@@ -36,6 +36,8 @@ public class BRCoreWalletManager implements
         BRCorePeerManager.Listener,
         BRCoreWallet.Listener {
 
+    static { System.loadLibrary("core"); }
+
     protected static boolean SHOW_CALLBACK = true;
     protected static boolean SHOW_CALLBACK_DETAIL = false;
 

@@ -21,8 +21,8 @@
 
 #include <stdlib.h>
 #include <malloc.h>
-#include <BRPeer.h>
-#include <BRInt.h>
+#include "BRPeer.h"
+#include "BRInt.h"
 #include "BRCoreJni.h"
 #include "com_breadwallet_core_BRCorePeer.h"
 
