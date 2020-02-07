@@ -142,7 +142,9 @@ public class CoreCryptoApplication extends Application {
                     "btc",
                     "eth",
                     "bch",
-                    "xrp");
+                    "xrp"
+                    // "hbar"
+            );
             systemListener = new DispatchingSystemListener();
             systemListener.addSystemListener(new CoreSystemListener(mode, isMainnet, currencyCodesNeeded));
 

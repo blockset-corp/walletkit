@@ -10,13 +10,15 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/crypto",
                                    projectDir.absolutePath + "/src/main/cpp/core/ethereum",
                                    projectDir.absolutePath + "/src/main/cpp/core/generic",
+                                   projectDir.absolutePath + "/src/main/cpp/core/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/ripple",
-                                   projectDir.absolutePath + "/src/main/cpp/core/support"]
+                                   projectDir.absolutePath + "/src/main/cpp/core/support",
+                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/ed25519"]
 
     cppCryptoIncDirs            = cppCryptoSrcDirs +
                                   [projectDir.absolutePath + "/src/main/cpp/core/include",
                                    projectDir.absolutePath + "/src/main/cpp/core",
                                    projectDir.absolutePath + "/src/main/cpp/core/vendor/secp256k1"]
 
-    cmakeCMakeListsFile         = projectDir.absolutePath + "/CMakeLists.txt"
+    cmakeCMakeListsFile         = projectDir.absolutePath + "/../WalletKitCore/CMakeLists.txt"
 }
