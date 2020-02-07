@@ -10,6 +10,7 @@
 //
 
 #include "BRHederaAddress.h"
+#include "BRHederaBase.h"
 #include "support/BRCrypto.h"
 #include <stdint.h>
 #include <stdio.h>

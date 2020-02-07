@@ -74,8 +74,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRAssert.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRArray.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBase.h
-                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.c
-                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.h
+#                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.c
+#                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP32Sequence.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP32Sequence.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP39Mnemonic.c
@@ -276,20 +276,20 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ethereum/ewm/BREthereumEWMPersist.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ethereum/ewm/BREthereumEWMPrivate.h)
 
-# Ethereum Tests
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
-                    PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/base/testBase.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/blockchain/testBc.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/contract/testContract.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/event/testEvent.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/ewm/testEwm.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/rlp/testRlp.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/les/testLES.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/util/testUtil.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c)
-endif(CMAKE_BUILD_TYPE MATCHES Debug)
+# # Ethereum Tests
+# if (CMAKE_BUILD_TYPE MATCHES Debug)
+#     target_sources (corecrypto
+#                     PRIVATE
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBase.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testRlp.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testLES.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testUtil.c
+#                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c)
+# endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Ripple
 target_sources (corecrypto
@@ -327,6 +327,48 @@ target_sources (corecrypto
 #                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ripple/testRippleTxList2.h)
 #endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# Hedera
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaBase.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHedera.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaAccount.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaAccount.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaAddress.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaAddress.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaCrypto.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaCrypto.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaFeeBasis.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaFeeBasis.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaSerialize.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaSerialize.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaTransaction.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaTransaction.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaWallet.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/BRHederaWallet.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/BasicTypes.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/BasicTypes.pb-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/CryptoTransfer.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/CryptoTransfer.pb-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Duration.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Duration.pb-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/protobuf-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/protobuf-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Timestamp.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Timestamp.pb-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Transaction.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/Transaction.pb-c.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/TransactionBody.pb-c.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/hedera/proto/TransactionBody.pb-c.h)
+
+# Hedera Tests
+#if (CMAKE_BUILD_TYPE MATCHES Debug)
+#    target_sources (corecrypto
+#                    PRIVATE
+#                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/hedera/testHedera.c)
+#endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
+
 # Generic
 target_sources (corecrypto
                 PRIVATE
@@ -340,7 +382,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/generic/BRGenericManager.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/generic/BRGenericRipple.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/generic/BRGenericRipple.c
-                )
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/generic/BRGenericHedera.h
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/generic/BRGenericHedera.c)
 
 # Crypto
 target_sources (corecrypto

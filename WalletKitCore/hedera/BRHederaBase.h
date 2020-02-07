@@ -31,6 +31,15 @@ typedef struct {
     uint8_t bytes[48];
 } BRHederaTransactionHash;
 
+// Needed for Android builds
+#if !defined (ntohll)
+#define ntohll(x) ((1==ntohl(1)) ? (x) : (((uint64_t)ntohl((x) & 0xFFFFFFFFUL)) << 32) | ntohl((uint32_t)((x) >> 32)))
+#endif
+
+#if !defined (htonll)
+#define htonll(x) ((((uint64_t)htonl(x)) << 32) + htonl((x) >> 32))
+#endif
+
 #ifdef __cplusplus
 }
 #endif
