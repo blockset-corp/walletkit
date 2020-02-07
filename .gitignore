@@ -37,6 +37,5 @@
 # Android Studio / IntelliJ (see Java/.gitignore)
 #.idea/
 
-test
 .git-re*
 CoreTestsConfig.json
