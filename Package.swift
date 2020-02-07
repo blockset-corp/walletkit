@@ -18,7 +18,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "git@github.com:blockset-corp/walletkit-core.git", .branch("develop"))
+        .package(path: "./WalletKitCore")
     ],
 
     targets: [
