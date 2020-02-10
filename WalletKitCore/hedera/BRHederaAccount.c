@@ -99,7 +99,7 @@ extern uint8_t *hederaAccountGetSerialization (BRHederaAccount account, size_t *
     assert (NULL != account);
 
     // Get the sizes of what we are storing and allocate storage
-    uint8_t addressBuffer[HEDERA_ADDRESS_SERIALIZED_SIZE] = {0}
+    uint8_t addressBuffer[HEDERA_ADDRESS_SERIALIZED_SIZE] = {0};
     // If we have an address then serialize it - otherwise we just copy 0's to the stream
     if (NULL != account->address) {
         hederaAddressSerialize (account->address, addressBuffer, HEDERA_ADDRESS_SERIALIZED_SIZE);
