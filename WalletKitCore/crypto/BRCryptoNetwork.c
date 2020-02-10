@@ -31,8 +31,8 @@ cryptoNetworkCanonicalTypeString (BRCryptoNetworkCanonicalType type) {
         "CRYPTO_NETWORK_TYPE_BTC",
         "CRYPTO_NETWORK_TYPE_BCH",
         "CRYPTO_NETWORK_TYPE_ETH",
-        "CRYPTO_NETWORK_TYPE_XRP"
-        // "Hedera"
+        "CRYPTO_NETWORK_TYPE_XRP",
+        "CRYPTO_NETWORK_TYPE_HBAR"
         // "Stellar"
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
