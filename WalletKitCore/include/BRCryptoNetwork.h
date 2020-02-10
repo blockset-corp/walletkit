@@ -38,7 +38,7 @@ extern "C" {
         // CRYPTO_NETWORK_TYPE_XLM,
     } BRCryptoNetworkCanonicalType;
 
-#  define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_XRP)
+#  define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
 
     extern const char *
     cryptoNetworkCanonicalTypeString (BRCryptoNetworkCanonicalType type);
