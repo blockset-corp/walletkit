@@ -223,7 +223,7 @@ fileServiceTypeTransferV1Writer (BRFileServiceContext context,
                                     rlpEncodeString (coder, strSource),
                                     rlpEncodeString (coder, strTarget),
                                     rlpEncodeUInt256 (coder, amount, 0),
-                                    rlpEncodeString (coder, transfer->type),
+                                    rlpEncodeString (coder, cryptoNetworkCanonicalTypeGetCurrencyCode(transfer->type)),
                                     genFeeBasisEncode (feeBasis, coder),
                                     genTransferStateEncode (state, coder),
                                     genTransferAttributesEncode (transfer->attributes, coder));
@@ -258,7 +258,7 @@ genManagerInitializeFileService (BRGenericManager gwm) {
 
 extern BRGenericManager
 genManagerCreate (BRGenericClient client,
-                  const char *type,
+                  BRCryptoNetworkCanonicalType type,
                   BRGenericNetwork network,
                   BRGenericAccount account,
                   uint64_t accountTimestamp,
@@ -290,8 +290,11 @@ genManagerCreate (BRGenericClient client,
     // Create the alarm clock, but don't start it.
     alarmClockCreateIfNecessary(0);
 
-    char handlerName[5 + strlen(type) + 1], *hp = &handlerName[4]; // less 1
-    sprintf (handlerName, "Core %s", type);
+    const char *networkName  = (genNetworkIsMainnet (gwm->network) ? "mainnet" : "testnet");
+    const char *currencyCode = cryptoNetworkCanonicalTypeGetCurrencyCode(type);
+
+    char handlerName[5 + strlen(currencyCode) + 1], *hp = &handlerName[4]; // less 1
+    sprintf (handlerName, "Core %s", currencyCode);
     while (*++hp) *hp = toupper (*hp);
 
     // The `main` event handler has a periodic wake-up.  Used, perhaps, if the mode indicates
@@ -302,9 +305,6 @@ genManagerCreate (BRGenericClient client,
                                        &gwm->lock);
 
     // File Service
-    const char *networkName  = (genNetworkIsMainnet (gwm->network) ? "mainnet" : "testnet");
-    const char *currencyCode = type;
-
     gwm->fileService = fileServiceCreate (storagePath, currencyCode, networkName, gwm, NULL);
     genManagerInitializeFileService (gwm);
 
@@ -582,7 +582,7 @@ extern void
 genManagerWipe (BRGenericNetwork network,
                 const char *storagePath) {
         fileServiceWipe (storagePath,
-                         genNetworkGetType(network),
+                         cryptoNetworkCanonicalTypeGetCurrencyCode (genNetworkGetType(network)),
                          genNetworkIsMainnet (network) ? "mainnet" : "testnet");
 }
 

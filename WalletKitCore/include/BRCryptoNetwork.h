@@ -18,31 +18,6 @@
 extern "C" {
 #endif
 
-    ///
-    /// Crypto Network Type
-    ///
-    /// Try as we might, there are certain circumstances where the type of the network needs to
-    /// be known.  Without this enumeration, one uses hack-arounds like:
-    ///    "btc" == network.currency.code
-    /// So, provide these and expect them to grow.
-    ///
-    /// Enumerations here need to be consistent with the networks defined in;
-    ///    crypto/BRCryptoConfig.h
-    ///
-    typedef enum {
-        CRYPTO_NETWORK_TYPE_BTC,
-        CRYPTO_NETWORK_TYPE_BCH,
-        CRYPTO_NETWORK_TYPE_ETH,
-        CRYPTO_NETWORK_TYPE_XRP,
-        CRYPTO_NETWORK_TYPE_HBAR,
-        // CRYPTO_NETWORK_TYPE_XLM,
-    } BRCryptoNetworkCanonicalType;
-
-#  define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_XRP)
-
-    extern const char *
-    cryptoNetworkCanonicalTypeString (BRCryptoNetworkCanonicalType type);
-
     /// MARK: - (Network) Address Scheme
 
     typedef enum {

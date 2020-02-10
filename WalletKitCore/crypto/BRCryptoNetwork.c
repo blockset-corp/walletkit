@@ -26,17 +26,17 @@ cryptoUnitGiveAll (BRArrayOf(BRCryptoUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-cryptoNetworkCanonicalTypeString (BRCryptoNetworkCanonicalType type) {
-    static const char *strings[NUMBER_OF_NETWORK_TYPES] = {
-        "CRYPTO_NETWORK_TYPE_BTC",
-        "CRYPTO_NETWORK_TYPE_BCH",
-        "CRYPTO_NETWORK_TYPE_ETH",
-        "CRYPTO_NETWORK_TYPE_XRP"
-        // "Hedera"
+cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
+    static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
+        CRYPTO_NETWORK_CURRENCY_BTC,
+        CRYPTO_NETWORK_CURRENCY_BCH,
+        CRYPTO_NETWORK_CURRENCY_ETH,
+        CRYPTO_NETWORK_CURRENCY_XRP,
+        CRYPTO_NETWORK_CURRENCY_HBAR,
         // "Stellar"
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
-    return strings[type];
+    return currencies[type];
 }
 
 /// MARK: - Network Fee
@@ -188,12 +188,11 @@ cryptoNetworkCreateAsETH (const char *uids,
 static BRCryptoNetwork
 cryptoNetworkCreateAsGEN (const char *uids,
                           const char *name,
-                          const char *type,
                           uint8_t isMainnet,
                           BRCryptoNetworkCanonicalType canonicalType) {
     BRCryptoNetwork network = cryptoNetworkCreate (uids, name, canonicalType);
     network->type = BLOCK_CHAIN_TYPE_GEN;
-    network->u.gen = genNetworkCreate(type, isMainnet);
+    network->u.gen = genNetworkCreate(canonicalType, isMainnet);
     return network;
 }
 
@@ -664,13 +663,13 @@ cryptoNetworkCreateBuiltin (const char *symbol,
     else if (0 == strcmp ("ethRinkeby", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkRinkeby);
     else if (0 == strcmp ("xrpMainnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_XRP, 1, CRYPTO_NETWORK_TYPE_XRP);
+        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XRP);
     else if (0 == strcmp ("xrpTestnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_XRP, 0, CRYPTO_NETWORK_TYPE_XRP);
+        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XRP);
     else if (0 == strcmp ("hbarMainnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_HBAR, 1, CRYPTO_NETWORK_TYPE_HBAR);
+        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_HBAR);
     else if (0 == strcmp ("hbarTestnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_HBAR, 0, CRYPTO_NETWORK_TYPE_HBAR);
+        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_HBAR);
 //    else if (0 == strcmp ("xlmMainnet", symbol))
 //        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_Xlm, 1, CRYPTO_NETWORK_TYPE_XLM);
     // ...

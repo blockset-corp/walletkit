@@ -21,17 +21,17 @@
 // MARK: - Generic Account
 
 static BRGenericAccountRef
-genericRippleAccountCreate (const char *type, UInt512 seed) {
+genericRippleAccountCreate (BRCryptoNetworkCanonicalType type, UInt512 seed) {
     return (BRGenericAccountRef) rippleAccountCreateWithSeed (seed);
 }
 
 static BRGenericAccountRef
-genericRippleAccountCreateWithPublicKey (const char *type, BRKey key) {
+genericRippleAccountCreateWithPublicKey (BRCryptoNetworkCanonicalType type, BRKey key) {
     return (BRGenericAccountRef) rippleAccountCreateWithKey (key);
 }
 
 static BRGenericAccountRef
-genericRippleAccountCreateWithSerialization (const char *type, uint8_t *bytes, size_t bytesCount) {
+genericRippleAccountCreateWithSerialization (BRCryptoNetworkCanonicalType type, uint8_t *bytes, size_t bytesCount) {
     return (BRGenericAccountRef) rippleAccountCreateWithSerialization (bytes, bytesCount);
 }
 
@@ -423,7 +423,7 @@ genericRippleWalletManagerGetAPISyncType (void) {
 // MARK: - Generic Handlers
 
 struct BRGenericHandersRecord genericRippleHandlersRecord = {
-    GEN_NETWORK_TYPE_XRP,
+    CRYPTO_NETWORK_TYPE_XRP,
     { // Network
     },
 

@@ -62,7 +62,7 @@ cryptoAccountAsETH (BRCryptoAccount account);
 
 private_extern BRGenericAccount
 cryptoAccountAsGEN (BRCryptoAccount account,
-                    const char *type);
+                    BRCryptoNetworkCanonicalType type);
 
 private_extern const char *
 cryptoAccountAddressAsETH (BRCryptoAccount account);

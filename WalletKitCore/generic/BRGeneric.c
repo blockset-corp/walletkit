@@ -19,7 +19,7 @@
 // IMPLEMENT_GENERIC_TYPE(Network,network)
 
 private_extern BRGenericNetwork
-genNetworkAllocAndInit (const char *type,
+genNetworkAllocAndInit (BRCryptoNetworkCanonicalType type,
                         BRGenericNetworkRef ref,
                         int isMainnet) {
     BRGenericNetwork network = calloc (1, sizeof (struct BRGenericNetworkRecord));
@@ -31,7 +31,7 @@ genNetworkAllocAndInit (const char *type,
 }
 
 extern BRGenericNetwork
-genNetworkCreate (const char *type, int isMainnet) {
+genNetworkCreate (BRCryptoNetworkCanonicalType type, int isMainnet) {
     // There is no 'gen handler' for network create
     return genNetworkAllocAndInit (type, NULL, isMainnet);
 }
@@ -41,7 +41,7 @@ genNetworkRelease (BRGenericNetwork network) {
     free (network);
 }
 
-extern const char *
+extern BRCryptoNetworkCanonicalType
 genNetworkGetType (BRGenericNetwork network) {
     return network->type;
 }
@@ -56,19 +56,19 @@ genNetworkIsMainnet (BRGenericNetwork network) {
 IMPLEMENT_GENERIC_TYPE(Account, account)
 
 extern BRGenericAccount
-genAccountCreate (const char *type,
+genAccountCreate (BRCryptoNetworkCanonicalType type,
                   UInt512 seed) {
     return genAccountAllocAndInit (type, genHandlerLookup(type)->account.create (type, seed));
 }
 
 extern BRGenericAccount
-genAccountCreateWithPublicKey (const char *type,
+genAccountCreateWithPublicKey (BRCryptoNetworkCanonicalType type,
                                BRKey publicKey) {
     return genAccountAllocAndInit (type, genHandlerLookup(type)->account.createWithPublicKey (type, publicKey));
 }
 
 extern BRGenericAccount
-genAccountCreateWithSerialization(const char *type,
+genAccountCreateWithSerialization(BRCryptoNetworkCanonicalType type,
                                   uint8_t *bytes,
                                   size_t   bytesCount) {
     return genAccountAllocAndInit (type, genHandlerLookup(type)->account.createWithSerialization (type, bytes, bytesCount));
@@ -80,15 +80,15 @@ genAccountRelease (BRGenericAccount account) {
     free (account);
 }
 
-extern const char *
+extern BRCryptoNetworkCanonicalType
 genAccountGetType (BRGenericAccount account) {
     return account->type;
 }
 
 extern int
 genAccountHasType (BRGenericAccount account,
-                   const char *type) {
-    return type == account->type || 0 == strcmp  (type, account->type);
+                   BRCryptoNetworkCanonicalType type) {
+    return type == account->type;
 }
 
 extern BRGenericAddress
@@ -120,7 +120,7 @@ genAccountSignTransferWithKey (BRGenericAccount account,
 IMPLEMENT_GENERIC_TYPE(Address, address)
 
 extern BRGenericAddress
-genAddressCreate (const char *type,
+genAddressCreate (BRCryptoNetworkCanonicalType type,
                   const char *string) {
     BRGenericAddressRef ref = genHandlerLookup(type)->address.create (string);
     return (NULL != ref
@@ -136,7 +136,7 @@ genAddressAsString (BRGenericAddress account) {
 extern int
 genAddressEqual (BRGenericAddress aid1,
                  BRGenericAddress aid2) {
-    assert (0 == strcmp (aid1->type, aid2->type));
+    assert (aid1->type == aid2->type);
     return aid1->handlers.equal (aid1->ref, aid2->ref);
 }
 
@@ -199,7 +199,7 @@ genTransferAttributeReleaseAll (OwnershipGiven BRArrayOf(BRGenericTransferAttrib
 // MARK: - Transfer
 
 private_extern BRGenericTransfer
-genTransferAllocAndInit (const char *type,
+genTransferAllocAndInit (BRCryptoNetworkCanonicalType type,
                          BRGenericTransferRef ref) {
     BRGenericTransfer transfer = calloc (1, sizeof (struct BRGenericTransferRecord));
     transfer->type = type;
@@ -349,7 +349,7 @@ genTransferSetCreate (size_t capacity) {
 // MARK: - Wallet
 
 private_extern BRGenericWallet
-genWalletAllocAndInit (const char *type,
+genWalletAllocAndInit (BRCryptoNetworkCanonicalType type,
                        BRGenericWalletRef ref) {
     BRGenericWallet wallet = calloc (1, sizeof (struct BRGenericWalletRecord));
     wallet->type = type;
