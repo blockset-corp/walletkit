@@ -35,6 +35,47 @@ In addition, there is a **cryptodemo-android** project that demonstrates how the
 
 Build outputs can be found under the **build** subdirectory of the individual sub-projects (ex: *./corenative-android/build*).
 
+# Download
+
+In your gradle repositories list, include Jcenter or the walletkit-java repository:
+
+```groovy
+allprojects {
+    repositories {
+        jcenter()
+
+        // If only walletkit-java is required:
+        // maven { url 'https://dl.bintray.com/brd/walletkit-java' }
+
+        // If published locally:
+        // mavenLocal()
+    }
+}
+```
+
+Now include your desired dependencies:
+
+```groovy
+
+dependencies {
+    // For desktop/server JRE targets:
+    implementation 'com.breadwallet.core:corecrypto-jre:<version>'
+    // For Android targets:
+    implementation 'com.breadwallet.core:corecrypto-android:<version>'
+}
+
+```
+
+# Publishing
+
+For development, artifacts can be published locally using `./gradlew publishToMavenLocal`.
+Do not forget to including the `mavenLocal()` repo in your repositories list when depending on these artifacts.
+
+For jcenter publication, ensure the `version` property is up to date in `gradle.properties` and run:
+`./gradlew publish -PbintrayUser=<user> -PbintrayApiKey=<apikey>`
+
+Alternatively the `BINTRAY_USER` and `BINTRAY_API_KEY` environment variables can be set allowing `./gradlew publish` to complete without additional properties.
+
 # A Word About JRE Modules
 
 The build system currently only builds **corenative-jre** and **corecrypto-jre** for the host platform. We are relying on the Gradle native plugins for builds and they do not support building for other platforms at the moment (see [issue](https://github.com/gradle/gradle-native/issues/1031)).
