@@ -48,7 +48,7 @@ extern BRRippleTransactionHash rippleCreateTransactionHashFromString(const char*
 extern BRRippleUnitDrops rippleCreateDropsFromString(const char* value)
 {
     BRRippleUnitDrops drops;
-    sscanf(value, "%llu", &drops);
+    sscanf(value, "%" PRIu64, &drops);
     return drops;
 }
 

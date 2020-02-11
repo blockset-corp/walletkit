@@ -29,7 +29,7 @@ char * createTransactionID(BRHederaAddress address, BRHederaTimeStamp timeStamp)
 {
     char buffer[128] = {0};
     const char * hederaAddress = hederaAddressAsString(address);
-    sprintf(buffer, "%s-%lld-%d", hederaAddress, timeStamp.seconds, timeStamp.nano);
+    sprintf(buffer, "%s-%" PRIi64 "-%" PRIi32, hederaAddress, timeStamp.seconds, timeStamp.nano);
     char * result = calloc(1, strlen(buffer) + 1);
     strncpy(result, buffer, strlen(buffer));
     return result;
@@ -331,8 +331,8 @@ BRHederaTimeStamp hederaParseTimeStamp(const char* transactionID)
     char * nanosStr = strtok(NULL, "-"); // Nanos
 
     //sscanf(transactionID, "%s:%lld.%lld.%lld-%lld-%d-", blockchain, &shard, &realm, &account, &seconds, &nanos);
-    sscanf(secondsStr, "%lld", &ts.seconds);
-    sscanf(nanosStr, "%d", &ts.nano);
+    sscanf(secondsStr, "%" PRIi64, &ts.seconds);
+    sscanf(nanosStr, "%" PRIi32, &ts.nano);
 
     return ts;
 }
