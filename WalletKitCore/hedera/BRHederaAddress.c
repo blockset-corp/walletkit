@@ -53,7 +53,7 @@ extern char * hederaAddressAsString (BRHederaAddress address)
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
-        size_t stringSize = sprintf(buffer, "%lld.%lld.%lld", address->shard, address->realm, address->account);
+        size_t stringSize = sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
         string = calloc(1, stringSize + 1);
         strcpy(string, buffer);
@@ -67,7 +67,7 @@ static bool hederaStringIsValid (const char * input)
     int64_t shard = -1;
     int64_t realm = -1;
     int64_t account = -1;
-    sscanf(input, "%lld.%lld.%lld", &shard, &realm, &account);
+    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, &shard, &realm, &account);
     if (shard >= 0 && realm >= 0 && account >= 0) {
         return true;
     }
@@ -82,7 +82,7 @@ BRHederaAddress hederaAddressStringToAddress(const char* input)
 
     // Hedera address are shard.realm.account
     BRHederaAddress address = (BRHederaAddress) calloc(1, sizeof(struct BRHederaAddressRecord));
-    sscanf(input, "%lld.%lld.%lld",
+    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64,
            &address->shard, &address->realm, &address->account);
     return address;
 }

@@ -13,6 +13,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <arpa/inet.h>          // htonl()
 #include "BRCryptoBase.h"
 
 #ifdef __cplusplus

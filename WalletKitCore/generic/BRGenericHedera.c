@@ -260,8 +260,8 @@ genericHederaWalletManagerRecoverTransfer (const char *hash,
                                            uint64_t blockHeight,
                                            int error) {
     BRHederaUnitTinyBar amountHbar, feeHbar = 0;
-    sscanf(amount, "%llu", &amountHbar);
-    if (NULL != fee) sscanf(fee,    "%llu", &feeHbar);
+    sscanf(amount, "%" PRIi64, &amountHbar);
+    if (NULL != fee) sscanf(fee, "%" PRIi64, &feeHbar);
     BRHederaAddress toAddress   = hederaAddressCreateFromString(to);
     BRHederaAddress fromAddress = hederaAddressCreateFromString(from);
     // Convert the hash string to bytes

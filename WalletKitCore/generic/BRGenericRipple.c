@@ -393,8 +393,8 @@ genericRippleWalletManagerRecoverTransfer (const char *hash,
                                            uint64_t blockHeight,
                                            int error) {
     BRRippleUnitDrops amountDrops, feeDrops = 0;
-    sscanf(amount, "%llu", &amountDrops);
-    if (NULL != fee) sscanf(fee,    "%llu", &feeDrops);
+    sscanf(amount, "%" PRIu64, &amountDrops);
+    if (NULL != fee) sscanf(fee, "%" PRIu64, &feeDrops);
     BRRippleAddress toAddress   = rippleAddressCreateFromString(to);
     BRRippleAddress fromAddress = rippleAddressCreateFromString(from);
     // Convert the hash string to bytes
