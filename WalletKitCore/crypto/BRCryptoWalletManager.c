@@ -805,6 +805,33 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 }
 
 extern BRCryptoTransfer
+cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
+                                           BRCryptoWallet wallet,
+                                           size_t specsCount,
+                                           BRCryptoTransferMultiSpec *specs,
+                                           BRCryptoFeeBasis estimatedFeeBasis) {
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, specsCount, specs, estimatedFeeBasis);
+    switch (cwm->type) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            break;
+        case BLOCK_CHAIN_TYPE_ETH:
+            break;
+        case BLOCK_CHAIN_TYPE_GEN:
+            if (NULL != transfer) {
+                cwm->listener.transferEventCallback (cwm->listener.context,
+                                                     cryptoWalletManagerTake (cwm),
+                                                     cryptoWalletTake (wallet),
+                                                     cryptoTransferTake(transfer),
+                                                     (BRCryptoTransferEvent) {
+                    CRYPTO_TRANSFER_EVENT_CREATED
+                });
+            }
+            break;
+    }
+    return transfer;
+}
+
+extern BRCryptoTransfer
 cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                    BRCryptoWallet wallet,
                                    BRCryptoAddress target,
