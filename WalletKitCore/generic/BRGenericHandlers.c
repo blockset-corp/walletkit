@@ -8,34 +8,19 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#include <pthread.h>
 #include "support/BRArray.h"
 #include "BRGenericHandlers.h"
+#include "BRCryptoBase.h"
 
-static pthread_once_t  _handlers_once = PTHREAD_ONCE_INIT;
-//static pthread_mutex_t _handler_lock;
-
-static BRArrayOf(BRGenericHandlers) arrayOfHandlers = NULL;
-
-static void _handlers_init (void) {
-    array_new (arrayOfHandlers, 10);
-}
+BRGenericHandlers arrayOfHandlers[NUMBER_OF_NETWORK_TYPES];
 
 extern void
 genHandlersInstall (const BRGenericHandlers handlers) {
-    pthread_once (&_handlers_once, _handlers_init);
-    array_add (arrayOfHandlers, handlers);
-
+    arrayOfHandlers[handlers->type] = handlers;
 }
 
 extern const BRGenericHandlers
-genHandlerLookup (const char *type) {
-    pthread_once (&_handlers_once, _handlers_init);
-    for (size_t index = 0; index < array_count(arrayOfHandlers); index++)
-        if (0 == strcmp (type, arrayOfHandlers[index]->type))
-            return arrayOfHandlers[index];
-
-    assert(0);
-    return NULL;
+genHandlerLookup (BRCryptoNetworkCanonicalType type) {
+    return arrayOfHandlers[type];
 }
 

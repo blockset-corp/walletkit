@@ -21,19 +21,19 @@
 // MARK: - Generic Account
 
 static BRGenericAccountRef
-genericHederaAccountCreate (const char *type, UInt512 seed) {
+genericHederaAccountCreate (BRCryptoNetworkCanonicalType type, UInt512 seed) {
     return (BRGenericAccountRef) hederaAccountCreateWithSeed (seed);
 }
 
 static BRGenericAccountRef
-genericHederaAccountCreateWithPublicKey (const char *type, BRKey key) {
+genericHederaAccountCreateWithPublicKey (BRCryptoNetworkCanonicalType type, BRKey key) {
     //return (BRGenericAccountRef) hederaAccountCreateWithKey (key);
     // TODO - this function will most likey be removed
     return NULL;
 }
 
 static BRGenericAccountRef
-genericHederaAccountCreateWithSerialization (const char *type, uint8_t *bytes, size_t bytesCount) {
+genericHederaAccountCreateWithSerialization (BRCryptoNetworkCanonicalType type, uint8_t *bytes, size_t bytesCount) {
     return (BRGenericAccountRef) hederaAccountCreateWithSerialization (bytes, bytesCount);
 }
 
@@ -299,7 +299,7 @@ genericHederaWalletManagerGetAPISyncType (void) {
 // MARK: - Generic Handlers
 
 struct BRGenericHandersRecord genericHederaHandlersRecord = {
-    "hbar",
+    CRYPTO_NETWORK_TYPE_HBAR,
     { // Network
     },
 

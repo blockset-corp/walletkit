@@ -238,7 +238,7 @@ cryptoWalletManagerCreate (BRCryptoCWMListener listener,
             BRGenericClient client = cryptoWalletManagerClientCreateGENClient (cwm);
 
             // Create CWM as 'GEN' based on the network's base currency.
-            const char *type = cryptoNetworkGetCurrencyCode (network);
+            BRCryptoNetworkCanonicalType type = cryptoNetworkGetCanonicalType (network);
 
             cwm->u.gen = genManagerCreate (client,
                                            type,

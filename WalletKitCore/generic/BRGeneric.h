@@ -25,13 +25,13 @@ extern "C" {
     // MARK: - Network
 
     extern BRGenericNetwork
-    genNetworkCreate (const char * type,
+    genNetworkCreate (BRCryptoNetworkCanonicalType type,
                       int isMainnet);
 
     extern void
     genNetworkRelease (BRGenericNetwork network);
 
-    extern const char *
+    extern BRCryptoNetworkCanonicalType
     genNetworkGetType (BRGenericNetwork network);
 
     extern int
@@ -40,27 +40,27 @@ extern "C" {
     // MARK: - Account
 
     extern BRGenericAccount
-    genAccountCreate (const char *type,
+    genAccountCreate (BRCryptoNetworkCanonicalType type,
                       UInt512 seed);
 
     extern BRGenericAccount
-    genAccountCreateWithPublicKey (const char *type,
+    genAccountCreateWithPublicKey (BRCryptoNetworkCanonicalType type,
                                    BRKey publicKey);
 
     extern BRGenericAccount
-    genAccountCreateWithSerialization (const char *type,
+    genAccountCreateWithSerialization (BRCryptoNetworkCanonicalType type,
                                        uint8_t *bytes,
                                        size_t   bytesCount);
     
     extern void
     genAccountRelease (BRGenericAccount account);
 
-    extern const char *
+    extern BRCryptoNetworkCanonicalType
     genAccountGetType (BRGenericAccount account);
 
     extern int
     genAccountHasType (BRGenericAccount account,
-                       const char *type);
+                       BRCryptoNetworkCanonicalType type);
 
     extern BRGenericAddress
     genAccountGetAddress (BRGenericAccount account);
@@ -80,7 +80,7 @@ extern "C" {
     // Address
 
     extern BRGenericAddress
-    genAddressCreate (const char *type,
+    genAddressCreate (BRCryptoNetworkCanonicalType type,
                       const char *string);
 
     extern char *
@@ -244,7 +244,7 @@ extern "C" {
 
     extern BRGenericManager
     genManagerCreate (BRGenericClient client,
-                      const char *type,
+                      BRCryptoNetworkCanonicalType type,
                       BRGenericNetwork network,
                       BRGenericAccount account,
                       uint64_t accountTimestamp,

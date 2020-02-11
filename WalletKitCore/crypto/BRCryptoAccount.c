@@ -405,7 +405,7 @@ cryptoAccountAsETH (BRCryptoAccount account) {
 
 private_extern BRGenericAccount
 cryptoAccountAsGEN (BRCryptoAccount account,
-                    const char *type) {
+                    BRCryptoNetworkCanonicalType type) {
     if (genAccountHasType (account->xrp, type)) return account->xrp;
     if (genAccountHasType (account->hbar, type)) return account->hbar;
     return NULL;

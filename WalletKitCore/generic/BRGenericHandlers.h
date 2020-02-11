@@ -41,9 +41,9 @@ extern "C" {
 
     // MARK: - Generic Account
 
-    typedef BRGenericAccountRef (*BRGenericAccountCreate) (const char *type, UInt512 seed);
-    typedef BRGenericAccountRef (*BRGenericAccountCreateWithPublicKey) (const char *type, BRKey key);
-    typedef BRGenericAccountRef (*BRGenericAccountCreateWithSerialization) (const char *type, uint8_t *bytes, size_t bytesCount);
+    typedef BRGenericAccountRef (*BRGenericAccountCreate) (BRCryptoNetworkCanonicalType type, UInt512 seed);
+    typedef BRGenericAccountRef (*BRGenericAccountCreateWithPublicKey) (BRCryptoNetworkCanonicalType type, BRKey key);
+    typedef BRGenericAccountRef (*BRGenericAccountCreateWithSerialization) (BRCryptoNetworkCanonicalType type, uint8_t *bytes, size_t bytesCount);
     typedef void (*BRGenericAccountFree) (BRGenericAccountRef account);
     typedef BRGenericAddressRef (*BRGenericAccountGetAddress) (BRGenericAccountRef account);
     typedef uint8_t * (*BRGenericAccountGetSerialization) (BRGenericAccountRef account, size_t *bytesCount);
@@ -197,7 +197,7 @@ extern "C" {
     // MARK: - Generic Handlers
 
     typedef struct BRGenericHandersRecord {
-        const char *type;
+        BRCryptoNetworkCanonicalType type;
         BRGenericNetworkHandlers network;
         BRGenericAccountHandlers account;
         BRGenericAddressHandlers address;
@@ -210,7 +210,7 @@ extern "C" {
     genHandlersInstall (const BRGenericHandlers handlers);
 
     extern const BRGenericHandlers
-    genHandlerLookup (const char *symbol);
+    genHandlerLookup (BRCryptoNetworkCanonicalType type);
 
 #ifdef __cplusplus
 }

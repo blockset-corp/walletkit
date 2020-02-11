@@ -21,18 +21,18 @@
 
 #define DECLARE_GENERIC_TYPE(name)                \
     struct BRGeneric##name##Record {              \
-      const char *type;                           \
+      BRCryptoNetworkCanonicalType type;          \
       BRGeneric##name##Handlers handlers;         \
       BRGeneric##name##Ref ref;                   \
     };                                            \
-    private_extern BRGeneric##name                \
-    gen##name##AllocAndInit (const char *type,    \
+    private_extern BRGeneric##name                              \
+    gen##name##AllocAndInit (BRCryptoNetworkCanonicalType type, \
                              BRGeneric##name##Ref ref);
 
 #define IMPLEMENT_GENERIC_TYPE(name,field)             \
     private_extern BRGeneric##name                     \
-    gen##name##AllocAndInit (const char *type,         \
-                             BRGeneric##name##Ref ref) { \
+    gen##name##AllocAndInit (BRCryptoNetworkCanonicalType type,                    \
+                             BRGeneric##name##Ref ref) {                           \
       BRGeneric##name __obj = calloc (1, sizeof (struct BRGeneric##name##Record)); \
       __obj->type = type;                              \
       __obj->handlers = genHandlerLookup(type)->field; \
@@ -41,14 +41,14 @@
     }
 
 struct BRGenericNetworkRecord {
-    const char *type;
+    BRCryptoNetworkCanonicalType type;
     BRGenericNetworkHandlers handlers;
     BRGenericNetworkRef ref;
     int isMainnet;
 };
 
 private_extern BRGenericNetwork
-genNetworkAllocAndInit (const char *type,
+genNetworkAllocAndInit (BRCryptoNetworkCanonicalType type,
                         BRGenericNetworkRef ref,
                         int isMainet);
 
@@ -57,7 +57,7 @@ DECLARE_GENERIC_TYPE(Account)
 DECLARE_GENERIC_TYPE(Address)
 
 struct BRGenericTransferRecord {
-    const char *type;
+    BRCryptoNetworkCanonicalType type;
     char *uids;
     BRGenericTransferHandlers handlers;
     BRGenericTransferRef ref;
@@ -67,19 +67,19 @@ struct BRGenericTransferRecord {
 };
 
 private_extern BRGenericTransfer
-genTransferAllocAndInit (const char *type,
+genTransferAllocAndInit (BRCryptoNetworkCanonicalType type,
                          BRGenericTransferRef ref);
 
 
 struct BRGenericWalletRecord {
-    const char *type;
+    BRCryptoNetworkCanonicalType type;
     BRGenericWalletHandlers handlers;
     BRGenericWalletRef ref;
     BRGenericFeeBasis defaultFeeBasis;
 };
 
 private_extern BRGenericWallet
-genWalletAllocAndInit (const char *type,
+genWalletAllocAndInit (BRCryptoNetworkCanonicalType type,
                        BRGenericWalletRef ref);
 
 //DECLARE_GENERIC_TYPE(Manager)
