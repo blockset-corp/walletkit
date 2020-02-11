@@ -335,7 +335,7 @@ public enum NetworkType: CustomStringConvertible {
     }
 
     public var description: String {
-        return asUTF8String (cryptoNetworkCanonicalTypeString (core))
+        return "CRYPTO_NETWORK_TYPE_" + asUTF8String (cryptoNetworkCanonicalTypeGetCurrencyCode (core)).uppercased()
     }
 }
 
