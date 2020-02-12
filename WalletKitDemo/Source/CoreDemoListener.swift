@@ -114,6 +114,22 @@ class CoreDemoListener: SystemListener {
                                                           currencies: currencies)
                 if !success {
                     system.wipe (network: network)
+
+                    // Recover if account is not initialized
+                    if !system.accountIsInitialized(system.account, onNetwork: network) {
+                        let dataForInitialization = system.accountGetInitializationdData (system.account, onNetwork: network)!
+                        print ("APP: Account: InitializationData: \(dataForInitialization.asHexEncodedString())")
+
+                        if network.type == .hbar {
+                            let initializationData = "0.0.114008".data(using: .utf8)!
+                            print ("APP: Account: InitializationResult: \(String(data: initializationData, encoding: .utf8)!)")
+
+                            let serializationData = system.accountInitialize (system.account, onNetwork: network, using: initializationData)
+                            print ("APP: Account: Serialization: \(serializationData?.asHexEncodedString() ?? "")")
+                        }
+                        print ("APP: Account: Initialized: \(system.accountIsInitialized(system.account, onNetwork: network))")
+                    }
+
                     let successRetry = system.createWalletManager (network: network,
                                                                    mode: mode,
                                                                    addressScheme: scheme,

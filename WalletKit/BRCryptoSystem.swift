@@ -86,6 +86,72 @@ public final class System {
     }
 
     ///
+    /// Check if `account` is initialized for `network`.  Some networks require that accounts
+    /// be initialized before they can be used; Hedera is one such network.
+    ///
+    /// - Parameters:
+    ///   - account: the account
+    ///   - network: the network
+    ///   
+    /// - Returns: `true` if initialized; `false` otherwise
+    ///
+    public func accountIsInitialized (_ account: Account, onNetwork network: Network) -> Bool {
+        return CRYPTO_TRUE == cryptoNetworkIsAccountInitialized (network.core, account.core)
+    }
+
+
+    /// Initialize `account` on `network` using `data`.  The provided data is network specific and
+    /// thus an opaque sequence of bytes.
+    ///
+    /// - Parameters:
+    ///   - account: the account
+    ///   - network: the network
+    ///   - data: the data
+    ///
+    /// - Returns: The account serialization or `nil` if the account was already initialized.  This
+    ///            serialization must be saved otherwise the initialization will be lost upon the
+    ///            next System start.
+    ///
+    public func accountInitialize (_ account: Account, onNetwork network: Network, using data: Data) -> Data? {
+        guard !accountIsInitialized (account, onNetwork: network)
+            else { return nil }
+
+        return data.withUnsafeBytes { (dataBytes: UnsafeRawBufferPointer) -> Data in
+            let dataAddr  = dataBytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
+            let dataCount = dataBytes.count
+
+            cryptoNetworkInitializeAccount (network.core,
+                                            account.core,
+                                            dataAddr,
+                                            dataCount)
+            return account.serialize
+        }
+    }
+
+    /// Get the data needed to initialize `account` on `network`.  This data is network specfic and
+    /// thus an opaqe sequence of bytes.  The bytes are provided to some 'initialization provider'
+    /// in a network specific manner; the provider's result is passed back using the
+    /// `accountInitialize` function.
+    ///
+    /// - Parameters:
+    ///   - account: the account
+    ///   - network: the network
+    ///
+    /// - Returns: Opaque data to be provided to the 'initialization provider'
+    ///
+    public func accountGetInitializationdData (_ account: Account, onNetwork network: Network) -> Data? {
+        var bytesCount: BRCryptoCount = 0
+        return cryptoNetworkGetAccountInitializationData (network.core,
+                                                          account.core,
+                                                          &bytesCount)
+            .map {
+                let bytes = $0
+                defer { cryptoMemoryFree (bytes) }
+                return Data (bytes: bytes, count: bytesCount)
+        }
+    }
+
+    ///
     /// Create a wallet manager for `network` using `mode`, `addressScheme`, and `currencies`.  A
     /// wallet will be 'registered' for each of:
     ///    a) the network's currency - this is the primaryWallet
@@ -116,16 +182,17 @@ public final class System {
         precondition (network.supportsMode(mode))
         precondition (network.supportsAddressScheme(addressScheme))
 
-        guard let manager = WalletManager (system: self,
-                                           callbackCoordinator: callbackCoordinator,
-                                           account: account,
-                                           network: network,
-                                           mode: mode,
-                                           addressScheme: addressScheme,
-                                           currencies: currencies,
-                                           storagePath: path,
-                                           listener: cryptoListener,
-                                           client: cryptoClient)
+        guard accountIsInitialized (account, onNetwork: network),
+            let manager = WalletManager (system: self,
+                                         callbackCoordinator: callbackCoordinator,
+                                         account: account,
+                                         network: network,
+                                         mode: mode,
+                                         addressScheme: addressScheme,
+                                         currencies: currencies,
+                                         storagePath: path,
+                                         listener: cryptoListener,
+                                         client: cryptoClient)
             else { return false }
         
         manager.setNetworkReachable(isNetworkReachable)
