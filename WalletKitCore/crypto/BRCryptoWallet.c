@@ -587,6 +587,7 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
                                     BRCryptoTransferMultiSpec *specs,
                                     BRCryptoFeeBasis estimatedFeeBasis) {
     assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+    if (0 == specsCount) return NULL;
 
     BRCryptoTransfer transfer = NULL;
 
