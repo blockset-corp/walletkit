@@ -383,6 +383,29 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
+    public boolean accountIsInitialized(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network) {
+        return Network.from (network).getCoreBRCryptoNetwork().isAccountInitialized(
+                Account.from(account).getCoreBRCryptoAccount());
+    }
+
+    @Override
+    public byte[] accountInitialize(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network, byte[] data) {
+        if (accountIsInitialized (account, network)) return null;
+
+        Network.from(network).getCoreBRCryptoNetwork().initializeAccount(
+                Account.from(account).getCoreBRCryptoAccount(),
+                data);
+
+        return account.serialize();
+    }
+
+    @Override
+    public byte[] accountGetInitializationdData(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network) {
+        return Network.from(network).getCoreBRCryptoNetwork().getAccountInitializationData(
+                Account.from(account).getCoreBRCryptoAccount());
+    }
+
+    @Override
     public boolean createWalletManager(com.breadwallet.crypto.Network network,
                                        WalletManagerMode mode,
                                        AddressScheme scheme,

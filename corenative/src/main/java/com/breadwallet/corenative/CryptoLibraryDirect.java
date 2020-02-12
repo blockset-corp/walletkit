@@ -145,6 +145,10 @@ public final class CryptoLibraryDirect {
     public static native boolean cryptoNetworkSupportsSyncMode(Pointer network, int mode);
     public static native boolean cryptoNetworkRequiresMigration(Pointer network);
 
+    public static native boolean cryptoNetworkIsAccountInitialized (Pointer network, Pointer account);
+    public static native Pointer cryptoNetworkGetAccountInitializationData (Pointer network, Pointer account, SizeTByReference bytesCount);
+    public static native void cryptoNetworkInitializeAccount (Pointer network, Pointer account, byte[] bytes, SizeT bytesCount);
+
     public static native Pointer cryptoNetworkInstallBuiltins(SizeTByReference count);
     public static native Pointer cryptoNetworkFindBuiltin(String uids);
 
