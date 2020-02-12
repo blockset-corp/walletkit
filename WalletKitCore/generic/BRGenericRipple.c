@@ -46,6 +46,22 @@ genericRippleAccountGetAddress (BRGenericAccountRef account) {
 }
 
 static uint8_t *
+genericRippleAccountGetInitializationData (BRGenericAccountRef account, size_t *bytesCount) {
+    if (NULL != bytesCount) *bytesCount = 0;
+    return NULL;
+}
+
+static void
+genericRippleAccountInitialize (BRGenericAccountRef account, const uint8_t *bytes, size_t bytesCount) {
+    return;
+}
+
+static int
+genericRippleAccountIsInitialized (BRGenericAccountRef account) {
+    return 1;
+}
+
+static uint8_t *
 genericRippleAccountGetSerialization (BRGenericAccountRef account,
                                       size_t *bytesCount) {
     return rippleAccountGetSerialization ((BRRippleAccount) account, bytesCount);
@@ -433,6 +449,9 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleAccountCreateWithSerialization,
         genericRippleAccountFree,
         genericRippleAccountGetAddress,
+        genericRippleAccountGetInitializationData,
+        genericRippleAccountInitialize,
+        genericRippleAccountIsInitialized,
         genericRippleAccountGetSerialization,
         genericRippleAccountSignTransferWithSeed,
         genericRippleAccountSignTransferWithKey,

@@ -94,6 +94,10 @@ extern BRHederaAddress hederaAccountGetPrimaryAddress (BRHederaAccount account)
     return hederaAccountGetAddress(account);
 }
 
+extern int hederaAccountHasPrimaryAddress (BRHederaAccount account) {
+    return NULL != account->address;
+}
+
 extern uint8_t *hederaAccountGetSerialization (BRHederaAccount account, size_t *bytesCount) {
     assert (NULL != bytesCount);
     assert (NULL != account);

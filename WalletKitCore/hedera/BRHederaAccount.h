@@ -99,6 +99,8 @@ extern BRHederaAddress hederaAccountGetPrimaryAddress (BRHederaAccount account);
 extern uint8_t * // Caller owns memory and must delete calling "free"
 hederaAccountGetSerialization (BRHederaAccount account, size_t *bytesCount);
 
+extern int hederaAccountHasPrimaryAddress (BRHederaAccount account);
+
 /**
  * Check if this account has the specified address
  *
