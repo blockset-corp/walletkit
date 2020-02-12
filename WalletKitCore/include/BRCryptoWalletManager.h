@@ -271,6 +271,13 @@ extern "C" {
                                        size_t attributesCount,
                                        OwnershipKept BRCryptoTransferAttribute *attributes);
 
+    extern BRCryptoTransfer
+    cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
+                                               BRCryptoWallet wallet,
+                                               size_t specsCount,
+                                               BRCryptoTransferMultiSpec *specs,
+                                               BRCryptoFeeBasis estimatedFeeBasis);
+
     extern BRCryptoBoolean
     cryptoWalletManagerSign (BRCryptoWalletManager cwm,
                              BRCryptoWallet wallet,

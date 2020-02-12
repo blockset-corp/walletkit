@@ -582,6 +582,69 @@ cryptoWalletAsGEN (BRCryptoWallet wallet) {
 }
 
 extern BRCryptoTransfer
+cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
+                                    size_t specsCount,
+                                    BRCryptoTransferMultiSpec *specs,
+                                    BRCryptoFeeBasis estimatedFeeBasis) {
+    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+    if (0 == specsCount) return NULL;
+
+    BRCryptoTransfer transfer = NULL;
+
+    BRCryptoUnit unit         = cryptoWalletGetUnit (wallet);
+    BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee(wallet);
+    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
+
+    switch (wallet->type) {
+        case BLOCK_CHAIN_TYPE_BTC: {
+            BRWalletManager bwm = wallet->u.btc.bwm;
+            BRWallet *wid = wallet->u.btc.wid;
+            BRAddressParams params = BRWalletGetAddressParams(wid);
+
+            BRTxOutput outputs [specsCount];
+            memset (outputs, 0, specsCount * sizeof(BRTxOutput));
+            
+            for (size_t index = 0; index < specsCount; index++) {
+                BRCryptoTransferMultiSpec *spec = &specs[index];
+                BRTxOutput *output = &outputs[index];
+
+                assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(spec->target));
+                assert (cryptoAmountHasCurrency (spec->amount, currency));
+
+                BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
+                BRAddress address = cryptoAddressAsBTC (spec->target, &isBitcoinAddr);
+                assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
+
+                BRCryptoBoolean overflow = CRYPTO_FALSE;
+                uint64_t value = cryptoAmountGetIntegerRaw (spec->amount, &overflow);
+                assert (CRYPTO_TRUE != overflow);
+
+                output->amount = value;
+                BRTxOutputSetAddress (output, params, address.s);
+            }
+
+            BRTransaction *tid = BRWalletManagerCreateTransactionForOutputs (bwm, wid,
+                                                                             outputs,
+                                                                             specsCount,
+                                                                             cryptoFeeBasisAsBTC(estimatedFeeBasis));
+            transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
+                                                                       AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
+            break;
+        }
+        case BLOCK_CHAIN_TYPE_ETH:
+            break;
+        case BLOCK_CHAIN_TYPE_GEN:
+            break;
+    }
+
+    cryptoCurrencyGive(currency);
+    cryptoUnitGive (unitForFee);
+    cryptoUnitGive (unit);
+
+    return transfer;
+}
+
+extern BRCryptoTransfer
 cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
                             BRCryptoAddress target,
                             BRCryptoAmount  amount,

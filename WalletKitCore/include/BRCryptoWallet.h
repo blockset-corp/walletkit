@@ -228,6 +228,18 @@ extern "C" {
                                                          BRCryptoPaymentProtocolRequest request,
                                                          BRCryptoFeeBasis estimatedFeeBasis);
 
+    typedef struct {
+        BRCryptoAddress target;
+        BRCryptoAmount  amount;
+        // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH supported
+    } BRCryptoTransferMultiSpec;
+
+    extern BRCryptoTransfer
+    cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
+                                        size_t specsCount,
+                                        BRCryptoTransferMultiSpec *specs,
+                                        BRCryptoFeeBasis estimatedFeeBasis);
+
     extern void
     cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
