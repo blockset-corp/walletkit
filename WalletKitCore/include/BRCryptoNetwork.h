@@ -12,6 +12,7 @@
 #define BRCryptoNetwork_h
 
 #include "BRCryptoAmount.h"
+#include "BRCryptoAccount.h"
 #include "BRCryptoSync.h"
 
 #ifdef __cplusplus
@@ -273,6 +274,23 @@ extern "C" {
     extern BRCryptoBoolean
     cryptoNetworkSupportsAddressScheme (BRCryptoNetwork network,
                                         BRCryptoAddressScheme scheme);
+
+    // MARK: Account Initialization
+
+    extern BRCryptoBoolean
+    cryptoNetworkIsAccountInitialized (BRCryptoNetwork network,
+                                       BRCryptoAccount account);
+
+    extern uint8_t *
+    cryptoNetworkGetAccountInitializationData (BRCryptoNetwork network,
+                                               BRCryptoAccount account,
+                                               size_t *bytesCount);
+
+    extern void
+    cryptoNetworkInitializeAccount (BRCryptoNetwork network,
+                                    BRCryptoAccount account,
+                                    const uint8_t *bytes,
+                                    size_t bytesCount);
 
     // MARK: - Sync Mode
 
