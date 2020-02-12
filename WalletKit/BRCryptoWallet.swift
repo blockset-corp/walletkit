@@ -222,6 +222,29 @@ public final class Wallet: Equatable {
         }
     }
 
+    public func createTransfer (parts: [(target:Address, amount:Amount)],
+                                estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
+        switch parts.count {
+        case 0: return nil
+        case 1: return createTransfer (target: parts[0].target,
+                                       amount: parts[0].amount,
+                                       estimatedFeeBasis: estimatedFeeBasis)
+        default:
+            let specsCount = parts.count
+            var specs: [BRCryptoTransferMultiSpec] = parts
+                .map { BRCryptoTransferMultiSpec (target: $0.target.core, amount: $0.amount.core) }
+
+            return cryptoWalletManagerCreateTransferMultiple (manager.core, core,
+                                                              specsCount,
+                                                              UnsafeMutablePointer (&specs),
+                                                              estimatedFeeBasis.core)
+                .map { Transfer (core: $0,
+                                 wallet: self,
+                                 take: false)
+            }
+        }
+    }
+
     internal func createTransfer(sweeper: WalletSweeper,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
         return cryptoWalletCreateTransferForWalletSweep(self.core, sweeper.core, estimatedFeeBasis.core)
