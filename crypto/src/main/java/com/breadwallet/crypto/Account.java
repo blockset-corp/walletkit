@@ -126,7 +126,8 @@ public interface Account {
      *
      * @param network the network
      *
-     * @return Opaque data to be provided to the 'initialization provider'
+     * @return Opaque data to be provided to the 'initialization provider' or null is no
+     *         initialization is required.
      */
     byte[] getInitializationData (Network network);
 }

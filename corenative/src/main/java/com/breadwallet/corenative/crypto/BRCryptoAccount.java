@@ -166,6 +166,8 @@ public class BRCryptoAccount extends PointerType {
                 thisPtr,
                 network.getPointer(),
                 bytesCount);
+        if (null == serializationPtr) return null;
+
         try {
             return serializationPtr.getByteArray(0, UnsignedInts.checkedCast(bytesCount.getValue().longValue()));
         } finally {
