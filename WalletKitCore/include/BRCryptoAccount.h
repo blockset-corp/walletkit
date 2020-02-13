@@ -12,6 +12,7 @@
 #define BRCryptoAccount_h
 
 #include "BRCryptoBase.h"
+#include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,6 +108,21 @@ extern "C" {
 
     extern const char *
     cryptoAccountGetUids (BRCryptoAccount account);
+
+    extern BRCryptoBoolean
+    cryptoAccountIsInitialized (BRCryptoAccount account,
+                                BRCryptoNetwork network);
+
+    extern uint8_t *
+    cryptoAccountGetInitializationData (BRCryptoAccount account,
+                                        BRCryptoNetwork network,
+                                        size_t *bytesCount);
+
+    extern void
+    cryptoAccountInitialize (BRCryptoAccount account,
+                             BRCryptoNetwork network,
+                             const uint8_t *bytes,
+                             size_t bytesCount);
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoAccount, cryptoAccount);
 

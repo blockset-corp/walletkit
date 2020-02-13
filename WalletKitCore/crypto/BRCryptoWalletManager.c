@@ -152,6 +152,10 @@ cryptoWalletManagerCreate (BRCryptoCWMListener listener,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
 
+    // Only create a wallet manager for accounts that are initializedon network.
+    if (CRYPTO_FALSE == cryptoAccountIsInitialized (account, network))
+        return NULL;
+
     // In rare cases a Wallet Manager cannot be created.  If not, we'll perform a 'goto' and, on
     // `1 == error`, perform some cleanup actions.
     int error = 0;

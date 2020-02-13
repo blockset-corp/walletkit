@@ -46,6 +46,9 @@ extern "C" {
     typedef BRGenericAccountRef (*BRGenericAccountCreateWithSerialization) (BRCryptoNetworkCanonicalType type, uint8_t *bytes, size_t bytesCount);
     typedef void (*BRGenericAccountFree) (BRGenericAccountRef account);
     typedef BRGenericAddressRef (*BRGenericAccountGetAddress) (BRGenericAccountRef account);
+    typedef uint8_t * (*BRGenericAccountGetInitializationData) (BRGenericAccountRef account, size_t *bytesCount);
+    typedef void (*BRGenericAccountInitialize) (BRGenericAccountRef account, const uint8_t *bytes, size_t bytesCount);
+    typedef int (*BRGenericAccountIsInitialized) (BRGenericAccountRef account);
     typedef uint8_t * (*BRGenericAccountGetSerialization) (BRGenericAccountRef account, size_t *bytesCount);
     typedef void (*BRGenericAccountSignTransferWithSeed) (BRGenericAccountRef account, BRGenericTransferRef transfer, UInt512 seed);
     typedef void (*BRGenericAccountSignTransferWithKey) (BRGenericAccountRef account, BRGenericTransferRef transfer, BRKey *key);
@@ -56,6 +59,9 @@ extern "C" {
         BRGenericAccountCreateWithSerialization createWithSerialization;
         BRGenericAccountFree free;
         BRGenericAccountGetAddress getAddress;
+        BRGenericAccountGetInitializationData getInitializationData;
+        BRGenericAccountInitialize initialize;
+        BRGenericAccountIsInitialized isInitialized;
         BRGenericAccountGetSerialization getSerialization;
         BRGenericAccountSignTransferWithSeed signTransferWithSeed;
         BRGenericAccountSignTransferWithKey signTransferWithKey;
