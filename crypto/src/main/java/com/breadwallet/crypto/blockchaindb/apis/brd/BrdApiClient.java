@@ -152,9 +152,9 @@ public class BrdApiClient {
         dataTask.execute(client, request, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                int responseCode = response.code();
-                if (HttpStatusCodes.responseSuccess(request.method()).contains(responseCode)) {
-                    try (ResponseBody responseBody = response.body()) {
+                try (ResponseBody responseBody = response.body()) {
+                    int responseCode = response.code();
+                    if (HttpStatusCodes.responseSuccess(request.method()).contains(responseCode)) {
                         if (responseBody == null) {
                             Log.log(Level.SEVERE, "response failed with null body");
                             handler.handleError(new QueryNoDataError());
@@ -166,10 +166,10 @@ public class BrdApiClient {
                                 handler.handleError(new QueryJsonParseError(e.getMessage()));
                             }
                         }
+                    } else {
+                        Log.log(Level.SEVERE, "response failed with status " + responseCode);
+                        handler.handleError(new QueryResponseError(responseCode));
                     }
-                } else {
-                    Log.log(Level.SEVERE, "response failed with status " + responseCode);
-                    handler.handleError(new QueryResponseError(responseCode));
                 }
             }
 
