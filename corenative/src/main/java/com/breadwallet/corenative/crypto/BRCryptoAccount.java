@@ -152,6 +152,37 @@ public class BRCryptoAccount extends PointerType {
                 serialization, new SizeT(serialization.length));
     }
 
+    public boolean isInitialized(BRCryptoNetwork network) {
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoAccountIsInitialized(
+                this.getPointer(),
+                network.getPointer());
+    }
+
+    public byte[] getInitializationData(BRCryptoNetwork network) {
+        Pointer thisPtr = this.getPointer();
+
+        SizeTByReference bytesCount = new SizeTByReference();
+        Pointer serializationPtr = CryptoLibraryDirect.cryptoAccountGetInitializationData(
+                thisPtr,
+                network.getPointer(),
+                bytesCount);
+        try {
+            return serializationPtr.getByteArray(0, UnsignedInts.checkedCast(bytesCount.getValue().longValue()));
+        } finally {
+            Native.free(Pointer.nativeValue(serializationPtr));
+        }
+    }
+
+    public void initialize(BRCryptoNetwork network, byte[] data) {
+        Pointer thisPtr = this.getPointer();
+
+        CryptoLibraryDirect.cryptoAccountInitialize(
+                thisPtr,
+                network.getPointer(),
+                data,
+                new SizeT(data.length));
+    }
+
     public void give() {
         Pointer thisPtr = this.getPointer();
 

@@ -44,6 +44,9 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoAccountGetFileSystemIdentifier(Pointer account);
     public static native Pointer cryptoAccountSerialize(Pointer account, SizeTByReference count);
     public static native int cryptoAccountValidateSerialization(Pointer account, byte[] serialization, SizeT count);
+    public static native int cryptoAccountIsInitialized (Pointer account, Pointer network);
+    public static native Pointer cryptoAccountGetInitializationData (Pointer account, Pointer network, SizeTByReference bytesCount);
+    public static native void cryptoAccountInitialize (Pointer account, Pointer network, byte[] bytes, SizeT bytesCount);
     public static native int cryptoAccountValidateWordsList(SizeT count);
     public static native Pointer cryptoAccountGeneratePaperKey(StringArray words);
     public static native int cryptoAccountValidatePaperKey(ByteBuffer phraseBuffer, StringArray wordsArray);
@@ -144,10 +147,6 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoNetworkGetSupportedSyncModes(Pointer network, SizeTByReference count);
     public static native boolean cryptoNetworkSupportsSyncMode(Pointer network, int mode);
     public static native boolean cryptoNetworkRequiresMigration(Pointer network);
-
-    public static native boolean cryptoNetworkIsAccountInitialized (Pointer network, Pointer account);
-    public static native Pointer cryptoNetworkGetAccountInitializationData (Pointer network, Pointer account, SizeTByReference bytesCount);
-    public static native void cryptoNetworkInitializeAccount (Pointer network, Pointer account, byte[] bytes, SizeT bytesCount);
 
     public static native Pointer cryptoNetworkInstallBuiltins(SizeTByReference count);
     public static native Pointer cryptoNetworkFindBuiltin(String uids);

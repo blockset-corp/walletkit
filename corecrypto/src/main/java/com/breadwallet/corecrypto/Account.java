@@ -120,6 +120,31 @@ final class Account implements com.breadwallet.crypto.Account {
         return core.validate(serialization);
     }
 
+    @Override
+    public boolean isInitialized(com.breadwallet.crypto.Network network) {
+        return core.isInitialized(
+                Network.from(network).getCoreBRCryptoNetwork()
+        );
+    }
+
+    @Override
+    public byte[] initialize(com.breadwallet.crypto.Network network, byte[] data) {
+        if (isInitialized(network)) return null;
+
+        core.initialize(
+                Network.from(network).getCoreBRCryptoNetwork(),
+                data
+        );
+        return serialize();
+    }
+
+    @Override
+    public byte[] getInitializationData(com.breadwallet.crypto.Network network) {
+        return core.getInitializationData(
+                Network.from(network).getCoreBRCryptoNetwork()
+        );
+    }
+
     /* package */
     String getFilesystemIdentifier() {
         return core.getFilesystemIdentifier();

@@ -149,10 +149,10 @@ public class CoreSystemListener implements SystemListener {
                 Account account = system.getAccount();
 
                 system.wipe(network);
-                if (!system.accountIsInitialized(account, network)) {
+                if (!account.isInitialized(network)) {
                     Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
 
-                    byte[] dataForInitialization = system.accountGetInitializationdData (account, network);
+                    byte[] dataForInitialization = account.getInitializationData (network);
                     Log.log(Level.FINE, String.format("Account: DataForInitialization: %s",
                             hexCoder.encode(dataForInitialization).get()));
 
@@ -160,11 +160,11 @@ public class CoreSystemListener implements SystemListener {
                         byte[] initializationData = "0.0.114008".getBytes();
                         Log.log(Level.FINE, String.format("Account: InitializationData: %s", "0.0.114008"));
 
-                        byte[] serializationData = system.accountInitialize(account, network, initializationData);
+                        byte[] serializationData = account.initialize(network, initializationData);
                         Log.log(Level.FINE, String.format("Account: Serialization: %s",
                                 hexCoder.encode(serializationData).get()));
                     }
-                    Log.log(Level.FINE, String.format("Account: Initialized: %s", system.accountIsInitialized(account, network)));
+                    Log.log(Level.FINE, String.format("Account: Initialized: %s", account.isInitialized(network)));
                 }
                 checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
             }

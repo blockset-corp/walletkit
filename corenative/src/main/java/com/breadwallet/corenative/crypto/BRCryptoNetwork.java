@@ -326,37 +326,6 @@ public class BRCryptoNetwork extends PointerType {
         );
     }
 
-    public boolean isAccountInitialized (BRCryptoAccount account) {
-        return CryptoLibraryDirect.cryptoNetworkIsAccountInitialized(
-                this.getPointer(),
-                account.getPointer());
-    }
-
-    public byte[] getAccountInitializationData (BRCryptoAccount account) {
-        Pointer thisPtr = this.getPointer();
-
-        SizeTByReference bytesCount = new SizeTByReference();
-        Pointer serializationPtr = CryptoLibraryDirect.cryptoNetworkGetAccountInitializationData(
-                thisPtr,
-                account.getPointer(),
-                bytesCount);
-        try {
-            return serializationPtr.getByteArray(0, UnsignedInts.checkedCast(bytesCount.getValue().longValue()));
-        } finally {
-            Native.free(Pointer.nativeValue(serializationPtr));
-        }
-    }
-
-    public void initializeAccount (BRCryptoAccount account, byte[] data) {
-        Pointer thisPtr = this.getPointer();
-
-        CryptoLibraryDirect.cryptoNetworkInitializeAccount(
-                thisPtr,
-                account.getPointer(),
-                data,
-                new SizeT(data.length));
-    }
-
     public boolean requiresMigration () {
         return CryptoLibraryDirect.cryptoNetworkRequiresMigration(
                 this.getPointer()

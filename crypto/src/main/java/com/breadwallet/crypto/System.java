@@ -126,45 +126,8 @@ public interface System {
     void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies);
 
     /**
-     * Check if `account` is initialized for `network`.  Some networks require that accounts
-     * be initialized before they can be used; Hedera is one such network.
-     *
-     * @param account the account
-     * @param network the network
-     *
-     * @return `true` if initialized; `false` otherwise
-     */
-    boolean accountIsInitialized (Account account, Network network);
-    
-    /**
-     * Initialize `account` on `network` using `data`.  The provided data is network specific and
-     * thus an opaque sequence of bytes.
-     *
-     * @param account the account
-     * @param network the network
-     * @param data the data
-     *
-     * @return The account serialization or `nil` if the account was already initialized.  This
-     *            serialization must be saved otherwise the initialization will be lost upon the
-     *            next System start.
-     */
-    byte[] accountInitialize (Account account, Network network, byte[] data);
-
-    /**
-     * Get the data needed to initialize `account` on `network`.  This data is network specfic and
-     * thus an opaqe sequence of bytes.  The bytes are provided to some 'initialization provider'
-     * in a network specific manner; the provider's result is passed back using the
-     * `accountInitialize` function.
-     *
-     * @param account the account
-     * @param network the network
-     *
-     * @return Opaque data to be provided to the 'initialization provider'
-     */
-    byte[] accountGetInitializationdData (Account account, Network network);
-
-    /**
      * Create a wallet manager for `network` using `mode.
+     *
      * Note: There are two preconditions - "network" must support "mode" and "addressScheme".
      *       Thus a fatal error arises if, for example, the network is BTC and the scheme is ETH.
      *
