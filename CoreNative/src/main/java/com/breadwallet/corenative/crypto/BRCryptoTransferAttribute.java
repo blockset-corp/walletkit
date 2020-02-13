@@ -38,7 +38,7 @@ public class BRCryptoTransferAttribute extends PointerType {
     public boolean isRequired () {
         Pointer thisPtr = this.getPointer();
 
-        return CryptoLibraryDirect.cryptoTransferAttributeIsRequired(thisPtr);
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoTransferAttributeIsRequired(thisPtr);
     }
 
     public BRCryptoTransferAttribute copy () {
