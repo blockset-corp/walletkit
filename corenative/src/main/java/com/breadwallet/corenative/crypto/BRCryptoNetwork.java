@@ -287,7 +287,7 @@ public class BRCryptoNetwork extends PointerType {
     }
 
     public boolean supportsAddressScheme(BRCryptoAddressScheme addressScheme) {
-        return CryptoLibraryDirect.cryptoNetworkSupportsAddressScheme (
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoNetworkSupportsAddressScheme (
                 this.getPointer(),
                 addressScheme.toCore()
         );
@@ -320,14 +320,14 @@ public class BRCryptoNetwork extends PointerType {
     }
 
     public boolean supportsSyncMode(BRCryptoSyncMode mode) {
-        return CryptoLibraryDirect.cryptoNetworkSupportsSyncMode(
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoNetworkSupportsSyncMode(
                 this.getPointer(),
                 mode.toCore()
         );
     }
 
     public boolean requiresMigration () {
-        return CryptoLibraryDirect.cryptoNetworkRequiresMigration(
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoNetworkRequiresMigration(
                 this.getPointer()
         );
     }

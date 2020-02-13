@@ -142,11 +142,11 @@ public final class CryptoLibraryDirect {
     public static native int cryptoNetworkGetCanonicalType(Pointer obj);
     public static native int cryptoNetworkGetDefaultAddressScheme(Pointer network);
     public static native Pointer cryptoNetworkGetSupportedAddressSchemes(Pointer network, SizeTByReference count);
-    public static native boolean cryptoNetworkSupportsAddressScheme(Pointer network, int scheme);
+    public static native int cryptoNetworkSupportsAddressScheme(Pointer network, int scheme);
     public static native int cryptoNetworkGetDefaultSyncMode(Pointer network);
     public static native Pointer cryptoNetworkGetSupportedSyncModes(Pointer network, SizeTByReference count);
-    public static native boolean cryptoNetworkSupportsSyncMode(Pointer network, int mode);
-    public static native boolean cryptoNetworkRequiresMigration(Pointer network);
+    public static native int cryptoNetworkSupportsSyncMode(Pointer network, int mode);
+    public static native int cryptoNetworkRequiresMigration(Pointer network);
 
     public static native Pointer cryptoNetworkInstallBuiltins(SizeTByReference count);
     public static native Pointer cryptoNetworkFindBuiltin(String uids);
@@ -256,7 +256,7 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoTransferAttributeGetKey(Pointer attribute);
     public static native Pointer cryptoTransferAttributeGetValue(Pointer attribute);
     public static native void cryptoTransferAttributeSetValue(Pointer attribute, String value);
-    public static native boolean cryptoTransferAttributeIsRequired(Pointer attribute);
+    public static native int cryptoTransferAttributeIsRequired(Pointer attribute);
     public static native void cryptoTransferAttributeGive(Pointer attribute);
 
 
