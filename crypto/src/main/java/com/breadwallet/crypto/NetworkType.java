@@ -4,6 +4,6 @@ public enum NetworkType {
     BTC,
     BCH,
     ETH,
-    XRP
-    // HBAR
+    XRP,
+    HBAR
 }

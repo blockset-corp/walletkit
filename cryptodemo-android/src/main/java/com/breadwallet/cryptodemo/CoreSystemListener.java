@@ -9,9 +9,12 @@ package com.breadwallet.cryptodemo;
 
 import android.support.annotation.Nullable;
 
+import com.breadwallet.crypto.Coder;
+import com.breadwallet.crypto.Account;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.Currency;
 import com.breadwallet.crypto.Network;
+import com.breadwallet.crypto.NetworkType;
 import com.breadwallet.crypto.System;
 import com.breadwallet.crypto.Transfer;
 import com.breadwallet.crypto.Wallet;
@@ -143,7 +146,26 @@ public class CoreSystemListener implements SystemListener {
             Log.log(Level.FINE, String.format("Creating %s WalletManager with %s and %s", network, mode, addressScheme));
             boolean success = system.createWalletManager(network, mode, addressScheme, Collections.emptySet());
             if (!success) {
+                Account account = system.getAccount();
+
                 system.wipe(network);
+                if (!account.isInitialized(network)) {
+                    Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
+
+                    byte[] dataForInitialization = account.getInitializationData (network);
+                    Log.log(Level.FINE, String.format("Account: DataForInitialization: %s",
+                            hexCoder.encode(dataForInitialization).get()));
+
+                    if (NetworkType.HBAR == network.getType()) {
+                        byte[] initializationData = "0.0.114008".getBytes();
+                        Log.log(Level.FINE, String.format("Account: InitializationData: %s", "0.0.114008"));
+
+                        byte[] serializationData = account.initialize(network, initializationData);
+                        Log.log(Level.FINE, String.format("Account: Serialization: %s",
+                                hexCoder.encode(serializationData).get()));
+                    }
+                    Log.log(Level.FINE, String.format("Account: Initialized: %s", account.isInitialized(network)));
+                }
                 checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
             }
         }

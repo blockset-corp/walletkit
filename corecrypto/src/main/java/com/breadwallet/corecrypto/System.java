@@ -390,6 +390,10 @@ final class System implements com.breadwallet.crypto.System {
         checkState(network.supportsWalletManagerMode(mode));
         checkState(network.supportsAddressScheme(scheme));
 
+        if (!account.isInitialized(network)) {
+            return false;
+        }
+
         Optional<WalletManager> maybeWalletManager = WalletManager.create(
                 cwmListener,
                 cwmClient,

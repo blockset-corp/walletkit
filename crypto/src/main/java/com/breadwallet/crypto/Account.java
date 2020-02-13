@@ -94,4 +94,40 @@ public interface Account {
      * @return true contains the same material; false otherwise
      */
     boolean validate(byte[] serialization);
+
+    /**
+     * Check if `account` is initialized for `network`.  Some networks require that accounts
+     * be initialized before they can be used; Hedera is one such network.
+     *
+     * @param network the network
+     *
+     * @return `true` if initialized; `false` otherwise
+     */
+    boolean isInitialized (Network network);
+
+    /**
+     * Initialize `account` on `network` using `data`.  The provided data is network specific and
+     * thus an opaque sequence of bytes.
+     *
+     * @param network the network
+     * @param data the data
+     *
+     * @return The account serialization or `nil` if the account was already initialized.  This
+     *            serialization must be saved otherwise the initialization will be lost upon the
+     *            next System start.
+     */
+    byte[] initialize (Network network, byte[] data);
+
+    /**
+     * Get the data needed to initialize `account` on `network`.  This data is network specfic and
+     * thus an opaqe sequence of bytes.  The bytes are provided to some 'initialization provider'
+     * in a network specific manner; the provider's result is passed back using the
+     * `accountInitialize` function.
+     *
+     * @param network the network
+     *
+     * @return Opaque data to be provided to the 'initialization provider' or null is no
+     *         initialization is required.
+     */
+    byte[] getInitializationData (Network network);
 }
