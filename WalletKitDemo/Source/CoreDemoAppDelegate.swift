@@ -122,7 +122,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
             "eth" : .api_only,
             "bch" : .p2p_only,
             "xrp" : .api_only,
-//            "hbar" : .api_only
+            "hbar" : .api_only
             ]
         if mainnet {
 
@@ -341,9 +341,10 @@ extension UIApplication {
             let alert = UIAlertController (title: "Block Chain Access",
                                            message: "Can't access '\(network.name)'",
                 preferredStyle: UIAlertController.Style.alert)
+
             alert.addAction (UIAlertAction (title: "Okay", style: UIAlertAction.Style.cancel))
-                app.summaryController.present (alert, animated: true) {}
-            }
+            app.summaryController.present (alert, animated: true) {}
+        }
     }
 
     static func peer (network: Network) -> NetworkPeer? {
@@ -374,3 +375,22 @@ extension Network {
     }
 }
 
+// https://stackoverflow.com/a/40089462/1286639
+extension Data {
+    struct HexEncodingOptions: OptionSet {
+        let rawValue: Int
+        static let upperCase = HexEncodingOptions(rawValue: 1 << 0)
+    }
+
+    func asHexEncodedString (prefix: String = "",
+                             options: HexEncodingOptions = []) -> String {
+        let hexDigits = Array((options.contains(.upperCase) ? "0123456789ABCDEF" : "0123456789abcdef").utf16)
+        var chars: [unichar] = []
+        chars.reserveCapacity(2 * count)
+        for byte in self {
+            chars.append(hexDigits[Int(byte / 16)])
+            chars.append(hexDigits[Int(byte % 16)])
+        }
+        return prefix + String(utf16CodeUnits: chars, count: chars.count)
+    }
+}

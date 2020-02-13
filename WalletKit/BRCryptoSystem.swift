@@ -116,16 +116,17 @@ public final class System {
         precondition (network.supportsMode(mode))
         precondition (network.supportsAddressScheme(addressScheme))
 
-        guard let manager = WalletManager (system: self,
-                                           callbackCoordinator: callbackCoordinator,
-                                           account: account,
-                                           network: network,
-                                           mode: mode,
-                                           addressScheme: addressScheme,
-                                           currencies: currencies,
-                                           storagePath: path,
-                                           listener: cryptoListener,
-                                           client: cryptoClient)
+        guard account.isInitialized (onNetwork: network),
+            let manager = WalletManager (system: self,
+                                         callbackCoordinator: callbackCoordinator,
+                                         account: account,
+                                         network: network,
+                                         mode: mode,
+                                         addressScheme: addressScheme,
+                                         currencies: currencies,
+                                         storagePath: path,
+                                         listener: cryptoListener,
+                                         client: cryptoClient)
             else { return false }
         
         manager.setNetworkReachable(isNetworkReachable)

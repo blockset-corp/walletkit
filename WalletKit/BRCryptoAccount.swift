@@ -125,4 +125,68 @@ public final class Account {
 
         return CRYPTO_TRUE == cryptoAccountValidatePaperKey (phrase, &words)
     }
+
+    ///
+    /// Check if `account` is initialized for `network`.  Some networks require that accounts
+    /// be initialized before they can be used; Hedera is one such network.
+    ///
+    /// - Parameters:
+    ///   - network: the network
+    ///
+    /// - Returns: `true` if initialized; `false` otherwise
+    ///
+    public func isInitialized (onNetwork network: Network) -> Bool {
+        return CRYPTO_TRUE == cryptoAccountIsInitialized (core, network.core)
+    }
+
+    ///
+    /// Initialize `account` on `network` using `data`.  The provided data is network specific and
+    /// thus an opaque sequence of bytes.
+    ///
+    /// - Parameters:
+    ///   - network: the network
+    ///   - data: the data
+    ///
+    /// - Returns: The account serialization or `nil` if the account was already initialized.  This
+    ///            serialization must be saved otherwise the initialization will be lost upon the
+    ///            next System start.
+    ///
+    public func initialize (onNetwork network: Network, using data: Data) -> Data? {
+        guard !isInitialized (onNetwork: network)
+            else { return nil }
+
+        return data.withUnsafeBytes { (dataBytes: UnsafeRawBufferPointer) -> Data in
+            let dataAddr  = dataBytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
+            let dataCount = dataBytes.count
+
+            cryptoAccountInitialize (core,
+                                     network.core,
+                                     dataAddr,
+                                     dataCount)
+            return serialize
+        }
+    }
+
+    ///
+    /// Get the data needed to initialize `account` on `network`.  This data is network specfic and
+    /// thus an opaqe sequence of bytes.  The bytes are provided to some 'initialization provider'
+    /// in a network specific manner; the provider's result is passed back using the
+    /// `accountInitialize` function.
+    ///
+    /// - Parameters:
+    ///   - network: the network
+    ///
+    /// - Returns: Opaque data to be provided to the 'initialization provider'
+    ///
+    public func getInitializationdData (onNetwork network: Network) -> Data? {
+        var bytesCount: BRCryptoCount = 0
+        return cryptoAccountGetInitializationData (core,
+                                                   network.core,
+                                                   &bytesCount)
+            .map {
+                let bytes = $0
+                defer { cryptoMemoryFree (bytes) }
+                return Data (bytes: bytes, count: bytesCount)
+        }
+    }
 }
