@@ -29,5 +29,10 @@ final class WalletKitCoreTests: XCTestCase {
 
     static var allTests = [
         ("testBase", testBase),
+        ("testUtil", testUtil),
+        ("testRLP",  testRLP),
+        ("testEvent", testEvent),
+        ("testBC",    testBC),
+        ("testBitcoin", testBitcoin),
     ]
 }

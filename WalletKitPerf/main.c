@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include "support/BROSCompat.h"
 #include "support/BRBIP39WordsEn.h"
 #include "ethereum/BREthereum.h"
 #include "test.h"  // runSyncTest
@@ -33,7 +34,7 @@ runSyncMany (BREthereumNetwork newtork,
 
     for (int i = 0; i < accounts; i++) {
         UInt128 entropy;
-        arc4random_buf(entropy.u64, sizeof (entropy));
+        random_bytes_brd(entropy.u64, sizeof (entropy));
 
         size_t phraseLen = BRBIP39Encode(NULL, 0, BRBIP39WordsEn, entropy.u8, sizeof(entropy));
         char phrase[phraseLen];

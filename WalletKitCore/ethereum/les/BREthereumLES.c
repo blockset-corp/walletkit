@@ -11,7 +11,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -19,6 +18,7 @@
 #include <netdb.h>
 #include "support/BRInt.h"
 #include "support/BRArray.h"
+#include "support/BROSCompat.h"
 #include "ethereum/rlp/BRRlp.h"
 #include "ethereum/util/BRUtil.h"
 #include "ethereum/base/BREthereumBase.h"
@@ -85,7 +85,7 @@ static inline int minimum (int a, int b) { return a < b ? a : b; }
 
 #define LES_THREAD_NAME    "Core Ethereum LES"
 #define LES_PTHREAD_STACK_SIZE (512 * 1024)
-#define LES_PTHREAD_NULL   ((pthread_t) NULL)
+#define LES_PTHREAD_NULL   PTHREAD_NULL
 
 #define LES_REQUESTS_INITIAL_SIZE   10
 #define LES_NODE_INITIAL_SIZE   10
@@ -531,7 +531,7 @@ lesCreate (BREthereumNetwork network,
 
     // For now, create a new, random private key that is used for communication with LES nodes.
     UInt256 secret;
-    arc4random_buf(secret.u64, sizeof (secret));
+    random_bytes_brd (secret.u64, sizeof (secret));
 
     // Assign the generated private key.
     BRKeySetSecret(&les->key, &secret, 0);
@@ -1142,11 +1142,8 @@ lesThreadBootstrapSeeds (BREthereumLES les) {
 
 static void *
 lesThread (BREthereumLES les) {
-#if defined (__ANDROID__)
-    pthread_setname_np (les->thread, LES_THREAD_NAME);
-#else
-    pthread_setname_np (LES_THREAD_NAME);
-#endif
+    pthread_setname_brd (les->thread, LES_THREAD_NAME);
+
     // TODO: Don't timeout pselect(); get some 'wakeup descriptor'
     struct timespec timeout = { 0, 250000000 }; // .250 seconds
 

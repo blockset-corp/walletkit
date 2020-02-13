@@ -61,7 +61,7 @@ typedef struct {
 
         struct {
             int error;
-        } unix;
+        } unx;
 
         struct {
             int code;  // sqlite3_status_code

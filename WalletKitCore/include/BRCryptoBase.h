@@ -12,6 +12,7 @@
 #define BRCryptoBase_h
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
@@ -54,10 +55,11 @@ extern "C" {
         free (memory);
     }
 
-#if !defined(BLOCK_HEIGHT_UNBOUND)
-// See BRBase.h
-#define BLOCK_HEIGHT_UNBOUND       (UINT64_MAX)
-#endif
+//#if !defined(BLOCK_HEIGHT_UNBOUND)
+//// See BRBase.h
+//#define BLOCK_HEIGHT_UNBOUND       (UINT64_MAX)
+//#endif
+extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
     /// MARK: - Data32 / Data16
 

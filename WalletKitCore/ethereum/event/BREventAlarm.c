@@ -12,14 +12,13 @@
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
-#include <pthread.h>
 #include <sys/time.h>
 #include "support/BRAssert.h"
 #include "support/BRArray.h"
+#include "support/BROSCompat.h"
 #include "BREvent.h"
 #include "BREventAlarm.h"
 
-#define PTHREAD_NULL   ((pthread_t) NULL)
 #define PTHREAD_STACK_SIZE   (32 * 1024)
 
 /* Explicitly import (from BREvent.c) */
@@ -263,12 +262,7 @@ typedef void* (*ThreadRoutine) (void*);
 
 static void *
 alarmClockThread (BREventAlarmClock clock) {
-
-#if defined (__ANDROID__)
-    pthread_setname_np(clock->thread, "Core Ethereum Alarm Clock");
-#else
-    pthread_setname_np("Core Ethereum Alarm Clock");
-#endif
+    pthread_setname_brd(clock->thread, "Core Ethereum Alarm Clock");
 
     pthread_mutex_lock(&clock->lock);
 
