@@ -47,16 +47,9 @@ genericHederaAccountGetAddress (BRGenericAccountRef account) {
     return (BRGenericAddressRef) hederaAccountGetAddress((BRHederaAccount) account);
 }
 
-
 static uint8_t *
 genericHederaAccountGetInitializationData (BRGenericAccountRef account, size_t *bytesCount) {
-    BRKey publicKey = hederaAccountGetPublicKey ((BRHederaAccount) account);
-
-    *bytesCount = BRKeyPubKey (&publicKey, NULL, 0);
-    uint8_t *bytes = malloc (*bytesCount);
-
-    BRKeyPubKey (&publicKey, bytes, *bytesCount);
-    return bytes;
+    return hederaAccountGetPublicKeyBytes((BRHederaAccount) account, bytesCount);
 }
 
 static void

@@ -79,6 +79,14 @@ extern BRKey hederaAccountGetPublicKey (BRHederaAccount account)
     return key;
 }
 
+extern uint8_t *
+hederaAccountGetPublicKeyBytes (BRHederaAccount account, size_t *bytesCount) {
+    uint8_t *bytes = malloc (HEDERA_PUBLIC_KEY_SIZE);
+    memcpy (bytes, account->publicKey, HEDERA_PUBLIC_KEY_SIZE);
+    *bytesCount = HEDERA_PUBLIC_KEY_SIZE;
+    return bytes;
+}
+
 extern BRHederaAddress hederaAccountGetAddress (BRHederaAccount account)
 {
     assert(account);

@@ -78,6 +78,9 @@ extern void hederaAccountSetAddress (BRHederaAccount account, BRHederaAddress ac
  */
 extern BRKey hederaAccountGetPublicKey (BRHederaAccount account);
 
+extern uint8_t *
+hederaAccountGetPublicKeyBytes (BRHederaAccount account, size_t *bytesCount);
+
 /**
  * Get the Hedera Address from the specified account.
  *

@@ -10,6 +10,8 @@
 
 #include <pthread.h>
 #include "BRCryptoAccountP.h"
+#include "BRCryptoNetworkP.h"
+
 #include "generic/BRGenericHandlers.h"  // genericHandlersInstall
 #include "generic/BRGenericRipple.h"    // genericRippleHandlers
 #include "generic/BRGenericHedera.h"    // genericHederaHandlers
@@ -95,14 +97,12 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
     account->ref = CRYPTO_REF_ASSIGN(cryptoAccountRelease);
 
     return account;
-
 }
+
 static BRCryptoAccount
 cryptoAccountCreateFromSeedInternal (UInt512 seed,
                                      uint64_t timestamp,
                                      const char *uids) {
-    cryptoAccountInstall();
-
     return cryptoAccountCreateInternal (BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8)),
                                         ethAccountCreateWithBIP32Seed(seed),
                                         genAccountCreate (genericRippleHandlers->type, seed),
@@ -113,9 +113,10 @@ cryptoAccountCreateFromSeedInternal (UInt512 seed,
 
 extern BRCryptoAccount
 cryptoAccountCreate (const char *phrase, uint64_t timestamp, const char *uids) {
+    cryptoAccountInstall();
+
     return cryptoAccountCreateFromSeedInternal (cryptoAccountDeriveSeedInternal(phrase), timestamp, uids);
 }
-
 
 /**
  * Deserialize into an Account.  The serialization format is:
@@ -397,6 +398,55 @@ extern const char *
 cryptoAccountGetUids (BRCryptoAccount account) {
     return account->uids;
 }
+
+// MARK: Account Initialization
+
+extern BRCryptoBoolean
+cryptoAccountIsInitialized (BRCryptoAccount account,
+                            BRCryptoNetwork network) {
+    switch (network->type) {
+        case BLOCK_CHAIN_TYPE_BTC: return CRYPTO_TRUE;
+        case BLOCK_CHAIN_TYPE_ETH: return CRYPTO_TRUE;
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
+            assert (NULL != genAccount);
+            return AS_CRYPTO_BOOLEAN (genAccountIsInitialized(genAccount));
+        }
+    }
+}
+
+extern uint8_t *
+cryptoAccountGetInitializationData (BRCryptoAccount account,
+                                    BRCryptoNetwork network,
+                                    size_t *bytesCount) {
+    switch (network->type) {
+        case BLOCK_CHAIN_TYPE_BTC: return NULL;
+        case BLOCK_CHAIN_TYPE_ETH: return NULL;
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
+            assert (NULL != genAccount);
+            return genAccountGetInitializationData (genAccount, bytesCount);
+        }
+    }
+}
+
+extern void
+cryptoAccountInitialize (BRCryptoAccount account,
+                         BRCryptoNetwork network,
+                         const uint8_t *bytes,
+                         size_t bytesCount) {
+    switch (network->type) {
+        case BLOCK_CHAIN_TYPE_BTC: return;
+        case BLOCK_CHAIN_TYPE_ETH: return;
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
+            assert (NULL != genAccount);
+            genAccountInitialize(genAccount, bytes, bytesCount);
+        }
+    }
+}
+
+/// MARK: - AccountAs...
 
 private_extern BREthereumAccount
 cryptoAccountAsETH (BRCryptoAccount account) {

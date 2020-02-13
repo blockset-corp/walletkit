@@ -12,7 +12,6 @@
 #include "BRCryptoUnit.h"
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
-#include "BRCryptoAccountP.h"
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
@@ -122,8 +121,6 @@ static BRCryptoNetwork
 cryptoNetworkCreate (const char *uids,
                      const char *name,
                      BRCryptoNetworkCanonicalType canonicalType) {
-    cryptoAccountInstall();
-
     BRCryptoNetwork network = calloc (1, sizeof (struct BRCryptoNetworkRecord));
 
     network->canonicalType = canonicalType;
@@ -567,53 +564,6 @@ cryptoNetworkSupportsAddressScheme (BRCryptoNetwork network,
     return CRYPTO_FALSE;
 }
 
-// MARK: Account Initialization
-
-extern BRCryptoBoolean
-cryptoNetworkIsAccountInitialized (BRCryptoNetwork network,
-                                   BRCryptoAccount account) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return CRYPTO_TRUE;
-        case BLOCK_CHAIN_TYPE_ETH: return CRYPTO_TRUE;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            return AS_CRYPTO_BOOLEAN (genAccountIsInitialized(genAccount));
-        }
-    }
-}
-
-extern uint8_t *
-cryptoNetworkGetAccountInitializationData (BRCryptoNetwork network,
-                                           BRCryptoAccount account,
-                                           size_t *bytesCount) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return NULL;
-        case BLOCK_CHAIN_TYPE_ETH: return NULL;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            return genAccountGetInitializationData (genAccount, bytesCount);
-        }
-    }
-}
-
-extern void
-cryptoNetworkInitializeAccount (BRCryptoNetwork network,
-                                BRCryptoAccount account,
-                                const uint8_t *bytes,
-                                size_t bytesCount) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return;
-        case BLOCK_CHAIN_TYPE_ETH: return;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            genAccountInitialize(genAccount, bytes, bytesCount);
-        }
-    }
-}
-
 // MARK: - Sync Mode
 
 extern BRCryptoSyncMode
@@ -727,8 +677,6 @@ cryptoNetworkCreateBuiltin (const char *symbol,
 
 extern BRCryptoNetwork *
 cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
-    cryptoAccountInstall();
-
     // Network Specification
     struct NetworkSpecification {
         char *symbol;
