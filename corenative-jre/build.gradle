@@ -17,16 +17,16 @@ static def jnaOsFromGradle(os) {
     } else if (os == "linux") {
         return os
     }
-    assert false, 'Invalid OS: ' + os
+    assert false, 'Unsupported OS: ' + os
 }
 
 static def jnaArchFromGradle(arch) {
     if (arch == 'x86-64') {
-        return 'amd64'
+        return arch
     } else if (arch == 'x86') {
         return arch
     }
-    assert false, 'Invalid ARCH: ' + arch
+    assert false, 'Unsupported ARCH: ' + arch
 }
 
 // JNA attempts to load libraries from the classpath using the logic outlined
@@ -86,15 +86,14 @@ model {
             sources {
                 c {
                     source {
-                        srcDirs project(':corenative').cppCryptoSrcDirs
+                        srcDirs project(':corenative').cppCryptoMainSrcDirs
                         include "**/*.c"
-                        exclude "**/test*.c"
                     }
                 }
             }
             binaries {
                 binaries.all {
-                    project(':corenative').cppCryptoIncDirs.forEach {
+                    project(':corenative').cppCryptoMainIncDirs.forEach {
                         cCompiler.args "-I$it"
                     }
 
@@ -129,15 +128,19 @@ model {
             sources {
                 c {
                     source {
-                        srcDirs project(':corenative').cppCryptoSrcDirs
+                        srcDirs project(':corenative').cppCryptoMainSrcDirs
+                        srcDirs project(':corenative').cppCryptoTestSrcDirs
                         include "**/*.c"
-                        // note the missing 'exclude' here; we WANT the test source
                     }
                 }
             }
             binaries {
                 binaries.all {
-                    project(':corenative').cppCryptoIncDirs.forEach {
+                    project(':corenative').cppCryptoMainIncDirs.forEach {
+                        cCompiler.args "-I$it"
+                    }
+
+                    project(':corenative').cppCryptoTestIncDirs.forEach {
                         cCompiler.args "-I$it"
                     }
 
