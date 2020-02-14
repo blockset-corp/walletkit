@@ -5,7 +5,7 @@ ext {
 
     cppSqliteSrcDir             = projectDir.absolutePath + "/src/main/cpp/core/vendor/sqlite3"
 
-    cppCryptoSrcDirs            = [projectDir.absolutePath + "/src/main/cpp/core/bcash",
+    cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/bcash",
                                    projectDir.absolutePath + "/src/main/cpp/core/bitcoin",
                                    projectDir.absolutePath + "/src/main/cpp/core/crypto",
                                    projectDir.absolutePath + "/src/main/cpp/core/ethereum",
@@ -15,10 +15,21 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/support",
                                    projectDir.absolutePath + "/src/main/cpp/core/vendor/ed25519"]
 
-    cppCryptoIncDirs            = cppCryptoSrcDirs +
+    cppCryptoMainIncDirs        = cppCryptoMainSrcDirs +
                                   [projectDir.absolutePath + "/src/main/cpp/core/include",
                                    projectDir.absolutePath + "/src/main/cpp/core",
                                    projectDir.absolutePath + "/src/main/cpp/core/vendor/secp256k1"]
+
+    cppCryptoTestSrcDirs        = [projectDir.absolutePath + "/src/test/cpp/core/bitcoin",
+                                   projectDir.absolutePath + "/src/test/cpp/core/crypto",
+                                   projectDir.absolutePath + "/src/test/cpp/core/ethereum",
+                                   projectDir.absolutePath + "/src/test/cpp/core/hedera",
+                                   projectDir.absolutePath + "/src/test/cpp/core/ripple",
+                                   projectDir.absolutePath + "/src/test/cpp/core/support"]
+
+    cppCryptoTestIncDirs        = cppCryptoTestSrcDirs +
+                                  [projectDir.absolutePath + "/src/test/cpp/core/include",
+                                   projectDir.absolutePath + "/src/test/cpp/core"]
 
     cmakeCMakeListsFile         = projectDir.absolutePath + "/../WalletKitCore/CMakeLists.txt"
 }
