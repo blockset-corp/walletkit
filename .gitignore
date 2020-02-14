@@ -1,4 +1,4 @@
-b# Object files
+# Object files
 *.o
 *.ko
 *.obj
@@ -44,6 +44,3 @@ DerivedData/
 xcuserdata/
 *TestsConfig.*
 Package.resolved
-
-
-
