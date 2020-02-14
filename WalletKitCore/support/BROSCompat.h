@@ -58,11 +58,6 @@ arc4random_buf_brd (void *bytes, size_t bytesCount);
 extern uint32_t
 arc4random_uniform_brd(uint32_t upperBbound);
 
-#if defined (__linux__) && !defined(strlcpy)
-extern size_t
-strlcpy (char *dst, const char *src, size_t siz);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
