@@ -811,10 +811,10 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 extern BRCryptoTransfer
 cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
                                            BRCryptoWallet wallet,
-                                           size_t specsCount,
-                                           BRCryptoTransferMultiSpec *specs,
+                                           size_t outputsCount,
+                                           BRCryptoTransferOutput *outputs,
                                            BRCryptoFeeBasis estimatedFeeBasis) {
-    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, specsCount, specs, estimatedFeeBasis);
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
     switch (cwm->type) {
         case BLOCK_CHAIN_TYPE_BTC:
             break;

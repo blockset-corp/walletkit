@@ -274,8 +274,8 @@ extern "C" {
     extern BRCryptoTransfer
     cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
                                                BRCryptoWallet wallet,
-                                               size_t specsCount,
-                                               BRCryptoTransferMultiSpec *specs,
+                                               size_t outputsCount,
+                                               BRCryptoTransferOutput *outputs,
                                                BRCryptoFeeBasis estimatedFeeBasis);
 
     extern BRCryptoBoolean
