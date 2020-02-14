@@ -222,21 +222,21 @@ public final class Wallet: Equatable {
         }
     }
 
-    public func createTransfer (parts: [(target:Address, amount:Amount)],
+    public func createTransfer (outputs: [TransferOutput],
                                 estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
-        switch parts.count {
+        let coreOutputsCount = outputs.count
+
+        switch coreOutputsCount {
         case 0: return nil
-        case 1: return createTransfer (target: parts[0].target,
-                                       amount: parts[0].amount,
+        case 1: return createTransfer (target: outputs[0].target,
+                                       amount: outputs[0].amount,
                                        estimatedFeeBasis: estimatedFeeBasis)
         default:
-            let specsCount = parts.count
-            var specs: [BRCryptoTransferMultiSpec] = parts
-                .map { BRCryptoTransferMultiSpec (target: $0.target.core, amount: $0.amount.core) }
+            var coreOutputs = outputs.map { $0.core }
 
             return cryptoWalletManagerCreateTransferMultiple (manager.core, core,
-                                                              specsCount,
-                                                              UnsafeMutablePointer (&specs),
+                                                              coreOutputsCount,
+                                                              UnsafeMutablePointer (&coreOutputs),
                                                               estimatedFeeBasis.core)
                 .map { Transfer (core: $0,
                                  wallet: self,
