@@ -362,8 +362,11 @@ class BRBlockChainDBTest: XCTestCase {
     }
 
      func testSubscription () {
-
+        #if os(Linux)
+        let deviceId = "some-random-device-id"
+        #else
         let deviceId = UIDevice.current.identifierForVendor!.uuidString
+        #endif
 
         /// environment : { unknown, production, development }
         /// kind        : { unknown, apns, fcm, ... }
