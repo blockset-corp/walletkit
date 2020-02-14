@@ -469,4 +469,13 @@ class BRBlockChainDBTest: XCTestCase {
         }
         wait (for: [expectation], timeout: 10)
     }
+
+    static var allTests = [
+        ("testBlockchains",  testBlockchains),
+        ("testCurrencies",   testCurrencies),
+        ("testTransfers",    testTransfers),
+        ("testTransactions", testTransactions),
+        ("testBlocks",       testBlocks),
+        ("testSubscription", testSubscription),
+    ]
 }

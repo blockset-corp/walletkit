@@ -1,7 +1,6 @@
 import XCTest
+@testable import WalletKitTests
 
-import WalletKitSwiftTests
-
-var tests = [XCTestCaseEntry]()
-tests += WalletKitSwiftTests.allTests()
-XCTMain(tests)
+XCTMain(
+    WalletKitTests.allTests()
+)
