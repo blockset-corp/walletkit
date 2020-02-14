@@ -464,6 +464,25 @@ public enum TransferEvent {
 }
 
 ///
+/// A TransferOuput is a pair of {Address, Amount} that can be used to create a Transfer
+/// with multiple outputs.
+///
+public struct TransferOutput {
+    public let target: Address
+    public let amount: Amount
+
+    public init (target: Address, amount: Amount) {
+        self.target = target
+        self.amount = amount
+    }
+    
+    var core: BRCryptoTransferOutput {
+        return BRCryptoTransferOutput (target: target.core,
+                                       amount: amount.core)
+    }
+}
+
+///
 /// Listener for TransferEvent
 ///
 public protocol TransferListener: class {
