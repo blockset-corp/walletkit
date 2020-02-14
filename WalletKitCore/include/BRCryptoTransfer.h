@@ -321,6 +321,22 @@ extern "C" {
                                     uint32_t *blockHeight,
                                     uint32_t *timestamp);
 
+    // MARK: - Transfer Output
+
+    /**
+     * A TransferOutput is a pair of {target, amount} that is used to create a transfer w/
+     * multiple outputs.  This is *only* used in the Crypto C interface and is never stored in
+     * the C code; hence we get away w/o making `BRCryptoTransferOutput` a 'first-class object'
+     * (that is, with a reference count).  The User is expected to maintain references to
+     * `target` and `amount` during the scope of use.
+     *
+     * Preliminary interface.  Caution warranted.
+     */
+    typedef struct {
+        BRCryptoAddress target;
+        BRCryptoAmount  amount;
+    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH supported
+    } BRCryptoTransferOutput;
 
 #ifdef __cplusplus
 }
