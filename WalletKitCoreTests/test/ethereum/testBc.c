@@ -381,7 +381,7 @@ runLogTests (void) {
     assert (ETHEREUM_BOOLEAN_IS_TRUE(ethHashEqual(someBlockHash, statusArchived.u.included.blockHash)));
 
     assert (status.u.included.blockNumber == statusArchived.u.included.blockNumber);
-    assert (someBlockNumber = statusArchived.u.included.blockNumber);
+    assert (someBlockNumber == statusArchived.u.included.blockNumber);
 
     rlpDataRelease(encodeData);
     rlpDataRelease(data);

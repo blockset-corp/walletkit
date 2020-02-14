@@ -11,13 +11,12 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include <assert.h>
 #include "BREvent.h"
 #include "BREventQueue.h"
 #include "BREventAlarm.h"
+#include "BROSCompat.h"
 
-#define PTHREAD_NULL   ((pthread_t) NULL)
 #define PTHREAD_STACK_SIZE (512 * 1024)
 #define PTHREAD_NAME_SIZE   (33)
 
@@ -146,11 +145,7 @@ typedef void* (*ThreadRoutine) (void*);
 
 static void *
 eventHandlerThread (BREventHandler handler) {
-#if defined (__ANDROID__)
-    pthread_setname_np (pthread_self(), handler->name);
-#else
-    pthread_setname_np (handler->name);
-#endif
+    pthread_setname_brd (pthread_self(), handler->name);
 
     int timeToQuit = 0;
 
@@ -166,11 +161,7 @@ eventHandlerThread (BREventHandler handler) {
                 // Yield here so that we don't have a situation where we repeatedly acquire
                 // the `lockOnDispatch`, thereby starving other threads, when there are many
                 // events queued (ex: on startup)
-#if defined (ANDROID)
-                nanosleep (&(struct timespec) {0, 1}, NULL); // pthread_yield() isn't POSIX standard :(
-#else
-                pthread_yield_np ();
-#endif
+                pthread_yield_brd();
                 break;
 
             case EVENT_STATUS_WAIT_ABORT:

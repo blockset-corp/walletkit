@@ -31,6 +31,8 @@
 #include "ethereum/BREthereum.h"
 #include "support/BRFileService.h"
 
+uint64_t BLOCK_HEIGHT_UNBOUND_VALUE = UINT64_MAX;
+
 static void
 cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm);
 

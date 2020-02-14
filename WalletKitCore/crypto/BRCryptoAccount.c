@@ -8,7 +8,7 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#include <pthread.h>
+#include "support/BROSCompat.h"
 #include "BRCryptoAccountP.h"
 #include "BRCryptoNetworkP.h"
 
@@ -32,9 +32,6 @@ cryptoAccountInstall (void) {
 static uint16_t
 checksumFletcher16 (const uint8_t *data, size_t count);
 
-static void
-randomBytes (void *bytes, size_t bytesCount);
-
 // Version 1: BTC (w/ BCH), ETH
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
@@ -57,7 +54,7 @@ cryptoAccountDeriveSeed (const char *phrase) {
 extern char *
 cryptoAccountGeneratePaperKey (const char *words[]) {
     UInt128 entropy;
-    randomBytes (entropy.u8, sizeof(entropy));
+    arc4random_buf_brd (entropy.u8, sizeof(entropy));
 
     size_t phraseLen = BRBIP39Encode (NULL, 0, words, entropy.u8, sizeof(entropy));
     char  *phrase    = calloc (phraseLen, 1);
@@ -487,18 +484,3 @@ checksumFletcher16(const uint8_t *data, size_t count )
     return (sum2 << 8) | sum1;
 }
 
-#if defined (__ANDROID__)
-static void
-randomBytes (void *bytes, size_t bytesCount) {
-    arc4random_buf (bytes, bytesCount);
-}
-
-#else // IOS, MacOS
-#include <Security/Security.h>
-
-static void
-randomBytes (void *bytes, size_t bytesCount) {
-    if (0 != SecRandomCopyBytes(kSecRandomDefault, bytesCount, bytes))
-        arc4random_buf (bytes, bytesCount); // fallback
-}
-#endif
