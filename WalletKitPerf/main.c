@@ -34,7 +34,7 @@ runSyncMany (BREthereumNetwork newtork,
 
     for (int i = 0; i < accounts; i++) {
         UInt128 entropy;
-        random_bytes_brd(entropy.u64, sizeof (entropy));
+        arc4random_buf_brd(entropy.u64, sizeof (entropy));
 
         size_t phraseLen = BRBIP39Encode(NULL, 0, BRBIP39WordsEn, entropy.u8, sizeof(entropy));
         char phrase[phraseLen];

@@ -45,8 +45,8 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedLibrary("resolv"),
-//                .linkedLibrary("bsd"),
-                .linkedLibrary("pthread")
+                .linkedLibrary("pthread"),
+                .linkedLibrary("bsd", .when(platforms: [.linux])),
             ]
         ),
 
@@ -147,8 +147,8 @@ let package = Package(
                 .headerSearchPath("../WalletKitCore/bitcoin")
             ],
             linkerSettings: [
-//                .linkedLibrary("bsd"),
                 .linkedLibrary("pthread"),
+                .linkedLibrary("bsd", .when(platforms: [.linux])),
             ]
         ),
 

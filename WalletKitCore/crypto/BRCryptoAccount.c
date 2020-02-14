@@ -54,7 +54,7 @@ cryptoAccountDeriveSeed (const char *phrase) {
 extern char *
 cryptoAccountGeneratePaperKey (const char *words[]) {
     UInt128 entropy;
-    random_bytes_brd (entropy.u8, sizeof(entropy));
+    arc4random_buf_brd (entropy.u8, sizeof(entropy));
 
     size_t phraseLen = BRBIP39Encode (NULL, 0, words, entropy.u8, sizeof(entropy));
     char  *phrase    = calloc (phraseLen, 1);

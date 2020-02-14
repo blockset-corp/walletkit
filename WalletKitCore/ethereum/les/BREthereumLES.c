@@ -531,7 +531,7 @@ lesCreate (BREthereumNetwork network,
 
     // For now, create a new, random private key that is used for communication with LES nodes.
     UInt256 secret;
-    random_bytes_brd (secret.u64, sizeof (secret));
+    arc4random_buf_brd (secret.u64, sizeof (secret));
 
     // Assign the generated private key.
     BRKeySetSecret(&les->key, &secret, 0);

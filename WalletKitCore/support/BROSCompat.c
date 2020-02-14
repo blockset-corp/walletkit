@@ -77,7 +77,7 @@ pthread_cond_timedwait_relative_brd (pthread_cond_t *cond,
 
 
 extern void
-random_bytes_brd (void *bytes, size_t bytesCount) {
+arc4random_buf_brd (void *bytes, size_t bytesCount) {
 #if defined (__ANDROID__) || defined (__linux__)
     arc4random_buf (bytes, bytesCount);
 
@@ -87,6 +87,11 @@ random_bytes_brd (void *bytes, size_t bytesCount) {
 #else
 #  error Undefined random_bytes_brd()
 #endif
+}
+
+extern uint32_t
+arc4random_uniform_brd(uint32_t upperBbound) {
+    return arc4random_uniform(upperBbound);
 }
 
 #if defined (__linux__) && !defined(strlcpy)

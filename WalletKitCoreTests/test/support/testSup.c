@@ -158,7 +158,7 @@ supWorkerThread (SupWorker worker) {
     while (1) {
         switch (pthread_cond_timedwait_relative_brd (&worker->cond, &worker->lock, &timeout)) {
             case ETIMEDOUT:
-                if (0 == arc4random_uniform (10 * DEFAULT_WORKERS)) {
+                if (0 == arc4random_uniform_brd (10 * DEFAULT_WORKERS)) {
                     printf ("Work (%p): Fail\n", worker);
                     pthread_mutex_unlock(&worker->lock);
                     BRFail();
