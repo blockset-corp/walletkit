@@ -44,8 +44,8 @@ extern "C" {
     void arc4random_buf(void *_buf, size_t n);
     uint32_t arc4random_uniform(uint32_t upper_bound);
 
-    extern int pthread_setname_np (pthread_t __target_thread, const char *__name)
-        __THROW __nonnull ((2));
+    extern int pthread_setname_np (pthread_t __target_thread, const char *__name)
+    __THROW __nonnull ((2));
 #endif // defined(__linux__)
 
 #define PTHREAD_NULL   ((pthread_t) NULL)
