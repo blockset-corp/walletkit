@@ -433,4 +433,12 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         }
         else { XCTAssert (false) }
     }
+
+    static var allTests = [
+        ("testWalletBTC_API", testWalletBTC_API),
+        ("testWalletBTC_P2P", testWalletBTC_P2P),
+        ("testWalletBCH",     testWalletBCH),
+        ("testWalletETH",     testWalletETH),
+        ("testWalletXRP",     testWalletXRP),
+    ]
 }

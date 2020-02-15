@@ -110,4 +110,9 @@ class BRCryptoNetworkTests: XCTestCase {
 
         let _ = Network (core: network.core, take: true)
     }
+
+    static var allTests = [
+        ("testNetworkBTC", testNetworkBTC),
+        ("testNetworkETH", testNetworkETH),
+    ]
 }

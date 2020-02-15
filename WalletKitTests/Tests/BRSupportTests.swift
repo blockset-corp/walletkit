@@ -93,4 +93,12 @@ class BRSupportTests: XCTestCase {
         XCTAssertEqual(10, res)
     }
 
+    static var allTests = [
+        ("testUInt64",             testUInt64),
+        ("testAsEquatable",        testAsEquatable),
+        ("testAsComparable",       testAsComparable),
+        ("testAsComparableInvert", testAsComparableInvert),
+        ("testAsHashable",         testAsHashable),
+        ("testResult",             testResult),
+    ]
 }

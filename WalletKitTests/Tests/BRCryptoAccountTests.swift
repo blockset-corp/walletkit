@@ -157,6 +157,16 @@ class BRCryptoAccountTests: XCTestCase {
 
     }
 
+    static var allTests = [
+        ("testPhrase",            testPhrase),
+        ("testAccount",           testAccount),
+        ("testAddressETH",        testAddressETH),
+        ("testAddressBTC",        testAddressBTC),
+        ("testAddressBCH",        testAddressBCH),
+        ("testAddressBCHTestnet", testAddressBCHTestnet),
+        ("testAddressScheme",     testAddressScheme),
+    ]
+
     static let words: [String] = [
         "abandon",
         "ability",

@@ -359,4 +359,14 @@ class BRCryptoAmountTests: XCTestCase {
         let oneBTC = Amount.create(double: 1.0, unit: BTC_BTC)
         XCTAssertEqual("$10,000.00", oneBTC.string(pair: pair))
     }
+
+    static var allTests = [
+        ("testCurrency",       testCurrency),
+        ("testUnit",           testUnit),
+        ("testAmount",         testAmount),
+        ("testAmountETH",      testAmountETH),
+        ("testAmountBTC",      testAmountBTC),
+        ("testAmountExtended", testAmountExtended),
+        ("testCurrencyPair",   testCurrencyPair),
+    ]
 }

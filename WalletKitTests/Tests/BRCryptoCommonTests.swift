@@ -383,4 +383,13 @@ class BRCryptoCommonTests: XCTestCase {
             XCTAssert(CoreCoder.hex.encode(data: outputSig) == signature)
         }
     }
+
+    static var allTests = [
+        ("testKey",           testKey),
+        ("testHasher",        testHasher),
+        ("testEncoder",       testEncoder),
+        ("testEncryptor",     testEncryptor),
+        ("testSigner",        testSigner),
+        ("testCompactSigner", testCompactSigner),
+    ]
 }

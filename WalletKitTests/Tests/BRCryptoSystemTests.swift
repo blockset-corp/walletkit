@@ -142,4 +142,10 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
                 XCTAssertTrue (network.supportsAddressScheme (network.defaultAddressScheme))
         }
     }
+
+    static var allTests = [
+        ("testSystemBTC",            testSystemBTC),
+        ("testSystemModes",          testSystemModes),
+        ("testSystemAddressSchemes", testSystemAddressSchemes),
+    ]
 }
