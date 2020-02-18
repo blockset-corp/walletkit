@@ -19,6 +19,9 @@
 
 #include <stdbool.h>
 
+// If '1' then display a detailed list of the builting currencies for each network
+#define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
+
 private_extern BRArrayOf(BRCryptoUnit)
 cryptoUnitGiveAll (BRArrayOf(BRCryptoUnit) units);
 
@@ -893,8 +896,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 
         networks[networkIndex] = network;
 
-#define SHOW_BUILTIN_CURRENCIES DEBUG
-#if defined (SHOW_BUILTIN_CURRENCIES)
+#if SHOW_BUILTIN_CURRENCIES
         printf ("== Network: %s, '%s'\n", network->uids, network->name);
         for (size_t ai = 0; ai < array_count(network->associations); ai++) {
             BRCryptoCurrencyAssociation a = network->associations[ai];
