@@ -79,6 +79,23 @@ class BRCryptoAmountTests: XCTestCase {
 
     }
 
+    func stringify (_ string: String, _ unit: WalletKit.Unit, negative: Bool = false) -> String {
+        let symbol   = unit.symbol
+        var space    = ""
+        var decimals = ""
+        #if os(iOS) || os(macOS)
+        if #available(iOS 13, macOS 10.15, *) { space = " " }
+        #endif
+
+        #if os(Linux)
+        if unit.decimals == 0 {
+            decimals = ".00"
+        }
+        #endif
+
+        return (negative ? "-" : "") + symbol + space + string + decimals
+    }
+
     func testAmount () {
         let btc = Currency (uids: "Bitcoin",  name: "Bitcoin",  code: "BTC", type: "native", issuer: nil)
         let eth = Currency (uids: "Ethereum", name: "Ethereum", code: "ETH", type: "native", issuer: nil)
@@ -116,14 +133,8 @@ class BRCryptoAmountTests: XCTestCase {
         XCTAssert (-1.5       == btc4.double (as: BTC_BTC))
         XCTAssert (-150000000 == btc4.double (as: BTC_SATOSHI))
 
-        if #available(iOS 13, *) {
-            XCTAssertEqual ("-B 1.50", btc4.string (as: BTC_BTC))
-            XCTAssertEqual ("-SAT 150,000,000", btc4.string (as: BTC_SATOSHI)!)
-        }
-        else {
-            XCTAssertEqual ("-B1.50", btc4.string (as: BTC_BTC))
-            XCTAssertEqual ("-SAT150,000,000", btc4.string (as: BTC_SATOSHI)!)
-        }
+        XCTAssertEqual (stringify ("1.50", BTC_BTC, negative: true), btc4.string (as: BTC_BTC))
+        XCTAssertEqual (stringify ("150,000,000", BTC_SATOSHI, negative: true), btc4.string (as: BTC_SATOSHI))
 
         XCTAssertEqual (btc1.double(as: BTC_BTC),     btc1.convert(to: BTC_SATOSHI)?.double(as: BTC_BTC))
         XCTAssertEqual (btc1.double(as: BTC_SATOSHI), btc1.convert(to: BTC_BTC)?.double(as: BTC_SATOSHI))
@@ -175,27 +186,15 @@ class BRCryptoAmountTests: XCTestCase {
         XCTAssert (100000000 == btc3s.double (as: BTC_SATOSHI))
         XCTAssert (1         == btc3s.double (as: BTC_BTC))
 
-        if #available(iOS 13, *) {
-            XCTAssertEqual ("SAT 100,000,000", btc3s.string (as: BTC_SATOSHI)!)
-            XCTAssertEqual ("B 1.00",          btc3s.string (as: BTC_BTC)!)
-        }
-        else {
-            XCTAssertEqual ("SAT100,000,000", btc3s.string (as: BTC_SATOSHI)!)
-            XCTAssertEqual ("B1.00",          btc3s.string (as: BTC_BTC)!)
-        }
+        XCTAssertEqual (stringify ("100,000,000", BTC_SATOSHI), btc3s.string (as: BTC_SATOSHI)!)
+        XCTAssertEqual (stringify ("1.00", BTC_BTC),            btc3s.string (as: BTC_BTC)!)
 
         let btc4s = Amount.create (string: "0x5f5e100", negative: true, unit: BTC_SATOSHI)!
         XCTAssert (-100000000 == btc4s.double (as: BTC_SATOSHI))
         XCTAssert (-1         == btc4s.double (as: BTC_BTC))
 
-        if #available(iOS 13, *) {
-            XCTAssertEqual ("-SAT 100,000,000", btc4s.string (as: BTC_SATOSHI)!)
-            XCTAssertEqual ("-B 1.00",          btc4s.string (as: BTC_BTC)!)
-        }
-        else {
-            XCTAssertEqual ("-SAT100,000,000", btc4s.string (as: BTC_SATOSHI)!)
-            XCTAssertEqual ("-B1.00",          btc4s.string (as: BTC_BTC)!)
-        }
+        XCTAssertEqual (stringify ("100,000,000", BTC_SATOSHI, negative: true), btc4s.string (as: BTC_SATOSHI)!)
+        XCTAssertEqual (stringify ("1.00", BTC_BTC, negative: true),            btc4s.string (as: BTC_BTC)!)
 
         XCTAssertNil (Amount.create (string: "w0x5f5e100", unit: BTC_SATOSHI))
         XCTAssertNil (Amount.create (string: "0x5f5e100w", unit: BTC_SATOSHI))
@@ -260,9 +259,9 @@ class BRCryptoAmountTests: XCTestCase {
         XCTAssertEqual(1234567891234567936, a5?.double(as: ETH_WEI)!)
         XCTAssertEqual("1234567891234567936", a5?.string (base: 10, preface: ""))
         // Lost precision - last 5 digits
-        if #available(iOS 13, *) { result = "wei 1,234,567,891,234,568,000" }
-        else { result = "wei1,234,567,891,234,570,000" }
-        XCTAssertEqual(result, a5?.string(as: ETH_WEI)!)
+        if #available(iOS 13, *) { result = "1,234,567,891,234,568,000" }
+        else { result = "1,234,567,891,234,570,000" }
+        XCTAssertEqual(stringify(result, ETH_WEI), a5?.string(as: ETH_WEI)!)
 
         XCTAssertEqual("1000000000000000000", Amount.create(string: "1", negative: false, unit: ETH_ETHER)!.string (base: 10, preface: ""))
         // String (1000000000000000000, radix:16, uppercase: true) -> DE0B6B3A7640000
@@ -270,9 +269,9 @@ class BRCryptoAmountTests: XCTestCase {
 
         let a6 = Amount.create(string: "123000000000000000000.0", negative: false, unit: ETH_WEI)
         XCTAssertNotNil(a6)
-        if #available(iOS 13, *) { result = "wei 123,000,000,000,000,000,000" }
-        else { result = "wei123,000,000,000,000,000,000" }
-        XCTAssertEqual(result, a6?.string(as: ETH_WEI)!)
+        if #available(iOS 13, *) { result = "123,000,000,000,000,000,000" }
+        else { result = "123,000,000,000,000,000,000" }
+        XCTAssertEqual(stringify (result, ETH_WEI), a6?.string(as: ETH_WEI)!)
 
         let a6Double = a6?.double (as: ETH_WEI)
         XCTAssertEqual(a6Double, 1.23e20)
@@ -281,9 +280,9 @@ class BRCryptoAmountTests: XCTestCase {
         XCTAssertNotNil(a7)
         XCTAssertEqual   ("123456789012345678",         a7?.string(base: 10, preface: ""))
         // Note: a DIFFERENT VALUE between iOS 13
-        if #available(iOS 13, *) { result = "wei 123,456,789,012,345,680" }
-        else { result = "wei123,456,789,012,346,000" }
-        XCTAssertEqual   (result, a7?.string(as: ETH_WEI)!)
+        if #available(iOS 13, *) { result = "123,456,789,012,345,680" }
+        else { result = "123,456,789,012,346,000" }
+        XCTAssertEqual   (stringify (result, ETH_WEI), a7?.string(as: ETH_WEI)!)
 //        XCTAssertNotEqual("wei123,456,789,012,345,678", a7?.string(as: ETH_WEI)!)
 
         let a7Double = a7?.double(as: ETH_WEI)

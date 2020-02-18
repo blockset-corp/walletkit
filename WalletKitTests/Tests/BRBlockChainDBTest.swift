@@ -348,6 +348,7 @@ class BRBlockChainDBTest: XCTestCase {
         ///
         ///
         ///
+        expectation = XCTestExpectation (description: "blocks")
         db.getBlocks (blockchainId: blockchainId,
                       begBlockNumber: 1446080,
                       endBlockNumber: 1446090,
