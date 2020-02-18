@@ -191,7 +191,7 @@ public final class PaymentProtocolRequest {
     fileprivate static let bitPayAndBip70Callbacks: BRCryptoPayProtReqBitPayAndBip70Callbacks = BRCryptoPayProtReqBitPayAndBip70Callbacks (
             context: nil,
             validator: { (req, ctx, pkiType, expires, certBytes, certLengths, certsSz, digest, digestLen, signature, signatureLen) in
-                #if !os(Linux)
+                #if !os(Linux) && !os(macOS)
                 let pkiType = asUTF8String (pkiType!)
                 if pkiType != "none" {
                     var certs = [SecCertificate]()
@@ -249,7 +249,7 @@ public final class PaymentProtocolRequest {
             nameExtractor: { (req, ctx, pkiType, certBytes, certLengths, certsSz) in
                 var name: String? = nil
 
-                #if !os(Linux)
+                #if !os(Linux) && !os(macOS)
                 var certArray = [Data]()
                 for index in 0..<certsSz {
                     certArray.append(Data (bytes: certBytes![index]!, count: certLengths![index]))

@@ -277,7 +277,6 @@ class BRCryptoCommonTests: XCTestCase {
         s = CoreCoder.base58check.encode(data: d)
         XCTAssertEqual (d, CoreCoder.base58check.decode(string: s))
 
-        print ("one")
         d = Data([0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
         s = CoreCoder.base58check.encode(data: d)
         XCTAssertEqual (d, CoreCoder.base58check.decode(string: s))
