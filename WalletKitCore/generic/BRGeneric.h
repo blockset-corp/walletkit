@@ -66,6 +66,15 @@ extern "C" {
     genAccountGetAddress (BRGenericAccount account);
 
     extern uint8_t *
+    genAccountGetInitializationData (BRGenericAccount account, size_t *bytesCount);
+
+    extern void
+    genAccountInitialize (BRGenericAccount account, const uint8_t *bytes, size_t bytesCount);
+
+    extern int
+    genAccountIsInitialized (BRGenericAccount account);
+
+    extern uint8_t *
     genAccountGetSerialization (BRGenericAccount account, size_t *bytesCount);
 
     extern void

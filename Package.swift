@@ -44,7 +44,9 @@ let package = Package(
                 .headerSearchPath("vendor/secp256k1"),
             ],
             linkerSettings: [
-                .linkedLibrary("resolv")
+                .linkedLibrary("resolv"),
+                .linkedLibrary("pthread"),
+                .linkedLibrary("bsd", .when(platforms: [.linux])),
             ]
         ),
 
@@ -121,9 +123,6 @@ let package = Package(
             name: "WalletKitSupportTests",
             dependencies: ["WalletKitCore"],
             path: "WalletKitCoreTests/test",
-//            exclude: [
-//                "ripple/testRipple.c"
-//            ],
             publicHeadersPath: "include",
             cSettings: [
                 .define("BITCOIN_TEST_NO_MAIN"),
@@ -146,6 +145,10 @@ let package = Package(
                 .headerSearchPath("../WalletKitCore"),
                 .headerSearchPath("../WalletKitCore/support"),
                 .headerSearchPath("../WalletKitCore/bitcoin")
+            ],
+            linkerSettings: [
+                .linkedLibrary("pthread"),
+                .linkedLibrary("bsd", .when(platforms: [.linux])),
             ]
         ),
 

@@ -513,7 +513,7 @@ fileServiceFailedUnix(BRFileService fs,
     return fileServiceFailedInternal (fs, releaseLock, bufferToFree, fileToClose,
                                       (BRFileServiceError) {
                                           FILE_SERVICE_UNIX,
-                                          { .unix = { error }}
+                                          { .unx = { error }}
                                       });
 }
 #pragma clang diagnostic pop

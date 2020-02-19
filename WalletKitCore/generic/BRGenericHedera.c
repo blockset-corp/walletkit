@@ -48,6 +48,31 @@ genericHederaAccountGetAddress (BRGenericAccountRef account) {
 }
 
 static uint8_t *
+genericHederaAccountGetInitializationData (BRGenericAccountRef account, size_t *bytesCount) {
+    return hederaAccountGetPublicKeyBytes((BRHederaAccount) account, bytesCount);
+}
+
+static void
+genericHederaAccountInitialize (BRGenericAccountRef account, const uint8_t *bytes, size_t bytesCount) {
+    char *hederaAddressString = malloc (bytesCount + 1);
+    memcpy (hederaAddressString, bytes, bytesCount);
+    hederaAddressString[bytesCount] = 0;
+
+    BRHederaAddress hederaAddress = hederaAddressCreateFromString (hederaAddressString);
+    free (hederaAddressString);
+
+    hederaAccountSetAddress ((BRHederaAccount) account, hederaAddress);
+    hederaAddressFree(hederaAddress);
+    
+    return;
+}
+
+static int
+genericHederaAccountIsInitialized (BRGenericAccountRef account) {
+    return hederaAccountHasPrimaryAddress ((BRHederaAccount) account);
+}
+
+static uint8_t *
 genericHederaAccountGetSerialization (BRGenericAccountRef account,
                                       size_t *bytesCount) {
     return hederaAccountGetSerialization ((BRHederaAccount) account, bytesCount);
@@ -309,6 +334,9 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaAccountCreateWithSerialization,
         genericHederaAccountFree,
         genericHederaAccountGetAddress,
+        genericHederaAccountGetInitializationData,
+        genericHederaAccountInitialize,
+        genericHederaAccountIsInitialized,
         genericHederaAccountGetSerialization,
         genericHederaAccountSignTransferWithSeed,
         genericHederaAccountSignTransferWithKey,

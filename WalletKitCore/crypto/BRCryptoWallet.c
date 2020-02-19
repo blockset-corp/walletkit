@@ -583,11 +583,11 @@ cryptoWalletAsGEN (BRCryptoWallet wallet) {
 
 extern BRCryptoTransfer
 cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
-                                    size_t specsCount,
-                                    BRCryptoTransferMultiSpec *specs,
+                                    size_t outputsCount,
+                                    BRCryptoTransferOutput *outputs,
                                     BRCryptoFeeBasis estimatedFeeBasis) {
     assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
-    if (0 == specsCount) return NULL;
+    if (0 == outputsCount) return NULL;
 
     BRCryptoTransfer transfer = NULL;
 
@@ -601,31 +601,31 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
             BRWallet *wid = wallet->u.btc.wid;
             BRAddressParams params = BRWalletGetAddressParams(wid);
 
-            BRTxOutput outputs [specsCount];
-            memset (outputs, 0, specsCount * sizeof(BRTxOutput));
+            BRTxOutput txOutputs [outputsCount];
+            memset (txOutputs, 0, outputsCount * sizeof(BRTxOutput));
             
-            for (size_t index = 0; index < specsCount; index++) {
-                BRCryptoTransferMultiSpec *spec = &specs[index];
-                BRTxOutput *output = &outputs[index];
+            for (size_t index = 0; index < outputsCount; index++) {
+                BRCryptoTransferOutput *output = &outputs[index];
+                BRTxOutput *txOutput = &txOutputs[index];
 
-                assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(spec->target));
-                assert (cryptoAmountHasCurrency (spec->amount, currency));
+                assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(output->target));
+                assert (cryptoAmountHasCurrency (output->amount, currency));
 
                 BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
-                BRAddress address = cryptoAddressAsBTC (spec->target, &isBitcoinAddr);
+                BRAddress address = cryptoAddressAsBTC (output->target, &isBitcoinAddr);
                 assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
 
                 BRCryptoBoolean overflow = CRYPTO_FALSE;
-                uint64_t value = cryptoAmountGetIntegerRaw (spec->amount, &overflow);
+                uint64_t value = cryptoAmountGetIntegerRaw (output->amount, &overflow);
                 assert (CRYPTO_TRUE != overflow);
 
-                output->amount = value;
-                BRTxOutputSetAddress (output, params, address.s);
+                txOutput->amount = value;
+                BRTxOutputSetAddress (txOutput, params, address.s);
             }
 
             BRTransaction *tid = BRWalletManagerCreateTransactionForOutputs (bwm, wid,
-                                                                             outputs,
-                                                                             specsCount,
+                                                                             txOutputs,
+                                                                             outputsCount,
                                                                              cryptoFeeBasisAsBTC(estimatedFeeBasis));
             transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
                                                                        AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));

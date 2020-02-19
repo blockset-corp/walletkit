@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 #include <unistd.h>         // sleep
-#include <pthread.h>
 
+#include "support/BROSCompat.h"
 #include "support/BRAssert.h"
 #include "support/BRAddress.h"
 #include "support/BRBIP39Mnemonic.h"
@@ -221,7 +221,7 @@ int work (int option) {
 }
 
 void *assertThread (void *ignore) {
-    pthread_setname_np ("Asserter");
+    pthread_setname_brd (pthread_self(), "Asserter");
     sleep (2);
     work ((int) ignore);
 

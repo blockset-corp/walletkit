@@ -97,6 +97,21 @@ genAccountGetAddress (BRGenericAccount account) {
 }
 
 extern uint8_t *
+genAccountGetInitializationData (BRGenericAccount account, size_t *bytesCount) {
+    return account->handlers.getInitializationData (account->ref, bytesCount);
+}
+
+extern void
+genAccountInitialize (BRGenericAccount account, const uint8_t *bytes, size_t bytesCount) {
+    account->handlers.initialize (account->ref, bytes, bytesCount);
+}
+
+extern int
+genAccountIsInitialized (BRGenericAccount account) {
+    return account->handlers.isInitialized (account->ref);
+}
+
+extern uint8_t *
 genAccountGetSerialization (BRGenericAccount account, size_t *bytesCount) {
     return account->handlers.getSerialization (account->ref, bytesCount);
 }

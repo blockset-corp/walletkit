@@ -26,7 +26,7 @@
 #define BRAddress_h
 
 #include "BRCrypto.h"
-#include <string.h>
+#include "BROSCompat.h"         // strlcpy
 #include <stddef.h>
 #include <inttypes.h>
 

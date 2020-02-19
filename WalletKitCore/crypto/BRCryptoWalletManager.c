@@ -31,6 +31,8 @@
 #include "ethereum/BREthereum.h"
 #include "support/BRFileService.h"
 
+uint64_t BLOCK_HEIGHT_UNBOUND_VALUE = UINT64_MAX;
+
 static void
 cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm);
 
@@ -151,6 +153,10 @@ cryptoWalletManagerCreate (BRCryptoCWMListener listener,
                            BRCryptoSyncMode mode,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
+
+    // Only create a wallet manager for accounts that are initializedon network.
+    if (CRYPTO_FALSE == cryptoAccountIsInitialized (account, network))
+        return NULL;
 
     // In rare cases a Wallet Manager cannot be created.  If not, we'll perform a 'goto' and, on
     // `1 == error`, perform some cleanup actions.
@@ -807,10 +813,10 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 extern BRCryptoTransfer
 cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
                                            BRCryptoWallet wallet,
-                                           size_t specsCount,
-                                           BRCryptoTransferMultiSpec *specs,
+                                           size_t outputsCount,
+                                           BRCryptoTransferOutput *outputs,
                                            BRCryptoFeeBasis estimatedFeeBasis) {
-    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, specsCount, specs, estimatedFeeBasis);
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
     switch (cwm->type) {
         case BLOCK_CHAIN_TYPE_BTC:
             break;

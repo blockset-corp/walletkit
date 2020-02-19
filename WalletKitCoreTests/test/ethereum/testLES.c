@@ -26,6 +26,7 @@
 #include <regex.h>
 #include "support/BRInt.h"
 #include "support/BRCrypto.h"
+#include "support/BROSCompat.h"
 #include "ethereum/base/BREthereumHash.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/les/BREthereumLESRandom.h"
@@ -43,23 +44,6 @@
 #define LES_LOCAL_ENDPOINT_TCP_PORT   DEFAULT_TCPPORT
 #define LES_LOCAL_ENDPOINT_UDP_PORT   DEFAULT_UDPPORT
 #define LES_LOCAL_ENDPOINT_NAME       "BRD Light Client"
-
-/// MARK: - Helpers
-
-static int _pthread_cond_timedwait_relative (pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *reltime) {
-#if defined(__ANDROID__)
-        struct timeval t;
-        gettimeofday(&t, NULL);
-
-        struct timespec timeout;
-        timeout.tv_sec  = reltime->tv_sec + t.tv_sec;
-        timeout.tv_nsec = reltime->tv_nsec +t.tv_usec*1000;
-
-        return pthread_cond_timedwait (cond, mutex, &timeout);
-#else
-        return pthread_cond_timedwait_relative_np (cond, mutex, reltime);
-#endif
-}
 
 /// MARK: - Node Test
 
@@ -118,7 +102,7 @@ static void _waitForTests() {
     pthread_mutex_lock(&_testLock);
     //Wait until all the tests are complete
     while(_testComplete < _numOfTests){
-        _pthread_cond_timedwait_relative (&_testCond, &_testLock, &wait);
+        pthread_cond_timedwait_relative_brd (&_testCond, &_testLock, &wait);
     }
     pthread_mutex_unlock(&_testLock);
 }

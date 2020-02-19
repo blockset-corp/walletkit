@@ -12,13 +12,15 @@
 #include "BRCryptoUnit.h"
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
-#include "BRCryptoAccountP.h"
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
 #include "ethereum/BREthereum.h"
 
 #include <stdbool.h>
+
+// If '1' then display a detailed list of the builting currencies for each network
+#define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
 
 private_extern BRArrayOf(BRCryptoUnit)
 cryptoUnitGiveAll (BRArrayOf(BRCryptoUnit) units);
@@ -122,8 +124,6 @@ static BRCryptoNetwork
 cryptoNetworkCreate (const char *uids,
                      const char *name,
                      BRCryptoNetworkCanonicalType canonicalType) {
-    cryptoAccountInstall();
-
     BRCryptoNetwork network = calloc (1, sizeof (struct BRCryptoNetworkRecord));
 
     network->canonicalType = canonicalType;
@@ -680,8 +680,6 @@ cryptoNetworkCreateBuiltin (const char *symbol,
 
 extern BRCryptoNetwork *
 cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
-    cryptoAccountInstall();
-
     // Network Specification
     struct NetworkSpecification {
         char *symbol;
@@ -898,8 +896,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 
         networks[networkIndex] = network;
 
-#define SHOW_BUILTIN_CURRENCIES DEBUG
-#if defined (SHOW_BUILTIN_CURRENCIES)
+#if SHOW_BUILTIN_CURRENCIES
         printf ("== Network: %s, '%s'\n", network->uids, network->name);
         for (size_t ai = 0; ai < array_count(network->associations); ai++) {
             BRCryptoCurrencyAssociation a = network->associations[ai];
