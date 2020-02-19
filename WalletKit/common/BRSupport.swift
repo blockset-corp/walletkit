@@ -256,10 +256,11 @@ public struct AccountSpecification {
         self.timestamp = dateFormatter.date(from: dict["timestamp"]!)!
     }
 
-    static public func loadFrom (configPath: String, defaultSpecification: AccountSpecification? = nil) -> [AccountSpecification] {
-        if FileManager.default.fileExists(atPath: configPath) {
+    static public func loadFrom (configPath: String? = nil, defaultSpecification: AccountSpecification? = nil) -> [AccountSpecification] {
+        if let configPath = configPath, FileManager.default.fileExists(atPath: configPath) {
             let configFile = URL(fileURLWithPath: configPath)
-            let configData = try! Data.init(contentsOf: configFile)
+            guard let configData = try? Data.init(contentsOf: configFile)
+                else { return defaultSpecification.map {[$0] } ?? [] }
             let json = try! JSONSerialization.jsonObject(with: configData, options: []) as! [[String:String]]
             return json.map { AccountSpecification (dict: $0) }
         }

@@ -52,40 +52,47 @@ class BRCryptoBaseTests: XCTestCase {
     var account: Account!
 
     func prepareAccount (_ spec: AccountSpecification? = nil, identifier: String? = nil) {
-        guard CommandLine.argc >= 1
-            else {
-                preconditionFailure ("Tests require an argument pointing to \".brdCoreTestsConfig.json\"")
-        }
 
-        let configPath = NSString (string: CommandLine.arguments[1]).expandingTildeInPath
-        guard FileManager.default.fileExists(atPath: configPath)
-            else {
-                preconditionFailure("Test config file of \(configPath) does not exist")
-        }
+        // If provided with CommandLine arguments, the first is locate of .brdCoreTestsConfig.json
+        let configPath: String? = (CommandLine.argc > 1
+            ? NSString (string: CommandLine.arguments[1]).expandingTildeInPath
+            : nil)
 
-        let defaultSpecification = AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ])
+        // If there is no `configPath` file, use this as the default AccountSpecification.  This
+        // default must have "network" match `isMainnet`
+        let defaultSpecification = AccountSpecification (dict: (isMainnet
+            ? [
+                "identifier": "loan(C)",
+                "paperKey":   "loan father fancy category panel render dinosaur mixture spy neck grocery habit",
+                "timestamp":  "2018-07-01",
+                "network":    "mainnet",
+                "content":    "compromised"
+                ]
+            : [
+                "identifier": "ginger",
+                "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
+                "timestamp":  "2018-01-01",
+                "network":    "testnet",
+                "content":    ""
+            ]))
 
-        self.accountSpecifications = (spec != nil
-            ? [spec!]
-            : AccountSpecification.loadFrom(configPath: configPath, defaultSpecification: defaultSpecification))
-            .filter { $0.network == (isMainnet ? "mainnet" : "testnet") }
+        // If `spec` was provided explicitly, then use it
+        self.accountSpecifications = spec.map { [$0] }
+            ?? AccountSpecification.loadFrom (configPath: configPath, defaultSpecification: defaultSpecification)
+                .filter { $0.network == (isMainnet ? "mainnet" : "testnet") }
 
         // If there is an identifier, filter
         if let id = identifier {
             self.accountSpecifications.removeAll { $0.identifier != id }
         }
-        let specifiction = accountSpecification!
 
         /// Create the account
         let walletId = UUID (uuidString: "5766b9fa-e9aa-4b6d-9b77-b5f1136e5e96")?.uuidString ?? "empty-wallet-id"
-        account = Account.createFrom (phrase: specifiction.paperKey,
-                                      timestamp: specifiction.timestamp,
+        account = Account.createFrom (phrase: accountSpecification.paperKey,
+                                      timestamp: accountSpecification.timestamp,
                                       uids: walletId)
+
+
     }
     
     override func setUp() {
@@ -200,18 +207,9 @@ class CryptoTestSystemListener: SystemListener {
                                                            addressScheme: scheme,
                                                            currencies: currencies)
                 XCTAssertTrue(success)
-
-//            if isMainnet == network.isMainnet &&
-//                currencyCodesNeeded.contains (where: { nil != network.currencyBy (code: $0) }) {
-//                let mode = modeMap[network.currency.code] ?? system.defaultMode(network: network)
-//                XCTAssertTrue (system.supportsMode(network: network, mode))
-//
-//                let scheme = system.defaultAddressScheme(network: network)
-//                let _ = system.createWalletManager (network: network,
-//                                                    mode: mode,
-//                                                    addressScheme: scheme,
-//                                                    currencies: Set<Currency>())
             }
+
+        case .discoveredNetworks:
             networkExpectation.fulfill()
 
         case .managerAdded:
@@ -241,7 +239,12 @@ class CryptoTestSystemListener: SystemListener {
     func handleManagerEvent(system: System, manager: WalletManager, event: WalletManagerEvent) {
         print ("TST: Manager Event: \(event)")
         managerEvents.append(event)
-        if case .walletAdded = event { walletExpectation.fulfill() }
+        if case .walletAdded = event {
+            if walletExpectationNeeded {
+                walletExpectationNeeded = false
+                walletExpectation.fulfill()   // Might fulfill on ETH before BRD?
+            }
+        }
         managerHandlers.forEach { $0 (system, manager, event) }
     }
 
@@ -257,7 +260,8 @@ class CryptoTestSystemListener: SystemListener {
 
     var walletHandlers: [WalletEventHandler] = []
     var walletEvents: [WalletEvent] = []
-    var walletExpectation  = XCTestExpectation (description: "ManagerExpectation")
+    var walletExpectation  = XCTestExpectation (description: "WalletExpectation")
+    var walletExpectationNeeded = true
 
     func handleWalletEvent(system: System, manager: WalletManager, wallet: Wallet, event: WalletEvent) {
         print ("TST: Wallet (\(wallet.name)) Event: \(event)")

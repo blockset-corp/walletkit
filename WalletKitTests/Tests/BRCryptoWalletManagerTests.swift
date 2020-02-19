@@ -298,6 +298,13 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         wait (for: [muckedListener.migratedManagerExpectation], timeout: 30)
         XCTAssertTrue (muckedListener.migratedFailed)
     }
+
+    static var allTests = [
+        ("testWalletManagerMode",       testWalletManagerMode),
+        ("testWalletManagerBTC",        testWalletManagerBTC),
+        ("testWalletManagerETH",        testWalletManagerETH),
+        ("testWalletManagerMigrateBTC", testWalletManagerMigrateBTC),
+    ]
 }
 
 class MigrateSystemListener: SystemListener {

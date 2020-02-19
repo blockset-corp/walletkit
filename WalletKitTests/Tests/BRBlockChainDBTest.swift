@@ -348,6 +348,7 @@ class BRBlockChainDBTest: XCTestCase {
         ///
         ///
         ///
+        expectation = XCTestExpectation (description: "blocks")
         db.getBlocks (blockchainId: blockchainId,
                       begBlockNumber: 1446080,
                       endBlockNumber: 1446090,
@@ -362,8 +363,11 @@ class BRBlockChainDBTest: XCTestCase {
     }
 
      func testSubscription () {
-
+        #if os(Linux) || os(macOS)
+        let deviceId = "some-random-device-id"
+        #else
         let deviceId = UIDevice.current.identifierForVendor!.uuidString
+        #endif
 
         /// environment : { unknown, production, development }
         /// kind        : { unknown, apns, fcm, ... }
@@ -466,4 +470,13 @@ class BRBlockChainDBTest: XCTestCase {
         }
         wait (for: [expectation], timeout: 10)
     }
+
+    static var allTests = [
+        ("testBlockchains",  testBlockchains),
+        ("testCurrencies",   testCurrencies),
+        ("testTransfers",    testTransfers),
+        ("testTransactions", testTransactions),
+        ("testBlocks",       testBlocks),
+        ("testSubscription", testSubscription),
+    ]
 }

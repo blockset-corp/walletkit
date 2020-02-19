@@ -10,6 +10,10 @@
 //
 import Foundation // DispatchQueue
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 public class BlockChainDB {
 
     /// Base URL (String) for the BRD BlockChain DB
