@@ -1,5 +1,6 @@
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
+apply from: '../gradle/publish.gradle'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'

@@ -72,7 +72,7 @@ For development, artifacts can be published locally using `./gradlew publishToMa
 Do not forget to including the `mavenLocal()` repo in your repositories list when depending on these artifacts.
 
 For jcenter publication, ensure the `version` property is up to date in `gradle.properties` and run:
-`./gradlew publish -PbintrayUser=<user> -PbintrayApiKey=<apikey>`
+`./gradlew bintrayUpload -PbintrayUser=<user> -PbintrayApiKey=<apikey>`
 
 Alternatively the `BINTRAY_USER` and `BINTRAY_API_KEY` environment variables can be set allowing `./gradlew publish` to complete without additional properties.
 
