@@ -1,0 +1,21 @@
+apply plugin: 'com.jfrog.bintray'
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+    publications = ['maven']
+    pkg {
+        repo = 'walletkit-java'
+        name = project.name
+        userOrg = 'brd'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/blockset-corp/walletkit-java.git'
+        githubRepo = 'blockset-corp/walletkit-java'
+        githubReleaseNotesFile = 'README.md'
+        version {
+            name = project.property('version')
+            released  = new Date()
+            vcsTag = project.property('version')
+        }
+    }
+}

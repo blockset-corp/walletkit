@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'digital.wup.android-maven-publish'
+apply from: '../gradle/publish.gradle'
 
 android {
     compileSdkVersion androidConfig.compileSdkVersion
@@ -72,7 +73,7 @@ dependencies {
 
 publishing {
     publications {
-        mavenAar(MavenPublication) {
+        maven(MavenPublication) {
             from components.android
         }
     }
