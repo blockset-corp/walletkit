@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include "../vendor/sqlite3/sqlite3.h"
 typedef int sqlite3_status_code;
 
@@ -177,7 +178,11 @@ fileServiceEntityTypeAddHandler (BRFileServiceEntityType *entityType,
 ///
 ///
 struct BRFileServiceRecord {
-    char    *sdbPath;
+    char *currency;
+    char *network;
+    char *sdbPath;
+
+#if !defined(NEUTER_FILE_SERVICE)
     sqlite3 *sdb;
     sqlite3_stmt *sdbInsertStmt;
     sqlite3_stmt *sdbSelectStmt;
@@ -186,16 +191,14 @@ struct BRFileServiceRecord {
     sqlite3_stmt *sdbDeleteStmt;
     sqlite3_stmt *sdbDeleteAllTypeStmt;
     sqlite3_stmt *sdbDeleteAllStmt;
-    uint8_t  sdbClosed;
+    bool  sdbClosed;
+#endif
 
-    char *currency;
-    char *network;
-
-    pthread_mutex_t lock;
-    
     BRArrayOf(BRFileServiceEntityType) entityTypes;
     BRFileServiceContext context;
     BRFileServiceErrorHandler handler;
+
+    pthread_mutex_t lock;
 };
 
 static BRFileService
@@ -233,6 +236,7 @@ fileServiceCreate (const char *basePath,
     if (strlen(network) > FILENAME_MAX || strlen(currency) > FILENAME_MAX)
         return NULL;
 
+#if !defined(NEUTER_FILE_SERVICE)
     // Make directory if needed.
     if (-1 == directoryMake(basePath)) return NULL;
 
@@ -244,6 +248,7 @@ fileServiceCreate (const char *basePath,
     // Require SQLite to support 'MULTI_THREADED' or 'SERIALIZED'.  We'll lock our connection.
     // and thus 'MULTI_THREADED' is appropriate.
     if (0 == sqlite3_threadsafe()) return NULL;
+#endif
 
     // Create the file service itself
     BRFileService fs = calloc (1, sizeof (struct BRFileServiceRecord));
@@ -260,16 +265,16 @@ fileServiceCreate (const char *basePath,
     // Set the error handler - early
     fileServiceSetErrorHandler (fs, context, handler);
 
-    fs->sdb = NULL;
-    fs->sdbPath = NULL;
-    fs->sdbClosed = 0;
-
     // Save currency and network
     fs->currency = strdup (currency);
     fs->network  = strdup (network);
 
     // Locate the SQLITE Database
-    fs->sdbPath = fileServiceCreateFilePath (basePath, currency, network, FILE_SERVICE_SDB_FILENAME);
+     fs->sdbPath = fileServiceCreateFilePath (basePath, currency, network, FILE_SERVICE_SDB_FILENAME);
+
+#if !defined(NEUTER_FILE_SERVICE)
+    fs->sdb = NULL;
+    fs->sdbClosed = false;
 
     // Create/Open the SQLITE Database
     sqlite3_status_code status = sqlite3_open(fs->sdbPath, &fs->sdb);
@@ -339,10 +344,7 @@ fileServiceCreate (const char *basePath,
             { .sdb = { status }}
         });
 
-    // Allocate the `entityTypes` array
-    array_new (fs->entityTypes, FILE_SERVICE_INITIAL_TYPE_COUNT);
-
-#if defined(DEBUG)
+#  if defined(DEBUG)
     if (needSQLiteCompileOptions) {
         needSQLiteCompileOptions = 0;
         printf ("SQLITE ThreadSafe Mutex: %d\n", sqlite3_threadsafe());
@@ -354,7 +356,12 @@ fileServiceCreate (const char *basePath,
             printf ("-DSQLITE_%s\n", option);
         }
     }
-#endif
+#  endif
+#endif // !define(NEUTER_FILE_SERVICE)
+
+    // Allocate the `entityTypes` array
+    array_new (fs->entityTypes, FILE_SERVICE_INITIAL_TYPE_COUNT);
+
     return fs;
 }
 
@@ -368,9 +375,10 @@ _fileServiceFinalizeStmt (BRFileService fs, sqlite3_stmt **stmt) {
 
 static void
 _fileServiceCloseInternal (BRFileService fs) {
+#if !defined(NEUTER_FILE_SERVICE)
     if (fs->sdbClosed) return;
 
-    fs->sdbClosed = 1;
+    fs->sdbClosed = true;
     _fileServiceFinalizeStmt (fs, &fs->sdbInsertStmt);
     _fileServiceFinalizeStmt (fs, &fs->sdbSelectStmt);
     _fileServiceFinalizeStmt (fs, &fs->sdbSelectAllStmt);
@@ -381,13 +389,16 @@ _fileServiceCloseInternal (BRFileService fs) {
 
     if (NULL != fs->sdb) sqlite3_close (fs->sdb);
     fs->sdb = NULL;
+#endif
 }
 
 extern void
 fileServiceClose (BRFileService fs) {
+#if !defined(NEUTER_FILE_SERVICE)
     pthread_mutex_lock (&fs->lock);
     _fileServiceCloseInternal(fs);
     pthread_mutex_unlock (&fs->lock);
+#endif
 }
 
 // This is callable with a partially allocated BRFileService.  So, be
@@ -396,7 +407,9 @@ extern void
 fileServiceRelease (BRFileService fs) {
     pthread_mutex_lock (&fs->lock);
 
+#if !defined(NEUTER_FILE_SERVICE)
     _fileServiceCloseInternal(fs);
+#endif
 
     if (NULL != fs->entityTypes) {
         size_t typesCount = array_count(fs->entityTypes);
@@ -546,6 +559,7 @@ _fileServiceSave (BRFileService fs,
     BRFileServiceEntityHandler *handler = fileServiceEntityTypeLookupHandler(entityType, entityType->currentVersion);
     if (NULL == handler) { fileServiceFailedImpl (fs, 0, NULL, NULL, "missed type handler"); return 0; };
 
+#if !defined(NEUTER_FILE_SERVICE)
     // Get then hex-encode the identifer
     UInt256 identifier = handler->identifier (handler->context, fs, entity);
     const char *hash = u256hex(identifier);
@@ -623,6 +637,8 @@ _fileServiceSave (BRFileService fs,
         pthread_mutex_unlock (&fs->lock);
 
     free (data);
+#endif // !defined(NEUTER_FILE_SERVICE)
+
     return 1;
 }
 
@@ -646,6 +662,7 @@ fileServiceLoad (BRFileService fs,
     BRFileServiceEntityHandler *entityHandlerCurrent = fileServiceEntityTypeLookupHandler(entityType, entityType->currentVersion);
     if (NULL == entityHandlerCurrent) return fileServiceFailedImpl (fs,  0, NULL, NULL, "missed type handler");
 
+#if !defined(NEUTER_FILE_SERVICE)
     sqlite3_status_code status;
 
     pthread_mutex_lock (&fs->lock);
@@ -754,6 +771,7 @@ fileServiceLoad (BRFileService fs,
     pthread_mutex_unlock (&fs->lock);
 
     if (dataBytes != dataBytesBuffer) free (dataBytes);
+#endif // !defined(NEUTER_FILE_SERVICE)
 
     return 1;
 }
@@ -768,6 +786,7 @@ fileServiceRemove (BRFileService fs,
     if (NULL == entityType)
         return fileServiceFailedImpl (fs, 0, NULL, NULL, "missed type");
 
+#if !defined(NEUTER_FILE_SERVICE)
     // Hex-Encode identifier
     const char *hash = u256hex(identifier);
 
@@ -796,6 +815,7 @@ fileServiceRemove (BRFileService fs,
     sqlite3_reset (fs->sdbDeleteStmt);
 
     pthread_mutex_unlock (&fs->lock);
+#endif // !defined(NEUTER_FILE_SERVICE)
 
     return 1;
 }
@@ -804,6 +824,7 @@ static int
 fileServiceClearForType (BRFileService fs,
                          BRFileServiceEntityType *entityType,
                          int needLock) {
+#if !defined(NEUTER_FILE_SERVICE)
     const char *type = entityType->type;
 
     sqlite3_status_code status;
@@ -827,6 +848,7 @@ fileServiceClearForType (BRFileService fs,
     sqlite3_reset (fs->sdbDeleteAllTypeStmt);
 
     if (needLock) pthread_mutex_unlock (&fs->lock);
+#endif // !defined(NEUTER_FILE_SERVICE)
 
     return 1;
 }
@@ -865,6 +887,7 @@ fileServiceReplace (BRFileService fs,
     if (NULL == entityType)
         return fileServiceFailedImpl (fs, 0, NULL, NULL, "missed type");
 
+#if !defined(NEUTER_FILE_SERVICE)
     sqlite3_status_code status;
 
     pthread_mutex_lock (&fs->lock);
@@ -887,6 +910,7 @@ fileServiceReplace (BRFileService fs,
         return fileServiceFailedSDB (fs, 1, status);
 
     pthread_mutex_unlock (&fs->lock);
+#endif // !defined(NEUTER_FILE_SERVICE)
 
     return 1;
 }
@@ -895,13 +919,17 @@ extern int
 fileServiceWipe (const char *basePath,
                  const char *currency,
                  const char *network) {
+    int result = 0; // 0 on success, errno on failure
 
+#if !defined(NEUTER_FILE_SERVICE)
     // Locate the SQLITE Database
     char *sdbPath = fileServiceCreateFilePath (basePath, currency, network, FILE_SERVICE_SDB_FILENAME);
 
     // Remove it.
-    int   result  = 0 == remove (sdbPath) ? 0 : errno;
+    result  = (0 == remove (sdbPath) ? 0 : errno);
     free (sdbPath);
+#endif
+
     return result;
 }
 
