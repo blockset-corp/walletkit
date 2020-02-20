@@ -784,8 +784,8 @@ void rippleTransactionTests()
 {
     testRippleTransaction();
     testRippleTransactionGetters();
-    testSerializeWithSignature();
-    testTransactionId();
+//    testSerializeWithSignature();
+//    testTransactionId();
     testTransactionDeserialize();
     testTransactionDeserializeUnknownFields();
     testTransactionDeserializeOptionalFields();
