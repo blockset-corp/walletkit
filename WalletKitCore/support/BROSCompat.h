@@ -28,8 +28,9 @@
 #include <pthread.h>
 #include <string.h>         // strlcpy()
 #include <stdint.h>
+#include <stdlib.h>         // arc4random
 
-#if defined (__linux__)
+#if defined (__linux__) && !defined(__ANDROID__)
 // TODO: Including bsd/stdlib.h causes a `swift build` failure
 //#include <bsd/stdlib.h>   // arc4random()
 // TODO: <string.h> on Linux does not include strlcpy()
@@ -40,7 +41,7 @@
 extern "C" {
 #endif
 
-#if defined (__linux__)
+#if defined (__linux__) && !defined(__ANDROID__)
     void arc4random_buf(void *_buf, size_t n);
     uint32_t arc4random_uniform(uint32_t upper_bound);
 

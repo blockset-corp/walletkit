@@ -92,12 +92,8 @@ static int runSupFileServiceTests (void) {
 
 /// MARK: - Assert Tests
 
-#include <pthread.h>
-
 #define DEFAULT_WORKERS     (5)
 #define SUP_MAIN_COUNT      (3)
-
-typedef void* (*ThreadRoutine) (void*);         // pthread_create
 
 ///
 /// Worker

@@ -71,8 +71,6 @@ lesDeactivateNode (BREthereumLES les,
                    BREthereumNode node,
                    const char *explain);
 
-typedef void* (*ThreadRoutine) (void*);
-
 static void *
 lesThread (BREthereumLES les);
 

@@ -258,8 +258,6 @@ alarmClockInsertAlarm (BREventAlarmClock clock,
     array_insert (clock->alarms, index, alarm);
 }
 
-typedef void* (*ThreadRoutine) (void*);
-
 static void *
 alarmClockThread (BREventAlarmClock clock) {
     pthread_setname_brd(clock->thread, "Core Ethereum Alarm Clock");
