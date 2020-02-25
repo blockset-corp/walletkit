@@ -30,6 +30,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    extern const char* cryptoVersion;
 
     typedef struct BRCryptoWalletRecord *BRCryptoWallet;
 

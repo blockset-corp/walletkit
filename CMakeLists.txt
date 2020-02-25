@@ -396,6 +396,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/include/BRCryptoBase.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/crypto/BRCryptoBaseP.h
 
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/version/BRCryptoVersion.c
+
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/include/BRCryptoStatus.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/crypto/BRCryptoStatusP.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/crypto/BRCryptoStatus.c
