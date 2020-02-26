@@ -27,6 +27,10 @@ final class WalletKitCoreTests: XCTestCase {
          BRRunTests()
      }
 
+    func testRipple () {
+        runRippleTest()
+    }
+
     static var allTests = [
         ("testBase", testBase),
         ("testUtil", testUtil),
@@ -34,5 +38,6 @@ final class WalletKitCoreTests: XCTestCase {
         ("testEvent", testEvent),
         ("testBC",    testBC),
         ("testBitcoin", testBitcoin),
+        ("testRipple",  testRipple),
     ]
 }
