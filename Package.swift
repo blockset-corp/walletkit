@@ -40,7 +40,12 @@ let package = Package(
         //
         .target(
             name: "WalletKitCore",
-            dependencies: ["WalletKitCoreSafe"],
+            dependencies: [
+                "WalletKitCoreSafe",
+                "WalletKitSQLite",
+                "WalletKitEd25519",
+                "WalletKitHederaProto",
+            ],
             path: "WalletKitCore",
             sources: ["version"],                   // Holds BRCryptoVersion.c only
             publicHeadersPath: "include",           // Export all public includes
@@ -54,9 +59,6 @@ let package = Package(
         .target(
             name: "WalletKitCoreSafe",
             dependencies: [
-                "WalletKitSQLite",
-                "WalletKitEd25519",
-                "WalletKitHederaProto",
             ],
             path: "WalletKitCore",
             exclude: [
@@ -64,10 +66,11 @@ let package = Package(
                 "vendor",           // See target: WalletKitSQLite
                 "hedera/proto"      // See target: WalletKitHederaProto
             ],
-            publicHeadersPath: ".",
+            publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
                 .headerSearchPath("include"),           // BRCrypto
                 .headerSearchPath("support"),           // Temporary (change support/, bitcoin/)
+                .headerSearchPath("."),
                 .headerSearchPath("vendor/secp256k1"),
                 .unsafeFlags([
                     // Enable warning flags
