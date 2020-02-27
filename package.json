@@ -1,0 +1,24 @@
+{
+  "name": "walletkit",
+  "version": "0.0.1",
+  "description": "A Javascript interface to WalletKit",
+  "main": "WalletKit/index.js",
+  "scripts": {
+    "test": "node WalletKitTests/index.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blockset-corp/walletkit-js.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/blockset-corp/walletkit-js/issues"
+  },
+  "homepage": "https://github.com/blockset-corp/walletkit-js#readme",
+  "devDependencies": {
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "typescript": "^3.8.2"
+  }
+}
