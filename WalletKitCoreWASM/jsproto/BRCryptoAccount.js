@@ -1,6 +1,6 @@
 var CoreJS = require ("./libcorecrypto.js")
 
-var BRCryptoAccount = {
+export var BRCryptoAccount = {
   "cryptoAccountGeneratePaperKey":  CoreJS.cwrap('cryptoAccountGeneratePaperKey', 'int', ['int-array']),
   // ...
 };

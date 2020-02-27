@@ -1,25 +1,22 @@
-type CoreCurrencyType = any;
+import * as Core from "../WalletKitCoreWASM";
 
 export default class Currency {
-  private core: CoreCurrencyType;
+  private core: Core.Currency;
 
-  public /* module protected */ constructor (core: CoreCurrencyType) {
+  public /* module protected */ constructor (core: Core.Currency) {
     this.core = core;
   }
 
-  // public static create (uids: string,
-  // 			name: string,
-  // 			code: string,
-  // 			type: string,
-  // 			issuer: string?): Currency? {
-  //     return undefined;
-  //
-  //   }
+  public static create (uids: string,
+   			name: string,
+   			code: string,
+   			type: string,
+   			issuer: string | undefined): Currency {
+			  return new Currency (Core.Interface.currencyCreate (uids, name, code, type, issuer));
+     }
   
   get uids(): string {
-    this.core;
-    //return this.core.cryptoCurrencyGetUids()
-    return "uids";
+    return Core.Interface.currencyGetUids (this.core)
   }
 
   get code(): string {

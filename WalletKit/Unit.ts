@@ -1,21 +1,19 @@
-import  Currency from './currency';
-
-type CoreUnitType = any;
+import * as Core from "../WalletKitCoreWASM";
+import Currency from "./Currency"
 
 export default class Unit {
-  private core: CoreUnitType;
+  private core: Core.Unit;
 
-  protected constructor (core: CoreUnitType) {
+  protected constructor (core: Core.Unit) {
     this.core = core;
   }
 
   get currency(): Currency {
-    this.core;
-    return new Currency ('core');
+    return new Currency (Core.Interface.unitGetCurrency (this.core))
   }
 
   get uids(): string {
-    return 'uids';
+    return Core.Interface.unitGetUids (this.core);
   }
 
   get name(): string {
@@ -27,7 +25,7 @@ export default class Unit {
   }
 
   get baseUnit(): Unit {
-    return new Unit ('baseUnit');
+    return new Unit (Core.Interface.unitGetBaseUnit(this.core));
   }
 
   get decimals(): number {

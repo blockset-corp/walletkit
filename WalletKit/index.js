@@ -1,7 +1,7 @@
 
-import Currency from "./currency"
+import Currency from "./Currency"
 export { Currency }
 
-import Unit from "./unit"
+import Unit from "./Unit"
 export { Unit }
 
