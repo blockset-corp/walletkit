@@ -1,20 +1,21 @@
-//import CoreJS from "./libcorecrypto.js"
-//import CoreJS = require ("./libcorecrypto.js");
+import CoreJS from "./libcorecrypto.js"
 
 type Currency = number;
 
 const CurrencyInterface = {
-  "currencyCreate": (uids: string, name: string, code: string, type: string, issuer: string | undefined): Currency => {
-    uids; name; code; type; issuer;
-    return 1;
-  },
-  "currencyGetUids": (core: Currency): string => {
-    core;
-    return 'uids';
-  },
+    "cryptoCurrencyCreate": CoreJS.cwrap('cryptoCurrencyCreate', 'int', [ 'string', 'string', 'string', 'string', 'string' ]),
+    
+    "currencyCreate": (uids: string, name: string, code: string, type: string, issuer: string | undefined): Currency => {
+	uids; name; code; type; issuer;
+	return 1;
+    },
+    "currencyGetUids": (core: Currency): string => {
+	core;
+	return 'uids';
+    },
 };
 
 export {
-  Currency,
-  CurrencyInterface
+    Currency,
+    CurrencyInterface
 }
