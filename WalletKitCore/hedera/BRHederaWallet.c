@@ -39,17 +39,11 @@ hederaWalletCreate (BRHederaAccount account)
      "0.0.13":"35.234.132.107:50211", "0.0.14": "34.94.67.202:50211",
      "0.0.15":"35.236.2.27:50211"}
      */
-    array_new(wallet->nodes, 10);
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.3"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.4"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.5"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.6"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.7"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.8"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.9"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.10"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.11"));
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.12"));
+    array_new(wallet->nodes, HEDERA_NODE_COUNT);
+    int64_t hedera_node_start = HEDERA_NODE_START;
+    for (int i = HEDERA_NODE_START; i < (HEDERA_NODE_COUNT + HEDERA_NODE_START); i++) {
+        array_add(wallet->nodes, hederaAddressCreate(0, 0, i));
+    }
 
     array_new(wallet->transactions, 0);
 
@@ -110,7 +104,7 @@ hederaWalletGetNodeAddress(BRHederaWallet wallet)
 {
     static unsigned index = 0;
     assert(wallet);
-    if (index > 9) {
+    if (index > HEDERA_NODE_COUNT - 1) {
         index = 0;
     }
     BRHederaAddress node = wallet->nodes[index++];

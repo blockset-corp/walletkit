@@ -529,15 +529,17 @@ static void nodeAddressTest()
     // Create a wallet
     BRHederaAccount account = getAccount ("patient"); // Our wallet account
     BRHederaWallet wallet = hederaWalletCreate (account);
-    for ( int i = 3; i <= 12; i++ ) {
+    for ( int i = HEDERA_NODE_START; i <= HEDERA_NODE_COUNT + HEDERA_NODE_START - 1; i++ ) {
         // Get the first 10 nodes
         BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
         assert(hederaAddressGetAccount(address) == i);
+        assert(hederaAddressGetShard(address) == 0);
+        assert(hederaAddressGetRealm(address) == 0);
         hederaAddressFree(address);
     }
     // Now get another one and see if we go back to the beginning
     BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
-    assert(hederaAddressGetAccount(address) == 3);
+    assert(hederaAddressGetAccount(address) == HEDERA_NODE_START);
     hederaAddressFree(address);
 }
 

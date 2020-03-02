@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define HEDERA_NODE_COUNT 10
+#define HEDERA_NODE_START 3
 
 typedef struct BRHederaWalletRecord *BRHederaWallet;
 
