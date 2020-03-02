@@ -204,6 +204,10 @@ final class WalletKitCoreTests: XCTestCase {
         runRippleTest()
     }
 
+    // MARK: - Hedera
+    func testHedera () {
+        runHederaTest()
+    }
     // MARK: - Bitcoin
 
     func testBitcoinSupport () {
@@ -407,6 +411,9 @@ final class WalletKitCoreTests: XCTestCase {
 
         // Ripple
         ("testRipple",          testRipple),
+
+        // Hedera
+        ("testHedera",          testHedera),
 
         // Bitcoin
         ("testSupportBTC",      testBitcoinSupport),

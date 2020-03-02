@@ -108,6 +108,10 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 extern void
 runRippleTest (void /* ... */);
 
+// Hedera
+extern void
+runHederaTest (void);
+
 #ifdef __cplusplus
 }
 #endif

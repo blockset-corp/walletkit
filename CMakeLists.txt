@@ -68,14 +68,14 @@ add_library( # Sets the name of the library.
 # Support
 target_sources (corecrypto
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BROSCompat.c
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BROSCompat.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRAddress.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRAddress.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRAssert.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRAssert.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRArray.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBase.h
-#                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.c
-#                ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRSyncMode.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP32Sequence.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP32Sequence.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/support/BRBIP39Mnemonic.c
@@ -395,6 +395,8 @@ target_sources (corecrypto
                 #  Dependency Order
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/include/BRCryptoBase.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/crypto/BRCryptoBaseP.h
+
+                ${PROJECT_SOURCE_DIR}/WalletKitCore/version/BRCryptoVersion.c
 
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/include/BRCryptoStatus.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/crypto/BRCryptoStatusP.h

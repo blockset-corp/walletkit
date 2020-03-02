@@ -75,7 +75,6 @@ pthread_cond_timedwait_relative_brd (pthread_cond_t *cond,
 #endif
 }
 
-
 extern void
 arc4random_buf_brd (void *bytes, size_t bytesCount) {
 #if defined (__ANDROID__) || defined (__linux__)

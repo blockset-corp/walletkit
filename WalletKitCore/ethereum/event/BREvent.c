@@ -141,8 +141,6 @@ eventHandlerAlarmCallback (BREventHandler handler,
     eventHandlerSignalEventOOB (handler, (BREvent*) &event);
 }
 
-typedef void* (*ThreadRoutine) (void*);
-
 static void *
 eventHandlerThread (BREventHandler handler) {
     pthread_setname_brd (pthread_self(), handler->name);

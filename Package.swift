@@ -24,25 +24,31 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
+        // MARK: - Core Targets
+
+        //
+        // We want to compile all Core sources with various warnings enabled.  This is performed
+        // in a Package.swift with a `cSettings.unsafeFlags` declaration.  However, a sub-package
+        // dependency is forbidden from having a unsafeFlags declaration.  Thus walletkit-swift
+        // depending on walletkit-core will fail during package validation.  We work around this
+        // by ensuring that this top-level `.target` does not have an unsafeFlags declaration but
+        // that subtargets do have our desired unsafeFlags.
+        //
+        // In order to accomplish the above this `WalletKitCore` target will depend on
+        // `WalletKitCoreSafe`, where ALL the sources will be, BUT we need at least one source
+        // file to remain in `WalletKitCore`.  We'll create one.
+        //
         .target(
             name: "WalletKitCore",
             dependencies: [
+                "WalletKitCoreSafe",
                 "WalletKitSQLite",
                 "WalletKitEd25519",
                 "WalletKitHederaProto",
             ],
             path: "WalletKitCore",
-            exclude: [
-                "vendor",           // See target: WalletKitSQLite
-                "hedera/proto"      // See target: WalletKitHederaProto
-            ],
-            publicHeadersPath: "include",
-            cSettings: [
-                .headerSearchPath("include"),
-                .headerSearchPath("."),
-                .headerSearchPath("./support"),
-                .headerSearchPath("vendor/secp256k1"),
-            ],
+            sources: ["version"],                   // Holds BRCryptoVersion.c only
+            publicHeadersPath: "include",           // Export all public includes
             linkerSettings: [
                 .linkedLibrary("resolv"),
                 .linkedLibrary("pthread"),
@@ -50,15 +56,44 @@ let package = Package(
             ]
         ),
 
-         // Custom compilation flags for SQLite - to silence warnings
+        .target(
+            name: "WalletKitCoreSafe",
+            dependencies: [
+            ],
+            path: "WalletKitCore",
+            exclude: [
+                "version",          // See target: WalletKitCore (above)
+                "vendor",           // See target: WalletKitSQLite
+                "hedera/proto"      // See target: WalletKitHederaProto
+            ],
+            publicHeadersPath: "version",   // A directory WITHOUT headers
+            cSettings: [
+                .headerSearchPath("include"),           // BRCrypto
+                .headerSearchPath("support"),           // Temporary (change support/, bitcoin/)
+                .headerSearchPath("."),
+                .headerSearchPath("vendor/secp256k1"),
+                .unsafeFlags([
+                    // Enable warning flags
+                    "-Wall",
+                    "-Wconversion",
+                    "-Wsign-conversion",
+                    "-Wparentheses",
+                    "-Wswitch",
+                    // Disable warning flags, if appropriate
+                    "-Wno-implicit-int-conversion",
+                    // "-Wno-sign-conversion",
+                    "-Wno-missing-braces"
+                ])
+            ]
+        ),
+
+        // Custom compilation flags for SQLite - to silence warnings
         .target(
             name: "WalletKitSQLite",
             dependencies: [],
             path: "WalletKitCore/vendor/sqlite3",
-            exclude: [
-                "shell.c",
-            ],
-            publicHeadersPath: nil,
+            sources: ["sqlite3.c"],
+            publicHeadersPath: "include",
             cSettings: [
                 .unsafeFlags([
                     "-D_HAVE_SQLITE_CONFIG_H=1",
@@ -82,7 +117,6 @@ let package = Package(
             ]
         ),
 
-
         // Custom compilation flags for hedera/proto - to silence warnings
         .target(
             name: "WalletKitHederaProto",
@@ -95,6 +129,8 @@ let package = Package(
                 ])
             ]
         ),
+
+        // MARK: - Core Misc Targets
 
         .target (
             name: "WalletKitExplore",
@@ -118,7 +154,9 @@ let package = Package(
                 .headerSearchPath("../WalletKitCoreTests/test"),
             ]
         ),
- 
+
+        // MARK: - Core Test Targets
+
         .target(
             name: "WalletKitSupportTests",
             dependencies: ["WalletKitCore"],
@@ -151,6 +189,5 @@ let package = Package(
                 .linkedLibrary("bsd", .when(platforms: [.linux])),
             ]
         ),
-
     ]
 )
