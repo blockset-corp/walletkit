@@ -524,10 +524,28 @@ static void account_tests() {
     accountStringTest("patient");
 }
 
+static void nodeAddressTest()
+{
+    // Create a wallet
+    BRHederaAccount account = getAccount ("patient"); // Our wallet account
+    BRHederaWallet wallet = hederaWalletCreate (account);
+    for ( int i = 3; i <= 12; i++ ) {
+        // Get the first 10 nodes
+        BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
+        assert(hederaAddressGetAccount(address) == i);
+        hederaAddressFree(address);
+    }
+    // Now get another one and see if we go back to the beginning
+    BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
+    assert(hederaAddressGetAccount(address) == 3);
+    hederaAddressFree(address);
+}
+
 static void wallet_tests()
 {
     createAndDeleteWallet();
     walletBalanceTests();
+    nodeAddressTest();
 }
 
 static void transaction_tests() {
