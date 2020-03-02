@@ -11,6 +11,7 @@
 #ifndef BRRippleAddress_h
 #define BRRippleAddress_h
 
+#include <stdbool.h>
 #include "support/BRKey.h"
 
 #ifdef __cplusplus
@@ -43,11 +44,13 @@ rippleAddressCreateFromKey (BRKey *publicKey);
  * Create a ripple address from a valid ripple address string
  *
  * @param address   - ripple address string in the "r..." format
+ * @param strict    - only accept 'r...' format addresses; otherwise: "__fee__" and "unknown" are
+ *    permitted.  These other addresses are used internally.
  *
  * @return address  - a BRRippleAddress object
  */
 extern BRRippleAddress
-rippleAddressCreateFromString(const char * rippleAddressString);
+rippleAddressCreateFromString(const char * rippleAddressString, bool strict);
 
 /**
  * Create a ripple address from the raw bytes (20 for ripple)

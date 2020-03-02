@@ -648,7 +648,7 @@ static void testRippleAddressCreate()
         0xD0, 0x1F, 0x30, 0x4E, 0xC8, 0x29, 0x51, 0xE3, 0x7C, 0xA2 };
     const char* ripple_address = "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a";
     
-    BRRippleAddress address = rippleAddressCreateFromString(ripple_address);
+    BRRippleAddress address = rippleAddressCreateFromString(ripple_address, true);
     BRRippleAddress expectedAddress = rippleAddressCreateFromBytes(expected_bytes, 20);
     assert(1 == rippleAddressEqual(address, expectedAddress));
     rippleAddressFree(address);
@@ -735,7 +735,7 @@ testTransactionId (void /* ... */) {
 }
 
 void testRippleAddressUnknown() {
-    BRRippleAddress address = rippleAddressCreateFromString("unknown");
+    BRRippleAddress address = rippleAddressCreateFromString("unknown", false);
     assert(address);
 
     char * addressString = rippleAddressAsString(address);
@@ -745,8 +745,14 @@ void testRippleAddressUnknown() {
     rippleAddressFree(address);
 }
 
+void testRippleAddressUnknownStrict() {
+    BRRippleAddress address = rippleAddressCreateFromString("unknown", true);
+    assert(NULL == address);
+}
+
+
 void testRippleAddressInvalid() {
-    BRRippleAddress address = rippleAddressCreateFromString(""); // Empty string
+    BRRippleAddress address = rippleAddressCreateFromString("", false); // Empty string
     assert(address);
 
     char * addressString = rippleAddressAsString(address);
@@ -757,7 +763,7 @@ void testRippleAddressInvalid() {
 }
 
 void testRippleAddressFee() {
-    BRRippleAddress address = rippleAddressCreateFromString("__fee__"); // Empty string
+    BRRippleAddress address = rippleAddressCreateFromString("__fee__", false); // Empty string
     assert(address);
 
     char * addressString = rippleAddressAsString(address);
@@ -776,6 +782,7 @@ void rippleAccountTests()
     testRippleAddressCreate();
     testRippleAddressEqual();
     testRippleAddressUnknown();
+    testRippleAddressUnknownStrict();
     testRippleAddressInvalid();
     testRippleAddressFee();
 }
@@ -922,7 +929,7 @@ static void submitWithDestinationTag() {
     const char * source_paper_key = "use a valid account here";
     BRRippleAccount sourceAccount = rippleAccountCreate(source_paper_key);
     // Carl's Coinbase account and destination tag.
-    BRRippleAddress targetAddress = rippleAddressCreateFromString("rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg");
+    BRRippleAddress targetAddress = rippleAddressCreateFromString("rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg", true);
     assembleTransaction(source_paper_key, sourceAccount, targetAddress, 400000, 3, 2611653455);
     rippleAccountFree(sourceAccount);
 }
@@ -931,8 +938,8 @@ static void submitWithoutDestinationTag() {
     // Create an account so we can get a public key
     const char * source_paper_key = "use a valid account here";
     BRRippleAccount sourceAccount = rippleAccountCreate(source_paper_key);
-    // Carl's Coinbase account and destination tag.
-    BRRippleAddress targetAddress = rippleAddressCreateFromString("rpFRjDTUmUdVgMjwurx3osy4rNmXsoz7FE");
+    // Carl's Coinbase account and destination tag. (Using 'false' on a valid address is okay).
+    BRRippleAddress targetAddress = rippleAddressCreateFromString("rpFRjDTUmUdVgMjwurx3osy4rNmXsoz7FE", false);
     assembleTransaction(source_paper_key, sourceAccount, targetAddress, 300000, 4, 0);
     rippleAccountFree(sourceAccount);
 }

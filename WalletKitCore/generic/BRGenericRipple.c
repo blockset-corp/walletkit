@@ -96,7 +96,7 @@ genericRippleAccountSignTransferWithKey (BRGenericAccountRef account,
 
 static BRGenericAddressRef
 genericRippleAddressCreate (const char *string) {
-    return (BRGenericAddressRef) rippleAddressCreateFromString (string);
+    return (BRGenericAddressRef) rippleAddressCreateFromString (string, true);
 }
 
 static char *
@@ -411,8 +411,8 @@ genericRippleWalletManagerRecoverTransfer (const char *hash,
     BRRippleUnitDrops amountDrops, feeDrops = 0;
     sscanf(amount, "%" PRIu64, &amountDrops);
     if (NULL != fee) sscanf(fee, "%" PRIu64, &feeDrops);
-    BRRippleAddress toAddress   = rippleAddressCreateFromString(to);
-    BRRippleAddress fromAddress = rippleAddressCreateFromString(from);
+    BRRippleAddress toAddress   = rippleAddressCreateFromString (to,   false);
+    BRRippleAddress fromAddress = rippleAddressCreateFromString (from, false);
     // Convert the hash string to bytes
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), hash, strlen(hash));
