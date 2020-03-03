@@ -363,7 +363,6 @@ testSerializeWithSignature () {
     BRRippleUnitDrops fee =  rippleTransactionGetFee(transaction);
     assert(10 == fee);
 
-    // After calling the sign function the sequence number should match what we passed in
     sequence = rippleTransactionGetSequence(transaction);
     // The account holds the previously used sequence number - so when we sign a transaction
     // it increments the sequence number first
