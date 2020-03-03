@@ -333,7 +333,7 @@ testSerializeWithSignature () {
     rippleAddressFree (address);
     rippleAddressFree (targetAddress);
 
-    uint32_t sequence_number = 25;
+    uint32_t last_sequence_number = 25;
 
     // Before we sign the sequence should be 0
     uint32_t sequence = rippleTransactionGetSequence(transaction);
@@ -341,7 +341,7 @@ testSerializeWithSignature () {
     assert(0 == sequence);
 
     // Must set the sequence number before signing
-    rippleAccountSetSequence(account, sequence_number);
+    rippleAccountSetSequence(account, last_sequence_number);
 
     // Serialize and sign
     UInt512 seed = UINT512_ZERO;
@@ -365,8 +365,9 @@ testSerializeWithSignature () {
 
     // After calling the sign function the sequence number should match what we passed in
     sequence = rippleTransactionGetSequence(transaction);
-    // Since we don't add the sequence until later - it should be 0
-    assert(sequence_number == sequence);
+    // The account holds the previously used sequence number - so when we sign a transaction
+    // it increments the sequence number first
+    assert(last_sequence_number + 1 == sequence);
 
     // Compare the output with what we are expecting - ignore the signature
     //assert(0 == memcmp(signed_bytes, expected_output, 50));
@@ -695,7 +696,7 @@ testTransactionId (void /* ... */) {
     rippleAddressFree(targetAddress);
 
     // Serialize and sign
-    rippleAccountSetSequence(sourceAccount, 2);
+    rippleAccountSetSequence(sourceAccount, 1);
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, source_paper_key, NULL);
     rippleAccountSignTransaction(sourceAccount, transaction, seed);
@@ -784,8 +785,8 @@ void rippleTransactionTests()
 {
     testRippleTransaction();
     testRippleTransactionGetters();
-//    testSerializeWithSignature();
-//    testTransactionId();
+    testSerializeWithSignature();
+    testTransactionId();
     testTransactionDeserialize();
     testTransactionDeserializeUnknownFields();
     testTransactionDeserializeOptionalFields();
