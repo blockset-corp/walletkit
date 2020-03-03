@@ -30,8 +30,20 @@ hederaWalletCreate (BRHederaAccount account)
     wallet->account = account;
     // TODO - do we just hard code Hedera nodes here - we probably can for now
     // but perhaps in the future there will be additional shards/realms
-    array_new(wallet->nodes, 10);
-    array_add(wallet->nodes, hederaAddressCreateFromString("0.0.3"));
+    /*
+     {"0.0.3":"104.196.1.78:50211", "0.0.4": "35.245.250.134:50211",
+     "0.0.5":"34.68.209.35:50211", "0.0.6": "34.82.173.33:50211",
+     "0.0.7":"35.200.105.230:50211", "0.0.8": "35.203.87.206:50211",
+     "0.0.9":"35.189.221.159:50211", "0.0.10": "35.234.104.86:50211",
+     "0.0.11":"34.90.238.202:50211", "0.0.12": "35.228.11.53:50211",
+     "0.0.13":"35.234.132.107:50211", "0.0.14": "34.94.67.202:50211",
+     "0.0.15":"35.236.2.27:50211"}
+     */
+    array_new(wallet->nodes, HEDERA_NODE_COUNT);
+    int64_t hedera_node_start = HEDERA_NODE_START;
+    for (int i = HEDERA_NODE_START; i < (HEDERA_NODE_COUNT + HEDERA_NODE_START); i++) {
+        array_add(wallet->nodes, hederaAddressCreate(0, 0, i));
+    }
 
     array_new(wallet->transactions, 0);
 
@@ -90,8 +102,12 @@ hederaWalletGetBalance (BRHederaWallet wallet)
 extern BRHederaAddress
 hederaWalletGetNodeAddress(BRHederaWallet wallet)
 {
+    static unsigned index = 0;
     assert(wallet);
-    BRHederaAddress node = wallet->nodes[0];
+    if (index > HEDERA_NODE_COUNT - 1) {
+        index = 0;
+    }
+    BRHederaAddress node = wallet->nodes[index++];
     return hederaAddressClone(node);
 }
 
