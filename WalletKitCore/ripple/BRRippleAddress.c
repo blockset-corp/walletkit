@@ -179,15 +179,32 @@ BRRippleAddress rippleAddressStringToAddress(const char* input)
 }
 
 extern BRRippleAddress
-rippleAddressCreateFromString(const char * rippleAddressString)
+rippleAddressCreateFromString(const char * rippleAddressString, bool strict)
 {
-    // 2 special case so far - the __fee__ address and "unknown" address
-    // See the note in BRRippleAcount.h with respect to the feeAddressBytes
-    if (rippleAddressString == NULL || strlen(rippleAddressString) == 0 || strcmp(rippleAddressString, "unknown") == 0) {
+    // Handle an 'invalid' string argument.
+    if (rippleAddressString == NULL || strlen(rippleAddressString) == 0) {
+        return (strict
+                ? NULL
+                : rippleAddressCreateUnknownAddress ());
+    }
+
+    //  If strict, only accept 'r...' addresses
+    else if (strict) {
+        return rippleAddressStringToAddress (rippleAddressString);
+    }
+
+    // Handle an 'unknown' address
+    else if (strcmp(rippleAddressString, "unknown") == 0) {
         return rippleAddressCreateUnknownAddress ();
-    } else if (strcmp(rippleAddressString, "__fee__") == 0) {
+    }
+
+    // Handle a '__fee__' address
+    else if (strcmp(rippleAddressString, "__fee__") == 0) {
         return rippleAddressCreateFeeAddress ();
-    } else {
+    }
+
+    // Handle an 'r...' address (in a non-strict mode).
+    else {
         // Work backwards from this ripple address (string) to what is
         // known as the acount ID (20 bytes)
         return rippleAddressStringToAddress (rippleAddressString);
