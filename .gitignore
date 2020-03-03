@@ -44,3 +44,4 @@ DerivedData/
 xcuserdata/
 *TestsConfig.*
 Package.resolved
+.DS_Store
