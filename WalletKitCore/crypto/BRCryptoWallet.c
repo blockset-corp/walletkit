@@ -507,7 +507,7 @@ cryptoWalletValidateTransferAttribute (BRCryptoWallet wallet,
             BRGenericTransferAttribute genAttribute =
             genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
                                         cryptoTransferAttributeGetValue(attribute),
-                                        cryptoTransferAttributeIsRequired(attribute));
+                                        CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
 
             *validates = genWalletValidateTransferAttribute(wallet->u.gen, genAttribute);
             genTransferAttributeRelease (genAttribute);
@@ -547,9 +547,9 @@ cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
             for (size_t index = 0; index < attributesCount; index++) {
                 BRCryptoTransferAttribute attribute = attributes[index];
                 BRGenericTransferAttribute genAttribute =
-                genTransferAttributeCreate(cryptoTransferAttributeGetKey(attribute),
-                                         cryptoTransferAttributeGetValue(attribute),
-                                         cryptoTransferAttributeIsRequired(attribute));
+                genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
+                                            cryptoTransferAttributeGetValue(attribute),
+                                            CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
                 array_add (genAttributes, genAttribute);
             }
 
@@ -733,9 +733,9 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
                     // (by the caller) and we only extract info.
                     BRCryptoTransferAttribute attribute = attributes[index];
                     BRGenericTransferAttribute genAttribute =
-                    genTransferAttributeCreate(cryptoTransferAttributeGetKey(attribute),
-                                             cryptoTransferAttributeGetValue(attribute),
-                                             cryptoTransferAttributeIsRequired(attribute));
+                    genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
+                                                cryptoTransferAttributeGetValue(attribute),
+                                                CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
                     array_add (genAttributes, genAttribute);
                 }
                 tid = genWalletCreateTransferWithAttributes (wid, genAddr, genValue, genFeeBasis, genAttributes);

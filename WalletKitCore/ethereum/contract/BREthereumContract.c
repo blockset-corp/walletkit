@@ -396,7 +396,7 @@ ethContractEncode (BREthereumContract contract, BREthereumContractFunction funct
 //
 static void
 encodeReverseBytes (uint8_t *t, const uint8_t *s, size_t slen) {
-    for (int i = 0; i < slen; i++)
+    for (size_t i = 0; i < slen; i++)
         t[slen - i - 1] = s[i];
 }
 

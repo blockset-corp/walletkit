@@ -472,7 +472,7 @@ cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
                                         BRCryptoBoolean isNetworkReachable) {
     switch (cwm->type) {
         case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerSetNetworkReachable (cwm->u.btc, isNetworkReachable);
+            BRWalletManagerSetNetworkReachable (cwm->u.btc, CRYPTO_TRUE == isNetworkReachable);
             break;
         default:
             break;

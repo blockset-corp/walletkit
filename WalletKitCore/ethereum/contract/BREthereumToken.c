@@ -96,7 +96,7 @@ ethTokenGetDescription(BREthereumToken token) {
     return token->description;
 }
 
-extern int
+extern unsigned int
 ethTokenGetDecimals(BREthereumToken token) {
     return token->decimals;
 }
@@ -127,7 +127,7 @@ ethTokenCreate (const char *address,
                 const char *symbol,
                 const char *name,
                 const char *description,
-                int decimals,
+                unsigned int decimals,
                 BREthereumGas defaultGasLimit,
                 BREthereumGasPrice defaultGasPrice) {
     BREthereumToken token = malloc (sizeof(struct BREthereumTokenRecord));
@@ -158,7 +158,7 @@ ethTokenUpdate (BREthereumToken token,
                 const char *symbol,
                 const char *name,
                 const char *description,
-                int decimals,
+                unsigned int decimals,
                 BREthereumGas defaultGasLimit,
                 BREthereumGasPrice defaultGasPrice) {
 

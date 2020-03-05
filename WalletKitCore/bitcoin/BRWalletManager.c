@@ -2056,7 +2056,7 @@ bwmHandleAnnounceBlockNumber (BRWalletManager manager,
     pthread_mutex_lock (&manager->lock);
     BRSyncManagerAnnounceGetBlockNumber (manager->syncManager,
                                          rid,
-                                         (int32_t) blockNumber);
+                                         blockNumber);
     pthread_mutex_unlock (&manager->lock);
     return 1;
 }
