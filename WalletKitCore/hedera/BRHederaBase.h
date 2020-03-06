@@ -21,11 +21,11 @@ extern "C" {
 #endif
 
 // Declare public/shared items
-typedef int64_t BRHederaUnitTinyBar;
+typedef uint64_t BRHederaUnitTinyBar;
 
 typedef struct __hedera_timestamp {
-    int64_t seconds; // Number of complete seconds since the start of the epoch
-    int32_t nano; // Number of nanoseconds since the start of the last second
+    uint64_t seconds; // Number of complete seconds since the start of the epoch
+    uint32_t nano; // Number of nanoseconds since the start of the last second
 } BRHederaTimeStamp;
 
 typedef struct {

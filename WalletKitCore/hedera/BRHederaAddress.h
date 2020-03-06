@@ -64,6 +64,8 @@ hederaAddressFree (BRHederaAddress address);
 extern int
 hederaAddressIsFeeAddress (BRHederaAddress address);
 
+typedef uint64_t BRHederaAddressComponentType;
+
 /**
  * Get the Hedera address field values
  *
@@ -71,9 +73,9 @@ hederaAddressIsFeeAddress (BRHederaAddress address);
  *
  * @return int64_t value
  */
-int64_t hederaAddressGetShard (BRHederaAddress address);
-int64_t hederaAddressGetRealm (BRHederaAddress address);
-int64_t hederaAddressGetAccount (BRHederaAddress address);
+BRHederaAddressComponentType hederaAddressGetShard (BRHederaAddress address);
+BRHederaAddressComponentType hederaAddressGetRealm (BRHederaAddress address);
+BRHederaAddressComponentType hederaAddressGetAccount (BRHederaAddress address);
 
 /**
  * Copy a BRHederaAddress

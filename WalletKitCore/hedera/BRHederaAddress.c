@@ -20,9 +20,9 @@
 #include <stdbool.h>
 
 struct BRHederaAddressRecord {
-    int64_t shard;
-    int64_t realm;
-    int64_t account;
+    BRHederaAddressComponentType shard;
+    BRHederaAddressComponentType realm;
+    BRHederaAddressComponentType account;
 };
 
 extern void hederaAddressFree (BRHederaAddress address)
@@ -53,7 +53,7 @@ extern char * hederaAddressAsString (BRHederaAddress address)
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
-        size_t stringSize = sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
+        size_t stringSize = sprintf(buffer, "%" PRIu64 ".%" PRIu64  ".%" PRIu64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
         string = calloc(1, stringSize + 1);
         strcpy(string, buffer);
@@ -67,7 +67,7 @@ static bool hederaStringIsValid (const char * input)
     int64_t shard = -1;
     int64_t realm = -1;
     int64_t account = -1;
-    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, &shard, &realm, &account);
+    sscanf(input, "%" PRIu64 ".%" PRIu64  ".%" PRIu64, &shard, &realm, &account);
     if (shard >= 0 && realm >= 0 && account >= 0) {
         return true;
     }
@@ -82,7 +82,7 @@ BRHederaAddress hederaAddressStringToAddress(const char* input)
 
     // Hedera address are shard.realm.account
     BRHederaAddress address = (BRHederaAddress) calloc(1, sizeof(struct BRHederaAddressRecord));
-    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64,
+    sscanf(input, "%" PRIu64 ".%" PRIu64  ".%" PRIu64,
            &address->shard, &address->realm, &address->account);
     return address;
 }
@@ -145,19 +145,19 @@ extern BRHederaAddress hederaAddressClone (BRHederaAddress address)
     return NULL;
 }
 
-int64_t hederaAddressGetShard (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetShard (BRHederaAddress address)
 {
     assert (address);
     return address->shard;
 }
 
-int64_t hederaAddressGetRealm (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetRealm (BRHederaAddress address)
 {
     assert (address);
     return address->realm;
 }
 
-int64_t hederaAddressGetAccount (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetAccount (BRHederaAddress address)
 {
     assert (address);
     return address->account;
@@ -169,13 +169,15 @@ void hederaAddressSerialize(BRHederaAddress address, uint8_t * buffer, size_t si
 
     // The Hedera account IDs are made up of 3 int64_t numbers
     // Get the account id values convert to network order
-    int64_t shard = htonll(hederaAddressGetShard(address));
-    int64_t realm = htonll(hederaAddressGetRealm(address));
-    int64_t account = htonll(hederaAddressGetAccount(address));
+    BRHederaAddressComponentType shard = htonll(hederaAddressGetShard(address));
+    BRHederaAddressComponentType realm = htonll(hederaAddressGetRealm(address));
+    BRHederaAddressComponentType account = htonll(hederaAddressGetAccount(address));
 
     // Copy the values to the buffer
-    memcpy(buffer, &shard, sizeof(int64_t));
-    memcpy(buffer + sizeof(int64_t), &realm, sizeof(int64_t));
-    memcpy(buffer + (2 * sizeof(int64_t)), &account, sizeof(int64_t));
+    size_t componentSize = sizeof (BRHederaAddressComponentType);
+
+    memcpy(buffer, &shard, componentSize);
+    memcpy(buffer + componentSize, &realm, componentSize);
+    memcpy(buffer + (2 * componentSize), &account, componentSize);
 }
 
