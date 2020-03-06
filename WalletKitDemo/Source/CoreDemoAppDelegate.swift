@@ -212,6 +212,10 @@ extension UIApplication {
         return (UIApplication.shared.delegate as! CoreDemoAppDelegate).accountSpecification.paperKey
     }
 
+    static var accountSpecification: AccountSpecification {
+        return (UIApplication.shared.delegate as! CoreDemoAppDelegate).accountSpecification
+    }
+
     static func doSync () {
         guard let app = UIApplication.shared.delegate as? CoreDemoAppDelegate else { return }
         print ("APP: Syncing")

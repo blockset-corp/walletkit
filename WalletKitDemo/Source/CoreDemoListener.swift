@@ -123,12 +123,17 @@ class CoreDemoListener: SystemListener {
                         print ("APP: Account: InitializationData: \(dataForInitialization.asHexEncodedString())")
 
                         if network.type == .hbar {
-                            // TODO: Remove stubbed data of "0.0.114008"
-                            let initializationData = "0.0.114008".data(using: .utf8)!
-                            print ("APP: Account: InitializationResult: \(String(data: initializationData, encoding: .utf8)!)")
+                            var initializationData: Data? = nil
+                            DispatchQueue.main.sync {
+                                initializationData = UIApplication.accountSpecification.hedera
+                                    .map { $0.data(using: .utf8)! }
+                            }
+                            if let initializationData = initializationData {
+                                print ("APP: Account: InitializationResult: \(String(data: initializationData, encoding: .utf8)!)")
 
-                            let serializationData = account.initialize (onNetwork: network, using: initializationData)
-                            print ("APP: Account: Serialization: \(serializationData?.asHexEncodedString() ?? "")")
+                                let serializationData = account.initialize (onNetwork: network, using: initializationData)
+                                print ("APP: Account: Serialization: \(serializationData?.asHexEncodedString() ?? "")")
+                            }
                         }
                         print ("APP: Account: Initialized: \(account.isInitialized (onNetwork: network))")
                     }

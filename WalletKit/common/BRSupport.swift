@@ -243,11 +243,13 @@ public struct AccountSpecification {
     public let network: String
     public let paperKey: String
     public let timestamp: Date
+    public let hedera: String? // an associated accountID/address
 
     init (dict: [String: String]) {
         self.identifier = dict["identifier"]! //as! String
         self.network    = dict["network"]!
         self.paperKey   = dict["paperKey"]!
+        self.hedera     = dict["hedera"]
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
