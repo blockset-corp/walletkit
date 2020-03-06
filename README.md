@@ -1,5 +1,3 @@
 # WalletKitSwift
 
-A description of this package.
-
-blah
+A Swift interface to WalletKitCore
