@@ -272,6 +272,29 @@ genericHederaWalletEstimateFeeBasis (BRGenericWalletRef wallet,
     };
 }
 
+static const char **
+genericHederaWalletGetTransactionAttributeKeys (BRGenericWalletRef wallet,
+                                                BRGenericAddressRef address,
+                                                int asRequired,
+                                                size_t *count) {
+
+    *count = 0;
+    return NULL;
+}
+
+static int
+genericHederaWalletValidateTransactionAttribute (BRGenericWalletRef wallet,
+                                                 BRGenericTransferAttribute attribute) {
+    return 0;
+}
+
+static int
+genericHederaWalletValidateTransactionAttributes (BRGenericWalletRef wallet,
+                                                  size_t attributesCount,
+                                                  BRGenericTransferAttribute *attributes) {
+    return 0;
+}
+
 // MARK: - Generic Manager
 
 static BRGenericTransferRef
@@ -372,7 +395,12 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletAddTransfer,
         genericHederaWalletRemTransfer,
         genericHederaWalletCreateTransfer,
-        genericHederaWalletEstimateFeeBasis
+        genericHederaWalletEstimateFeeBasis,
+
+        genericHederaWalletGetTransactionAttributeKeys,
+        genericHederaWalletValidateTransactionAttribute,
+        genericHederaWalletValidateTransactionAttributes
+
     },
 
     { // Wallet Manager
