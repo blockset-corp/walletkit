@@ -64,7 +64,7 @@ hederaAddressFree (BRHederaAddress address);
 extern int
 hederaAddressIsFeeAddress (BRHederaAddress address);
 
-typedef uint64_t BRHederaAddressComponentType;
+typedef int64_t BRHederaAddressComponentType;
 
 /**
  * Get the Hedera address field values

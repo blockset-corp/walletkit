@@ -90,7 +90,7 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
     } else {
         // It would great to be able to get the timestamp from the txID - but I guess
         // we just have to use whatever came from blockset
-        transaction->timeStamp.seconds = timestamp;
+        transaction->timeStamp.seconds = (int64_t) timestamp;
     }
 
     transaction->hash = hash;

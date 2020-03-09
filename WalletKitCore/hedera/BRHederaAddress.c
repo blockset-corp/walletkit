@@ -53,7 +53,7 @@ extern char * hederaAddressAsString (BRHederaAddress address)
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
-        size_t stringSize = sprintf(buffer, "%" PRIu64 ".%" PRIu64  ".%" PRIu64, address->shard, address->realm, address->account);
+        size_t stringSize = (size_t) sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
         string = calloc(1, stringSize + 1);
         strcpy(string, buffer);
@@ -67,7 +67,7 @@ static bool hederaStringIsValid (const char * input)
     int64_t shard = -1;
     int64_t realm = -1;
     int64_t account = -1;
-    sscanf(input, "%" PRIu64 ".%" PRIu64  ".%" PRIu64, &shard, &realm, &account);
+    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, &shard, &realm, &account);
     if (shard >= 0 && realm >= 0 && account >= 0) {
         return true;
     }
@@ -82,7 +82,7 @@ BRHederaAddress hederaAddressStringToAddress(const char* input)
 
     // Hedera address are shard.realm.account
     BRHederaAddress address = (BRHederaAddress) calloc(1, sizeof(struct BRHederaAddressRecord));
-    sscanf(input, "%" PRIu64 ".%" PRIu64  ".%" PRIu64,
+    sscanf(input, "%" PRIi64 ".%" PRIi64  ".%" PRIi64,
            &address->shard, &address->realm, &address->account);
     return address;
 }
@@ -169,9 +169,9 @@ void hederaAddressSerialize(BRHederaAddress address, uint8_t * buffer, size_t si
 
     // The Hedera account IDs are made up of 3 int64_t numbers
     // Get the account id values convert to network order
-    BRHederaAddressComponentType shard = htonll(hederaAddressGetShard(address));
-    BRHederaAddressComponentType realm = htonll(hederaAddressGetRealm(address));
-    BRHederaAddressComponentType account = htonll(hederaAddressGetAccount(address));
+    BRHederaAddressComponentType shard   = (BRHederaAddressComponentType) htonll(hederaAddressGetShard(address));
+    BRHederaAddressComponentType realm   = (BRHederaAddressComponentType) htonll(hederaAddressGetRealm(address));
+    BRHederaAddressComponentType account = (BRHederaAddressComponentType) htonll(hederaAddressGetAccount(address));
 
     // Copy the values to the buffer
     size_t componentSize = sizeof (BRHederaAddressComponentType);

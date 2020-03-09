@@ -48,7 +48,9 @@ hederaAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     memcpy(&shard, addressBytes, 8);
     memcpy(&realm, addressBytes + 8, 8);
     memcpy(&accountNum, addressBytes + 16, 8);
-    account->address = hederaAddressCreate(ntohll(shard), ntohll(realm), ntohll(accountNum));
+    account->address = hederaAddressCreate ((BRHederaAddressComponentType) ntohll(shard),
+                                            (BRHederaAddressComponentType) ntohll(realm),
+                                            (BRHederaAddressComponentType) ntohll(accountNum));
 
     // Now copy the public key
     memcpy(account->publicKey, bytes + HEDERA_ADDRESS_SERIALIZED_SIZE, HEDERA_PUBLIC_KEY_SIZE);
