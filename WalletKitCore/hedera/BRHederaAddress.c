@@ -56,16 +56,18 @@ extern char * hederaAddressAsString (BRHederaAddress address)
     // Check for our special case __fee__ address
     // See the note above with respect to the feeAddressBytes
     if (address->account == -1) {
-        string = calloc(1, 8);
-        strcpy(string, "__fee__");
-    } else {
+        string = strdup ("__fee__");
+    }
+    else if (address->account == -2) {
+        string = strdup ("unknown");
+    }
+    else {
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
         size_t stringSize = sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
-        string = calloc(1, stringSize + 1);
-        strcpy(string, buffer);
+        string = strdup (buffer);
     }
     return string;
 }
