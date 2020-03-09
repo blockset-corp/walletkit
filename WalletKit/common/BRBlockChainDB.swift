@@ -332,14 +332,24 @@ public class BlockChainDB {
         static internal let addressBRDTestnet = "0x7108ca7c4718efa810457f228305c9c71390931a" // testnet
         static internal let addressBRDMainnet = "0x558ec3152e2eb2174905cd19aea4e34a23de9ad6" // mainnet
 
+        /// Amount
+
+        public typealias Amount = (currency: String, value: String)
+
+        static internal func asAmount (json: JSON) -> Model.Amount? {
+            guard let currency = json.asString (name: "currency_id"),
+                let value = json.asString (name: "amount")
+                else { return nil }
+            return (currency: currency, value: value)
+        }
+
         /// Transfer
 
         public typealias Transfer = (
             id: String,
             source: String?,
             target: String?,
-            amountValue: String,
-            amountCurrency: String,
+            amount: Amount,
             acknowledgements: UInt64,
             index: UInt64,
             transactionId: String?,
@@ -350,9 +360,9 @@ public class BlockChainDB {
             guard let id   = json.asString (name: "transfer_id"),
                 let bid    = json.asString (name: "blockchain_id"),
                 let index  = json.asUInt64 (name: "index"),
-                let amount = json.asDict (name: "amount").map ({ JSON (dict: $0) }),
-                let amountValue    = amount.asString (name: "amount"),
-                let amountCurrency = amount.asString (name: "currency_id")
+                let amount = json.asDict (name: "amount")
+                    .map ({ JSON (dict: $0) })
+                    .map ({ asAmount(json: $0) }) as? Amount
                 else { return nil }
 
             // TODO: Resolve if optional or not
@@ -362,8 +372,7 @@ public class BlockChainDB {
             let tid    = json.asString (name: "transaction_id")
             let meta   = json.asDict(name: "meta")?.mapValues { return $0 as! String }
 
-            return (id: id, source: source, target: target,
-                    amountValue: amountValue, amountCurrency: amountCurrency,
+            return (id: id, source: source, target: target, amount: amount,
                     acknowledgements: acks, index: index,
                     transactionId: tid, blockchainId: bid,
                     metaData: meta)
@@ -577,6 +586,36 @@ public class BlockChainDB {
                 "currencies"      : subscription.currencies.map { asJSON (subscriptionCurrency: $0) }
             ]
         }
+
+        /// Address
+
+        public typealias Address = (
+            blockchainID: String,
+            address: String,
+            nonce: UInt64?,
+            timestamp: UInt64,
+            metaData: Dictionary<String,String>?,
+            balances: [Amount]
+        )
+
+        static internal func asAddress (json: JSON) -> Address? {
+            guard let bid     = json.asString (name: "blockchain_id"),
+                let address   = json.asString (name: "address"),
+                let timestamp = json.asUInt64 (name: "timestamp"),
+                let balances = json.asArray (name: "balances")?
+                    .map ({ JSON (dict: $0) })
+                    .map ({ asAmount(json: $0)}) as? [Amount]
+                else { return nil }
+
+            let nonce = json.asUInt64 (name: "nonce")
+            let meta  = json.asDict(name: "meta")?.mapValues { return $0 as! String }
+
+            return (blockchainID: bid, address: address,
+                    nonce: nonce, timestamp: timestamp,
+                    metaData: meta,
+                    balances: balances)
+        }
+
 
     } // End of Model
 
@@ -989,6 +1028,51 @@ public class BlockChainDB {
                 BlockChainDB.getOneExpected (id: blockId, data: $0, transform: Model.asBlock)
             })
         }
+    }
+
+    // Address
+
+    public func getAddresses (blockchainId: String, publicKey: String,
+                              completion: @escaping (Result<[Model.Address],QueryError>) -> Void) {
+        let queryKeys = ["blockchain_id", "public_key"]
+        let queryVals = [ blockchainId,    publicKey]
+
+        bdbMakeRequest (path: "addresses", query: zip (queryKeys, queryVals)) {
+            (more: URL?, res: Result<[JSON], QueryError>) in
+            precondition (nil == more)
+            completion (res.flatMap {
+                BlockChainDB.getManyExpected(data: $0, transform: Model.asAddress)
+            })
+        }
+    }
+
+    public func getAddress (blockchainId: String, address: String, timestamp: UInt64? = nil,
+                            completion: @escaping (Result<Model.Address,QueryError>) -> Void) {
+        let queryKeys = ["blockchain_id", timestamp.map { (ignore) in "timestamp" }].compactMap { $0 }
+        let queryVals = [ blockchainId,   timestamp?.description].compactMap { $0 }
+
+        bdbMakeRequest (path: "addresses/\(address)", query: zip (queryKeys, queryVals), embedded: false) {
+            (more: URL?, res: Result<[JSON], QueryError>) in
+            precondition (nil == more)
+            completion (res.flatMap {
+                BlockChainDB.getOneExpected(id: address, data: $0, transform: Model.asAddress)
+            })
+        }
+    }
+
+    public func createAddress (blockchainId: String, data: Data,
+                               completion: @escaping (Result<Void, QueryError>) -> Void) {
+        let json: JSON.Dict = [
+            "blockchain_id": blockchainId,
+            "data" : data.base64EncodedString()
+        ]
+
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: "/addresses",
+                     data: json,
+                     httpMethod: "POST",
+                     deserializer: { (_) in Result.success(()) },
+                     completion: completion)
     }
 
     /// BTC - nothing
@@ -1726,7 +1810,7 @@ public class BlockChainDB {
     /// Convert an array of JSON into a single value using a specified transform
     ///
     /// - Parameters:
-    ///   - id: If not value exists, report QueryError.NoEntity (id: id)
+    ///   - id: If no value exists, report QueryError.NoEntity (id: id)
     ///   - data: The array of JSON
     ///   - transform: Function to tranfrom JSON -> T?
     ///

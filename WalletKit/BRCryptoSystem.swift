@@ -1169,8 +1169,8 @@ extension System {
                         : [(id: transferWithFee.id,
                             source: transferWithFee.source,
                             target: "unknown",
-                            amountValue: "0",
-                            amountCurrency: transferWithFee.amountCurrency,
+                            amount: (currency: transferWithFee.amount.currency,
+                                     value: "0"),
                             acknowledgements: transferWithFee.acknowledgements,
                             index: transferWithFee.index,
                             transactionId: transferWithFee.transactionId,
@@ -1183,7 +1183,7 @@ extension System {
                 // Map transfers adding the fee to the `transferforFeeId`
                 return transfers
                     .map { (transfer: $0,
-                            fee: ($0.id == transferForFeeId ? transferWithFee.amountValue : nil))
+                            fee: ($0.id == transferForFeeId ? transferWithFee.amount.value : nil))
                 }
 
             default:
@@ -1449,8 +1449,8 @@ extension System {
                                                                                                        transfer.id,
                                                                                                        transfer.source,
                                                                                                        transfer.target,
-                                                                                                       transfer.amountValue,
-                                                                                                       transfer.amountCurrency,
+                                                                                                       transfer.amount.value,
+                                                                                                       transfer.amount.currency,
                                                                                                        fee,
                                                                                                        timestamp,
                                                                                                        height,
