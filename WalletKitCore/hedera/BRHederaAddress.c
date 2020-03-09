@@ -39,6 +39,15 @@ BRHederaAddress hederaAddressCreateFeeAddress()
     return address;
 }
 
+BRHederaAddress hederaAddressCreateUnknownAddress()
+{
+    BRHederaAddress address = calloc(1, sizeof(struct BRHederaAddressRecord));
+    address->shard  = -1;
+    address->realm  = -1;
+    address->account = -2;
+    return address;
+}
+
 extern char * hederaAddressAsString (BRHederaAddress address)
 {
     assert(address);
@@ -47,16 +56,18 @@ extern char * hederaAddressAsString (BRHederaAddress address)
     // Check for our special case __fee__ address
     // See the note above with respect to the feeAddressBytes
     if (address->account == -1) {
-        string = calloc(1, 8);
-        strcpy(string, "__fee__");
-    } else {
+        string = strdup ("__fee__");
+    }
+    else if (address->account == -2) {
+        string = strdup ("unknown");
+    }
+    else {
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
         size_t stringSize = sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
-        string = calloc(1, stringSize + 1);
-        strcpy(string, buffer);
+        string = strdup (buffer);
     }
     return string;
 }
@@ -88,20 +99,33 @@ BRHederaAddress hederaAddressStringToAddress(const char* input)
 }
 
 extern BRHederaAddress
-hederaAddressCreateFromString(const char * hederaAddressString)
+hederaAddressCreateFromString(const char * hederaAddressString, bool strict)
 {
-    assert(hederaAddressString);
-
-    if (!hederaAddressString) {
-        return NULL;
+    // Handle an 'invalid' string argument.
+    if (hederaAddressString == NULL || strlen(hederaAddressString) == 0) {
+        return (strict
+                ? NULL
+                : hederaAddressCreateUnknownAddress ());
     }
 
-    // 1 special case so far - the __fee__ address.
-    // See the note in BRHederaAcount.h with respect to the feeAddressBytes
-    if (strcmp(hederaAddressString, "__fee__") == 0) {
+    //  If strict, only accept 'r...' addresses
+    else if (strict) {
+        return hederaAddressStringToAddress (hederaAddressString);
+    }
+
+    // Handle an 'unknown' address
+    else if (strcmp(hederaAddressString, "unknown") == 0) {
+        return hederaAddressCreateUnknownAddress ();
+    }
+
+    // Handle a '__fee__' address
+    else if (strcmp(hederaAddressString, "__fee__") == 0) {
         return hederaAddressCreateFeeAddress ();
-    } else {
-        // Work backwards from this hedera address (string) to what is
+    }
+
+    // Handle an 'r...' address (in a non-strict mode).
+    else {
+        // Work backwards from this ripple address (string) to what is
         // known as the acount ID (20 bytes)
         return hederaAddressStringToAddress (hederaAddressString);
     }

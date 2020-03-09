@@ -58,7 +58,7 @@ genericHederaAccountInitialize (BRGenericAccountRef account, const uint8_t *byte
     memcpy (hederaAddressString, bytes, bytesCount);
     hederaAddressString[bytesCount] = 0;
 
-    BRHederaAddress hederaAddress = hederaAddressCreateFromString (hederaAddressString);
+    BRHederaAddress hederaAddress = hederaAddressCreateFromString (hederaAddressString, true);
     free (hederaAddressString);
 
     hederaAccountSetAddress ((BRHederaAccount) account, hederaAddress);
@@ -99,7 +99,7 @@ genericHederaAccountSignTransferWithKey (BRGenericAccountRef account,
 
 static BRGenericAddressRef
 genericHederaAddressCreate (const char *string) {
-    return (BRGenericAddressRef) hederaAddressCreateFromString (string);
+    return (BRGenericAddressRef) hederaAddressCreateFromString (string, true);
 }
 
 static char *
@@ -310,8 +310,8 @@ genericHederaWalletManagerRecoverTransfer (const char *hash,
     BRHederaUnitTinyBar amountHbar, feeHbar = 0;
     sscanf(amount, "%" PRIi64, &amountHbar);
     if (NULL != fee) sscanf(fee, "%" PRIi64, &feeHbar);
-    BRHederaAddress toAddress   = hederaAddressCreateFromString(to);
-    BRHederaAddress fromAddress = hederaAddressCreateFromString(from);
+    BRHederaAddress toAddress   = hederaAddressCreateFromString(to,   false);
+    BRHederaAddress fromAddress = hederaAddressCreateFromString(from, false);
     // Convert the hash string to bytes
     BRHederaTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), hash, strlen(hash));
