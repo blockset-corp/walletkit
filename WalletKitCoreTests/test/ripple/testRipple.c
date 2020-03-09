@@ -649,7 +649,7 @@ static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oF
 
 static void checkRippleEncodeAddress (const char *addr) {
     size_t   bytes1Count = rippleDecodeBase58 (addr, NULL);
-    if (24 == bytes1Count) bytes1Count = 25;
+    if (24 == bytes1Count || 23 == bytes1Count) bytes1Count = 25;
     uint8_t *bytes1      = malloc (bytes1Count);
     rippleDecodeBase58(addr, bytes1);
 
