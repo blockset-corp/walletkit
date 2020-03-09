@@ -105,6 +105,7 @@ extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transacti
 extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transaction);
+extern int hederaTransactionHasError (BRHederaTransaction transaction);
 
 // Check equality
 extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2);
