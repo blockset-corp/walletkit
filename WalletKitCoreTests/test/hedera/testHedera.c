@@ -109,7 +109,7 @@ struct account_info find_account (const char * accountName) {
 static int checkAddress (BRHederaAddress address, const char * accountName)
 {
     struct account_info accountInfo = find_account (accountName);
-    BRHederaAddress accountAddress = hederaAddressCreateFromString(accountInfo.account_string);
+    BRHederaAddress accountAddress = hederaAddressCreateFromString(accountInfo.account_string, true);
     int equal = hederaAddressEqual(address, accountAddress);
     hederaAddressFree (accountAddress);
     return equal;
@@ -123,7 +123,7 @@ static BRHederaAccount getDefaultAccount()
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, default_account.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed(seed);
-    BRHederaAddress address = hederaAddressCreateFromString(default_account.account_string);
+    BRHederaAddress address = hederaAddressCreateFromString(default_account.account_string, true);
     hederaAccountSetAddress(account, address);
     return account;
 }
@@ -138,7 +138,7 @@ static BRHederaAccount getAccount(const char * name)
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, accountInfo.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed(seed);
-    BRHederaAddress address = hederaAddressCreateFromString(accountInfo.account_string);
+    BRHederaAddress address = hederaAddressCreateFromString(accountInfo.account_string, true);
     hederaAccountSetAddress(account, address);
     return account;
 }
@@ -156,9 +156,9 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     BRBIP39DeriveKey(seed.u8, source_account.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed(seed);
 
-    BRHederaAddress sourceAddress = hederaAddressCreateFromString (source_account.account_string);
-    BRHederaAddress targetAddress = hederaAddressCreateFromString (target_account.account_string);
-    BRHederaAddress nodeAddress = hederaAddressCreateFromString (node_account.account_string);
+    BRHederaAddress sourceAddress = hederaAddressCreateFromString (source_account.account_string, true);
+    BRHederaAddress targetAddress = hederaAddressCreateFromString (target_account.account_string, true);
+    BRHederaAddress nodeAddress = hederaAddressCreateFromString (node_account.account_string, true);
     BRHederaTimeStamp timeStamp;
     timeStamp.seconds = seconds;
     timeStamp.nano = nanos;
@@ -235,8 +235,8 @@ static void createExistingTransaction(const char * sourceUserName, const char *t
     // Create a hedera account
     BRHederaAccount account = getDefaultAccount();
 
-    BRHederaAddress source = hederaAddressCreateFromString (sourceAccountInfo.account_string);
-    BRHederaAddress target = hederaAddressCreateFromString (targetAccountInfo.account_string);
+    BRHederaAddress source = hederaAddressCreateFromString (sourceAccountInfo.account_string, true);
+    BRHederaAddress target = hederaAddressCreateFromString (targetAccountInfo.account_string, true);
 
     const char * txId = "hedera-mainnet:0.0.14623-1568420904-460838529-0";
     BRHederaTransactionHash expectedHash;
@@ -291,7 +291,7 @@ static void hederaAccountCheckSerialize(const char * userName)
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, accountInfo.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed(seed);
-    BRHederaAddress address = hederaAddressCreateFromString(accountInfo.account_string);
+    BRHederaAddress address = hederaAddressCreateFromString(accountInfo.account_string, true);
     BRKey key1 = hederaAccountGetPublicKey(account);
     hederaAccountSetAddress(account, address);
     size_t accountByteSize = 0;
@@ -315,7 +315,7 @@ static void accountStringTest(const char * userName) {
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, accountInfo.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed (seed);
-    BRHederaAddress inAddress = hederaAddressCreateFromString (accountInfo.account_string);
+    BRHederaAddress inAddress = hederaAddressCreateFromString (accountInfo.account_string, true);
     hederaAccountSetAddress (account, inAddress);
 
     // Now get the address from the account
@@ -334,14 +334,14 @@ static void accountStringTest(const char * userName) {
 
 static void addressEqualTests()
 {
-    BRHederaAddress a1 = hederaAddressCreateFromString("0.0.1000000");
+    BRHederaAddress a1 = hederaAddressCreateFromString("0.0.1000000", true);
     BRHederaAddress a2 = hederaAddressClone (a1);
-    BRHederaAddress a3 = hederaAddressCreateFromString("0.0.1000000");
+    BRHederaAddress a3 = hederaAddressCreateFromString("0.0.1000000", true);
     assert(1 == hederaAddressEqual(a1, a2));
     assert(1 == hederaAddressEqual(a1, a3));
 
     // now check no equal
-    BRHederaAddress a4 = hederaAddressCreateFromString("0.0.1000001");
+    BRHederaAddress a4 = hederaAddressCreateFromString("0.0.1000001", true);
     assert(0 == hederaAddressEqual(a1, a4));
 
     hederaAddressFree (a1);
@@ -352,7 +352,7 @@ static void addressEqualTests()
 
 static void addressCloneTests()
 {
-    BRHederaAddress a1 = hederaAddressCreateFromString("0.0.1000000");
+    BRHederaAddress a1 = hederaAddressCreateFromString("0.0.1000000", true);
     BRHederaAddress a2 = hederaAddressClone (a1);
     BRHederaAddress a3 = hederaAddressClone (a1);
     BRHederaAddress a4 = hederaAddressClone (a1);
@@ -378,34 +378,34 @@ static void addressCloneTests()
 
 static void addressFeeTests()
 {
-    BRHederaAddress feeAddress = hederaAddressCreateFromString("__fee__");
+    BRHederaAddress feeAddress = hederaAddressCreateFromString("__fee__", false);
     assert (1 == hederaAddressIsFeeAddress(feeAddress));
     char * feeAddressString = hederaAddressAsString (feeAddress);
     assert(0 == strcmp(feeAddressString, "__fee__"));
     free (feeAddressString);
     hederaAddressFree(feeAddress);
 
-    BRHederaAddress address = hederaAddressCreateFromString("0.0.3");
+    BRHederaAddress address = hederaAddressCreateFromString("0.0.3", true);
     assert (0 == hederaAddressIsFeeAddress(address));
     hederaAddressFree(address);
 }
 
 static void addressValueTests() {
-    BRHederaAddress address = hederaAddressCreateFromString("0.0.0");
+    BRHederaAddress address = hederaAddressCreateFromString("0.0.0", true);
     assert(0 == hederaAddressGetShard (address));
     assert(0 == hederaAddressGetRealm (address));
     assert(0 == hederaAddressGetAccount (address));
     hederaAddressFree (address);
 
     // Check a max int64 account number
-    address = hederaAddressCreateFromString("0.0.9223372036854775807");
+    address = hederaAddressCreateFromString("0.0.9223372036854775807", true);
     assert(0 == hederaAddressGetShard (address));
     assert(0 == hederaAddressGetRealm (address));
     assert(9223372036854775807 == hederaAddressGetAccount (address));
     hederaAddressFree (address);
 
     // Check when all numbers are max int64
-    address = hederaAddressCreateFromString("9223372036854775807.9223372036854775807.9223372036854775807");
+    address = hederaAddressCreateFromString("9223372036854775807.9223372036854775807.9223372036854775807", true);
     assert(9223372036854775807 == hederaAddressGetShard (address));
     assert(9223372036854775807 == hederaAddressGetRealm (address));
     assert(9223372036854775807 == hederaAddressGetAccount (address));
@@ -420,11 +420,11 @@ static void addressValueTests() {
     //assert(address == NULL);
 
     // Check when the string is invalid
-    address = hederaAddressCreateFromString("0.0");
+    address = hederaAddressCreateFromString("0.0", true);
     assert(address == NULL);
 
     // Check an empty string
-    address = hederaAddressCreateFromString("");
+    address = hederaAddressCreateFromString("", true);
     assert(address == NULL);
 
     // Check an null - cannot check this since due to assert in function
@@ -440,7 +440,7 @@ static void createAndDeleteWallet()
 
     // Source and target addresses should be the same for Hedera
     struct account_info defaultAccountInfo = find_account("default_account");
-    BRHederaAddress expectedAddress = hederaAddressCreateFromString(defaultAccountInfo.account_string);
+    BRHederaAddress expectedAddress = hederaAddressCreateFromString(defaultAccountInfo.account_string, true);
 
     BRHederaAddress sourceAddress = hederaWalletGetSourceAddress(wallet);
     assert(hederaAddressEqual(sourceAddress, expectedAddress) == 1);
