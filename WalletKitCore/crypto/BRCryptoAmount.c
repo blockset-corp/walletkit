@@ -85,7 +85,7 @@ extern BRCryptoAmount
 cryptoAmountCreateInteger (int64_t value,
                            BRCryptoUnit unit) {
 
-    UInt256 v = uint256Create (value < 0 ? -value : value);
+    UInt256 v = uint256Create ((uint64_t) (value < 0 ? -value : value));
     return cryptoAmountCreateUInt256 (v, (value < 0 ? CRYPTO_TRUE : CRYPTO_FALSE), unit);
 }
 
@@ -256,7 +256,7 @@ cryptoAmountGetDouble (BRCryptoAmount amount,
     assert (NULL != overflow);
     long double power  = powl (10.0, cryptoUnitGetBaseDecimalOffset(unit));
     long double result = uint256CoerceDouble (amount->value, (int*) overflow) / power;
-    return (CRYPTO_TRUE == amount->isNegative ? -result : result);
+    return (double) (CRYPTO_TRUE == amount->isNegative ? -result : result);
 }
 
 extern uint64_t

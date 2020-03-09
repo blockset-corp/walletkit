@@ -350,7 +350,7 @@ cwmWalletEventAsBTC (BRWalletManagerClientContext context,
             assert (NULL != wallet);
 
             // Get the amount (it is 'taken')
-            BRCryptoAmount amount = cryptoAmountCreateInteger (event.u.balance.satoshi, unit); // taken
+            BRCryptoAmount amount = cryptoAmountCreateInteger ((int64_t) event.u.balance.satoshi, unit); // taken
 
             // Generate BALANCE_UPDATED with 'amount' (taken)
             cwm->listener.walletEventCallback (cwm->listener.context,
@@ -2120,12 +2120,12 @@ cwmAnnounceGetTransactionsComplete (OwnershipKept BRCryptoWalletManager cwm,
     if (CWM_CALLBACK_TYPE_BTC_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_BTC == cwm->type) {
         bwmAnnounceTransactionComplete (cwm->u.btc,
                                         callbackState->rid,
-                                        success);
+                                        CRYPTO_TRUE == success);
 
     } else if (CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_ETH == cwm->type) {
         ewmAnnounceTransactionComplete (cwm->u.eth,
                                         callbackState->rid,
-                                        AS_ETHEREUM_BOOLEAN (success));
+                                        AS_ETHEREUM_BOOLEAN (CRYPTO_TRUE == success));
 
     } else if (CWM_CALLBACK_TYPE_GEN_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_GEN== cwm->type) {
         genManagerAnnounceTransferComplete (cwm->u.gen,

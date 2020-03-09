@@ -242,7 +242,7 @@ messageDISPingCreate (BREthereumDISEndpoint to,
 static BRRlpItem
 messageDISPingEncode (BREthereumDISMessagePing message, BREthereumMessageCoder coder) {
     return rlpEncodeList (coder.rlp, 4,
-                          rlpEncodeUInt64 (coder.rlp, message.version, 1),
+                          rlpEncodeUInt64 (coder.rlp, (uint64_t) message.version, 1),
                           endpointDISEncode (&message.from, coder.rlp),
                           endpointDISEncode (&message.to, coder.rlp),
                           rlpEncodeUInt64 (coder.rlp, message.expiration, 1));

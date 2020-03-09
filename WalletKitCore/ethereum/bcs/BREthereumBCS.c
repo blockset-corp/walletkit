@@ -1424,7 +1424,7 @@ bcsHandleAccountState (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Account)", (NULL == block ? -1 : blockGetNumber(block)));
+        eth_log ("BCS", "Block %" PRIu64 " Missed (Account)", (NULL == block ? UINT64_MAX : blockGetNumber(block)));
         return;
     }
 
@@ -1495,7 +1495,7 @@ bcsHandleBlockBody (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Bodies)", (NULL == block ? -1 : blockGetNumber(block)));
+        eth_log ("BCS", "Block %" PRIu64 " Missed (Bodies)", (NULL == block ? UINT64_MAX : blockGetNumber(block)));
         bcsReleaseOmmersAndTransactionsFully(bcs, transactions, ommers);
         return;
     }
@@ -1531,13 +1531,13 @@ bcsHandleBlockBody (BREthereumBCS bcs,
     BREthereumTransaction *neededTransactions = NULL;
 
     // Check the transactions one-by-one.
-    for (int i = 0; i < array_count(transactions); i++) {
+    for (size_t i = 0; i < array_count(transactions); i++) {
         BREthereumTransaction tx = transactions[i];
         assert (NULL != tx);
         
         // If it is our transaction (as source or target), handle it.
         if (ETHEREUM_BOOLEAN_IS_TRUE(transactionHasAddress(tx, bcs->address))) {
-            eth_log("BCS", "Bodies %" PRIu64 " Found Transaction at %d",
+            eth_log("BCS", "Bodies %" PRIu64 " Found Transaction at %zu",
                     blockGetNumber(block), i);
 
             // We'll need a copy of the transaction as the orginal transaction is held in `block`
@@ -1720,7 +1720,7 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Receipts)", (NULL == block ? -1 : blockGetNumber(block)));
+        eth_log ("BCS", "Block %" PRIu64 " Missed (Receipts)", (NULL == block ? UINT64_MAX : blockGetNumber(block)));
         bcsReleaseReceiptsFully(bcs, receipts);
         return;
     }

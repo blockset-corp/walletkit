@@ -72,7 +72,7 @@ struct BRGenericManagerRecord {
     /**
      * An identiifer for a BRD Request
      */
-    unsigned int requestId;
+    int requestId;
 
     /**
      * An EventHandler for Main.  All 'announcements' (via PeerManager (or BRD) hit here.
@@ -820,7 +820,7 @@ genTransferAttributesEncode (OwnershipKept BRArrayOf(BRGenericTransferAttribute)
         items[index] = rlpEncodeList (coder, 3,
                                       rlpEncodeString (coder, key),
                                       rlpEncodeString (coder, (NULL == val ? "" : val)),
-                                      rlpEncodeUInt64 (coder, isRequired, 1));
+                                      rlpEncodeUInt64 (coder, (uint64_t) isRequired, 1));
     }
     return rlpEncodeListItems(coder, items, itemsCount);
 }

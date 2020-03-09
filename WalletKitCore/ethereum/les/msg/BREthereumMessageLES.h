@@ -476,7 +476,8 @@ messageLESGetCredits (const BREthereumLESMessage *message);
 extern uint64_t
 messageLESGetCreditsCount (const BREthereumLESMessage *message);
 
-#define LES_MESSAGE_NO_REQUEST_ID    (-1)
+#define LES_MESSAGE_NO_REQUEST_ID    ((uint64_t) -1)
+
 extern size_t
 messageLESGetRequestId (const BREthereumLESMessage *message);
 

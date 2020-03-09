@@ -875,7 +875,7 @@ computeOptimalStep (uint64_t numberOfBlocks,
                     uint64_t *optimalCount) {
     *optimalCount = 0;
     uint64_t optimalRemainder = UINT64_MAX;
-    for (int count = SYNC_N_ARY_REQUEST_MINIMUM; count < SYNC_N_ARY_REQUEST_MAXIMUM; count++) {
+    for (size_t count = SYNC_N_ARY_REQUEST_MINIMUM; count < SYNC_N_ARY_REQUEST_MAXIMUM; count++) {
         uint64_t remainder = numberOfBlocks % count;
         if (remainder <= optimalRemainder) {
             optimalRemainder = remainder;

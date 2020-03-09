@@ -32,7 +32,7 @@ uint256CreateDouble (double value, int decimals, int *overflow) {
     y = roundl(y);  // (extraneous) Axe any fraction; can't participate in a UInt
 
     for (size_t index = 0; index < 4; index++)
-        result.u64[index] = UINT64_MAX * modfl(y/UINT64_MAX, &y);
+        result.u64[index] = UINT64_MAX * (uint64_t) modfl(y/UINT64_MAX, &y);
     *overflow = (y != 0);
 
     return *overflow ? UINT256_ZERO : result;
@@ -149,16 +149,16 @@ uint256Mul (const UInt256 x, const UInt256 y) {
     //  assert (__LITTLE_ENDIAN__ == BYTE_ORDER);
     UInt512 z = UINT512_ZERO;
     
-    unsigned int count = sizeof (UInt256) / sizeof(uint32_t);
+    size_t count = sizeof (UInt256) / sizeof(uint32_t);
     
     // Use 'grade school' long multiplication in base 32.  For UInt256 we'll have 8 32-bit value
     // and perform 64 32-bit multiplications.  A more sophisticated algorith, e.g. Katasuba, can
     // perform just 27 32-bit multiplications.  For our application, not a big enough savings for
     // the added complexity.
-    for (int xi = 0; xi < count; xi++) {
+    for (size_t xi = 0; xi < count; xi++) {
         uint64_t carry = 0;
         if (x.u32[xi] == 0) continue;
-        for (int yi = 0; yi < count; yi++) {
+        for (size_t yi = 0; yi < count; yi++) {
             uint64_t total = z.u32[yi + xi] + carry + AS_UINT64 (y.u32[yi]) * AS_UINT64 (x.u32[xi]);
             carry = total >> 32;
             z.u32[yi + xi] = (uint32_t) total;
@@ -206,7 +206,7 @@ uint256Mul_Double (UInt256 x, double y, int *overflow, int *negative, double *re
     uint64_t overflows[count];  // overflow can be huge... not large enough...
 
     // From high to low, account for underflow along the way...
-    for (int i = count -1; i >= 0; i--) {
+    for (ssize_t i = count - 1; i >= 0; i--) {
         long double total = y * (long double) (x.u16[i]) + underflow;
         // split out the integer and fractional parts
         fractional = modfl (total, &integer);
