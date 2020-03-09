@@ -12,6 +12,7 @@
 #define BRHederaAddress_h
 
 #include "support/BRKey.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +40,7 @@ hederaAddressAsString (BRHederaAddress address);
  * @return address  - a BRHederaAddress object
  */
 extern BRHederaAddress
-hederaAddressCreateFromString(const char * hederaAddressString);
+hederaAddressCreateFromString(const char * hederaAddressString, bool strict);
 
 extern BRHederaAddress
 hederaAddressCreate(int64_t shard, int64_t realm, int64_t account_num);
