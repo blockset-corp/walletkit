@@ -22,6 +22,7 @@
 
 #include "testRippleTxList1.h"
 #include "testRippleTxList2.h"
+#include "testRippleAddress.h"
 
 int debug_log = 0;
 
@@ -673,11 +674,9 @@ static void checkRippleEncodeAddress (const char *addr) {
 }
 
 static void testRippleEncode () {
-    checkRippleEncodeAddress ("r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a");
-    checkRippleEncodeAddress ("rPcKEwWuMpzwgutYpQrjQbQvLaxX5Uw5tW");
-    checkRippleEncodeAddress ("rB4cQoLFZu2vGS8qverKGFrWfKzpgTdt62");
-    checkRippleEncodeAddress ("rZCiUKoDA2qsAekp3ixKUN2Sg6ay2t6KE");
-    checkRippleEncodeAddress ("rQrw3sAYs6U6j7B4ofm5GgDCi4jkpWs4Sz");
+    for (size_t index = 0; NULL != test_address_list[index]; index++) {
+        checkRippleEncodeAddress (test_address_list[index]);
+    }
 }
 
 static void testRippleAddressCreate()
