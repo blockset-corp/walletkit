@@ -18,7 +18,6 @@
 #include "support/BRBIP39WordsEn.h"
 #include "support/BRKey.h"
 #include "ripple/BRRipple.h"
-#include "ripple/BRRippleBase58.h"
 
 #include "testRippleTxList1.h"
 #include "testRippleTxList2.h"
@@ -648,29 +647,17 @@ static void testWalletAddress()
 static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 
 static void checkRippleEncodeAddress (const char *addr) {
-    size_t   bytes1Count = rippleDecodeBase58 (addr, NULL);
-    if (24 == bytes1Count || 23 == bytes1Count) bytes1Count = 25;
-    uint8_t *bytes1      = malloc (bytes1Count);
-    rippleDecodeBase58(addr, bytes1);
+    size_t   bytesCount = BRBase58DecodeEx(NULL, 0, addr, rippleAlphabet);
+    uint8_t *bytes      = malloc(bytesCount);
+    BRBase58DecodeEx(bytes, bytesCount, addr, rippleAlphabet);
 
-    size_t   bytes2Count = BRBase58DecodeEx(NULL, 0, addr, rippleAlphabet);
-    uint8_t *bytes2      = malloc(bytes2Count);
-    BRBase58DecodeEx(bytes2, bytes2Count, addr, rippleAlphabet);
+    assert (25 == bytesCount);
 
-    assert (bytes1Count == bytes2Count);
-    assert (0 == memcmp (bytes1, bytes2, bytes1Count));
+    size_t strCount = BRBase58EncodeEx(NULL, 0, bytes, bytesCount, rippleAlphabet);
+    char  *str      = malloc(strCount + 1);
+    BRBase58EncodeEx(str, strCount, bytes, bytesCount, rippleAlphabet);
 
-    size_t str1Count = rippleEncodeBase58(NULL, 0, bytes1, bytes1Count);
-    char  *str1      = malloc (str1Count + 1);
-    rippleEncodeBase58(str1, str1Count, bytes1, bytes1Count);
-
-    size_t str2Count = BRBase58EncodeEx(NULL, 0, bytes2, bytes2Count, rippleAlphabet);
-    char  *str2      = malloc(str2Count + 1);
-    BRBase58EncodeEx(str2, str2Count, bytes2, bytes2Count, rippleAlphabet);
-
-    assert (str1Count == str2Count);
-    assert (0 == strcmp(str1, str2));
-    assert (0 == strcmp(str1, addr));
+    assert (0 == strcmp(str, addr));
 }
 
 static void testRippleEncode () {

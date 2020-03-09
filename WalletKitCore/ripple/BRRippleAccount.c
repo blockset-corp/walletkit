@@ -22,7 +22,6 @@
 #include "BRRippleBase.h"
 #include "BRRippleAccount.h"
 #include "BRRippleSignature.h"
-#include "BRRippleBase58.h"
 #include "BRRippleAddress.h"
 
 //#include "BRBase58.h"
