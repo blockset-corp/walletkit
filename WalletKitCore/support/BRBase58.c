@@ -199,12 +199,12 @@ size_t BRBase58DecodeEx(uint8_t* data, size_t dataLen, const char *str, const ch
     memset(&reverseLookup[0], -1, sizeof(reverseLookup));
     int map_num = 0;
     for (int i = 0; i < strlen(alphabet); i++) {
-        reverseLookup[alphabet[i]] = map_num++;
+        reverseLookup[(int) alphabet[i]] = map_num++;
     }
 
     // Skip and count leading zeroes
-    int zcount = 0;
-    while (str && reverseLookup[*str] == 0) str++, zcount++;
+    size_t zcount = 0;
+    while (str && reverseLookup[(int) *str] == 0) str++, zcount++;
 
     // Create buffer large enough to hold the decode bytes
     int bufSize = (str) ? (int)(strlen(str)*733/1000 + 1) : 0;
@@ -214,7 +214,7 @@ size_t BRBase58DecodeEx(uint8_t* data, size_t dataLen, const char *str, const ch
     // Do the decoding
     while (str && *str)
     {
-        int carry = reverseLookup[*str];
+        int carry = reverseLookup[(int) *str];
         if (carry == -1) return 0;
 
         for (int i = bufSize - 1; i >= 0; i--)
@@ -227,7 +227,7 @@ size_t BRBase58DecodeEx(uint8_t* data, size_t dataLen, const char *str, const ch
     }
 
     // Skip leading zeros in buf
-    int i = 0;
+    size_t i = 0;
     while(buf[i] == 0) { i++; }
 
     // Calculate the length

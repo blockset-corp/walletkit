@@ -100,7 +100,7 @@ ethHashEncodeList (BRArrayOf(BREthereumHash) hashes, BRRlpCoder coder);
 // BRSet Support
 inline static int
 ethHashSetValue (const BREthereumHash *hash) {
-    return ((UInt256 *) hash->bytes)->u32[0];
+    return (int) ((UInt256 *) hash->bytes)->u32[0];
 }
 
 // BRSet Support

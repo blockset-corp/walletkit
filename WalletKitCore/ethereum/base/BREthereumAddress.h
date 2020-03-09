@@ -102,7 +102,7 @@ ethAddressEqual (BREthereumAddress address1,
 
 static inline int
 ethAddressHashValue (BREthereumAddress address) {
-    return ((UInt160 *) &address)->u32[0];
+    return (int) ((UInt160 *) &address)->u32[0];
 }
 
 static inline int

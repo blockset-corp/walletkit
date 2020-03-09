@@ -108,12 +108,12 @@ extern int
 cryptoHashGetHashValue (BRCryptoHash hash) {
     switch (hash->type) {
         case BLOCK_CHAIN_TYPE_BTC:
-            return hash->u.btc.u32[0];
+            return (int) hash->u.btc.u32[0];
 
         case BLOCK_CHAIN_TYPE_ETH:
             return ethHashSetValue (&hash->u.eth);
 
         case BLOCK_CHAIN_TYPE_GEN:
-            return genericHashSetValue (hash->u.gen);
+            return (int) genericHashSetValue (hash->u.gen);
     }
 }

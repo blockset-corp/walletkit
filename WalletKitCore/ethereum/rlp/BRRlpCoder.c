@@ -286,11 +286,11 @@ rlpCoderHasFailed (BRRlpCoder coder) {
 /**
  * Return the index of the first non-zero byte; if all bytes are zero, bytesCount is returned
  */
-static int
+static size_t
 findNonZeroIndex (uint8_t *bytes, size_t bytesCount) {
-    for (int i = 0; i < bytesCount; i++)
+    for (size_t i = 0; i < bytesCount; i++)
         if (bytes[i] != 0) return i;
-    return (int) bytesCount;
+    return bytesCount;
 }
 
 /**
@@ -301,7 +301,7 @@ findNonZeroIndex (uint8_t *bytes, size_t bytesCount) {
 static void
 swapBytesIfLittleEndian (uint8_t *target, uint8_t *source, size_t count) {
     assert (target != source);  // common overlap case, but wholely insufficient.
-    for (int i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
 #if BYTE_ORDER == LITTLE_ENDIAN
         target[i] = source[count - 1 - i];
 #else

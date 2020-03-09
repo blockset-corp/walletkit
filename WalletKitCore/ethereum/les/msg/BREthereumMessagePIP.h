@@ -294,7 +294,7 @@ messagePIPGetCredits (const BREthereumPIPMessage *message);
 extern uint64_t
 messagePIPGetCreditsCount (const BREthereumPIPMessage *message);
 
-#define PIP_MESSAGE_NO_REQUEST_ID    (-1)
+#define PIP_MESSAGE_NO_REQUEST_ID    ((uint64_t) -1)
 extern size_t
 messagePIPGetRequestId (const BREthereumPIPMessage *message);
 

@@ -71,7 +71,7 @@ cryptoKeyRelease (BRCryptoKey key) {
 
 extern BRCryptoBoolean
 cryptoKeyIsProtectedPrivate (const char *privateKey) {
-    return BRBIP38KeyIsValid (privateKey);
+    return AS_CRYPTO_BOOLEAN (BRBIP38KeyIsValid (privateKey));
 }
 
 private_extern BRCryptoKey
@@ -211,7 +211,7 @@ cryptoKeyCreateForBIP32BitID (const char *phrase, int index, const char *uri,  c
     BRBIP39DeriveKey (seed.u8, phrase, NULL);
 
     BRKey core;
-    BRBIP32BitIDKey (&core, &seed, sizeof(UInt512), index, uri);
+    BRBIP32BitIDKey (&core, &seed, sizeof(UInt512), (uint32_t) index, uri);
 
     BRCryptoKey result = cryptoKeyCreateInternal(core, CRYPTO_ADDRESS_PARAMS);
 

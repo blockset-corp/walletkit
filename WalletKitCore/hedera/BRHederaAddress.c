@@ -20,9 +20,9 @@
 #include <stdbool.h>
 
 struct BRHederaAddressRecord {
-    int64_t shard;
-    int64_t realm;
-    int64_t account;
+    BRHederaAddressComponentType shard;
+    BRHederaAddressComponentType realm;
+    BRHederaAddressComponentType account;
 };
 
 extern void hederaAddressFree (BRHederaAddress address)
@@ -39,6 +39,15 @@ BRHederaAddress hederaAddressCreateFeeAddress()
     return address;
 }
 
+BRHederaAddress hederaAddressCreateUnknownAddress()
+{
+    BRHederaAddress address = calloc(1, sizeof(struct BRHederaAddressRecord));
+    address->shard  = -1;
+    address->realm  = -1;
+    address->account = -2;
+    return address;
+}
+
 extern char * hederaAddressAsString (BRHederaAddress address)
 {
     assert(address);
@@ -47,16 +56,18 @@ extern char * hederaAddressAsString (BRHederaAddress address)
     // Check for our special case __fee__ address
     // See the note above with respect to the feeAddressBytes
     if (address->account == -1) {
-        string = calloc(1, 8);
-        strcpy(string, "__fee__");
-    } else {
+        string = strdup ("__fee__");
+    }
+    else if (address->account == -2) {
+        string = strdup ("unknown");
+    }
+    else {
         // Hedera addresses are shown as a.b.c
         char buffer[1024];
         memset(buffer, 0x00, sizeof(buffer));
-        size_t stringSize = sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
+        size_t stringSize = (size_t) sprintf(buffer, "%" PRIi64 ".%" PRIi64  ".%" PRIi64, address->shard, address->realm, address->account);
         assert(stringSize > 0);
-        string = calloc(1, stringSize + 1);
-        strcpy(string, buffer);
+        string = strdup (buffer);
     }
     return string;
 }
@@ -88,20 +99,33 @@ BRHederaAddress hederaAddressStringToAddress(const char* input)
 }
 
 extern BRHederaAddress
-hederaAddressCreateFromString(const char * hederaAddressString)
+hederaAddressCreateFromString(const char * hederaAddressString, bool strict)
 {
-    assert(hederaAddressString);
-
-    if (!hederaAddressString) {
-        return NULL;
+    // Handle an 'invalid' string argument.
+    if (hederaAddressString == NULL || strlen(hederaAddressString) == 0) {
+        return (strict
+                ? NULL
+                : hederaAddressCreateUnknownAddress ());
     }
 
-    // 1 special case so far - the __fee__ address.
-    // See the note in BRHederaAcount.h with respect to the feeAddressBytes
-    if (strcmp(hederaAddressString, "__fee__") == 0) {
+    //  If strict, only accept 'r...' addresses
+    else if (strict) {
+        return hederaAddressStringToAddress (hederaAddressString);
+    }
+
+    // Handle an 'unknown' address
+    else if (strcmp(hederaAddressString, "unknown") == 0) {
+        return hederaAddressCreateUnknownAddress ();
+    }
+
+    // Handle a '__fee__' address
+    else if (strcmp(hederaAddressString, "__fee__") == 0) {
         return hederaAddressCreateFeeAddress ();
-    } else {
-        // Work backwards from this hedera address (string) to what is
+    }
+
+    // Handle an 'r...' address (in a non-strict mode).
+    else {
+        // Work backwards from this ripple address (string) to what is
         // known as the acount ID (20 bytes)
         return hederaAddressStringToAddress (hederaAddressString);
     }
@@ -145,19 +169,19 @@ extern BRHederaAddress hederaAddressClone (BRHederaAddress address)
     return NULL;
 }
 
-int64_t hederaAddressGetShard (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetShard (BRHederaAddress address)
 {
     assert (address);
     return address->shard;
 }
 
-int64_t hederaAddressGetRealm (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetRealm (BRHederaAddress address)
 {
     assert (address);
     return address->realm;
 }
 
-int64_t hederaAddressGetAccount (BRHederaAddress address)
+BRHederaAddressComponentType hederaAddressGetAccount (BRHederaAddress address)
 {
     assert (address);
     return address->account;
@@ -169,13 +193,15 @@ void hederaAddressSerialize(BRHederaAddress address, uint8_t * buffer, size_t si
 
     // The Hedera account IDs are made up of 3 int64_t numbers
     // Get the account id values convert to network order
-    int64_t shard = htonll(hederaAddressGetShard(address));
-    int64_t realm = htonll(hederaAddressGetRealm(address));
-    int64_t account = htonll(hederaAddressGetAccount(address));
+    BRHederaAddressComponentType shard   = (BRHederaAddressComponentType) htonll(hederaAddressGetShard(address));
+    BRHederaAddressComponentType realm   = (BRHederaAddressComponentType) htonll(hederaAddressGetRealm(address));
+    BRHederaAddressComponentType account = (BRHederaAddressComponentType) htonll(hederaAddressGetAccount(address));
 
     // Copy the values to the buffer
-    memcpy(buffer, &shard, sizeof(int64_t));
-    memcpy(buffer + sizeof(int64_t), &realm, sizeof(int64_t));
-    memcpy(buffer + (2 * sizeof(int64_t)), &account, sizeof(int64_t));
+    size_t componentSize = sizeof (BRHederaAddressComponentType);
+
+    memcpy(buffer, &shard, componentSize);
+    memcpy(buffer + componentSize, &realm, componentSize);
+    memcpy(buffer + (2 * componentSize), &account, componentSize);
 }
 

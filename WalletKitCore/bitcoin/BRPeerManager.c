@@ -1545,7 +1545,7 @@ BRPeerManager *BRPeerManagerNew(const BRChainParams *params, BRWallet *wallet, u
     }
 
     _peer_log("BPM: checkpoint found with %u last block height",
-              (manager->lastBlock ? manager->lastBlock->height : -1));
+              (manager->lastBlock ? manager->lastBlock->height : (uint32_t) -1));
 
     block = NULL;
     

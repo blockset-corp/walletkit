@@ -90,10 +90,10 @@ uint256CreateParseDecimal (const char *string, int decimals, BRCoreParseStatus *
     if (NULL == whole) whole = "";
     if (NULL == fract) fract = "";
     
-    unsigned long fractLen = strlen(fract);
+   size_t fractLen = strlen(fract);
     
     // Strip trailing '0'
-    for (int i = 0; i < fractLen; i++) {
+    for (size_t i = 0; i < fractLen; i++) {
         if ('0' == fract[fractLen - 1 - i])
             fract[fractLen - 1 - i] = '\0';
         else
@@ -138,7 +138,7 @@ uint256CreateParseDecimal (const char *string, int decimals, BRCoreParseStatus *
 //    16
 
 // The maximum digits allowed in a string so as to prevent overflow in uint64_t
-static int
+static size_t
 parseMaximumDigitsForUInt64InBase (int base) {
     switch (base) {
         case 2:  return 64;
@@ -148,7 +148,7 @@ parseMaximumDigitsForUInt64InBase (int base) {
     }
 }
 
-static int
+static size_t
 parseMaximumDigitsForUInt256InBase (int base) {
     switch (base) {
         case 2:  return 256;
@@ -161,7 +161,7 @@ parseMaximumDigitsForUInt256InBase (int base) {
 // Compute (expt base power)
 static UInt256
 parseUInt256Power (int base, int power, int *overflow) {
-    int maxPower = parseMaximumDigitsForUInt64InBase(base);
+    size_t maxPower = parseMaximumDigitsForUInt64InBase(base);
     
     if (power > maxPower) {
         *overflow = 1;
@@ -170,7 +170,7 @@ parseUInt256Power (int base, int power, int *overflow) {
     
     uint64_t value = 1;
     while (power-- > 0)
-        value *= base;  // slow, but yeah.
+        value *= (uint64_t) base;  // slow, but yeah.
     
     // Reality is that this can overflow for 16^16 = 2^64 (one too many).  We'll handle it.
     //  Probably also for 2^256... can't handle that one similarly.
@@ -194,7 +194,7 @@ parseUInt256ScaleByPower (UInt256 value, int base, int power, int *overflow) {
 
 static UInt256
 parseUInt64 (const char *string, int digits, int base) {
-    int maxDigits = parseMaximumDigitsForUInt64InBase(base);
+    size_t maxDigits = parseMaximumDigitsForUInt64InBase(base);
     assert (digits <= maxDigits );
     
     //
@@ -246,8 +246,8 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
     if (CORE_PARSE_OK != *status)
         return UINT256_ZERO;
 
-    int maxDigits = parseMaximumDigitsForUInt256InBase(base);
-    long length = strlen (string);
+    size_t maxDigits = parseMaximumDigitsForUInt256InBase(base);
+    size_t length = strlen (string);
     
     if (length > maxDigits) {  // overflow
         *status = CORE_PARSE_OVERFLOW;
@@ -255,7 +255,7 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
     }
     
     // We'll process this many digits in `string`.
-    int stringChunks = parseMaximumDigitsForUInt64InBase(base);
+    size_t stringChunks = parseMaximumDigitsForUInt64InBase(base);
 
     // Fill this in.
     UInt256 value = UINT256_ZERO;
@@ -263,7 +263,7 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
     // For parsing a string like "123.45", the character at index 0 is '1'.  So by parsing chunks
     // with ascending index, we naturally treat `string` as big endian - no matter the base.
     // Eventually, when `parseUInt64()` calls `strtoull` we'll still be using big endian.
-    for (long index = 0; index < length; index += stringChunks) {
+    for (size_t index = 0; index < length; index += stringChunks) {
         // On the first time through, get an initial value
         if (index == 0) {
             value = parseUInt64(string, stringChunks, base);
@@ -301,9 +301,9 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
 //
 static char *
 coerceReverseString (const char *s) {
-    long len = strlen(s);
+    size_t len = strlen(s);
     char *t = calloc (1 + len, 1);
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
         t[len - i - 1] = s[i];
     return t;
 }
@@ -325,7 +325,7 @@ uint256CoerceString (UInt256 x, int base) {
         case 16: {
             // Reverse and 'strip zeros'
             UInt256 xr = UInt256Reverse(x);  // TODO: LITTLE ENDIAN only
-            int xrIndex = 0;
+            size_t xrIndex = 0;
             // We explicitly handled the '0 == x' case up-front.  Thus xr.u8 *always*
             // eventually has a non-zero value.
             while (0 == xr.u8[xrIndex]) xrIndex++;
