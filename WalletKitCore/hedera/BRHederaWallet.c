@@ -40,7 +40,7 @@ hederaWalletCreate (BRHederaAccount account)
      "0.0.15":"35.236.2.27:50211"}
      */
     array_new(wallet->nodes, HEDERA_NODE_COUNT);
-    int64_t hedera_node_start = HEDERA_NODE_START;
+    // int64_t hedera_node_start = HEDERA_NODE_START;
     for (int i = HEDERA_NODE_START; i < (HEDERA_NODE_COUNT + HEDERA_NODE_START); i++) {
         array_add(wallet->nodes, hederaAddressCreate(0, 0, i));
     }
@@ -151,7 +151,9 @@ extern void hederaWalletAddTransfer(BRHederaWallet wallet, BRHederaTransaction t
         array_add(wallet->transactions, transaction);
 
         // Update the balance
-        BRHederaUnitTinyBar amount = hederaTransactionGetAmount(transaction);
+        BRHederaUnitTinyBar amount = (hederaTransactionHasError(transaction)
+                                      ? 0
+                                      : hederaTransactionGetAmount(transaction));
         BRHederaUnitTinyBar fee    = hederaTransactionGetFee(transaction);
 
         BRHederaAddress accountAddress = hederaAccountGetAddress(wallet->account);
@@ -193,7 +195,9 @@ extern void hederaWalletRemTransfer (BRHederaWallet wallet,
             }
 
         // Update the balance
-        BRHederaUnitTinyBar amount = hederaTransactionGetAmount(transaction);
+        BRHederaUnitTinyBar amount = (hederaTransactionHasError(transaction)
+                                      ? 0
+                                      : hederaTransactionGetAmount(transaction));
         BRHederaUnitTinyBar fee    = hederaTransactionGetFee(transaction);
 
         BRHederaAddress accountAddress = hederaAccountGetAddress(wallet->account);

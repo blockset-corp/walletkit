@@ -80,7 +80,7 @@ ethEtherCreateZero(void) {
 
 extern BREthereumEther
 ethEtherCreateString(const char *number, BREthereumEtherUnit unit, BRCoreParseStatus *status) {
-    int decimals = 3 * unit;
+    int decimals = 3 * (int) unit;
     
     UInt256 value = uint256CreateParseDecimal(number, decimals, status);
     return ethEtherCreate(value);
@@ -101,7 +101,7 @@ ethEtherGetValue(const BREthereumEther ether,
 
 extern char * // Perhaps can be done. 1 WEI -> 1e-18 Ether
 ethEtherGetValueString(const BREthereumEther ether, BREthereumEtherUnit unit) {
-    return uint256CoerceStringDecimal(ether.valueInWEI, 3 * unit);
+    return uint256CoerceStringDecimal(ether.valueInWEI, 3 * (int) unit);
 }
 
 extern BRRlpItem

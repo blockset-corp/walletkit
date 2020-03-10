@@ -62,7 +62,7 @@ inline static VLBytes * createVLBytes(int length)
 {
     VLBytes * bytes = calloc(1, sizeof(VLBytes));
     bytes->length = length;
-    bytes->value = calloc(1, length);
+    bytes->value = calloc(1, (size_t) length);
     return bytes;
 }
 

@@ -53,7 +53,7 @@ ethTokenGetName (BREthereumToken token);
 extern const char *
 ethTokenGetDescription(BREthereumToken token);
 
-extern int
+extern unsigned int
 ethTokenGetDecimals (BREthereumToken token);
 
 extern BREthereumGas
@@ -73,7 +73,7 @@ ethTokenCreate (const char *address,
                 const char *symbol,
                 const char *name,
                 const char *description,
-                int decimals,
+                unsigned int decimals,
                 BREthereumGas defaultGasLimit,
                 BREthereumGasPrice defaultGasPrice);
 
@@ -85,7 +85,7 @@ ethTokenUpdate (BREthereumToken token,
                 const char *symbol,
                 const char *name,
                 const char *description,
-                int decimals,
+                unsigned int decimals,
                 BREthereumGas defaultGasLimit,
                 BREthereumGasPrice defaultGasPrice);
 

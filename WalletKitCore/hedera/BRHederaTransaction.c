@@ -23,6 +23,7 @@ struct BRHederaTransactionRecord {
     BRHederaAddress nodeAddress;
     BRHederaTimeStamp timeStamp;
     uint64_t blockHeight;
+    int error;
 };
 
 char * createTransactionID(BRHederaAddress address, BRHederaTimeStamp timeStamp)
@@ -58,6 +59,7 @@ extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
     }
     transaction->transactionId = createTransactionID(source, transaction->timeStamp);
     transaction->blockHeight = 0;
+    transaction->error = 0;
     return transaction;
 }
 
@@ -90,11 +92,12 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
     } else {
         // It would great to be able to get the timestamp from the txID - but I guess
         // we just have to use whatever came from blockset
-        transaction->timeStamp.seconds = timestamp;
+        transaction->timeStamp.seconds = (int64_t) timestamp;
     }
 
     transaction->hash = hash;
     transaction->blockHeight = blockHeight;
+    transaction->error = error;
 
     return transaction;
 }
@@ -186,6 +189,9 @@ hederaTransactionSignTransaction (BRHederaTransaction transaction,
                                                        body, bodySize,
                                                        &transaction->serializedSize);
 
+    // Create the hash from the serialized bytes
+    BRSHA384(transaction->hash.bytes, serializedBytes, transaction->serializedSize);
+
     // We are now done with the body - it was copied to the serialized bytes so we
     // must clean up it now.
     free (body);
@@ -208,6 +214,9 @@ hederaTransactionSignTransaction (BRHederaTransaction transaction,
 
     // Cleanup temporary buffers
     free (serializedBytes);
+
+    // Create the transaction id
+    transaction->transactionId = createTransactionID(transaction->source, transaction->timeStamp);
 
     transaction->serializedSize += HEDERA_ADDRESS_SERIALIZED_SIZE; // This will be our new size of serialized bytes
     return transaction->serializedSize;
@@ -261,6 +270,11 @@ extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transactio
 {
     assert(transaction);
     return hederaAddressClone (transaction->target);
+}
+
+extern int hederaTransactionHasError (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->error;
 }
 
 extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2)

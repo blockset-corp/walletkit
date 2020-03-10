@@ -450,7 +450,8 @@ cryptoPaymentProtocolRequestGetPrimaryTargetAddress (BRCryptoPaymentProtocolRequ
                 char *addressString = malloc (addressSize);
                 BRTxOutputAddress (output, addressString, addressSize, chainParams->addrParams);
 
-                address = cryptoAddressCreateAsBTC (BRAddressFill (chainParams->addrParams, addressString), isBTC);
+                address = cryptoAddressCreateAsBTC (BRAddressFill (chainParams->addrParams, addressString),
+                                                    AS_CRYPTO_BOOLEAN (isBTC));
                 free (addressString);
             }
             break;

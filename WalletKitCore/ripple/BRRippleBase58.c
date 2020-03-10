@@ -50,7 +50,7 @@ int rippleDecodeBase58(const char* input, uint8_t *output)
     memset(&inv[0], -1, sizeof(inv));
     int map_num = 0;
     for (int i = 0; i < strlen(rippleAlphabet); i++) {
-        inv[rippleAlphabet[i]] = map_num++;
+        inv[(int) rippleAlphabet[i]] = map_num++;
     }
     
     const char *psz = input;
@@ -58,7 +58,7 @@ int rippleDecodeBase58(const char* input, uint8_t *output)
     
     // Skip and count leading zeroes
     int zeroes = 0;
-    while (remain > 0 && inv[*psz] == 0)
+    while (remain > 0 && inv[(int) *psz] == 0)
     {
         ++zeroes;
         ++psz;
@@ -79,7 +79,7 @@ int rippleDecodeBase58(const char* input, uint8_t *output)
     // Do the decoding
     while (remain > 0)
     {
-        int carry = inv[*psz];
+        int carry = inv[(int) *psz];
         if (carry == -1)
             return 0;
         // Apply "b256 = b256 * 58 + carry".

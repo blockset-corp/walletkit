@@ -126,7 +126,7 @@ cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
             double fee = (((double) feeBasis->u.btc.feePerKB) * feeBasis->u.btc.sizeInByte) / 1000.0;
             return cryptoAmountCreateInternal (feeBasis->unit,
                                                CRYPTO_FALSE,
-                                               uint256Create (round (fee)),
+                                               uint256Create ((uint64_t) lround (fee)),
                                                1);
         }
             

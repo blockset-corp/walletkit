@@ -130,6 +130,6 @@ ethHashesIndex (BRArrayOf(BREthereumHash) hashes,
                 BREthereumHash hash) {
     for (size_t index = 0; index < array_count(hashes); index++)
         if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, hashes[index])))
-            return index;
+            return (ssize_t) index;
     return -1;
 }

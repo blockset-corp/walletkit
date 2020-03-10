@@ -2823,7 +2823,7 @@ ewmCreateToken (BREthereumEWM ewm,
                 const char *symbol,
                 const char *name,
                 const char *description,
-                int decimals,
+                unsigned int decimals,
                 BREthereumGas defaultGasLimit,
                 BREthereumGasPrice defaultGasPrice) {
     if (NULL == address || 0 == strlen(address)) return NULL;

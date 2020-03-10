@@ -480,7 +480,7 @@ walletWalkTransfers (BREthereumWallet wallet,
                      void *context,
                      BREthereumTransferPredicate predicate,
                      BREthereumTransferWalker walker) {
-    for (int i = 0; i < array_count(wallet->transfers); i++)
+    for (unsigned int i = 0; i < array_count(wallet->transfers); i++)
         if (predicate (context, wallet->transfers[i], i))
             walker (context, wallet->transfers[i], i);
 }
