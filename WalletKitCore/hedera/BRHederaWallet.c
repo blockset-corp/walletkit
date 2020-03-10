@@ -151,7 +151,9 @@ extern void hederaWalletAddTransfer(BRHederaWallet wallet, BRHederaTransaction t
         array_add(wallet->transactions, transaction);
 
         // Update the balance
-        BRHederaUnitTinyBar amount = hederaTransactionGetAmount(transaction);
+        BRHederaUnitTinyBar amount = (hederaTransactionHasError(transaction)
+                                      ? 0
+                                      : hederaTransactionGetAmount(transaction));
         BRHederaUnitTinyBar fee    = hederaTransactionGetFee(transaction);
 
         BRHederaAddress accountAddress = hederaAccountGetAddress(wallet->account);
@@ -193,7 +195,9 @@ extern void hederaWalletRemTransfer (BRHederaWallet wallet,
             }
 
         // Update the balance
-        BRHederaUnitTinyBar amount = hederaTransactionGetAmount(transaction);
+        BRHederaUnitTinyBar amount = (hederaTransactionHasError(transaction)
+                                      ? 0
+                                      : hederaTransactionGetAmount(transaction));
         BRHederaUnitTinyBar fee    = hederaTransactionGetFee(transaction);
 
         BRHederaAddress accountAddress = hederaAccountGetAddress(wallet->account);

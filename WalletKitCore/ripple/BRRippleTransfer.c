@@ -53,6 +53,7 @@ rippleTransferCreateNew(BRRippleAddress from, BRRippleAddress to,
     feeBasis.costFactor = 1;
     transfer->fee = 10; // Consistent w/ feeBasis
     transfer->transaction = rippleTransactionCreate(from, to, amount, feeBasis);
+    transfer->error = 0;
     return transfer;
 }
 
