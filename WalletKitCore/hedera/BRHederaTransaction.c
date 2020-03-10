@@ -23,6 +23,7 @@ struct BRHederaTransactionRecord {
     BRHederaAddress nodeAddress;
     BRHederaTimeStamp timeStamp;
     uint64_t blockHeight;
+    int error;
 };
 
 char * createTransactionID(BRHederaAddress address, BRHederaTimeStamp timeStamp)
@@ -58,6 +59,7 @@ extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
     }
     transaction->transactionId = createTransactionID(source, transaction->timeStamp);
     transaction->blockHeight = 0;
+    transaction->error = 0;
     return transaction;
 }
 
@@ -95,6 +97,7 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
 
     transaction->hash = hash;
     transaction->blockHeight = blockHeight;
+    transaction->error = error;
 
     return transaction;
 }
@@ -261,6 +264,11 @@ extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transactio
 {
     assert(transaction);
     return hederaAddressClone (transaction->target);
+}
+
+extern int hederaTransactionHasError (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->error;
 }
 
 extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2)
