@@ -189,6 +189,9 @@ hederaTransactionSignTransaction (BRHederaTransaction transaction,
                                                        body, bodySize,
                                                        &transaction->serializedSize);
 
+    // Create the hash from the serialized bytes
+    BRSHA384(transaction->hash.bytes, serializedBytes, transaction->serializedSize);
+
     // We are now done with the body - it was copied to the serialized bytes so we
     // must clean up it now.
     free (body);
@@ -211,6 +214,9 @@ hederaTransactionSignTransaction (BRHederaTransaction transaction,
 
     // Cleanup temporary buffers
     free (serializedBytes);
+
+    // Create the transaction id
+    transaction->transactionId = createTransactionID(transaction->source, transaction->timeStamp);
 
     transaction->serializedSize += HEDERA_ADDRESS_SERIALIZED_SIZE; // This will be our new size of serialized bytes
     return transaction->serializedSize;
