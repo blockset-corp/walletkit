@@ -406,7 +406,7 @@ static void addressFeeTests()
     free (feeAddressString);
     hederaAddressFree(feeAddress);
 
-    BRHederaAddress address = hederaAddressCreateFromString("0.0.3", false);
+    BRHederaAddress address = hederaAddressCreateFromString("0.0.3", true);
     assert (0 == hederaAddressIsFeeAddress(address));
     hederaAddressFree(address);
 }

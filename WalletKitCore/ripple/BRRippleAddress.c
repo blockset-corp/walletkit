@@ -10,13 +10,15 @@
 //
 
 #include "BRRippleAddress.h"
-#include "BRRippleBase58.h"
 #include "support/BRCrypto.h"
+#include "support/BRBase58.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <memory.h>
+
+static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 
 // A Ripple Address - 20 bytes
 #define ADDRESS_BYTES   (20)
@@ -107,12 +109,7 @@ extern char * rippleAddressAsString (BRRippleAddress address)
         BRSHA256_2(hash, input, 21);
         memcpy(&input[21], hash, 4);
 
-        // Now base58 encode the result
-        rippleEncodeBase58(string, 35, input, 25);
-        // NOTE: once the following function is "approved" we can switch to using it
-        // and remove the base58 function above
-        // static const char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
-        // BRBase58EncodeEx(string, 36, input, 25, rippleAlphabet);
+        BRBase58EncodeEx(string, 36, input, 25, rippleAlphabet);
     }
     return string;
 }
@@ -146,8 +143,7 @@ BRRippleAddress rippleAddressStringToAddress(const char* input)
 
     // Decode the string input
     uint8_t bytes[25];
-    //int length = BRBase58DecodeEx(NULL, 0, input, rippleAlphabet);
-    int length = rippleDecodeBase58(input, NULL);
+    int length = BRBase58DecodeEx(NULL, 0, input, rippleAlphabet);
     if (length != 25) {
         // Since ripple addresses are created from 20 byte account IDs the
         // needed space to covert it back has to be 25 bytes.
@@ -156,8 +152,7 @@ BRRippleAddress rippleAddressStringToAddress(const char* input)
     }
 
     // We got the correct length so go ahead and decode.
-    rippleDecodeBase58(input, bytes);
-    //BRBase58DecodeEx(bytes, 25, input, rippleAlphabet);
+    BRBase58DecodeEx(bytes, 25, input, rippleAlphabet);
 
     // We need to do a checksum on all but the last 4 bytes.
     // From trial and error is appears that the checksum is just
