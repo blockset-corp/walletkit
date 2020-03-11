@@ -1061,7 +1061,7 @@ public class BlockChainDB {
     }
 
     public func createAddress (blockchainId: String, data: Data,
-                               completion: @escaping (Result<Void, QueryError>) -> Void) {
+                               completion: @escaping (Result<Model.Address, QueryError>) -> Void) {
         let json: JSON.Dict = [
             "blockchain_id": blockchainId,
             "data" : data.base64EncodedString()
@@ -1070,9 +1070,17 @@ public class BlockChainDB {
         makeRequest (bdbDataTaskFunc, bdbBaseURL,
                      path: "/addresses",
                      data: json,
-                     httpMethod: "POST",
-                     deserializer: { (_) in Result.success(()) },
-                     completion: completion)
+                     httpMethod: "POST") {
+                        self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                            (more: URL?, res: Result<[JSON], QueryError>) in
+                            precondition (nil == more)
+                            completion (res.flatMap {
+                                BlockChainDB.getOneExpected (id: "POST /addresses",
+                                                             data: $0,
+                                                             transform: Model.asAddress)
+                            })
+                        }
+        }
     }
 
     /// BTC - nothing
