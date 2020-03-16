@@ -12,14 +12,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdint.h>
+#include "support/BRBase58.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39WordsEn.h"
 #include "support/BRKey.h"
 #include "ripple/BRRipple.h"
-#include "ripple/BRRippleBase58.h"
 
 #include "testRippleTxList1.h"
 #include "testRippleTxList2.h"
+#include "testRippleAddress.h"
 
 int debug_log = 0;
 
@@ -642,6 +644,28 @@ static void testWalletAddress()
     rippleWalletFree(wallet);
 }
 
+static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
+
+static void checkRippleEncodeAddress (const char *addr) {
+    size_t   bytesCount = BRBase58DecodeEx(NULL, 0, addr, rippleAlphabet);
+    uint8_t *bytes      = malloc(bytesCount);
+    BRBase58DecodeEx(bytes, bytesCount, addr, rippleAlphabet);
+
+    assert (25 == bytesCount);
+
+    size_t strCount = BRBase58EncodeEx(NULL, 0, bytes, bytesCount, rippleAlphabet);
+    char  *str      = malloc(strCount + 1);
+    BRBase58EncodeEx(str, strCount, bytes, bytesCount, rippleAlphabet);
+
+    assert (0 == strcmp(str, addr));
+}
+
+static void testRippleEncode () {
+    for (size_t index = 0; NULL != test_address_list[index]; index++) {
+        checkRippleEncodeAddress (test_address_list[index]);
+    }
+}
+
 static void testRippleAddressCreate()
 {
     uint8_t expected_bytes[] = { 0xEF, 0xFC, 0x27, 0x52, 0xB5, 0xC9, 0xDA, 0x22, 0x88, 0xC5,
@@ -779,6 +803,7 @@ void rippleAccountTests()
     testCreateRippleAccountWithSeed();
     testCreateRippleAccountWithKey();
     testCreateRippleAccountWithSerializedAccount();
+    testRippleEncode();
     testRippleAddressCreate();
     testRippleAddressEqual();
     testRippleAddressUnknown();
