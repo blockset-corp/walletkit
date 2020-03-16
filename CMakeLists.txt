@@ -306,8 +306,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleAccount.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleAddress.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleAddress.h
-                ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleBase58.c
-                ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleBase58.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleFeeBasis.c
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleFeeBasis.h
                 ${PROJECT_SOURCE_DIR}/WalletKitCore/ripple/BRRippleSerialize.c
