@@ -32,7 +32,7 @@ uint256CreateDouble (double value, int decimals, int *overflow) {
     y = roundl(y);  // (extraneous) Axe any fraction; can't participate in a UInt
 
     for (size_t index = 0; index < 4; index++)
-        result.u64[index] = UINT64_MAX * (uint64_t) modfl(y/UINT64_MAX, &y);
+        result.u64[index] = (uint64_t) (UINT64_MAX * modfl(y/UINT64_MAX, &y));
     *overflow = (y != 0);
 
     return *overflow ? UINT256_ZERO : result;
