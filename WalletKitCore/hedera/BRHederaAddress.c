@@ -19,6 +19,7 @@
 #include <memory.h>
 #include <stdbool.h>
 
+// An 'uninitialized address' has {shard, realm, account} as {0, 0, 0}
 struct BRHederaAddressRecord {
     BRHederaAddressComponentType shard;
     BRHederaAddressComponentType realm;
@@ -157,6 +158,11 @@ hederaAddressIsFeeAddress (BRHederaAddress address)
     } else {
         return 0;
     }
+}
+
+extern int
+hederaAddressIsUninitializedAddress (BRHederaAddress address) {
+    return 0 == address->shard && 0 == address->realm && 0 == address->account;
 }
 
 extern BRHederaAddress hederaAddressClone (BRHederaAddress address)
