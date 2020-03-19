@@ -61,14 +61,15 @@ hederaAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
 
 extern void hederaAccountFree (BRHederaAccount account)
 {
-    assert(account);
-    if (account->address) hederaAddressFree (account->address);
+    assert(account && account->address);
+    hederaAddressFree (account->address);
     free(account);
 }
 
 extern void hederaAccountSetAddress (BRHederaAccount account, BRHederaAddress address)
 {
     assert(account);
+    assert(address);
     account->address = hederaAddressClone (address);
 }
 
