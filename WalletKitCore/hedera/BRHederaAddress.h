@@ -65,6 +65,9 @@ hederaAddressFree (BRHederaAddress address);
 extern int
 hederaAddressIsFeeAddress (BRHederaAddress address);
 
+extern int
+hederaAddressIsUninitializedAddress (BRHederaAddress address);
+
 typedef int64_t BRHederaAddressComponentType;
 
 /**
