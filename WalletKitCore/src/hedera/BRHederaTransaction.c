@@ -4,7 +4,7 @@
 #include "BRHederaTransaction.h"
 #include "BRHederaCrypto.h"
 #include "BRHederaSerialize.h"
-#include "vendor/ed25519/ed25519.h"
+#include "ed25519/ed25519.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

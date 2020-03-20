@@ -3,7 +3,7 @@
 
 #include "BRHederaCrypto.h"
 #include "support/BRBIP32Sequence.h"
-#include "vendor/ed25519/ed25519.h"
+#include "ed25519/ed25519.h"
 
 #include <stdlib.h>
 #include <assert.h>
