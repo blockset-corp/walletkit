@@ -1,4 +1,0 @@
-[submodule "WalletKitCore"]
-	path = WalletKitCore
-	url = git@github.com:blockset-corp/walletkit-core.git
-	branch = develop
