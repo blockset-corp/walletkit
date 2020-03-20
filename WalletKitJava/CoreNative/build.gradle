@@ -3,7 +3,7 @@ ext {
 
     javaTestSrcDir              = projectDir.absolutePath + "/src/commonTest/java"
 
-    cppSqliteSrcDir             = projectDir.absolutePath + "/src/main/cpp/core/vendor/sqlite3"
+    cppSqliteSrcDir             = projectDir.absolutePath + "/../../WalletKitCore/vendor/sqlite3"
 
     cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/bcash",
                                    projectDir.absolutePath + "/src/main/cpp/core/bitcoin",
@@ -13,12 +13,13 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/ripple",
                                    projectDir.absolutePath + "/src/main/cpp/core/support",
-                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/ed25519"]
+                                   projectDir.absolutePath + "/../../WalletKitCore/vendor/ed25519"]
 
-    cppCryptoMainIncDirs        = cppCryptoMainSrcDirs +
-                                  [projectDir.absolutePath + "/src/main/cpp/core/include",
-                                   projectDir.absolutePath + "/src/main/cpp/core",
-                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/secp256k1"]
+    cppCryptoMainIncDirs        = [projectDir.absolutePath + "/../../WalletKitCore/include",
+                                   projectDir.absolutePath + "/../../WalletKitCore/src",
+                                   projectDir.absolutePath + "/../../WalletKitCore/src/support",
+                                   projectDir.absolutePath + "/../../WalletKitCore/vendor",
+                                   projectDir.absolutePath + "/../../WalletKitCore/vendor/secp256k1"]
 
     cppCryptoTestSrcDirs        = [projectDir.absolutePath + "/src/test/cpp/core/bitcoin",
                                    projectDir.absolutePath + "/src/test/cpp/core/crypto",
@@ -27,9 +28,9 @@ ext {
                                    projectDir.absolutePath + "/src/test/cpp/core/ripple",
                                    projectDir.absolutePath + "/src/test/cpp/core/support"]
 
-    cppCryptoTestIncDirs        = cppCryptoTestSrcDirs +
-                                  [projectDir.absolutePath + "/src/test/cpp/core/include",
-                                   projectDir.absolutePath + "/src/test/cpp/core"]
+    cppCryptoTestIncDirs        = [] // cppCryptoTestSrcDirs +
+                                  [projectDir.absolutePath + "/../../WalletKitCore/include",
+                                   projectDir.absolutePath + "/../../WalletKitCore/src"]
 
-    cmakeCMakeListsFile         = projectDir.absolutePath + "/../WalletKitCore/CMakeLists.txt"
+    cmakeCMakeListsFile         = projectDir.absolutePath + "/../../WalletKitCore/CMakeLists.txt"
 }
