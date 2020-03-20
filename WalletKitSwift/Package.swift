@@ -18,7 +18,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(path: "./WalletKitCore")
+        .package(path: "../WalletKitCore")
     ],
 
     targets: [
