@@ -1,0 +1,1 @@
+Javascript Interface to WalletKitCore
