@@ -7,4 +7,4 @@ mv lib*.* WalletKitCoreWASM/
 
 funcs=\'["_cryptoNetworkCanonicalTypeGetCurrencyCode", "_cryptoAccountGeneratePaperKey", ...]\'
 
-emcc libcorecrypto.a -o libcorecrypto.js -s EXPORTED_FUNCTIONS='["_cryptoNetworkCanonicalTypeGetCurrencyCode"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
+emcc libcorecrypto.a -o libcorecrypto.js -s EXPORTED_FUNCTIONS='["_cryptoCurrencyCreate"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
