@@ -28,9 +28,8 @@ extern BRHederaAccount hederaAccountCreateWithSeed (UInt512 seed)
     // From the secret get the public key
     hederaKeyGetPublicKey(privateKey, account->publicKey);
 
-    // We cannot generate an address from the public key - but
-    // when running the demo app we need to put in some address
-    // account->address = hederaAddressCreateFromString("0.0.3229");
+    // The address is uninitialized.
+    account->address = hederaAddressCreate (0, 0, 0);
 
     return account;
 }
@@ -48,6 +47,8 @@ hederaAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     memcpy(&shard, addressBytes, 8);
     memcpy(&realm, addressBytes + 8, 8);
     memcpy(&accountNum, addressBytes + 16, 8);
+
+    // This may be uninitialized
     account->address = hederaAddressCreate ((BRHederaAddressComponentType) ntohll(shard),
                                             (BRHederaAddressComponentType) ntohll(realm),
                                             (BRHederaAddressComponentType) ntohll(accountNum));
@@ -60,14 +61,15 @@ hederaAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
 
 extern void hederaAccountFree (BRHederaAccount account)
 {
-    assert(account);
-    if (account->address) hederaAddressFree (account->address);
+    assert(account && account->address);
+    hederaAddressFree (account->address);
     free(account);
 }
 
 extern void hederaAccountSetAddress (BRHederaAccount account, BRHederaAddress address)
 {
     assert(account);
+    assert(address);
     account->address = hederaAddressClone (address);
 }
 
@@ -92,11 +94,8 @@ hederaAccountGetPublicKeyBytes (BRHederaAccount account, size_t *bytesCount) {
 extern BRHederaAddress hederaAccountGetAddress (BRHederaAccount account)
 {
     assert(account);
-    if (account->address) {
-        return hederaAddressClone (account->address);
-    } else {
-        return NULL;
-    }
+    assert(account->address);
+    return hederaAddressClone (account->address);
 }
 
 extern BRHederaAddress hederaAccountGetPrimaryAddress (BRHederaAccount account)
@@ -105,19 +104,18 @@ extern BRHederaAddress hederaAccountGetPrimaryAddress (BRHederaAccount account)
 }
 
 extern int hederaAccountHasPrimaryAddress (BRHederaAccount account) {
-    return NULL != account->address;
+    return !hederaAddressIsUninitializedAddress (account->address);
 }
 
 extern uint8_t *hederaAccountGetSerialization (BRHederaAccount account, size_t *bytesCount) {
     assert (NULL != bytesCount);
     assert (NULL != account);
+    assert (NULL != account->address);
 
     // Get the sizes of what we are storing and allocate storage
     uint8_t addressBuffer[HEDERA_ADDRESS_SERIALIZED_SIZE] = {0};
-    // If we have an address then serialize it - otherwise we just copy 0's to the stream
-    if (NULL != account->address) {
-        hederaAddressSerialize (account->address, addressBuffer, HEDERA_ADDRESS_SERIALIZED_SIZE);
-    }
+    hederaAddressSerialize (account->address, addressBuffer, HEDERA_ADDRESS_SERIALIZED_SIZE);
+
     *bytesCount = HEDERA_ADDRESS_SERIALIZED_SIZE + HEDERA_PUBLIC_KEY_SIZE;
     uint8_t *bytes = calloc (1, *bytesCount);
 
