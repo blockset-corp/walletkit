@@ -24,9 +24,9 @@
 
 #include "BRPeerManager.h"
 #include "BRBloomFilter.h"
-#include "BRSet.h"
-#include "BRArray.h"
-#include "BRInt.h"
+#include "support/BRSet.h"
+#include "support/BRArray.h"
+#include "support/BRInt.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>

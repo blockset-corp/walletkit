@@ -12,10 +12,10 @@
 #include <stdlib.h>
 
 #include "BRCryptoKey.h"
-#include "BRKey.h"
-#include "BRBIP39Mnemonic.h"
-#include "BRBIP32Sequence.h"
-#include "BRKeyECIES.h"
+#include "support/BRKey.h"
+#include "support/BRBIP39Mnemonic.h"
+#include "support/BRBIP32Sequence.h"
+#include "support/BRKeyECIES.h"
 #include "ethereum/util/BRUtil.h"
 #include "bitcoin/BRBIP38Key.h"
 

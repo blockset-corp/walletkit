@@ -12,14 +12,14 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "BRArray.h"
-#include "BRBase.h"
-#include "BRSet.h"
+#include "support/BRArray.h"
+#include "support/BRBase.h"
+#include "support/BRSet.h"
 #include "BRWalletManager.h"
 #include "BRWalletManagerPrivate.h"
 #include "BRPeerManager.h"
 #include "BRMerkleBlock.h"
-#include "BRBase58.h"
+#include "support/BRBase58.h"
 #include "BRChainParams.h"
 #include "bcash/BRBCashParams.h"
 

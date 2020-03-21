@@ -15,7 +15,7 @@
 #include "BREvent.h"
 #include "BREventQueue.h"
 #include "BREventAlarm.h"
-#include "BROSCompat.h"
+#include "support/BROSCompat.h"
 
 #define PTHREAD_STACK_SIZE (512 * 1024)
 #define PTHREAD_NAME_SIZE   (33)

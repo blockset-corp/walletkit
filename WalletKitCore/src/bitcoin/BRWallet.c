@@ -23,9 +23,9 @@
 //  THE SOFTWARE.
 
 #include "BRWallet.h"
-#include "BRSet.h"
-#include "BRAddress.h"
-#include "BRArray.h"
+#include "support/BRSet.h"
+#include "support/BRAddress.h"
+#include "support/BRArray.h"
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>

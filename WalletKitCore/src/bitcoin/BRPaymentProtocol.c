@@ -23,8 +23,8 @@
 //  THE SOFTWARE.
 
 #include "BRPaymentProtocol.h"
-#include "BRCrypto.h"
-#include "BRArray.h"
+#include "support/BRCrypto.h"
+#include "support/BRArray.h"
 #include <string.h>
 #include <inttypes.h>
 #include <stdio.h>

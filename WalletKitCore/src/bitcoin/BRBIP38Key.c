@@ -23,10 +23,10 @@
 //  THE SOFTWARE.
 
 #include "BRBIP38Key.h"
-#include "BRAddress.h"
-#include "BRCrypto.h"
-#include "BRBase58.h"
-#include "BRInt.h"
+#include "support/BRAddress.h"
+#include "support/BRCrypto.h"
+#include "support/BRBase58.h"
+#include "support/BRInt.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

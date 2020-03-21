@@ -24,12 +24,12 @@
 
 #include "BRPeer.h"
 #include "BRMerkleBlock.h"
-#include "BRBase.h"
-#include "BRAddress.h"
-#include "BRSet.h"
-#include "BRArray.h"
-#include "BRCrypto.h"
-#include "BRInt.h"
+#include "support/BRBase.h"
+#include "support/BRAddress.h"
+#include "support/BRSet.h"
+#include "support/BRArray.h"
+#include "support/BRCrypto.h"
+#include "support/BRInt.h"
 #include <stdlib.h>
 #include <float.h>
 #include <inttypes.h>

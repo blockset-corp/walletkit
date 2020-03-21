@@ -25,7 +25,7 @@
 #ifndef BRMerkleBlock_h
 #define BRMerkleBlock_h
 
-#include "BRInt.h"
+#include "support/BRInt.h"
 #include <stddef.h>
 #include <inttypes.h>
 

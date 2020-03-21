@@ -26,8 +26,8 @@
 #define BRPaymentProtocol_h
 
 #include "BRTransaction.h"
-#include "BRAddress.h"
-#include "BRKey.h"
+#include "support/BRAddress.h"
+#include "support/BRKey.h"
 #include <inttypes.h>
 
 #ifdef __cplusplus
