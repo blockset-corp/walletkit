@@ -481,15 +481,12 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 # Setup all the include paths
 target_include_directories (corecrypto
                             PUBLIC
-                            ${PROJECT_SOURCE_DIR}/../WalletKitCore/include
-                            ${PROJECT_SOURCE_DIR}/../WalletKitCore/src
-                            ${PROJECT_SOURCE_DIR}/../WalletKitCore/src/support
-#                            ${PROJECT_SOURCE_DIR}/bitcoin
-#                            ${PROJECT_SOURCE_DIR}/bcash
-#                            ${PROJECT_SOURCE_DIR}/src/ethereum
+                            ${PROJECT_SOURCE_DIR}/include
+                            ${PROJECT_SOURCE_DIR}/src
+                            ${PROJECT_SOURCE_DIR}/src/support
+                            ${PROJECT_SOURCE_DIR}
                             ${PROJECT_SOURCE_DIR}/vendor
                             ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
-#                            ${PROJECT_SOURCE_DIR}/src/crypto)
 
 # Set the DEBUG define when building DEBUG builds
 if (CMAKE_BUILD_TYPE MATCHES Debug)
