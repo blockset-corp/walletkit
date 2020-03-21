@@ -1,6 +1,6 @@
 import XCTest
 @testable import WalletKitCore
-@testable import WalletKitSupportTests
+@testable import WalletKitCoreSupportTests
 
 final class WalletKitCoreTests: XCTestCase {
 

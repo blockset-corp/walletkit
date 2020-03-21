@@ -12,14 +12,14 @@ let package = Package(
         ),
         
         .executable(
-            name: "WalletKitExplore",
-            targets: ["WalletKitExplore"]
+            name: "WalletKitCoreExplore",
+            targets: ["WalletKitCoreExplore"]
         ),
         
         
         .executable(
-            name: "WalletKitPerf",
-            targets: ["WalletKitPerf"]
+            name: "WalletKitCorePerf",
+            targets: ["WalletKitCorePerf"]
         ),
     ],
     dependencies: [],
@@ -46,8 +46,8 @@ let package = Package(
                 "WalletKitEd25519",
                 "WalletKitHederaProto",
             ],
-            path: "WalletKitCore",
-            sources: ["version"],                   // Holds BRCryptoVersion.c only
+            path: ".",
+            sources: ["src/version"],                   // Holds BRCryptoVersion.c only
             publicHeadersPath: "include",           // Export all public includes
             linkerSettings: [
                 .linkedLibrary("resolv"),
@@ -60,18 +60,18 @@ let package = Package(
             name: "WalletKitCoreSafe",
             dependencies: [
             ],
-            path: "WalletKitCore",
+            path: "src",
             exclude: [
-                "version",          // See target: WalletKitCore (above)
-                "vendor",           // See target: WalletKitSQLite
                 "hedera/proto"      // See target: WalletKitHederaProto
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
-                .headerSearchPath("include"),           // BRCrypto
-                .headerSearchPath("support"),           // Temporary (change support/, bitcoin/)
+                .headerSearchPath("../include"),           // BRCrypto
                 .headerSearchPath("."),
-                .headerSearchPath("vendor/secp256k1"),
+                .headerSearchPath("./support"),           // Temporary (change support/, bitcoin/)
+                .headerSearchPath(".."),
+                .headerSearchPath("../vendor"),
+                .headerSearchPath("../vendor/secp256k1"),  // To compile vendor/secp256k1/secp256k1.c
                 .unsafeFlags([
                     // Enable warning flags
                     "-Wall",
@@ -91,7 +91,7 @@ let package = Package(
         .target(
             name: "WalletKitSQLite",
             dependencies: [],
-            path: "WalletKitCore/vendor/sqlite3",
+            path: "vendor/sqlite3",
             sources: ["sqlite3.c"],
             publicHeadersPath: "include",
             cSettings: [
@@ -109,7 +109,7 @@ let package = Package(
         .target(
             name: "WalletKitEd25519",
             dependencies: [],
-            path: "WalletKitCore/vendor/ed25519",
+            path: "vendor/ed25519",
             exclude: [],
             publicHeadersPath: nil,
             cSettings: [
@@ -121,7 +121,7 @@ let package = Package(
         .target(
             name: "WalletKitHederaProto",
             dependencies: [],
-            path: "WalletKitCore/hedera/proto",
+            path: "src/hedera/proto",
             publicHeadersPath: nil,
             cSettings: [
                 .unsafeFlags([
@@ -133,24 +133,26 @@ let package = Package(
         // MARK: - Core Misc Targets
 
         .target (
-            name: "WalletKitExplore",
+            name: "WalletKitCoreExplore",
             dependencies: ["WalletKitCore"],
-            path: "WalletKitExplore",
+            path: "WalletKitCoreExplore",
             cSettings: [
-                .headerSearchPath("../WalletKitCore"),
-                .headerSearchPath("../WalletKitCore/support"),
-                .headerSearchPath("../WalletKitCore/bitcoin"),
+                .headerSearchPath("../include"),
+                .headerSearchPath("../src"),
+                .headerSearchPath("../src/support"),
+                .headerSearchPath("../src/bitcoin"),
             ]
         ),
 
         .target (
-            name: "WalletKitPerf",
-            dependencies: ["WalletKitCore", "WalletKitSupportTests"],
-            path: "WalletKitPerf",
+            name: "WalletKitCorePerf",
+            dependencies: ["WalletKitCore", "WalletKitCoreSupportTests"],
+            path: "WalletKitCorePerf",
             cSettings: [
-                .headerSearchPath("../WalletKitCore"),
-                .headerSearchPath("../WalletKitCore/support"),
-                .headerSearchPath("../WalletKitCore/bitcoin"),
+                .headerSearchPath("../include"),
+                .headerSearchPath("../src"),
+                .headerSearchPath("../src/support"),
+                .headerSearchPath("../src/bitcoin"),
                 .headerSearchPath("../WalletKitCoreTests/test"),
             ]
         ),
@@ -158,31 +160,32 @@ let package = Package(
         // MARK: - Core Test Targets
 
         .target(
-            name: "WalletKitSupportTests",
+            name: "WalletKitCoreSupportTests",
             dependencies: ["WalletKitCore"],
             path: "WalletKitCoreTests/test",
             publicHeadersPath: "include",
             cSettings: [
                 .define("BITCOIN_TEST_NO_MAIN"),
-                .headerSearchPath("../../WalletKitCore"),
-                .headerSearchPath("../../WalletKitCore/support"),
-                .headerSearchPath("../../WalletKitCore/bitcoin")
+                .headerSearchPath("../../include"),
+                .headerSearchPath("../../src"),
+                .headerSearchPath("../../src/support"),
+                .headerSearchPath("../../src/bitcoin")
             ]
         ),
 
         .testTarget(
             name: "WalletKitCoreTests",
             dependencies: [
-                "WalletKitSupportTests"
+                "WalletKitCoreSupportTests"
             ],
             path: "WalletKitCoreTests",
             exclude: [
                 "test"
             ],
             cSettings: [
-                .headerSearchPath("../WalletKitCore"),
-                .headerSearchPath("../WalletKitCore/support"),
-                .headerSearchPath("../WalletKitCore/bitcoin")
+                .headerSearchPath("../src"),
+                .headerSearchPath("../src/support"),
+                .headerSearchPath("../src/bitcoin")
             ],
             linkerSettings: [
                 .linkedLibrary("pthread"),
