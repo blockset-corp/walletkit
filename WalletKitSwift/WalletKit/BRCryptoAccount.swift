@@ -135,7 +135,7 @@ public final class Account {
     ///
     /// - Returns: `true` if initialized; `false` otherwise
     ///
-    public func isInitialized (onNetwork network: Network) -> Bool {
+    internal func isInitialized (onNetwork network: Network) -> Bool {
         return CRYPTO_TRUE == cryptoAccountIsInitialized (core, network.core)
     }
 
@@ -151,7 +151,7 @@ public final class Account {
     ///            serialization must be saved otherwise the initialization will be lost upon the
     ///            next System start.
     ///
-    public func initialize (onNetwork network: Network, using data: Data) -> Data? {
+    internal func initialize (onNetwork network: Network, using data: Data) -> Data? {
         guard !isInitialized (onNetwork: network)
             else { return nil }
 
@@ -178,7 +178,7 @@ public final class Account {
     ///
     /// - Returns: Opaque data to be provided to the 'initialization provider'
     ///
-    public func getInitializationdData (onNetwork network: Network) -> Data? {
+    internal func getInitializationdData (onNetwork network: Network) -> Data? {
         var bytesCount: BRCryptoCount = 0
         return cryptoAccountGetInitializationData (core,
                                                    network.core,
