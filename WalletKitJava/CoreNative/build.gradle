@@ -1,36 +1,20 @@
 ext {
-    javaMainSrcDir              = projectDir.absolutePath + "/src/main/java"
+    javaMainSrcDir              =  projectDir.absolutePath + "/src/main/java"
 
-    javaTestSrcDir              = projectDir.absolutePath + "/src/commonTest/java"
+    javaTestSrcDir              =  projectDir.absolutePath + "/src/commonTest/java"
 
-    cppSqliteSrcDir             = projectDir.absolutePath + "/../../WalletKitCore/vendor/sqlite3"
+    cppCryptoBaseDir            = projectDir.absolutePath + "/../../WalletKitCore"
 
-    cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/bcash",
-                                   projectDir.absolutePath + "/src/main/cpp/core/bitcoin",
-                                   projectDir.absolutePath + "/src/main/cpp/core/crypto",
-                                   projectDir.absolutePath + "/src/main/cpp/core/ethereum",
-                                   projectDir.absolutePath + "/src/main/cpp/core/generic",
-                                   projectDir.absolutePath + "/src/main/cpp/core/hedera",
-                                   projectDir.absolutePath + "/src/main/cpp/core/ripple",
-                                   projectDir.absolutePath + "/src/main/cpp/core/support",
-                                   projectDir.absolutePath + "/../../WalletKitCore/vendor/ed25519"]
+    cppCryptoVendorSrcDir       =  cppCryptoBaseDir + "/vendor"
+    cppCryptoMainSrcDirs        = [cppCryptoBaseDir + "/src"]
 
-    cppCryptoMainIncDirs        = [projectDir.absolutePath + "/../../WalletKitCore/include",
-                                   projectDir.absolutePath + "/../../WalletKitCore/src",
-                                   projectDir.absolutePath + "/../../WalletKitCore/src/support",
-                                   projectDir.absolutePath + "/../../WalletKitCore/vendor",
-                                   projectDir.absolutePath + "/../../WalletKitCore/vendor/secp256k1"]
+    cppCryptoMainIncDirs        = [cppCryptoBaseDir + "/include",
+                                   cppCryptoBaseDir + "/src",
+                                   cppCryptoBaseDir + "/vendor",
+                                   cppCryptoBaseDir + "/vendor/secp256k1"]
 
-    cppCryptoTestSrcDirs        = [projectDir.absolutePath + "/src/test/cpp/core/bitcoin",
-                                   projectDir.absolutePath + "/src/test/cpp/core/crypto",
-                                   projectDir.absolutePath + "/src/test/cpp/core/ethereum",
-                                   projectDir.absolutePath + "/src/test/cpp/core/hedera",
-                                   projectDir.absolutePath + "/src/test/cpp/core/ripple",
-                                   projectDir.absolutePath + "/src/test/cpp/core/support"]
+    cppCryptoTestSrcDirs        = [cppCryptoBaseDir + "/WalletKitCoreTests/test"]
+    cppCryptoTestIncDirs        = [cppCryptoBaseDir + "/WalletKitCoreTests/test/include"]
 
-    cppCryptoTestIncDirs        = [] // cppCryptoTestSrcDirs +
-                                  [projectDir.absolutePath + "/../../WalletKitCore/include",
-                                   projectDir.absolutePath + "/../../WalletKitCore/src"]
-
-    cmakeCMakeListsFile         = projectDir.absolutePath + "/../../WalletKitCore/CMakeLists.txt"
+    cmakeCMakeListsFile         = cppCryptoBaseDir + "/CMakeLists.txt"
 }
