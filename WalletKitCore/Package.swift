@@ -62,7 +62,8 @@ let package = Package(
             ],
             path: "src",
             exclude: [
-                "hedera/proto"      // See target: WalletKitHederaProto
+                "hedera/proto",      // See target: WalletKitHederaProto
+                "version"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
