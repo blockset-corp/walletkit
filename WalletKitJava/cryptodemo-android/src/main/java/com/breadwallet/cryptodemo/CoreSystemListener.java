@@ -9,12 +9,10 @@ package com.breadwallet.cryptodemo;
 
 import android.support.annotation.Nullable;
 
-import com.breadwallet.crypto.Coder;
 import com.breadwallet.crypto.Account;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.Currency;
 import com.breadwallet.crypto.Network;
-import com.breadwallet.crypto.NetworkType;
 import com.breadwallet.crypto.System;
 import com.breadwallet.crypto.Transfer;
 import com.breadwallet.crypto.Wallet;
@@ -35,6 +33,7 @@ import com.breadwallet.crypto.events.walletmanager.WalletManagerEvent;
 import com.google.common.base.Optional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -150,23 +149,49 @@ public class CoreSystemListener implements SystemListener {
 
                 system.wipe(network);
                 if (!account.isInitialized(network)) {
-                    Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
-
-                    byte[] dataForInitialization = account.getInitializationData (network);
-                    Log.log(Level.FINE, String.format("Account: DataForInitialization: %s",
-                            hexCoder.encode(dataForInitialization).get()));
-
-                    if (NetworkType.HBAR == network.getType()) {
-                        byte[] initializationData = "0.0.114008".getBytes();
-                        Log.log(Level.FINE, String.format("Account: InitializationData: %s", "0.0.114008"));
-
-                        byte[] serializationData = account.initialize(network, initializationData);
-                        Log.log(Level.FINE, String.format("Account: Serialization: %s",
-                                hexCoder.encode(serializationData).get()));
-                    }
-                    Log.log(Level.FINE, String.format("Account: Initialized: %s", account.isInitialized(network)));
+//                    switch (network.getType()) {
+//                        case HBAR:
+//                            Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
+//
+//                            byte[] dataForInitialization = account.getInitializationData(network);
+//                            Log.log(Level.FINE, String.format("Account: DataForInitialization: %s",
+//                                    hexCoder.encode(dataForInitialization).get()));
+//
+//                            system.getQuery().accountExistsForHedera(network.getUids(), dataForInitialization,
+//                                    new CompletionHandler<byte[], QueryError>() {
+//                                        @Override
+//                                        public void handleData(byte[] data) {
+//                                            Log.log(Level.FINE, String.format("Account: Exists: InitializationData: %s",
+//                                                    new String (data))); // Hedera AccountID: 0.0.<n>
+//
+//                                            account.initialize(network, data);
+//                                            checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
+//                                        }
+//
+//                                        @Override
+//                                        public void handleError(QueryError error) {
+//                                            system.getQuery().accountCreateForHedera(network.getUids(), dataForInitialization,
+//                                                    new CompletionHandler<byte[], QueryError>() {
+//                                                        @Override
+//                                                        public void handleData(byte[] data) {
+//                                                            Log.log(Level.FINE, String.format("Account: Create: InitializationData: %s",
+//                                                                    new String (data))); // Hedera AccountID: 0.0.<n>
+//
+//                                                            account.initialize(network, data);
+//                                                            checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
+//                                                        }
+//
+//                                                        @Override
+//                                                        public void handleError(QueryError error) {
+//                                                            checkState(false);
+//                                                        }
+//                                                    });
+//                                        }
+//                                    });
+//                        default:
+//                            checkState(false);
+//                    }
                 }
-                checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
             }
         }
     }

@@ -13,6 +13,7 @@ import com.breadwallet.crypto.blockchaindb.apis.bdb.BlockApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.BlockchainApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.CurrencyApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.BdbApiClient;
+import com.breadwallet.crypto.blockchaindb.apis.bdb.ExperimentalApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.SubscriptionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransactionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransferApi;
@@ -26,6 +27,7 @@ import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Block;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Currency;
+import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Subscription;
 import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionCurrency;
 import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionEndpoint;
@@ -41,6 +43,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
@@ -60,6 +63,7 @@ public class BlockchainDb {
     private final SubscriptionApi subscriptionApi;
     private final TransferApi transferApi;
     private final TransactionApi transactionApi;
+    private final ExperimentalApi experimentalApi;
 
     private final EthBalanceApi ethBalanceApi;
     private final EthBlockApi ethBlockApi;
@@ -91,6 +95,7 @@ public class BlockchainDb {
         BrdApiClient brdClient = new BrdApiClient(client, apiBaseURL, apiDataTask, coder);
 
         ExecutorService executorService = Executors.newCachedThreadPool();
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         this.ridGenerator = new AtomicInteger(0);
 
@@ -100,6 +105,7 @@ public class BlockchainDb {
         this.subscriptionApi = new SubscriptionApi(bdbClient);
         this.transferApi = new TransferApi(bdbClient, executorService);
         this.transactionApi = new TransactionApi(bdbClient, executorService);
+        this.experimentalApi = new ExperimentalApi(bdbClient, scheduledExecutorService);
 
         this.ethBalanceApi = new EthBalanceApi(brdClient);
         this.ethBlockApi = new EthBlockApi(brdClient);
@@ -415,6 +421,30 @@ public class BlockchainDb {
                 false,
                 false,
                 false,
+                handler
+        );
+    }
+
+    // Addresses
+
+    // Experimental - Hedera Account Creation
+
+    public void getHederaAccount(String id,
+                                 String publicKey,
+                                 CompletionHandler<List<HederaAccount>, QueryError> handler) {
+        experimentalApi.getHederaAccount(
+                id,
+                publicKey,
+                handler
+        );
+    }
+
+    public void createHederaAccount(String id,
+                                    String publicKey,
+                                    CompletionHandler<List<HederaAccount>, QueryError> handler) {
+        experimentalApi.createHederaAccount(
+                id,
+                publicKey,
                 handler
         );
     }
