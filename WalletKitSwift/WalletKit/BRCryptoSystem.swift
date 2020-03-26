@@ -145,7 +145,7 @@ public final class System {
     ///
     public func wipe (network: Network) {
         // Racy - but if there is no wallet manager for `network`... then
-        if !managers.contains { network == $0.network } {
+        if !managers.contains(where: { network == $0.network }) {
             cryptoWalletManagerWipe (network.core, path);
         }
     }
@@ -1212,7 +1212,7 @@ extension System {
             funcGetBalance: { (context, cwm, sid, addresses, addressesCount, issuer) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup ("SYS: GetBalance: Missed {cwm}", cwm: cwm); return }
 
                 let issuer = issuer.map (asUTF8String)
@@ -1254,7 +1254,7 @@ extension System {
             funcGetBlockNumber: { (context, cwm, sid) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: GetBlockNumber")
 
@@ -1292,11 +1292,10 @@ extension System {
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup ("SYS: BTC: GetTransactions: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: BTC: GetTransactions: Blocks: {\(begBlockNumber), \(endBlockNumber)}")
 
-                let currency  = currency.map (asUTF8String)
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
                 manager.query.getTransactions (blockchainId: manager.network.uids,
@@ -1333,7 +1332,7 @@ extension System {
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { print ("SYS: GetTransfers: Missed {cwm}"); return }
                 print ("SYS: GetTransfers: Blocks: {\(begBlockNumber), \(endBlockNumber)}")
 
@@ -1467,7 +1466,7 @@ extension System {
             funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: SubmitTransaction: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: SubmitTransaction")
 
@@ -1505,7 +1504,7 @@ extension System {
             funcGetGasPriceETH: { (context, cwm, sid, network) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {cwm}", cwm: cwm); return }
 
                 guard let network = network.map (asUTF8String)
@@ -1522,7 +1521,7 @@ extension System {
             funcEstimateGasETH: { (context, cwm, sid, network, from, to, amount, price, data) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: ETH: EstimateGas: Missed {cwm}", cwm: cwm); return }
 
                 guard let price = price.map (asUTF8String)
@@ -1546,7 +1545,7 @@ extension System {
             funcGetBlocksETH: { (context, cwm, sid, network, address, interests, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {cwm}", cwm: cwm); return }
 
                 guard let network = network.map (asUTF8String)
@@ -1573,7 +1572,7 @@ extension System {
             funcGetTokensETH: { (context, cwm, sid) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: ETH: GetTokens: Missed {cwm}", cwm: cwm); return }
 
                 manager.query.getTokensAsETH () {
@@ -1597,7 +1596,7 @@ extension System {
             funcGetNonceETH: { (context, cwm, sid, network, address) in
                 precondition (nil != context  && nil != cwm)
 
-                guard let (system, manager) = System.systemExtract (context, cwm)
+                guard let (_, manager) = System.systemExtract (context, cwm)
                     else { System.cleanup  ("SYS: ETH: GetNonce: Missed {cwm}", cwm: cwm); return }
 
                 guard let network = network.map (asUTF8String),

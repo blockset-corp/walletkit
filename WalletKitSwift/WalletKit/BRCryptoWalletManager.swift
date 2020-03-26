@@ -108,7 +108,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
 
     /// The managed wallets - often will just be [primaryWallet]
     public var wallets: [Wallet] {
-        let listener = system.listener
+        let _ = system.listener
 
         var walletsCount: size_t = 0
         let walletsPtr = cryptoWalletManagerGetWallets(core, &walletsCount);
