@@ -666,7 +666,7 @@ messagePIPGetRequestIdInternal (const BREthereumPIPMessage *message) {
 extern size_t
 messagePIPGetRequestId (const BREthereumPIPMessage *message) {
     uint64_t reqId = messagePIPGetRequestIdInternal (message);
-    if (PIP_MESSAGE_NO_REQUEST_ID == reqId) return PIP_MESSAGE_NO_REQUEST_ID;
+    if (PIP_MESSAGE_NO_REQUEST_ID == reqId) return (size_t) PIP_MESSAGE_NO_REQUEST_ID;
     assert (reqId <= (uint64_t) SIZE_MAX);
     return (size_t) reqId;
 }

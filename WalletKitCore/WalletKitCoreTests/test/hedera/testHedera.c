@@ -312,7 +312,10 @@ static void hederaAccountCheckSerialize(const char * userName)
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, accountInfo.paper_key, NULL); // no passphrase
     BRHederaAccount account = hederaAccountCreateWithSeed(seed);
+    assert (hederaAddressIsUninitializedAddress (hederaAccountGetPrimaryAddress(account)));
     BRHederaAddress address = hederaAddressCreateFromString(accountInfo.account_string, true);
+    if (0 == strcmp(userName, "none"))
+        assert (hederaAddressIsUninitializedAddress(address));
     BRKey key1 = hederaAccountGetPublicKey(account);
     hederaAccountSetAddress(account, address);
     size_t accountByteSize = 0;
@@ -543,6 +546,7 @@ static void account_tests() {
     hederaAccountCheckPublicKey("choose");
 
     hederaAccountCheckSerialize("patient");
+    hederaAccountCheckSerialize("none");
 
     accountStringTest("patient");
 }

@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 
 #include "BRTransaction.h"
-#include "BRArray.h"
+#include "support/BRArray.h"
 #include <stdlib.h>
 #include <limits.h>
 #include <time.h>

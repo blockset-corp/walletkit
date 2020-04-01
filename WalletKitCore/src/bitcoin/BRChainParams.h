@@ -26,9 +26,9 @@
 #define BRChainParams_h
 
 #include "BRMerkleBlock.h"
-#include "BRSet.h"
 #include "BRPeer.h"
-#include "BRAddress.h"
+#include "support/BRSet.h"
+#include "support/BRAddress.h"
 #include <assert.h>
 
 #ifdef __cplusplus

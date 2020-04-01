@@ -128,7 +128,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3CD5B23723EB79D700CC8A56 /* Build configuration list for PBXNativeTarget "WalletKitDemo" */;
 			buildPhases = (
-				3C82745023ECB9B70047A2D3 /* ShellScript */,
+				3C82745023ECB9B70047A2D3 /* Install CoreTestsConfig.json */,
 				3CD5B21F23EB79D600CC8A56 /* Sources */,
 				3CD5B22023EB79D600CC8A56 /* Frameworks */,
 				3CD5B22123EB79D600CC8A56 /* Resources */,
@@ -152,7 +152,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1130;
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1140;
 				ORGANIZATIONNAME = breadwallet;
 				TargetAttributes = {
 					3CD5B22223EB79D600CC8A56 = {
@@ -196,7 +196,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		3C82745023ECB9B70047A2D3 /* ShellScript */ = {
+		3C82745023ECB9B70047A2D3 /* Install CoreTestsConfig.json */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -205,6 +205,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Install CoreTestsConfig.json";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -266,6 +267,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -326,6 +328,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";

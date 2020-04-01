@@ -68,7 +68,7 @@ model {
             sources {
                 c {
                     source {
-                        srcDir project(':corenative').cppSqliteSrcDir
+                        srcDir project(':corenative').cppCryptoVendorSrcDir + "/sqlite3"
                         include "sqlite3.c"
                     }
                 }
@@ -83,6 +83,18 @@ model {
                 }
             }
         }
+
+        ed25519(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir project(':corenative').cppCryptoVendorSrcDir + "/ed25519"
+                        include "*.c"
+                    }
+                }
+            }
+        }
+
         corecrypto(NativeLibrarySpec) {
             sources {
                 c {
@@ -99,6 +111,7 @@ model {
                     }
 
                     lib library: 'sqlite3', linkage: 'static'
+                    lib library: 'ed25519', linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -149,6 +162,7 @@ model {
                     cCompiler.define "BITCOIN_DEBUG"
 
                     lib library: 'sqlite3', linkage: 'static'
+                    lib library: 'ed25519', linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name

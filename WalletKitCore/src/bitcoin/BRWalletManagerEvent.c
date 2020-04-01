@@ -9,7 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 
-#include "BRBase.h"
+#include "support/BRBase.h"
 #include "BRWalletManager.h"
 #include "BRWalletManagerPrivate.h"
 #include "BRTransaction.h"

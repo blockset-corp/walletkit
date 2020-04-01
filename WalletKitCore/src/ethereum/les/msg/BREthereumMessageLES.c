@@ -943,7 +943,7 @@ messageLESGetRequestIdInternal (const BREthereumLESMessage *message) {
 extern size_t
 messageLESGetRequestId (const BREthereumLESMessage *message) {
     uint64_t reqId = messageLESGetRequestIdInternal (message);
-    if (LES_MESSAGE_NO_REQUEST_ID == reqId) return LES_MESSAGE_NO_REQUEST_ID;
+    if (LES_MESSAGE_NO_REQUEST_ID == reqId) return (size_t) LES_MESSAGE_NO_REQUEST_ID;
     assert (reqId <= (uint64_t) SIZE_MAX);
     return (size_t) reqId;
 }

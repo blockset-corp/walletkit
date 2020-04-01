@@ -25,9 +25,9 @@
 #ifndef BRTransaction_h
 #define BRTransaction_h
 
-#include "BRKey.h"
-#include "BRInt.h"
-#include "BRAddress.h"
+#include "support/BRKey.h"
+#include "support/BRInt.h"
+#include "support/BRAddress.h"
 #include <stddef.h>
 #include <inttypes.h>
 

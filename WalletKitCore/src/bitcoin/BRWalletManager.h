@@ -13,9 +13,9 @@
 #define BRWalletManager_h
 
 #include <stdio.h>
-#include "BRFileService.h"
-#include "BRBase.h"                 // Ownership
-#include "BRBIP32Sequence.h"        // BRMasterPubKey
+#include "support/BRFileService.h"
+#include "support/BRBase.h"                 // Ownership
+#include "support/BRBIP32Sequence.h"        // BRMasterPubKey
 #include "BRChainParams.h"          // BRChainParams (*NOT THE STATIC DECLARATIONS*)
 #include "BRTransaction.h"
 #include "BRWallet.h"

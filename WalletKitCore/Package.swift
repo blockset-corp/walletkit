@@ -62,13 +62,13 @@ let package = Package(
             ],
             path: "src",
             exclude: [
-                "hedera/proto"      // See target: WalletKitHederaProto
+                "hedera/proto",      // See target: WalletKitHederaProto
+                "version"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
                 .headerSearchPath("../include"),           // BRCrypto
                 .headerSearchPath("."),
-                .headerSearchPath("./support"),           // Temporary (change support/, bitcoin/)
                 .headerSearchPath("../vendor"),
                 .headerSearchPath("../vendor/secp256k1"),  // To compile vendor/secp256k1/secp256k1.c
                 .unsafeFlags([
@@ -138,8 +138,6 @@ let package = Package(
             cSettings: [
                 .headerSearchPath("../include"),
                 .headerSearchPath("../src"),
-                .headerSearchPath("../src/support"),
-                .headerSearchPath("../src/bitcoin"),
             ]
         ),
 
@@ -150,9 +148,6 @@ let package = Package(
             cSettings: [
                 .headerSearchPath("../include"),
                 .headerSearchPath("../src"),
-                .headerSearchPath("../src/support"),
-                .headerSearchPath("../src/bitcoin"),
-                .headerSearchPath("../WalletKitCoreTests/test"),
             ]
         ),
 
@@ -167,8 +162,6 @@ let package = Package(
                 .define("BITCOIN_TEST_NO_MAIN"),
                 .headerSearchPath("../../include"),
                 .headerSearchPath("../../src"),
-                .headerSearchPath("../../src/support"),
-                .headerSearchPath("../../src/bitcoin")
             ]
         ),
 
@@ -183,8 +176,6 @@ let package = Package(
             ],
             cSettings: [
                 .headerSearchPath("../src"),
-                .headerSearchPath("../src/support"),
-                .headerSearchPath("../src/bitcoin")
             ],
             linkerSettings: [
                 .linkedLibrary("pthread"),

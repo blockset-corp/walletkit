@@ -23,9 +23,9 @@
 //  THE SOFTWARE.
 
 #include "BRMerkleBlock.h"
-#include "BRBase.h"
-#include "BRCrypto.h"
-#include "BRAddress.h"
+#include "support/BRBase.h"
+#include "support/BRCrypto.h"
+#include "support/BRAddress.h"
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>

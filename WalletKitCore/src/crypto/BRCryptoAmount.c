@@ -155,7 +155,7 @@ cryptoCompareUInt256 (UInt256 v1, UInt256 v2) {
         case -1: return CRYPTO_COMPARE_LT;
         case  0: return CRYPTO_COMPARE_EQ;
         case +1: return CRYPTO_COMPARE_GT;
-        default: assert (0);
+        default: assert (0); return CRYPTO_COMPARE_EQ;
     }
 }
 

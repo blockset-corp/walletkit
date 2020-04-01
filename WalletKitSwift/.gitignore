@@ -42,6 +42,9 @@
 
 DerivedData/
 xcuserdata/
-*TestsConfig.*
 Package.resolved
 .DS_Store
+
+*TestsConfig.*
+!InstallCoreTestsConfig.sh
+
