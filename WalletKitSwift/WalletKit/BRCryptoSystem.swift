@@ -219,11 +219,13 @@ public final class System {
         case .hbar:
             // For Hedera, the account initialization data is the public key.
             guard let publicKey = account.getInitializationdData(onNetwork: network)
-                .flatMap ({ String (data: $0, encoding: .utf8) })
+                .flatMap ({ CoreCoder.hex.encode(data: $0) })
             else {
                 accountInitializeReportResult (Result.failure(.queryFailure("No initialization data")), completion)
                 return
             }
+
+            print ("SYS: Account: Hedera: publicKey: \(publicKey)")
 
             // Find a pre-existing account or create one if necessary.
             query.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
@@ -285,6 +287,8 @@ public final class System {
                     }
 
                 case 1:
+                    print ("SYS: Account: Hedera: AccountID: \(accounts[0].id), Balance: \(accounts[0].balance)")
+
                     let serialization = accountInitializeHedera (account,
                                                                  onNetwork: network,
                                                                  hedera: accounts[0])
@@ -1632,7 +1636,7 @@ extension System {
                         else { System.cleanup  ("SYS: SubmitTransaction: Missed {network}", cwm: cwm); return }
 
                     manager.query.submitTransactionAsETH (network: network,
-                                                          transaction: data.asHexEncodedString (prefix: "0x")) {
+                                                          transaction: "0x" + CoreCoder.hex.encode (data: data)!) {
                                                             (res: Result<String, BlockChainDB.QueryError>) in
                                                             defer { cryptoWalletManagerGive (cwm!) }
                                                             res.resolve (

@@ -121,28 +121,26 @@ class CoreDemoListener: SystemListener {
                         system.accountInitialize (system.account, onNetwork: network) {
                             (res:Result<Data, System.AccountInitializationError>) in
 
-                            var initializationData: Data? = DispatchQueue.main.sync {
-                                UIApplication.accountSpecification.hedera
-                                    .flatMap { $0.data(using: .utf8) }
-                            }
+                            var serializationData: Data? = nil
 
                             switch res {
                             case .success (let data):
-                                initializationData = data
+                                serializationData = data
 
                             case .failure (let error):
                                 switch error {
                                 case .alreadyInitialized:
                                     print ("APP: Account: Already Initialized")
-                                    initializationData = nil
+                                    // No serialization data??
 
                                 case .multipleHederaAccounts(let accounts):
                                     let accountDescriptions = accounts
                                             .map { "{id: \($0.id), balance: \($0.balance)"}
                                     print ("APP: Account: Multiple Hedera Accounts: \(accountDescriptions.joined(separator: ", "))")
 
+                                    // Chose the Hedera account with the largest balance - DEMO-SPECFIC
                                     let hederaAccount = accounts.sorted { $0.balance > $1.balance }[0]
-                                    initializationData = system.accountInitializeHedera (system.account,
+                                    serializationData = system.accountInitializeHedera (system.account,
                                                                                          onNetwork: network,
                                                                                          hedera: hederaAccount)
 
@@ -154,9 +152,19 @@ class CoreDemoListener: SystemListener {
                                 }
                             }
 
-                            if let initializationData = initializationData {
-                                // If we got non-nil initializationData, use it.
-                                let _ = system.accountInitialize(system.account, onNetwork: network, using: initializationData)
+                            // If initailization failed, use `accountSpecification` if we can - DEMO-SPECiFIC
+                            if nil == serializationData,
+                                let initializationData = DispatchQueue.main.sync (execute: {
+                                    UIApplication.accountSpecification.hedera
+                                        .flatMap { $0.data(using: .utf8) }
+                                }) {
+                                serializationData = system.accountInitialize(system.account, onNetwork: network, using: initializationData)
+                            }
+
+                            if let serializationData = serializationData {
+                                // Normally, save the `serializationData`; but not here - DEMO-SPECIFIC
+                                print ("APP: Account: SerializationData: \(CoreCoder.hex.encode(data: serializationData)!)")
+
                                 let successRetry = system.createWalletManager (network: network,
                                                                                mode: mode,
                                                                                addressScheme: scheme,
