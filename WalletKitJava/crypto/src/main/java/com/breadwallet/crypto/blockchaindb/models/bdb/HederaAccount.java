@@ -3,6 +3,7 @@ package com.breadwallet.crypto.blockchaindb.models.bdb;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Comparator;
 import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -56,4 +57,7 @@ public class HederaAccount {
     public boolean isDeleted() {
         return !"active".equalsIgnoreCase(status);
     }
+
+    public static final Comparator<HederaAccount> BALANCE_COMPARATOR =
+            (HederaAccount a1, HederaAccount a2) -> Long.compare(a1.getBalance(), a2.getBalance());
 }

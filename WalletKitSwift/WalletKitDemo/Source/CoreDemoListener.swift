@@ -140,9 +140,9 @@ class CoreDemoListener: SystemListener {
 
                                     // Chose the Hedera account with the largest balance - DEMO-SPECFIC
                                     let hederaAccount = accounts.sorted { $0.balance > $1.balance }[0]
-                                    serializationData = system.accountInitializeHedera (system.account,
-                                                                                         onNetwork: network,
-                                                                                         hedera: hederaAccount)
+                                    serializationData = system.accountInitialize (system.account,
+                                                                                  onNetwork: network,
+                                                                                  hedera: hederaAccount)
 
                                 case .queryFailure(let message):
                                     print ("APP: Account: Initalization Query Error: \(message)")

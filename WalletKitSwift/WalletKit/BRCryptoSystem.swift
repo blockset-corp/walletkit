@@ -158,10 +158,28 @@ public final class System {
     // Account Initialization
     
     public enum AccountInitializationError: Error {
+        /// The function `accountInitialize(...callback)` was called but `accountIsInitialized()`
+        /// return `true`.  No account initialization is required.
         case alreadyInitialized
-        case multipleHederaAccounts ([BlockChainDB.Model.HederaAccount])
+
+        /// If account initialization requires a remote/HTTP query, then the query has failed.
+        /// It is worth retrying.  Could occur if network connectivity is lost or remote/HTTP
+        /// services are down.
         case queryFailure(String)
+
+        /// An attempt was made to get the required account initialization data (aka 'create an
+        /// account on the specified network') but the creation failed.  It is worth retrying but
+        /// a delay may be warrented.  That is 'creating an account' might be in progress but
+        /// got reported as failed; waiting a bit might allow the 'create' to complete.
         case cantCreate
+
+        /// An attempt was made to get the required account initialization data (aka 'create an
+        /// account on the specified network') but multiple accounts already exist.  This is
+        /// unusual and may indicate a) a sophisticated User creating accounts outside of BRD, or
+        /// b) and error during a BRD create that 'missed' a creation and now multiple exist.
+        /// Chose the preferred account from among the array - like the one with the largest
+        /// balance and then call `accountInitialize(...hedera)`
+        case multipleHederaAccounts ([BlockChainDB.Model.HederaAccount])
     }
 
     ///
@@ -177,24 +195,6 @@ public final class System {
     ///
     public func accountIsInitialized (_ account: Account, onNetwork network: Network) -> Bool {
         return account.isInitialized(onNetwork: network)
-    }
-
-    ///
-    /// If somehow, magically, you've got `initializationData`, use it to initialize `account`.
-    /// Note that `initializationData` is not `account serialization data`; don't confuse them.
-    ///
-    /// - Parameters:
-    ///   - account: The account
-    ///   - network: The network
-    ///   - data: accounit initialization data
-    ///
-    /// - Returns: An Account serialization that must be persistently stored; otherwise really bad
-    ///     things will happen.
-    ///
-    public func accountInitialize (_ account: Account,
-                                   onNetwork network: Network,
-                                   using data: Data) -> Data? {
-        return account.initialize (onNetwork: network, using: data)
     }
 
     ///
@@ -243,6 +243,24 @@ public final class System {
     }
 
     ///
+    /// If somehow, magically, you've got `initializationData`, use it to initialize `account`.
+    /// Note that `initializationData` is not `account serialization data`; don't confuse them.
+    ///
+    /// - Parameters:
+    ///   - account: The account
+    ///   - network: The network
+    ///   - data: accounit initialization data
+    ///
+    /// - Returns: An Account serialization that must be persistently stored; otherwise really bad
+    ///     things will happen.
+    ///
+    public func accountInitialize (_ account: Account,
+                                   onNetwork network: Network,
+                                   using data: Data) -> Data? {
+        return account.initialize (onNetwork: network, using: data)
+    }
+
+    ///
     /// Initialize a Hedera account based on a 'selection'.  On `accountInitialize` one fo the
     /// errors is `multipleHederaAccounts`.  If that occurs, you should select one of them and
     /// call this function with the one selected.
@@ -256,13 +274,11 @@ public final class System {
     /// - Returns: An Account serialization that must be persistently stored; otherwise really bad
     ///     things will happen.
     ///
-    public func accountInitializeHedera (_ account: Account,
-                                         onNetwork network: Network,
-                                         hedera: BlockChainDB.Model.HederaAccount) -> Data? {
-        guard let dataForInitialization = hedera.id.data(using: .utf8)
-            else { return nil }
-
-        return account.initialize (onNetwork: network, using: dataForInitialization)
+    public func accountInitialize (_ account: Account,
+                                   onNetwork network: Network,
+                                   hedera: BlockChainDB.Model.HederaAccount) -> Data? {
+        return hedera.id.data(using: .utf8)
+            .flatMap { accountInitialize (account, onNetwork: network, using: $0) }
     }
 
     private func accountInitializeHandleHederaResult (create: Bool,
@@ -289,9 +305,9 @@ public final class System {
                 case 1:
                     print ("SYS: Account: Hedera: AccountID: \(accounts[0].id), Balance: \(accounts[0].balance)")
 
-                    let serialization = accountInitializeHedera (account,
-                                                                 onNetwork: network,
-                                                                 hedera: accounts[0])
+                    let serialization = accountInitialize (account,
+                                                           onNetwork: network,
+                                                           hedera: accounts[0])
                     accountInitializeReportResult (Result.success(serialization), completion)
 
                 default:

@@ -25,6 +25,7 @@ import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.collect.Multimap;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -89,6 +90,20 @@ public class BdbApiClient {
                 handler);
     }
 
+    <T> void sendPost(List<String> resourcePath,
+                      Multimap<String, String> params,
+                      Object body,
+                      Class<T> clazz,
+                      CompletionHandler<T, QueryError> handler) {
+        makeAndSendRequest(
+                resourcePath,
+                params,
+                body,
+                "POST",
+                new RootObjectResponseParser<>(coder, clazz),
+                handler);
+    }
+
     // Read (cRud)
 
     /* package */
@@ -116,6 +131,21 @@ public class BdbApiClient {
                 null,
                 "GET",
                 new EmbeddedArrayResponseParser<>(resource, coder, clazz),
+                handler);
+    }
+
+    /* package */
+    <T> void sendGetForArray(List<String> resourcePath,
+                             String embeddedPath,
+                             Multimap<String, String> params,
+                             Class<T> clazz,
+                             CompletionHandler<List<T>, QueryError> handler) {
+        makeAndSendRequest(
+                resourcePath,
+                params,
+                null,
+                "GET",
+                new EmbeddedArrayResponseParser<>(embeddedPath, coder, clazz),
                 handler);
     }
 
@@ -153,6 +183,24 @@ public class BdbApiClient {
                            CompletionHandler<T, QueryError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
+                params,
+                null,
+                "GET",
+                new RootObjectResponseParser<>(coder, clazz),
+                handler);
+    }
+
+    /* package */
+    <T> void sendGetWithId(List<String> resourcePath,
+                           String id,
+                           Multimap<String, String> params,
+                           Class<T> clazz,
+                           CompletionHandler<T, QueryError> handler) {
+        List<String> fullResourcePath = new ArrayList<>(resourcePath);
+        fullResourcePath.add(id);
+
+        makeAndSendRequest(
+                fullResourcePath,
                 params,
                 null,
                 "GET",
