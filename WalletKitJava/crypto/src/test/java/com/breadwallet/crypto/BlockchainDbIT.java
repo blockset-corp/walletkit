@@ -48,11 +48,7 @@ public class BlockchainDbIT {
 
     private static final String API_BASE_URL = "https://api.breadwallet.com";
     private static final String BDB_BASE_URL = "https://api.blockset.com";
-    private static final String BRD_AUTH_TOKEN = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9." +
-            "eyJzdWIiOiJjNzQ5NTA2ZS02MWUzLTRjM2UtYWNiNS00OTY5NTM2ZmRhMTAiLCJpYXQiOjE1N" +
-            "zI1NDY1MDAuODg3LCJleHAiOjE4ODAxMzA1MDAuODg3LCJicmQ6Y3QiOiJ1c3IiLCJicmQ6Y2" +
-            "xpIjoiZGViNjNlMjgtMDM0NS00OGY2LTlkMTctY2U4MGNiZDYxN2NiIn0." +
-            "460_GdAWbONxqOhWL5TEbQ7uEZi3fSNrl0E_Zg7MAg570CVcgO7rSMJvAPwaQtvIx1XFK_QZjcoNULmB8EtOdg";
+    private static final String BRD_AUTH_TOKEN = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg";
 
     private BlockchainDb blockchainDb;
 
