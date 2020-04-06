@@ -31,8 +31,8 @@ public final class CryptoApiProvider implements CryptoApi.Provider {
 
     private static final CryptoApi.AccountProvider accountProvider = new CryptoApi.AccountProvider() {
         @Override
-        public com.breadwallet.crypto.Account createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
-            return Account.createFromPhrase(phraseUtf8, timestamp, uids);
+        public Optional<com.breadwallet.crypto.Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
+            return Account.createFromPhrase(phraseUtf8, timestamp, uids).transform(a -> a);
         }
 
         @Override

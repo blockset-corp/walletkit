@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class BRCryptoAccount extends PointerType {
 
-    public static BRCryptoAccount createFromPhrase(byte[] phraseUtf8, UnsignedLong timestamp, String uids) {
+    public static Optional<BRCryptoAccount> createFromPhrase(byte[] phraseUtf8, UnsignedLong timestamp, String uids) {
         long timestampAsLong = timestamp.longValue();
 
         // ensure string is null terminated
@@ -40,13 +40,13 @@ public class BRCryptoAccount extends PointerType {
                 phraseMemory.write(0, phraseUtf8, 0, phraseUtf8.length);
                 ByteBuffer phraseBuffer = phraseMemory.getByteBuffer(0, phraseUtf8.length);
 
-                return new BRCryptoAccount(
+                return Optional.fromNullable(
                         CryptoLibraryDirect.cryptoAccountCreate(
                                 phraseBuffer,
                                 timestampAsLong,
                                 uids
                         )
-                );
+                ).transform(BRCryptoAccount::new);
             } finally {
                 phraseMemory.clear();
             }

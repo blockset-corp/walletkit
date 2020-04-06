@@ -52,9 +52,9 @@ final class Account implements com.breadwallet.crypto.Account {
      * @param timestamp The timestamp of when this account was first created
      * @param uids The unique identifier of this account
      */
-    static Account createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
-        BRCryptoAccount core = BRCryptoAccount.createFromPhrase(phraseUtf8, Utilities.dateAsUnixTimestamp(timestamp), uids);
-        return Account.create(core);
+    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
+        Optional<BRCryptoAccount> core = BRCryptoAccount.createFromPhrase(phraseUtf8, Utilities.dateAsUnixTimestamp(timestamp), uids);
+        return core.transform(Account::create);
     }
 
     /**
