@@ -113,7 +113,7 @@ public final class Account {
     ///
     /// - Parameters:
     ///   - phrase: the candidate paper key
-    ///   - words: A local-specific BIP-39-defined array of BIP39_WORDLIST_COUNT words.
+    ///   - words: A locale-specific BIP-39-defined array of BIP39_WORDLIST_COUNT words.
     ///
     /// - Returns: true is a valid paper key; false otherwise
     ///

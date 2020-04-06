@@ -175,7 +175,7 @@ class HelpersAIT {
 
     /* package */
     static Account createDefaultAccount() {
-        return Account.createFromPhrase(DEFAULT_ACCOUNT_KEY, DEFAULT_ACCOUNT_TIMESTAMP, DEFAULT_ACCOUNT_UIDS);
+        return Account.createFromPhrase(DEFAULT_ACCOUNT_KEY, DEFAULT_ACCOUNT_TIMESTAMP, DEFAULT_ACCOUNT_UIDS).get();
     }
 
     // BlockchainDB
