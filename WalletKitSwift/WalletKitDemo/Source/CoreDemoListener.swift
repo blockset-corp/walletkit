@@ -135,7 +135,7 @@ class CoreDemoListener: SystemListener {
 
                                 case .multipleHederaAccounts(let accounts):
                                     let accountDescriptions = accounts
-                                            .map { "{id: \($0.id), balance: \($0.balance)"}
+                                            .map { "{id: \($0.id), balance: \($0.balance)}"}
                                     print ("APP: Account: Multiple Hedera Accounts: \(accountDescriptions.joined(separator: ", "))")
 
                                     // Chose the Hedera account with the largest balance - DEMO-SPECFIC

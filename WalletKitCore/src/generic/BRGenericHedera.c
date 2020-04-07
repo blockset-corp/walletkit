@@ -12,7 +12,6 @@
 #include "hedera/BRHederaAccount.h"
 #include "hedera/BRHederaWallet.h"
 #include "hedera/BRHederaTransaction.h"
-//#include "hedera/BRHederaFeeBasis.h"
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilHex.h"
 
@@ -157,7 +156,7 @@ genericHederaTransferGetTargetAddress (BRGenericTransferRef transfer) {
 static UInt256
 genericHederaTransferGetAmount (BRGenericTransferRef transfer) {
     BRHederaUnitTinyBar thbar = hederaTransactionGetAmount ((BRHederaTransaction) transfer);
-    return uint256Create(thbar);
+    return uint256Create((uint64_t) thbar);
 }
 
 static BRGenericFeeBasis
@@ -165,7 +164,7 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
     // TODO -
     BRHederaUnitTinyBar hederaFee = hederaTransactionGetFee ((BRHederaTransaction) transfer);
     return (BRGenericFeeBasis) {
-        uint256Create (hederaFee),
+        uint256Create ((uint64_t) hederaFee),
         1
     };
 }
@@ -199,14 +198,15 @@ genericHederaWalletFree (BRGenericWalletRef wallet) {
 
 static UInt256
 genericHederaWalletGetBalance (BRGenericWalletRef wallet) {
-    return uint256Create (hederaWalletGetBalance ((BRHederaWallet) wallet));
+    return uint256Create ((uint64_t) hederaWalletGetBalance ((BRHederaWallet) wallet));
 }
 
 static UInt256
 genericHederaWalletGetBalanceLimit (BRGenericWalletRef wallet,
                                     int asMaximum,
                                     int *hasLimit) {
-    return uint256Create(0);
+
+    return uint256Create ((uint64_t) hederaWalletGetBalanceLimit ((BRHederaWallet) wallet, asMaximum, hasLimit));
 }
 
 static BRGenericAddressRef
@@ -250,12 +250,12 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
                                    size_t attributesCount,
                                    BRGenericTransferAttribute *attributes) {
     BRHederaAddress source = hederaWalletGetSourceAddress ((BRHederaWallet) wallet);
-    BRHederaUnitTinyBar thbar  = amount.u64[0];
+    BRHederaUnitTinyBar thbar  = (BRHederaUnitTinyBar) amount.u64[0];
     BRHederaAddress nodeAddress = hederaWalletGetNodeAddress((BRHederaWallet) wallet);
     BRHederaFeeBasis feeBasis;
     feeBasis.costFactor = estimatedFeeBasis.costFactor;
     int overflow = 0;
-    feeBasis.pricePerCostFactor = uint64Coerce(estimatedFeeBasis.pricePerCostFactor, &overflow);
+    feeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) uint64Coerce(estimatedFeeBasis.pricePerCostFactor, &overflow);
     assert(overflow == 0);
     return (BRGenericTransferRef) hederaTransactionCreateNew (source, (BRHederaAddress) target,
                                                            thbar, feeBasis, nodeAddress, NULL);

@@ -22,6 +22,9 @@ extern "C" {
 
 // Declare public/shared items
 typedef int64_t BRHederaUnitTinyBar;
+#define HEDERA_HBAR_SCALE_FACTOR       (100000000)  // 1 HBAR = 1e8 TINY_BAR
+#define HEDERA_HBAR_TO_TINY_BAR(x)     ((x) * HEDERA_HBAR_SCALE_FACTOR)
+#define HEDERA_TINY_BAR_TO_HBAR(x)     (((double) (x)) / HEDERA_HBAR_SCALE_FACTOR)
 
 typedef struct __hedera_timestamp {
     int64_t seconds; // Number of complete seconds since the start of the epoch
