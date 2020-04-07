@@ -28,7 +28,7 @@ public interface Account {
      * @param timestamp The timestamp of when this account was first created
      * @param uids The unique identifier of this account
      */
-    static Account createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
+    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
         return CryptoApi.getProvider().accountProvider().createFromPhrase(phraseUtf8, timestamp, uids);
     }
 
