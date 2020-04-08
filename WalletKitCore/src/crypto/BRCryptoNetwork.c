@@ -35,7 +35,7 @@ cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,
-        // "Stellar"
+        CRYPTO_NETWORK_CURRENCY_XLM,
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
@@ -656,22 +656,36 @@ cryptoNetworkCreateBuiltin (const char *symbol,
         network = cryptoNetworkCreateAsBCH (uids, name, BRBCashParams);
     else if (0 == strcmp ("bchTestnet", symbol))
         network = cryptoNetworkCreateAsBCH (uids, name, BRBCashTestNetParams);
+
+    // ETH
+
     else if (0 == strcmp ("ethMainnet", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkMainnet);
     else if (0 == strcmp ("ethRopsten", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkTestnet);
     else if (0 == strcmp ("ethRinkeby", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkRinkeby);
+
+    // XRP
+
     else if (0 == strcmp ("xrpMainnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XRP);
     else if (0 == strcmp ("xrpTestnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XRP);
+
+    // HBAR
+
     else if (0 == strcmp ("hbarMainnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_HBAR);
     else if (0 == strcmp ("hbarTestnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_HBAR);
-//    else if (0 == strcmp ("xlmMainnet", symbol))
-//        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_Xlm, 1, CRYPTO_NETWORK_TYPE_XLM);
+
+    // XLM
+    
+    else if (0 == strcmp ("xlmMainnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XLM);
+    else if (0 == strcmp ("xlmTestnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XLM);
     // ...
 
     assert (NULL != network);

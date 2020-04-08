@@ -99,10 +99,10 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_ETH,
         CRYPTO_NETWORK_TYPE_XRP,
         CRYPTO_NETWORK_TYPE_HBAR,
-        // CRYPTO_NETWORK_TYPE_XLM,
+        CRYPTO_NETWORK_TYPE_XLM,
     } BRCryptoNetworkCanonicalType;
 
-#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
+#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_XLM)
 
     //
     // Crypto Network Base Currency
@@ -115,6 +115,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_ETH     "eth"
 #    define CRYPTO_NETWORK_CURRENCY_XRP     "xrp"
 #    define CRYPTO_NETWORK_CURRENCY_HBAR    "hbar"
+#    define CRYPTO_NETWORK_CURRENCY_XLM     "xlm"
 
     extern const char *
     cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type);

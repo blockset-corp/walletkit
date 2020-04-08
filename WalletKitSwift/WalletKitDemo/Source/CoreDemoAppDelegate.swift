@@ -374,7 +374,7 @@ extension Network {
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"
-//        case .xlm:  return "stellar"
+        case .xlm: return "stellar"
         }
     }
 }

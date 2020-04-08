@@ -142,6 +142,24 @@ DEFINE_MODES            ("hedera-testnet", CRYPTO_SYNC_MODE_API_ONLY)
 
 // MARK: XLM Mainnet
 
+#define NETWORK_NAME    "Stellar"
+DEFINE_NETWORK (xlmMainnet,  "stellar-mainnet", NETWORK_NAME, "mainnet", true, 52473542, 1)
+DEFINE_NETWORK_FEE_ESTIMATE ("stellar-mainnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_CURRENCY ("stellar-mainnet",     "stellar-mainnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
+    DEFINE_UNIT ("stellar-testnet:__native__",  "miniStellar", "mxlm",  0,  "mXLM")  // 0.0001 Tx Fee
+    DEFINE_UNIT ("stellar-testnet:__native__",  NETWORK_NAME,  "xlm",   8,  "XLM")   // 10^8
+DEFINE_ADDRESS_SCHEMES  ("stellar-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
+DEFINE_MODES            ("stellar-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
+
+DEFINE_NETWORK (xlmTestnet,  "stellar-testnet", NETWORK_NAME, "testnet", false, 50000, 1)
+DEFINE_NETWORK_FEE_ESTIMATE ("stellar-testnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_CURRENCY ("stellar-testnet",     "stellar-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
+    DEFINE_UNIT ("stellar-testnet:__native__",  "miniStellar", "mxlm",  0,  "mXLM")  // 0.0001 Tx Fee
+    DEFINE_UNIT ("stellar-testnet:__native__",  NETWORK_NAME,  "xlm",   8,  "XLM")   // 10^8
+DEFINE_ADDRESS_SCHEMES  ("stellar-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
+DEFINE_MODES            ("stellar-testnet", CRYPTO_SYNC_MODE_API_ONLY)
+#undef NETWORK_NAME
+
 #undef DEFINE_NETWORK
 #undef DEFINE_NETWORK_FEE_ESTIMATE
 #undef DEFINE_CURRENCY
