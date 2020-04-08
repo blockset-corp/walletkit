@@ -112,6 +112,10 @@ runRippleTest (void /* ... */);
 extern void
 runHederaTest (void);
 
+// Stellar
+extern void
+runStellarTest (void);
+
 #ifdef __cplusplus
 }
 #endif

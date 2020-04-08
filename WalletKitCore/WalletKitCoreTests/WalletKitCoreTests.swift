@@ -208,6 +208,13 @@ final class WalletKitCoreTests: XCTestCase {
     func testHedera () {
         runHederaTest()
     }
+
+    // MARK: - Stellar
+
+    func testStellar () {
+        runStellarTest()
+    }
+    
     // MARK: - Bitcoin
 
     func testBitcoinSupport () {
