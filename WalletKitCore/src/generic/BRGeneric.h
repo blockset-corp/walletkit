@@ -18,6 +18,8 @@
 #include "BRGenericBase.h"
 #include "BRGenericClient.h"
 
+#include "BRCryptoSync.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -251,6 +253,13 @@ extern "C" {
 
     // MARK: Generic (Wallet) Manager
 
+    typedef void *BRGenericManagerSyncContext;
+    typedef void (*BRGenericManagerSyncCallback) (BRGenericManagerSyncContext context,
+                                                  BRGenericManager manager,
+                                                  uint64_t begBlockHeight,
+                                                  uint64_t endBlockHeight,
+                                                  uint64_t fullSyncIncrement);
+
     extern BRGenericManager
     genManagerCreate (BRGenericClient client,
                       BRCryptoNetworkCanonicalType type,
@@ -259,6 +268,8 @@ extern "C" {
                       uint64_t accountTimestamp,
                       const char *storagePath,
                       uint32_t syncPeriodInSeconds,
+                      BRGenericManagerSyncContext  syncContext,
+                      BRGenericManagerSyncCallback syncCallback,
                       uint64_t blockHeight);
 
     extern void
@@ -273,8 +284,15 @@ extern "C" {
     extern void
     genManagerDisconnect (BRGenericManager gwm);
 
+    extern int
+    genManagerIsConnected (BRGenericManager gwm);
+
     extern void
     genManagerSync (BRGenericManager gwm);
+
+    extern void
+    genManagerSyncToDepth (BRGenericManager gwm,
+                           BRCryptoSyncDepth depth);
 
     #if 0
     extern BRArrayOf (BRGenericTransfer) // BRSetOf

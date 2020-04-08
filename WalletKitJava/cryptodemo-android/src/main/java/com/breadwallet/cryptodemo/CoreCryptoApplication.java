@@ -149,7 +149,7 @@ public class CoreCryptoApplication extends Application {
             systemListener.addSystemListener(new CoreSystemListener(mode, isMainnet, currencyCodesNeeded));
 
             String uids = UUID.randomUUID().toString();
-            account = Account.createFromPhrase(paperKey, new Date(TimeUnit.SECONDS.toMillis(timestamp)), uids);
+            account = Account.createFromPhrase(paperKey, new Date(TimeUnit.SECONDS.toMillis(timestamp)), uids).get();
 
             blockchainDb = BlockchainDb.createForTest (new OkHttpClient(), BDB_AUTH_TOKEN);
             system = System.create(systemExecutor, systemListener, account,

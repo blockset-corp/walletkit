@@ -55,6 +55,17 @@ extern "C" {
     extern BRCryptoBoolean
     cryptoAccountValidateWordsList (size_t wordsCount);
 
+    /**
+     * Create an Account from a paperKey.  There is absolutely no check on the paperKey as a valid
+     * BIP-39 paperKey for a specified word-list.  Therefore Users should call
+     * `cryptoAccountValidatePaperKey()` prior to any attempt to create an account.
+     *
+     * @param paperKey the paper key
+     * @param timestamp the paper key's creation timestamp
+     * @param uids a uids
+     *
+     * @return The Account, or NULL.  In practice NULL is never returned.
+     */
     extern BRCryptoAccount
     cryptoAccountCreate (const char *paperKey, uint64_t timestamp, const char *uids);
 
