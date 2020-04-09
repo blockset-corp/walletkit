@@ -15,6 +15,12 @@
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilHex.h"
 
+static uint64_t
+hederaTinyBarCoerceToUInt64 (BRHederaUnitTinyBar bars) {
+    assert (bars >= 0);
+    return (uint64_t) bars;
+}
+
 // MARK: - Generic Network
 
 // MARK: - Generic Account
@@ -156,7 +162,7 @@ genericHederaTransferGetTargetAddress (BRGenericTransferRef transfer) {
 static UInt256
 genericHederaTransferGetAmount (BRGenericTransferRef transfer) {
     BRHederaUnitTinyBar thbar = hederaTransactionGetAmount ((BRHederaTransaction) transfer);
-    return uint256Create((uint64_t) thbar);
+    return uint256Create(hederaTinyBarCoerceToUInt64 (thbar));
 }
 
 static BRGenericFeeBasis
@@ -164,7 +170,7 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
     // TODO -
     BRHederaUnitTinyBar hederaFee = hederaTransactionGetFee ((BRHederaTransaction) transfer);
     return (BRGenericFeeBasis) {
-        uint256Create ((uint64_t) hederaFee),
+        uint256Create (hederaTinyBarCoerceToUInt64 (hederaFee)),
         1
     };
 }
@@ -198,7 +204,7 @@ genericHederaWalletFree (BRGenericWalletRef wallet) {
 
 static UInt256
 genericHederaWalletGetBalance (BRGenericWalletRef wallet) {
-    return uint256Create ((uint64_t) hederaWalletGetBalance ((BRHederaWallet) wallet));
+    return uint256Create (hederaTinyBarCoerceToUInt64 (hederaWalletGetBalance ((BRHederaWallet) wallet)));
 }
 
 static UInt256
@@ -206,7 +212,7 @@ genericHederaWalletGetBalanceLimit (BRGenericWalletRef wallet,
                                     int asMaximum,
                                     int *hasLimit) {
 
-    return uint256Create ((uint64_t) hederaWalletGetBalanceLimit ((BRHederaWallet) wallet, asMaximum, hasLimit));
+    return uint256Create (hederaTinyBarCoerceToUInt64 (hederaWalletGetBalanceLimit ((BRHederaWallet) wallet, asMaximum, hasLimit)));
 }
 
 static BRGenericAddressRef
