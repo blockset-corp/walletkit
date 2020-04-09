@@ -156,7 +156,7 @@ public class CryptoLibraryIT {
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
                 uids
-        );
+        ).get();
 
         try {
             BRCryptoNetwork network;
@@ -196,7 +196,7 @@ public class CryptoLibraryIT {
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
                 uids
-        );
+        ).get();
 
         try {
             BRCryptoNetwork network;
@@ -235,7 +235,7 @@ public class CryptoLibraryIT {
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
                 uids
-        );
+        ).get();
 
         try {
             BRCryptoNetwork network;

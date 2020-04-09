@@ -116,7 +116,7 @@ public final class System {
         precondition (network.supportsMode(mode))
         precondition (network.supportsAddressScheme(addressScheme))
 
-        guard account.isInitialized (onNetwork: network),
+        guard accountIsInitialized (account, onNetwork: network),
             let manager = WalletManager (system: self,
                                          callbackCoordinator: callbackCoordinator,
                                          account: account,
@@ -154,6 +154,178 @@ public final class System {
     public var wallets: [Wallet] {
         return managers.flatMap { $0.wallets }
     }
+
+    // Account Initialization
+    
+    public enum AccountInitializationError: Error {
+        /// The function `accountInitialize(...callback)` was called but `accountIsInitialized()`
+        /// return `true`.  No account initialization is required.
+        case alreadyInitialized
+
+        /// If account initialization requires a remote/HTTP query, then the query has failed.
+        /// It is worth retrying.  Could occur if network connectivity is lost or remote/HTTP
+        /// services are down.
+        case queryFailure(String)
+
+        /// An attempt was made to get the required account initialization data (aka 'create an
+        /// account on the specified network') but the creation failed.  It is worth retrying but
+        /// a delay may be warrented.  That is 'creating an account' might be in progress but
+        /// got reported as failed; waiting a bit might allow the 'create' to complete.
+        case cantCreate
+
+        /// An attempt was made to get the required account initialization data (aka 'create an
+        /// account on the specified network') but multiple accounts already exist.  This is
+        /// unusual and may indicate a) a sophisticated User creating accounts outside of BRD, or
+        /// b) and error during a BRD create that 'missed' a creation and now multiple exist.
+        /// Chose the preferred account from among the array - like the one with the largest
+        /// balance and then call `accountInitialize(...hedera)`
+        case multipleHederaAccounts ([BlockChainDB.Model.HederaAccount])
+    }
+
+    ///
+    /// Check if `Account` is initialized.  A WalletManger for {account, network} can not be
+    /// created unless the account is initialized.  Some blockchains, such as Hedera, require
+    /// a distinct initialization process.
+    ///
+    /// - Parameters:
+    ///   - account: The Account
+    ///   - network: The Network
+    ///
+    /// - Returns: `true` if initialized, `false` otherwise.
+    ///
+    public func accountIsInitialized (_ account: Account, onNetwork network: Network) -> Bool {
+        return account.isInitialized(onNetwork: network)
+    }
+
+    ///
+    /// Initialize an account for network.
+    ///
+    /// - Parameters:
+    ///   - account: The Account
+    ///   - network: The Network
+    ///   - completion: A Handler that is invoked once initialization is complete.  On success,
+    ///       the `Result` contains `account serialization data` that must be persistently stored.
+    ///
+    public func accountInitialize (_ account: Account,
+                                   onNetwork network: Network,
+                                   completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
+        guard !accountIsInitialized(account, onNetwork: network)
+            else {
+                accountInitializeReportResult (Result.failure(.alreadyInitialized), completion)
+                return
+        }
+
+        switch network.type {
+        case .hbar:
+            // For Hedera, the account initialization data is the public key.
+            guard let publicKey = account.getInitializationdData(onNetwork: network)
+                .flatMap ({ CoreCoder.hex.encode(data: $0) })
+            else {
+                accountInitializeReportResult (Result.failure(.queryFailure("No initialization data")), completion)
+                return
+            }
+
+            print ("SYS: Account: Hedera: publicKey: \(publicKey)")
+
+            // Find a pre-existing account or create one if necessary.
+            query.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
+                (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
+                self.accountInitializeHandleHederaResult (create: true,
+                                                          network: network,
+                                                          publicKey: publicKey,
+                                                          res: res,
+                                                          completion: completion)
+            }
+
+        default:
+            preconditionFailure("Initialization Is Not Supported: \(network.type)")
+        }
+    }
+
+    ///
+    /// If somehow, magically, you've got `initializationData`, use it to initialize `account`.
+    /// Note that `initializationData` is not `account serialization data`; don't confuse them.
+    ///
+    /// - Parameters:
+    ///   - account: The account
+    ///   - network: The network
+    ///   - data: accounit initialization data
+    ///
+    /// - Returns: An Account serialization that must be persistently stored; otherwise really bad
+    ///     things will happen.
+    ///
+    public func accountInitialize (_ account: Account,
+                                   onNetwork network: Network,
+                                   using data: Data) -> Data? {
+        return account.initialize (onNetwork: network, using: data)
+    }
+
+    ///
+    /// Initialize a Hedera account based on a 'selection'.  On `accountInitialize` one fo the
+    /// errors is `multipleHederaAccounts`.  If that occurs, you should select one of them and
+    /// call this function with the one selected.
+    ///
+    /// - Parameters:
+    ///   - account: The Account
+    ///   - network: The Network
+    ///   - hedera:  A HederaAccount selected from among
+    ///         `AccountInitializationError.multipleHederaAccounts`
+    ///
+    /// - Returns: An Account serialization that must be persistently stored; otherwise really bad
+    ///     things will happen.
+    ///
+    public func accountInitialize (_ account: Account,
+                                   onNetwork network: Network,
+                                   hedera: BlockChainDB.Model.HederaAccount) -> Data? {
+        return hedera.id.data(using: .utf8)
+            .flatMap { accountInitialize (account, onNetwork: network, using: $0) }
+    }
+
+    private func accountInitializeHandleHederaResult (create: Bool,
+                                                      network: Network,
+                                                      publicKey: String,
+                                                      res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>,
+                                                      completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
+        res.resolve (
+            success: { (accounts: [BlockChainDB.Model.HederaAccount]) in
+                switch accounts.count {
+                case 0:
+                    if !create { accountInitializeReportResult (Result.failure(.cantCreate), completion) }
+                    else {
+                        query.createHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
+                            (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
+                            self.accountInitializeHandleHederaResult (create: false,
+                                                                      network: network,
+                                                                      publicKey: publicKey,
+                                                                      res: res,
+                                                                      completion: completion)
+                        }
+                    }
+
+                case 1:
+                    print ("SYS: Account: Hedera: AccountID: \(accounts[0].id), Balance: \(accounts[0].balance)")
+
+                    let serialization = accountInitialize (account,
+                                                           onNetwork: network,
+                                                           hedera: accounts[0])
+                    accountInitializeReportResult (Result.success(serialization), completion)
+
+                default:
+                    accountInitializeReportResult (Result.failure (.multipleHederaAccounts (accounts)), completion)
+                }},
+
+            failure: { (error: BlockChainDB.QueryError) in
+                accountInitializeReportResult (Result.failure (.queryFailure (error.localizedDescription)), completion)
+        })
+    }
+
+    private func accountInitializeReportResult (_ res: Result<Data?, AccountInitializationError>,
+                                                _ completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
+        queue.async { completion (res.flatMap {
+            $0.map { Result.success ($0) } ?? Result.failure(.queryFailure("No Data")) }) }
+    }
+
+    /// System Initialization
 
     static func ensurePath (_ path: String) -> Bool {
         // Apple on `fileExists`, `isWritableFile`
@@ -959,7 +1131,7 @@ extension System {
                     walletManagerEvent = WalletManagerEvent.syncStarted
 
                 case CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES:
-                    let timestamp: Date? = (0 == event.u.syncContinues.timestamp // CRYPTO_NO_SYNC_TIMESTAMP
+                    let timestamp: Date? = (0 == event.u.syncContinues.timestamp // NO_CRYPTO_SYNC_TIMESTAMP
                         ? nil
                         : Date (timeIntervalSince1970: TimeInterval(event.u.syncContinues.timestamp)))
 
@@ -1480,7 +1652,7 @@ extension System {
                         else { System.cleanup  ("SYS: SubmitTransaction: Missed {network}", cwm: cwm); return }
 
                     manager.query.submitTransactionAsETH (network: network,
-                                                          transaction: data.asHexEncodedString (prefix: "0x")) {
+                                                          transaction: "0x" + CoreCoder.hex.encode (data: data)!) {
                                                             (res: Result<String, BlockChainDB.QueryError>) in
                                                             defer { cryptoWalletManagerGive (cwm!) }
                                                             res.resolve (
