@@ -174,7 +174,7 @@ public class BlockChainDB {
 
     // this token has no expiration - testing only.
     public static let createForTestBDBBaseURL = "https://api.blockset.com"
-    public static let createForTestBDBToken   = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNzQ5NTA2ZS02MWUzLTRjM2UtYWNiNS00OTY5NTM2ZmRhMTAiLCJpYXQiOjE1NzI1NDY1MDAuODg3LCJleHAiOjE4ODAxMzA1MDAuODg3LCJicmQ6Y3QiOiJ1c3IiLCJicmQ6Y2xpIjoiZGViNjNlMjgtMDM0NS00OGY2LTlkMTctY2U4MGNiZDYxN2NiIn0.460_GdAWbONxqOhWL5TEbQ7uEZi3fSNrl0E_Zg7MAg570CVcgO7rSMJvAPwaQtvIx1XFK_QZjcoNULmB8EtOdg"
+    public static let createForTestBDBToken   = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg"
 
     ///
     /// Create a BlockChainDB using a specified Authorization token.  This is declared 'public'
@@ -616,6 +616,27 @@ public class BlockChainDB {
                     balances: balances)
         }
 
+        /// Hedera Account
+
+        public typealias HederaAccount = (
+            id: String,
+            balance: UInt64,
+            deleted: Bool,
+            timestamp: Date
+        )
+
+        static internal func asHederaAccount (json: JSON) -> HederaAccount? {
+            guard let id      = json.asString (name: "account_id"),
+                let balance   = json.asUInt64 (name: "hbar_balance"),
+                let status    = json.asString (name: "account_status"),
+                let timestamp = json.asDate   (name: "updated")
+                else { return nil }
+
+            return (id: id,
+                    balance: balance,
+                    deleted: "active" != status,
+                    timestamp: timestamp)
+        }
 
     } // End of Model
 
@@ -1079,6 +1100,134 @@ public class BlockChainDB {
                                                              data: $0,
                                                              transform: Model.asAddress)
                             })
+                        }
+        }
+    }
+
+    // Experimental - Hedera Account Creation
+
+    private func canonicalizePublicKey (_ publicKey: String) -> String {
+        return publicKey.starts(with: "0x") || publicKey.starts(with: "0X")
+            ? String (publicKey.dropFirst (2))
+            : publicKey
+    }
+
+    private func getHederaAccount (blockchainId: String,
+                                   publicKey: String,
+                                   transactionId: String,
+                                   completion: @escaping (Result<[Model.HederaAccount],QueryError>) -> Void) {
+        let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
+        let noDataFailure = Result<[Model.HederaAccount],QueryError>.failure(BlockChainDB.QueryError.noData)
+
+        let retryPeriodInSeconds = 5
+        let retryDurationInSeconds = 4 * 60
+        var retriesRemaining = (retryDurationInSeconds / retryPeriodInSeconds) - 1
+
+        func handleResult (res: Result<JSON.Dict, QueryError>) {
+            switch res {
+            case .failure (let error): completion (Result.failure(error))
+            case .success (let dict) :
+                let json = JSON (dict: dict)
+
+                guard let transactionStatus = json.asString(name: "transaction_status")
+                    else { completion (noDataFailure); return }
+
+                switch transactionStatus {
+                case "success":
+                    self.getHederaAccount (blockchainId: blockchainId,
+                                           publicKey: publicKey,
+                                           completion: completion)
+
+                case "pending":
+                    guard retriesRemaining > 0
+                        else { completion (noDataFailure); return }
+
+                    retriesRemaining -= 1
+                    let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * retryPeriodInSeconds))
+                    self.queue.asyncAfter (deadline: deadline) {
+                        self.makeRequest (self.bdbDataTaskFunc, self.bdbBaseURL,
+                                          path: path,
+                                          httpMethod: "GET",
+                                          completion: handleResult)
+                    }
+
+                default /* failed */:
+                    completion (noDataFailure)
+                }
+
+            }
+        }
+
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: path,
+                     httpMethod: "GET",
+                     completion: handleResult)
+    }
+
+    public func getHederaAccount (blockchainId: String,
+                                  publicKey: String,
+                                  completion: @escaping (Result<[Model.HederaAccount], QueryError>) -> Void) {
+        let queryKeys = ["blockchain_id", "pub_key"  ]
+        let queryVals = [ blockchainId,    canonicalizePublicKey (publicKey) ]
+
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: "/_experimental/hedera/accounts",
+                     query: zip (queryKeys, queryVals),
+                     data: nil,
+                     httpMethod: "GET") {
+                        (res: Result<JSON.Dict, QueryError>) in
+                        self.bdbHandleResult (res, embeddedPath: "accounts") {
+                            (ignore, res: Result<[BlockChainDB.JSON], BlockChainDB.QueryError>) in
+                            completion (res.flatMap {
+                                BlockChainDB.getManyExpected(data: $0, transform: Model.asHederaAccount)
+                            })
+                        }
+        }
+    }
+
+    public func createHederaAccount (blockchainId: String,
+                                     publicKey: String,
+                                     completion: @escaping (Result<[Model.HederaAccount], QueryError>) -> Void) {
+        let noDataFailure = Result<[Model.HederaAccount],QueryError>.failure(BlockChainDB.QueryError.noData)
+
+        let publicKey = canonicalizePublicKey (publicKey)
+
+        let postData: JSON.Dict = [
+            "blockchain_id": blockchainId,
+            "pub_key": publicKey
+        ]
+
+        // Make a POST request to `/_experimental/hedera/accounts`.  On success a "transaction_id"
+        // will be returned, in the JSON reponse data, that can be repeatedly queried for the
+        // created AccountID.  On failure, if the POST produced a '422' status, then the AccountID
+        // already exists and can be queried.
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: "/_experimental/hedera/accounts",
+                     data: postData,
+                     httpMethod: "POST") {
+                        (res: Result<JSON.Dict, QueryError>) in
+                        switch res {
+                        case .failure (let error):
+                            // If a reponse error with HTTP status of 422, the Hedera accont
+                            // already exists.  Just get it.
+                            if case let .response (code) = error, code == 422 {
+                                self.getHederaAccount (blockchainId: blockchainId,
+                                                       publicKey: publicKey,
+                                                       completion: completion)
+                            }
+                            else {
+                                completion (Result.failure(error))
+                            }
+                        case .success (let dict ):
+                            let json = JSON (dict: dict)
+
+                            guard let transactionId = json.asString(name: "transaction_id")
+                                else { completion (noDataFailure); return }
+
+                            self.getHederaAccount (blockchainId: blockchainId,
+                                                   publicKey: publicKey,
+                                                   transactionId: transactionId,
+                                                   completion: completion)
                         }
         }
     }

@@ -9,9 +9,10 @@ package com.breadwallet.cryptodemo;
 
 import android.support.annotation.Nullable;
 
-import com.breadwallet.crypto.Coder;
 import com.breadwallet.crypto.Account;
+import com.breadwallet.crypto.Address;
 import com.breadwallet.crypto.AddressScheme;
+import com.breadwallet.crypto.Coder;
 import com.breadwallet.crypto.Currency;
 import com.breadwallet.crypto.Network;
 import com.breadwallet.crypto.NetworkType;
@@ -20,6 +21,9 @@ import com.breadwallet.crypto.Transfer;
 import com.breadwallet.crypto.Wallet;
 import com.breadwallet.crypto.WalletManager;
 import com.breadwallet.crypto.WalletManagerMode;
+import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
+import com.breadwallet.crypto.errors.AccountInitializationError;
+import com.breadwallet.crypto.errors.AccountInitializationMultipleHederaAccountsError;
 import com.breadwallet.crypto.events.network.NetworkEvent;
 import com.breadwallet.crypto.events.system.DefaultSystemEventVisitor;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
@@ -32,6 +36,7 @@ import com.breadwallet.crypto.events.wallet.DefaultWalletEventVisitor;
 import com.breadwallet.crypto.events.wallet.WalletCreatedEvent;
 import com.breadwallet.crypto.events.wallet.WalletEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerEvent;
+import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 
 import java.util.ArrayList;
@@ -150,24 +155,48 @@ public class CoreSystemListener implements SystemListener {
 
                 system.wipe(network);
                 if (!account.isInitialized(network)) {
-                    Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
 
-                    byte[] dataForInitialization = account.getInitializationData (network);
-                    Log.log(Level.FINE, String.format("Account: DataForInitialization: %s",
-                            hexCoder.encode(dataForInitialization).get()));
+                    checkState (network.getType() == NetworkType.HBAR);
+                    List<byte[]> serializationData = new ArrayList<>();
 
-                    if (NetworkType.HBAR == network.getType()) {
-                        byte[] initializationData = "0.0.114008".getBytes();
-                        Log.log(Level.FINE, String.format("Account: InitializationData: %s", "0.0.114008"));
+                    system.accountInitialize(system.getAccount(), network, new CompletionHandler<byte[], AccountInitializationError>() {
+                        @Override
+                        public void handleData(byte[] data) {
+                            serializationData.add(data);
+                            createWalletManagerIfAppropriate(serializationData, system, network, mode, addressScheme);
+                        }
 
-                        byte[] serializationData = account.initialize(network, initializationData);
-                        Log.log(Level.FINE, String.format("Account: Serialization: %s",
-                                hexCoder.encode(serializationData).get()));
-                    }
-                    Log.log(Level.FINE, String.format("Account: Initialized: %s", account.isInitialized(network)));
+                        @Override
+                        public void handleError(AccountInitializationError error) {
+                            if (error instanceof AccountInitializationMultipleHederaAccountsError) {
+                                List<HederaAccount> accounts = ((AccountInitializationMultipleHederaAccountsError) error).getAccounts();
+
+                                // Sort accounts....
+                                system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
+                                        .transform((bytes) -> { serializationData.add(bytes); return null; });
+                            }
+                            createWalletManagerIfAppropriate(serializationData, system, network, mode, addressScheme);
+                        }
+                    });
+
                 }
-                checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
             }
+        }
+    }
+
+    private void createWalletManagerIfAppropriate (List<byte[]> serializationData,
+                                                   System system,
+                                                   Network network,
+                                                   WalletManagerMode mode,
+                                                   AddressScheme addressScheme) {
+        if (!serializationData.isEmpty()) {
+            Coder hexCoder = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX);
+
+            // Normally, save the `serializationData`; but not here - DEMO-SPECIFIC
+            Log.log(Level.INFO, String.format("Account: SerializationData: %s",
+                    hexCoder.encode(serializationData.get(0))));
+
+            checkState(system.createWalletManager(network, mode, addressScheme, Collections.emptySet()));
         }
     }
 
