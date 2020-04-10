@@ -107,6 +107,11 @@ extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transactio
 extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transaction);
 extern int hederaTransactionHasError (BRHederaTransaction transaction);
 
+// Memo
+extern void hederaTransactionSetMemo(BRHederaTransaction transaction, const char* memo);
+extern char * // Caller owns memory and must free calling "free"
+hederaTransactionGetMemo(BRHederaTransaction transaction);
+
 // Check equality
 extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2);
 

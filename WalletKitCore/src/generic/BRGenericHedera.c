@@ -15,6 +15,13 @@
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilHex.h"
 
+#define FIELD_OPTION_MEMO "memo"
+
+static int // 1 if equal, 0 if not.
+genericHederaCompareFieldOption (const char *t1, const char *t2) {
+    return 0 == strcasecmp (t1, t2);
+}
+
 static uint64_t
 hederaTinyBarCoerceToUInt64 (BRHederaUnitTinyBar bars) {
     assert (bars >= 0);
@@ -259,12 +266,29 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
     BRHederaUnitTinyBar thbar  = (BRHederaUnitTinyBar) amount.u64[0];
     BRHederaAddress nodeAddress = hederaWalletGetNodeAddress((BRHederaWallet) wallet);
     BRHederaFeeBasis feeBasis;
-    feeBasis.costFactor = estimatedFeeBasis.costFactor;
+    feeBasis.costFactor = (uint32_t)estimatedFeeBasis.costFactor;
     int overflow = 0;
     feeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) uint64Coerce(estimatedFeeBasis.pricePerCostFactor, &overflow);
     assert(overflow == 0);
-    return (BRGenericTransferRef) hederaTransactionCreateNew (source, (BRHederaAddress) target,
+    BRHederaTransaction transaction =  hederaTransactionCreateNew (source, (BRHederaAddress) target,
                                                            thbar, feeBasis, nodeAddress, NULL);
+
+    for (size_t index = 0; index < attributesCount; index++) {
+        BRGenericTransferAttribute attribute = attributes[index];
+        if (NULL != genTransferAttributeGetVal(attribute)) {
+            if (genericHederaCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_MEMO)) {
+                const char * memo = genTransferAttributeGetVal (attribute);
+                hederaTransactionSetMemo (transaction, memo);
+            } else {
+                // TODO: Impossible if validated?
+            }
+        }
+    }
+
+    hederaAddressFree(source);
+    hederaAddressFree(nodeAddress);
+
+    return (BRGenericTransferRef) transaction;
 }
 
 static BRGenericFeeBasis
