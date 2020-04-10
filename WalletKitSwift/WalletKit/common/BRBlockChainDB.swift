@@ -620,22 +620,20 @@ public class BlockChainDB {
 
         public typealias HederaAccount = (
             id: String,
-            balance: UInt64,
-            deleted: Bool,
-            timestamp: Date
+            balance: UInt64?,
+            deleted: Bool
         )
 
         static internal func asHederaAccount (json: JSON) -> HederaAccount? {
             guard let id      = json.asString (name: "account_id"),
-                let balance   = json.asUInt64 (name: "hbar_balance"),
-                let status    = json.asString (name: "account_status"),
-                let timestamp = json.asDate   (name: "updated")
+                let status    = json.asString (name: "account_status")
                 else { return nil }
+
+            let balance   = json.asUInt64 (name: "hbar_balance")
 
             return (id: id,
                     balance: balance,
-                    deleted: "active" != status,
-                    timestamp: timestamp)
+                    deleted: "active" != status)
         }
 
     } // End of Model
