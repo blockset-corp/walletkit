@@ -2,6 +2,7 @@ package com.breadwallet.crypto.blockchaindb.models.bdb;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Optional;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -12,27 +13,23 @@ public class HederaAccount {
     @JsonCreator
     public static HederaAccount create(@JsonProperty("account_id") String accountId,
                                        @JsonProperty("hbar_balance") Long balance,
-                                       @JsonProperty("account_status") String status,
-                                       @JsonProperty("updated") Date timestamp) {
+                                       @JsonProperty("account_status") String status) {
         return new HederaAccount(
                 checkNotNull(accountId),
-                checkNotNull(balance),
-                checkNotNull(status),
-                checkNotNull(timestamp)
+                balance,
+                checkNotNull(status)
         );
     }
 
     private final String accountId;
-    private final Long balance;
+    private final Optional<Long> balance;
     private final String status;
-    private final Date timestamp;
 
-    private HederaAccount (String accountId, Long balance, String status, Date timestamp) {
+    private HederaAccount (String accountId, Long balance, String status) {
         this.accountId = accountId;
-        this.balance = balance;
+        this.balance = Optional.fromNullable(balance);
         this.status = status;
-        this.timestamp = timestamp;
-    }
+        }
 
     @JsonProperty("account_id")
     public String getAccountId () {
@@ -40,7 +37,7 @@ public class HederaAccount {
     }
 
     @JsonProperty("hbar_balance")
-    public Long getBalance () {
+    public Optional<Long> getBalance () {
         return balance;
     }
 
@@ -49,15 +46,10 @@ public class HederaAccount {
         return status;
     }
 
-    @JsonProperty("updated")
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
     public boolean isDeleted() {
         return !"active".equalsIgnoreCase(status);
     }
 
     public static final Comparator<HederaAccount> BALANCE_COMPARATOR =
-            (HederaAccount a1, HederaAccount a2) -> Long.compare(a1.getBalance(), a2.getBalance());
+            (HederaAccount a1, HederaAccount a2) -> Long.compare(a1.getBalance().or(0L), a2.getBalance().or(0L));
 }

@@ -2406,72 +2406,76 @@ final class System implements com.breadwallet.crypto.System {
     public void accountInitialize(com.breadwallet.crypto.Account account,
                                   com.breadwallet.crypto.Network network,
                                   CompletionHandler<byte[], AccountInitializationError> handler) {
-        if (accountIsInitialized (account, network)) {
-            accountInitializeReportError (new AccountInitializationAlreadyInitializedError(), handler);
-            return;
-        }
+        EXECUTOR_CLIENT.execute(() -> {
+            if (accountIsInitialized(account, network)) {
+                accountInitializeReportError(new AccountInitializationAlreadyInitializedError(), handler);
+                return;
+            }
 
-        switch (network.getType()) {
-            case HBAR:
-                Optional<String> publicKey = Optional.fromNullable(account.getInitializationData(network))
-                        .transform((data) -> Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX).encode(data))
-                        .get();
+            switch (network.getType()) {
+                case HBAR:
+                    Optional<String> publicKey = Optional.fromNullable(account.getInitializationData(network))
+                            .transform((data) -> Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX).encode(data))
+                            .get();
 
-                if (!publicKey.isPresent()) {
-                    accountInitializeReportError (new AccountInitializationQueryError(new QueryNoDataError()), handler);
-                    return;
-                }
+                    if (!publicKey.isPresent()) {
+                        accountInitializeReportError(new AccountInitializationQueryError(new QueryNoDataError()), handler);
+                        return;
+                    }
 
-                Log.log(Level.INFO, "HBAR accountInitialize: publicKey: %s", publicKey.get());
+                    Log.log(Level.INFO, "HBAR accountInitialize: publicKey: %s", publicKey.get());
 
-                // We'll recursively reference this 'hederaHandler' - put it in a 'final box' so
-                // that the compiler permits references w/o 'perhaps not initialized' errors.
-                final HederaAccountCompletionHandler[] hederaHandlerBox = new HederaAccountCompletionHandler[1];
-                hederaHandlerBox[0] = new HederaAccountCompletionHandler() {
-                    @Override
-                    public void handleData(List<HederaAccount> accounts) {
-                        switch (accounts.size()) {
-                            case 0:
-                                if (!hederaHandlerBox[0].create) {
-                                    accountInitializeReportError(new AccountInitializationCantCreateError(), handler);
-                                } else {
-                                    // Create the account; but only try once.
-                                    hederaHandlerBox[0].create = false;
-                                    query.createHederaAccount(network.getUids(), publicKey.get(), hederaHandlerBox[0]);
-                                }
-                                break;
+                    // We'll recursively reference this 'hederaHandler' - put it in a 'final box' so
+                    // that the compiler permits references w/o 'perhaps not initialized' errors.
+                    final HederaAccountCompletionHandler[] hederaHandlerBox = new HederaAccountCompletionHandler[1];
+                    hederaHandlerBox[0] = new HederaAccountCompletionHandler() {
+                        @Override
+                        public void handleData(List<HederaAccount> accounts) {
+                            switch (accounts.size()) {
+                                case 0:
+                                    if (!hederaHandlerBox[0].create) {
+                                        accountInitializeReportError(new AccountInitializationCantCreateError(), handler);
+                                    } else {
+                                        // Create the account; but only try once.
+                                        hederaHandlerBox[0].create = false;
+                                        query.createHederaAccount(network.getUids(), publicKey.get(), hederaHandlerBox[0]);
+                                    }
+                                    break;
 
-                            case 1:
-                                Log.log(Level.INFO, String.format("HBAR accountInitialize: Hedera AccountId: %s, Balance: %s",
-                                        accounts.get(0).getAccountId(),
-                                        accounts.get(0).getBalance()));
+                                case 1:
+                                    Log.log(Level.INFO, String.format("HBAR accountInitialize: Hedera AccountId: %s, Balance: %s",
+                                            accounts.get(0).getAccountId(),
+                                            accounts.get(0).getBalance()));
 
-                                Optional<byte[]> serialization = accountInitializeUsingHedera(account, network, accounts.get(0));
-                                if (serialization.isPresent()) {
-                                    accountInitializeReportSuccess(serialization.get(), handler);
-                                } else {
-                                    accountInitializeReportError(new AccountInitializationQueryError(new QueryNoDataError()), handler);
-                                }
-                                break;
+                                    Optional<byte[]> serialization = accountInitializeUsingHedera(account, network, accounts.get(0));
+                                    if (serialization.isPresent()) {
+                                        accountInitializeReportSuccess(serialization.get(), handler);
+                                    } else {
+                                        accountInitializeReportError(new AccountInitializationQueryError(new QueryNoDataError()), handler);
+                                    }
+                                    break;
 
-                            default:
-                                accountInitializeReportError(new AccountInitializationMultipleHederaAccountsError(accounts), handler);
-                                break;
+                                default:
+                                    accountInitializeReportError(new AccountInitializationMultipleHederaAccountsError(accounts), handler);
+                                    break;
+                            }
+
                         }
 
-                    }
+                        @Override
+                        public void handleError(QueryError error) {
+                            accountInitializeReportError(new AccountInitializationQueryError(error), handler);
+                        }
+                    };
 
-                    @Override
-                    public void handleError(QueryError error) {
-                        accountInitializeReportError(new AccountInitializationQueryError(error), handler);
-                    }
-                };
+                    query.getHederaAccount(network.getUids(), publicKey.get(), hederaHandlerBox[0]);
+                    break;
 
-                query.getHederaAccount(network.getUids(), publicKey.get(), hederaHandlerBox[0]);
-
-            default:
-                checkState(false);
-        }
+                default:
+                    checkState(false);
+                    break;
+            }
+        });
     }
 
     @Override
@@ -2486,13 +2490,11 @@ final class System implements com.breadwallet.crypto.System {
 
     private void accountInitializeReportError(AccountInitializationError error,
                                               CompletionHandler<byte[], AccountInitializationError> handler) {
-        // Some thread
         handler.handleError(error);
     }
 
     private void accountInitializeReportSuccess(byte[] data,
                                                 CompletionHandler<byte[], AccountInitializationError> handler) {
-        // Some thread
         handler.handleData(data);
     }
 
