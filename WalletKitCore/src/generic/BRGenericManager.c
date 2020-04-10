@@ -225,7 +225,7 @@ fileServiceTypeTransferWriter (BRFileServiceContext context,
          : (GENERIC_TRANSFER_VERSION_2 == version ? GEN_TRANSFER_STATE_ENCODE_V2
             : GEN_TRANSFER_STATE_ENCODE_V1));
 
-BRRlpItem item = rlpEncodeList (coder, 9,
+    BRRlpItem item = rlpEncodeList (coder, 9,
                                     rlpEncodeBytes (coder, hash.value.u8, sizeof (hash.value.u8)),
                                     rlpEncodeString (coder, transfer->uids),
                                     rlpEncodeString (coder, strSource),
