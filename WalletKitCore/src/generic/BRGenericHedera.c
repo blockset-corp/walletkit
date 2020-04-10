@@ -178,9 +178,7 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
 static BRGenericHash
 genericHederaTransferGetHash (BRGenericTransferRef transfer) {
     BRHederaTransactionHash hash = hederaTransactionGetHash ((BRHederaTransaction) transfer);
-    UInt256 value;
-    memcpy (value.u8, hash.bytes, 32);
-    return (BRGenericHash) { value };
+    return genericHashCreate (sizeof(hash.bytes), hash.bytes);
 }
 
 static uint8_t *
