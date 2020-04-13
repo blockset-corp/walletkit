@@ -347,13 +347,14 @@ genTransferSerialize (BRGenericTransfer transfer, size_t *bytesCount) {
 static size_t
 genTransferGetHashForSet (const void *transferPtr) {
     BRGenericTransfer transfer = (BRGenericTransfer) transferPtr;
-    return genTransferGetHash (transfer).value.u32[0];
+    return genericHashSetValue (genTransferGetHash (transfer));
 }
 
 static int
 genTransferIsEqualForSet (const void *transferPtr1, const void *transferPtr2) {
-    return uint256EQL (genTransferGetHash((BRGenericTransfer) transferPtr1).value,
-                      genTransferGetHash((BRGenericTransfer) transferPtr2).value);
+    return (transferPtr1 == transferPtr2 ||
+            genericHashEqual (genTransferGetHash((BRGenericTransfer) transferPtr1),
+                              genTransferGetHash((BRGenericTransfer) transferPtr2)));
 }
 
 extern BRSetOf (BRGenericTransfer)

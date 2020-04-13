@@ -30,28 +30,50 @@ extern "C" {
 
     // MARK: - Generic Hash
 
+    #define GENERIC_HASH_BYTES      64
     typedef struct {
-        UInt256 value;
+        size_t  bytesCount;
+        uint8_t bytes[GENERIC_HASH_BYTES];
     } BRGenericHash;
 
     static inline int
     genericHashEqual (BRGenericHash gen1, BRGenericHash gen2) {
-        return uint256EQL (gen1.value, gen2.value);
+        return (gen1.bytesCount == gen2.bytesCount &&
+                0 == memcmp(gen1.bytes, gen2.bytes, gen1.bytesCount));
     }
 
     static inline int
     genericHashIsEmpty (BRGenericHash gen) {
-        return uint256EQL (gen.value, UINT256_ZERO);
+        assert (gen.bytesCount <= GENERIC_HASH_BYTES);
+        static uint8_t bytes[GENERIC_HASH_BYTES] = { 0 };
+        return 0 == memcmp (gen.bytes, bytes, gen.bytesCount);
+    }
+
+    static inline BRGenericHash
+    genericHashCreate (size_t bytesCount, uint8_t* bytes) {
+        assert (bytesCount <= GENERIC_HASH_BYTES);
+        BRGenericHash hash = { bytesCount, { 0 } };
+        memcpy (hash.bytes, bytes, bytesCount);
+        return hash;
+    }
+
+    static inline BRGenericHash
+    genericHashCreateEmpty (size_t bytesCount) {
+        assert (bytesCount <= GENERIC_HASH_BYTES);
+        return (BRGenericHash) { bytesCount, { 0 } };
     }
 
     static inline char *
     genericHashAsString (BRGenericHash gen) {
-        return hexEncodeCreate (NULL, gen.value.u8, sizeof (gen.value.u8));
+        return hexEncodeCreate (NULL, gen.bytes, gen.bytesCount);
     }
 
     static inline uint32_t
     genericHashSetValue (BRGenericHash gen) {
-        return gen.value.u32[0];
+        assert (gen.bytesCount >= sizeof (uint32_t));
+
+        uint32_t *value = (uint32_t*) gen.bytes;
+        return *value;
     }
 
     // MARK: Generic Fee Basis
