@@ -252,7 +252,7 @@ genericRippleWalletCreateTransfer (BRGenericWalletRef wallet,
                                    BRGenericAddressRef target,
                                    UInt256 amount,
                                    BRGenericFeeBasis estimatedFeeBasis,
-                                   size_t attributeCount,
+                                   size_t attributesCount,
                                    BRGenericTransferAttribute *attributes) {
     BRRippleAddress source  = rippleWalletGetSourceAddress ((BRRippleWallet) wallet);
     BRRippleUnitDrops drops = amount.u64[0];
@@ -263,7 +263,7 @@ genericRippleWalletCreateTransfer (BRGenericWalletRef wallet,
 
     BRRippleTransaction transaction = rippleTransferGetTransaction(transfer);
 
-    for (size_t index = 0; index < attributeCount; index++) {
+    for (size_t index = 0; index < attributesCount; index++) {
         BRGenericTransferAttribute attribute = attributes[index];
         if (NULL != genTransferAttributeGetVal(attribute)) {
             if (genericRippleCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {

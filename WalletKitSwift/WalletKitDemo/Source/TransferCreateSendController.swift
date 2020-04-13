@@ -124,6 +124,14 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 attributes.insert (destinationTagAttribute)
             }
 
+            if let memoAttribute = self.wallet.transferAttributesFor(target: target)
+                .first (where: { "Memo" == $0.key }) {
+                memoAttribute.value = (self.recvField.text! == "0.0.16952" // Binance
+                    ? "1009554437"
+                    : nil)
+                attributes.insert(memoAttribute)
+            }
+
             guard let transfer = self.wallet.createTransfer (target: target,
                                                              amount: amount,
                                                              estimatedFeeBasis: transferFeeBasis,

@@ -246,6 +246,13 @@ genericHederaWalletRemTransfer (BRGenericWalletRef wallet,
     hederaWalletRemTransfer ((BRHederaWallet) wallet, (BRHederaTransaction) transfer);
 }
 
+#define TRANSFER_ATTRIBUTE_MEMO_TAG         "Memo"
+
+static int // 1 if equal, 0 if not.
+genericHederaCompareAttribute (const char *t1, const char *t2) {
+    return 0 == strcasecmp (t1, t2);
+}
+
 static BRGenericTransferRef
 genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
                                    BRGenericAddressRef target,
@@ -257,12 +264,30 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
     BRHederaUnitTinyBar thbar  = (BRHederaUnitTinyBar) amount.u64[0];
     BRHederaAddress nodeAddress = hederaWalletGetNodeAddress((BRHederaWallet) wallet);
     BRHederaFeeBasis feeBasis;
-    feeBasis.costFactor = estimatedFeeBasis.costFactor;
+    feeBasis.costFactor = (uint32_t)estimatedFeeBasis.costFactor;
     int overflow = 0;
     feeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) uint64Coerce(estimatedFeeBasis.pricePerCostFactor, &overflow);
     assert(overflow == 0);
-    return (BRGenericTransferRef) hederaTransactionCreateNew (source, (BRHederaAddress) target,
+
+    BRHederaTransaction transaction = hederaTransactionCreateNew (source, (BRHederaAddress) target,
                                                            thbar, feeBasis, nodeAddress, NULL);
+
+    for (size_t index = 0; index < attributesCount; index++) {
+        BRGenericTransferAttribute attribute = attributes[index];
+        if (NULL != genTransferAttributeGetVal(attribute)) {
+            if (genericHederaCompareAttribute (genTransferAttributeGetKey(attribute), TRANSFER_ATTRIBUTE_MEMO_TAG)) {
+                hederaTransactionSetMemo (transaction, genTransferAttributeGetVal(attribute));
+            }
+            else {
+                // TODO: Impossible if validated?
+            }
+        }
+    }
+
+    hederaAddressFree(source);
+    hederaAddressFree(nodeAddress);
+
+    return (BRGenericTransferRef) transaction;
 }
 
 static BRGenericFeeBasis
@@ -276,27 +301,86 @@ genericHederaWalletEstimateFeeBasis (BRGenericWalletRef wallet,
     };
 }
 
+static const char *knownMemoRequiringAddresses[] = {
+    "0.0.16952",                // Binance
+    NULL
+};
+
+static int
+genericHedraRequiresMemo (BRHederaAddress address) {
+    if (NULL == address) return 0;
+
+    char *addressAsString = hederaAddressAsString(address);
+    int isRequired = 0;
+
+    for (size_t index = 0; NULL != knownMemoRequiringAddresses[index]; index++)
+        if (0 == strcasecmp (addressAsString, knownMemoRequiringAddresses[index])) {
+            isRequired = 1;
+            break;
+        }
+
+    free (addressAsString);
+    return isRequired;
+}
+
 static const char **
 genericHederaWalletGetTransactionAttributeKeys (BRGenericWalletRef wallet,
                                                 BRGenericAddressRef address,
                                                 int asRequired,
                                                 size_t *count) {
 
-    *count = 0;
-    return NULL;
+    if (genericHedraRequiresMemo ((BRHederaAddress) address)) {
+        static size_t requiredCount = 1;
+        static const char *requiredNames[] = {
+            TRANSFER_ATTRIBUTE_MEMO_TAG,
+        };
+
+        static size_t optionalCount = 0;
+        static const char **optionalNames = NULL;
+
+        if (asRequired) { *count = requiredCount; return requiredNames; }
+        else {            *count = optionalCount; return optionalNames; }
+    }
+
+    else {
+        static size_t requiredCount = 0;
+        static const char **requiredNames = NULL;
+
+        static size_t optionalCount = 1;
+        static const char *optionalNames[] = {
+            TRANSFER_ATTRIBUTE_MEMO_TAG
+        };
+
+        if (asRequired) { *count = requiredCount; return requiredNames; }
+        else {            *count = optionalCount; return optionalNames; }
+    }
 }
 
 static int
 genericHederaWalletValidateTransactionAttribute (BRGenericWalletRef wallet,
                                                  BRGenericTransferAttribute attribute) {
-    return 0;
+    const char *key = genTransferAttributeGetKey (attribute);
+    const char *val = genTransferAttributeGetVal (attribute);
+
+    // If attribute.value is NULL, we validate unless the attribute.value is required.
+    if (NULL == val) return !genTransferAttributeIsRequired(attribute);
+
+    if (genericHederaCompareAttribute (key, TRANSFER_ATTRIBUTE_MEMO_TAG)) {
+        // There is no constraint on the form of the 'memo' field.
+        return 1;
+    }
+    else return 0;
 }
 
 static int
 genericHederaWalletValidateTransactionAttributes (BRGenericWalletRef wallet,
                                                   size_t attributesCount,
                                                   BRGenericTransferAttribute *attributes) {
-    return 0;
+    // Validate one-by-one
+    for (size_t index = 0; index < attributesCount; index++)
+        if (0 == genericHederaWalletValidateTransactionAttribute (wallet, attributes[index]))
+            return 0;
+    return 1;
 }
 
 // MARK: - Generic Manager
