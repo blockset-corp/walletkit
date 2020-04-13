@@ -303,7 +303,7 @@ public final class System {
                     }
 
                 case 1:
-                    print ("SYS: Account: Hedera: AccountID: \(accounts[0].id), Balance: \(accounts[0].balance)")
+                    print ("SYS: Account: Hedera: AccountID: \(accounts[0].id), Balance: \(accounts[0].balance?.description ?? "<none>")")
 
                     let serialization = accountInitialize (account,
                                                            onNetwork: network,
