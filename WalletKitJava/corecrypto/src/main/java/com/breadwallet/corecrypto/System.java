@@ -2403,6 +2403,45 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
+    public void accountIsInitializedConfirm(com.breadwallet.crypto.Account account,
+                                            com.breadwallet.crypto.Network network,
+                                            CompletionHandler<Boolean, AccountInitializationError> handler) {
+        EXECUTOR_CLIENT.execute(() -> {
+            boolean initialized = account.isInitialized(network);
+            switch (network.getType()) {
+                case HBAR:
+                    Optional<String> publicKey = Optional.fromNullable(account.getInitializationData(network))
+                            .transform((data) -> Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX).encode(data))
+                            .get();
+
+                    if (!publicKey.isPresent()) {
+                        accountInitializeReportError(new AccountInitializationQueryError(new QueryNoDataError()), handler);
+                        return;
+                    }
+
+                    Log.log(Level.INFO, "HBAR accountIsInitializedConfirm: publicKey: %s", publicKey.get());
+
+                    query.getHederaAccount(network.getUids(), publicKey.get(), new CompletionHandler<List<HederaAccount>, QueryError>() {
+                        @Override
+                        public void handleData(List<HederaAccount> accounts) {
+                            accountInitializeReportSuccess(!accounts.isEmpty(), handler);
+                        }
+
+                        @Override
+                        public void handleError(QueryError error) {
+                            accountInitializeReportError(new AccountInitializationQueryError(error), handler);
+                        }
+                    });
+                    break;
+
+                default:
+                    accountInitializeReportSuccess(initialized, handler);
+                    break;
+            }
+        });
+    }
+
+    @Override
     public void accountInitialize(com.breadwallet.crypto.Account account,
                                   com.breadwallet.crypto.Network network,
                                   CompletionHandler<byte[], AccountInitializationError> handler) {
@@ -2488,14 +2527,14 @@ final class System implements com.breadwallet.crypto.System {
         return Optional.of (account.initialize (network, hedera.getAccountId().getBytes()));
     }
 
-    private void accountInitializeReportError(AccountInitializationError error,
-                                              CompletionHandler<byte[], AccountInitializationError> handler) {
+    private <T> void accountInitializeReportError(AccountInitializationError error,
+                                                  CompletionHandler<T, AccountInitializationError> handler) {
         handler.handleError(error);
     }
 
-    private void accountInitializeReportSuccess(byte[] data,
-                                                CompletionHandler<byte[], AccountInitializationError> handler) {
-        handler.handleData(data);
+    private <T> void accountInitializeReportSuccess(T result,
+                                                    CompletionHandler<T, AccountInitializationError> handler) {
+        handler.handleData(result);
     }
 
     private abstract class HederaAccountCompletionHandler implements CompletionHandler<List<HederaAccount>, QueryError> {

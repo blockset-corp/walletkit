@@ -197,6 +197,53 @@ public final class System {
         return account.isInitialized(onNetwork: network)
     }
 
+    /// Check if `Account` is initialized.   A WalletManger for {account, network} can not be
+    /// created unless the account is initialized.  Some blockchains, such as Hedera, require
+    /// a distinct initialization process.
+    ///
+    /// This method asynchronously checks (for those networks with an underlying asynchronous
+    /// account creation process) if the account is initialized.  This a 'success result' may
+    /// differ from the `accountIsInitialized(_:onNetwork)` function because that function caches
+    /// it's results
+    ///
+    /// Baring User-initiated-outside-of-wallet-kit action, if this function's Result is 'true',
+    /// then upon `accountInitialize` a network-specific account will not need to be created.
+    ///
+    /// - Parameters:
+    ///   - account: The Account
+    ///   - network: The Network
+    ///   - completion: A Handler that is invoked once the check is complete.
+    ///
+    public func accountIsInitialized (_ account: Account,
+                                      onNetwork network: Network,
+                                      completion: @escaping  (Result<Bool, AccountInitializationError>) -> Void) {
+        let initialized = account.isInitialized(onNetwork: network)
+
+        switch network.type {
+        case .hbar:
+            // For Hedera, the account initialization data is the public key.
+            guard let publicKey = account.getInitializationdData(onNetwork: network)
+                .flatMap ({ CoreCoder.hex.encode(data: $0) })
+            else {
+                accountInitializeReportResult (Result.failure(.queryFailure("No initialization data")), completion)
+                return
+            }
+
+            print ("SYS: Account: Hedera: publicKey: \(publicKey)")
+
+            query.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
+                (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
+                self.accountInitializeReportResult(
+                    res.map { !$0.isEmpty }
+                        .mapError { .queryFailure ($0.localizedDescription) },
+                    completion)
+            }
+
+        default:
+            accountInitializeReportResult (Result.success(initialized), completion)
+        }
+    }
+
     ///
     /// Initialize an account for network.
     ///
@@ -319,8 +366,8 @@ public final class System {
         })
     }
 
-    private func accountInitializeReportResult (_ res: Result<Data?, AccountInitializationError>,
-                                                _ completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
+    private func accountInitializeReportResult<T> (_ res: Result<T?, AccountInitializationError>,
+                                                _ completion: @escaping  (Result<T, AccountInitializationError>) -> Void) {
         queue.async { completion (res.flatMap {
             $0.map { Result.success ($0) } ?? Result.failure(.queryFailure("No Data")) }) }
     }

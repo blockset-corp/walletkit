@@ -118,6 +118,16 @@ class CoreDemoListener: SystemListener {
                     // Recover if account is not initialized
                     if !system.accountIsInitialized (system.account, onNetwork: network) {
                         guard .hbar == network.type else { preconditionFailure () }
+
+                        system.accountIsInitialized(system.account, onNetwork: network) {
+                            (res: Result<Bool, System.AccountInitializationError>) in
+                            res.resolve(success: { (exists: Bool) in
+                                print ("APP: Account: Exists: \(exists)")
+                            }) { (error: System.AccountInitializationError) in
+                                print ("APP: Account: Exists: Erorr: \(error.localizedDescription)")
+                            }
+                        }
+
                         system.accountInitialize (system.account, onNetwork: network) {
                             (res:Result<Data, System.AccountInitializationError>) in
 

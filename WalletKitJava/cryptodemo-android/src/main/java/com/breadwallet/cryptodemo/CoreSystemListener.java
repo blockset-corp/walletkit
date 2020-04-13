@@ -159,6 +159,18 @@ public class CoreSystemListener implements SystemListener {
                     checkState (network.getType() == NetworkType.HBAR);
                     List<byte[]> serializationData = new ArrayList<>();
 
+                    system.accountIsInitializedConfirm(system.getAccount(), network, new CompletionHandler<Boolean, AccountInitializationError>() {
+                                @Override
+                                public void handleData(Boolean exists) {
+                                    Log.log(Level.FINE, String.format("Account: Hedera: Exists: %s", exists));
+                                }
+
+                                @Override
+                                public void handleError(AccountInitializationError error) {
+                                    Log.log(Level.FINE, String.format("Account: Hedera: Exists: Error: %s", error.getLocalizedMessage()));
+                                }
+                            }
+                    );
                     system.accountInitialize(system.getAccount(), network, new CompletionHandler<byte[], AccountInitializationError>() {
                         @Override
                         public void handleData(byte[] data) {
@@ -173,7 +185,7 @@ public class CoreSystemListener implements SystemListener {
 
                                 // Sort accounts....
                                 system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
-                                        .transform((bytes) -> { serializationData.add(bytes); return null; });
+                                        .transform((bytes) -> { serializationData.add(bytes); return true; });
                             }
                             createWalletManagerIfAppropriate(serializationData, system, network, mode, addressScheme);
                         }
