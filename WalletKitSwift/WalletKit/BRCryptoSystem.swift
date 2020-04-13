@@ -208,6 +208,7 @@ public final class System {
     ///
     public func accountInitialize (_ account: Account,
                                    onNetwork network: Network,
+                                   createIfDoesNotExist create: Bool,
                                    completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
         guard !accountIsInitialized(account, onNetwork: network)
             else {
@@ -230,7 +231,7 @@ public final class System {
             // Find a pre-existing account or create one if necessary.
             query.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
                 (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
-                self.accountInitializeHandleHederaResult (create: true,
+                self.accountInitializeHandleHederaResult (create: create,
                                                           network: network,
                                                           publicKey: publicKey,
                                                           res: res,
