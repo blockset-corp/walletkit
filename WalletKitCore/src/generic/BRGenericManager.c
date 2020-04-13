@@ -118,7 +118,12 @@ fileServiceTypeTransferV1Identifier (BRFileServiceContext context,
                                      BRFileService fs,
                                      const void *entity) {
     BRGenericTransfer transfer = (BRGenericTransfer) entity;
-    return genTransferGetHash (transfer).value;
+    BRGenericHash     hash     = genTransferGetHash(transfer);
+
+    assert (hash.bytesCount >= sizeof(UInt256));
+    UInt256 *result = (UInt256*) hash.bytes;
+
+    return *result;
 }
 
 static void *
@@ -146,9 +151,9 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     BRGenericTransferState state = genTransferStateDecode (items[7], coder);
     BRArrayOf(BRGenericTransferAttribute) attributes = genTransferAttributesDecode(items[8], coder);
 
-    BRGenericHash *hash = (BRGenericHash*) hashData.bytes;
-    char *strHash   = genericHashAsString (*hash);
+    BRGenericHash hash = genericHashCreate(hashData.bytesCount, hashData.bytes);
 
+    char *strHash   = genericHashAsString (hash);
     char *strAmount = uint256CoerceString (amount, 10);
 
     int overflow = 0;
@@ -226,7 +231,7 @@ fileServiceTypeTransferWriter (BRFileServiceContext context,
             : GEN_TRANSFER_STATE_ENCODE_V1));
 
     BRRlpItem item = rlpEncodeList (coder, 9,
-                                    rlpEncodeBytes (coder, hash.value.u8, sizeof (hash.value.u8)),
+                                    rlpEncodeBytes (coder, hash.bytes, hash.bytesCount),
                                     rlpEncodeString (coder, transfer->uids),
                                     rlpEncodeString (coder, strSource),
                                     rlpEncodeString (coder, strTarget),
