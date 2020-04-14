@@ -118,7 +118,7 @@ class CoreDemoListener: SystemListener {
                     // Recover if account is not initialized
                     if !system.accountIsInitialized (system.account, onNetwork: network) {
                         guard .hbar == network.type else { preconditionFailure () }
-                        system.accountInitialize (system.account, onNetwork: network) {
+                        system.accountInitialize (system.account, onNetwork: network, createIfDoesNotExist: true) {
                             (res:Result<Data, System.AccountInitializationError>) in
 
                             var serializationData: Data? = nil

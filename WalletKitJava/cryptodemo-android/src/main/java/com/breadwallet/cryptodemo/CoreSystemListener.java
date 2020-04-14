@@ -154,12 +154,12 @@ public class CoreSystemListener implements SystemListener {
                 Account account = system.getAccount();
 
                 system.wipe(network);
-                if (!account.isInitialized(network)) {
+                if (!system.accountIsInitialized(account, network)) {
 
                     checkState (network.getType() == NetworkType.HBAR);
                     List<byte[]> serializationData = new ArrayList<>();
 
-                    system.accountInitialize(system.getAccount(), network, new CompletionHandler<byte[], AccountInitializationError>() {
+                    system.accountInitialize(system.getAccount(), network, true, new CompletionHandler<byte[], AccountInitializationError>() {
                         @Override
                         public void handleData(byte[] data) {
                             serializationData.add(data);
