@@ -232,7 +232,7 @@ public interface System {
 
     boolean accountIsInitialized (Account account, Network nework);
 
-    void accountInitialize (Account account, Network network, CompletionHandler<byte[], AccountInitializationError> handler);
+    void accountInitialize (Account account, Network network, boolean create, CompletionHandler<byte[], AccountInitializationError> handler);
 
     Optional<byte[]> accountInitializeUsingData (Account account, Network network, byte[] data);
 

@@ -168,9 +168,7 @@ genericRippleTransferGetFeeBasis (BRGenericTransferRef transfer) {
 static BRGenericHash
 genericRippleTransferGetHash (BRGenericTransferRef transfer) {
     BRRippleTransactionHash hash = rippleTransferGetTransactionId ((BRRippleTransfer) transfer);
-    UInt256 value;
-    memcpy (value.u8, hash.bytes, 32);
-    return (BRGenericHash) { value };
+    return genericHashCreate (sizeof (hash.bytes), hash.bytes);
 }
 
 static uint8_t *
@@ -254,7 +252,7 @@ genericRippleWalletCreateTransfer (BRGenericWalletRef wallet,
                                    BRGenericAddressRef target,
                                    UInt256 amount,
                                    BRGenericFeeBasis estimatedFeeBasis,
-                                   size_t attributeCount,
+                                   size_t attributesCount,
                                    BRGenericTransferAttribute *attributes) {
     BRRippleAddress source  = rippleWalletGetSourceAddress ((BRRippleWallet) wallet);
     BRRippleUnitDrops drops = amount.u64[0];
@@ -265,7 +263,7 @@ genericRippleWalletCreateTransfer (BRGenericWalletRef wallet,
 
     BRRippleTransaction transaction = rippleTransferGetTransaction(transfer);
 
-    for (size_t index = 0; index < attributeCount; index++) {
+    for (size_t index = 0; index < attributesCount; index++) {
         BRGenericTransferAttribute attribute = attributes[index];
         if (NULL != genTransferAttributeGetVal(attribute)) {
             if (genericRippleCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {

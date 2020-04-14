@@ -118,7 +118,7 @@ class CoreDemoListener: SystemListener {
                     // Recover if account is not initialized
                     if !system.accountIsInitialized (system.account, onNetwork: network) {
                         guard .hbar == network.type else { preconditionFailure () }
-                        system.accountInitialize (system.account, onNetwork: network) {
+                        system.accountInitialize (system.account, onNetwork: network, createIfDoesNotExist: true) {
                             (res:Result<Data, System.AccountInitializationError>) in
 
                             var serializationData: Data? = nil
@@ -135,11 +135,11 @@ class CoreDemoListener: SystemListener {
 
                                 case .multipleHederaAccounts(let accounts):
                                     let accountDescriptions = accounts
-                                            .map { "{id: \($0.id), balance: \($0.balance)}"}
+                                        .map { "{id: \($0.id), balance: \($0.balance?.description ?? "<none>")}"}
                                     print ("APP: Account: Multiple Hedera Accounts: \(accountDescriptions.joined(separator: ", "))")
 
                                     // Chose the Hedera account with the largest balance - DEMO-SPECFIC
-                                    let hederaAccount = accounts.sorted { $0.balance > $1.balance }[0]
+                                    let hederaAccount = accounts.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) }[0]
                                     serializationData = system.accountInitialize (system.account,
                                                                                   onNetwork: network,
                                                                                   hedera: hederaAccount)

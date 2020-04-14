@@ -50,7 +50,8 @@ hederaWalletCreate (BRHederaAccount account)
         array_add(wallet->nodes, hederaAddressCreate(0, 0, i));
     }
 
-    array_new(wallet->transactions, 0);
+    // Putting a '1' here avoids a 'false positive' in the Xcode leak instrument.
+    array_new(wallet->transactions, 1);
 
     // Add a default fee basis
     wallet->feeBasis.costFactor = 1;
@@ -67,6 +68,10 @@ hederaWalletFree (BRHederaWallet wallet)
         hederaAddressFree(wallet->nodes[i]);
     }
     array_free(wallet->nodes);
+
+    // Transactions owned elsewhere, it seems.  Therefore, free the array, not the contents.
+    array_free (wallet->transactions);
+
     free(wallet);
 }
 
