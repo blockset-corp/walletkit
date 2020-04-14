@@ -128,7 +128,7 @@ class CoreDemoListener: SystemListener {
                             }
                         }
 
-                        system.accountInitialize (system.account, onNetwork: network) {
+                        system.accountInitialize (system.account, onNetwork: network, createIfDoesNotExist: true) {
                             (res:Result<Data, System.AccountInitializationError>) in
 
                             var serializationData: Data? = nil

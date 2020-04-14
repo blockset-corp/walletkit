@@ -2442,6 +2442,7 @@ final class System implements com.breadwallet.crypto.System {
     @Override
     public void accountInitialize(com.breadwallet.crypto.Account account,
                                   com.breadwallet.crypto.Network network,
+                                  boolean create,
                                   CompletionHandler<byte[], AccountInitializationError> handler) {
         if (accountIsInitialized(account, network)) {
             accountInitializeReportError(new AccountInitializationAlreadyInitializedError(), handler);
@@ -2504,6 +2505,7 @@ final class System implements com.breadwallet.crypto.System {
                     }
                 };
 
+                hederaHandlerBox[0].create = create;
                 query.getHederaAccount(network.getUids(), publicKey.get(), hederaHandlerBox[0]);
                 break;
 
