@@ -10,7 +10,6 @@ package com.breadwallet.cryptodemo;
 import android.support.annotation.Nullable;
 
 import com.breadwallet.crypto.Account;
-import com.breadwallet.crypto.Address;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.Coder;
 import com.breadwallet.crypto.Currency;
@@ -159,7 +158,7 @@ public class CoreSystemListener implements SystemListener {
                     checkState (network.getType() == NetworkType.HBAR);
                     List<byte[]> serializationData = new ArrayList<>();
 
-                    system.accountIsInitializedConfirm(system.getAccount(), network, new CompletionHandler<Boolean, AccountInitializationError>() {
+                    system.accountIsInitialized(system.getAccount(), network, new CompletionHandler<Boolean, AccountInitializationError>() {
                                 @Override
                                 public void handleData(Boolean exists) {
                                     Log.log(Level.FINE, String.format("Account: Hedera: Exists: %s", exists));

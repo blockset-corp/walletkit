@@ -232,7 +232,7 @@ public interface System {
 
     boolean accountIsInitialized (Account account, Network nework);
 
-    void accountIsInitializedConfirm (Account account, Network network, CompletionHandler<Boolean, AccountInitializationError> handler);
+    void accountIsInitialized(Account account, Network network, CompletionHandler<Boolean, AccountInitializationError> handler);
 
     void accountInitialize (Account account, Network network, CompletionHandler<byte[], AccountInitializationError> handler);
 
