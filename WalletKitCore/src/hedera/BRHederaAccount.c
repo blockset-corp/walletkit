@@ -70,6 +70,7 @@ extern void hederaAccountSetAddress (BRHederaAccount account, BRHederaAddress ad
 {
     assert(account);
     assert(address);
+    hederaAddressFree(account->address);
     account->address = hederaAddressClone (address);
 }
 

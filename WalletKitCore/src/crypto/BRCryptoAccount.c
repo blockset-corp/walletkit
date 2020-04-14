@@ -330,6 +330,7 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
     UInt16SetBE (bytes, checksum);
 
     free (xrpBytes);
+    free (hbarBytes);
 
     return bytes;
 }
