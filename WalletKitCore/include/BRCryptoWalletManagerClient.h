@@ -54,14 +54,9 @@ typedef void
                                          OwnershipGiven BRCryptoClientCallbackState callbackState);
 
 extern void
-cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager cwm,
-                                           OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                           uint64_t blockNumber);
-
-extern void
-cwmAnnounceGetBlockNumberSuccessAsString (OwnershipKept BRCryptoWalletManager cwm,
-                                          OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                          OwnershipKept const char *blockNumber);
+cwmAnnounceGetBlockNumberSuccess (OwnershipKept BRCryptoWalletManager cwm,
+                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  uint64_t blockNumber);
 
 extern void
 cwmAnnounceGetBlockNumberFailure (OwnershipKept BRCryptoWalletManager cwm,

@@ -404,7 +404,7 @@ static void
 clientGetBlockNumber (BREthereumClientContext context,
                       BREthereumEWM ewm,
                       int rid) {
-    ewmAnnounceBlockNumber(ewm, "0x2e487e", rid);
+    ewmAnnounceBlockNumber(ewm, 0x2e487e, rid);
 }
 
 static void

@@ -1853,11 +1853,12 @@ cryptoWalletManagerClientCreateGENClient (BRCryptoWalletManager cwm) {
 /// MARK: - Announce Functions
 
 extern void
-cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager cwm,
+cwmAnnounceGetBlockNumberSuccess (OwnershipKept BRCryptoWalletManager cwm,
                                            OwnershipGiven BRCryptoClientCallbackState callbackState,
                                            uint64_t blockNumber) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_GET_BLOCK_NUMBER == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_GET_BLOCK_NUMBER == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_GET_BLOCK_NUMBER == callbackState->type);
 
     cwm = cryptoWalletManagerTake (cwm);
@@ -1868,6 +1869,13 @@ cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager c
                                     callbackState->rid,
                                     blockNumber);
             break;
+
+        case CWM_CALLBACK_TYPE_ETH_GET_BLOCK_NUMBER: {
+            ewmAnnounceBlockNumber (cwm->u.eth,
+                                    blockNumber,
+                                    callbackState->rid);
+            break;
+        }
 
         case CWM_CALLBACK_TYPE_GEN_GET_BLOCK_NUMBER: {
             genManagerAnnounceBlockNumber (cwm->u.gen,
@@ -1892,21 +1900,6 @@ cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager c
         default:
             break;
     }
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetBlockNumberSuccessAsString (OwnershipKept BRCryptoWalletManager cwm,
-                                          OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                          OwnershipKept const char *blockNumber) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BLOCK_NUMBER == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceBlockNumber (cwm->u.eth,
-                            blockNumber,
-                            callbackState->rid);
-
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
@@ -2178,6 +2171,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
             }
 
             case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+                // meta: nonce, gasPrice, gasLimit
 #if 0
                 ewmAnnounceTransaction (cwm->u.eth,
                                         callbackState->rid,

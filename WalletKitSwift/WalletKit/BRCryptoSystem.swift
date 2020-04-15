@@ -1431,6 +1431,7 @@ extension System {
                     else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: GetBlockNumber")
 
+                #if false
                 switch manager.network.type {
                 // Handle ETH explicitly - using an ETH query
                 case .eth:
@@ -1460,7 +1461,17 @@ extension System {
                             success: { cwmAnnounceGetBlockNumberSuccessAsInteger (manager.core, sid, $0.blockHeight!) },
                             failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
                     }
-                }},
+                }
+                #else
+                manager.query.getBlockchain (blockchainId: manager.network.uids) {
+                    (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve (
+                        success: { cwmAnnounceGetBlockNumberSuccess (manager.core, sid, $0.blockHeight!) },
+                        failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
+                }
+                #endif
+                },
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)

@@ -322,9 +322,8 @@ ewmHandleAnnounceBlockNumber (BREthereumEWM ewm,
 
 extern BREthereumStatus
 ewmAnnounceBlockNumber (BREthereumEWM ewm,
-                        const char *strBlockNumber,
+                        uint64_t blockNumber,
                         int rid) {
-    uint64_t blockNumber = strtoull(strBlockNumber, NULL, 0);
     ewmSignalAnnounceBlockNumber (ewm, blockNumber, rid);
     return SUCCESS;
 }

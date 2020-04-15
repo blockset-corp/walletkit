@@ -246,7 +246,7 @@ extern "C" {
 
     extern BREthereumStatus
     ewmAnnounceBlockNumber (BREthereumEWM ewm,
-                            const char *blockNumber,
+                            uint64_t blockNumber,
                             int rid);
 
     /// MARK: - Nonce
