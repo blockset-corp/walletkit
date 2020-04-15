@@ -1698,6 +1698,7 @@ extension System {
                 let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
+                #if false
                 switch manager.network.type {
                 // Handle ETH explicitly - using an ETH query
                 case .eth:
@@ -1723,8 +1724,19 @@ extension System {
                                 print ("SYS: SubmitTransaction: Error: \(e)")
                                 cwmAnnounceSubmitTransferFailure (cwm, sid) })
                     }
-
-                }},
+                }
+                #else
+                manager.query.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                    (res: Result<Void, BlockChainDB.QueryError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve(
+                        success: { (_) in cwmAnnounceSubmitTransferSuccess (cwm, sid, hash) },
+                        failure: { (e) in
+                            print ("SYS: SubmitTransaction: Error: \(e)")
+                            cwmAnnounceSubmitTransferFailure (cwm, sid) })
+                }
+                #endif
+                },
 
             funcGetGasPriceETH: { (context, cwm, sid, network) in
                 precondition (nil != context  && nil != cwm)

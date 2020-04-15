@@ -127,10 +127,6 @@ cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
                                  BRCryptoBoolean success);
 
-extern void
-cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState);
-
 // MARK: - Submit Transaction
 
 typedef void
@@ -142,9 +138,9 @@ typedef void
                                             OwnershipKept const char *hashAsHex);
 
 extern void
-cwmAnnounceSubmitTransferSuccessForHash (OwnershipKept BRCryptoWalletManager cwm,
-                                         OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                         const char *hash);
+cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
+                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  OwnershipKept const char *hash);
 
 extern void
 cwmAnnounceSubmitTransferFailure (OwnershipKept BRCryptoWalletManager cwm,

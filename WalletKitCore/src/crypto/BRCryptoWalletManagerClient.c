@@ -2320,41 +2320,44 @@ cwmAnnounceSubmitTransferResultGEN (OwnershipKept BRCryptoWalletManager cwm,
 
 extern void
 cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState) {
+                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  OwnershipKept const char *hash) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_SUBMIT_TRANSACTION == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_SUBMIT_TRANSACTION == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type);
     cwm = cryptoWalletManagerTake (cwm);
 
-    if (CWM_CALLBACK_TYPE_BTC_SUBMIT_TRANSACTION == callbackState->type && BLOCK_CHAIN_TYPE_BTC == cwm->type) {
-        bwmAnnounceSubmit (cwm->u.btc,
-                           callbackState->rid,
-                           callbackState->u.btcSubmit.txHash,
-                           0);
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_BTC_SUBMIT_TRANSACTION: {
+            assert (BLOCK_CHAIN_TYPE_BTC == cwm->type);
+            bwmAnnounceSubmit (cwm->u.btc,
+                               callbackState->rid,
+                               callbackState->u.btcSubmit.txHash,
+                               0);
+            break;
+        }
+
+        case CWM_CALLBACK_TYPE_ETH_SUBMIT_TRANSACTION: {
+            assert (BLOCK_CHAIN_TYPE_ETH == cwm->type);
+            ewmAnnounceSubmitTransfer (cwm->u.eth,
+                                       callbackState->u.ethWithTransaction.wid,
+                                       callbackState->u.ethWithTransaction.tid,
+                                       hash,
+                                       -1,
+                                       NULL,
+                                       callbackState->rid);
+            break;
+        }
+
+        case CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION: {
+            assert (BLOCK_CHAIN_TYPE_GEN == cwm->type);
+            cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, 0);
+            break;
+        }
+
+        default: assert (0);
     }
-
-    else if (CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type && BLOCK_CHAIN_TYPE_GEN == cwm->type) {
-        cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, 0);
-    }
-
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceSubmitTransferSuccessForHash (OwnershipKept BRCryptoWalletManager cwm,
-                                         OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                         OwnershipKept const char *hash) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_SUBMIT_TRANSACTION == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceSubmitTransfer (cwm->u.eth,
-                               callbackState->u.ethWithTransaction.wid,
-                               callbackState->u.ethWithTransaction.tid,
-                               hash,
-                               -1,
-                               NULL,
-                               callbackState->rid);
 
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
