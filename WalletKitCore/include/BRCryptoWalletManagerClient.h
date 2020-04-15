@@ -202,6 +202,7 @@ extern void
 cwmAnnounceGetBlocksFailure (OwnershipKept BRCryptoWalletManager cwm,
                              OwnershipGiven BRCryptoClientCallbackState callbackState);
 
+#if 0
 // MARK: - (ETH) Get Tokens
 
 typedef void
@@ -223,6 +224,7 @@ extern void
 cwmAnnounceGetTokensComplete (OwnershipKept BRCryptoWalletManager cwm,
                               OwnershipGiven BRCryptoClientCallbackState callbackState,
                               BRCryptoBoolean success);
+#endif
 
 // MARK: - (ETH) Get Block Number
 
@@ -232,7 +234,7 @@ typedef void
                                             OwnershipGiven BRCryptoClientCallbackState callbackState,
                                             OwnershipKept const char *network);
 
-
+#if false
 // MARK: (ETH) Get Nonce
 
 typedef void
@@ -254,7 +256,7 @@ cwmAnnounceGetNonceFailure (BRCryptoWalletManager cwm,
 
 typedef struct {
 } BRCryptoCWMClientETH;
-
+#endif
 
 typedef struct {
     BRCryptoClientContext context;
@@ -264,11 +266,11 @@ typedef struct {
     BRCryptoClientGetTransfersCallback funcGetTransfers;
     BRCryptoClientSubmitTransactionCallback funcSubmitTransaction;
 
-    BRCryptoClientETHGetGasPriceCallback funcGetGasPriceETH;
+//    BRCryptoClientETHGetGasPriceCallback funcGetGasPriceETH;
     BRCryptoClientETHEstimateGasCallback funcEstimateGasETH;
-    BRCryptoClientETHGetBlocksCallback funcGetBlocksETH;
-    BRCryptoClientETHGetTokensCallback funcGetTokensETH; // announce one-by-one
-    BRCryptoClientETHGetNonceCallback funcGetNonceETH;
+//    BRCryptoClientETHGetBlocksCallback funcGetBlocksETH;
+//    BRCryptoClientETHGetTokensCallback funcGetTokensETH; // announce one-by-one
+//    BRCryptoClientETHGetNonceCallback funcGetNonceETH;
 } BRCryptoClient;
 
 #ifdef __cplusplus

@@ -1413,6 +1413,7 @@ cwmGetBalanceAsETH (BREthereumClientContext context,
                     BREthereumWallet wid,
                     const char *address,
                     int rid) {
+#if 0
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
     if (NULL == cwm) return;
@@ -1430,6 +1431,7 @@ cwmGetBalanceAsETH (BREthereumClientContext context,
                                 (NULL == token ? NULL : ethTokenGetAddress (token)));
 
     cryptoWalletManagerGive (cwm);
+#endif
 }
 
 static void
@@ -1437,6 +1439,7 @@ cwmGetGasPriceAsETH (BREthereumClientContext context,
                      BREthereumEWM ewm,
                      BREthereumWallet wid,
                      int rid) {
+#if 0
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
     if (NULL == cwm) return;
@@ -1456,6 +1459,7 @@ cwmGetGasPriceAsETH (BREthereumClientContext context,
 
     free (networkName);
     cryptoWalletManagerGive (cwm);
+#endif
 }
 
 static void
@@ -1586,6 +1590,7 @@ cwmGetBlocksAsETH (BREthereumClientContext context,
                    uint64_t blockNumberStart,
                    uint64_t blockNumberStop,
                    int rid) {
+#if 0
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
     if (NULL == cwm) return;
@@ -1608,12 +1613,14 @@ cwmGetBlocksAsETH (BREthereumClientContext context,
 
     free (networkName);
     cryptoWalletManagerGive (cwm);
+#endif
 }
 
 static void
 cwmGetTokensAsETH (BREthereumClientContext context,
                    BREthereumEWM ewm,
                    int rid) {
+#if 0
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
     if (NULL == cwm) return;
@@ -1627,6 +1634,7 @@ cwmGetTokensAsETH (BREthereumClientContext context,
                                   callbackState);
 
     cryptoWalletManagerGive (cwm);
+#endif
 }
 
 static void
@@ -1653,6 +1661,7 @@ cwmGetNonceAsETH (BREthereumClientContext context,
                   BREthereumEWM ewm,
                   const char *address,
                   int rid) {
+    #if 0
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
     if (NULL == cwm) return;
@@ -1672,6 +1681,7 @@ cwmGetNonceAsETH (BREthereumClientContext context,
 
     free (networkName);
     cryptoWalletManagerGive (cwm);
+    #endif
 }
 
 // MARK: - GEN Callbacks
@@ -1818,16 +1828,16 @@ cryptoWalletManagerClientCreateETHClient (OwnershipKept BRCryptoWalletManager cw
     // All these client callbacks are invoked directly on an ETH thread.
     return (BREthereumClient) {
         cwm,
-        cwmGetBalanceAsETH,
-        cwmGetGasPriceAsETH,
+        cwmGetBalanceAsETH,             // NOOP
+        cwmGetGasPriceAsETH,            // NOOP
         cwmGetGasEstimateAsETH,
-        cwmSubmitTransactionAsETH,
-        cwmGetTransactionsAsETH,
-        cwmGetLogsAsETH,
-        cwmGetBlocksAsETH,
-        cwmGetTokensAsETH,
-        cwmGetBlockNumberAsETH,
-        cwmGetNonceAsETH,
+        cwmSubmitTransactionAsETH,      // cwm->client.funcSubmitTransaction
+        cwmGetTransactionsAsETH,        // cwm->client.funcGetTransfers
+        cwmGetLogsAsETH,                // cwm->client.funcGetTransfers
+        cwmGetBlocksAsETH,              // NOOP
+        cwmGetTokensAsETH,              // NOOP
+        cwmGetBlockNumberAsETH,         // cwm->client.funcGetBlockNumber
+        cwmGetNonceAsETH,               // NOP
 
         // Events - Announce changes to entities that normally impact the UI.
         cwmWalletManagerEventAsETH,
@@ -2497,6 +2507,7 @@ cwmAnnounceGetBlocksFailure (OwnershipKept BRCryptoWalletManager cwm,
     cwmClientCallbackStateRelease (callbackState);
 }
 
+#if false
 extern void
 cwmAnnounceGetTokensItem(OwnershipKept BRCryptoWalletManager cwm,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -2538,7 +2549,9 @@ cwmAnnounceGetTokensComplete(OwnershipKept BRCryptoWalletManager cwm,
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
+#endif
 
+#if false
 extern void
 cwmAnnounceGetNonceSuccess (OwnershipKept BRCryptoWalletManager cwm,
                             OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -2562,3 +2575,4 @@ cwmAnnounceGetNonceFailure (OwnershipKept BRCryptoWalletManager cwm,
     assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_NONCE == callbackState->type);
     cwmClientCallbackStateRelease (callbackState);
 }
+#endif

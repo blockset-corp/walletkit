@@ -1748,23 +1748,22 @@ extension System {
                 }
                 #endif
                 },
-
-            funcGetGasPriceETH: { (context, cwm, sid, network) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {cwm}", cwm: cwm); return }
-
-                guard let network = network.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {network}", cwm: cwm); return }
-
-                manager.query.getGasPriceAsETH (network: network) {
-                    (res: Result<String, BlockChainDB.QueryError>) in
-                    defer { cryptoWalletManagerGive (cwm!) }
-                    res.resolve (
-                        success: { cwmAnnounceGetGasPriceSuccess (cwm, sid, $0) },
-                        failure: { (_) in cwmAnnounceGetGasPriceFailure (cwm, sid) })
-                }},
+//            funcGetGasPriceETH: { (context, cwm, sid, network) in
+//                precondition (nil != context  && nil != cwm)
+//
+//                guard let (_, manager) = System.systemExtract (context, cwm)
+//                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {cwm}", cwm: cwm); return }
+//
+//                guard let network = network.map (asUTF8String)
+//                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {network}", cwm: cwm); return }
+//
+//                manager.query.getGasPriceAsETH (network: network) {
+//                    (res: Result<String, BlockChainDB.QueryError>) in
+//                    defer { cryptoWalletManagerGive (cwm!) }
+//                    res.resolve (
+//                        success: { cwmAnnounceGetGasPriceSuccess (cwm, sid, $0) },
+//                        failure: { (_) in cwmAnnounceGetGasPriceFailure (cwm, sid) })
+//                }},
 
             funcEstimateGasETH: { (context, cwm, sid, network, from, to, amount, price, data) in
                 precondition (nil != context  && nil != cwm)
@@ -1788,76 +1787,77 @@ extension System {
                                                     res.resolve (
                                                         success: { cwmAnnounceGetGasEstimateSuccess (cwm, sid, $0, price) },
                                                         failure: { (_) in cwmAnnounceGetGasEstimateFailure (cwm, sid, CRYPTO_ERROR_FAILED) })
-                }},
+                }}
 
-            funcGetBlocksETH: { (context, cwm, sid, network, address, interests, begBlockNumber, endBlockNumber) in
-                precondition (nil != context  && nil != cwm)
+//            funcGetBlocksETH: { (context, cwm, sid, network, address, interests, begBlockNumber, endBlockNumber) in
+//                precondition (nil != context  && nil != cwm)
+//
+//                guard let (_, manager) = System.systemExtract (context, cwm)
+//                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {cwm}", cwm: cwm); return }
+//
+//                guard let network = network.map (asUTF8String)
+//                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {network}", cwm: cwm); return }
+//
+//                manager.query.getBlocksAsETH (network: network,
+//                                              address: asUTF8String(address!),
+//                                              interests: interests,
+//                                              blockStart: begBlockNumber,
+//                                              blockStop:  endBlockNumber) {
+//                                                (res: Result<[UInt64], BlockChainDB.QueryError>) in
+//                                                defer { cryptoWalletManagerGive (cwm!) }
+//                                                res.resolve (
+//                                                    success: {
+//                                                        let numbersCount = Int32 ($0.count)
+//                                                        var numbers = $0
+//                                                        numbers.withUnsafeMutableBytes {
+//                                                            let bytesAsUInt8 = $0.baseAddress?.assumingMemoryBound(to: UInt64.self)
+//                                                            cwmAnnounceGetBlocksSuccess (cwm, sid, numbersCount, bytesAsUInt8)
+//                                                        }},
+//                                                    failure: { (_) in cwmAnnounceGetBlocksFailure (cwm, sid) })
+//                }},
 
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {cwm}", cwm: cwm); return }
+//            funcGetTokensETH: { (context, cwm, sid) in
+//                precondition (nil != context  && nil != cwm)
+//
+//                guard let (_, manager) = System.systemExtract (context, cwm)
+//                    else { System.cleanup  ("SYS: ETH: GetTokens: Missed {cwm}", cwm: cwm); return }
+//
+//                manager.query.getTokensAsETH () {
+//                    (res: Result<[BlockChainDB.ETH.Token],BlockChainDB.QueryError>) in
+//                    defer { cryptoWalletManagerGive (cwm!) }
+//                    res.resolve(
+//                        success: { (tokens: [BlockChainDB.ETH.Token]) in
+//                            tokens.forEach { (token: BlockChainDB.ETH.Token) in
+//                                cwmAnnounceGetTokensItem (cwm, sid,
+//                                                          token.address,
+//                                                          token.symbol,
+//                                                          token.name,
+//                                                          token.description,
+//                                                          token.decimals,
+//                                                          token.defaultGasLimit,
+//                                                          token.defaultGasPrice) }
+//                            cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_TRUE) },
+//                        failure: { (_) in cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_FALSE) })
+//                }},
 
-                guard let network = network.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {network}", cwm: cwm); return }
-
-                manager.query.getBlocksAsETH (network: network,
-                                              address: asUTF8String(address!),
-                                              interests: interests,
-                                              blockStart: begBlockNumber,
-                                              blockStop:  endBlockNumber) {
-                                                (res: Result<[UInt64], BlockChainDB.QueryError>) in
-                                                defer { cryptoWalletManagerGive (cwm!) }
-                                                res.resolve (
-                                                    success: {
-                                                        let numbersCount = Int32 ($0.count)
-                                                        var numbers = $0
-                                                        numbers.withUnsafeMutableBytes {
-                                                            let bytesAsUInt8 = $0.baseAddress?.assumingMemoryBound(to: UInt64.self)
-                                                            cwmAnnounceGetBlocksSuccess (cwm, sid, numbersCount, bytesAsUInt8)
-                                                        }},
-                                                    failure: { (_) in cwmAnnounceGetBlocksFailure (cwm, sid) })
-                }},
-
-            funcGetTokensETH: { (context, cwm, sid) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetTokens: Missed {cwm}", cwm: cwm); return }
-
-                manager.query.getTokensAsETH () {
-                    (res: Result<[BlockChainDB.ETH.Token],BlockChainDB.QueryError>) in
-                    defer { cryptoWalletManagerGive (cwm!) }
-                    res.resolve(
-                        success: { (tokens: [BlockChainDB.ETH.Token]) in
-                            tokens.forEach { (token: BlockChainDB.ETH.Token) in
-                                cwmAnnounceGetTokensItem (cwm, sid,
-                                                          token.address,
-                                                          token.symbol,
-                                                          token.name,
-                                                          token.description,
-                                                          token.decimals,
-                                                          token.defaultGasLimit,
-                                                          token.defaultGasPrice) }
-                            cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_TRUE) },
-                        failure: { (_) in cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_FALSE) })
-                }},
-
-            funcGetNonceETH: { (context, cwm, sid, network, address) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {cwm}", cwm: cwm); return }
-
-                guard let network = network.map (asUTF8String),
-                    let address = address.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {network, address}", cwm: cwm); return }
-
-                manager.query.getNonceAsETH (network: network, address: address) {
-                    (res: Result<String, BlockChainDB.QueryError>) in
-                    defer { cryptoWalletManagerGive (cwm!) }
-                    res.resolve (
-                        success: { cwmAnnounceGetNonceSuccess (cwm, sid, address, $0) },
-                        failure: { (_) in cwmAnnounceGetNonceFailure (cwm, sid) })
-                }})
+//            funcGetNonceETH: { (context, cwm, sid, network, address) in
+//                precondition (nil != context  && nil != cwm)
+//
+//                guard let (_, manager) = System.systemExtract (context, cwm)
+//                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {cwm}", cwm: cwm); return }
+//
+//                guard let network = network.map (asUTF8String),
+//                    let address = address.map (asUTF8String)
+//                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {network, address}", cwm: cwm); return }
+//
+//                manager.query.getNonceAsETH (network: network, address: address) {
+//                    (res: Result<String, BlockChainDB.QueryError>) in
+//                    defer { cryptoWalletManagerGive (cwm!) }
+//                    res.resolve (
+//                        success: { cwmAnnounceGetNonceSuccess (cwm, sid, address, $0) },
+//                        failure: { (_) in cwmAnnounceGetNonceFailure (cwm, sid) })
+//                }}
+        )
     }
 }
 
