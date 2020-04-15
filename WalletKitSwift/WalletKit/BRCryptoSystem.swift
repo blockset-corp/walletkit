@@ -1512,6 +1512,7 @@ extension System {
                 let currency  = currency.map(asUTF8String)
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
+                #if false
                 switch manager.network.type {
                 case .eth:
                     guard let network = manager.network.ethNetworkName.map ({ $0.lowercased() })
@@ -1634,7 +1635,58 @@ extension System {
                                                             cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_TRUE) },
                                                         failure: { (_) in cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_FALSE) })
                     }
-                }},
+                }
+                #else
+                manager.query.getTransactions (blockchainId: manager.network.uids,
+                                               addresses: addresses,
+                                               begBlockNumber: begBlockNumber,
+                                               endBlockNumber: endBlockNumber,
+                                               includeRaw: false) {
+                                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+                                                defer { cryptoWalletManagerGive(cwm) }
+                                                res.resolve(
+                                                    success: {
+                                                        $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
+                                                            let timestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
+                                                            let height    = transaction.blockHeight ?? 0
+                                                            let status    = System.getTransferStatus (transaction.status)
+
+                                                            System.mergeTransfers (transaction.transfers, with: addresses)
+                                                                .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: String?)) in
+                                                                    let (transfer, fee) = arg
+
+                                                                    var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
+                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
+                                                                    defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                                                                    var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
+                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
+                                                                    defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                                                                    // If 'fee' is 'nil' it comes from the transaction...
+
+                                                                    // Use MetaData to extract TransferAttribute
+                                                                    cwmAnnounceGetTransferItem (cwm, sid, status,
+                                                                                                   transaction.hash,
+                                                                                                   transfer.id,
+                                                                                                   transfer.source,
+                                                                                                   transfer.target,
+                                                                                                   transfer.amount.value,
+                                                                                                   transfer.amount.currency,
+                                                                                                   fee,
+                                                                                                   timestamp,
+                                                                                                   height,
+                                                                                                   metaKeysPtr.count,
+                                                                                                   &metaKeysPtr,
+                                                                                                   &metaValsPtr)
+                                                            }
+                                                        }
+                                                        cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_TRUE) },
+                                                    failure: { (_) in cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_FALSE) })
+                }
+
+                #endif
+        },
 
             funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)

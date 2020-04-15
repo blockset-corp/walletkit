@@ -1982,54 +1982,6 @@ cwmAnnounceGetTransactionsItem (OwnershipKept BRCryptoWalletManager cwm,
     // DON'T free (callbackState);
 }
 
-extern void
-cwmAnnounceGetTransactionsItemETH (OwnershipKept BRCryptoWalletManager cwm,
-                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                   OwnershipKept const char *hash,
-                                   OwnershipKept const char *from,
-                                   OwnershipKept const char *to,
-                                   OwnershipKept const char *contract,
-                                   OwnershipKept const char *amount, // value
-                                   OwnershipKept const char *gasLimit,
-                                   OwnershipKept const char *gasPrice,
-                                   OwnershipKept const char *data,
-                                   OwnershipKept const char *nonce,
-                                   OwnershipKept const char *gasUsed,
-                                   OwnershipKept const char *blockNumber,
-                                   OwnershipKept const char *blockHash,
-                                   OwnershipKept const char *blockConfirmations,
-                                   OwnershipKept const char *blockTransactionIndex,
-                                   OwnershipKept const char *blockTimestamp,
-                                   // cumulative gas used,
-                                   // confirmations
-                                   // txreceipt_status
-                                   OwnershipKept const char *isError) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceTransaction (cwm->u.eth,
-                            callbackState->rid,
-                            hash,
-                            from,
-                            to,
-                            contract,
-                            amount,
-                            gasLimit,
-                            gasPrice,
-                            data,
-                            nonce,
-                            gasUsed,
-                            blockNumber,
-                            blockHash,
-                            blockConfirmations,
-                            blockTransactionIndex,
-                            blockTimestamp,
-                            isError);
-
-    cryptoWalletManagerGive (cwm);
-    // DON'T free (callbackState);
-}
-
 static BRGenericTransferState
 cwmAnnounceGetTransferStateGEN (BRGenericTransfer transfer,
                                 BRCryptoTransferStateType status,
@@ -2113,26 +2065,27 @@ cwmAnnounceGetTransactionsComplete (OwnershipKept BRCryptoWalletManager cwm,
                                     BRCryptoBoolean success) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_GET_TRANSACTIONS == callbackState->type ||
-            CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_GET_TRANSACTIONS == callbackState->type);
     cwm = cryptoWalletManagerTake (cwm);
 
-    if (CWM_CALLBACK_TYPE_BTC_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_BTC == cwm->type) {
-        bwmAnnounceTransactionComplete (cwm->u.btc,
-                                        callbackState->rid,
-                                        CRYPTO_TRUE == success);
-
-    } else if (CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_ETH == cwm->type) {
-        ewmAnnounceTransactionComplete (cwm->u.eth,
-                                        callbackState->rid,
-                                        AS_ETHEREUM_BOOLEAN (CRYPTO_TRUE == success));
-
-    } else if (CWM_CALLBACK_TYPE_GEN_GET_TRANSACTIONS == callbackState->type && BLOCK_CHAIN_TYPE_GEN== cwm->type) {
-        genManagerAnnounceTransferComplete (cwm->u.gen,
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_BTC_GET_TRANSACTIONS: {
+            assert (BLOCK_CHAIN_TYPE_BTC == cwm->type);
+            bwmAnnounceTransactionComplete (cwm->u.btc,
                                             callbackState->rid,
                                             CRYPTO_TRUE == success);
-    } else {
-        assert (0);
+            break;
+        }
+
+        case CWM_CALLBACK_TYPE_GEN_GET_TRANSACTIONS: {
+            assert (BLOCK_CHAIN_TYPE_GEN== cwm->type);
+            genManagerAnnounceTransferComplete (cwm->u.gen,
+                                                callbackState->rid,
+                                                CRYPTO_TRUE == success);
+            break;
+        }
+
+        default: assert(0);
     }
 
     cryptoWalletManagerGive (cwm);
@@ -2140,23 +2093,25 @@ cwmAnnounceGetTransactionsComplete (OwnershipKept BRCryptoWalletManager cwm,
 }
 
 extern void
-cwmAnnounceGetTransferItemGEN (BRCryptoWalletManager cwm,
-                               BRCryptoClientCallbackState callbackState,
-                               BRCryptoTransferStateType status,
-                               OwnershipKept const char *hash,
-                               OwnershipKept const char *uids,
-                               OwnershipKept const char *from,
-                               OwnershipKept const char *to,
-                               OwnershipKept const char *amount,
-                               OwnershipKept const char *currency,
-                               OwnershipKept const char *fee,
-                               uint64_t timestamp,
-                               uint64_t blockHeight,
-                               size_t attributesCount,
-                               OwnershipKept const char **attributeKeys,
-                               OwnershipKept const char **attributeVals) {
+cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
+                            BRCryptoClientCallbackState callbackState,
+                            BRCryptoTransferStateType status,
+                            OwnershipKept const char *hash,
+                            OwnershipKept const char *uids,
+                            OwnershipKept const char *from,
+                            OwnershipKept const char *to,
+                            OwnershipKept const char *amount,
+                            OwnershipKept const char *currency,
+                            OwnershipKept const char *fee,
+                            uint64_t timestamp,
+                            uint64_t blockHeight,
+                            size_t attributesCount,
+                            OwnershipKept const char **attributeKeys,
+                            OwnershipKept const char **attributeVals) {
     assert (cwm); assert (callbackState);
-    assert (CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS == callbackState->type);
+    assert (CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS    == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_GET_LOGS         == callbackState->type);
     cwm = cryptoWalletManagerTake (cwm);
 
     // Lookup the network's currency
@@ -2170,55 +2125,105 @@ cwmAnnounceGetTransferItemGEN (BRCryptoWalletManager cwm,
 
     // If we have a wallet, then proceed
     if (NULL != wallet) {
-        // Create a 'GEN' transfer
-        BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
-        BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
-                                                                   from, to,
-                                                                   amount, currency, fee,
-                                                                   timestamp, blockHeight,
-                                                                   CRYPTO_TRANSFER_STATE_ERRORED == status);
+        switch (callbackState->type) {
+            case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+                // Create a 'GEN' transfer
+                BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
+                BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
+                                                                           from, to,
+                                                                           amount, currency, fee,
+                                                                           timestamp, blockHeight,
+                                                                           CRYPTO_TRANSFER_STATE_ERRORED == status);
 
-        genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, timestamp, blockHeight));
+                genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, timestamp, blockHeight));
 
-        // If we are passed in attribues, they will replace any attribute already held
-        // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
-        // we might have a 'DestinationTag'.  If the attributes provided do not include
-        // 'DestinatinTag' then that attribute will be lost.  Losing such an attribute would
-        // indicate a BlockSet error in processing transfers.
-        if (attributesCount > 0) {
-            BRGenericAddress genTarget = genTransferGetTargetAddress (genTransfer);
+                // If we are passed in attribues, they will replace any attribute already held
+                // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
+                // we might have a 'DestinationTag'.  If the attributes provided do not include
+                // 'DestinatinTag' then that attribute will be lost.  Losing such an attribute would
+                // indicate a BlockSet error in processing transfers.
+                if (attributesCount > 0) {
+                    BRGenericAddress genTarget = genTransferGetTargetAddress (genTransfer);
 
-            // Build the transfer attributes
-            BRArrayOf(BRGenericTransferAttribute) genAttributes;
-            array_new(genAttributes, attributesCount);
-            for (size_t index = 0; index < attributesCount; index++) {
-                const char *keyFound;
-                BRCryptoBoolean isRequiredAttribute;
-                BRCryptoBoolean isAttribute = genWalletHasTransferAttributeForKey (genWallet,
-                                                                                   genTarget,
-                                                                                   attributeKeys[index],
-                                                                                   &keyFound,
-                                                                                   &isRequiredAttribute);
-                if (CRYPTO_TRUE == isAttribute)
-                    array_add (genAttributes,
-                               genTransferAttributeCreate (keyFound,
-                                                           attributeVals[index],
-                                                           CRYPTO_TRUE == isRequiredAttribute));
+                    // Build the transfer attributes
+                    BRArrayOf(BRGenericTransferAttribute) genAttributes;
+                    array_new(genAttributes, attributesCount);
+                    for (size_t index = 0; index < attributesCount; index++) {
+                        const char *keyFound;
+                        BRCryptoBoolean isRequiredAttribute;
+                        BRCryptoBoolean isAttribute = genWalletHasTransferAttributeForKey (genWallet,
+                                                                                           genTarget,
+                                                                                           attributeKeys[index],
+                                                                                           &keyFound,
+                                                                                           &isRequiredAttribute);
+                        if (CRYPTO_TRUE == isAttribute)
+                            array_add (genAttributes,
+                                       genTransferAttributeCreate (keyFound,
+                                                                   attributeVals[index],
+                                                                   CRYPTO_TRUE == isRequiredAttribute));
+                    }
+                    genTransferSetAttributes(genTransfer, genAttributes);
+                    genTransferAttributeReleaseAll(genAttributes);
+                    genAddressRelease(genTarget);
+                }
+
+                // Announce to GWM.  Note: the equivalent BTC+ETH announce transaction is going to
+                // create BTC+ETH wallet manager + wallet + transfer events that we'll handle by
+                // incorporating the BTC+ETH transfer into 'crypto'.  However, GEN does not generate
+                // similar events.
+                //
+                // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
+                cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
+                break;
             }
-            genTransferSetAttributes(genTransfer, genAttributes);
-            genTransferAttributeReleaseAll(genAttributes);
-            genAddressRelease(genTarget);
+
+            case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+#if 0
+                ewmAnnounceTransaction (cwm->u.eth,
+                                        callbackState->rid,
+                                        hash,
+                                        from,
+                                        to,
+                                        contract,
+                                        amount,
+                                        gasLimit,
+                                        gasPrice,
+                                        data,
+                                        nonce,
+                                        gasUsed,
+                                        blockNumber,
+                                        blockHash,
+                                        blockConfirmations,
+                                        blockTransactionIndex,
+                                        blockTimestamp,
+                                        isError);
+#endif
+                break;
+            }
+
+            case CWM_CALLBACK_TYPE_ETH_GET_LOGS: {
+#if 0
+                ewmAnnounceLog (cwm->u.eth,
+                                callbackState->rid,
+                                strHash,
+                                strContract,
+                                topicCount,
+                                arrayTopics,
+                                strData,
+                                strGasPrice,
+                                strGasUsed,
+                                strLogIndex,
+                                strBlockNumber,
+                                strBlockTransactionIndex,
+                                strBlockTimestamp);
+#endif
+                break;
+            }
+
+            default: assert (0);
         }
-
-        // Announce to GWM.  Note: the equivalent BTC+ETH announce transaction is going to
-        // create BTC+ETH wallet manager + wallet + transfer events that we'll handle by
-        // incorporating the BTC+ETH transfer into 'crypto'.  However, GEN does not generate
-        // similar events.
-        //
-        // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
-        cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
     }
-
+    
     if (NULL != wallet) cryptoWalletGive (wallet);
     if (NULL != walletCurrency) cryptoCurrencyGive (walletCurrency);
 
@@ -2232,30 +2237,52 @@ cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
                                  BRCryptoBoolean success) {
     assert (cwm); assert (callbackState);
-    assert (CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS == callbackState->type);
+    assert (CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS    == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS == callbackState->type ||
+            CWM_CALLBACK_TYPE_ETH_GET_LOGS         == callbackState->type);
 
     cwm = cryptoWalletManagerTake (cwm);
 
-    if (CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS == callbackState->type && BLOCK_CHAIN_TYPE_GEN== cwm->type) {
-        genManagerAnnounceTransferComplete (cwm->u.gen, callbackState->rid, CRYPTO_TRUE == success);
-    } else {
-        assert (0);
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+            assert (BLOCK_CHAIN_TYPE_GEN == cwm->type);
+            genManagerAnnounceTransferComplete (cwm->u.gen, callbackState->rid, CRYPTO_TRUE == success);
+            // Synchronizing of transfers is complete - calculate the new balance
+            BRCryptoAmount balance = cryptoWalletGetBalance(cwm->wallet);
+            // ... and announce the balance
+            cwm->listener.walletEventCallback (cwm->listener.context,
+                                               cryptoWalletManagerTake (cwm),
+                                               cryptoWalletTake (cwm->wallet),
+                                               (BRCryptoWalletEvent) {
+                                                   CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                                                   { .balanceUpdated = { cryptoAmountTake(balance) }}
+                                               });
+
+            cryptoAmountGive(balance);
+            break;
+        }
+
+        case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+            assert (BLOCK_CHAIN_TYPE_ETH == cwm->type);
+            ewmAnnounceTransactionComplete (cwm->u.eth,
+                                            callbackState->rid,
+                                            AS_ETHEREUM_BOOLEAN (CRYPTO_TRUE == success));
+            break;
+        }
+
+        case CWM_CALLBACK_TYPE_ETH_GET_LOGS: {
+            assert (BLOCK_CHAIN_TYPE_ETH == cwm->type);
+            ewmAnnounceLogComplete (cwm->u.eth,
+                                    callbackState->rid,
+                                    AS_ETHEREUM_BOOLEAN (success));
+            break;
+        }
+
+        default: assert (0);
     }
 
-    // TODO: This even occurs even when the balance doesn't change (no new transfers).
+    // TODO: This event occurs even when the balance doesn't change (no new transfers).
 
-    // Synchronizing of transfers is complete - calculate the new balance
-    BRCryptoAmount balance = cryptoWalletGetBalance(cwm->wallet);
-    // ... and announce the balance
-    cwm->listener.walletEventCallback (cwm->listener.context,
-                                       cryptoWalletManagerTake (cwm),
-                                       cryptoWalletTake (cwm->wallet),
-                                       (BRCryptoWalletEvent) {
-                                           CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                           { .balanceUpdated = { cryptoAmountTake(balance) }}
-                                       });
-
-    cryptoAmountGive(balance);
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
@@ -2446,56 +2473,6 @@ cwmAnnounceGetGasEstimateFailure (OwnershipKept BRCryptoWalletManager cwm,
                                    callbackState->u.ethWithWalletAndCookie.cookie,
                                    cryptoStatusAsETH (status),
                                    callbackState->rid);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetLogsItemETH (OwnershipKept BRCryptoWalletManager cwm,
-                           OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           OwnershipKept const char *strHash,
-                           OwnershipKept const char *strContract,
-                           int topicCount,
-                           OwnershipKept const char **arrayTopics,
-                           OwnershipKept const char *strData,
-                           OwnershipKept const char *strGasPrice,
-                           OwnershipKept const char *strGasUsed,
-                           OwnershipKept const char *strLogIndex,
-                           OwnershipKept const char *strBlockNumber,
-                           OwnershipKept const char *strBlockTransactionIndex,
-                           OwnershipKept const char *strBlockTimestamp) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_LOGS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceLog (cwm->u.eth,
-                    callbackState->rid,
-                    strHash,
-                    strContract,
-                    topicCount,
-                    arrayTopics,
-                    strData,
-                    strGasPrice,
-                    strGasUsed,
-                    strLogIndex,
-                    strBlockNumber,
-                    strBlockTransactionIndex,
-                    strBlockTimestamp);
-
-    cryptoWalletManagerGive (cwm);
-    // don't free (callbackState);
-}
-
-extern void
-cwmAnnounceGetLogsComplete(OwnershipKept BRCryptoWalletManager cwm,
-                           OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           BRCryptoBoolean success) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_LOGS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceLogComplete (cwm->u.eth,
-                            callbackState->rid,
-                            AS_ETHEREUM_BOOLEAN (success));
-
-    cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
 
