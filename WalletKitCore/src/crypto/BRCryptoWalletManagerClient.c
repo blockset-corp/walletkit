@@ -1414,25 +1414,7 @@ cwmGetBalanceAsETH (BREthereumClientContext context,
                     BREthereumWallet wid,
                     const char *address,
                     int rid) {
-#if 0
-    // Extract CWM, checking to make sure it still lives
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
-    if (NULL == cwm) return;
-
-    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
-    callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_BALANCE;
-    callbackState->u.ethWithWallet.wid = wid;
-    callbackState->rid = rid;
-
-    BREthereumToken token = ewmWalletGetToken (ewm, wid);
-    cwm->client.funcGetBalance (cwm->client.context,
-                                cryptoWalletManagerTake (cwm),
-                                callbackState,
-                                &address, 1,
-                                (NULL == token ? NULL : ethTokenGetAddress (token)));
-
-    cryptoWalletManagerGive (cwm);
-#endif
+    return;
 }
 
 static void
@@ -1440,27 +1422,7 @@ cwmGetGasPriceAsETH (BREthereumClientContext context,
                      BREthereumEWM ewm,
                      BREthereumWallet wid,
                      int rid) {
-#if 0
-    // Extract CWM, checking to make sure it still lives
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
-    if (NULL == cwm) return;
-
-    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
-    callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_GAS_PRICE;
-    callbackState->u.ethWithWallet.wid = wid;
-    callbackState->rid = rid;
-
-    BREthereumNetwork network = ewmGetNetwork (ewm);
-    char *networkName = ethNetworkCopyNameAsLowercase (network);
-
-    cwm->client.funcGetGasPriceETH (cwm->client.context,
-                                    cryptoWalletManagerTake (cwm),
-                                    callbackState,
-                                    networkName);
-
-    free (networkName);
-    cryptoWalletManagerGive (cwm);
-#endif
+    return;
 }
 
 static void
@@ -1594,51 +1556,14 @@ cwmGetBlocksAsETH (BREthereumClientContext context,
                    uint64_t blockNumberStart,
                    uint64_t blockNumberStop,
                    int rid) {
-#if 0
-    // Extract CWM, checking to make sure it still lives
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
-    if (NULL == cwm) return;
-
-    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
-    callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_BLOCKS;
-    callbackState->rid = rid;
-
-    BREthereumNetwork network = ewmGetNetwork (ewm);
-    char *networkName = ethNetworkCopyNameAsLowercase (network);
-
-    cwm->client.funcGetBlocksETH (cwm->client.context,
-                                  cryptoWalletManagerTake (cwm),
-                                  callbackState,
-                                  networkName,
-                                  address,
-                                  interests,
-                                  blockNumberStart,
-                                  blockNumberStop);
-
-    free (networkName);
-    cryptoWalletManagerGive (cwm);
-#endif
+    return;
 }
 
 static void
 cwmGetTokensAsETH (BREthereumClientContext context,
                    BREthereumEWM ewm,
                    int rid) {
-#if 0
-    // Extract CWM, checking to make sure it still lives
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
-    if (NULL == cwm) return;
-
-    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
-    callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_TOKENS;
-    callbackState->rid = rid;
-
-    cwm->client.funcGetTokensETH (cwm->client.context,
-                                  cryptoWalletManagerTake (cwm),
-                                  callbackState);
-
-    cryptoWalletManagerGive (cwm);
-#endif
+    return;
 }
 
 static void
@@ -1665,27 +1590,7 @@ cwmGetNonceAsETH (BREthereumClientContext context,
                   BREthereumEWM ewm,
                   const char *address,
                   int rid) {
-    #if 0
-    // Extract CWM, checking to make sure it still lives
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
-    if (NULL == cwm) return;
-
-    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
-    callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_NONCE;
-    callbackState->rid = rid;
-
-    BREthereumNetwork network = ewmGetNetwork (ewm);
-    char *networkName = ethNetworkCopyNameAsLowercase (network);
-
-    cwm->client.funcGetNonceETH (cwm->client.context,
-                                 cryptoWalletManagerTake (cwm),
-                                 callbackState,
-                                 networkName,
-                                 address);
-
-    free (networkName);
-    cryptoWalletManagerGive (cwm);
-    #endif
+    return;
 }
 
 // MARK: - GEN Callbacks
@@ -1834,7 +1739,7 @@ cryptoWalletManagerClientCreateETHClient (OwnershipKept BRCryptoWalletManager cw
         cwm,
         cwmGetBalanceAsETH,             // NOOP
         cwmGetGasPriceAsETH,            // NOOP
-        cwmGetGasEstimateAsETH,
+        cwmGetGasEstimateAsETH,         // cwm->client.funcEstimateTransactionFee
         cwmSubmitTransactionAsETH,      // cwm->client.funcSubmitTransaction
         cwmGetTransactionsAsETH,        // cwm->client.funcGetTransfers
         cwmGetLogsAsETH,                // cwm->client.funcGetTransfers
@@ -2139,6 +2044,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             uint64_t blockNumber,
                             uint64_t blockConfirmations,
                             uint64_t blockTransactionIndex,
+                            OwnershipKept const char *blockHash,
                             size_t attributesCount,
                             OwnershipKept const char **attributeKeys,
                             OwnershipKept const char **attributeVals) {
@@ -2218,20 +2124,23 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
 
                 UInt256 value = cwmParseUInt256 (amount, &error);
 
-                // meta: nonce, gasPrice, gasLimit
-                char *contract = NULL;
-                char *data     = NULL;
+                const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
+                char *data     = "";
                 uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
                 uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
                 UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
                 uint64_t nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), &error);
-                char *blockHash = NULL;
 
                 error |= (CRYPTO_TRANSFER_STATE_ERRORED == status);
+                isLog &= (NULL != contract);
 
                 if (isLog) {
                     size_t topicsCount = 3;
-                    char *topics[3];
+                    char *topics[3] = {
+                        (char *) ethEventGetSelector(ethEventERC20Transfer),
+                        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, from),
+                        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, to)
+                    };
 
                     size_t logIndex = 0;
 
@@ -2248,6 +2157,9 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                     blockNumber,
                                     blockTransactionIndex,
                                     blockTimestamp);
+
+                    free (topics[1]);
+                    free (topics[2]);
                 }
                 else {
                     ewmAnnounceTransaction (cwm->u.eth,
