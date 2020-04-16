@@ -12,6 +12,7 @@
 #include "BRCryptoUnit.h"
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
+#include "BRCryptoAccountP.h"
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
@@ -767,6 +768,11 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 #include "BRCryptoConfig.h"
     };
     size_t NUMBER_OF_MODES = sizeof (modeSpecs) / sizeof (struct SyncModeSpecification);
+
+    // Ensure that accounts are installed... because this ensures that GEN blockchains, such as
+    // XRP and HBAR, have their handlers installed.  Calling here catches all paths in
+    // Network; this call makes Network consistent with the comment on `cryptoAccountInstall()`.
+    cryptoAccountInstall();
 
     assert (NULL != networksCount);
     *networksCount = NUMBER_OF_NETWORKS;

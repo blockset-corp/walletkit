@@ -134,6 +134,20 @@ class BRCryptoAccountTests: XCTestCase {
         //        XCTAssertNil (network.addressFor("bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v"))
     }
 
+    func testAddressXRP () {
+        let network = Network.findBuiltin (uids: "ripple-mainnet")!
+
+        XCTAssertEqual (Address.create (string: "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network)?.description,
+                       "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a")
+    }
+
+    func testAddressHBAR () {
+        let network = Network.findBuiltin (uids: "hedera-mainnet")!
+
+        XCTAssertEqual (Address.create (string: "0.0.14222", network: network)?.description,
+                       "0.0.14222")
+
+    }
 /*
         let addr1 = bch.addressFor("bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v") // cashaddr with prefix is valid
         let addr2 = bch.addressFor("qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v") // cashaddr without prefix is valid
