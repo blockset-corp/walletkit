@@ -1660,6 +1660,8 @@ extension System {
                                                         $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
                                                             let timestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
                                                             let height    = transaction.blockHeight ?? 0
+                                                            let confirmations = transaction.confirmations ?? 0
+                                                            let index     = transaction.index ?? 0
                                                             let status    = System.getTransferStatus (transaction.status)
 
                                                             System.mergeTransfers (transaction.transfers, with: addresses)
@@ -1687,6 +1689,8 @@ extension System {
                                                                                                    fee,
                                                                                                    timestamp,
                                                                                                    height,
+                                                                                                   confirmations,
+                                                                                                   index,
                                                                                                    metaKeysPtr.count,
                                                                                                    &metaKeysPtr,
                                                                                                    &metaValsPtr)

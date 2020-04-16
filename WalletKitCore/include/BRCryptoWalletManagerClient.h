@@ -113,6 +113,8 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             OwnershipKept const char *fee,
                             uint64_t timestamp,
                             uint64_t blockHeight,
+                            uint64_t blockConfirmations,
+                            uint64_t blockTransactionIndex,
                             size_t attributesCount,
                             OwnershipKept const char **attributeKeys,
                             OwnershipKept const char **attributeVals);

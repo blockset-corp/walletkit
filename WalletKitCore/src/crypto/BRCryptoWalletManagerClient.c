@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <math.h>  // round()
+#include <stdbool.h>
 
 #include "BRCryptoBase.h"
 #include "BRCryptoStatusP.h"
@@ -2095,6 +2096,31 @@ cwmAnnounceGetTransactionsComplete (OwnershipKept BRCryptoWalletManager cwm,
     cwmClientCallbackStateRelease (callbackState);
 }
 
+static const char *
+cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
+    for (size_t index = 0; index < count; index++)
+        if (0 == strcasecmp (key, keys[index]))
+            return vals[index];
+    return NULL;
+}
+
+static uint64_t
+cwmParseUInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return strtoull(string, NULL, 0);
+}
+
+static UInt256
+cwmParseUInt256 (const char *string, bool *error) {
+    if (!string) { *error = true; return UINT256_ZERO; }
+
+    BRCoreParseStatus status;
+    UInt256 result = uint256CreateParse (string, 0, &status);
+    if (CORE_PARSE_OK != status) { *error = true; return UINT256_ZERO; }
+
+    return result;
+}
+
 extern void
 cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             BRCryptoClientCallbackState callbackState,
@@ -2106,8 +2132,10 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             OwnershipKept const char *amount,
                             OwnershipKept const char *currency,
                             OwnershipKept const char *fee,
-                            uint64_t timestamp,
-                            uint64_t blockHeight,
+                            uint64_t blockTimestamp,
+                            uint64_t blockNumber,
+                            uint64_t blockConfirmations,
+                            uint64_t blockTransactionIndex,
                             size_t attributesCount,
                             OwnershipKept const char **attributeKeys,
                             OwnershipKept const char **attributeVals) {
@@ -2135,10 +2163,10 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
                                                                            from, to,
                                                                            amount, currency, fee,
-                                                                           timestamp, blockHeight,
+                                                                           blockTimestamp, blockNumber,
                                                                            CRYPTO_TRANSFER_STATE_ERRORED == status);
 
-                genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, timestamp, blockHeight));
+                genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, blockTimestamp, blockNumber));
 
                 // If we are passed in attribues, they will replace any attribute already held
                 // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
@@ -2180,47 +2208,64 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 break;
             }
 
-            case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
-                // meta: nonce, gasPrice, gasLimit
-#if 0
-                ewmAnnounceTransaction (cwm->u.eth,
-                                        callbackState->rid,
-                                        hash,
-                                        from,
-                                        to,
-                                        contract,
-                                        amount,
-                                        gasLimit,
-                                        gasPrice,
-                                        data,
-                                        nonce,
-                                        gasUsed,
-                                        blockNumber,
-                                        blockHash,
-                                        blockConfirmations,
-                                        blockTransactionIndex,
-                                        blockTimestamp,
-                                        isError);
-#endif
-                break;
-            }
-
+            case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS:
             case CWM_CALLBACK_TYPE_ETH_GET_LOGS: {
-#if 0
-                ewmAnnounceLog (cwm->u.eth,
-                                callbackState->rid,
-                                strHash,
-                                strContract,
-                                topicCount,
-                                arrayTopics,
-                                strData,
-                                strGasPrice,
-                                strGasUsed,
-                                strLogIndex,
-                                strBlockNumber,
-                                strBlockTransactionIndex,
-                                strBlockTimestamp);
-#endif
+                bool isLog = (CWM_CALLBACK_TYPE_ETH_GET_LOGS == callbackState->type);
+                bool error = false;
+
+                UInt256 value = cwmParseUInt256 (amount, &error);
+
+                // meta: nonce, gasPrice, gasLimit
+                char *contract = NULL;
+                char *data     = NULL;
+                uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
+                uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
+                UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
+                uint64_t nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), &error);
+                char *blockHash = NULL;
+
+                error |= (CRYPTO_TRANSFER_STATE_ERRORED == status);
+
+                if (isLog) {
+                    size_t topicsCount = 3;
+                    char *topics[3];
+
+                    size_t logIndex = 0;
+
+                    ewmAnnounceLog (cwm->u.eth,
+                                    callbackState->rid,
+                                    hash,
+                                    contract,
+                                    topicsCount,
+                                    (const char **) &topics[0],
+                                    data,
+                                    gasPrice,
+                                    gasUsed,
+                                    logIndex,
+                                    blockNumber,
+                                    blockTransactionIndex,
+                                    blockTimestamp);
+                }
+                else {
+                    ewmAnnounceTransaction (cwm->u.eth,
+                                            callbackState->rid,
+                                            hash,
+                                            from,
+                                            to,
+                                            contract,
+                                            value,
+                                            gasLimit,
+                                            gasPrice,
+                                            data,
+                                            nonce,
+                                            gasUsed,
+                                            blockNumber,
+                                            blockHash,
+                                            blockConfirmations,
+                                            blockTransactionIndex,
+                                            blockTimestamp,
+                                            error);
+                }
                 break;
             }
 
