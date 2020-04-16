@@ -74,6 +74,7 @@ extern "C" {
     (*BREthereumClientHandlerEstimateGas) (BREthereumClientContext context,
                                            BREthereumEWM ewm,
                                            BREthereumWallet wid,
+                                           BREthereumTransfer tid,
                                            BREthereumCookie cookie,
                                            const char *from,
                                            const char *to,

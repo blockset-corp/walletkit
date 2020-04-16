@@ -210,7 +210,6 @@ extern int
 ewmWalletGetTransferCount(BREthereumEWM ewm,
                           BREthereumWallet wallet);
 
-
 extern BREthereumTransfer
 ewmWalletCreateTransfer(BREthereumEWM ewm,
                         BREthereumWallet wallet,
@@ -497,7 +496,20 @@ extern const char *
 ewmTransferGetRawDataHexEncoded(BREthereumEWM ewm,
                                 BREthereumWallet wallet,
                                 BREthereumTransfer transfer,
+                                BREthereumBoolean encodeAsSigned,
                                 const char *prefix);
+
+extern BRRlpData
+ewmTransferGetRLPEncoding (BREthereumEWM ewm,
+                           BREthereumWallet wallet,
+                           BREthereumTransfer transfer,
+                           BREthereumRlpType type,
+                           BREthereumBoolean *encoded);
+
+extern BREthereumTransfer
+ewmWalletGetTransferByOriginatingTransactionHash (BREthereumEWM ewm,
+                                                  BREthereumWallet wallet,
+                                                  BREthereumHash hash);
 
 
 #ifdef __cplusplus

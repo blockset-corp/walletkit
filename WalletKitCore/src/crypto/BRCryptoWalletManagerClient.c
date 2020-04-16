@@ -1467,6 +1467,7 @@ static void
 cwmGetGasEstimateAsETH (BREthereumClientContext context,
                         BREthereumEWM ewm,
                         BREthereumWallet wid,
+                        BREthereumTransfer tid,
                         BREthereumCookie cookie,
                         const char *from,
                         const char *to,
@@ -1484,20 +1485,22 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
     callbackState->u.ethWithWalletAndCookie.cookie = cookie;
     callbackState->rid = rid;
 
-    BREthereumNetwork network = ewmGetNetwork (ewm);
-    char *networkName = ethNetworkCopyNameAsLowercase (network);
+    BREthereumBoolean encoded = ETHEREUM_BOOLEAN_FALSE;
+    BRRlpData transactionData = ewmTransferGetRLPEncoding (ewm, wid, tid, RLP_TYPE_TRANSACTION_UNSIGNED, &encoded);
+    assert (ETHEREUM_BOOLEAN_IS_TRUE(encoded));
 
-    cwm->client.funcEstimateGasETH (cwm->client.context,
-                                    cryptoWalletManagerTake (cwm),
-                                    callbackState,
-                                    networkName,
-                                    from,
-                                    to,
-                                    amount,
-                                    price,
-                                    data);
+    char *transactionHash = ethHashAsString (ewmTransferGetOriginatingTransactionHash(ewm, tid));
 
-    free (networkName);
+    cwm->client.funcEstimateTransactionFee (cwm->client.context,
+                                            cryptoWalletManagerTake (cwm),
+                                            callbackState,
+                                            transactionData.bytes,
+                                            transactionData.bytesCount,
+                                            transactionHash);
+
+    free (transactionHash);
+    rlpDataRelease (transactionData);
+
     cryptoWalletManagerGive (cwm);
 }
 
@@ -2449,175 +2452,245 @@ cwmAnnounceSubmitTransferFailure (OwnershipKept BRCryptoWalletManager cwm,
     cwmClientCallbackStateRelease (callbackState);
 }
 
-extern void
-cwmAnnounceGetBalanceSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                              OwnershipGiven BRCryptoClientCallbackState callbackState,
-                              OwnershipKept const char *balance) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BALANCE == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceWalletBalance (cwm->u.eth,
-                              callbackState->u.ethWithWallet.wid,
-                              balance,
-                              callbackState->rid);
-
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
+//extern void
+//cwmAnnounceGetBalanceSuccess (OwnershipKept BRCryptoWalletManager cwm,
+//                              OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                              OwnershipKept const char *balance) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BALANCE == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceWalletBalance (cwm->u.eth,
+//                              callbackState->u.ethWithWallet.wid,
+//                              balance,
+//                              callbackState->rid);
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
 extern void
 cwmAnnounceGetBalanceFailure (OwnershipKept BRCryptoWalletManager cwm,
                               OwnershipGiven BRCryptoClientCallbackState callbackState) {
     assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BALANCE == callbackState->type);
     cwmClientCallbackStateRelease (callbackState);
 }
+//
+//extern void
+//cwmAnnounceGetGasPriceSuccess (OwnershipKept BRCryptoWalletManager cwm,
+//                               OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                               OwnershipKept const char *gasPrice) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_GAS_PRICE == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceGasPrice (cwm->u.eth,
+//                         callbackState->u.ethWithWallet.wid,
+//                         gasPrice,
+//                         callbackState->rid);
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetGasPriceFailure (OwnershipKept BRCryptoWalletManager cwm,
+//                               OwnershipGiven BRCryptoClientCallbackState callbackState) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_GAS_PRICE == callbackState->type);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
 
 extern void
-cwmAnnounceGetGasPriceSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                               OwnershipGiven BRCryptoClientCallbackState callbackState,
-                               OwnershipKept const char *gasPrice) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_GAS_PRICE == callbackState->type);
+cwmAnnounceEstimateTransactionFeeSuccess (OwnershipKept BRCryptoWalletManager cwm,
+                                          OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                          OwnershipKept const char *strHash,
+                                          uint64_t costUnits) {
+    assert (cwm); assert (callbackState);
     cwm = cryptoWalletManagerTake (cwm);
 
-    ewmAnnounceGasPrice (cwm->u.eth,
-                         callbackState->u.ethWithWallet.wid,
-                         gasPrice,
-                         callbackState->rid);
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS: {
+            //
+            BREthereumHash hash = ethHashCreate (strHash);
+            BREthereumTransfer transfer =  ewmWalletGetTransferByOriginatingTransactionHash (cwm->u.eth,
+                                                                                             callbackState->u.ethWithWalletAndCookie.wid,
+                                                                                             hash);
+            char strGasEstimate[128];
+            bool error = sprintf (strGasEstimate, "%" PRIu64, costUnits) < 0;
+
+            if (NULL == transfer || error) {
+                ewmAnnounceGasEstimateFailure (cwm->u.eth,
+                                               callbackState->u.ethWithWalletAndCookie.wid,
+                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               (error ? ERROR_NUMERIC_PARSE : ERROR_FAILED),
+                                               callbackState->rid);
+            }
+            else {
+                BREthereumGasPrice gasPrice = ewmTransferGetGasPrice (cwm->u.eth, transfer, WEI);
+                char *strGasPrice = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
+
+                ewmAnnounceGasEstimateSuccess (cwm->u.eth,
+                                               callbackState->u.ethWithWalletAndCookie.wid,
+                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               strGasEstimate,
+                                               strGasPrice,
+                                               callbackState->rid);
+
+                free (strGasPrice);
+            }
+            break;
+        }
+            
+        default:
+            assert (0);
+    }
 
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
 
 extern void
-cwmAnnounceGetGasPriceFailure (OwnershipKept BRCryptoWalletManager cwm,
-                               OwnershipGiven BRCryptoClientCallbackState callbackState) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_GAS_PRICE == callbackState->type);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetGasEstimateSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                  OwnershipKept const char *gasEstimate,
-                                  OwnershipKept const char *gasPrice) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS == callbackState->type);
+cwmAnnounceEstimateTransactionFeeFailure (OwnershipKept BRCryptoWalletManager cwm,
+                                          OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                          OwnershipKept const char *hash) {
+    assert (cwm); assert (callbackState);
     cwm = cryptoWalletManagerTake (cwm);
 
-    ewmAnnounceGasEstimateSuccess (cwm->u.eth,
-                                   callbackState->u.ethWithWalletAndCookie.wid,
-                                   callbackState->u.ethWithWalletAndCookie.cookie,
-                                   gasEstimate,
-                                   gasPrice,
-                                   callbackState->rid);
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS:
+            ewmAnnounceGasEstimateFailure (cwm->u.eth,
+                                           callbackState->u.ethWithWalletAndCookie.wid,
+                                           callbackState->u.ethWithWalletAndCookie.cookie,
+                                           ERROR_FAILED,
+                                           callbackState->rid);
+            break;
+
+        default:
+            assert (0);
+    }
 
     cryptoWalletManagerGive (cwm);
     cwmClientCallbackStateRelease (callbackState);
 }
 
-extern void
-cwmAnnounceGetGasEstimateFailure (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                  BRCryptoStatus status) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS == callbackState->type);
 
-    ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                   callbackState->u.ethWithWalletAndCookie.wid,
-                                   callbackState->u.ethWithWalletAndCookie.cookie,
-                                   cryptoStatusAsETH (status),
-                                   callbackState->rid);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetBlocksSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                             OwnershipGiven BRCryptoClientCallbackState callbackState,
-                             int blockNumbersCount,
-                             OwnershipKept uint64_t *blockNumbers) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BLOCKS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceBlocks (cwm->u.eth,
-                       callbackState->rid,
-                       blockNumbersCount,
-                       blockNumbers);
-
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetBlocksFailure (OwnershipKept BRCryptoWalletManager cwm,
-                             OwnershipGiven BRCryptoClientCallbackState callbackState) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BLOCKS == callbackState->type);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-#if false
-extern void
-cwmAnnounceGetTokensItem(OwnershipKept BRCryptoWalletManager cwm,
-                         OwnershipGiven BRCryptoClientCallbackState callbackState,
-                         OwnershipKept const char *address,
-                         OwnershipKept const char *symbol,
-                         OwnershipKept const char *name,
-                         OwnershipKept const char *description,
-                         unsigned int decimals,
-                         OwnershipKept const char *strDefaultGasLimit,
-                         OwnershipKept const char *strDefaultGasPrice) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_TOKENS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceToken (cwm->u.eth,
-                      callbackState->rid,
-                      address,
-                      symbol,
-                      name,
-                      description,
-                      decimals,
-                      strDefaultGasLimit,
-                      strDefaultGasPrice);
-
-    cryptoWalletManagerGive (cwm);
-    // don't free (callbackState);
-}
-
-extern void
-cwmAnnounceGetTokensComplete(OwnershipKept BRCryptoWalletManager cwm,
-                             OwnershipGiven BRCryptoClientCallbackState callbackState,
-                             BRCryptoBoolean success) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_TOKENS == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceTokenComplete (cwm->u.eth,
-                              callbackState->rid,
-                              AS_ETHEREUM_BOOLEAN (success));
-
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-#endif
-
-#if false
-extern void
-cwmAnnounceGetNonceSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                            OwnershipGiven BRCryptoClientCallbackState callbackState,
-                            OwnershipKept const char *address,
-                            OwnershipKept const char *nonce) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_NONCE == callbackState->type);
-    cwm = cryptoWalletManagerTake (cwm);
-
-    ewmAnnounceNonce (cwm->u.eth,
-                      address,
-                      nonce,
-                      callbackState->rid);
-
-    cryptoWalletManagerGive (cwm);
-    cwmClientCallbackStateRelease (callbackState);
-}
-
-extern void
-cwmAnnounceGetNonceFailure (OwnershipKept BRCryptoWalletManager cwm,
-                            OwnershipGiven BRCryptoClientCallbackState callbackState) {
-    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_NONCE == callbackState->type);
-    cwmClientCallbackStateRelease (callbackState);
-}
-#endif
+//extern void
+//cwmAnnounceGetGasEstimateSuccess (OwnershipKept BRCryptoWalletManager cwm,
+//                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                                  OwnershipKept const char *gasEstimate,
+//                                  OwnershipKept const char *gasPrice) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceGasEstimateSuccess (cwm->u.eth,
+//                                   callbackState->u.ethWithWalletAndCookie.wid,
+//                                   callbackState->u.ethWithWalletAndCookie.cookie,
+//                                   gasEstimate,
+//                                   gasPrice,
+//                                   callbackState->rid);
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetGasEstimateFailure (OwnershipKept BRCryptoWalletManager cwm,
+//                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                                  BRCryptoStatus status) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS == callbackState->type);
+//
+//    ewmAnnounceGasEstimateFailure (cwm->u.eth,
+//                                   callbackState->u.ethWithWalletAndCookie.wid,
+//                                   callbackState->u.ethWithWalletAndCookie.cookie,
+//                                   cryptoStatusAsETH (status),
+//                                   callbackState->rid);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetBlocksSuccess (OwnershipKept BRCryptoWalletManager cwm,
+//                             OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                             int blockNumbersCount,
+//                             OwnershipKept uint64_t *blockNumbers) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BLOCKS == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceBlocks (cwm->u.eth,
+//                       callbackState->rid,
+//                       blockNumbersCount,
+//                       blockNumbers);
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetBlocksFailure (OwnershipKept BRCryptoWalletManager cwm,
+//                             OwnershipGiven BRCryptoClientCallbackState callbackState) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_BLOCKS == callbackState->type);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetTokensItem(OwnershipKept BRCryptoWalletManager cwm,
+//                         OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                         OwnershipKept const char *address,
+//                         OwnershipKept const char *symbol,
+//                         OwnershipKept const char *name,
+//                         OwnershipKept const char *description,
+//                         unsigned int decimals,
+//                         OwnershipKept const char *strDefaultGasLimit,
+//                         OwnershipKept const char *strDefaultGasPrice) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_TOKENS == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceToken (cwm->u.eth,
+//                      callbackState->rid,
+//                      address,
+//                      symbol,
+//                      name,
+//                      description,
+//                      decimals,
+//                      strDefaultGasLimit,
+//                      strDefaultGasPrice);
+//
+//    cryptoWalletManagerGive (cwm);
+//    // don't free (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetTokensComplete(OwnershipKept BRCryptoWalletManager cwm,
+//                             OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                             BRCryptoBoolean success) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_TOKENS == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceTokenComplete (cwm->u.eth,
+//                              callbackState->rid,
+//                              AS_ETHEREUM_BOOLEAN (success));
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetNonceSuccess (OwnershipKept BRCryptoWalletManager cwm,
+//                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+//                            OwnershipKept const char *address,
+//                            OwnershipKept const char *nonce) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_NONCE == callbackState->type);
+//    cwm = cryptoWalletManagerTake (cwm);
+//
+//    ewmAnnounceNonce (cwm->u.eth,
+//                      address,
+//                      nonce,
+//                      callbackState->rid);
+//
+//    cryptoWalletManagerGive (cwm);
+//    cwmClientCallbackStateRelease (callbackState);
+//}
+//
+//extern void
+//cwmAnnounceGetNonceFailure (OwnershipKept BRCryptoWalletManager cwm,
+//                            OwnershipGiven BRCryptoClientCallbackState callbackState) {
+//    assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_GET_NONCE == callbackState->type);
+//    cwmClientCallbackStateRelease (callbackState);
+//}

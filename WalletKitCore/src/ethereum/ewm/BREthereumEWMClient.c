@@ -213,6 +213,7 @@ ewmGetGasEstimate (BREthereumEWM ewm,
                 ewm->client.funcEstimateGas (ewm->client.context,
                                              ewm,
                                              wallet,
+                                             transfer,
                                              cookie,
                                              from,
                                              to,
@@ -448,7 +449,6 @@ ewmAnnounceTransaction(BREthereumEWM ewm,
                        uint64_t blockTransactionIndex,
                        uint64_t blockTimestamp,
                        bool isError) {
-    BRCoreParseStatus parseStatus;
     BREthereumEWMClientAnnounceTransactionBundle *bundle = malloc(sizeof (BREthereumEWMClientAnnounceTransactionBundle));
 
     bundle->hash = ethHashCreate(hashString);
