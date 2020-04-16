@@ -1114,52 +1114,41 @@ public class BlockChainDB {
                                    publicKey: String,
                                    transactionId: String,
                                    completion: @escaping (Result<[Model.HederaAccount],QueryError>) -> Void) {
-        let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
+        // We don't actually use the `transactionID` through the `GET .../account_transactions`
+        // endpoint.  It is more direct to just repeatedly "GET .../accounts"
+        // let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
         let noDataFailure = Result<[Model.HederaAccount],QueryError>.failure(BlockChainDB.QueryError.noData)
 
-        let retryPeriodInSeconds = 5
+        let initialDelayInSeconds  = 2
+        let retryPeriodInSeconds   = 5
         let retryDurationInSeconds = 4 * 60
         var retriesRemaining = (retryDurationInSeconds / retryPeriodInSeconds) - 1
 
-        func handleResult (res: Result<JSON.Dict, QueryError>) {
-            switch res {
-            case .failure (let error): completion (Result.failure(error))
-            case .success (let dict) :
-                let json = JSON (dict: dict)
+        func handleResult (res: Result<[Model.HederaAccount], QueryError>) {
+            // On a Result with a QueryError just assume there is no account... and try again.
+            let accounts = res.getWithRecovery { (_) in return [] }
 
-                guard let transactionStatus = json.asString(name: "transaction_status")
+            if accounts.count > 0 { completion (Result.success (accounts)) }
+            else {
+                guard retriesRemaining > 0
                     else { completion (noDataFailure); return }
 
-                switch transactionStatus {
-                case "success":
-                    self.getHederaAccount (blockchainId: blockchainId,
-                                           publicKey: publicKey,
-                                           completion: completion)
-
-                case "pending":
-                    guard retriesRemaining > 0
-                        else { completion (noDataFailure); return }
-
-                    retriesRemaining -= 1
-                    let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * retryPeriodInSeconds))
-                    self.queue.asyncAfter (deadline: deadline) {
-                        self.makeRequest (self.bdbDataTaskFunc, self.bdbBaseURL,
-                                          path: path,
-                                          httpMethod: "GET",
+                retriesRemaining -= 1
+                let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * retryPeriodInSeconds))
+                self.queue.asyncAfter (deadline: deadline) {
+                    self.getHederaAccount(blockchainId: blockchainId,
+                                          publicKey: publicKey,
                                           completion: handleResult)
-                    }
-
-                default /* failed */:
-                    completion (noDataFailure)
                 }
-
             }
         }
 
-        makeRequest (bdbDataTaskFunc, bdbBaseURL,
-                     path: path,
-                     httpMethod: "GET",
-                     completion: handleResult)
+        let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * initialDelayInSeconds))
+        self.queue.asyncAfter (deadline: deadline) {
+            self.getHederaAccount(blockchainId: blockchainId,
+                             publicKey: publicKey,
+                             completion: handleResult)
+        }
     }
 
     public func getHederaAccount (blockchainId: String,
