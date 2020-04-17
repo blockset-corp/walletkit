@@ -763,6 +763,9 @@ public class BlockChainDB {
 
     // Transfers
 
+    static let ADDRESS_COUNT = 50
+    static let DEFAULT_MAX_PAGE_SIZE = 20
+
     public func getTransfers (blockchainId: String,
                               addresses: [String],
                               begBlockNumber: UInt64,
@@ -773,16 +776,13 @@ public class BlockChainDB {
             var error: QueryError? = nil
             var results = [Model.Transfer]()
 
+            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
             for addresses in addresses.chunked(into: BlockChainDB.ADDRESS_COUNT) {
                 if nil != error { break }
-                var queryKeys = ["blockchain_id", "start_height", "end_height"] + Array (repeating: "address", count: addresses.count)
 
-                var queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description] + addresses
-
-                if let maxPageSize = maxPageSize {
-                    queryKeys += ["max_page_size"]
-                    queryVals += [String(maxPageSize)]
-                }
+                let queryKeys = ["blockchain_id", "start_height", "end_height", "max_page_size"] + Array (repeating: "address", count: addresses.count)
+                let queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, maxPageSize.description] + addresses
 
                 let semaphore = DispatchSemaphore (value: 0)
 
@@ -841,8 +841,6 @@ public class BlockChainDB {
 
     // Transactions
 
-    static let ADDRESS_COUNT = 50
-
     public func getTransactions (blockchainId: String,
                                  addresses: [String],
                                  begBlockNumber: UInt64? = nil,
@@ -857,13 +855,15 @@ public class BlockChainDB {
             var error: QueryError? = nil
             var results = [Model.Transaction]()
 
+            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
             let queryKeysBase = [
                 "blockchain_id",
                 begBlockNumber.map { (_) in "start_height" },
                 endBlockNumber.map { (_) in "end_height" },
                 "include_proof",
                 "include_raw",
-                maxPageSize.map { (_) in "max_page_size" }]
+                "max_page_size"]
                 .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
 
             let queryValsBase: [String] = [
@@ -872,7 +872,7 @@ public class BlockChainDB {
                 endBlockNumber.map { $0.description },
                 includeProof.description,
                 includeRaw.description,
-                maxPageSize.map { $0.description }]
+                maxPageSize.description]
                 .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
 
             let semaphore = DispatchSemaphore (value: 0)

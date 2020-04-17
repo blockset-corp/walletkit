@@ -28,6 +28,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class TransferApi {
 
     private static final int ADDRESS_COUNT = 50;
+    private static final int DEFAULT_MAX_PAGE_SIZE = 20;
 
     private final BdbApiClient jsonClient;
     private final ExecutorService executorService;
@@ -47,6 +48,8 @@ public class TransferApi {
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transfer> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 
+        if (null == maxPageSize) maxPageSize = DEFAULT_MAX_PAGE_SIZE;
+
         for (int i = 0; i < chunkedAddressesList.size(); i++) {
             List<String> chunkedAddresses = chunkedAddressesList.get(i);
 
@@ -54,7 +57,7 @@ public class TransferApi {
             paramsBuilder.put("blockchain_id", id);
             paramsBuilder.put("start_height", beginBlockNumber.toString());
             paramsBuilder.put("end_height", endBlockNumber.toString());
-            if (null != maxPageSize) paramsBuilder.put("max_page_size", maxPageSize.toString());
+            paramsBuilder.put("max_page_size", maxPageSize.toString());
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();
 
