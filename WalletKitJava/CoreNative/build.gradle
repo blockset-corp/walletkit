@@ -1,0 +1,20 @@
+ext {
+    javaMainSrcDir              =  projectDir.absolutePath + "/src/main/java"
+
+    javaTestSrcDir              =  projectDir.absolutePath + "/src/commonTest/java"
+
+    cppCryptoBaseDir            = projectDir.absolutePath + "/../../WalletKitCore"
+
+    cppCryptoVendorSrcDir       =  cppCryptoBaseDir + "/vendor"
+    cppCryptoMainSrcDirs        = [cppCryptoBaseDir + "/src"]
+
+    cppCryptoMainIncDirs        = [cppCryptoBaseDir + "/include",
+                                   cppCryptoBaseDir + "/src",
+                                   cppCryptoBaseDir + "/vendor",
+                                   cppCryptoBaseDir + "/vendor/secp256k1"]
+
+    cppCryptoTestSrcDirs        = [cppCryptoBaseDir + "/WalletKitCoreTests/test"]
+    cppCryptoTestIncDirs        = [cppCryptoBaseDir + "/WalletKitCoreTests/test/include"]
+
+    cmakeCMakeListsFile         = cppCryptoBaseDir + "/CMakeLists.txt"
+}

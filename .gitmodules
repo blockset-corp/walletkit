@@ -1,0 +1,3 @@
+[submodule "WalletKitCore/vendor/secp256k1"]
+	path = WalletKitCore/vendor/secp256k1
+	url = https://github.com/bitcoin-core/secp256k1.git
