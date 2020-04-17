@@ -1758,7 +1758,7 @@ bwmHandleTxAdded (BRWalletManager manager,
     size_t transactionsCount = array_count (manager->transactions);
 
     size_t resolvedTransactionIndex = 0;
-    BRTransactionWithState *resolvedTransactions = calloc (transactionsCount, sizeof (BRTransactionWithState*));
+    BRTransactionWithState *resolvedTransactions = calloc (transactionsCount, sizeof (BRTransactionWithState));
 
     for (size_t index = 0; index < transactionsCount; index++) {
         BRTransactionWithState txnWithState  = manager->transactions[index];
