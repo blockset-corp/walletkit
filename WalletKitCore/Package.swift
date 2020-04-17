@@ -1,6 +1,5 @@
 // swift-tools-version:5.1
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
+//
 import PackageDescription
 
 let package = Package(
@@ -15,8 +14,8 @@ let package = Package(
             name: "WalletKitCoreExplore",
             targets: ["WalletKitCoreExplore"]
         ),
-        
-        
+
+
         .executable(
             name: "WalletKitCorePerf",
             targets: ["WalletKitCorePerf"]
@@ -47,7 +46,7 @@ let package = Package(
                 "WalletKitHederaProto",
             ],
             path: ".",
-            sources: ["src/version"],                   // Holds BRCryptoVersion.c only
+            sources: ["src/version"],               // Holds BRCryptoVersion.c only
             publicHeadersPath: "include",           // Export all public includes
             linkerSettings: [
                 .linkedLibrary("resolv"),
@@ -95,6 +94,7 @@ let package = Package(
             publicHeadersPath: "include",
             cSettings: [
                 .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks",
                     "-D_HAVE_SQLITE_CONFIG_H=1",
                     "-Wno-ambiguous-macro",
                     "-Wno-shorten-64-to-32",
@@ -112,7 +112,9 @@ let package = Package(
             exclude: [],
             publicHeadersPath: nil,
             cSettings: [
-                .unsafeFlags([])
+                .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks"
+                ])
             ]
         ),
 
@@ -124,6 +126,7 @@ let package = Package(
             publicHeadersPath: nil,
             cSettings: [
                 .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks",
                     "-Wno-shorten-64-to-32",
                 ])
             ]

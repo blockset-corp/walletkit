@@ -371,5 +371,6 @@ BRHederaTimeStamp hederaParseTimeStamp(const char* transactionID)
     sscanf(secondsStr, "%" PRIi64, &ts.seconds);
     sscanf(nanosStr, "%" PRIi32, &ts.nano);
 
+    free (txID);
     return ts;
 }
