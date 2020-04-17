@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 public class TransactionApi {
 
     private static final int ADDRESS_COUNT = 50;
+    private static final int DEFAULT_MAX_PAGE_SIZE = 20;
 
     private final BdbApiClient jsonClient;
     private final ExecutorService executorService;
@@ -51,6 +52,8 @@ public class TransactionApi {
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transaction> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 
+        if (null == maxPageSize) maxPageSize = DEFAULT_MAX_PAGE_SIZE;
+
         for (int i = 0; i < chunkedAddressesList.size(); i++) {
             List<String> chunkedAddresses = chunkedAddressesList.get(i);
 
@@ -60,7 +63,7 @@ public class TransactionApi {
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
-            if (maxPageSize != null) paramsBuilder.put("max_page_size", maxPageSize.toString());
+            paramsBuilder.put("max_page_size", maxPageSize.toString());
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();
 

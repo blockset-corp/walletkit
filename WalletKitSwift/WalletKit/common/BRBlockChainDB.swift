@@ -763,6 +763,9 @@ public class BlockChainDB {
 
     // Transfers
 
+    static let ADDRESS_COUNT = 50
+    static let DEFAULT_MAX_PAGE_SIZE = 20
+
     public func getTransfers (blockchainId: String,
                               addresses: [String],
                               begBlockNumber: UInt64,
@@ -773,16 +776,13 @@ public class BlockChainDB {
             var error: QueryError? = nil
             var results = [Model.Transfer]()
 
+            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
             for addresses in addresses.chunked(into: BlockChainDB.ADDRESS_COUNT) {
                 if nil != error { break }
-                var queryKeys = ["blockchain_id", "start_height", "end_height"] + Array (repeating: "address", count: addresses.count)
 
-                var queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description] + addresses
-
-                if let maxPageSize = maxPageSize {
-                    queryKeys += ["max_page_size"]
-                    queryVals += [String(maxPageSize)]
-                }
+                let queryKeys = ["blockchain_id", "start_height", "end_height", "max_page_size"] + Array (repeating: "address", count: addresses.count)
+                let queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, maxPageSize.description] + addresses
 
                 let semaphore = DispatchSemaphore (value: 0)
 
@@ -841,8 +841,6 @@ public class BlockChainDB {
 
     // Transactions
 
-    static let ADDRESS_COUNT = 50
-
     public func getTransactions (blockchainId: String,
                                  addresses: [String],
                                  begBlockNumber: UInt64? = nil,
@@ -857,13 +855,15 @@ public class BlockChainDB {
             var error: QueryError? = nil
             var results = [Model.Transaction]()
 
+            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
             let queryKeysBase = [
                 "blockchain_id",
                 begBlockNumber.map { (_) in "start_height" },
                 endBlockNumber.map { (_) in "end_height" },
                 "include_proof",
                 "include_raw",
-                maxPageSize.map { (_) in "max_page_size" }]
+                "max_page_size"]
                 .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
 
             let queryValsBase: [String] = [
@@ -872,7 +872,7 @@ public class BlockChainDB {
                 endBlockNumber.map { $0.description },
                 includeProof.description,
                 includeRaw.description,
-                maxPageSize.map { $0.description }]
+                maxPageSize.description]
                 .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
 
             let semaphore = DispatchSemaphore (value: 0)
@@ -1114,52 +1114,41 @@ public class BlockChainDB {
                                    publicKey: String,
                                    transactionId: String,
                                    completion: @escaping (Result<[Model.HederaAccount],QueryError>) -> Void) {
-        let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
+        // We don't actually use the `transactionID` through the `GET .../account_transactions`
+        // endpoint.  It is more direct to just repeatedly "GET .../accounts"
+        // let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
         let noDataFailure = Result<[Model.HederaAccount],QueryError>.failure(BlockChainDB.QueryError.noData)
 
-        let retryPeriodInSeconds = 5
+        let initialDelayInSeconds  = 2
+        let retryPeriodInSeconds   = 5
         let retryDurationInSeconds = 4 * 60
         var retriesRemaining = (retryDurationInSeconds / retryPeriodInSeconds) - 1
 
-        func handleResult (res: Result<JSON.Dict, QueryError>) {
-            switch res {
-            case .failure (let error): completion (Result.failure(error))
-            case .success (let dict) :
-                let json = JSON (dict: dict)
+        func handleResult (res: Result<[Model.HederaAccount], QueryError>) {
+            // On a Result with a QueryError just assume there is no account... and try again.
+            let accounts = res.getWithRecovery { (_) in return [] }
 
-                guard let transactionStatus = json.asString(name: "transaction_status")
+            if accounts.count > 0 { completion (Result.success (accounts)) }
+            else {
+                guard retriesRemaining > 0
                     else { completion (noDataFailure); return }
 
-                switch transactionStatus {
-                case "success":
-                    self.getHederaAccount (blockchainId: blockchainId,
-                                           publicKey: publicKey,
-                                           completion: completion)
-
-                case "pending":
-                    guard retriesRemaining > 0
-                        else { completion (noDataFailure); return }
-
-                    retriesRemaining -= 1
-                    let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * retryPeriodInSeconds))
-                    self.queue.asyncAfter (deadline: deadline) {
-                        self.makeRequest (self.bdbDataTaskFunc, self.bdbBaseURL,
-                                          path: path,
-                                          httpMethod: "GET",
+                retriesRemaining -= 1
+                let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * retryPeriodInSeconds))
+                self.queue.asyncAfter (deadline: deadline) {
+                    self.getHederaAccount(blockchainId: blockchainId,
+                                          publicKey: publicKey,
                                           completion: handleResult)
-                    }
-
-                default /* failed */:
-                    completion (noDataFailure)
                 }
-
             }
         }
 
-        makeRequest (bdbDataTaskFunc, bdbBaseURL,
-                     path: path,
-                     httpMethod: "GET",
-                     completion: handleResult)
+        let deadline = DispatchTime (uptimeNanoseconds: DispatchTime.now().uptimeNanoseconds + UInt64(1_000_000_000 * initialDelayInSeconds))
+        self.queue.asyncAfter (deadline: deadline) {
+            self.getHederaAccount(blockchainId: blockchainId,
+                             publicKey: publicKey,
+                             completion: handleResult)
+        }
     }
 
     public func getHederaAccount (blockchainId: String,

@@ -39,6 +39,8 @@
 #define static_on_release   static
 #endif
 
+#define MAX(a,b)    ((a) >= (b) ? (a) : (b))
+
 /* Forward Declarations */
 static void
 bwmPeriodicDispatcher (BREventHandler handler,
@@ -1068,7 +1070,7 @@ BRWalletManagerNew (BRWalletManagerClient client,
     }
 
     // Create the transaction array with enough initial capacity to hold all the loaded transactions
-    array_new(bwm->transactions, array_count(transactions));
+    array_new(bwm->transactions, MAX(1, array_count(transactions)));
 
     // Create the Wallet being managed and populate with the loaded transactions
     _peer_log ("BWM: initializing wallet with %zu transactions", array_count(transactions));
@@ -1756,7 +1758,7 @@ bwmHandleTxAdded (BRWalletManager manager,
     size_t transactionsCount = array_count (manager->transactions);
 
     size_t resolvedTransactionIndex = 0;
-    BRTransactionWithState *resolvedTransactions = calloc (transactionsCount, sizeof (BRTransactionWithState*));
+    BRTransactionWithState *resolvedTransactions = calloc (transactionsCount, sizeof (BRTransactionWithState));
 
     for (size_t index = 0; index < transactionsCount; index++) {
         BRTransactionWithState txnWithState  = manager->transactions[index];

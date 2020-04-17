@@ -50,7 +50,7 @@ rippleMemoNodeClone (BRRippleMemoNode *node) {
     clone->memo = rippleMemoClone (node->memo);
     clone->next = rippleMemoNodeClone (node->next);
 
-    return NULL;
+    return clone;
 }
 
 typedef struct _txPaymentRecord {

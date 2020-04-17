@@ -34,66 +34,64 @@ public class ExperimentalApi {
         this.executorService = executorService;
     }
 
-     private void getHederaAccountForTransaction(String id,
+    private class HederaRetryCompletionHandler implements CompletionHandler<List<HederaAccount>, QueryError> {
+        final long retryPeriodInSeconds = 5;
+        final long retryDurationInSeconds = 4 * 60;
+        long retriesRemaining = (retryDurationInSeconds / retryPeriodInSeconds) - 1;
+
+        String id;
+        String publicKey;
+        CompletionHandler<List<HederaAccount>, QueryError> handler;
+
+        HederaRetryCompletionHandler (String id, String publicKey, CompletionHandler<List<HederaAccount>, QueryError> handler) {
+            this.id = id;
+            this.publicKey = publicKey;
+            this.handler = handler;
+        }
+
+        private void retryIfAppropriate () {
+            if (0 == retriesRemaining) handler.handleError(new QueryNoDataError());
+            else {
+                retriesRemaining -= 1;
+                executorService.schedule(
+                        () -> getHederaAccount (id, publicKey, this),
+                        retryPeriodInSeconds,
+                        TimeUnit.SECONDS);
+            }
+        }
+
+        @Override
+        public void handleData(List<HederaAccount> accounts) {
+            if (accounts.isEmpty()) retryIfAppropriate();
+            else {
+                handler.handleData(accounts);
+            }
+        }
+
+        @Override
+        public void handleError(QueryError error) {
+            // Ignore the error and try again.  The rationale being: the POST to create the
+            // Hedera Account succeeded (because we are here in the first place), so we might as
+            // well just keep trying to get the actual Hedera Account.
+            retryIfAppropriate();
+        }
+    }
+
+    private void getHederaAccountForTransaction(String id,
                                                 String publicKey,
                                                 HederaTransaction transaction,
                                                 CompletionHandler<List<HederaAccount>, QueryError> handler) {
-        final long retryPeriodInSeconds = 5;
-        final long retryDurationInSeconds = 4 * 60;
-        final long[] retriesRemaining = { (retryDurationInSeconds / retryPeriodInSeconds) - 1 };
+        // We don't actually use the `transactionID` through the `GET .../account_transactions`
+        // endpoint.  It is more direct to just repeatedly "GET .../accounts"
+        // final String transactionId = id + ":" + transaction.getTransactionId();
 
-        final String transactionId = id + ":" + transaction.getTransactionId();
+        final long initialDelayInSeconds = 2;
 
-        final List<CompletionHandler<HederaTransaction, QueryError>> retryHandler = new ArrayList<>();
-        retryHandler.add (new CompletionHandler<HederaTransaction, QueryError>() {
-            @Override
-            public void handleData(HederaTransaction newTransaction) {
-                switch (newTransaction.getTransactionStatus()) {
-                    case "success":
-                        getHederaAccount(id, publicKey, handler);
-                        break;
-
-                    case "pending":
-                        if (retriesRemaining[0] == 0)
-                            handler.handleError(new QueryNoDataError());
-                        else {
-                            retriesRemaining[0] -= 1;
-                            executorService.schedule(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            jsonClient.sendGetWithId(
-                                                    resourcePathAccountTransactions,
-                                                    transactionId,
-                                                    ImmutableMultimap.of(),
-                                                    HederaTransaction.class,
-                                                    retryHandler.get(0));  // recursive-ish
-                                        }
-                                    },
-                                    retryDurationInSeconds,
-                                    TimeUnit.SECONDS);
-                        }
-                        break;
-
-                    default:
-                        handler.handleError(new QueryNoDataError());
-                        break;
-                }
-            }
-
-            @Override
-            public void handleError(QueryError error) {
-                handler.handleError(new QueryNoDataError());
-            }
-        });
-
-        jsonClient.sendGetWithId(
-                resourcePathAccountTransactions,
-                transactionId,
-                ImmutableMultimap.of(),
-                HederaTransaction.class,
-                retryHandler.get(0));
-   }
+        executorService.schedule(
+                () -> getHederaAccount(id, publicKey, new HederaRetryCompletionHandler(id, publicKey, handler)),
+                initialDelayInSeconds,
+                TimeUnit.SECONDS);
+    }
 
     public void getHederaAccount(String id,
                                  String publicKey,
