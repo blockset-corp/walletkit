@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "BRGenericPrivate.h"
 
@@ -94,8 +95,12 @@ struct BRGenericManagerRecord {
 
         int rid;
 
-        int completed:1;
+        bool completed;
+        bool success;
     } brdSync;
+
+    BRGenericManagerSyncContext  syncContext;
+    BRGenericManagerSyncCallback syncCallback;
 };
 
 
@@ -113,7 +118,12 @@ fileServiceTypeTransferV1Identifier (BRFileServiceContext context,
                                      BRFileService fs,
                                      const void *entity) {
     BRGenericTransfer transfer = (BRGenericTransfer) entity;
-    return genTransferGetHash (transfer).value;
+    BRGenericHash     hash     = genTransferGetHash(transfer);
+
+    assert (hash.bytesCount >= sizeof(UInt256));
+    UInt256 *result = (UInt256*) hash.bytes;
+
+    return *result;
 }
 
 static void *
@@ -141,9 +151,9 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     BRGenericTransferState state = genTransferStateDecode (items[7], coder);
     BRArrayOf(BRGenericTransferAttribute) attributes = genTransferAttributesDecode(items[8], coder);
 
-    BRGenericHash *hash = (BRGenericHash*) hashData.bytes;
-    char *strHash   = genericHashAsString (*hash);
+    BRGenericHash hash = genericHashCreate(hashData.bytesCount, hashData.bytes);
 
+    char *strHash   = genericHashAsString (hash);
     char *strAmount = uint256CoerceString (amount, 10);
 
     int overflow = 0;
@@ -220,8 +230,8 @@ fileServiceTypeTransferWriter (BRFileServiceContext context,
          : (GENERIC_TRANSFER_VERSION_2 == version ? GEN_TRANSFER_STATE_ENCODE_V2
             : GEN_TRANSFER_STATE_ENCODE_V1));
 
-BRRlpItem item = rlpEncodeList (coder, 9,
-                                    rlpEncodeBytes (coder, hash.value.u8, sizeof (hash.value.u8)),
+    BRRlpItem item = rlpEncodeList (coder, 9,
+                                    rlpEncodeBytes (coder, hash.bytes, hash.bytesCount),
                                     rlpEncodeString (coder, transfer->uids),
                                     rlpEncodeString (coder, strSource),
                                     rlpEncodeString (coder, strTarget),
@@ -293,6 +303,8 @@ genManagerCreate (BRGenericClient client,
                   uint64_t accountTimestamp,
                   const char *storagePath,
                   uint32_t syncPeriodInSeconds,
+                  BRGenericManagerSyncContext  syncContext,
+                  BRGenericManagerSyncCallback syncCallback,
                   uint64_t blockHeight) {
     BRGenericManager gwm = calloc (1, sizeof (struct BRGenericManagerRecord));
 
@@ -349,8 +361,12 @@ genManagerCreate (BRGenericClient client,
     gwm->brdSync.rid = -1;
     gwm->brdSync.begBlockNumber = earliestBlockNumber;
     gwm->brdSync.endBlockNumber = MAX (earliestBlockNumber, blockHeight);
-    gwm->brdSync.completed = 0;
+    gwm->brdSync.completed = false;
+    gwm->brdSync.success = false;
 
+    gwm->syncContext  = syncContext;
+    gwm->syncCallback = syncCallback;
+    
     eventHandlerSetTimeoutDispatcher (gwm->handler,
                                       1000 * syncPeriodInSeconds,
                                       (BREventDispatcher) genManagerPeriodicDispatcher,
@@ -410,9 +426,39 @@ genManagerDisconnect (BRGenericManager gwm) {
                            // Event
 }
 
+extern int
+genManagerIsConnected (BRGenericManager gwm) {
+    return eventHandlerIsRunning (gwm->handler);
+}
+
 extern void
 genManagerSync (BRGenericManager gwm) {
-    return;
+    genManagerSyncToDepth (gwm, CRYPTO_SYNC_DEPTH_FROM_CREATION);
+}
+
+extern void
+genManagerSyncToDepth (BRGenericManager gwm,
+                       BRCryptoSyncDepth depth) {
+    pthread_mutex_lock (&gwm->lock);
+
+    // Abort an ongoing sync by incrementing the `rid` - any callback for an in-progress
+    // client callback will be ignored.
+    gwm->brdSync.rid += 1;
+
+    // Avoid the periodic dispatcher from mucking with the 'begBlockNumber' - which it might
+    // do if success is `true`.
+    gwm->brdSync.completed = false;
+    gwm->brdSync.success = false;
+
+    // For a GEN sync, just start at 0 always.
+    switch (depth) {
+        case CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND:
+        case CRYPTO_SYNC_DEPTH_FROM_LAST_TRUSTED_BLOCK:
+        case CRYPTO_SYNC_DEPTH_FROM_CREATION:
+            gwm->brdSync.begBlockNumber = 0;
+            break;
+    }
+    pthread_mutex_unlock (&gwm->lock);
 }
 
 extern BRGenericAddress
@@ -563,8 +609,8 @@ genManagerPeriodicDispatcher (BREventHandler handler,
 
     // Handle a BRD Sync:
 
-    // 1) check if the prior sync has completed.
-    if (gwm->brdSync.completed) {
+    // 1) check if the prior sync has completed successfully
+    if (gwm->brdSync.completed && gwm->brdSync.success) {
         // 1a) if so, advance the sync range by updating `begBlockNumber`
         gwm->brdSync.begBlockNumber = (gwm->brdSync.endBlockNumber >=  GWM_BRD_SYNC_START_BLOCK_OFFSET
                                        ? gwm->brdSync.endBlockNumber - GWM_BRD_SYNC_START_BLOCK_OFFSET
@@ -579,8 +625,10 @@ genManagerPeriodicDispatcher (BREventHandler handler,
         BRGenericAddress accountAddress = genManagerGetAccountAddress(gwm);
         char *address = genAddressAsString (accountAddress);
         
-        // 3a) Save the current requestId
+        // 3a) Save the current requestId and mark as not completed.
         gwm->brdSync.rid = gwm->requestId;
+        gwm->brdSync.completed = false;
+        gwm->brdSync.success = false;
 
         // 3b) Query all transactions; each one found will have bwmAnnounceTransaction() invoked
         // which will process the transaction into the wallet.
@@ -594,23 +642,30 @@ genManagerPeriodicDispatcher (BREventHandler handler,
                                       address,
                                       gwm->brdSync.begBlockNumber,
                                       gwm->brdSync.endBlockNumber,
-                                      gwm->requestId++);
+                                      gwm->brdSync.rid);
         } else {
             gwm->client.getTransactions (gwm->client.context,
                                          gwm,
                                          address,
                                          gwm->brdSync.begBlockNumber,
                                          gwm->brdSync.endBlockNumber,
-                                         gwm->requestId++);
+                                         gwm->brdSync.rid);
         }
 
+        // 3c) On to the next rid
+        gwm->requestId += 1;
 
         free (address);
         genAddressRelease(accountAddress);
-
-        // 3c) Mark as not completed
-        gwm->brdSync.completed = 0;
     }
+
+    if (NULL != gwm->syncCallback)
+        gwm->syncCallback (gwm->syncContext,
+                           gwm,
+                           gwm->brdSync.begBlockNumber,
+                           gwm->brdSync.endBlockNumber,
+                           // lots of incremental sync 'slop'
+                           2 * GWM_BRD_SYNC_START_BLOCK_OFFSET);
 
     // End handling a BRD Sync
 }
@@ -654,8 +709,10 @@ genManagerAnnounceTransferComplete (BRGenericManager manager,
                                     int rid,
                                     int success) {
     pthread_mutex_lock (&manager->lock);
-    if (rid == manager->brdSync.rid)
-        manager->brdSync.completed = success;
+    if (rid == manager->brdSync.rid) {
+        manager->brdSync.completed = true;
+        manager->brdSync.success = (bool) success;
+    }
     pthread_mutex_unlock (&manager->lock);
 }
 

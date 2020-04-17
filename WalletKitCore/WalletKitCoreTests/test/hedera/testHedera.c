@@ -99,7 +99,7 @@ struct account_info accounts[] = {
     {"node3", "0.0.3", "", ""},
     {"node2", "0.0.2", "", ""},
     {"nodetest", "5412398.75.101101101", "", ""},
-    {"inmate", "", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"}
+    {"inmate", "0.0.38230", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
 };
 size_t num_accounts = sizeof (accounts) / sizeof (struct account_info);
 
@@ -154,7 +154,7 @@ static BRHederaAccount getAccount(const char * name)
 
 static BRHederaTransaction createSignedTransaction (const char * source, const char * target, const char * node,
                                   int64_t amount, int64_t seconds, int32_t nanos,
-                                  int64_t fee)
+                                  int64_t fee, const char * memo)
 {
     struct account_info source_account = find_account (source);
     struct account_info target_account = find_account (target);
@@ -177,6 +177,8 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     BRHederaTransaction transaction = hederaTransactionCreateNew(sourceAddress, targetAddress, amount,
                                                                  feeBasis, nodeAddress, &timeStamp);
 
+    if (memo) hederaTransactionSetMemo(transaction, memo);
+
     // Sign the transaction
     BRKey publicKey = hederaAccountGetPublicKey(account);
     hederaTransactionSignTransaction (transaction, publicKey, seed);
@@ -192,10 +194,10 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
 
 static void createNewTransaction (const char * source, const char * target, const char * node,
                                    int64_t amount, int64_t seconds, int32_t nanos,
-                                   int64_t fee, const char * expectedOutput, bool printOutput,
+                                   int64_t fee, const char * memo, const char * expectedOutput, bool printOutput,
                                   const char * expectedHash)
 {
-    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee);
+    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee, memo);
 
     // Get the signed bytes
     size_t serializedSize = 0;
@@ -231,7 +233,7 @@ static void createNewTransaction (const char * source, const char * target, cons
 static void transaction_value_test(const char * source, const char * target, const char * node, int64_t amount,
                                    int64_t seconds, int32_t nanos, int64_t fee)
 {
-    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee);
+    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee, NULL);
     // Check the fee and amount
     BRHederaUnitTinyBar txFee = hederaTransactionGetFee (transaction);
     assert (txFee == fee);
@@ -486,10 +488,10 @@ static void walletBalanceTests()
     BRHederaUnitTinyBar expectedBalance = 0;
 
     // Now add a few transfers for this wallet (3 TO and 1 FROM)
-    BRHederaTransaction tx1 = createSignedTransaction("choose", "patient", "node3", 2000000000, 1, 0, 500000);
-    BRHederaTransaction tx2 = createSignedTransaction("choose", "patient", "node3", 1500000000, 2, 0, 500000);
-    BRHederaTransaction tx3 = createSignedTransaction("choose", "patient", "node3", 1400000000, 3, 0, 500000);
-    BRHederaTransaction tx4 = createSignedTransaction("patient", "choose", "node3", 1400000000, 4, 0, 500000);
+    BRHederaTransaction tx1 = createSignedTransaction("choose", "patient", "node3", 2000000000, 1, 0, 500000, NULL);
+    BRHederaTransaction tx2 = createSignedTransaction("choose", "patient", "node3", 1500000000, 2, 0, 500000, NULL);
+    BRHederaTransaction tx3 = createSignedTransaction("choose", "patient", "node3", 1400000000, 3, 0, 500000, NULL);
+    BRHederaTransaction tx4 = createSignedTransaction("patient", "choose", "node3", 1400000000, 4, 0, 500000, NULL);
     expectedBalance = 2000000000L + 1500000000L + 1400000000L;
     hederaWalletAddTransfer(wallet, tx1);
     hederaWalletAddTransfer(wallet, tx2);
@@ -516,21 +518,25 @@ static void create_real_transactions() {
     now = time(&now);
     printf ("now: %ld\n", now);
     // Send 10,000,000 tiny bars from patient to chose via node3
-    createNewTransaction ("patient", "choose", "node3", 10000000, now, 0, 500000, NULL, true, NULL);
+    createNewTransaction ("patient", "choose", "node3", 10000000, now, 0, 500000, NULL, NULL, true, NULL);
 
-    createNewTransaction ("choose", "patient", "node3", 50000000, now, 0, 500000, NULL, true, NULL);
+    createNewTransaction ("choose", "patient", "node3", 50000000, now, 0, 500000, NULL, NULL, true, NULL);
+
+    // Create one with a memo
+    const char * memo = "BRD Memo";
+    //createNewTransaction ("inmate", "door", "node3", 1000, now, 0, 500000, memo, NULL, true, NULL);
 }
 
 static void create_new_transactions() {
     const char * testOneOutput = "0000000000000000000000000000000000000000000000031a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40e9086013e266e779a08a6b5f56efef98a1d9a9a5d3dce2f40dba01b35ea429247872c98e2fe0f6150ba3d82e7b9848a2c95d118d9f8bc66ae285be42d1e94407223b0a0e0a060889f0c6ed05120418d8fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409";
     // Send 10,000,000 tiny bars to "choose" from "patient" via node3.
     char * hash = "E1CFDD4D80C768AF3C8DF0E88649C57F1DAF0A81F6269B59D75D03AEC6EF11A7CAE5BD5310801FF93553AD0BD6B8A194";
-    createNewTransaction ("patient", "choose", "node3", 10000000, 1571928073, 0, 500000, testOneOutput, false, hash);
+    createNewTransaction ("patient", "choose", "node3", 10000000, 1571928073, 0, 500000, NULL, testOneOutput, false, hash);
 
     const char * testTwoOutput = "0000000000000000000000000000000000000000000000031a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40be090d58fb3926c5e3e3f8bd19badca4189a42d7ce336bf4e736738bf3932c8b9a12e79bcab3e94beeca17e2acd027c6baedc8b74d70b63669319927bb39f700223b0a0e0a0608d1f1c6ed05120418d9fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f";
     // Send 50,000,000 tiny bars to "patient" from "choose" via node3
     const char * hash2 = "9C14E7FC73E35D978D160872C9CB2F02C373AA6CCE9A8EC587806AAA108B0FEBBF8F6D0525940869859E7437B421C7AF";
-    createNewTransaction ("choose", "patient", "node3", 50000000, 1571928273, 0, 500000, testTwoOutput, false, hash2);
+    createNewTransaction ("choose", "patient", "node3", 50000000, 1571928273, 0, 500000, NULL, testTwoOutput, false, hash2);
 }
 
 static void address_tests() {

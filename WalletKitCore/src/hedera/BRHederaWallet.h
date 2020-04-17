@@ -90,6 +90,20 @@ hederaWalletSetBalance (BRHederaWallet wallet, BRHederaUnitTinyBar balance);
 extern BRHederaUnitTinyBar
 hederaWalletGetBalance (BRHederaWallet wallet);
 
+/**
+ * Return the balance limit for this wallet, either asMaximum or asMinimum
+ *
+ * @param wallet - the wallet
+ * @param asMaximum - if true, return the wallet maximum limit; otherwise minimum limit
+ * @param hasLimit  - must be non-NULL; assigns if wallet as the specified limit
+ *
+ * @return balance limit - in tiny bar units
+ */
+extern BRHederaUnitTinyBar
+hederaWalletGetBalanceLimit (BRHederaWallet wallet,
+                             int asMaximum,
+                             int *hasLimit);
+
 extern BRHederaAddress /* Caller must free address using hederaAddressFree */
 hederaWalletGetNodeAddress(BRHederaWallet wallet);
 

@@ -12,6 +12,8 @@ package com.breadwallet.crypto;
 import android.support.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.BlockchainDb;
+import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
+import com.breadwallet.crypto.errors.AccountInitializationError;
 import com.breadwallet.crypto.errors.MigrateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.events.system.SystemListener;
@@ -226,4 +228,13 @@ public interface System {
      */
     void migrateStorage (Network network, List<TransactionBlob> transactionBlobs, List<BlockBlob> blockBlobs,
                          List<PeerBlob> peerBlobs) throws MigrateError;
+
+
+    boolean accountIsInitialized (Account account, Network nework);
+
+    void accountInitialize (Account account, Network network, boolean create, CompletionHandler<byte[], AccountInitializationError> handler);
+
+    Optional<byte[]> accountInitializeUsingData (Account account, Network network, byte[] data);
+
+    Optional<byte[]> accountInitializeUsingHedera (Account account, Network network, HederaAccount hedera);
 }

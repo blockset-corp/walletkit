@@ -11,6 +11,11 @@
 #include <stdbool.h>
 #include <pthread.h>
 
+#define HEDERA_EXCHANGE_RATE                     0.03  // 1 Hbar == 0.03 USD (3 US Cents)
+#define HEDERA_WALLET_CREATE_FEE_TINY_BAR       (0.01     * HEDERA_HBAR_SCALE_FACTOR / HEDERA_EXCHANGE_RATE)  // 1.0    US Cents
+#define HEDERA_WALLET_QUARTERY_FEE_HBAR         (0.000002 * HEDERA_HBAR_SCALE_FACTOR / HEDERA_EXCHANGE_RATE)  // 0.0002 US Cents
+#define HEDERA_WALLET_MINIMUM_BALANCE_TINY_BAR  (HEDERA_HBAR_SCALE_FACTOR / 10) // 0.1 HBAR
+
 struct BRHederaWalletRecord {
     BRHederaAccount account;
     BRHederaUnitTinyBar balance;
@@ -45,7 +50,8 @@ hederaWalletCreate (BRHederaAccount account)
         array_add(wallet->nodes, hederaAddressCreate(0, 0, i));
     }
 
-    array_new(wallet->transactions, 0);
+    // Putting a '1' here avoids a 'false positive' in the Xcode leak instrument.
+    array_new(wallet->transactions, 1);
 
     // Add a default fee basis
     wallet->feeBasis.costFactor = 1;
@@ -62,6 +68,10 @@ hederaWalletFree (BRHederaWallet wallet)
         hederaAddressFree(wallet->nodes[i]);
     }
     array_free(wallet->nodes);
+
+    // Transactions owned elsewhere, it seems.  Therefore, free the array, not the contents.
+    array_free (wallet->transactions);
+
     free(wallet);
 }
 
@@ -97,6 +107,16 @@ hederaWalletGetBalance (BRHederaWallet wallet)
 {
     assert(wallet);
     return (wallet->balance);
+}
+
+extern BRHederaUnitTinyBar
+hederaWalletGetBalanceLimit (BRHederaWallet wallet,
+                             int asMaximum,
+                             int *hasLimit) {
+    assert (NULL != hasLimit);
+
+    *hasLimit = !asMaximum;
+    return (asMaximum ? 0 : HEDERA_WALLET_MINIMUM_BALANCE_TINY_BAR);
 }
 
 extern BRHederaAddress

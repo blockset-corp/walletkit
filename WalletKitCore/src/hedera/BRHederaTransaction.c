@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <string.h>
 
 struct BRHederaTransactionRecord {
     BRHederaAddress source;
@@ -24,6 +25,7 @@ struct BRHederaTransactionRecord {
     BRHederaTimeStamp timeStamp;
     uint64_t blockHeight;
     int error;
+    char * memo;
 };
 
 char * createTransactionID(BRHederaAddress address, BRHederaTimeStamp timeStamp)
@@ -132,6 +134,9 @@ hederaTransactionClone (BRHederaTransaction transaction)
         newTransaction->nodeAddress = hederaAddressClone(transaction->nodeAddress);
     }
 
+    if (transaction->memo) {
+        newTransaction->memo = strdup(transaction->memo);
+    }
     return newTransaction;
 }
 
@@ -143,7 +148,25 @@ extern void hederaTransactionFree (BRHederaTransaction transaction)
     if (transaction->source) hederaAddressFree (transaction->source);
     if (transaction->target) hederaAddressFree (transaction->target);
     if (transaction->nodeAddress) hederaAddressFree (transaction->nodeAddress);
+    if (transaction->memo) free(transaction->memo);
     free (transaction);
+}
+
+extern void hederaTransactionSetMemo(BRHederaTransaction transaction, const char* memo)
+{
+    assert(transaction);
+    assert(memo);
+    transaction->memo = strdup(memo);
+}
+
+extern char * // Caller owns memory and must free calling "free"
+hederaTransactionGetMemo(BRHederaTransaction transaction)
+{
+    assert(transaction);
+    if (transaction->memo && strlen(transaction->memo) > 0) {
+        return strdup(transaction->memo);
+    }
+    return NULL;
 }
 
 extern size_t
@@ -175,7 +198,7 @@ hederaTransactionSignTransaction (BRHederaTransaction transaction,
                                                 transaction->amount,
                                                 transaction->timeStamp,
                                                 fee,
-                                                NULL,
+                                                transaction->memo,
                                                 &bodySize);
 
     // Create signature from the body bytes
@@ -348,5 +371,6 @@ BRHederaTimeStamp hederaParseTimeStamp(const char* transactionID)
     sscanf(secondsStr, "%" PRIi64, &ts.seconds);
     sscanf(nanosStr, "%" PRIi32, &ts.nano);
 
+    free (txID);
     return ts;
 }

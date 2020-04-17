@@ -13,6 +13,8 @@
 #include "proto/TransactionBody.pb-c.h"
 #include <stdlib.h>
 
+const size_t max_memo_size = 100L;
+
 Proto__AccountID * createAccountID (BRHederaAddress address)
 {
     Proto__AccountID *protoAccountID = calloc(1, sizeof(Proto__AccountID));
@@ -74,7 +76,12 @@ uint8_t * hederaTransactionBodyPack (BRHederaAddress source,
     // Create a transaction ID
     body->transactionid = createProtoTransactionID(source, timeStamp);
     body->nodeaccountid = createAccountID(nodeAddress);
-    body->transactionfee = fee;
+    body->transactionfee = (uint64_t)fee;
+
+    // Docs say the limit of 100 is enforced. The max size of not defined
+    // in the .proto file so I guess we just have to trust that it is string with max 100 chars
+    if (memo) body->memo = strndup(memo, max_memo_size);
+
     // Set the duration
     // *** NOTE 1 *** if the transaction is unable to be verified in this
     // duration then it will fail. The default value in the Hedera Java SDK
