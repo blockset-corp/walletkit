@@ -39,7 +39,10 @@ extern BRRippleWallet
 rippleWalletCreate (BRRippleAccount account)
 {
     BRRippleWallet wallet = (BRRippleWallet) calloc (1, sizeof(struct BRRippleWalletRecord));
-    array_new(wallet->transfers, 0);
+
+    // To void a Xcode 'Leaks' Instrument false positive; use '1'.
+    array_new(wallet->transfers, 1);
+
     wallet->account = account;
     wallet->balance = 0;
     wallet->feeBasis = (BRRippleFeeBasis) {
