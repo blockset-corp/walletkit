@@ -202,7 +202,15 @@ genericHederaWalletFree (BRGenericWalletRef wallet) {
 
 static UInt256
 genericHederaWalletGetBalance (BRGenericWalletRef wallet) {
-    return uint256Create (hederaTinyBarCoerceToUInt64 (hederaWalletGetBalance ((BRHederaWallet) wallet)));
+    // It appears possible for a wallet balance to be negative in two cases:
+    //   a) we load transfers from persistent stoarge in a random order
+    //   b) perhaps Blockset responds with two 'simultaneous transfers' in a swapped order.
+    // Both of these cases MUST be transitory; so we'll return '0' and wait for it to correct
+    // itself naturally.
+    BRHederaUnitTinyBar balance = hederaWalletGetBalance ((BRHederaWallet) wallet);
+    return (balance >= 0
+            ? uint256Create (hederaTinyBarCoerceToUInt64 (balance))
+            : UINT256_ZERO);
 }
 
 static UInt256
