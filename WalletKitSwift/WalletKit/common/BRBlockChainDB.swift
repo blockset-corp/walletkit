@@ -38,20 +38,23 @@ private struct BlockChainDBCapabilities: OptionSet, CustomStringConvertible {
         }
     }
 
-    static let v0_1_0: BlockChainDBCapabilities = [
+    static let v2020_03_21: BlockChainDBCapabilities = [
         .transferStatusRevert,
         .transferStatusReject
     ]
 
     var versionDescription: String {
-        return (self == BlockChainDBCapabilities.v0_1_0
-            ? "application/vnd.blockset.v0.1+json"
-            : "application/json")
+        switch self {
+        case BlockChainDBCapabilities.v2020_03_21: return "application/vnd.blockset.V_2020-03-21+json"
+        default: return "application/json"
+        }
     }
+
+    static let current = v2020_03_21
 }
 
 public class BlockChainDB {
-    static fileprivate let capabilities =  BlockChainDBCapabilities.v0_1_0
+    static fileprivate let capabilities =  BlockChainDBCapabilities.current
 
     /// Base URL (String) for the BRD BlockChain DB
     let bdbBaseURL: String
