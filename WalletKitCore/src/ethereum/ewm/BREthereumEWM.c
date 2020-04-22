@@ -2535,7 +2535,6 @@ ewmTransferGetRLPEncoding (BREthereumEWM ewm,
                            BREthereumTransfer transfer,
                            BREthereumRlpType type,
                            BREthereumBoolean *encoded) {
-    assert (walletHasTransfer(wallet, transfer));
     assert (NULL != encoded);
 
     pthread_mutex_lock (&ewm->lock);
