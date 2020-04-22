@@ -397,6 +397,7 @@ public class BlockChainDB {
             timestamp: Date?,
             firstSeen: Date?,
             raw: Data?,
+            fee: Amount,
             transfers: [Transfer],
             acknowledgements: UInt64
         )
@@ -407,7 +408,10 @@ public class BlockChainDB {
                 let hash       = json.asString (name: "hash"),
                 let identifier = json.asString (name: "identifier"),
                 let status     = json.asString (name: "status"),
-                let size       = json.asUInt64 (name: "size")
+                let size       = json.asUInt64 (name: "size"),
+                let fee        = json.asDict (name: "fee")
+                    .map ({ JSON (dict: $0) })
+                    .map ({ asAmount(json: $0)}) as? Amount
                 else { return nil }
 
             // TODO: Resolve if optional or not
@@ -437,6 +441,7 @@ public class BlockChainDB {
                      blockHash: blockHash, blockHeight: blockHeight, index: index, confirmations: confirmations, status: status,
                      size: size, timestamp: timestamp, firstSeen: firstSeen,
                      raw: raw,
+                     fee: fee,
                      transfers: transfers,
                      acknowledgements: acks)
         }

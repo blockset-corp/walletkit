@@ -1304,10 +1304,10 @@ extension System {
 }
 
 extension System {
-    private static func mergeTransfers (_ transfers: [BlockChainDB.Model.Transfer], with addresses: [String])
-        -> [(transfer: BlockChainDB.Model.Transfer, fee: String?)] {
+    private static func mergeTransfers (_ transaction: BlockChainDB.Model.Transaction, with addresses: [String])
+        -> [(transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)] {
             // Only consider transfers w/ `address`
-            var transfers = transfers.filter {
+            var transfers = transaction.transfers.filter {
                 ($0.source.map { addresses.contains($0) } ?? false) ||
                     ($0.target.map { addresses.contains($0) } ?? false)
             }
@@ -1356,7 +1356,7 @@ extension System {
                 // Map transfers adding the fee to the `transferforFeeId`
                 return transfers
                     .map { (transfer: $0,
-                            fee: ($0.id == transferForFeeId ? transferWithFee.amount.value : nil))
+                            fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
                 }
 
             default:
@@ -1375,8 +1375,6 @@ extension System {
             addresses[index] = asUTF8String (cAddresses.pointee!)
             cAddresses = cAddresses.advanced(by: 1)
         }
-        return addresses
-
         return addresses.map { $0.lowercased() }
     }
 
@@ -1479,8 +1477,8 @@ extension System {
                                                             let status    = System.getTransferStatus (transaction.status)
 
 
-                                                            System.mergeTransfers (transaction.transfers, with: addresses)
-                                                                .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: String?)) in
+                                                            System.mergeTransfers (transaction, with: addresses)
+                                                                .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
                                                                     let (transfer, fee) = arg
 
                                                                     var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
@@ -1491,9 +1489,6 @@ extension System {
                                                                         .map { UnsafePointer<Int8>(strdup($0)) }
                                                                     defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
-                                                                    // If 'fee' is 'nil' it comes from the transaction...
-
-                                                                    // Use MetaData to extract TransferAttribute
                                                                     cwmAnnounceGetTransferItem (cwm, sid, status,
                                                                                                    transaction.hash,
                                                                                                    transfer.id,
@@ -1501,7 +1496,7 @@ extension System {
                                                                                                    transfer.target,
                                                                                                    transfer.amount.value,
                                                                                                    transfer.amount.currency,
-                                                                                                   fee,
+                                                                                                   fee.map { $0.value },
                                                                                                    blockTimestamp,
                                                                                                    blockHeight,
                                                                                                    blockConfirmations,
