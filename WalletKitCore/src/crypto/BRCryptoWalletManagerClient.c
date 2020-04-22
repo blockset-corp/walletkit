@@ -1517,7 +1517,6 @@ cwmGetTransactionsAsETH (BREthereumClientContext context,
                                   "__native__",
                                   begBlockNumber, endBlockNumber);
 
-
     cryptoWalletManagerGive (cwm);
 }
 
@@ -1538,13 +1537,9 @@ cwmGetLogsAsETH (BREthereumClientContext context,
     callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_LOGS;
     callbackState->rid = rid;
 
-    cwm->client.funcGetTransfers (cwm->client.context,
-                                  cryptoWalletManagerTake (cwm),
-                                  callbackState,
-                                  &address, 1,
-                                  contract,
-                                  begBlockNumber, endBlockNumber);
+    // We'll getLogs as part of getTransfactions
 
+    cwmAnnounceGetTransfersComplete (cwm, callbackState, CRYPTO_TRUE);
     cryptoWalletManagerGive (cwm);
 }
 
@@ -2132,7 +2127,6 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
 
             case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS:
             case CWM_CALLBACK_TYPE_ETH_GET_LOGS: {
-                bool isLog = (CWM_CALLBACK_TYPE_ETH_GET_LOGS == callbackState->type);
                 bool error = false;
 
                 UInt256 value = cwmParseUInt256 (amount, &error);
@@ -2145,9 +2139,8 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 uint64_t nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), &error);
 
                 error |= (CRYPTO_TRANSFER_STATE_ERRORED == status);
-                isLog &= (NULL != contract);
 
-                if (isLog) {
+                if (NULL != contract) {
                     size_t topicsCount = 3;
                     char *topics[3] = {
                         (char *) ethEventGetSelector(ethEventERC20Transfer),
