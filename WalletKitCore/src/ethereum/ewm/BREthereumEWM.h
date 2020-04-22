@@ -192,7 +192,6 @@ ewmWalletSetDefaultGasPrice(BREthereumEWM ewm,
                             BREthereumWallet wallet,
                             BREthereumGasPrice gasPrice);
 
-
 /**
  * Return a newly allocated array of transfers in wallet.  (You own the array and  must call free
  * on it - but not on its elements).
@@ -295,6 +294,10 @@ ewmWalletCreateTransferToReplace(BREthereumEWM ewm,
                                  BREthereumBoolean updateGasPrice,
                                  BREthereumBoolean updateGasLimit,
                                  BREthereumBoolean updateNonce);
+
+extern unsigned int
+ewmWalletGetTransferNonce (BREthereumEWM ewm,
+                           BREthereumWallet wallet);
 
 /// MARK: - Transfer
 

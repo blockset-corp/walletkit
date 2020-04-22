@@ -292,7 +292,7 @@ walletUnhandleTransfer (BREthereumWallet wallet,
                         BREthereumTransfer transfer) {
     int index = walletLookupTransferIndex (wallet, transfer);
     assert (-1 != index);
-    array_rm(wallet->transfers, index);
+    array_rm(wallet->transfers, (size_t) index);
 }
 
 private_extern int
@@ -472,7 +472,7 @@ extern int
 transferPredicateStatus (BREthereumTransferStatus status,
                          BREthereumTransfer transfer,
                          unsigned int index) {
-    return transferHasStatus(transfer, status);
+    return ETHEREUM_BOOLEAN_IS_TRUE (transferHasStatus(transfer, status));
 }
 
 extern void
@@ -558,7 +558,7 @@ walletUpdateTransferSorted (BREthereumWallet wallet,
     // transfer might have moved - move it if needed - but for now, remove then insert.
     int index = walletLookupTransferIndex(wallet, transfer);
     assert (-1 != index);
-    array_rm(wallet->transfers, index);
+    array_rm(wallet->transfers, (size_t) index);
     walletInsertTransferSorted(wallet, transfer);
 }
 #pragma clang diagnostic pop
@@ -567,6 +567,29 @@ walletUpdateTransferSorted (BREthereumWallet wallet,
 extern unsigned long
 walletGetTransferCount (BREthereumWallet wallet) {
     return array_count(wallet->transfers);
+}
+
+extern unsigned int
+walletGetTransferCountAsSource (BREthereumWallet wallet) {
+    unsigned int count = 0;
+
+    for (int i = 0; i < array_count(wallet->transfers); i++)
+         if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i]))))
+             count += 1;
+
+    return count;
+}
+
+extern unsigned int
+walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet) {
+    unsigned int nonce = 0;
+
+#define MAX(x,y)    ((x) >= (y) ? (x) : (y))
+    for (int i = 0; i < array_count(wallet->transfers); i++)
+        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i]))))
+            nonce = MAX (nonce, (unsigned int) transferGetNonce(wallet->transfers[i]));
+#undef MAX
+    return nonce;
 }
 
 //
@@ -712,7 +735,7 @@ walletStateGetHash (const BREthereumWalletState state) {
 static inline size_t
 walletStateHashValue (const void *t)
 {
-    return ethAddressHashValue(((BREthereumWalletState) t)->address);
+    return (size_t) ethAddressHashValue(((BREthereumWalletState) t)->address);
 }
 
 static inline int

@@ -1433,6 +1433,16 @@ ewmWalletCreateTransferToReplace (BREthereumEWM ewm,
     return transfer;
 }
 
+extern unsigned int
+ewmWalletGetTransferNonce (BREthereumEWM ewm,
+                           BREthereumWallet wallet) {
+    pthread_mutex_lock(&ewm->lock);
+    unsigned int countAsSource = walletGetTransferCountAsSource(wallet);
+    unsigned int nonceMaximum  = walletGetTransferNonceMaximumAsSource(wallet);
+    pthread_mutex_unlock(&ewm->lock);
+
+    return nonceMaximum > countAsSource ? nonceMaximum : countAsSource;
+}
 
 static void
 ewmWalletSignTransferAnnounce (BREthereumEWM ewm,
@@ -2385,7 +2395,6 @@ ewmHandleSyncAPI (BREthereumEWM ewm) {
 
     // Get this always and early.
     ewmUpdateBlockNumber(ewm);
-    ewmUpdateNonce(ewm);
 
     // Handle a BRD Sync:
 
@@ -2452,6 +2461,8 @@ ewmHandleSyncAPI (BREthereumEWM ewm) {
     }
 
     // End handling a BRD Sync
+
+    ewmUpdateNonce(ewm);
 
     if (NULL != ewm->bcs) bcsClean (ewm->bcs);
 }

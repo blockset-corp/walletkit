@@ -1585,11 +1585,24 @@ cwmGetBlockNumberAsETH (BREthereumClientContext context,
     cryptoWalletManagerGive (cwm);
 }
 
+extern void
+ewmSignalAnnounceNonce (BREthereumEWM ewm,
+                        BREthereumAddress address,
+                        uint64_t nonce,
+                        int rid);
+
 static void
 cwmGetNonceAsETH (BREthereumClientContext context,
                   BREthereumEWM ewm,
                   const char *address,
                   int rid) {
+    // Nothing to call out to; just compute the nonce based on existing transaction
+    // in the 'primary wallet'.
+    BREthereumWallet wallet = ewmGetWallet (ewm);
+    ewmSignalAnnounceNonce (ewm,
+                            ewmWalletGetAddress (ewm, wallet),
+                            ewmWalletGetTransferNonce (ewm, wallet),
+                            rid);
     return;
 }
 

@@ -230,6 +230,12 @@ walletGetTransferByIndex(BREthereumWallet wallet,
 extern unsigned long
 walletGetTransferCount (BREthereumWallet wallet);
 
+extern unsigned int
+walletGetTransferCountAsSource (BREthereumWallet wallet);
+
+extern unsigned int
+walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet);
+
 //
 // Private
 // TODO: Make 'static'
