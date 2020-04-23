@@ -40,19 +40,19 @@ public final class CryptoLibraryIndirect {
         return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, countOfAttributes, attributes, validates);
     }
 
-    public static void cwmAnnounceGetTransferItemGEN(Pointer cwm, Pointer callbackState, int status,
-                                                     String hash, String uids, String sourceAddr, String targetAddr,
-                                                     String amount, String currency, String fee,
-                                                     long timestamp, long blockHeight,
-                                                     SizeT attributesCount,
-                                                     String[] attributeKeys,
-                                                     String[] attributeVals) {
+    public static void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
+                                                  String hash, String uids, String sourceAddr, String targetAddr,
+                                                  String amount, String currency, String fee,
+                                                  long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
+                                                  SizeT attributesCount,
+                                                  String[] attributeKeys,
+                                                  String[] attributeVals) {
         attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
         attributeVals = attributeVals.length == 0 ? null : attributeVals;
-        INSTANCE.cwmAnnounceGetTransferItemGEN(cwm, callbackState, status,
+        INSTANCE.cwmAnnounceGetTransferItem(cwm, callbackState, status,
                 hash, uids, sourceAddr, targetAddr,
                 amount, currency, fee,
-                timestamp, blockHeight,
+                blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
     }
 
@@ -63,15 +63,15 @@ public final class CryptoLibraryIndirect {
 
         // crypto/BRCryptoWallet.h
         Pointer cryptoWalletCreateTransfer(Pointer wallet, Pointer target, Pointer amount, Pointer feeBasis, SizeT attributesCount, BRCryptoTransferAttribute[] attributes);
+
         int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates);
 
-        void cwmAnnounceGetTransferItemGEN(Pointer cwm, Pointer callbackState, int status,
-                                           String hash, String uids, String sourceAddr, String targetAddr,
-                                           String amount, String currency, String fee,
-                                           long timestamp, long blockHeight,
-                                           SizeT attributesCount,
-                                           String[] attributeKeys,
-                                           String[] attributeVals);
-
+        void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
+                                        String hash, String uids, String sourceAddr, String targetAddr,
+                                        String amount, String currency, String fee,
+                                        long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
+                                        SizeT attributesCount,
+                                        String[] attributeKeys,
+                                        String[] attributeVals);
     }
 }

@@ -17,12 +17,7 @@ import com.breadwallet.crypto.blockchaindb.apis.bdb.ExperimentalApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.SubscriptionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransactionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransferApi;
-import com.breadwallet.crypto.blockchaindb.apis.brd.EthBalanceApi;
 import com.breadwallet.crypto.blockchaindb.apis.brd.BrdApiClient;
-import com.breadwallet.crypto.blockchaindb.apis.brd.EthGasApi;
-import com.breadwallet.crypto.blockchaindb.apis.brd.EthTokenApi;
-import com.breadwallet.crypto.blockchaindb.apis.brd.EthBlockApi;
-import com.breadwallet.crypto.blockchaindb.apis.brd.EthTransferApi;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Block;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
@@ -32,12 +27,9 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.Subscription;
 import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionCurrency;
 import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionEndpoint;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transfer;
-import com.breadwallet.crypto.blockchaindb.models.brd.EthLog;
-import com.breadwallet.crypto.blockchaindb.models.brd.EthToken;
-import com.breadwallet.crypto.blockchaindb.models.brd.EthTransaction;
 import com.breadwallet.crypto.utility.CompletionHandler;
-import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 
 import java.util.List;
@@ -64,12 +56,6 @@ public class BlockchainDb {
     private final TransferApi transferApi;
     private final TransactionApi transactionApi;
     private final ExperimentalApi experimentalApi;
-
-    private final EthBalanceApi ethBalanceApi;
-    private final EthBlockApi ethBlockApi;
-    private final EthGasApi ethGasApi;
-    private final EthTokenApi ethTokenApi;
-    private final EthTransferApi ethTransferApi;
 
     public BlockchainDb(OkHttpClient client) {
         this(client, null, null, null, null);
@@ -106,12 +92,6 @@ public class BlockchainDb {
         this.transferApi = new TransferApi(bdbClient, executorService);
         this.transactionApi = new TransactionApi(bdbClient, executorService);
         this.experimentalApi = new ExperimentalApi(bdbClient, scheduledExecutorService);
-
-        this.ethBalanceApi = new EthBalanceApi(brdClient);
-        this.ethBlockApi = new EthBlockApi(brdClient);
-        this.ethGasApi = new EthGasApi(brdClient);
-        this.ethTokenApi = new EthTokenApi(brdClient);
-        this.ethTransferApi = new EthTransferApi(brdClient);
     }
 
     public static BlockchainDb createForTest (OkHttpClient client,
@@ -339,6 +319,18 @@ public class BlockchainDb {
         );
     }
 
+    public void estimateTransactionFee(String id,
+                                       String hashAsHex,
+                                       byte[] tx,
+                                       CompletionHandler<TransactionFee, QueryError> handler) {
+        transactionApi.estimateTransactionFee(
+                id,
+                hashAsHex,
+                tx,
+                handler
+        );
+    }
+
     // Blocks
 
     public void getBlocks(String id,
@@ -445,155 +437,6 @@ public class BlockchainDb {
         experimentalApi.createHederaAccount(
                 id,
                 publicKey,
-                handler
-        );
-    }
-
-    // ETH Balance
-
-    public void getBalanceAsEth(String networkName,
-                                String address,
-                                CompletionHandler<String, QueryError> handler) {
-        ethBalanceApi.getBalanceAsEth(
-                networkName,
-                address,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getBalanceAsTok(String networkName,
-                                String address,
-                                String tokenAddress,
-                                CompletionHandler<String, QueryError> handler) {
-        ethBalanceApi.getBalanceAsTok(
-                networkName,
-                address,
-                tokenAddress,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    // ETH Gas
-
-    public void getGasPriceAsEth(String networkName,
-                                 CompletionHandler<String, QueryError> handler) {
-        ethGasApi.getGasPriceAsEth(
-                networkName,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getGasEstimateAsEth(String networkName,
-                                    String from,
-                                    String to,
-                                    String amount,
-                                    String data,
-                                    CompletionHandler<String, QueryError> handler) {
-        ethGasApi.getGasEstimateAsEth(
-                networkName,
-                from,
-                to,
-                amount,
-                data,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    // ETH Token
-
-    public void getTokensAsEth(CompletionHandler<List<EthToken>, QueryError> handler) {
-        ethTokenApi.getTokensAsEth(
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    // ETH Block
-
-    public void getBlockNumberAsEth(String networkName,
-                                    CompletionHandler<String, QueryError> handler) {
-        ethBlockApi.getBlockNumberAsEth(
-                networkName,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    // ETH Transfer
-
-    public void submitTransactionAsEth(String networkName,
-                                       String transaction,
-                                       CompletionHandler<String, QueryError> handler) {
-        ethTransferApi.submitTransactionAsEth(
-                networkName,
-                transaction,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getTransactionsAsEth(String networkName,
-                                     String address,
-                                     UnsignedLong begBlockNumber,
-                                     UnsignedLong endBlockNumber,
-                                     CompletionHandler<List<EthTransaction>, QueryError> handler) {
-        ethTransferApi.getTransactionsAsEth(
-                networkName,
-                address,
-                begBlockNumber,
-                endBlockNumber,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getNonceAsEth(String networkName,
-                              String address,
-                              CompletionHandler<String, QueryError> handler) {
-        ethTransferApi.getNonceAsEth(
-                networkName,
-                address,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getLogsAsEth(String networkName,
-                             @Nullable String contract,
-                             String address,
-                             String event,
-                             UnsignedLong begBlockNumber,
-                             UnsignedLong endBlockNumber,
-                             CompletionHandler<List<EthLog>, QueryError> handler) {
-        ethTransferApi.getLogsAsEth(
-                networkName,
-                contract,
-                address,
-                event,
-                begBlockNumber,
-                endBlockNumber,
-                ridGenerator.getAndIncrement(),
-                handler
-        );
-    }
-
-    public void getBlocksAsEth(String networkName,
-                               String address,
-                               UnsignedInteger interests,
-                               UnsignedLong blockStart,
-                               UnsignedLong blockEnd,
-                               CompletionHandler<List<UnsignedLong>, QueryError> handler) {
-        ethTransferApi.getBlocksAsEth(
-                networkName,
-                address,
-                interests,
-                blockStart,
-                blockEnd,
-                ridGenerator.getAndIncrement(),
                 handler
         );
     }
