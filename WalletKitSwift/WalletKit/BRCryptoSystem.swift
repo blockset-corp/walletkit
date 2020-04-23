@@ -1382,20 +1382,6 @@ extension System {
         return BRCryptoClient (
             context: systemContext,
 
-            funcGetBalance: { (context, cwm, sid, addresses, addressesCount, issuer) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, _ /*manager */) = System.systemExtract (context, cwm)
-                    else { System.cleanup ("SYS: GetBalance: Missed {cwm}", cwm: cwm); return }
-
-                let issuer = issuer.map (asUTF8String)
-                print ("SYS: BTC: GetBalance: Issuer: \(issuer ?? "")")
-
-                //let addresses = System.makeAddresses (addresses, addressesCount)
-
-                cwmAnnounceGetBalanceFailure (cwm, sid)
-        },
-
             funcGetBlockNumber: { (context, cwm, sid) in
                 precondition (nil != context  && nil != cwm)
 
