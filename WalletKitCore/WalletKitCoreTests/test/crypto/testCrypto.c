@@ -359,16 +359,6 @@ _CWMAbuseSwapThread (void *context) {
 // TODO(fix): The below callbacks leak state
 
 static void
-_CWMNopGetBalanceCallback (BRCryptoClientContext context,
-                           OwnershipGiven BRCryptoWalletManager manager,
-                           OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           OwnershipKept const char **addresses,
-                           size_t addressesCount,
-                           OwnershipKept const char *issuer) {
-    cryptoWalletManagerGive (manager);
-}
-
-static void
 _CWMNopGetBlockNumberCallback (BRCryptoClientContext context,
                                OwnershipGiven BRCryptoWalletManager manager,
                                OwnershipGiven BRCryptoClientCallbackState callbackState) {
@@ -886,7 +876,6 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
 
     BRCryptoClient client = (BRCryptoClient) {
         state,
-        _CWMNopGetBalanceCallback,
         _CWMNopGetBlockNumberCallback,
         _CWMNopGetTransactionsCallback,
         _CWMNopGetTransfersCallback,
