@@ -203,7 +203,8 @@ BRSyncManagerAnnounceGetTransactionsItem(BRSyncManager manager,
                                          OwnershipKept uint8_t *transaction,
                                          size_t transactionLength,
                                          uint64_t timestamp,
-                                         uint64_t blockHeight);
+                                         uint64_t blockHeight,
+                                         uint8_t  error);
 
 extern void
 BRSyncManagerAnnounceGetTransactionsDone(BRSyncManager manager,

@@ -250,6 +250,7 @@ typedef struct {
     size_t transactionLength;
     uint64_t timestamp;
     uint64_t blockHeight;
+    uint8_t  error;
 } BRWalletManagerClientAnnounceTransactionEvent;
 
 static void
@@ -260,7 +261,8 @@ bwmSignalAnnounceTransactionDispatcher (BREventHandler ignore,
                                  event->transaction,
                                  event->transactionLength,
                                  event->timestamp,
-                                 event->blockHeight);
+                                 event->blockHeight,
+                                 event->error);
     free (event->transaction);
 }
 
@@ -282,12 +284,13 @@ bwmSignalAnnounceTransaction(BRWalletManager manager,
                              OwnershipKept uint8_t *transaction,
                              size_t transactionLength,
                              uint64_t timestamp,
-                             uint64_t blockHeight) {
+                             uint64_t blockHeight,
+                             uint8_t  error) {
     uint8_t *transactionCopy = malloc (transactionLength);
     memcpy (transactionCopy, transaction, transactionLength);
 
     BRWalletManagerClientAnnounceTransactionEvent message =
-    { { NULL, &bwmClientAnnounceTransactionEventType}, manager, rid, transactionCopy, transactionLength, timestamp, blockHeight};
+    { { NULL, &bwmClientAnnounceTransactionEventType}, manager, rid, transactionCopy, transactionLength, timestamp, blockHeight, error };
     eventHandlerSignalEvent (manager->handler, (BREvent*) &message);
 }
 

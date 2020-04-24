@@ -1856,7 +1856,8 @@ cwmAnnounceGetTransactionsItem (OwnershipKept BRCryptoWalletManager cwm,
                                     transaction,
                                     transactionLength,
                                     timestamp,
-                                    blockHeight);
+                                    blockHeight,
+                                    CRYPTO_TRANSFER_STATE_ERRORED == status);
             break;
         }
 
@@ -1871,7 +1872,7 @@ cwmAnnounceGetTransactionsItem (OwnershipKept BRCryptoWalletManager cwm,
                                                                                                    transaction, transactionLength,
                                                                                                    timestamp,
                                                                                                    blockHeight,
-                                                                                                   0); // no error, handle below
+                                                                                                   CRYPTO_TRANSFER_STATE_ERRORED == status);
             // Announce to GWM.  Note: the equivalent BTC+ETH announce transaction is going to
             // create BTC+ETH wallet manager + wallet + transfer events that we'll handle by incorporating
             // the BTC+ETH transfer into 'crypto'.  However, GEN does not generate similar events.

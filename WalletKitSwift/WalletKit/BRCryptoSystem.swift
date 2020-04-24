@@ -1296,8 +1296,8 @@ extension System {
     private static func getTransferStatus (_ modelStatus: String) -> BRCryptoTransferStateType {
         switch modelStatus {
         case "confirmed": return CRYPTO_TRANSFER_STATE_INCLUDED
-        case "submitted": return CRYPTO_TRANSFER_STATE_SUBMITTED
-        case "failed":    return CRYPTO_TRANSFER_STATE_ERRORED
+        case "submitted", "reverted": return CRYPTO_TRANSFER_STATE_SUBMITTED
+        case "failed", "rejected":    return CRYPTO_TRANSFER_STATE_ERRORED
         default: preconditionFailure()
         }
     }
