@@ -1433,6 +1433,16 @@ ewmWalletCreateTransferToReplace (BREthereumEWM ewm,
     return transfer;
 }
 
+extern unsigned int
+ewmWalletGetTransferNonce (BREthereumEWM ewm,
+                           BREthereumWallet wallet) {
+    pthread_mutex_lock(&ewm->lock);
+    unsigned int countAsSource = walletGetTransferCountAsSource(wallet);
+    unsigned int nonceMaximum  = walletGetTransferNonceMaximumAsSource(wallet);
+    pthread_mutex_unlock(&ewm->lock);
+
+    return nonceMaximum > countAsSource ? nonceMaximum : countAsSource;
+}
 
 static void
 ewmWalletSignTransferAnnounce (BREthereumEWM ewm,
@@ -1492,6 +1502,27 @@ ewmWalletGetTransferCount(BREthereumEWM ewm,
     pthread_mutex_unlock(&ewm->lock);
 
     return count;
+}
+
+extern BREthereumTransfer
+ewmWalletGetTransferByOriginatingTransactionHash (BREthereumEWM ewm,
+                                                  BREthereumWallet wallet,
+                                                  BREthereumHash hash) {
+    BREthereumTransfer result = NULL;
+
+    pthread_mutex_lock(&ewm->lock);
+    for (size_t index = 0; index < walletGetTransferCount(wallet); index++) {
+        BREthereumTransfer    transfer    = walletGetTransferByIndex(wallet, index);
+        BREthereumTransaction transaction = transferGetBasisTransaction(transfer);
+
+        if (ethHashEqual(hash, transactionGetHash(transaction))) {
+            result = transfer;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&ewm->lock);
+
+    return result;
 }
 
 extern BREthereumAddress
@@ -2364,7 +2395,6 @@ ewmHandleSyncAPI (BREthereumEWM ewm) {
 
     // Get this always and early.
     ewmUpdateBlockNumber(ewm);
-    ewmUpdateNonce(ewm);
 
     // Handle a BRD Sync:
 
@@ -2432,6 +2462,8 @@ ewmHandleSyncAPI (BREthereumEWM ewm) {
 
     // End handling a BRD Sync
 
+    ewmUpdateNonce(ewm);
+
     if (NULL != ewm->bcs) bcsClean (ewm->bcs);
 }
 
@@ -2480,6 +2512,7 @@ extern const char *
 ewmTransferGetRawDataHexEncoded(BREthereumEWM ewm,
                                 BREthereumWallet wallet,
                                 BREthereumTransfer transfer,
+                                BREthereumBoolean encodeAsSigned,
                                 const char *prefix) {
     assert (walletHasTransfer(wallet, transfer));
     
@@ -2490,10 +2523,32 @@ ewmTransferGetRawDataHexEncoded(BREthereumEWM ewm,
     return (NULL == transaction ? NULL
             : transactionGetRlpHexEncoded (transaction,
                                            ewm->network,
-                                           (ETHEREUM_BOOLEAN_IS_TRUE (transactionIsSigned(transaction))
+                                           (ETHEREUM_BOOLEAN_IS_TRUE(encodeAsSigned) && ETHEREUM_BOOLEAN_IS_TRUE (transactionIsSigned(transaction))
                                             ? RLP_TYPE_TRANSACTION_SIGNED
                                             : RLP_TYPE_TRANSACTION_UNSIGNED),
                                            prefix));
+}
+
+extern BRRlpData
+ewmTransferGetRLPEncoding (BREthereumEWM ewm,
+                           BREthereumWallet wallet,
+                           BREthereumTransfer transfer,
+                           BREthereumRlpType type,
+                           BREthereumBoolean *encoded) {
+    assert (NULL != encoded);
+
+    pthread_mutex_lock (&ewm->lock);
+    BREthereumTransaction transaction = transferGetOriginatingTransaction (transfer);
+    pthread_mutex_unlock (&ewm->lock);
+
+    if (NULL == transaction ||
+        (RLP_TYPE_TRANSACTION_SIGNED == type && ETHEREUM_BOOLEAN_IS_FALSE (transactionIsSigned(transaction)))) {
+        *encoded = ETHEREUM_BOOLEAN_FALSE;
+        return (BRRlpData) { 0, NULL };
+    }
+
+    *encoded = ETHEREUM_BOOLEAN_TRUE;
+    return transactionGetRlpData (transaction, ewm->network, type);
 }
 
 /// MARK: - Transfer

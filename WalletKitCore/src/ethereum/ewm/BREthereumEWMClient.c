@@ -13,6 +13,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <stdbool.h>
 #include "support/BRArray.h"
 #include "BREthereumEWMPrivate.h"
 
@@ -212,6 +213,7 @@ ewmGetGasEstimate (BREthereumEWM ewm,
                 ewm->client.funcEstimateGas (ewm->client.context,
                                              ewm,
                                              wallet,
+                                             transfer,
                                              cookie,
                                              from,
                                              to,
@@ -322,9 +324,8 @@ ewmHandleAnnounceBlockNumber (BREthereumEWM ewm,
 
 extern BREthereumStatus
 ewmAnnounceBlockNumber (BREthereumEWM ewm,
-                        const char *strBlockNumber,
+                        uint64_t blockNumber,
                         int rid) {
-    uint64_t blockNumber = strtoull(strBlockNumber, NULL, 0);
     ewmSignalAnnounceBlockNumber (ewm, blockNumber, rid);
     return SUCCESS;
 }
@@ -436,45 +437,44 @@ ewmAnnounceTransaction(BREthereumEWM ewm,
                        const char *from,
                        const char *to,
                        const char *contract,
-                       const char *strAmount, // value
-                       const char *strGasLimit,
-                       const char *strGasPrice,
+                       UInt256 amount, // value
+                       uint64_t gasLimit,
+                       UInt256 gasPrice,
                        const char *data,
-                       const char *strNonce,
-                       const char *strGasUsed,
-                       const char *strBlockNumber,
+                       uint64_t nonce,
+                       uint64_t  gasUsed,
+                       uint64_t  blockNumber,
                        const char *strBlockHash,
-                       const char *strBlockConfirmations,
-                       const char *strBlockTransactionIndex,
-                       const char *strBlockTimestamp,
-                       const char *isError) {
-    BRCoreParseStatus parseStatus;
+                       uint64_t blockConfirmations,
+                       uint64_t blockTransactionIndex,
+                       uint64_t blockTimestamp,
+                       bool isError) {
     BREthereumEWMClientAnnounceTransactionBundle *bundle = malloc(sizeof (BREthereumEWMClientAnnounceTransactionBundle));
 
     bundle->hash = ethHashCreate(hashString);
 
     bundle->from = ethAddressCreate(from);
-    bundle->to = ethAddressCreate(to);
+    bundle->to   = ethAddressCreate(to);
     bundle->contract = (NULL == contract || '\0' == contract[0]
                         ? EMPTY_ADDRESS_INIT
                         : ethAddressCreate(contract));
 
-    bundle->amount = uint256CreateParse(strAmount, 0, &parseStatus);
+    bundle->amount = amount; // uint256CreateParse(strAmount, 0, &parseStatus);
 
-    bundle->gasLimit = strtoull(strGasLimit, NULL, 0);
-    bundle->gasPrice = uint256CreateParse(strGasPrice, 0, &parseStatus);
+    bundle->gasLimit = gasLimit;
+    bundle->gasPrice = gasPrice; // uint256CreateParse(strGasPrice, 0, &parseStatus);
     bundle->data = strdup(data);
 
-    bundle->nonce = strtoull(strNonce, NULL, 0); // TODO: Assumes `nonce` is uint64_t; which it is for now
-    bundle->gasUsed = strtoull(strGasUsed, NULL, 0);
+    bundle->nonce = nonce;
+    bundle->gasUsed = gasUsed;
 
-    bundle->blockNumber = strtoull(strBlockNumber, NULL, 0);
+    bundle->blockNumber = blockNumber;
     bundle->blockHash = ethHashCreate (strBlockHash);
-    bundle->blockConfirmations = strtoull(strBlockConfirmations, NULL, 0);
-    bundle->blockTransactionIndex = (unsigned int) strtoul(strBlockTransactionIndex, NULL, 0);
-    bundle->blockTimestamp = strtoull(strBlockTimestamp, NULL, 0);
+    bundle->blockConfirmations = blockConfirmations;
+    bundle->blockTransactionIndex = blockTransactionIndex;
+    bundle->blockTimestamp = blockTimestamp;
 
-    bundle->isError = AS_ETHEREUM_BOOLEAN(0 != strcmp (isError, "0"));
+    bundle->isError = AS_ETHEREUM_BOOLEAN(isError);
 
     ewmSignalAnnounceTransaction(ewm, bundle, id);
     return SUCCESS;
@@ -566,34 +566,33 @@ ewmHandleAnnounceLog (BREthereumEWM ewm,
 extern BREthereumStatus
 ewmAnnounceLog (BREthereumEWM ewm,
                 int id,
-                const char *strHash,
-                const char *strContract,
-                int topicCount,
+                const char *hash,
+                const char *contract,
+                size_t topicsCount,
                 const char **arrayTopics,
                 const char *strData,
-                const char *strGasPrice,
-                const char *strGasUsed,
-                const char *strLogIndex,
-                const char *strBlockNumber,
-                const char *strBlockTransactionIndex,
-                const char *strBlockTimestamp) {
+                UInt256  gasPrice,
+                uint64_t gasUsed,
+                uint64_t logIndex,
+                uint64_t blockNumber,
+                uint64_t blockTransactionIndex,
+                uint64_t blockTimestamp) {
 
-    BRCoreParseStatus parseStatus;
     BREthereumEWMClientAnnounceLogBundle *bundle = malloc(sizeof (BREthereumEWMClientAnnounceLogBundle));
 
-    bundle->hash = ethHashCreate(strHash);
-    bundle->contract = ethAddressCreate(strContract);
-    bundle->topicCount = topicCount;
-    bundle->arrayTopics = calloc (topicCount, sizeof (char *));
-    for (int i = 0; i < topicCount; i++)
+    bundle->hash = ethHashCreate(hash);
+    bundle->contract = ethAddressCreate(contract);
+    bundle->topicCount = topicsCount;
+    bundle->arrayTopics = calloc (topicsCount, sizeof (char *));
+    for (int i = 0; i < topicsCount; i++)
         bundle->arrayTopics[i] = strdup (arrayTopics[i]);
     bundle->data = strdup (strData);
-    bundle->gasPrice = uint256CreateParse(strGasPrice, 0, &parseStatus);
-    bundle->gasUsed = strtoull(strGasUsed, NULL, 0);
-    bundle->logIndex = strtoull(strLogIndex, NULL, 0);
-    bundle->blockNumber = strtoull(strBlockNumber, NULL, 0);
-    bundle->blockTransactionIndex = strtoull(strBlockTransactionIndex, NULL, 0);
-    bundle->blockTimestamp = strtoull(strBlockTimestamp, NULL, 0);
+    bundle->gasPrice = gasPrice;
+    bundle->gasUsed = gasUsed;
+    bundle->logIndex = logIndex;
+    bundle->blockNumber = blockNumber;
+    bundle->blockTransactionIndex = blockTransactionIndex;
+    bundle->blockTimestamp = blockTimestamp;
 
     ewmSignalAnnounceLog(ewm, bundle, id);
     return SUCCESS;

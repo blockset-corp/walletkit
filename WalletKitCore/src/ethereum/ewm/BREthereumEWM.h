@@ -192,7 +192,6 @@ ewmWalletSetDefaultGasPrice(BREthereumEWM ewm,
                             BREthereumWallet wallet,
                             BREthereumGasPrice gasPrice);
 
-
 /**
  * Return a newly allocated array of transfers in wallet.  (You own the array and  must call free
  * on it - but not on its elements).
@@ -209,7 +208,6 @@ ewmWalletGetTransfers(BREthereumEWM ewm,
 extern int
 ewmWalletGetTransferCount(BREthereumEWM ewm,
                           BREthereumWallet wallet);
-
 
 extern BREthereumTransfer
 ewmWalletCreateTransfer(BREthereumEWM ewm,
@@ -296,6 +294,10 @@ ewmWalletCreateTransferToReplace(BREthereumEWM ewm,
                                  BREthereumBoolean updateGasPrice,
                                  BREthereumBoolean updateGasLimit,
                                  BREthereumBoolean updateNonce);
+
+extern unsigned int
+ewmWalletGetTransferNonce (BREthereumEWM ewm,
+                           BREthereumWallet wallet);
 
 /// MARK: - Transfer
 
@@ -497,7 +499,20 @@ extern const char *
 ewmTransferGetRawDataHexEncoded(BREthereumEWM ewm,
                                 BREthereumWallet wallet,
                                 BREthereumTransfer transfer,
+                                BREthereumBoolean encodeAsSigned,
                                 const char *prefix);
+
+extern BRRlpData
+ewmTransferGetRLPEncoding (BREthereumEWM ewm,
+                           BREthereumWallet wallet,
+                           BREthereumTransfer transfer,
+                           BREthereumRlpType type,
+                           BREthereumBoolean *encoded);
+
+extern BREthereumTransfer
+ewmWalletGetTransferByOriginatingTransactionHash (BREthereumEWM ewm,
+                                                  BREthereumWallet wallet,
+                                                  BREthereumHash hash);
 
 
 #ifdef __cplusplus
