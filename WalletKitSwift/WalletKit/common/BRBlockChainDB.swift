@@ -14,7 +14,47 @@ import Foundation // DispatchQueue
 import FoundationNetworking
 #endif
 
+private struct BlockChainDBCapabilities: OptionSet, CustomStringConvertible {
+    let rawValue: Int
+
+    static let transferStatusRevert = BlockChainDBCapabilities (rawValue: 1 << 0)
+    static let transferStatusReject = BlockChainDBCapabilities (rawValue: 1 << 1)
+
+    var description: String {
+        switch rawValue {
+        case 1 << 0: return "revert"
+        case 1 << 1: return "reject"
+        default:     return options.map { $0.description }.joined (separator: ", ")
+        }
+    }
+
+    var options: [BlockChainDBCapabilities] {
+        (0..<2).compactMap {
+            switch rawValue & (1 << $0) {
+            case 1 << 0: return .transferStatusRevert
+            case 1 << 1: return .transferStatusReject
+            default: return nil
+            }
+        }
+    }
+
+    static let v2020_03_21: BlockChainDBCapabilities = [
+        .transferStatusRevert,
+        .transferStatusReject
+    ]
+
+    var versionDescription: String {
+        switch self {
+        case BlockChainDBCapabilities.v2020_03_21: return "application/vnd.blockset.V_2020-03-21+json"
+        default: return "application/json"
+        }
+    }
+
+    static let current = v2020_03_21
+}
+
 public class BlockChainDB {
+    static fileprivate let capabilities =  BlockChainDBCapabilities.current
 
     /// Base URL (String) for the BRD BlockChain DB
     let bdbBaseURL: String
@@ -398,13 +438,29 @@ public class BlockChainDB {
             acknowledgements: UInt64
         )
 
+        static internal func asTransactionValidateStatus (_ status: String) -> Bool {
+            switch status {
+            case "confirmed",
+                 "submitted",
+                 "failed":
+                return true
+            case "reverted":
+                return BlockChainDB.capabilities.contains(.transferStatusRevert)
+            case "rejected":
+                return BlockChainDB.capabilities.contains(.transferStatusReject)
+            default:
+                return false
+            }
+        }
+
         static internal func asTransaction (json: JSON) -> Model.Transaction? {
             guard let id = json.asString(name: "transaction_id"),
                 let bid        = json.asString (name: "blockchain_id"),
                 let hash       = json.asString (name: "hash"),
                 let identifier = json.asString (name: "identifier"),
                 let status     = json.asString (name: "status"),
-                let size       = json.asUInt64 (name: "size")
+                let size       = json.asUInt64 (name: "size"),
+                asTransactionValidateStatus(status)
                 else { return nil }
 
             // TODO: Resolve if optional or not
@@ -1738,7 +1794,7 @@ public class BlockChainDB {
 
     /// Update `request` with 'application/json' headers and the httpMethod
     internal func decorateRequest (_ request: inout URLRequest, httpMethod: String) {
-        request.addValue ("application/json", forHTTPHeaderField: "Accept")
+        request.addValue (BlockChainDB.capabilities.versionDescription, forHTTPHeaderField: "Accept")
         request.addValue ("application/json", forHTTPHeaderField: "Content-Type")
         request.httpMethod = httpMethod
     }

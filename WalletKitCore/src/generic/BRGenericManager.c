@@ -539,7 +539,7 @@ genManagerRecoverTransfer (BRGenericManager gwm,
                                                          GENERIC_TRANSFER_TRANSACTION_INDEX_UNKNOWN,
                                                          timestamp,
                                                          feeBasis,
-                                                         0 == error,
+                                                         AS_CRYPTO_BOOLEAN (0 == error),
                                                          NULL));
 
     genAddressRelease (source);
@@ -565,7 +565,7 @@ genManagerRecoverTransfersFromRawTransaction (BRGenericManager gwm,
                                                              GENERIC_TRANSFER_TRANSACTION_INDEX_UNKNOWN,
                                                              timestamp,
                                                              genTransferGetFeeBasis (transfer),
-                                                             0 == error,
+                                                             AS_CRYPTO_BOOLEAN (0 == error),
                                                              NULL));
         array_add (transfers, transfer);
     }

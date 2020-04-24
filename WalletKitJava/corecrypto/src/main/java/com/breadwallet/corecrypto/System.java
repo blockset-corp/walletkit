@@ -1720,6 +1720,22 @@ final class System implements com.breadwallet.crypto.System {
         });
     }
 
+    private static BRCryptoTransferStateType getTransferStatus (String apiStatus) {
+        switch (apiStatus) {
+            case "confirmed":
+                return BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_INCLUDED;
+            case "submitted":
+            case "reverted":
+                return BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_SUBMITTED;
+            case "failed":
+            case "rejected":
+                return BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_ERRORED;
+            default:
+                // throw new IllegalArgumentException("Unexpected API Status of " + apiStatus);
+                return BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED;
+        }
+    }
+
     private static void getTransactions(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
                                         List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
@@ -1760,13 +1776,8 @@ final class System implements com.breadwallet.crypto.System {
                                                 UnsignedLong blockHeight = transaction.getBlockHeight().or(UnsignedLong.ZERO);
                                                 UnsignedLong timestamp =
                                                         transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
-                                                BRCryptoTransferStateType status = (transaction.getStatus().equals("confirmed")
-                                                        ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_INCLUDED
-                                                        : (transaction.getStatus().equals("submitted")
-                                                        ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_SUBMITTED
-                                                        : (transaction.getStatus().equals("failed")
-                                                        ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_ERRORED
-                                                        : BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED)));  // Query API error
+
+                                                BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
 
                                                 if (status != BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED) {
                                                     Log.log(Level.FINE,
@@ -1938,14 +1949,7 @@ final class System implements com.breadwallet.crypto.System {
                                                         UnsignedLong blockHeight = transaction.getBlockHeight().or(UnsignedLong.ZERO);
                                                         UnsignedLong timestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
 
-                                                        BRCryptoTransferStateType status = (transaction.getStatus().equals("confirmed")
-                                                                ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_INCLUDED
-                                                                : (transaction.getStatus().equals("submitted")
-                                                                ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_SUBMITTED
-                                                                : (transaction.getStatus().equals("failed")
-                                                                ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_ERRORED
-                                                                : BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED)));  // Query API error
-
+                                                        BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
 
                                                         merged = System.mergeTransfers(transaction, addresses);
                                                         for (ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String> o : merged) {

@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.apis.PagedData;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
+import com.breadwallet.crypto.blockchaindb.errors.QueryJsonParseError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
@@ -106,7 +107,8 @@ public class TransactionApi {
 
                 if (nextUrl.isPresent()) {
                     submitGetNextTransactions(nextUrl.get(), this);
-
+                } else if (!transactionsAreAllValid(allResults)) {
+                    coordinator.handleError(new QueryJsonParseError());
                 } else {
                     coordinator.handleChunkData(chunkedAddresses, allResults);
                 }
@@ -127,5 +129,32 @@ public class TransactionApi {
     private void getNextTransactions(String nextUrl,
                                      CompletionHandler<PagedData<Transaction>, QueryError> handler) {
         jsonClient.sendGetForArrayWithPaging("transactions", nextUrl, Transaction.class, handler);
+    }
+
+    boolean transactionsAreAllValid (List<Transaction> transactions) {
+        for (Transaction transaction : transactions) {
+            if (!transactionIsValid(transaction))
+                return false;
+        }
+        return true;
+    }
+
+    boolean transactionIsValid (Transaction transaction) {
+        return transactionStatusIsValid(transaction);
+    }
+
+    boolean transactionStatusIsValid(Transaction transaction) {
+        switch (transaction.getStatus()) {
+            case "confirmed":
+            case "submitted":
+            case "failed":
+                return true;
+            case "reverted":
+                return jsonClient.capabilities.hasCapabilities (BdbApiClient.Capabilities.transferStatusRevert);
+            case "rejected":
+                return jsonClient.capabilities.hasCapabilities (BdbApiClient.Capabilities.transferStatusReject);
+            default:
+                return false;
+        }
     }
 }
