@@ -12,15 +12,11 @@
 #include "BRCryptoAccountP.h"
 #include "BRCryptoNetworkP.h"
 
-#include "generic/BRGenericHandlers.h"  // genericHandlersInstall
-#include "generic/BRGenericRipple.h"    // genericRippleHandlers
-#include "generic/BRGenericHedera.h"    // genericHederaHandlers
-
 static pthread_once_t  _accounts_once = PTHREAD_ONCE_INIT;
 
 static void _accounts_init (void) {
-    genHandlersInstall (genericRippleHandlers);
-    genHandlersInstall (genericHederaHandlers);
+//    genHandlersInstall (genericRippleHandlers);
+//    genHandlersInstall (genericHederaHandlers);
     // ...
 }
 
@@ -79,8 +75,8 @@ cryptoAccountValidateWordsList (size_t wordsCount) {
 static BRCryptoAccount
 cryptoAccountCreateInternal (BRMasterPubKey btc,
                              BREthereumAccount eth,
-                             BRGenericAccount xrp,
-                             BRGenericAccount hbar,
+                             BRRippleAccount xrp,
+                             BRHederaAccount hbar,
                              uint64_t timestamp,
                              const char * uids) {
     BRCryptoAccount account = malloc (sizeof (struct BRCryptoAccountRecord));
@@ -102,8 +98,8 @@ cryptoAccountCreateFromSeedInternal (UInt512 seed,
                                      const char *uids) {
     return cryptoAccountCreateInternal (BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8)),
                                         ethAccountCreateWithBIP32Seed(seed),
-                                        genAccountCreate (genericRippleHandlers->type, seed),
-                                        genAccountCreate (genericHederaHandlers->type, seed),
+                                        rippleAccountCreateWithSeed (seed),
+                                        hederaAccountCreateWithSeed(seed),
                                         timestamp,
                                         uids);
 }
@@ -200,7 +196,7 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     size_t xrpSize = UInt32GetBE(bytesPtr);
     BYTES_PTR_INCR_AND_CHECK (szSize);
 
-    BRGenericAccount xrp = genAccountCreateWithSerialization (genericRippleHandlers->type, bytesPtr, xrpSize);
+    BRRippleAccount xrp = rippleAccountCreateWithSerialization(bytesPtr, xrpSize);
     assert (NULL != xrp);
     BYTES_PTR_INCR_AND_CHECK (xrpSize); // Move the pointer to then end of the XRP account
 
@@ -208,7 +204,7 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     size_t hbarSize = UInt32GetBE(bytesPtr);
     BYTES_PTR_INCR_AND_CHECK (szSize);
 
-    BRGenericAccount hbar = genAccountCreateWithSerialization (genericHederaHandlers->type, bytesPtr, hbarSize);
+    BRHederaAccount hbar = hederaAccountCreateWithSerialization(bytesPtr, hbarSize);
     assert (NULL != hbar);
     BYTES_PTR_INCR_AND_CHECK (hbarSize); // Move the pointer to the end of the Hedera account
 
@@ -219,8 +215,8 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
 static void
 cryptoAccountRelease (BRCryptoAccount account) {
     ethAccountRelease(account->eth);
-    genAccountRelease(account->xrp);
-    genAccountRelease(account->hbar);
+    rippleAccountFree(account->xrp);
+    hederaAccountFree(account->hbar);
 
     free (account->uids);
     memset (account, 0, sizeof(*account));
@@ -262,11 +258,11 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     // XRP
     size_t   xrpSize = 0;
-    uint8_t *xrpBytes = genAccountGetSerialization (account->xrp, &xrpSize);
+    uint8_t *xrpBytes = rippleAccountGetSerialization (account->xrp, &xrpSize);
 
     // HBAR
     size_t   hbarSize = 0;
-    uint8_t *hbarBytes = genAccountGetSerialization (account->hbar, &hbarSize);
+    uint8_t *hbarBytes = hederaAccountGetSerialization(account->hbar, &hbarSize);
 
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize
@@ -395,78 +391,6 @@ cryptoAccountGetFileSystemIdentifier (BRCryptoAccount account) {
 extern const char *
 cryptoAccountGetUids (BRCryptoAccount account) {
     return account->uids;
-}
-
-// MARK: Account Initialization
-
-extern BRCryptoBoolean
-cryptoAccountIsInitialized (BRCryptoAccount account,
-                            BRCryptoNetwork network) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return CRYPTO_TRUE;
-        case BLOCK_CHAIN_TYPE_ETH: return CRYPTO_TRUE;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            return AS_CRYPTO_BOOLEAN (genAccountIsInitialized(genAccount));
-        }
-    }
-}
-
-extern uint8_t *
-cryptoAccountGetInitializationData (BRCryptoAccount account,
-                                    BRCryptoNetwork network,
-                                    size_t *bytesCount) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return NULL;
-        case BLOCK_CHAIN_TYPE_ETH: return NULL;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            return genAccountGetInitializationData (genAccount, bytesCount);
-        }
-    }
-}
-
-extern void
-cryptoAccountInitialize (BRCryptoAccount account,
-                         BRCryptoNetwork network,
-                         const uint8_t *bytes,
-                         size_t bytesCount) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return;
-        case BLOCK_CHAIN_TYPE_ETH: return;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericAccount genAccount = cryptoAccountAsGEN (account, network->canonicalType);
-            assert (NULL != genAccount);
-            genAccountInitialize(genAccount, bytes, bytesCount);
-        }
-    }
-}
-
-/// MARK: - AccountAs...
-
-private_extern BREthereumAccount
-cryptoAccountAsETH (BRCryptoAccount account) {
-    return account->eth;
-}
-
-private_extern BRGenericAccount
-cryptoAccountAsGEN (BRCryptoAccount account,
-                    BRCryptoNetworkCanonicalType type) {
-    if (genAccountHasType (account->xrp, type)) return account->xrp;
-    if (genAccountHasType (account->hbar, type)) return account->hbar;
-    return NULL;
-}
-
-private_extern const char *
-cryptoAccountAddressAsETH (BRCryptoAccount account) {
-    return ethAccountGetPrimaryAddressString (account->eth);
-}
-
-private_extern BRMasterPubKey
-cryptoAccountAsBTC (BRCryptoAccount account) {
-    return account->btc;
 }
 
 // https://en.wikipedia.org/wiki/Fletcher%27s_checksum

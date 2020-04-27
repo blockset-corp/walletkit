@@ -13,12 +13,7 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoAccountP.h"
-
-#include "bitcoin/BRChainParams.h"
-#include "bcash/BRBCashParams.h"
-#include "ethereum/BREthereum.h"
-
-#include <stdbool.h>
+#include "BRCryptoGenericP.h"
 
 // If '1' then display a detailed list of the builting currencies for each network
 #define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
@@ -29,7 +24,7 @@ cryptoUnitGiveAll (BRArrayOf(BRCryptoUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
+cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         CRYPTO_NETWORK_CURRENCY_BTC,
         CRYPTO_NETWORK_CURRENCY_BCH,
@@ -91,14 +86,7 @@ cryptoNetworkFeeRelease (BRCryptoNetworkFee networkFee) {
     free (networkFee);
 }
 
-private_extern uint64_t
-cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee) {
-    BRCryptoBoolean overflow;
-    uint64_t value = cryptoAmountGetIntegerRaw (networkFee->pricePerCostFactor, &overflow);
-    assert (CRYPTO_FALSE == overflow);
-    return value;
-}
-
+#ifdef REFACTOR
 private_extern BREthereumGasPrice
 cryptoNetworkFeeAsETH (BRCryptoNetworkFee networkFee) {
     UInt256 value = cryptoAmountGetValue (networkFee->pricePerCostFactor);
@@ -112,6 +100,7 @@ cryptoNetworkFeeAsGEN( BRCryptoNetworkFee networkFee) {
     assert (CRYPTO_FALSE == overflow);
     return value;
 }
+#endif
 
 /// MARK: - Network
 
@@ -121,15 +110,22 @@ cryptoNetworkFeeAsGEN( BRCryptoNetworkFee networkFee) {
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork)
 
-static BRCryptoNetwork
-cryptoNetworkCreate (const char *uids,
-                     const char *name,
-                     BRCryptoNetworkCanonicalType canonicalType) {
-    BRCryptoNetwork network = calloc (1, sizeof (struct BRCryptoNetworkRecord));
+extern BRCryptoNetwork
+cryptoNetworkAllocAndInit (size_t sizeInBytes,
+                           BRCryptoBlockChainType type,
+                           const char *uids,
+                           const char *name,
+                           const char *desc,
+                           bool isMainnet) {
+    assert (sizeInBytes >= sizeof (struct BRCryptoNetworkRecord));
+    BRCryptoNetwork network = calloc (1, sizeInBytes);
 
-    network->canonicalType = canonicalType;
+    network->type = type;
+    network->handlers = cryptoGenericHandlersLookup(type)->network;
+
     network->uids = strdup (uids);
     network->name = strdup (name);
+    network->desc = strdup (desc);
     network->currency = NULL;
     network->height = 0;
     array_new (network->associations, CRYPTO_NETWORK_DEFAULT_CURRENCY_ASSOCIATIONS);
@@ -137,6 +133,8 @@ cryptoNetworkCreate (const char *uids,
 
     network->addressSchemes = NULL;
     network->syncModes = NULL;
+
+    network->isMainnet = isMainnet;
 
     network->ref = CRYPTO_REF_ASSIGN(cryptoNetworkRelease);
 
@@ -152,53 +150,10 @@ cryptoNetworkCreate (const char *uids,
     return network;
 }
 
-// TODO: Remove forkId; derivable from BRChainParams (after CORE-284)
-static BRCryptoNetwork
-cryptoNetworkCreateAsBTC (const char *uids,
-                          const char *name,
-                          const BRChainParams *params) {
-    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BTC);
-    network->type = BLOCK_CHAIN_TYPE_BTC;
-    network->u.btc = params;
-
-    return network;
-}
-
-static BRCryptoNetwork
-cryptoNetworkCreateAsBCH (const char *uids,
-                          const char *name,
-                          const BRChainParams *params) {
-    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BCH);
-    network->type = BLOCK_CHAIN_TYPE_BTC;
-    network->u.btc = params;
-
-    return network;
-}
-
-static BRCryptoNetwork
-cryptoNetworkCreateAsETH (const char *uids,
-                          const char *name,
-                          BREthereumNetwork net) {
-    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_ETH);
-    network->type = BLOCK_CHAIN_TYPE_ETH;
-    network->u.eth = net;
-
-    return network;
-}
-
-static BRCryptoNetwork
-cryptoNetworkCreateAsGEN (const char *uids,
-                          const char *name,
-                          uint8_t isMainnet,
-                          BRCryptoNetworkCanonicalType canonicalType) {
-    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, canonicalType);
-    network->type = BLOCK_CHAIN_TYPE_GEN;
-    network->u.gen = genNetworkCreate(canonicalType, isMainnet);
-    return network;
-}
-
 static void
 cryptoNetworkRelease (BRCryptoNetwork network) {
+    network->handlers->release (network);
+
     for (size_t index = 0; index < array_count (network->associations); index++) {
         BRCryptoCurrencyAssociation *association = &network->associations[index];
         cryptoCurrencyGive (association->currency);
@@ -216,30 +171,15 @@ cryptoNetworkRelease (BRCryptoNetwork network) {
 
     if (network->addressSchemes) array_free (network->addressSchemes);
     if (network->syncModes)      array_free (network->syncModes);
-        
-    // TBD
-    switch (network->type){
-        case BLOCK_CHAIN_TYPE_BTC:
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            genNetworkRelease (network->u.gen);
-            break;
-    }
 
+    free (network->desc);
     free (network->name);
     free (network->uids);
     if (NULL != network->currency) cryptoCurrencyGive (network->currency);
     pthread_mutex_destroy (&network->lock);
 
-    memset (network, 0, sizeof(*network));
+    memset (network, 0, network->sizeInBytes);
     free (network);
-}
-
-extern BRCryptoNetworkCanonicalType
-cryptoNetworkGetCanonicalType (BRCryptoNetwork network) {
-    return network->canonicalType;
 }
 
 private_extern BRCryptoBlockChainType
@@ -257,17 +197,23 @@ cryptoNetworkGetName (BRCryptoNetwork network) {
     return network->name;
 }
 
+private_extern const char *
+cryptoNetworkGetDesc (BRCryptoNetwork network) {
+    return network->desc;
+}
+
 extern BRCryptoBoolean
 cryptoNetworkIsMainnet (BRCryptoNetwork network) {
-    switch (network->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            return AS_CRYPTO_BOOLEAN (network->u.btc == BRMainNetParams ||
-                                      network->u.btc == BRBCashParams);
-        case BLOCK_CHAIN_TYPE_ETH:
-            return AS_CRYPTO_BOOLEAN (network->u.eth == ethNetworkMainnet);
-        case BLOCK_CHAIN_TYPE_GEN:
-            return AS_CRYPTO_BOOLEAN (genNetworkIsMainnet (network->u.gen));
-    }
+    return network->isMainnet;
+//    switch (network->type) {
+//        case BLOCK_CHAIN_TYPE_BTC:
+//            return AS_CRYPTO_BOOLEAN (network->u.btc == BRMainNetParams ||
+//                                      network->u.btc == BRBCashParams);
+//        case BLOCK_CHAIN_TYPE_ETH:
+//            return AS_CRYPTO_BOOLEAN (network->u.eth == ethNetworkMainnet);
+//        case BLOCK_CHAIN_TYPE_GEN:
+//            return AS_CRYPTO_BOOLEAN (genNetworkIsMainnet (network->u.gen));
+//    }
 }
 
 extern BRCryptoBlockChainHeight
@@ -391,24 +337,6 @@ cryptoNetworkGetCurrencyForIssuer (BRCryptoNetwork network,
     }
     pthread_mutex_unlock (&network->lock);
     return currency;
-}
-
-private_extern BRCryptoCurrency
-cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,
-                                     BREthereumToken token) {
-    BRCryptoCurrency tokenCurrency = NULL;
-    pthread_mutex_lock (&network->lock);
-    for (size_t index = 0; index < array_count(network->associations); index++) {
-        BRCryptoCurrency currency = network->associations[index].currency;
-        const char *address = cryptoCurrencyGetIssuer (currency);
-
-        if (NULL != address && ETHEREUM_BOOLEAN_IS_TRUE (ethTokenHasAddress (token, address))) {
-            tokenCurrency = cryptoCurrencyTake (currency);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&network->lock);
-    return tokenCurrency;
 }
 
 static BRCryptoCurrencyAssociation *
@@ -568,6 +496,14 @@ cryptoNetworkSupportsAddressScheme (BRCryptoNetwork network,
     return CRYPTO_FALSE;
 }
 
+// MARK: - Address
+
+extern BRCryptoAddress
+cryptoNetworkCreateAddress (BRCryptoNetwork network,
+                            const char *address) {
+    return network->handlers->createAddress (network, address);
+}
+
 // MARK: - Sync Mode
 
 extern BRCryptoSyncMode
@@ -604,10 +540,38 @@ cryptoNetworkSupportsSyncMode (BRCryptoNetwork network,
 
 extern BRCryptoBoolean
 cryptoNetworkRequiresMigration (BRCryptoNetwork network) {
-    return (CRYPTO_NETWORK_TYPE_BTC == network->canonicalType ||
-            CRYPTO_NETWORK_TYPE_BCH == network->canonicalType);
+    switch (network->type) {
+        case CRYPTO_NETWORK_TYPE_BTC:
+        case CRYPTO_NETWORK_TYPE_BCH:
+            return CRYPTO_TRUE;
+        default:
+            return CRYPTO_FALSE;
+    }
 }
 
+extern BRCryptoBoolean
+cryptoNetworkIsAccountInitialized (BRCryptoNetwork network,
+                                   BRCryptoAccount account) {
+    return network->handlers->isAccountInitialized (network, account);
+}
+
+
+extern uint8_t *
+cryptoNetworkGetAccountInitializationData (BRCryptoNetwork network,
+                                           BRCryptoAccount account,
+                                           size_t *bytesCount) {
+    return network->handlers->getAccountInitializationData (network, account, bytesCount);
+}
+
+extern void
+cryptoNetworkInitializeAccount (BRCryptoNetwork network,
+                                BRCryptoAccount account,
+                                const uint8_t *bytes,
+                                size_t bytesCount) {
+    network->handlers->initializeAccount (network, account, bytes, bytesCount);
+}
+
+#ifdef REFACTOR
 extern const char *
 cryptoNetworkGetETHNetworkName (BRCryptoNetwork network) {
     BREthereumNetwork ethNetwork = cryptoNetworkAsETH(network);
@@ -634,6 +598,7 @@ cryptoNetworkAsGEN (BRCryptoNetwork network) {
     assert (BLOCK_CHAIN_TYPE_GEN == network->type);
     return network->u.gen;
 }
+#endif
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
@@ -642,48 +607,11 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
 
 // MARK: - Network Defaults
 
-static BRCryptoNetwork
-cryptoNetworkCreateBuiltin (const char *symbol,
-                            const char *uids,
-                            const char *name) {
-    BRCryptoNetwork network = NULL; // cryptoNetworkCreate (uids, name);
-    // BTC, BCH, ETH, GEN
-
-    if      (0 == strcmp ("btcMainnet", symbol))
-        network = cryptoNetworkCreateAsBTC (uids, name, BRMainNetParams);
-    else if (0 == strcmp ("btcTestnet", symbol))
-        network = cryptoNetworkCreateAsBTC (uids, name, BRTestNetParams);
-    else if (0 == strcmp ("bchMainnet", symbol))
-        network = cryptoNetworkCreateAsBCH (uids, name, BRBCashParams);
-    else if (0 == strcmp ("bchTestnet", symbol))
-        network = cryptoNetworkCreateAsBCH (uids, name, BRBCashTestNetParams);
-    else if (0 == strcmp ("ethMainnet", symbol))
-        network = cryptoNetworkCreateAsETH (uids, name, ethNetworkMainnet);
-    else if (0 == strcmp ("ethRopsten", symbol))
-        network = cryptoNetworkCreateAsETH (uids, name, ethNetworkTestnet);
-    else if (0 == strcmp ("ethRinkeby", symbol))
-        network = cryptoNetworkCreateAsETH (uids, name, ethNetworkRinkeby);
-    else if (0 == strcmp ("xrpMainnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XRP);
-    else if (0 == strcmp ("xrpTestnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XRP);
-    else if (0 == strcmp ("hbarMainnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_HBAR);
-    else if (0 == strcmp ("hbarTestnet", symbol))
-        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_HBAR);
-//    else if (0 == strcmp ("xlmMainnet", symbol))
-//        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_Xlm, 1, CRYPTO_NETWORK_TYPE_XLM);
-    // ...
-
-    assert (NULL != network);
-    return network;
-}
-
 extern BRCryptoNetwork *
 cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
     // Network Specification
     struct NetworkSpecification {
-        char *symbol;
+        BRCryptoBlockChainType type;
         char *networkId;
         char *name;
         char *network;
@@ -691,8 +619,8 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
         uint64_t height;
         uint32_t confirmations;
     } networkSpecifications[] = {
-#define DEFINE_NETWORK(symbol, networkId, name, network, isMainnet, height, confirmations) \
-{ #symbol, networkId, name, network, isMainnet, height, confirmations },
+#define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations) \
+{ type, networkId, name, network, isMainnet, height, confirmations },
 #include "BRCryptoConfig.h"
 //        { NULL }
     };
@@ -781,9 +709,13 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
     for (size_t networkIndex = 0; networkIndex < NUMBER_OF_NETWORKS; networkIndex++) {
         struct NetworkSpecification *networkSpec = &networkSpecifications[networkIndex];
 
-        BRCryptoNetwork network = cryptoNetworkCreateBuiltin (networkSpec->symbol,
-                                                              networkSpec->networkId,
-                                                              networkSpec->name);;
+        const BRCryptoGenericHandlers *handlers = cryptoGenericHandlersLookup(networkSpec->type);
+        assert (NULL != handlers);
+
+        BRCryptoNetwork network = handlers->network->create (networkSpec->networkId,
+                                                             networkSpec->name,
+                                                             networkSpec->network,
+                                                             networkSpec->isMainnet);
 
         BRCryptoCurrency currency = NULL;
 

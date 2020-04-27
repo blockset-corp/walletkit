@@ -12,9 +12,71 @@
 
 #include "BRCryptoFeeBasisP.h"
 #include "BRCryptoAmountP.h"
+#include "ethereum/util/BRUtilMath.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoFeeBasis, cryptoFeeBasis)
 
+extern BRCryptoFeeBasis
+cryptoFeeBasisCreate (BRCryptoAmount pricePerCostFactor,
+                      double costFactor) {
+    assert (costFactor >= 0.0);
+
+    BRCryptoFeeBasis feeBasis = malloc (sizeof (struct BRCryptoFeeBasisRecord));
+
+    feeBasis->costPerPriceFactor = cryptoAmountTake (pricePerCostFactor);
+    feeBasis->costFactor =costFactor;
+    feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
+
+        return feeBasis;
+}
+
+static void
+cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
+    cryptoAmountGive (feeBasis->costPerPriceFactor);
+    memset (feeBasis, 0, sizeof(*feeBasis));
+    free (feeBasis);
+}
+
+
+extern BRCryptoAmount
+cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis) {
+    return cryptoAmountTake (feeBasis->costPerPriceFactor);
+}
+
+extern double
+cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis) {
+    return feeBasis->costFactor;
+}
+
+extern BRCryptoAmount
+cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
+    int overflow, negative;
+    double rem;
+
+    UInt256 feeValue = uint256Mul_Double (cryptoAmountGetValue(feeBasis->costPerPriceFactor),
+                                          feeBasis->costFactor,
+                                          &overflow,
+                                          &negative,
+                                          &rem);
+
+    assert (!overflow); assert (!negative);
+
+    BRCryptoUnit   unit = cryptoAmountGetUnit (feeBasis->costPerPriceFactor);
+    BRCryptoAmount fee  = cryptoAmountCreate (unit, CRYPTO_FALSE, feeValue);
+    cryptoUnitGive(unit);
+
+    return fee;
+}
+
+extern BRCryptoBoolean
+cryptoFeeBasisIsEqual (BRCryptoFeeBasis feeBasis1,
+                       BRCryptoFeeBasis feeBasis2) {
+    return AS_CRYPTO_BOOLEAN (feeBasis1 == feeBasis2 ||
+                              (CRYPTO_COMPARE_EQ == cryptoAmountCompare (feeBasis1->costPerPriceFactor, feeBasis2->costPerPriceFactor) &&
+                               feeBasis1->costFactor == feeBasis2->costFactor));
+}
+
+#ifdef REFACTOR
 static BRCryptoFeeBasis
 cryptoFeeBasisCreateInternal (BRCryptoBlockChainType type,
                               BRCryptoUnit unit) {
@@ -23,17 +85,6 @@ cryptoFeeBasisCreateInternal (BRCryptoBlockChainType type,
     feeBasis->type = type;
     feeBasis->unit = cryptoUnitTake (unit);
     feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
-
-    return feeBasis;
-}
-
-private_extern BRCryptoFeeBasis
-cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint32_t feePerKB,
-                           uint32_t sizeInByte) {
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateInternal (BLOCK_CHAIN_TYPE_BTC, unit);
-    feeBasis->u.btc.feePerKB   = feePerKB;
-    feeBasis->u.btc.sizeInByte = sizeInByte;
 
     return feeBasis;
 }
@@ -187,4 +238,4 @@ cryptoFeeBasisAsGEN (BRCryptoFeeBasis feeBasis) {
     assert (BLOCK_CHAIN_TYPE_GEN == feeBasis->type);
     return feeBasis->u.gen;
 }
-
+#endif

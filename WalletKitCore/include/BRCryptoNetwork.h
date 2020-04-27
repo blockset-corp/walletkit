@@ -11,6 +11,8 @@
 #ifndef BRCryptoNetwork_h
 #define BRCryptoNetwork_h
 
+#include "BRCryptoAccount.h"
+#include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoSync.h"
 
@@ -80,9 +82,6 @@ extern "C" {
     typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
     typedef void *BRCryptoNetworkListener;
-
-    extern BRCryptoNetworkCanonicalType
-    cryptoNetworkGetCanonicalType (BRCryptoNetwork network);
 
     extern const char *
     cryptoNetworkGetUids (BRCryptoNetwork network);
@@ -274,6 +273,12 @@ extern "C" {
     cryptoNetworkSupportsAddressScheme (BRCryptoNetwork network,
                                         BRCryptoAddressScheme scheme);
 
+    // MARK: - Address
+
+    extern BRCryptoAddress
+    cryptoNetworkCreateAddress (BRCryptoNetwork network,
+                                const char *address);
+
     // MARK: - Sync Mode
 
     extern BRCryptoSyncMode
@@ -293,6 +298,24 @@ extern "C" {
     //  TODO: Remove this once ETH uses the BlockSet API
     extern const char *
     cryptoNetworkGetETHNetworkName (BRCryptoNetwork network);
+
+    // MARK: - Account Initialization
+
+    extern BRCryptoBoolean
+    cryptoNetworkIsAccountInitialized (BRCryptoNetwork network,
+                                       BRCryptoAccount account);
+
+
+    extern uint8_t *
+    cryptoNetworkGetAccountInitializationData (BRCryptoNetwork network,
+                                               BRCryptoAccount account,
+                                               size_t *bytesCount);
+
+    extern void
+    cryptoNetworkInitializeAccount (BRCryptoNetwork network,
+                                    BRCryptoAccount account,
+                                    const uint8_t *bytes,
+                                    size_t bytesCount);
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork);
 

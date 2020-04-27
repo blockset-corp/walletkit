@@ -410,7 +410,7 @@ _CWMNopEstimateTransactionFeeCallback (BRCryptoClientContext context,
 
 }
 
-// BRCryptoCWMListener Event Wrapper
+// BRCryptoListener Event Wrapper
 
 typedef enum {
     SYNC_EVENT_WALLET_MANAGER_TYPE,
@@ -626,7 +626,7 @@ CWMEventString (CWMEvent *e) {
     return eventString;
 }
 
-// BRCryptoCWMListener Event Recording
+// BRCryptoListener Event Recording
 
 typedef struct {
     BRCryptoBoolean silent;

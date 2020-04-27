@@ -12,18 +12,17 @@
 #define BRCryptoTransferP_h
 
 #include <pthread.h>
+#include "support/BRArray.h"
 
 #include "BRCryptoTransfer.h"
 #include "BRCryptoBaseP.h"
 
-#include "bitcoin/BRWallet.h"
-#include "bitcoin/BRTransaction.h"
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// MARK: - Transfer Confirmation
 
 typedef struct {
     uint64_t blockNumber;
@@ -32,25 +31,42 @@ typedef struct {
     BRCryptoAmount fee; // ouch; => cant be a struct
 } BRCryptoTransferConfirmation;
 
+// MARK: - Transfer Handlers
+
+typedef void
+(*BRCryptoTransferReleaseHandler) (BRCryptoTransfer transfer);
+
+typedef BRCryptoAmount
+(*BRCryptoTransferGetAmountAsSignHandler) (BRCryptoTransfer transfer,
+                                           BRCryptoBoolean isNegative);
+
+typedef BRCryptoTransferDirection
+(*BRCryptoTransferGetDirectionHandler) (BRCryptoTransfer transfer);
+
+typedef BRCryptoHash
+(*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
+
+typedef int
+(*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
+                                   BRCryptoTransfer t2);
+
+typedef struct {
+    BRCryptoTransferReleaseHandler release;
+    BRCryptoTransferGetAmountAsSignHandler getAmountAsSign;
+    BRCryptoTransferGetDirectionHandler getDirection;
+    BRCryptoTransferGetHashHandler getHash;
+    BRCryptoTransferIsEqualHandler isEqual;
+} BRCryptoTransferHandlers;
+
+/// MARK: - Transfer
 
 struct BRCryptoTransferRecord {
-    pthread_mutex_t lock;
-
     BRCryptoBlockChainType type;
-    union {
-        struct {
-            BRTransaction *tid;
-            uint64_t fee;
-            uint64_t send;
-            uint64_t recv;
-        } btc;
-        struct {
-            BREthereumEWM ewm;
-            BREthereumTransfer tid;
-            BREthereumAddress accountAddress;
-        } eth;
-        BRGenericTransfer gen;
-    } u;
+    const BRCryptoTransferHandlers *handlers;
+    BRCryptoRef ref;
+    size_t sizeInBytes;
+
+    pthread_mutex_t lock;
 
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
@@ -71,9 +87,13 @@ struct BRCryptoTransferRecord {
     BRCryptoFeeBasis feeBasisEstimated;
 
     BRArrayOf(BRCryptoTransferAttribute) attributes;
-
-    BRCryptoRef ref;
 };
+
+extern BRCryptoTransfer
+cryptoTransferAllocAndInit (size_t sizeInBytes,
+                            BRCryptoBlockChainType type,
+                            BRCryptoUnit unit,
+                            BRCryptoUnit unitForFee);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
@@ -82,6 +102,15 @@ private_extern void
 cryptoTransferSetState (BRCryptoTransfer transfer,
                         BRCryptoTransferState state);
 
+private_extern void
+cryptoTransferSetConfirmedFeeBasis (BRCryptoTransfer transfer,
+                                    BRCryptoFeeBasis feeBasisConfirmed);
+
+private_extern void
+cryptoTransferSetAttributes (BRCryptoTransfer transfer,
+                             OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
+
+#if 0
 private_extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
@@ -100,10 +129,6 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsGEN (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRGenericTransfer tid);
-
-private_extern void
-cryptoTransferSetConfirmedFeeBasis (BRCryptoTransfer transfer,
-                                    BRCryptoFeeBasis feeBasisConfirmed);
 
 private_extern BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transfer);
@@ -125,10 +150,7 @@ cryptoTransferHasETH (BRCryptoTransfer transfer,
 private_extern BRCryptoBoolean
 cryptoTransferHasGEN (BRCryptoTransfer transfer,
                       BRGenericTransfer gen);
-
-private_extern void
-cryptoTransferSetAttributes (BRCryptoTransfer transfer,
-                             OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
+#endif
 
 #ifdef __cplusplus
 }

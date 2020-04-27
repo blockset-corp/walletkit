@@ -12,14 +12,11 @@
 #define BRCryptoNetworkP_h
 
 #include <pthread.h>
+#include <stdbool.h>
 
+#include "support/BRArray.h"
 #include "BRCryptoBaseP.h"
 #include "BRCryptoNetwork.h"
-
-#include "bitcoin/BRChainParams.h"
-#include "bcash/BRBCashParams.h"
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,15 +36,6 @@ cryptoNetworkFeeCreate (uint64_t confirmationTimeInMilliseconds,
                         BRCryptoAmount pricePerCostFactor,
                         BRCryptoUnit   pricePerCostFactorUnit);
 
-private_extern uint64_t
-cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee);
-
-private_extern BREthereumGasPrice
-cryptoNetworkFeeAsETH (BRCryptoNetworkFee networkFee);
-
-private_extern uint64_t
-cryptoNetworkFeeAsGEN( BRCryptoNetworkFee networkFee);
-
 /// MARK: - Currency Association
 
 typedef struct {
@@ -57,19 +45,66 @@ typedef struct {
     BRArrayOf(BRCryptoUnit) units;
 } BRCryptoCurrencyAssociation;
 
+/// MARK: - Network Handlers
+
+typedef BRCryptoNetwork
+(*BRCyptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
+                                const char *name,               // Bitcoin
+                                const char *network,            // testnet
+                                bool isMainnet);                // false
+
+typedef void
+(*BRCryptoNetworkReleaseHandler) (BRCryptoNetwork network);
+
+typedef BRCryptoAddress
+(*BRCryptoNetworkCreateAddressHandler) (BRCryptoNetwork network,
+                                        const char *addressAsString);
+
+typedef BRCryptoBoolean
+(*BRCryptoNetworkIsAccountInitializedHandler) (BRCryptoNetwork network,
+                                               BRCryptoAccount account);
+
+
+typedef uint8_t *
+(*BRCryptoNetworkGetAccountInitializationDataHandler) (BRCryptoNetwork network,
+                                                       BRCryptoAccount account,
+                                                       size_t *bytesCount);
+
+typedef void
+(*BRCryptoNetworkInitializeAccountHandler) (BRCryptoNetwork network,
+                                            BRCryptoAccount account,
+                                            const uint8_t *bytes,
+                                            size_t bytesCount);
+
+typedef struct {
+    BRCyptoNetworkCreateHandler create;
+    BRCryptoNetworkReleaseHandler release;
+    BRCryptoNetworkCreateAddressHandler createAddress;
+    BRCryptoNetworkIsAccountInitializedHandler isAccountInitialized;
+    BRCryptoNetworkGetAccountInitializationDataHandler getAccountInitializationData;
+    BRCryptoNetworkInitializeAccountHandler initializeAccount;
+} BRCryptoNetworkHandlers;
+
 /// MARK: - Network
 
 struct BRCryptoNetworkRecord {
+    BRCryptoBlockChainType type;
+    const BRCryptoNetworkHandlers *handlers;
+    BRCryptoRef ref;
+    size_t sizeInBytes;
+    
     pthread_mutex_t lock;
     
     char *uids;
     char *name;
-    BRCryptoNetworkCanonicalType canonicalType;
+    char *desc;
+    bool isMainnet;
     BRCryptoBlockChainHeight height;
+
+    // Base and associated currencies.
     BRCryptoCurrency currency;
     BRArrayOf(BRCryptoCurrencyAssociation) associations;
-    BRArrayOf(BRCryptoNetworkFee) fees;
-    
+
     uint32_t confirmationsUntilFinal;
 
     // Address Schemes
@@ -80,17 +115,23 @@ struct BRCryptoNetworkRecord {
     BRArrayOf(BRCryptoSyncMode) syncModes;
     BRCryptoSyncMode defaultSyncMode;
 
-    BRCryptoBlockChainType type;
-    union {
-        const BRChainParams *btc;
-        BREthereumNetwork eth;
-        BRGenericNetwork gen;
-    } u;
-    BRCryptoRef ref;
+    // Fees
+    BRArrayOf(BRCryptoNetworkFee) fees;
 };
+
+extern BRCryptoNetwork
+cryptoNetworkAllocAndInit (size_t sizeInBytes,
+                           BRCryptoBlockChainType type,
+                           const char *uids,
+                           const char *name,
+                           const char *desc,        // "mainnet", "testnet", "rinkeby"
+                           bool isMainnet);
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetType (BRCryptoNetwork network);
+
+private_extern const char *
+cryptoNetworkGetDesc (BRCryptoNetwork network);
 
 private_extern void
 cryptoNetworkAnnounce (BRCryptoNetwork network);
@@ -127,21 +168,8 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
                              const BRCryptoNetworkFee *fees,
                              size_t count);
 
-private_extern const BRChainParams *
-cryptoNetworkAsBTC (BRCryptoNetwork network);
-
-private_extern BREthereumNetwork
-cryptoNetworkAsETH (BRCryptoNetwork network);
-
-private_extern BRGenericNetwork
-cryptoNetworkAsGEN (BRCryptoNetwork network);
-
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
-
-private_extern BRCryptoCurrency
-cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,
-                                     BREthereumToken token);
 
 #ifdef __cplusplus
 }

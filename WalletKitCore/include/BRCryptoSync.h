@@ -11,6 +11,8 @@
 #ifndef BRCryptoSync_h
 #define BRCryptoSync_h
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

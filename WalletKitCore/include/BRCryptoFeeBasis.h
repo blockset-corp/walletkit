@@ -19,25 +19,26 @@
 extern "C" {
 #endif
 
-    typedef struct BRCryptoFeeBasisRecord *BRCryptoFeeBasis;
+typedef struct BRCryptoFeeBasisRecord *BRCryptoFeeBasis;
 
-    extern BRCryptoAmount
-    cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis);
+extern BRCryptoFeeBasis
+cryptoFeeBasisCreate (BRCryptoAmount pricePerCostFactor,
+                      double costFactor);
 
-    extern BRCryptoUnit
-    cryptoFeeBasisGetPricePerCostFactorUnit (BRCryptoFeeBasis feeBasis);
+extern BRCryptoAmount
+cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis);
 
-    extern double
-    cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis);
+extern double
+cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis);
 
-    extern BRCryptoAmount
-    cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis);
+extern BRCryptoAmount
+cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis);
 
-    extern BRCryptoBoolean
-    cryptoFeeBasisIsIdentical (BRCryptoFeeBasis feeBasis1,
-                               BRCryptoFeeBasis feeBasis2);
-    
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoFeeBasis, cryptoFeeBasis);
+extern BRCryptoBoolean
+cryptoFeeBasisIsEqual (BRCryptoFeeBasis feeBasis1,
+                       BRCryptoFeeBasis feeBasis2);
+
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoFeeBasis, cryptoFeeBasis);
 
 #ifdef __cplusplus
 }

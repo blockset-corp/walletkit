@@ -16,8 +16,9 @@
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRKey.h"
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
+#include "ethereum/base/BREthereumAccount.h"
+#include "ripple/BRRippleAccount.h"
+#include "hedera/BRHederaAccount.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,8 +27,8 @@ extern "C" {
 struct BRCryptoAccountRecord {
     BRMasterPubKey btc;
     BREthereumAccount eth;
-    BRGenericAccount xrp;
-    BRGenericAccount hbar;
+    BRRippleAccount xrp;
+    BRHederaAccount hbar;
     // ...
 
     char *uids;
@@ -56,19 +57,27 @@ cryptoAccountInstall (void);
 private_extern UInt512
 cryptoAccountDeriveSeed (const char *phrase);
 
+// MARK: Account As {ETH,BTC,XRP,HBAR
 
-private_extern BREthereumAccount
-cryptoAccountAsETH (BRCryptoAccount account);
+static inline BRMasterPubKey
+cryptoAccountAsBTC (BRCryptoAccount account) {
+    return account->btc;
+}
 
-private_extern BRGenericAccount
-cryptoAccountAsGEN (BRCryptoAccount account,
-                    BRCryptoNetworkCanonicalType type);
+static inline BREthereumAccount
+cryptoAccountAsETH (BRCryptoAccount account) {
+    return account->eth;
+}
 
-private_extern const char *
-cryptoAccountAddressAsETH (BRCryptoAccount account);
+static inline BRRippleAccount
+cryptoAccountAsXRP (BRCryptoAccount account) {
+    return account->xrp;
+}
 
-private_extern BRMasterPubKey
-cryptoAccountAsBTC (BRCryptoAccount account);
+static inline BRHederaAccount
+cryptoAccountAsHBAR (BRCryptoAccount account) {
+    return account->hbar;
+}
 
 #ifdef __cplusplus
 }

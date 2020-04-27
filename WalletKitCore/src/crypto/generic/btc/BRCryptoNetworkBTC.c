@@ -1,0 +1,163 @@
+//
+//  BRCryptoNetworkBTC.c
+//  
+//
+//  Created by Ed Gamble on 4/24/20.
+//
+
+#include "BRCryptoBTC.h"
+#include "bitcoin/BRChainParams.h"
+
+struct BRCryptoNetworkBTCRecord {
+    struct BRCryptoNetworkRecord base;
+
+    const BRChainParams *params;
+};
+
+static BRCryptoNetworkBTC
+cryptoNetworkCoerce (BRCryptoNetwork network) {
+    assert (CRYPTO_NETWORK_TYPE_BTC == network->type);
+    return (BRCryptoNetworkBTC) network;
+}
+
+extern const BRChainParams *
+cryptoNetworkAsBTC (BRCryptoNetwork network) {
+    return cryptoNetworkCoerce(network)->params;
+}
+
+static BRCryptoNetwork
+cryptoNetworkCreateAsBTC (const char *uids,
+                          const char *name,
+                          const char *desc,
+                          bool isMainnet,
+                          const BRChainParams *params) {
+    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+                                                             CRYPTO_NETWORK_TYPE_BTC,
+                                                             uids,
+                                                             name,
+                                                             desc,
+                                                             isMainnet);
+    BRCryptoNetworkBTC network = cryptoNetworkCoerce(networkBase);
+
+    network->params = params;
+
+    return networkBase;
+}
+
+static BRCryptoNetwork
+cyptoNetworkCreateBTC (const char *uids,
+                       const char *name,
+                       const char *desc,
+                       bool isMainnet) {
+    if      (0 == strcmp ("mainnet", desc))
+        return cryptoNetworkCreateAsBTC (uids, name, desc, true, BRMainNetParams);
+    else if (0 == strcmp ("testnet", desc))
+        return cryptoNetworkCreateAsBTC (uids, name, desc, false, BRTestNetParams);
+    else {
+        assert (false); return NULL;
+    }
+}
+
+static void
+cryptoNetworkReleaseBTC (BRCryptoNetwork network) {
+}
+
+
+static BRCryptoAddress
+cryptoNetworkCreateAddressBTC (BRCryptoNetwork networkBase,
+                                const char *addressAsString) {
+    BRCryptoNetworkBTC network = (BRCryptoNetworkBTC) networkBase;
+
+    return (BRChainParamsIsBitcoin (network->params)
+            ? cryptoAddressCreateFromStringAsBTC (network->params->addrParams, addressAsString)
+            : cryptoAddressCreateFromStringAsBCH (network->params->addrParams, addressAsString));
+}
+
+static BRCryptoBoolean
+cryptoNetworkIsAccountInitializedBTC (BRCryptoNetwork network,
+                                   BRCryptoAccount account) {
+    return CRYPTO_TRUE;
+}
+
+
+static uint8_t *
+cryptoNetworkGetAccountInitializationDataBTC (BRCryptoNetwork network,
+                                           BRCryptoAccount account,
+                                           size_t *bytesCount) {
+    return NULL;
+}
+
+static void
+cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
+                                BRCryptoAccount account,
+                                const uint8_t *bytes,
+                                size_t bytesCount) {
+    return;
+}
+
+// MARK: - Network Fee
+
+extern uint64_t
+cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee) {
+    BRCryptoBoolean overflow;
+    uint64_t value = cryptoAmountGetIntegerRaw (networkFee->pricePerCostFactor, &overflow);
+    assert (CRYPTO_FALSE == overflow);
+    return value;
+}
+
+BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
+    cyptoNetworkCreateBTC,
+    cryptoNetworkReleaseBTC,
+    cryptoNetworkCreateAddressBTC,
+    cryptoNetworkIsAccountInitializedBTC,
+    cryptoNetworkGetAccountInitializationDataBTC,
+    cryptoNetworkInitializeAccountBTC
+};
+
+
+
+
+//static BRCryptoNetwork
+//cryptoNetworkCreateAsBTC (const char *uids,
+//                          const char *name,
+//                          const BRChainParams *params) {
+//    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BTC);
+//    network->type = BLOCK_CHAIN_TYPE_BTC;
+//    network->u.btc = params;
+//
+//    return network;
+//}
+//
+//static BRCryptoNetwork
+//cryptoNetworkCreateAsBCH (const char *uids,
+//                          const char *name,
+//                          const BRChainParams *params) {
+//    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BCH);
+//    network->type = BLOCK_CHAIN_TYPE_BTC;
+//    network->u.btc = params;
+//
+//    return network;
+//}
+//
+//static BRCryptoNetwork
+//cryptoNetworkCreateAsETH (const char *uids,
+//                          const char *name,
+//                          BREthereumNetwork net) {
+//    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_ETH);
+//    network->type = BLOCK_CHAIN_TYPE_ETH;
+//    network->u.eth = net;
+//
+//    return network;
+//}
+//
+//static BRCryptoNetwork
+//cryptoNetworkCreateAsGEN (const char *uids,
+//                          const char *name,
+//                          uint8_t isMainnet,
+//                          BRCryptoNetworkCanonicalType canonicalType) {
+//    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, canonicalType);
+//    network->type = BLOCK_CHAIN_TYPE_GEN;
+//    network->u.gen = genNetworkCreate(canonicalType, isMainnet);
+//    return network;
+//}
+

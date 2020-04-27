@@ -14,30 +14,17 @@
 #include "BRCryptoFeeBasis.h"
 #include "BRCryptoBaseP.h"
 
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct BRCryptoFeeBasisRecord {
-    BRCryptoBlockChainType type;
-    union {
-        struct {
-            uint32_t feePerKB;
-            uint32_t sizeInByte;
-        } btc;
-        BREthereumFeeBasis eth;
-        BRGenericFeeBasis gen;
-    } u;
-    BRCryptoUnit unit;
+    BRCryptoAmount costPerPriceFactor;
+    double costFactor;
     BRCryptoRef ref;
 };
 
-private_extern BRCryptoBlockChainType
-cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis);
-
+#ifdef REFACTOR
  private_extern uint64_t
  cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
 
@@ -60,6 +47,7 @@ cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis);
  private_extern BRCryptoFeeBasis
  cryptoFeeBasisCreateAsGEN (BRCryptoUnit unit,
                             OwnershipGiven BRGenericFeeBasis bid);
+#endif
 
 #ifdef __cplusplus
 }

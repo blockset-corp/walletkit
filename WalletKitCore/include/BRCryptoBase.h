@@ -13,9 +13,11 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
+#include <assert.h>
 
 // temporary
 
@@ -100,7 +102,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_XRP,
         CRYPTO_NETWORK_TYPE_HBAR,
         // CRYPTO_NETWORK_TYPE_XLM,
-    } BRCryptoNetworkCanonicalType;
+    } BRCryptoBlockChainType;
 
 #    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
 
@@ -117,7 +119,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_HBAR    "hbar"
 
     extern const char *
-    cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type);
+    cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type);
 
     /// MARK: - Reference Counting
 

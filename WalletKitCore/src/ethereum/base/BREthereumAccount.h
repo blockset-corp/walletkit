@@ -20,6 +20,16 @@ extern "C" {
 #endif
 
 /**
+ * An Ethereum Account holds the public key data associated with a User's 'BIP-39 Paper Key'.
+ *
+ * The account provides the ethereum address (in both string and byte form) and the nonce.  (The
+ * account nonce represent the number of ethereum transactions originated by the account; it is
+ * monotonically increasing and is used to guard against double spends.) As per the Ethereum
+ * specification and unlike bitcoin, the account has a single address.
+ */
+typedef struct BREthereumAccountRecord *BREthereumAccount;
+
+/**
  * Create a new account using paperKey and the sharedWordList (see installSharedWordList).
  *
  * @param paperKey

@@ -94,28 +94,6 @@ genericRippleAccountSignTransferWithKey (BRGenericAccountRef account,
 
 // MARK: - Generic Address
 
-static BRGenericAddressRef
-genericRippleAddressCreate (const char *string) {
-    return (BRGenericAddressRef) rippleAddressCreateFromString (string, true);
-}
-
-static char *
-genericRippleAddressAsString (BRGenericAddressRef address) {
-    return rippleAddressAsString ((BRRippleAddress) address);
-}
-
-static int
-genericRippleAddressEqual (BRGenericAddressRef address1,
-                           BRGenericAddressRef address2) {
-    return rippleAddressEqual ((BRRippleAddress) address1,
-                               (BRRippleAddress) address2);
-}
-
-static void
-genericRippleAddressFree (BRGenericAddressRef address) {
-    rippleAddressFree ((BRRippleAddress) address);
-}
-
 // MARK: - Generic Transfer
 
 static BRGenericTransferRef

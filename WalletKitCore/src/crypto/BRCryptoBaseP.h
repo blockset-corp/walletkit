@@ -17,11 +17,5 @@
 ///
 /// This is an implementation detail
 ///
-typedef enum {
-    BLOCK_CHAIN_TYPE_BTC,
-    BLOCK_CHAIN_TYPE_ETH,
-    BLOCK_CHAIN_TYPE_GEN
-} BRCryptoBlockChainType;
-
 
 #endif /* BRCryptoBaseP_h */

@@ -19,7 +19,7 @@
 #include "BRCryptoTransfer.h"
 #include "BRCryptoWallet.h"
 #include "BRCryptoSync.h"
-#include "BRCryptoWalletManagerClient.h"
+#include "BRCryptoClient.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,38 +135,38 @@ extern "C" {
 
     /// MARK: Listener
 
-    typedef void *BRCryptoCWMListenerContext;
+    typedef void *BRCryptoListenerContext;
 
     /// Handler must 'give': manager, event.wallet.value
-    typedef void (*BRCryptoCWMListenerWalletManagerEvent) (BRCryptoCWMListenerContext context,
+    typedef void (*BRCryptoListenerWalletManagerEvent) (BRCryptoListenerContext context,
                                                            BRCryptoWalletManager manager,
                                                            BRCryptoWalletManagerEvent event);
 
     /// Handler must 'give': manager, wallet, event.*
-    typedef void (*BRCryptoCWMListenerWalletEvent) (BRCryptoCWMListenerContext context,
+    typedef void (*BRCryptoListenerWalletEvent) (BRCryptoListenerContext context,
                                                     BRCryptoWalletManager manager,
                                                     BRCryptoWallet wallet,
                                                     BRCryptoWalletEvent event);
 
     /// Handler must 'give': manager, wallet, transfer
-    typedef void (*BRCryptoCWMListenerTransferEvent) (BRCryptoCWMListenerContext context,
+    typedef void (*BRCryptoListenerTransferEvent) (BRCryptoListenerContext context,
                                                       BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
                                                       BRCryptoTransfer transfer,
                                                       BRCryptoTransferEvent event);
 
     typedef struct {
-        BRCryptoCWMListenerContext context;
-        BRCryptoCWMListenerWalletManagerEvent walletManagerEventCallback;
-        BRCryptoCWMListenerWalletEvent walletEventCallback;
-        BRCryptoCWMListenerTransferEvent transferEventCallback;
-    } BRCryptoCWMListener;
+        BRCryptoListenerContext context;
+        BRCryptoListenerWalletManagerEvent walletManagerEventCallback;
+        BRCryptoListenerWalletEvent walletEventCallback;
+        BRCryptoListenerTransferEvent transferEventCallback;
+    } BRCryptoListener;
 
     /// MARK: Wallet Manager
 
     /// Can return NULL
     extern BRCryptoWalletManager
-    cryptoWalletManagerCreate (BRCryptoCWMListener listener,
+    cryptoWalletManagerCreate (BRCryptoListener listener,
                                BRCryptoClient client,
                                BRCryptoAccount account,
                                BRCryptoNetwork network,
@@ -242,6 +242,19 @@ extern "C" {
     cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
                                        BRCryptoCurrency currency);
 
+    /**
+     * Start the WalletManager; allows for handling of events.  This does not connect to an
+     * associated P2P network or a QRY interface. The WalletManger is started once created.  There
+     * is no harm calling this multiple times - it is a noop if already started.
+     */
+    extern void
+    cryptoWalletManagerStart (BRCryptoWalletManager cwm);
+
+    /**
+     * Stop the WalletManager; ends handling of events and stops any sync by disconnecting .  In
+     * practice this should only be called when the WalletManger is to be disposed of.  There is
+     * no harm calling this multiple times - it is a noop if already stopped.
+     */
     extern void
     cryptoWalletManagerStop (BRCryptoWalletManager cwm);
 

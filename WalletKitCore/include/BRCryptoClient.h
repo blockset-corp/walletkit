@@ -1,5 +1,5 @@
 //
-//  BRCryptoWalletManagerClient.h
+//  BRCryptoClient.h
 //  BRCrypto
 //
 //  Created by Michael Carrara on 6/19/19.
@@ -8,8 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#ifndef BRCryptoWalletManagerClient_h
-#define BRCryptoWalletManagerClient_h
+#ifndef BRCryptoClient_h
+#define BRCryptoClient_h
 
 #include "BRCryptoBase.h"
 #include "BRCryptoNetwork.h"

@@ -24,10 +24,11 @@
 #include "BRCryptoWalletManagerClient.h"
 #include "BRCryptoWalletManagerP.h"
 
-#include "bitcoin/BRWalletManager.h"
-#include "ethereum/BREthereum.h"
+//#include "bitcoin/BRWalletManager.h"
+//#include "ethereum/BREthereum.h"
 #include "support/BRBase.h"
 
+#ifdef REFACTOR // A Huge #ifdef
 typedef enum  {
     CWM_CALLBACK_TYPE_BTC_GET_BLOCK_NUMBER,
     CWM_CALLBACK_TYPE_BTC_GET_TRANSACTIONS,
@@ -1771,6 +1772,7 @@ cryptoWalletManagerClientCreateGENClient (BRCryptoWalletManager cwm) {
         cwmSubmitTransactionAsGEN
     };
 }
+#endif // End 'Huge #ifdef'
 
 /// MARK: - Announce Functions
 

@@ -169,7 +169,7 @@ extern "C" {
      * Check if `wallet` has `address`.  Checks that `address` has been used already by `wallet`
      * or if `address` is the *next* address from `wallet`
      */
-    extern BRCryptoBoolean
+    extern bool
     cryptoWalletHasAddress (BRCryptoWallet wallet,
                             BRCryptoAddress address);
 
