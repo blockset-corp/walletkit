@@ -1,4 +1,4 @@
-from core cimport *
+from walletkit.core cimport *
 from enum import Enum
 
 

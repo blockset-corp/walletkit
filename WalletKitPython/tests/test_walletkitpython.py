@@ -1,5 +1,5 @@
 import unittest
-from walletkit.native.hasher import Hasher, HasherType
+from walletkit import Hasher, HasherType
 
 
 class TestHasher(unittest.TestCase):

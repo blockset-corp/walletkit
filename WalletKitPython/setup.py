@@ -16,34 +16,27 @@ CORE_SRC_FILES = list(map(str, itertools.chain(
     Path(path.join(CORE_ROOT, 'src')).rglob('*.c'),
     Path(path.join(CORE_ROOT, 'vendor', 'ed25519')).rglob('*.c')
 )))
-CYTHON_INCLUDE_DIRS = [path.join(HERE, 'walletkit', 'native')]
+CYTHON_INCLUDE_DIRS = [path.join(HERE, 'walletkit')]
 INCLUDE_DIRS = [
     path.join(CORE_ROOT, 'src'),
     path.join(CORE_ROOT, 'include'),
     path.join(CORE_ROOT, 'vendor'),
     path.join(CORE_ROOT, 'vendor', 'secp256k1'),
 ]
-NATIVE_MODULES = ['hasher']
-EXTENSIONS = []
-LIBRARIES = ['WalletKitCore']
-LIBRARY_DIRS = [path.join(HERE, 'walletkit', 'native')]
-
-for wkmod in NATIVE_MODULES:
-    src = [path.join(HERE, 'walletkit', 'native', f'{wkmod}.pyx')] + CORE_SRC_FILES
-    EXTENSIONS.append(Extension(
-        wkmod, src,
-        include_dirs=INCLUDE_DIRS,
-        libraries=["resolv"],
-        extra_compile_args=[
-            "-Wall",
-            "-Wconversion",
-            "-Wsign-conversion",
-            "-Wparentheses",
-            "-Wswitch",
-            "-Wno-implicit-int-conversion",
-            "-Wno-missing-braces",
-        ]
-    ))
+EXTENSIONS = [Extension(
+    'native', [path.join(HERE, 'walletkit', 'native.pyx')] + CORE_SRC_FILES,
+    include_dirs=INCLUDE_DIRS,
+    libraries=["resolv"],
+    extra_compile_args=[
+        "-Wall",
+        "-Wconversion",
+        "-Wsign-conversion",
+        "-Wparentheses",
+        "-Wswitch",
+        "-Wno-implicit-int-conversion",
+        "-Wno-missing-braces",
+    ]
+)]
 
 setup(
     name='walletkit',
@@ -54,7 +47,7 @@ setup(
     license="MIT",
     url="https://github.com/blockset-corp/walletkit",
     packages=['walletkit'],
-    ext_package='walletkit.native',
+    ext_package='walletkit',
     ext_modules=cythonize(
         EXTENSIONS,
         include_path=CYTHON_INCLUDE_DIRS,
