@@ -34,8 +34,7 @@
 # Xcode (see Swift/.gitignore)
 # xcuserdata/
 
-# Android Studio / IntelliJ (see Java/.gitignore)
-#.idea/
+.idea
 
 .build/
 .git-re*
