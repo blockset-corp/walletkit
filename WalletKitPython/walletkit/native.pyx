@@ -1,4 +1,4 @@
-from walletkit.core cimport *
+from core cimport *
 from enum import Enum
 
 
@@ -18,6 +18,9 @@ class HasherType(Enum):
 
 cdef class Hasher:
     cdef BRCryptoHasher _hasher
+
+    def __init__(self, hasher_type: HasherType):
+        pass
 
     def __cinit__(self, kind: HasherType):
         self._hasher = cryptoHasherCreate(kind.value)
