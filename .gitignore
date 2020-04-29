@@ -41,3 +41,5 @@
 .git-re*
 .swiftpm/
 CoreTestsConfig.json
+/.idea
+/WalletKitCore/cmake-build-debug

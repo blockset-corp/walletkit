@@ -261,8 +261,8 @@ extern BRCryptoBoolean
 cryptoNetworkIsMainnet (BRCryptoNetwork network) {
     switch (network->type) {
         case BLOCK_CHAIN_TYPE_BTC:
-            return AS_CRYPTO_BOOLEAN (network->u.btc == BRMainNetParams ||
-                                      network->u.btc == BRBCashParams);
+            return AS_CRYPTO_BOOLEAN (BRChainParamsIsBitcoinMainnet(network->u.btc) ||
+                                      BRChainParamsIsBitcashMainnet(network->u.btc));
         case BLOCK_CHAIN_TYPE_ETH:
             return AS_CRYPTO_BOOLEAN (network->u.eth == ethNetworkMainnet);
         case BLOCK_CHAIN_TYPE_GEN:
@@ -650,13 +650,13 @@ cryptoNetworkCreateBuiltin (const char *symbol,
     // BTC, BCH, ETH, GEN
 
     if      (0 == strcmp ("btcMainnet", symbol))
-        network = cryptoNetworkCreateAsBTC (uids, name, BRMainNetParams);
+        network = cryptoNetworkCreateAsBTC (uids, name, BRChainParamsGetBitcoinMainnet());
     else if (0 == strcmp ("btcTestnet", symbol))
-        network = cryptoNetworkCreateAsBTC (uids, name, BRTestNetParams);
+        network = cryptoNetworkCreateAsBTC (uids, name, BRChainParamsGetBitcoinTestnet());
     else if (0 == strcmp ("bchMainnet", symbol))
-        network = cryptoNetworkCreateAsBCH (uids, name, BRBCashParams);
+        network = cryptoNetworkCreateAsBCH (uids, name, BRChainParamsGetBCashMainnet());
     else if (0 == strcmp ("bchTestnet", symbol))
-        network = cryptoNetworkCreateAsBCH (uids, name, BRBCashTestNetParams);
+        network = cryptoNetworkCreateAsBCH (uids, name, BRChainParamsGetBCashTestnet());
     else if (0 == strcmp ("ethMainnet", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkMainnet);
     else if (0 == strcmp ("ethRopsten", symbol))

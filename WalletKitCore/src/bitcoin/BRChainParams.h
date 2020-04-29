@@ -56,15 +56,16 @@ typedef struct {
     uint8_t forkId;
 } BRChainParams;
 
-extern const BRChainParams *BRMainNetParams;
-extern const BRChainParams *BRTestNetParams;
+extern const BRChainParams *BRChainParamsGetBitcoinMainnet();
 
-static inline const BRChainParams *BRChainParamsGetBitcoin (int mainnet) {
-    return mainnet ? BRMainNetParams : BRTestNetParams;
-}
+extern const BRChainParams *BRChainParamsGetBitcoinTestnet();
 
 static inline int BRChainParamsIsBitcoin (const BRChainParams *params) {
-    return BRMainNetParams == params || BRTestNetParams == params;
+    return params->forkId == BITCOIN_FORKID && (params->magicNumber == 0xd9b4bef9 || params->magicNumber == 0x0709110b);
+}
+
+static inline int BRChainParamsIsBitcoinMainnet (const BRChainParams *params) {
+    return params->forkId == BITCOIN_FORKID && params->magicNumber == 0xd9b4bef9;
 }
 
 extern const BRCheckPoint *BRChainParamsGetCheckpointBefore (const BRChainParams *params, uint32_t timestamp);
