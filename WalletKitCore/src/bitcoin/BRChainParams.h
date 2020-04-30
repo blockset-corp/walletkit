@@ -36,6 +36,8 @@ extern "C" {
 #endif
     
 #define BITCOIN_FORKID 0x00
+#define BITCOIN_MAINNET 1
+#define BITCOIN_TESTNET 0
 
 typedef struct {
     uint32_t height;
@@ -56,16 +58,10 @@ typedef struct {
     uint8_t forkId;
 } BRChainParams;
 
-extern const BRChainParams *BRChainParamsGetBitcoinMainnet();
-
-extern const BRChainParams *BRChainParamsGetBitcoinTestnet();
+extern const BRChainParams *BRChainParamsGetBitcoin(int mainnet);
 
 static inline int BRChainParamsIsBitcoin (const BRChainParams *params) {
-    return params->forkId == BITCOIN_FORKID && (params->magicNumber == 0xd9b4bef9 || params->magicNumber == 0x0709110b);
-}
-
-static inline int BRChainParamsIsBitcoinMainnet (const BRChainParams *params) {
-    return params->forkId == BITCOIN_FORKID && params->magicNumber == 0xd9b4bef9;
+    return params == BRChainParamsGetBitcoin(BITCOIN_MAINNET) || params == BRChainParamsGetBitcoin(BITCOIN_TESTNET);
 }
 
 extern const BRCheckPoint *BRChainParamsGetCheckpointBefore (const BRChainParams *params, uint32_t timestamp);

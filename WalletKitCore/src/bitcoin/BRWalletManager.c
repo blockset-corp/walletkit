@@ -62,12 +62,12 @@ static void _BRWalletManagerTxDeleted (void *info, UInt256 hash, int notifyUser,
 
 static const char *
 getNetworkName (const BRChainParams *params) {
-    if (params->magicNumber == BRChainParamsGetBitcoinMainnet()->magicNumber ||
-        params->magicNumber == BRChainParamsGetBCashMainnet()->magicNumber)
+    if (params->magicNumber == BRChainParamsGetBitcoin(BITCOIN_MAINNET)->magicNumber ||
+        params->magicNumber == BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET)->magicNumber)
         return "mainnet";
 
-    if (params->magicNumber == BRChainParamsGetBitcoinTestnet()->magicNumber ||
-        params->magicNumber == BRChainParamsGetBCashTestnet()->magicNumber)
+    if (params->magicNumber == BRChainParamsGetBitcoin(BITCOIN_TESTNET)->magicNumber ||
+        params->magicNumber == BRChainParamsGetBitcoincash(BITCOINCASH_TESTNET)->magicNumber)
         return "testnet";
 
     // this should never happen!
@@ -77,12 +77,12 @@ getNetworkName (const BRChainParams *params) {
 
 static const char *
 getCurrencyName (const BRChainParams *params) {
-    if (params->magicNumber == BRChainParamsGetBitcoinMainnet()->magicNumber ||
-        params->magicNumber == BRChainParamsGetBitcoinTestnet()->magicNumber)
+    if (params->magicNumber == BRChainParamsGetBitcoin(BITCOIN_MAINNET)->magicNumber ||
+        params->magicNumber == BRChainParamsGetBitcoin(BITCOIN_TESTNET)->magicNumber)
         return "btc";
 
-    if (params->magicNumber == BRChainParamsGetBCashMainnet()->magicNumber ||
-        params->magicNumber == BRChainParamsGetBCashTestnet()->magicNumber)
+    if (params->magicNumber == BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET)->magicNumber ||
+        params->magicNumber == BRChainParamsGetBitcoincash(BITCOINCASH_TESTNET)->magicNumber)
         return "bch";
 
     // this should never happen!

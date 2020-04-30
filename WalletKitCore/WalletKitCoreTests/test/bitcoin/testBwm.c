@@ -78,9 +78,9 @@ extern int BRRunTestWalletManagerSync (const char *paperKey,
                                        const char *storagePath,
                                        int isBTC,
                                        int isMainnet) {
-    const BRChainParams *params = (isBTC & isMainnet ? BRChainParamsGetBitcoinMainnet()
-                                   : (isBTC & !isMainnet ? BRChainParamsGetBitcoinTestnet()
-                                      : (isMainnet ? BRChainParamsGetBCashMainnet() : BRChainParamsGetBCashMainnet())));
+    const BRChainParams *params = (isBTC & isMainnet ? BRChainParamsGetBitcoin(BITCOIN_MAINNET)
+                                   : (isBTC & !isMainnet ? BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET)
+                                      : (isMainnet ? BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET) : BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET))));
 
     uint32_t epoch = 1483228800; // 1/1/17
     epoch += (365 + 365/2) * 24 * 60 * 60;
@@ -565,9 +565,9 @@ BRRunTestWalletManagerSyncBwmSetup (BRCryptoSyncMode mode,
 
     const BRChainParams *params = NULL;
     if (isBTC) {
-        params = isMainnet ? BRChainParamsGetBitcoinMainnet() : BRChainParamsGetBitcoinTestnet();
+        params = isMainnet ? BRChainParamsGetBitcoin(BITCOIN_MAINNET) : BRChainParamsGetBitcoin(BITCOIN_TESTNET);
     } else {
-        params = isMainnet ? BRChainParamsGetBCashMainnet() : BRChainParamsGetBCashTestnet();
+        params = isMainnet ? BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET) : BRChainParamsGetBitcoincash(BITCOINCASH_TESTNET);
     }
     return BRWalletManagerNew (client, mpk, params, earliestKeyTime, mode, storagePath, blockHeight, 6);
 }

@@ -74,10 +74,13 @@ extern const BRCheckPoint *BRChainParamsGetCheckpointBeforeBlockNumber (const BR
 }
 
 static BRChainParams bitcoinMainnetParams;
+static BRChainParams bitcoinTestnetParams;
 
-extern const BRChainParams *BRChainParamsGetBitcoinMainnet() {
+extern const BRChainParams *BRChainParamsGetBitcoin(int mainnet) {
     static int needsInitialization = 1;
     if (needsInitialization) {
+        needsInitialization = 0;
+
         // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
         // difficulty transition boundaries in order to verify the block difficulty at the immediately following transition
         const BRCheckPoint BRMainNetCheckpoints[] = {
@@ -127,16 +130,7 @@ extern const BRChainParams *BRChainParamsGetBitcoinMainnet() {
                 BITCOIN_FORKID
         };
         bitcoinMainnetParams = BRMainNetParamsRecord;
-        needsInitialization = 0;
-    }
-    return &bitcoinMainnetParams;
-}
 
-static BRChainParams bitcoinTestnetParams;
-
-extern const BRChainParams *BRChainParamsGetBitcoinTestnet() {
-    static int needsInitialization = 1;
-    if (needsInitialization) {
         const BRCheckPoint BRTestNetCheckpoints[] = {
                 {0,       uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff},
                 {100800,  uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907},
@@ -172,7 +166,6 @@ extern const BRChainParams *BRChainParamsGetBitcoinTestnet() {
                 BITCOIN_FORKID
         };
         bitcoinTestnetParams = BRTestNetParamsRecord;
-        needsInitialization = 0;
     }
-    return &bitcoinTestnetParams;
+    return mainnet == BITCOIN_MAINNET ? &bitcoinMainnetParams : &bitcoinTestnetParams;
 }

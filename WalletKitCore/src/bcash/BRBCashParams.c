@@ -123,9 +123,10 @@ static int BRBCashTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSe
     return 1; // XXX skip testnet difficulty check for now
 }
 
-static BRChainParams bcashMainnetParams;
+static BRChainParams bitcoincashMainnetParams;
+static BRChainParams bitcoincashTestnetParams;
 
-extern const BRChainParams *BRChainParamsGetBCashMainnet() {
+extern const BRChainParams *BRChainParamsGetBitcoincash(int mainnet) {
     static int needsInitialization = 1;
     if (needsInitialization) {
         // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
@@ -176,17 +177,8 @@ extern const BRChainParams *BRChainParamsGetBCashMainnet() {
                 {BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL},
                 BCASH_FORKID
         };
-        bcashMainnetParams = BRBCashParamsRecord;
-        needsInitialization = 0;
-    }
-    return &bcashMainnetParams;
-}
+        bitcoincashMainnetParams = BRBCashParamsRecord;
 
-static BRChainParams bcashTestnetParams;
-
-extern const BRChainParams *BRChainParamsGetBCashTestnet() {
-    static int needsInitialization = 1;
-    if (needsInitialization) {
         const BRCheckPoint BRBCashTestNetCheckpoints[] = {
                 {0,       uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff},
                 {100800,  uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907},
@@ -215,8 +207,8 @@ extern const BRChainParams *BRChainParamsGetBCashTestnet() {
                 {BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL},
                 BCASH_FORKID
         };
-        bcashTestnetParams = BRBCashTestNetParamsRecord;
+        bitcoincashTestnetParams = BRBCashTestNetParamsRecord;
         needsInitialization = 0;
     }
-    return &bcashTestnetParams;
+    return mainnet == BITCOINCASH_MAINNET ? &bitcoincashMainnetParams : &bitcoincashTestnetParams;
 }

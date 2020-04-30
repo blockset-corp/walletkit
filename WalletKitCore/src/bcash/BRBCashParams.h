@@ -32,17 +32,13 @@ extern "C" {
 #endif
     
 #define BCASH_FORKID 0x40
+#define BITCOINCASH_MAINNET 1
+#define BITCOINCASH_TESTNET 0
 
-extern const BRChainParams *BRChainParamsGetBCashMainnet();
-
-extern const BRChainParams *BRChainParamsGetBCashTestnet();
+extern const BRChainParams *BRChainParamsGetBitcoincash(int mainnet);
 
 static inline int BRChainParamsIsBitcash (const BRChainParams *params) {
     return params->forkId == BCASH_FORKID && (params->magicNumber == 0xe8f3e1e3 || params->magicNumber == 0xf4f3e5f4);
-}
-
-static inline int BRChainParamsIsBitcashMainnet (const BRChainParams *params) {
-    return params->forkId == BCASH_FORKID && params->magicNumber == 0xe8f3e1e3;
 }
 
 #ifdef __cplusplus

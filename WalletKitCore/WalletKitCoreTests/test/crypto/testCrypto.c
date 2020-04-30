@@ -218,18 +218,18 @@ transferTestsBalance (void) {
     }
 
     // Initialize wallet w/ all transactions
-    BRWallet *wid1 = BRWalletNew (BRChainParamsGetBitcoinTestnet()->addrParams, transactions, numberOfTransferTests, mpk);
+    BRWallet *wid1 = BRWalletNew (BRChainParamsGetBitcoin(BITCOIN_TESTNET)->addrParams, transactions, numberOfTransferTests, mpk);
     uint64_t balance1 = BRWalletBalance(wid1);
 
     // Initialize wallet w/ each transaction, one by one
-    BRWallet *wid2 = BRWalletNew (BRChainParamsGetBitcoinTestnet()->addrParams, NULL, 0, mpk);
+    BRWallet *wid2 = BRWalletNew (BRChainParamsGetBitcoin(BITCOIN_TESTNET)->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
         BRWalletRegisterTransaction (wid2, BRTransactionCopy (transactions[index]));
     }
     uint64_t balance2 = BRWalletBalance(wid2);
 
     // Initialize wallet w/ each transaction in reverse order
-     BRWallet *wid3 = BRWalletNew (BRChainParamsGetBitcoinTestnet()->addrParams, NULL, 0, mpk);
+     BRWallet *wid3 = BRWalletNew (BRChainParamsGetBitcoin(BITCOIN_TESTNET)->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
         BRWalletRegisterTransaction (wid3, BRTransactionCopy(transactions[numberOfTransferTests - 1 - index]));
     }
@@ -260,7 +260,7 @@ transferTestsAddress (void) {
                             "SAT");
 
     BRMasterPubKey mpk = transferTestsGetMPK();
-    BRWallet *wid = BRWalletNew (BRChainParamsGetBitcoinTestnet()->addrParams, NULL, 0, mpk);
+    BRWallet *wid = BRWalletNew (BRChainParamsGetBitcoin(BITCOIN_TESTNET)->addrParams, NULL, 0, mpk);
     BRWalletSetCallbacks (wid, NULL, NULL, NULL, NULL, NULL);
 
     for (size_t index = 0; index < numberOfTransferTests; index++) {
@@ -1520,9 +1520,9 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
     BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_GEN == chainType);
     BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == chainType);
     BRCryptoBoolean isBtc = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoinMainnet() || cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoinTestnet()));
+                             && (cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoin(BITCOIN_MAINNET) || cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoin(BITCOIN_TESTNET)));
     BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRChainParamsGetBCashMainnet() || cryptoNetworkAsBTC (network) == BRChainParamsGetBCashTestnet()));
+                             && (cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoincash(BITCOINCASH_MAINNET) || cryptoNetworkAsBTC (network) == BRChainParamsGetBitcoincash(BITCOINCASH_TESTNET)));
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
                                     CRYPTO_ADDRESS_SCHEME_BTC_LEGACY :

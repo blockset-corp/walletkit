@@ -5,8 +5,10 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+project(WalletKitCore)
+
 # now build app's shared lib
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -D__LINUX__")
 
 #
 # sqlite3 build
