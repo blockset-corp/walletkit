@@ -518,3 +518,6 @@ if (APPLE)
                            "resolv"
                            "-framework Security")
 endif(APPLE)
+
+add_executable(walletfuzz walletfuzz.c)
+target_link_libraries(walletfuzz PRIVATE corecrypto)
