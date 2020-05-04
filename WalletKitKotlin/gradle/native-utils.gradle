@@ -1,0 +1,33 @@
+def safeExec(String... script) {
+    if (!file("/usr/bin/" + script[0]).exists()) {
+        return ""
+    }
+    def retVal
+    exec {
+        commandLine script
+        standardOutput = new ByteArrayOutputStream()
+        retVal = {
+            standardOutput.toString().trim()
+        }
+    }
+    return retVal()
+}
+
+ext {
+    // Paths and compiler options to build WalletKitCore for iOS targets
+    iphoneOsSdk = safeExec("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
+    iphoneSimSdk = safeExec("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
+    iosClangCompilerArgs = { args, sdk, arch ->
+        args << "-isysroot"
+        args << "${sdk}"
+        args << "-arch"
+        args << "${arch}"
+        args << "-miphoneos-version-min=10.0"
+        args << "-std=c99"
+        args << "-stdlib=libc++"
+        args << "-fembed-bitcode"
+        args << "-O0"
+        args << "-F${sdk}/System/Library/Frameworks"
+        args << "-I${sdk}/usr/include"
+    }
+}

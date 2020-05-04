@@ -1,0 +1,357 @@
+buildscript {
+    dependencies {
+        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+    }
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://kotlin.bintray.com/kotlinx' }
+        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform' version "$kotlin_version"
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
+    id 'org.jetbrains.dokka' version "$dokka_version"
+    id 'c'
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+        jcenter()
+        maven { url 'https://kotlin.bintray.com/kotlinx' }
+        maven { url 'https://kotlin.bintray.com/ktor' }
+        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+        maven { url 'https://dl.bintray.com/brd/walletkit-java' }
+    }
+}
+
+project.ext.ideaActive = System.getProperty('idea.active') == 'true'
+
+apply from: 'gradle/walletkit-core-dirs.gradle'
+apply from: 'gradle/native-utils.gradle'
+apply plugin: 'kotlinx-atomicfu'
+apply plugin: 'idea'
+
+def publicApiHeaders = file("$corePath/include")
+        .listFiles()
+        .findAll { it.name.endsWith('.h') }
+def privateApiHeaders = file("$corePath/src/crypto")
+        .listFiles()
+        .findAll { it.name.endsWith('.h') }
+
+kotlin {
+    jvm()
+    // NOTE: Only enable one darwin target in the IDE to for allow symbol resolution.
+    def nativeTargets = [macosX64("macos")] // TODO: Add other native targets
+    if (!project.ext.ideaActive) {
+        nativeTargets += [iosX64("iosSim"), iosArm64()]
+    }
+    // TODO: Adapt native configuration to support windows, linux, etc
+    configure(nativeTargets) {
+        // TODO: Resolve linking paths from native build plugin
+        def coreLibPath = file("./build/libs/corecrypto/static/$name").absolutePath
+        def sqliteLibPath = file("./build/libs/sqlite3/static/$name").absolutePath
+        def ed25519LibPath = file("./build/libs/ed25519/static/$name").absolutePath
+
+        binaries.getTest(DEBUG).linkerOpts = [
+                "-L" + coreLibPath,
+                "-L" + sqliteLibPath,
+                "-L" + ed25519LibPath,
+                "-framework", "Security"
+        ]
+
+        compilations.main {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-include-binary", coreLibPath + "/libcorecrypto.a",
+                        "-include-binary", sqliteLibPath + "/libsqlite3.a",
+                        "-include-binary", ed25519LibPath + "/libed25519.a"
+                ]
+            }
+            cinterops {
+                BRCrypto {
+                    packageName 'brcrypto'
+                    headers publicApiHeaders + privateApiHeaders
+                    includeDirs "$corePath/include", "$corePath/src"
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        all {
+            languageSettings {
+                enableLanguageFeature('InlineClasses')
+                useExperimentalAnnotation('kotlin.ExperimentalUnsignedTypes')
+                useExperimentalAnnotation('kotlin.RequiresOptIn')
+                progressiveMode = true
+            }
+        }
+
+        commonMain {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+                implementation "io.ktor:ktor-client-core:$ktor_version"
+                implementation "io.ktor:ktor-client-json:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization:$ktor_version"
+                implementation "io.ktor:ktor-client-logging:$ktor_version"
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-test-common:$kotlin_version"
+                implementation "org.jetbrains.kotlin:kotlin-test-annotations-common:$kotlin_version"
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+
+                implementation "io.ktor:ktor-client-okhttp:$ktor_version"
+                implementation "io.ktor:ktor-client-json-jvm:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization-jvm:$ktor_version"
+
+                implementation "com.breadwallet.core:corenative-jre:$corenative_jre_version"
+                // TODO(fix): Guava is missing from the published corenative-jre pom
+                implementation "com.google.guava:guava:28.1-jre"
+            }
+        }
+
+        jvmTest {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+                implementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+            }
+        }
+
+        // TODO: HMPP structures cannot share cinterop dependencies in common sources
+        //   this should be renamed to darwinMain and consumed by darwin targets when
+        //   that restriction is removed.
+        darwinDependenciesMain {
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+                implementation "io.ktor:ktor-client-json:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization:$ktor_version"
+                implementation "io.ktor:ktor-client-logging:$ktor_version"
+                implementation "co.touchlab:stately-iso-collections:$stately_version"
+            }
+        }
+
+        iosSimMain {
+            dependsOn(darwinDependenciesMain)
+            kotlin.srcDirs += ['src/darwinMain']
+            dependencies {
+                implementation "io.ktor:ktor-client-ios:$ktor_version"
+            }
+        }
+
+        macosMain {
+            dependsOn(darwinDependenciesMain)
+            kotlin.srcDirs += ['src/darwinMain']
+            dependencies {
+                // Requires curl 7.63+
+                implementation "io.ktor:ktor-client-curl:$ktor_version"
+            }
+        }
+    }
+}
+
+task iosTest {
+    onlyIf { kotlin.targets.iosSim.publishable }
+    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone 11"
+    dependsOn 'linkDebugTestIosSim'
+    group = JavaBasePlugin.VERIFICATION_GROUP
+    description = "Runs tests for target 'ios' on an iOS simulator"
+
+    doLast {
+        def binary = kotlin.targets.iosSim.binaries.getTest('DEBUG').outputFile
+        exec {
+            commandLine 'xcrun', 'simctl', 'spawn', '--standalone', device, binary.absolutePath
+        }
+    }
+}
+
+allTests.dependsOn iosTest
+
+model {
+    toolChains {
+        clang(Clang) {
+            // TODO: Share iOS config and select correct sdk path
+            target('iosSim') {
+                cCompiler.executable 'clang'
+                cCompiler.withArguments { args ->
+                    iosClangCompilerArgs(args, iphoneSimSdk, "x86_64")
+                }
+
+                linker.withArguments { args ->
+                    // TODO: Can this code be removed gracefully?
+                    //  Why are these args here if they fail?
+                    args.remove("-Wl,-soname,libcorecrypto.so")
+                    args.remove("-Wl,-soname,libsqlite3.so")
+                    args.remove("-Wl,-soname,libed25519.so")
+                }
+            }
+            target('iosArm64') {
+                cCompiler.executable 'clang'
+                cCompiler.withArguments { args ->
+                    iosClangCompilerArgs(args, iphoneOsSdk, "arm64")
+                }
+
+                linker.withArguments { args ->
+                    // TODO: Can this code be removed gracefully?
+                    //  Why are these args here if they fail?
+                    args.remove("-Wl,-soname,libcorecrypto.so")
+                    args.remove("-Wl,-soname,libsqlite3.so")
+                    args.remove("-Wl,-soname,libed25519.so")
+                }
+            }
+        }
+    }
+    platforms {
+        macos {
+            operatingSystem "osx"
+            architecture "x86_64"
+        }
+        iosArm64 {
+            architecture 'arm64'
+            operatingSystem 'ios'
+        }
+        iosSim {
+            architecture 'x86_64'
+            operatingSystem 'ios'
+        }
+        linux32 { // TODO: Not configured
+            operatingSystem "linux"
+            architecture "x86"
+        }
+        linux64 { // TODO: Not configured
+            operatingSystem "linux"
+            architecture "x86_64"
+        }
+        windows { // TODO: Not configured
+            architecture 'x64'
+            operatingSystem 'windows'
+        }
+    }
+    components {
+        ed25519(NativeLibrarySpec) {
+            targetPlatform 'linux32'
+            targetPlatform 'linux64'
+            targetPlatform 'windows'
+            if (kotlin.targets.macos.publishable) {
+                targetPlatform 'macos'
+                targetPlatform 'iosArm64'
+                targetPlatform 'iosSim'
+            }
+            sources {
+                c {
+                    source {
+                        srcDir cppEd25519SrcDir
+                        include "*.c"
+                    }
+                }
+            }
+        }
+        sqlite3(NativeLibrarySpec) {
+            targetPlatform 'linux32'
+            targetPlatform 'linux64'
+            targetPlatform 'windows'
+            if (kotlin.targets.macos.publishable) {
+                targetPlatform 'macos'
+                targetPlatform 'iosArm64'
+                targetPlatform 'iosSim'
+            }
+
+            sources {
+                c {
+                    source {
+                        srcDir cppSqliteSrcDir
+                        include "sqlite3.c"
+                    }
+                }
+            }
+            binaries {
+                binaries.all {
+                    // TODO(fix): Do we want to use this approach (config.h)?
+                    cCompiler.define "_HAVE_SQLITE_CONFIG_H"
+                }
+                withType(StaticLibraryBinarySpec) {
+                    //buildable = false
+                }
+            }
+        }
+        corecrypto(NativeLibrarySpec) {
+            targetPlatform 'linux32'
+            targetPlatform 'linux64'
+            targetPlatform 'windows'
+            if (kotlin.targets.macos.publishable) {
+                targetPlatform 'macos'
+                targetPlatform 'iosArm64'
+                targetPlatform 'iosSim'
+            }
+
+            sources {
+                c {
+                    source {
+                        srcDirs cppCryptoSrcDirs
+                        include "**/*.c"
+                    }
+                }
+            }
+            binaries {
+                binaries.all {
+                    cppCryptoIncDirs.forEach {
+                        cCompiler.args "-I$it"
+                    }
+
+                    lib library: 'sqlite3', linkage: 'static'
+                    lib library: 'ed25519', linkage: 'static'
+                }
+                withType(SharedLibraryBinarySpec) {
+                    def os = targetPlatform.operatingSystem.name
+                    if (os == "osx" || os == "ios") {
+                        linker.args '-framework', 'Security'
+                        linker.args '-lresolv'
+                    }
+                }
+                withType(StaticLibraryBinarySpec) {
+                    //buildable = false
+                }
+            }
+        }
+    }
+
+    tasks {
+        // Link native builds to the corresponding compileKotlin<Target> task
+        $.binaries
+                .findAll { it.buildable }
+                .each { spec ->
+                    def targetName = spec.targetPlatform.name.capitalize()
+                    def kCompileTask = project.tasks.findByName("compileKotlin" + targetName)
+                    if (kCompileTask != null) {
+                        kCompileTask.dependsOn spec.tasks.getBuild()
+                    }
+                }
+    }
+}
+
+dokka {
+    outputFormat = 'html'
+    outputDirectory = "$buildDir/dokka"
+
+    multiplatform {
+        jvm {}
+        macos {}
+    }
+}

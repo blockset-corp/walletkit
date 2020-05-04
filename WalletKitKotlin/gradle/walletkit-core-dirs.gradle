@@ -1,0 +1,27 @@
+ext {
+    corePath = file("../WalletKitCore").absolutePath
+    coreLibPath = file("./build/libs/corecrypto/static").absolutePath
+    sqliteLibPath = file("./build/libs/sqlite3/static").absolutePath
+    ed25519LibPath = file("./build/libs/ed25519/static").absolutePath
+
+    cppSqliteSrcDir = "$corePath/vendor/sqlite3"
+    cppEd25519SrcDir = "$corePath/vendor/ed25519"
+    cppCryptoSrcDirs = [cppEd25519SrcDir] + [
+            "bcash",
+            "bitcoin",
+            "crypto",
+            "ethereum",
+            "generic",
+            "hedera",
+            "ripple",
+            "support"
+    ].collect { "$corePath/src/$it" }
+
+    cppCryptoIncDirs = cppCryptoSrcDirs + [
+            "src",
+            "src/support",
+            "include",
+            "vendor",
+            "vendor/secp256k1"
+    ].collect { "$corePath/$it" }
+}

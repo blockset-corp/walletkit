@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
+    }
+}
+
+rootProject.name = "WalletKitKotlin"
+
+include ":demo"
+
+enableFeaturePreview('GRADLE_METADATA')

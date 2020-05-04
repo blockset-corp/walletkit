@@ -1,0 +1,80 @@
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+}
+
+kotlin {
+    jvm {
+        // Produces a portable and runnable jar file
+        jvmJar {
+            withJava()
+            manifest {
+                attributes 'Main-Class': 'demo.MainKt'
+            }
+            from {
+                configurations.runtimeClasspath.collect {
+                    it.isDirectory() ? it : zipTree(it)
+                }
+            }
+        }
+    }
+    macosX64("macos") {
+        binaries {
+            executable {
+                entryPoint = "demo.main"
+                linkerOpts = ["-framework", "Security"]
+            }
+        }
+    }
+
+    sourceSets {
+        all {
+            languageSettings {
+                useExperimentalAnnotation('kotlin.ExperimentalUnsignedTypes')
+            }
+            dependencies {
+                implementation "co.touchlab:stately-isolate:$stately_version"
+                implementation "co.touchlab:stately-iso-collections:$stately_version"
+            }
+        }
+        commonMain {
+            dependencies {
+                implementation rootProject
+                implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "io.ktor:ktor-client-core:$ktor_version"
+                implementation "io.ktor:ktor-client-json:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization:$ktor_version"
+            }
+        }
+
+        macosMain {
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+                implementation "io.ktor:ktor-client-curl:$ktor_version"
+                implementation "io.ktor:ktor-client-json:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization:$ktor_version"
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+                implementation "io.ktor:ktor-client-core:$ktor_version"
+                implementation "io.ktor:ktor-client-okhttp:$ktor_version"
+                implementation "io.ktor:ktor-client-json-jvm:$ktor_version"
+                implementation "io.ktor:ktor-client-serialization-jvm:$ktor_version"
+            }
+        }
+    }
+}
+
+task runJar(type: Exec) {
+    group = "run"
+    description = "Executes Kotlin/JVM jar"
+    dependsOn jvmJar
+    commandLine "java", "-jar", "./build/libs/demo-jvm.jar"
+}
