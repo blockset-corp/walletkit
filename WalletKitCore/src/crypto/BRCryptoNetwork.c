@@ -116,12 +116,14 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *uids,
                            const char *name,
                            const char *desc,
-                           bool isMainnet) {
+                           bool isMainnet,
+                           uint32_t confirmationPeriodInSeconds) {
     assert (sizeInBytes >= sizeof (struct BRCryptoNetworkRecord));
     BRCryptoNetwork network = calloc (1, sizeInBytes);
 
     network->type = type;
     network->handlers = cryptoGenericHandlersLookup(type)->network;
+    network->sizeInBytes = sizeInBytes;
 
     network->uids = strdup (uids);
     network->name = strdup (name);
@@ -130,6 +132,8 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     network->height = 0;
     array_new (network->associations, CRYPTO_NETWORK_DEFAULT_CURRENCY_ASSOCIATIONS);
     array_new (network->fees, CRYPTO_NETWORK_DEFAULT_FEES);
+
+    network->confirmationPeriodInSeconds = confirmationPeriodInSeconds;
 
     network->addressSchemes = NULL;
     network->syncModes = NULL;
@@ -214,6 +218,11 @@ cryptoNetworkIsMainnet (BRCryptoNetwork network) {
 //        case BLOCK_CHAIN_TYPE_GEN:
 //            return AS_CRYPTO_BOOLEAN (genNetworkIsMainnet (network->u.gen));
 //    }
+}
+
+private_extern uint32_t
+cryptoNetworkGetConfirmationPeriodInSeconds (BRCryptoNetwork network) {
+    return network->confirmationPeriodInSeconds;
 }
 
 extern BRCryptoBlockChainHeight
@@ -618,9 +627,10 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
         bool isMainnet;
         uint64_t height;
         uint32_t confirmations;
+        uint32_t confirmationPeriodInSeconds;
     } networkSpecifications[] = {
-#define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations) \
-{ type, networkId, name, network, isMainnet, height, confirmations },
+#define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds) \
+{ type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds },
 #include "BRCryptoConfig.h"
 //        { NULL }
     };
@@ -715,7 +725,8 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
         BRCryptoNetwork network = handlers->network->create (networkSpec->networkId,
                                                              networkSpec->name,
                                                              networkSpec->network,
-                                                             networkSpec->isMainnet);
+                                                             networkSpec->isMainnet,
+                                                             networkSpec->confirmationPeriodInSeconds);
 
         BRCryptoCurrency currency = NULL;
 

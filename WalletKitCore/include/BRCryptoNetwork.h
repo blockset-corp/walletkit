@@ -92,6 +92,9 @@ extern "C" {
     extern BRCryptoBoolean
     cryptoNetworkIsMainnet (BRCryptoNetwork network);
 
+    extern BRCryptoBlockChainType
+    cryptoNetworkGetType (BRCryptoNetwork network);
+
     /**
      * Returns the network's currency.  This is typically (always?) the currency used to pay
      * for network fees.

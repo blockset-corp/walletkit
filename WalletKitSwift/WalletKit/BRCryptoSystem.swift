@@ -835,7 +835,7 @@ public final class System {
         }
     }
 
-    static func systemExtract (_ context: BRCryptoCWMListenerContext!,
+    static func systemExtract (_ context: BRCryptoListenerContext!,
                                _ cwm: BRCryptoWalletManager!) -> (System, WalletManager)? {
         precondition (nil != context  && nil != cwm)
 
@@ -849,7 +849,7 @@ public final class System {
         }
     }
 
-    static func systemExtract (_ context: BRCryptoCWMListenerContext!,
+    static func systemExtract (_ context: BRCryptoListenerContext!,
                                _ cwm: BRCryptoWalletManager!,
                                _ wid: BRCryptoWallet!) -> (System, WalletManager, Wallet)? {
         precondition (nil != context  && nil != cwm && nil != wid)
@@ -861,7 +861,7 @@ public final class System {
         }
     }
 
-    static func systemExtract (_ context: BRCryptoCWMListenerContext!,
+    static func systemExtract (_ context: BRCryptoListenerContext!,
                                _ cwm: BRCryptoWalletManager!,
                                _ wid: BRCryptoWallet!,
                                _ tid: BRCryptoTransfer!) -> (System, WalletManager, Wallet, Transfer)? {
@@ -1082,9 +1082,9 @@ internal final class SystemCallbackCoordinator {
 
 
 extension System {
-    internal var cryptoListener: BRCryptoCWMListener {
+    internal var cryptoListener: BRCryptoListener {
         // These methods are invoked direclty on a BWM, EWM, or GWM thread.
-        return BRCryptoCWMListener (
+        return BRCryptoListener (
             context: systemContext,
 
             walletManagerEventCallback: { (context, cwm, event) in
@@ -1378,6 +1378,76 @@ extension System {
         return addresses.map { $0.lowercased() }
     }
 
+    internal static func makeTransactionBundle (_ model: BlockChainDB.Model.Transaction) -> BRCryptoClientTransactionBundle {
+        let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
+        let height    = model.blockHeight ?? 0
+        let status    = System.getTransferStatus (model.status)
+
+        var data = model.raw!
+        let bytesCount = data.count
+        return data.withUnsafeMutableBytes { (bytes: UnsafeMutableRawBufferPointer) -> Void in
+            let bytesAsUInt8 = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
+            return cryptoClientTransactionBundleCreate (status, bytesAsUInt8, bytesCount, timestamp, height)
+        }
+    }
+
+    internal static func makeTransferBundles (_ transaction: BlockChainDB.Model.Transaction, addresses:[String]) -> [BRCryptoClientTransferBundle] {
+        let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
+        let blockHeight    = transaction.blockHeight ?? 0
+        let blockConfirmations = transaction.confirmations ?? 0
+        let blockTransactionIndex = transaction.index ?? 0
+        let blockHash             = transaction.blockHash
+        let status    = System.getTransferStatus (transaction.status)
+
+        return System.mergeTransfers (transaction, with: addresses)
+            .map { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
+                let (transfer, fee) = arg
+
+                var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
+                    .map { UnsafePointer<Int8>(strdup($0)) }
+                defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
+                    .map { UnsafePointer<Int8>(strdup($0)) }
+                defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                #if false
+                cwmAnnounceGetTransferItem (cwm, sid, status,
+                                               transaction.hash,
+                                               transfer.id,
+                                               transfer.source,
+                                               transfer.target,
+                                               transfer.amount.value,
+                                               transfer.amount.currency,
+                                               fee.map { $0.value },
+                                               blockTimestamp,
+                                               blockHeight,
+                                               blockConfirmations,
+                                               blockTransactionIndex,
+                                               blockHash,
+                                               metaKeysPtr.count,
+                                               &metaKeysPtr,
+                                               &metaValsPtr)
+                #endif
+
+                return cryptoClientTransferBundleCreate (status,
+                                                         transaction.hash,
+                                                         transfer.id,
+                                                         transfer.source,
+                                                         transfer.target,
+                                                         transfer.amount.value,
+                                                         transfer.amount.currency,
+                                                         fee.map { $0.value },
+                                                         blockTimestamp,
+                                                         blockHeight,
+                                                         blockConfirmations,
+                                                         blockTransactionIndex,
+                                                         blockHash,
+                                                         metaKeysPtr.count,
+                                                         &metaKeysPtr,
+                                                         &metaValsPtr)
+        }
+    }
+
     internal var cryptoClient: BRCryptoClient {
         return BRCryptoClient (
             context: systemContext,
@@ -1393,8 +1463,8 @@ extension System {
                     (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
-                        success: { cwmAnnounceGetBlockNumberSuccess (manager.core, sid, $0.blockHeight!) },
-                        failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
+                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0) },
+                        failure: { (_) in cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
@@ -1415,25 +1485,10 @@ extension System {
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
                                                     success: {
-                                                        $0.forEach { (model: BlockChainDB.Model.Transaction) in
-                                                            let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let height    = model.blockHeight ?? 0
-                                                            let status    = System.getTransferStatus (model.status)
-
-                                                            if var data = model.raw {
-                                                                let bytesCount = data.count
-                                                                data.withUnsafeMutableBytes { (bytes: UnsafeMutableRawBufferPointer) -> Void in
-                                                                    let bytesAsUInt8 = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
-                                                                    cwmAnnounceGetTransactionsItem (cwm, sid, status,
-                                                                                                    bytesAsUInt8,
-                                                                                                    bytesCount,
-                                                                                                    timestamp,
-                                                                                                    height)
-                                                                }
-                                                            }
-                                                        }
-                                                        cwmAnnounceGetTransactionsComplete (cwm, sid, CRYPTO_TRUE) },
-                                                    failure: { (_) in cwmAnnounceGetTransactionsComplete (cwm, sid, CRYPTO_FALSE) })
+                                                        let bundles = $0.map { System.makeTransactionBundle ($0) }
+                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  bundles, bundles.count) },
+                                                    failure: { (_) in
+                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
                 }},
 
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
@@ -1454,49 +1509,11 @@ extension System {
                                                 defer { cryptoWalletManagerGive(cwm) }
                                                 res.resolve(
                                                     success: {
-                                                        $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
-                                                            let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let blockHeight    = transaction.blockHeight ?? 0
-                                                            let blockConfirmations = transaction.confirmations ?? 0
-                                                            let blockTransactionIndex = transaction.index ?? 0
-                                                            let blockHash             = transaction.blockHash
-                                                            let status    = System.getTransferStatus (transaction.status)
-
-
-                                                            System.mergeTransfers (transaction, with: addresses)
-                                                                .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
-                                                                    let (transfer, fee) = arg
-
-                                                                    var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
-                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
-                                                                    defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
-
-                                                                    var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
-                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
-                                                                    defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
-
-                                                                    cwmAnnounceGetTransferItem (cwm, sid, status,
-                                                                                                   transaction.hash,
-                                                                                                   transfer.id,
-                                                                                                   transfer.source,
-                                                                                                   transfer.target,
-                                                                                                   transfer.amount.value,
-                                                                                                   transfer.amount.currency,
-                                                                                                   fee.map { $0.value },
-                                                                                                   blockTimestamp,
-                                                                                                   blockHeight,
-                                                                                                   blockConfirmations,
-                                                                                                   blockTransactionIndex,
-                                                                                                   blockHash,
-                                                                                                   metaKeysPtr.count,
-                                                                                                   &metaKeysPtr,
-                                                                                                   &metaValsPtr)
-                                                            }
-                                                        }
-                                                        cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_TRUE) },
-                                                    failure: { (_) in cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_FALSE) })
-                }
-        },
+                                                        let bundles = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
+                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  bundles, bundles.count) },
+                                                    failure: { (_) in
+                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
+                }},
 
             funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)
@@ -1512,10 +1529,11 @@ extension System {
                     (res: Result<Void, BlockChainDB.QueryError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { (_) in cwmAnnounceSubmitTransferSuccess (cwm, sid, hash) },
+                        success: { (_) in
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE,  hash) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransferFailure (cwm, sid) })
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE, hash) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
@@ -1532,11 +1550,10 @@ extension System {
                     (res: Result<BlockChainDB.Model.TransactionFee, BlockChainDB.QueryError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { (fee: BlockChainDB.Model.TransactionFee) in
-                            cwmAnnounceEstimateTransactionFeeSuccess(cwm, sid, hash, fee.costUnits) },
+                        success: { cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_TRUE, hash, $0.costUnits) },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            cwmAnnounceEstimateTransactionFeeFailure (cwm, sid, hash) })
+                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0) })
                 }}
         )
     }
@@ -1548,6 +1565,7 @@ extension System {
 /// transations, blocks and peers into 'Generic Crypto' - where these entities are persistently
 /// stored in the file system (by BRFileSystem).
 ///
+#if false
 extension System {
 
     ///
@@ -1648,7 +1666,7 @@ extension System {
         guard migrateRequired (network: network)
             else { throw MigrateError.invalid }
 
-        switch cryptoNetworkGetCanonicalType (network.core) {
+        switch cryptoNetworkGetType (network.core) {
         case CRYPTO_NETWORK_TYPE_BTC,
              CRYPTO_NETWORK_TYPE_BCH:
             try migrateStorageAsBTC(network: network,
@@ -1758,7 +1776,7 @@ extension System {
     /// - Returns: The currency code or nil
     ///
     public func migrateRequired (network: Network) -> Bool {
-        switch cryptoNetworkGetCanonicalType (network.core) {
+        switch cryptoNetworkGetType (network.core) {
         case CRYPTO_NETWORK_TYPE_BTC,
              CRYPTO_NETWORK_TYPE_BCH:
             return true
@@ -1782,7 +1800,7 @@ extension System {
         guard migrateRequired(network: network)
             else { return nil }
 
-        switch cryptoNetworkGetCanonicalType (network.core) {
+        switch cryptoNetworkGetType (network.core) {
         case CRYPTO_NETWORK_TYPE_BTC,
              CRYPTO_NETWORK_TYPE_BCH:
             var blockHeight: UInt32 = 0
@@ -1804,6 +1822,7 @@ extension System {
         }
     }
 }
+#endif
 
 extension BRCryptoTransferEventType: CustomStringConvertible {
     public var description: String {

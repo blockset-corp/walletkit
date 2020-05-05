@@ -382,6 +382,7 @@ cryptoTransferExtractBlobAsBTC (BRCryptoTransfer transfer,
     if (NULL != blockHeight) *blockHeight = tx->blockHeight;
     if (NULL != timestamp)   *timestamp   = tx->timestamp;
 }
+#endif
 
 extern BRCryptoTransferState
 cryptoTransferStateInit (BRCryptoTransferStateType type) {
@@ -409,7 +410,6 @@ cryptoTransferStateInit (BRCryptoTransferStateType type) {
         }
     }
 }
-#endif
 
 extern BRCryptoTransferState
 cryptoTransferStateIncludedInit (uint64_t blockNumber,

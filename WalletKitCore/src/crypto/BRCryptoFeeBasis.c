@@ -23,16 +23,16 @@ cryptoFeeBasisCreate (BRCryptoAmount pricePerCostFactor,
 
     BRCryptoFeeBasis feeBasis = malloc (sizeof (struct BRCryptoFeeBasisRecord));
 
-    feeBasis->costPerPriceFactor = cryptoAmountTake (pricePerCostFactor);
+    feeBasis->pricePerCostFactor = cryptoAmountTake (pricePerCostFactor);
     feeBasis->costFactor =costFactor;
     feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
 
-        return feeBasis;
+    return feeBasis;
 }
 
 static void
 cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
-    cryptoAmountGive (feeBasis->costPerPriceFactor);
+    cryptoAmountGive (feeBasis->pricePerCostFactor);
     memset (feeBasis, 0, sizeof(*feeBasis));
     free (feeBasis);
 }
@@ -40,7 +40,7 @@ cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
 
 extern BRCryptoAmount
 cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis) {
-    return cryptoAmountTake (feeBasis->costPerPriceFactor);
+    return cryptoAmountTake (feeBasis->pricePerCostFactor);
 }
 
 extern double
@@ -53,7 +53,7 @@ cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
     int overflow, negative;
     double rem;
 
-    UInt256 feeValue = uint256Mul_Double (cryptoAmountGetValue(feeBasis->costPerPriceFactor),
+    UInt256 feeValue = uint256Mul_Double (cryptoAmountGetValue(feeBasis->pricePerCostFactor),
                                           feeBasis->costFactor,
                                           &overflow,
                                           &negative,
@@ -61,7 +61,7 @@ cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
 
     assert (!overflow); assert (!negative);
 
-    BRCryptoUnit   unit = cryptoAmountGetUnit (feeBasis->costPerPriceFactor);
+    BRCryptoUnit   unit = cryptoAmountGetUnit (feeBasis->pricePerCostFactor);
     BRCryptoAmount fee  = cryptoAmountCreate (unit, CRYPTO_FALSE, feeValue);
     cryptoUnitGive(unit);
 
@@ -72,22 +72,76 @@ extern BRCryptoBoolean
 cryptoFeeBasisIsEqual (BRCryptoFeeBasis feeBasis1,
                        BRCryptoFeeBasis feeBasis2) {
     return AS_CRYPTO_BOOLEAN (feeBasis1 == feeBasis2 ||
-                              (CRYPTO_COMPARE_EQ == cryptoAmountCompare (feeBasis1->costPerPriceFactor, feeBasis2->costPerPriceFactor) &&
+                              (CRYPTO_COMPARE_EQ == cryptoAmountCompare (feeBasis1->pricePerCostFactor, feeBasis2->pricePerCostFactor) &&
                                feeBasis1->costFactor == feeBasis2->costFactor));
 }
 
+extern BRCryptoUnit
+cryptoFeeBasisGetPricePerCostFactorUnit (BRCryptoFeeBasis feeBasis) {
+    return cryptoAmountGetUnit (feeBasis->pricePerCostFactor);
+}
+
 #ifdef REFACTOR
+
+static UInt256
+cryptoFeeBasisGetPricePerCostFactorAsUInt256 (BRCryptoFeeBasis feeBasis) {
+    return cryptoAmountGetValue (feeBasis->pricePerCostFactor);
+}
+
+
+extern BRCryptoBoolean
+cryptoFeeBasisIsIdentical (BRCryptoFeeBasis feeBasis1,
+                           BRCryptoFeeBasis feeBasis2) {
+    if (feeBasis1 == feeBasis2) return CRYPTO_TRUE;
+    if (feeBasis1->type != feeBasis2->type) return CRYPTO_FALSE;
+    if (CRYPTO_FALSE == cryptoUnitIsCompatible (feeBasis1->unit, feeBasis2->unit)) return CRYPTO_FALSE;
+
+    switch (feeBasis1->type) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            return AS_CRYPTO_BOOLEAN (feeBasis1->u.btc.feePerKB   == feeBasis2->u.btc.feePerKB &&
+                                      feeBasis1->u.btc.sizeInByte == feeBasis2->u.btc.sizeInByte);
+
+        case BLOCK_CHAIN_TYPE_ETH:
+            return AS_CRYPTO_BOOLEAN (ETHEREUM_BOOLEAN_IS_TRUE (ethFeeBasisEqual (&feeBasis1->u.eth, &feeBasis2->u.eth)));
+
+        case BLOCK_CHAIN_TYPE_GEN:
+            return AS_CRYPTO_BOOLEAN (genFeeBasisIsEqual (&feeBasis1->u.gen, &feeBasis2->u.gen));
+    }
+}
+
 static BRCryptoFeeBasis
 cryptoFeeBasisCreateInternal (BRCryptoBlockChainType type,
                               BRCryptoUnit unit) {
     BRCryptoFeeBasis feeBasis = malloc (sizeof (struct BRCryptoFeeBasisRecord));
 
-    feeBasis->type = type;
     feeBasis->unit = cryptoUnitTake (unit);
     feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
 
     return feeBasis;
 }
+
+extern BRCryptoAmount
+cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis) {
+    return cryptoAmountCreateInternal (feeBasis->unit,
+                                       CRYPTO_FALSE,
+                                       cryptoFeeBasisGetPricePerCostFactorAsUInt256 (feeBasis),
+                                       1);
+}
+
+extern double
+cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis) {
+    switch (feeBasis->type) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            return ((double) feeBasis->u.btc.sizeInByte) / 1000.0;
+
+        case BLOCK_CHAIN_TYPE_ETH:
+            return feeBasis->u.eth.u.gas.limit.amountOfGas;
+
+        case BLOCK_CHAIN_TYPE_GEN:
+            return genFeeBasisGetCostFactor (&feeBasis->u.gen);
+    }
+}
+
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
@@ -111,115 +165,6 @@ cryptoFeeBasisCreateAsGEN (BRCryptoUnit unit,
     return feeBasis;
 }
 
-static void
-cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
-    cryptoUnitGive (feeBasis->unit);
-    switch (feeBasis->type) {
-        case BLOCK_CHAIN_TYPE_BTC: break;
-        case BLOCK_CHAIN_TYPE_ETH: break;
-        case BLOCK_CHAIN_TYPE_GEN: break;
-    }
-
-    memset (feeBasis, 0, sizeof(*feeBasis));
-    free (feeBasis);
-}
-
-private_extern BRCryptoBlockChainType
-cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis) {
-    return feeBasis->type;
-}
-
-static UInt256
-cryptoFeeBasisGetPricePerCostFactorAsUInt256 (BRCryptoFeeBasis feeBasis) {
-    switch (feeBasis->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            return uint256Create(feeBasis->u.btc.feePerKB);
-
-        case BLOCK_CHAIN_TYPE_ETH:
-            return feeBasis->u.eth.u.gas.price.etherPerGas.valueInWEI;
-
-        case BLOCK_CHAIN_TYPE_GEN:
-            return genFeeBasisGetPricePerCostFactor (&feeBasis->u.gen);
-    }
-}
-
-extern BRCryptoAmount
-cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis) {
-    return cryptoAmountCreateInternal (feeBasis->unit,
-                                       CRYPTO_FALSE,
-                                       cryptoFeeBasisGetPricePerCostFactorAsUInt256 (feeBasis),
-                                       1);
-}
-
-extern BRCryptoUnit
-cryptoFeeBasisGetPricePerCostFactorUnit (BRCryptoFeeBasis feeBasis) {
-    return cryptoUnitTake (feeBasis->unit);
-}
-
-extern double
-cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis) {
-    switch (feeBasis->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            return ((double) feeBasis->u.btc.sizeInByte) / 1000.0;
-
-        case BLOCK_CHAIN_TYPE_ETH:
-            return feeBasis->u.eth.u.gas.limit.amountOfGas;
-
-        case BLOCK_CHAIN_TYPE_GEN:
-            return genFeeBasisGetCostFactor (&feeBasis->u.gen);
-    }
-}
-
-extern BRCryptoAmount
-cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
-    switch (feeBasis->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            double fee = (((double) feeBasis->u.btc.feePerKB) * feeBasis->u.btc.sizeInByte) / 1000.0;
-            return cryptoAmountCreateInternal (feeBasis->unit,
-                                               CRYPTO_FALSE,
-                                               uint256Create ((uint64_t) lround (fee)),
-                                               1);
-        }
-            
-        case BLOCK_CHAIN_TYPE_ETH:
-        case BLOCK_CHAIN_TYPE_GEN: {
-            UInt256 pricePerCostFactor = cryptoFeeBasisGetPricePerCostFactorAsUInt256 (feeBasis);
-            double  costFactor = cryptoFeeBasisGetCostFactor (feeBasis);
-
-            int overflow = 0, negative = 0;
-            double rem;
-
-            UInt256 value = uint256Mul_Double (pricePerCostFactor, costFactor, &overflow, &negative, &rem);
-
-            return (overflow
-                    ? NULL
-                    : cryptoAmountCreateInternal (feeBasis->unit,
-                                                  CRYPTO_FALSE,
-                                                  value,
-                                                  1));
-        }
-    }
-}
-
-extern BRCryptoBoolean
-cryptoFeeBasisIsIdentical (BRCryptoFeeBasis feeBasis1,
-                           BRCryptoFeeBasis feeBasis2) {
-    if (feeBasis1 == feeBasis2) return CRYPTO_TRUE;
-    if (feeBasis1->type != feeBasis2->type) return CRYPTO_FALSE;
-    if (CRYPTO_FALSE == cryptoUnitIsCompatible (feeBasis1->unit, feeBasis2->unit)) return CRYPTO_FALSE;
-
-    switch (feeBasis1->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            return AS_CRYPTO_BOOLEAN (feeBasis1->u.btc.feePerKB   == feeBasis2->u.btc.feePerKB &&
-                                      feeBasis1->u.btc.sizeInByte == feeBasis2->u.btc.sizeInByte);
-
-        case BLOCK_CHAIN_TYPE_ETH:
-            return AS_CRYPTO_BOOLEAN (ETHEREUM_BOOLEAN_IS_TRUE (ethFeeBasisEqual (&feeBasis1->u.eth, &feeBasis2->u.eth)));
-
-        case BLOCK_CHAIN_TYPE_GEN:
-            return AS_CRYPTO_BOOLEAN (genFeeBasisIsEqual (&feeBasis1->u.gen, &feeBasis2->u.gen));
-    }
-}
 
 private_extern uint64_t // SAT-per-KB
 cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis) {

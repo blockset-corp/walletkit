@@ -25,7 +25,10 @@ let package = Package(
             dependencies: [
                 "WalletKitCore"
             ],
-            path: "WalletKit"
+            path: "WalletKit",
+            exclude: [
+                "BRCryptoPayment.swift"
+            ]
         ),
 
         .testTarget(

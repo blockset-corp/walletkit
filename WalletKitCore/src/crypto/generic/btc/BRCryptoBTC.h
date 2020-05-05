@@ -24,8 +24,7 @@ extern BRCryptoAddressHandlers cryptoAddressHandlersBTC;
 
 extern BRCryptoAddress
 cryptoAddressCreateAsBTC (BRCryptoBlockChainType type,
-                          BRAddress addr,
-                          BRCryptoBoolean isBitcoinAddr);
+                          BRAddress addr);
 
 extern BRCryptoAddress
 cryptoAddressCreateFromStringAsBTC (BRAddressParams params, const char *btcAddress);
@@ -67,7 +66,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
                            OwnershipKept BRTransaction *tid,
-                           BRCryptoBoolean isBTC);
+                           BRCryptoBlockChainType type);
 
 extern BRCryptoHash
 cryptoTransferGetHashBTC (BRCryptoTransfer transferBase);
@@ -203,6 +202,10 @@ cryptoWalletManagerFindWalletAsGEN (BRCryptoWalletManager cwm,
 }
 #endif
 
+// MARK: - Events
+
+extern const BREventType *bwmEventTypes[];
+extern const unsigned int bwmEventTypesCount;
 
 // MARK: - Support
 
@@ -216,6 +219,7 @@ cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
 
 private_extern BRCryptoHash
 cryptoHashCreateAsBTC (UInt256 btc);
+
 
 #ifdef __cplusplus
 }

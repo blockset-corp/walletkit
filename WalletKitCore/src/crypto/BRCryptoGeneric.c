@@ -26,5 +26,8 @@ cryptoGenericHandlersLookup (BRCryptoBlockChainType type) {
     for (size_t index = 0; index < NUMBER_OF_NETWORK_TYPES; index++)
         if (type == handlers[index].type)
             return &handlers[index];
+
+    // Never here
+    assert (0);
     return NULL;
 }

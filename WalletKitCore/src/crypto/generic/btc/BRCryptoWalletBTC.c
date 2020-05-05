@@ -38,6 +38,12 @@ static void
 cryptoWalletReleaseBTC (BRCryptoWallet wallet) {
 }
 
+private_extern BRWallet *
+cryptoWalletAsBTC (BRCryptoWallet walletBase) {
+    BRCryptoWalletBTC wallet = cryptoWalletCoerce(walletBase);
+    return wallet->wid;
+}
+
 private_extern BRCryptoTransfer
 cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
                                BRTransaction *btc) {
@@ -68,7 +74,7 @@ cryptoWalletGetAddressBTC (BRCryptoWallet walletBase,
 #ifdef REFACTOR
     return cryptoAddressCreateAsBTC (btcAddress, AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC(wallet->u.btc.bwm)));
 #endif
-    return cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, btcAddress, CRYPTO_TRUE);
+    return cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, btcAddress);
 
 }
 

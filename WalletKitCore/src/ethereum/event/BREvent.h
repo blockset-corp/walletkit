@@ -110,7 +110,7 @@ typedef struct {
 extern BREventHandler
 eventHandlerCreate (const char *name,
                     const BREventType *types[],
-                    unsigned int typesCount,
+                    size_t typesCount,
                     pthread_mutex_t *lock);
 
 /**

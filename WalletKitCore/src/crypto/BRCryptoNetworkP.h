@@ -51,7 +51,8 @@ typedef BRCryptoNetwork
 (*BRCyptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
                                 const char *name,               // Bitcoin
                                 const char *network,            // testnet
-                                bool isMainnet);                // false
+                                bool isMainnet,                 // false
+                                uint32_t confirmationPeriodInSeconds); // 10 * 60
 
 typedef void
 (*BRCryptoNetworkReleaseHandler) (BRCryptoNetwork network);
@@ -99,12 +100,14 @@ struct BRCryptoNetworkRecord {
     char *name;
     char *desc;
     bool isMainnet;
+
     BRCryptoBlockChainHeight height;
 
     // Base and associated currencies.
     BRCryptoCurrency currency;
     BRArrayOf(BRCryptoCurrencyAssociation) associations;
 
+    uint32_t confirmationPeriodInSeconds;
     uint32_t confirmationsUntilFinal;
 
     // Address Schemes
@@ -125,13 +128,17 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *uids,
                            const char *name,
                            const char *desc,        // "mainnet", "testnet", "rinkeby"
-                           bool isMainnet);
+                           bool isMainnet,
+                           uint32_t confirmationPeriodInSeconds);
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetType (BRCryptoNetwork network);
 
 private_extern const char *
 cryptoNetworkGetDesc (BRCryptoNetwork network);
+
+private_extern uint32_t
+cryptoNetworkGetConfirmationPeriodInSeconds (BRCryptoNetwork network);
 
 private_extern void
 cryptoNetworkAnnounce (BRCryptoNetwork network);

@@ -225,11 +225,13 @@ public final class WalletManager: Equatable, CustomStringConvertible {
                                                 isNetworkReachable ? CRYPTO_TRUE : CRYPTO_FALSE)
     }
 
+    #if false
     public func createSweeper (wallet: Wallet,
                                key: Key,
                                completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         WalletSweeper.create(wallet: wallet, key: key, bdb: query, completion: completion)
     }
+    #endif
 
     internal init (core: BRCryptoWalletManager,
                    system: System,
@@ -261,7 +263,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
                                 addressScheme: AddressScheme,
                                 currencies: Set<Currency>,
                                 storagePath: String,
-                                listener: BRCryptoCWMListener,
+                                listener: BRCryptoListener,
                                 client: BRCryptoClient) {
         guard let core = cryptoWalletManagerCreate (listener,
                                                     client,
@@ -344,7 +346,7 @@ extension WalletManager {
 ///
 /// The WalletSweeper
 ///
-
+#if false
 public enum WalletSweeperError: Error {
     case unsupportedCurrency
     case invalidKey
@@ -387,7 +389,7 @@ public final class WalletSweeper {
             return
         }
 
-        switch cryptoNetworkGetCanonicalType (wallet.manager.network.core) {
+        switch cryptoNetworkGetType (wallet.manager.network.core) {
         case CRYPTO_NETWORK_TYPE_BTC:
             // handle as BTC, creating the underlying BRCryptoWalletSweeper and initializing it
             // using the BlockchainDB
@@ -487,6 +489,7 @@ public final class WalletSweeper {
         cryptoWalletSweeperRelease(core)
     }
 }
+#endif
 
 public enum WalletManagerDisconnectReason: Equatable {
     case requested

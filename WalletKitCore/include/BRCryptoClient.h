@@ -34,6 +34,13 @@ typedef void
                                          OwnershipGiven BRCryptoClientCallbackState callbackState);
 
 extern void
+cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
+                        OwnershipGiven BRCryptoClientCallbackState callbackState,
+                        BRCryptoBoolean success,
+                        uint64_t blockNumber);
+
+#if 0
+extern void
 cwmAnnounceGetBlockNumberSuccess (OwnershipKept BRCryptoWalletManager cwm,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
                                   uint64_t blockNumber);
@@ -41,6 +48,7 @@ cwmAnnounceGetBlockNumberSuccess (OwnershipKept BRCryptoWalletManager cwm,
 extern void
 cwmAnnounceGetBlockNumberFailure (OwnershipKept BRCryptoWalletManager cwm,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState);
+#endif
 
 // MARK: - Get Transactions
 
@@ -54,6 +62,23 @@ typedef void
                                           uint64_t begBlockNumber,
                                           uint64_t endBlockNumber);
 
+typedef struct BRCryptoClientTransactionBundleRecord *BRCryptoClientTransactionBundle;
+
+extern BRCryptoClientTransactionBundle
+cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
+                                     OwnershipKept uint8_t *transaction,
+                                     size_t transactionLength,
+                                     uint64_t timestamp,
+                                     uint64_t blockHeight);
+
+extern void
+cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
+                         OwnershipGiven BRCryptoClientCallbackState callbackState,
+                         BRCryptoBoolean success,
+                         BRCryptoClientTransactionBundle *bundles,
+                         size_t bundlesCount);
+
+#if 0
 extern void
 cwmAnnounceGetTransactionsItem (OwnershipKept BRCryptoWalletManager cwm,
                                 OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -67,6 +92,7 @@ extern void
 cwmAnnounceGetTransactionsComplete (OwnershipKept BRCryptoWalletManager cwm,
                                     OwnershipGiven BRCryptoClientCallbackState callbackState,
                                     BRCryptoBoolean success);
+#endif
 
 // MARK: - Get Transfers
 
@@ -80,6 +106,34 @@ typedef void
                                        uint64_t begBlockNumber,
                                        uint64_t endBlockNumber);
 
+typedef struct BRCryptoClientTransferBundleRecord *BRCryptoClientTransferBundle;
+
+extern BRCryptoClientTransferBundle
+cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
+                                  OwnershipKept const char *hash,
+                                  OwnershipKept const char *uids,
+                                  OwnershipKept const char *from,
+                                  OwnershipKept const char *to,
+                                  OwnershipKept const char *amount,
+                                  OwnershipKept const char *currency,
+                                  OwnershipKept const char *fee,
+                                  uint64_t blockTimestamp,
+                                  uint64_t blockNumber,
+                                  uint64_t blockConfirmations,
+                                  uint64_t blockTransactionIndex,
+                                  OwnershipKept const char *blockHash,
+                                  size_t attributesCount,
+                                  OwnershipKept const char **attributeKeys,
+                                  OwnershipKept const char **attributeVals);
+
+extern void
+cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,
+                      OwnershipGiven BRCryptoClientCallbackState callbackState,
+                      BRCryptoBoolean success,
+                      BRCryptoClientTransferBundle *bundles,
+                      size_t bundlesCount);
+
+#if 0
 extern void
 cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             BRCryptoClientCallbackState callbackState,
@@ -104,7 +158,7 @@ extern void
 cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
                                  BRCryptoBoolean success);
-
+#endif
 // MARK: - Submit Transaction
 
 typedef void
@@ -116,6 +170,13 @@ typedef void
                                             OwnershipKept const char *hashAsHex);
 
 extern void
+cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
+                           OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           BRCryptoBoolean success,
+                           OwnershipKept const char *hash);
+
+#if 0
+extern void
 cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
                                   OwnershipKept const char *hash);
@@ -123,6 +184,7 @@ cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
 extern void
 cwmAnnounceSubmitTransferFailure (OwnershipKept BRCryptoWalletManager cwm,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState);
+#endif
 
 // MARK: - Estimate Transaction Fee
 
@@ -135,6 +197,14 @@ typedef void
                                                  OwnershipKept const char *hashAsHex);
 
 extern void
+cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
+OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                   BRCryptoBoolean success,
+                                   OwnershipKept const char *hash,
+                                   uint64_t costUnits);
+
+#if 0
+extern void
 cwmAnnounceEstimateTransactionFeeSuccess (OwnershipKept BRCryptoWalletManager cwm,
                                           OwnershipGiven BRCryptoClientCallbackState callbackState,
                                           OwnershipKept const char *hash,
@@ -144,6 +214,7 @@ extern void
 cwmAnnounceEstimateTransactionFeeFailure (OwnershipKept BRCryptoWalletManager cwm,
                                           OwnershipGiven BRCryptoClientCallbackState callbackState,
                                           OwnershipKept const char *hash);
+#endif
 
 typedef struct {
     BRCryptoClientContext context;

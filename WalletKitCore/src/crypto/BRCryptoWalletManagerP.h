@@ -30,8 +30,20 @@ extern "C" {
 
 // MARK: - WalletManager Handlers
 
+typedef BRCryptoWalletManager
+(*BERWalletManagerCreateHandler) (BRCryptoListener listener,
+                                  BRCryptoClient client,
+                                  BRCryptoAccount account,
+                                  BRCryptoNetwork network,
+                                  BRCryptoSyncMode mode,
+                                  BRCryptoAddressScheme scheme,
+                                  const char *path);
+
 typedef void
 (*BRWalletManagerReleaseHandler) (BRCryptoWalletManager manager);
+
+typedef void
+(*BRWalletManagerInitializeHandler) (BRCryptoWalletManager manager);
 
 typedef BRFileService
 (*BRWalletManagerCreateFileService) (BRCryptoWalletManager manager,
@@ -40,6 +52,10 @@ typedef BRFileService
                                      const char *network,
                                      BRFileServiceContext context,
                                      BRFileServiceErrorHandler handler);
+
+typedef const BREventType **
+(*BRWalletManagerGetEventTypesHandler) (BRCryptoWalletManager manager,
+                                        size_t *eventTypesCount);
 
 typedef BRArrayOf(BRCryptoWallet)
 (*BRWalletManagerCreateWalletsHandler) (BRCryptoWalletManager manager,
@@ -80,9 +96,12 @@ typedef BRCryptoClientP2PManager
 (*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
 typedef struct {
+    BERWalletManagerCreateHandler create;
     BRWalletManagerReleaseHandler release;
+    BRWalletManagerInitializeHandler initialize;
     BRWalletManagerCreateFileService createFileService;
-    BRWalletManagerCreateWalletsHandler createWallets;
+    BRWalletManagerGetEventTypesHandler getEventTypes;
+//    BRWalletManagerCreateWalletsHandler createWallets;
     BRWalletManagerSignTransactionWithSeedHandler signTransactionWithSeed;
     BRWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
     BRWalletManagerEstimateLimitHandler estimateLimit;
@@ -97,6 +116,7 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoBlockChainType type;
     const BRCryptoWalletManagerHandlers *handlers;
     BRCryptoRef ref;
+    size_t sizeInBytes;
 
     pthread_mutex_t lock;
 
@@ -127,7 +147,15 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoWalletManagerState state;
 };
 
- /// MARK: - WalletManager
+extern BRCryptoWalletManager
+cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
+                                 BRCryptoBlockChainType type,
+                                 BRCryptoListener listener,
+                                 BRCryptoClient client,
+                                 BRCryptoAccount account,
+                                 BRCryptoNetwork network,
+                                 BRCryptoAddressScheme scheme,
+                                 const char *path);
 
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
@@ -199,6 +227,12 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRCryptoTransfer transfer,
                                         BRGenericTransferState newGenericState);
 #endif
+
+private_extern void
+cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
+                                          BRCryptoWallet wallet,
+                                          BRCryptoTransfer transfer,
+                                          BRCryptoTransferEvent event);
 
 #ifdef __cplusplus
 }

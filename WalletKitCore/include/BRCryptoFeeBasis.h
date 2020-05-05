@@ -28,6 +28,9 @@ cryptoFeeBasisCreate (BRCryptoAmount pricePerCostFactor,
 extern BRCryptoAmount
 cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis);
 
+extern BRCryptoUnit
+cryptoFeeBasisGetPricePerCostFactorUnit (BRCryptoFeeBasis feeBasis);
+
 extern double
 cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis);
 

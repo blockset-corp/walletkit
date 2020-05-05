@@ -87,7 +87,7 @@ public final class Wallet: Equatable {
     /// - Parameter address: the address to check
     ///
     public func hasAddress (_ address: Address) -> Bool {
-        return CRYPTO_TRUE == cryptoWalletHasAddress (core, address.core);
+        return cryptoWalletHasAddress (core, address.core);
     }
 
     ///
@@ -245,6 +245,7 @@ public final class Wallet: Equatable {
         }
     }
 
+    #if false
     internal func createTransfer(sweeper: WalletSweeper,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
         return cryptoWalletCreateTransferForWalletSweep(self.core, sweeper.core, estimatedFeeBasis.core)
@@ -253,7 +254,9 @@ public final class Wallet: Equatable {
                              take: false)
         }
     }
+    #endif
 
+    #if false
     internal func createTransfer(request: PaymentProtocolRequest,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
         return cryptoWalletCreateTransferForPaymentProtocolRequest(self.core, request.core, estimatedFeeBasis.core)
@@ -262,7 +265,7 @@ public final class Wallet: Equatable {
                              take: false)
         }
     }
-
+    #endif
     /// MARK: Estimate Limit
 
     ///
@@ -535,7 +538,8 @@ public final class Wallet: Equatable {
                                              amount.core,
                                              fee.core)
     }
-    
+
+    #if false
     internal func estimateFee (sweeper: WalletSweeper,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
@@ -545,7 +549,9 @@ public final class Wallet: Equatable {
                                                            sweeper.core,
                                                            fee.core)
     }
+    #endif
     
+    #if false
     internal func estimateFee (request: PaymentProtocolRequest,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
@@ -555,7 +561,7 @@ public final class Wallet: Equatable {
                                                                       request.core,
                                                                       fee.core)
     }
-
+    #endif
     public enum FeeEstimationError: Error {
         case ServiceUnavailable
         case ServiceError

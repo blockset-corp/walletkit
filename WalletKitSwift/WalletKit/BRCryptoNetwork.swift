@@ -237,7 +237,7 @@ public final class Network: CustomStringConvertible {
         self.uids = asUTF8String (cryptoNetworkGetUids (core))
         self.name = asUTF8String (cryptoNetworkGetName (core))
         self.isMainnet  = (CRYPTO_TRUE == cryptoNetworkIsMainnet (core))
-        self.type       = NetworkType (core: cryptoNetworkGetCanonicalType(core))
+        self.type       = NetworkType (core: cryptoNetworkGetType(core))
         self.currency   = Currency (core: cryptoNetworkGetCurrency(core), take: false)
     }
 
@@ -282,6 +282,7 @@ extension Network: Hashable {
     }
 }
 
+#if false
 extension Network {
     internal var ethNetworkName: String? {
         if case .eth = type {
@@ -293,6 +294,8 @@ extension Network {
         }
     }
 }
+#endif
+
 ///
 /// Try as we might, certain functionality outside of WalletKit will require knowing the
 /// canonical network type as: BTC, BCH, ETH, etc.  The NetworkType provides this information.
@@ -311,7 +314,7 @@ public enum NetworkType: CustomStringConvertible {
     case hbar
 //    case xlm
 
-    internal init (core: BRCryptoNetworkCanonicalType) {
+    internal init (core: BRCryptoBlockChainType) {
         switch core {
         case CRYPTO_NETWORK_TYPE_BTC:  self = .btc
         case CRYPTO_NETWORK_TYPE_BCH:  self = .bch
@@ -323,7 +326,7 @@ public enum NetworkType: CustomStringConvertible {
         }
     }
 
-    internal var core: BRCryptoNetworkCanonicalType {
+    internal var core: BRCryptoBlockChainType {
         switch self {
         case .btc: return CRYPTO_NETWORK_TYPE_BTC
         case .bch: return CRYPTO_NETWORK_TYPE_BCH
@@ -335,7 +338,7 @@ public enum NetworkType: CustomStringConvertible {
     }
 
     public var description: String {
-        return "CRYPTO_NETWORK_TYPE_" + asUTF8String (cryptoNetworkCanonicalTypeGetCurrencyCode (core)).uppercased()
+        return "CRYPTO_NETWORK_TYPE_" + asUTF8String (cryptoBlockChainTypeGetCurrencyCode (core)).uppercased()
     }
 }
 

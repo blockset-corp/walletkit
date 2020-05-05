@@ -19,35 +19,10 @@ extern "C" {
 #endif
 
 struct BRCryptoFeeBasisRecord {
-    BRCryptoAmount costPerPriceFactor;
+    BRCryptoAmount pricePerCostFactor;
     double costFactor;
     BRCryptoRef ref;
 };
-
-#ifdef REFACTOR
- private_extern uint64_t
- cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
-
- private_extern BREthereumFeeBasis
- cryptoFeeBasisAsETH (BRCryptoFeeBasis feeBasis);
-
- private_extern BRGenericFeeBasis
- cryptoFeeBasisAsGEN (BRCryptoFeeBasis feeBasis);
-
- private_extern BRCryptoFeeBasis
- cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                            uint32_t feePerKB,
-                            uint32_t sizeInByte);
-
- private_extern BRCryptoFeeBasis
- cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
-                            BREthereumGas gas,
-                            BREthereumGasPrice gasPrice);
-
- private_extern BRCryptoFeeBasis
- cryptoFeeBasisCreateAsGEN (BRCryptoUnit unit,
-                            OwnershipGiven BRGenericFeeBasis bid);
-#endif
 
 #ifdef __cplusplus
 }

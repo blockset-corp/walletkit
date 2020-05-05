@@ -32,9 +32,9 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
                            OwnershipKept BRTransaction *tid,
-                           BRCryptoBoolean isBTC) {
+                           BRCryptoBlockChainType type) {
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
-                                                                CRYPTO_NETWORK_TYPE_BTC,
+                                                                type,
                                                                 unit,
                                                                 unitForFee);
     BRCryptoTransferBTC transfer = cryptoTransferCoerce(transferBase);
@@ -70,9 +70,8 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (inputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->sourceAddress = cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC,
-                                                                            BRAddressFill (addressParams, address),
-                                                                            isBTC);
+                    transferBase->sourceAddress = cryptoAddressCreateAsBTC (type,
+                                                                            BRAddressFill (addressParams, address));
                     break;
                 }
             }
@@ -100,9 +99,8 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (outputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->targetAddress = cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC,
-                                                                            BRAddressFill (addressParams, address),
-                                                                            isBTC);
+                    transferBase->targetAddress = cryptoAddressCreateAsBTC (type,
+                                                                            BRAddressFill (addressParams, address));
                     break;
                 }
             }

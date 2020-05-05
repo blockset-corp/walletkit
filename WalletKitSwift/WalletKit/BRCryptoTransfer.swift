@@ -257,7 +257,7 @@ public class TransferFeeBasis: Equatable {
     }
 
     public static func == (lhs: TransferFeeBasis, rhs: TransferFeeBasis) -> Bool {
-        return CRYPTO_TRUE == cryptoFeeBasisIsIdentical (lhs.core, rhs.core)
+        return CRYPTO_TRUE == cryptoFeeBasisIsEqual (lhs.core, rhs.core)
     }
 }
 

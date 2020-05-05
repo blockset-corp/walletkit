@@ -13,6 +13,14 @@
 
 #include "BRCryptoBase.h"
 
+#if !defined (MAX)
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+#if !defined (MIN)
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 /// Private-ish
 ///
 /// This is an implementation detail

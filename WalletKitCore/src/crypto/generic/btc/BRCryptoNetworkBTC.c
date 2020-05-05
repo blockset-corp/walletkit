@@ -30,13 +30,15 @@ cryptoNetworkCreateAsBTC (const char *uids,
                           const char *name,
                           const char *desc,
                           bool isMainnet,
+                          uint32_t confirmationPeriodInSeconds,
                           const BRChainParams *params) {
     BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
                                                              CRYPTO_NETWORK_TYPE_BTC,
                                                              uids,
                                                              name,
                                                              desc,
-                                                             isMainnet);
+                                                             isMainnet,
+                                                             confirmationPeriodInSeconds);
     BRCryptoNetworkBTC network = cryptoNetworkCoerce(networkBase);
 
     network->params = params;
@@ -48,11 +50,12 @@ static BRCryptoNetwork
 cyptoNetworkCreateBTC (const char *uids,
                        const char *name,
                        const char *desc,
-                       bool isMainnet) {
+                       bool isMainnet,
+                       uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (uids, name, desc, true, BRMainNetParams);
+        return cryptoNetworkCreateAsBTC (uids, name, desc, true, confirmationPeriodInSeconds, BRMainNetParams);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (uids, name, desc, false, BRTestNetParams);
+        return cryptoNetworkCreateAsBTC (uids, name, desc, false, confirmationPeriodInSeconds, BRTestNetParams);
     else {
         assert (false); return NULL;
     }

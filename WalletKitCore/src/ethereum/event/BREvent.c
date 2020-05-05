@@ -74,7 +74,7 @@ struct BREventHandlerRecord {
 extern BREventHandler
 eventHandlerCreate (const char *name,
                     const BREventType *types[],
-                    unsigned int typesCount,
+                    size_t typesCount,
                     pthread_mutex_t *lockOnDispatch) {
     BREventHandler handler = calloc (1, sizeof (struct BREventHandlerRecord));
 

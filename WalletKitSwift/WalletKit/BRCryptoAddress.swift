@@ -44,7 +44,7 @@ public final class Address: Equatable, CustomStringConvertible {
     /// - Returns: An address or nil if `string` is invalide for `network`
     ///
     public static func create (string: String, network: Network) -> Address? {
-        return cryptoAddressCreateFromString (network.core, string)
+        return cryptoNetworkCreateAddress (network.core, string)
             .map { Address (core: $0, take: false) }
     }
 

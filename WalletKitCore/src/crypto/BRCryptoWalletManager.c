@@ -29,16 +29,23 @@
 
 #include "BRCryptoGenericP.h"
 #include "support/BRFileService.h"
+#include "ethereum/event/BREventAlarm.h"
+
+// We'll do a period QRY 'tick-tock' CWM_CONFIRMATION_PERIOD_FACTOR times in
+// each network's ConfirmationPeriod.  Thus, for example, the Bitcoin confirmation period is
+// targeted for every 10 minutes; we'll check every 2.5 minutes.
+#define CWM_CONFIRMATION_PERIOD_FACTOR  (4)
 
 uint64_t BLOCK_HEIGHT_UNBOUND_VALUE = UINT64_MAX;
+
+static void
+cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
+                                       BREventTimeout *event);
 
 static void
 cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
                                             BRFileService fs,
                                             BRFileServiceError error);
-
-static void
-cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm);
 
 #ifdef REFACTOR
 static void
@@ -103,18 +110,24 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
-static BRCryptoWalletManager
-cryptoWalletManagerCreateInternal (BRCryptoListener listener,
-                                   BRCryptoClient client,
-                                   BRCryptoAccount account,
-                                   BRCryptoBlockChainType type,
-                                   BRCryptoNetwork network,
-                                   BRCryptoAddressScheme scheme,
-                                   char *path) {
-    BRCryptoWalletManager cwm = calloc (1, sizeof (struct BRCryptoWalletManagerRecord));
+extern BRCryptoWalletManager
+cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
+                                 BRCryptoBlockChainType type,
+                                 BRCryptoListener listener,
+                                 BRCryptoClient client,
+                                 BRCryptoAccount account,
+                                 BRCryptoNetwork network,
+                                 BRCryptoAddressScheme scheme,
+                                 const char *path) {
+    assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
+    assert (type == cryptoNetworkGetType(network));
+
+    BRCryptoWalletManager cwm = calloc (1, sizeInBytes);
+    if (NULL == cwm) return NULL;
 
     cwm->type = type;
     cwm->handlers = cryptoGenericHandlersLookup(type)->manager;
+    network->sizeInBytes = sizeInBytes;
 
     cwm->listener = listener;
     cwm->client  = client;
@@ -127,6 +140,8 @@ cryptoWalletManagerCreateInternal (BRCryptoListener listener,
     // File Service
     const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cwm->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
+
+    // TODO: Replace `createFileService` with `getFileServiceSpecifications`
     cwm->fileService = cwm->handlers->createFileService (cwm,
                                                          cwm->path,
                                                          currencyName,
@@ -134,7 +149,27 @@ cryptoWalletManagerCreateInternal (BRCryptoListener listener,
                                                          cwm,
                                                          cryptoWalletManagerFileServiceErrorHandler);
 
-    // Event Handler
+    // Create the alarm clock, but don't start it.
+    alarmClockCreateIfNecessary(0);
+
+    // Create the event handler name (useful for debugging).
+    char handlerName[5 + strlen(currencyName) + 1];
+    sprintf(handlerName, "Core %s", currencyName);
+
+    // Get the event handler types.
+    size_t eventTypesCount;
+    const BREventType **eventTypes = cwm->handlers->getEventTypes (cwm, &eventTypesCount);
+
+    // Create the event handler
+    cwm->handler = eventHandlerCreate (handlerName,
+                                       eventTypes,
+                                       eventTypesCount,
+                                       &cwm->lock);
+
+    eventHandlerSetTimeoutDispatcher (cwm->handler,
+                                      (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
+                                      (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
+                                      (void*) cwm);
 
     cwm->p2pManager = cwm->handlers->createP2PManager (cwm);
     cwm->qryManager = cryptoClientQRYManagerCreate(client, cwm);
@@ -159,61 +194,6 @@ cryptoWalletManagerCreateInternal (BRCryptoListener listener,
     return cwm;
 }
 
-#define _peer_log printf
-static void
-cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
-                                            BRFileService fs,
-                                            BRFileServiceError error) {
-    switch (error.type) {
-        case FILE_SERVICE_IMPL:
-            // This actually a FATAL - an unresolvable coding error.
-            _peer_log ("BWM: FileService Error: IMPL: %s", error.u.impl.reason);
-            break;
-        case FILE_SERVICE_UNIX:
-            _peer_log ("BWM: FileService Error: UNIX: %s", strerror(error.u.unx.error));
-            break;
-        case FILE_SERVICE_ENTITY:
-            // This is likely a coding error too.
-            _peer_log ("BWM: FileService Error: ENTITY (%s): %s",
-                     error.u.entity.type,
-                     error.u.entity.reason);
-            break;
-        case FILE_SERVICE_SDB:
-            _peer_log ("BWM: FileService Error: SDB: (%d): %s",
-                       error.u.sdb.code,
-                       error.u.sdb.reason);
-            break;
-    }
-    _peer_log ("BWM: FileService Error: FORCED SYNC%s", "");
-
-    // BRWalletManager bwm = (BRWalletManager) context;
-    // TODO(fix): What do we actually want to happen here?
-    // if (NULL != bwm->peerManager)
-    //     BRPeerManagerRescan (bwm->peerManager);
-}
-#undef _peer_log
-
-
-extern void
-cryptoWalletManagerWipe (BRCryptoNetwork network,
-                         const char *path) {
-#ifdef REFACTOR
-    switch (cryptoNetworkGetType(network)) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerWipe (cryptoNetworkAsBTC(network), path);
-            break;
-
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmWipe (cryptoNetworkAsETH(network), path);
-            break;
-
-        case BLOCK_CHAIN_TYPE_GEN:
-            genManagerWipe (cryptoNetworkAsGEN (network), path);
-            break;
-    }
-#endif
-}
-
 extern BRCryptoWalletManager
 cryptoWalletManagerCreate (BRCryptoListener listener,
                            BRCryptoClient client,
@@ -222,21 +202,32 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                            BRCryptoSyncMode mode,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
-
     // Only create a wallet manager for accounts that are initializedon network.
     if (CRYPTO_FALSE == cryptoNetworkIsAccountInitialized(network, account))
         return NULL;
 
-    BRCryptoWalletManager manager  = cryptoWalletManagerCreateInternal (listener,
-                                                                        client,
-                                                                        account,
-                                                                        cryptoNetworkGetBlockChainType (network),
-                                                                        network,
-                                                                        scheme,
-                                                                        path);
+    // Lookup the handler for the network's type.
+    BRCryptoBlockChainType type = cryptoNetworkGetType(network);
+    const BRCryptoWalletManagerHandlers *handlers = cryptoGenericHandlersLookup(type)->manager;
 
+    // Create the manager
+    BRCryptoWalletManager manager = handlers->create (listener,
+                                                      client,
+                                                      account,
+                                                      network,
+                                                      mode,
+                                                      scheme,
+                                                      path);
     if (NULL == manager) return NULL;
 
+    // Initialize the manager.  This will restore persistent state - such as for transactions.
+    // It will create the primary wallet and any other associated wallets (that are knowable at
+    // this time).  No events will be announced.
+    //
+    // This will fully configure the P2P and QRY managers.
+    manager->handlers->initialize (manager);
+
+#if 0
     // Primary wallet currency and unit.
     BRCryptoCurrency currency = cryptoNetworkGetCurrency (manager->network);
     BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault (manager->network, currency);
@@ -246,12 +237,15 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     // Create all wallets for 'network'
     manager->wallets = manager->handlers->createWallets (manager, NULL, &manager->wallet);
     // Announce wallets
+#endif
 
     cryptoWalletManagerSetMode (manager, mode);
 
     // Start
     cryptoWalletManagerStart (manager);
 
+    return manager;
+    
 #ifdef REFACTOR
     switch (cwm->type) {
         case BLOCK_CHAIN_TYPE_BTC: {
@@ -266,7 +260,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                                              cwmPath,
                                              cryptoNetworkGetHeight(network),
                                              cryptoNetworkGetConfirmationsUntilFinal (network));
-            if (NULL == cwm->u.btc) { error = 1; break ; }
+            if (NULL == cwm->u.btc) { error = true; break ; }
 
             // ... get the CWM primary wallet in place...
             cwm->wallet = cryptoWalletCreateAsBTC (unit, unit, cwm->u.btc, BRWalletManagerGetWallet (cwm->u.btc));
@@ -292,7 +286,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                                     cwmPath,
                                     cryptoNetworkGetHeight(network),
                                     cryptoNetworkGetConfirmationsUntilFinal (network));
-            if (NULL == cwm->u.eth) { error = 1; break; }
+            if (NULL == cwm->u.eth) { error = true; break; }
 
             // ... get the CWM primary wallet in place...
             cwm->wallet = cryptoWalletCreateAsETH (unit, unit, cwm->u.eth, ewmGetWallet(cwm->u.eth));
@@ -334,7 +328,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                                            cryptoNetworkGetHeight(network));
             if (NULL == cwm->u.gen) {
                 pthread_mutex_unlock (&cwm->lock);
-                error = 1;
+                error = true;
                 break; }
 
             // ... and create the primary wallet
@@ -392,7 +386,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
             break;
         }
     }
-#endif
+
     if (error) {
         cryptoWalletManagerGive (manager);
         manager = NULL;
@@ -401,10 +395,45 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     cryptoUnitGive(unit);
     cryptoCurrencyGive(currency);
 
-    free (cwmPath);
-
     return manager;
+
+    #endif
 }
+
+#define _peer_log printf
+static void
+cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
+                                            BRFileService fs,
+                                            BRFileServiceError error) {
+    switch (error.type) {
+        case FILE_SERVICE_IMPL:
+            // This actually a FATAL - an unresolvable coding error.
+            _peer_log ("BWM: FileService Error: IMPL: %s", error.u.impl.reason);
+            break;
+        case FILE_SERVICE_UNIX:
+            _peer_log ("BWM: FileService Error: UNIX: %s", strerror(error.u.unx.error));
+            break;
+        case FILE_SERVICE_ENTITY:
+            // This is likely a coding error too.
+            _peer_log ("BWM: FileService Error: ENTITY (%s): %s",
+                     error.u.entity.type,
+                     error.u.entity.reason);
+            break;
+        case FILE_SERVICE_SDB:
+            _peer_log ("BWM: FileService Error: SDB: (%d): %s",
+                       error.u.sdb.code,
+                       error.u.sdb.reason);
+            break;
+    }
+    _peer_log ("BWM: FileService Error: FORCED SYNC%s", "");
+
+    // BRWalletManager bwm = (BRWalletManager) context;
+    // TODO(fix): What do we actually want to happen here?
+    // if (NULL != bwm->peerManager)
+    //     BRPeerManagerRescan (bwm->peerManager);
+}
+#undef _peer_log
+
 
 static void
 cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
@@ -713,71 +742,26 @@ cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
     if (NULL != managerWallet) cryptoWalletGive (managerWallet);
 }
 
-static void
-cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm) {
-    BRCryptoNetwork  network    = cryptoNetworkTake (cwm->network);
-    BRCryptoCurrency currency   = cryptoNetworkGetCurrency(network);
-    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (network, currency);
-
-    size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
-    for (size_t index = 0; index < currencyCount; index++) {
-        BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
-        if (c != currency) {
-            BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
-
-#ifdef REFACTOR
-            switch (cwm->type) {
-                case BLOCK_CHAIN_TYPE_BTC:
-                    break;
-                case BLOCK_CHAIN_TYPE_ETH: {
-                    const char *address = cryptoCurrencyGetIssuer(c);
-                    if (NULL != address) {
-                        BREthereumGas      ethGasLimit = ethGasCreate(TOKEN_BRD_DEFAULT_GAS_LIMIT);
-                        BREthereumGasPrice ethGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
-
-                        // This has the perhaps surprising side-effect of updating the properties
-                        // of an existing token.  That is, `address` is used to locate a token and
-                        // if found it is updated.  Either created or updated the token will be
-                        // persistently saved.
-                        //
-                        // Argubably EWM should create a wallet for the token.  But, it doesn't.
-                        // So we'll call `ewmGetWalletHoldingToken()` to get a wallet.
-
-                        BREthereumToken token = ewmCreateToken (cwm->u.eth,
-                                                                address,
-                                                                cryptoCurrencyGetCode (c),
-                                                                cryptoCurrencyGetName(c),
-                                                                cryptoCurrencyGetUids(c), // description
-                                                                cryptoUnitGetBaseDecimalOffset(unitDefault),
-                                                                ethGasLimit,
-                                                                ethGasPrice);
-                        assert (NULL != token); (void) &token;
-                    }
-                    break;
-                }
-                case BLOCK_CHAIN_TYPE_GEN:
-                    break;
-            }
-#endif
-            cryptoUnitGive(unitDefault);
-        }
-        cryptoCurrencyGive(c);
-    }
-    cryptoUnitGive(unitForFee);
-    cryptoCurrencyGive(currency);
-    cryptoNetworkGive(network);
-}
-
 // MARK: - Start/Stop
 
 extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
+    eventHandlerStop (cwm->handler);
+
+    // P2P Manager
+    // QRY Manager
+
 }
 
 extern void
 cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
     // Stop the CWM 'Event Handler'
+    eventHandlerStop (cwm->handler);
+
+    // P2P Manager
+    // QRY Manager
+
     #ifdef REFACTOR
     // Stop the specific cwm type, if it exists.
     switch (cwm->type) {
@@ -802,120 +786,97 @@ cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
 extern void
 cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
                             BRCryptoPeer peer) {
+    switch (cwm->state.type) {
+        case CRYPTO_WALLET_MANAGER_STATE_CREATED:
+        case CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED: {
+            BRCryptoWalletManagerState oldState = cwm->state;
+            BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
+
+            cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
+            cryptoClientQRYManagerConnect (cwm->qryManager);
+
+            cryptoWalletManagerSetState (cwm, newState);
+
+            (void) oldState;
 #ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            // Assume `peer` is NULL; UINT128_ZERO will restore BRPeerManager peer discovery
-            UInt128  address = UINT128_ZERO;
-            uint16_t port    = 0;
-
-            if (NULL != peer) {
-                BRCryptoData16 addrAsInt = cryptoPeerGetAddrAsInt(peer);
-                memcpy (address.u8, addrAsInt.data, sizeof (addrAsInt.data));
-                port = cryptoPeerGetPort (peer);
-            }
-
-            // Calling `SetFixedPeer` will 100% disconnect.  We could avoid calling SetFixedPeer
-            // if we kept a reference to `peer` and checked if it differs.
-            BRWalletManagerSetFixedPeer (cwm->u.btc, address, port);
-            BRWalletManagerConnect (cwm->u.btc);
+            cwm->listener.walletManagerEventCallback (cwm->listener.context,
+                                                      cryptoWalletManagerTake (cwm),
+                                                      (BRCryptoWalletManagerEvent) {
+                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
+                { .state = { oldState, newState }}
+            });
+#endif
             break;
         }
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmConnect (cwm->u.eth);
+        case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
+        case CRYPTO_WALLET_MANAGER_STATE_SYNCING:
             break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            pthread_mutex_lock (&cwm->lock);
-            if (!genManagerIsConnected (cwm->u.gen)) {
-                BRCryptoWalletManagerState oldState = cwm->state;
-                BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
-                // assert oldState != CRYPTO_WALLET_MANAGER_STATE_CONNECTED
-                genManagerConnect(cwm->u.gen);
-                cryptoWalletManagerSetState (cwm, newState);
-                pthread_mutex_unlock (&cwm->lock);
-
-                cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                          cryptoWalletManagerTake (cwm),
-                                                          (BRCryptoWalletManagerEvent) {
-                    CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                    { .state = { oldState, newState }}
-                });
-            }
-            else pthread_mutex_unlock (&cwm->lock);
+        case CRYPTO_WALLET_MANAGER_STATE_DELETED:
             break;
     }
-#endif
 }
 
 extern void
 cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
+    switch (cwm->state.type) {
+        case CRYPTO_WALLET_MANAGER_STATE_CREATED:
+        case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
+        case CRYPTO_WALLET_MANAGER_STATE_SYNCING: {
+            BRCryptoWalletManagerState oldState = cwm->state;
+            BRCryptoWalletManagerState newState = cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested());
+
+            cryptoClientP2PManagerDisconnect (cwm->p2pManager);
+            cryptoClientQRYManagerDisconnect (cwm->qryManager);
+
+            cryptoWalletManagerSetState (cwm, newState);
+
+            (void) oldState;
 #ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerDisconnect (cwm->u.btc);
+            cwm->listener.walletManagerEventCallback (cwm->listener.context,
+                                                      cryptoWalletManagerTake (cwm),
+                                                      (BRCryptoWalletManagerEvent) {
+                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
+                { .state = { oldState, newState }}
+            });
+#endif
             break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmDisconnect (cwm->u.eth);
+        }
+
+        case CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED:
             break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            pthread_mutex_lock (&cwm->lock);
-            if (genManagerIsConnected (cwm->u.gen)) {
-                BRCryptoWalletManagerState oldState = cwm->state;
-                BRCryptoWalletManagerState newState = cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested());
 
-                // assert oldState != CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED
-                genManagerDisconnect (cwm->u.gen);
-                cryptoWalletManagerSetState (cwm, newState);
-                pthread_mutex_unlock (&cwm->lock);
-
-                cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                          cryptoWalletManagerTake (cwm),
-                                                          (BRCryptoWalletManagerEvent) {
-                    CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                    { .state = { oldState, newState }}
-                });
-            }
-            else pthread_mutex_unlock (&cwm->lock);
+        case CRYPTO_WALLET_MANAGER_STATE_DELETED:
             break;
     }
-#endif
 }
 
 extern void
 cryptoWalletManagerSync (BRCryptoWalletManager cwm) {
-    #ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerScan (cwm->u.btc);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmSync (cwm->u.eth, ETHEREUM_BOOLEAN_FALSE);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            genManagerSync(cwm->u.gen);
-            break;
-    }
-#endif
+    cryptoWalletManagerSyncToDepth (cwm, CRYPTO_SYNC_DEPTH_FROM_CREATION);
 }
 
 extern void
 cryptoWalletManagerSyncToDepth (BRCryptoWalletManager cwm,
                                 BRCryptoSyncDepth depth) {
-#ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerScanToDepth (cwm->u.btc, depth);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmSyncToDepth (cwm->u.eth, ETHEREUM_BOOLEAN_FALSE, depth);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            genManagerSyncToDepth(cwm->u.gen, depth);
-            break;
-    }
-#endif
+    if (CRYPTO_WALLET_MANAGER_STATE_CONNECTED == cwm->state.type)
+        cryptoClientSync (cwm->canSync, depth, cryptoNetworkGetHeight(cwm->network));
 }
+
+// MARK: - Wipe
+
+
+extern void
+cryptoWalletManagerWipe (BRCryptoNetwork network,
+                         const char *path) {
+
+    const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cryptoNetworkGetType(network));
+    const char *networkName  = cryptoNetworkGetDesc(network);
+
+    fileServiceWipe (path, currencyName, networkName);
+}
+
+// MARK: - Gen Stuff
 
 #ifdef REFACTOR
 static BRCryptoTransferState
@@ -2135,4 +2096,27 @@ cryptoSyncModeString (BRCryptoSyncMode m) {
         case CRYPTO_SYNC_MODE_P2P_ONLY:
         return "CRYPTO_SYNC_MODE_P2P_ONLY";
     }
+}
+
+// MARK: - Periodic Dispatcher
+
+static void
+cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
+                                       BREventTimeout *event) {
+    BRCryptoWalletManager cwm = (BRCryptoWalletManager) event->context;
+    cryptoClientSyncPeriodic (cwm->canSync);
+}
+
+// MARK: - Generate Events
+
+private_extern void
+cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
+                                          BRCryptoWallet wallet,
+                                          BRCryptoTransfer transfer,
+                                          BRCryptoTransferEvent event) {
+    cwm->listener.transferEventCallback (cwm->listener.context,
+                                         cryptoWalletManagerTake (cwm),
+                                         cryptoWalletTake (wallet),
+                                         cryptoTransferTake (transfer),
+                                         event);
 }
