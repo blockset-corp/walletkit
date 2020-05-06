@@ -403,7 +403,7 @@ static BRRippleTransaction transactionDeserialize(const char * trans_bytes, cons
     memset(bytes,0x00, sizeof(bytes));
     hex2bin(tx_blob, bytes);
 
-    BRRippleTransaction transaction = rippleTransactionCreateFromBytes(bytes, (int)sizeof(bytes));
+    BRRippleTransaction transaction = rippleTransactionCreateFromBytes(bytes, (uint32_t)sizeof(bytes));
     return transaction;
 }
 
@@ -850,6 +850,7 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
     int other_type = 0;
     int xrp_currency = 0;
     int other_currency = 0;
+    int destination_tag_count= 0;
     for(int i = 0; i <= num_elements - 2; i += 2) {
         size_t input_size = strlen(tx_list[i+1]) / 2;
         size_t output_size;
@@ -862,18 +863,34 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
         assert(transaction);
         
         // Check if this is a transaction
+        BRRippleDestinationTag tag = rippleTransactionGetDestinationTag(transaction);
+        if (tag > 0) {
+            destination_tag_count++;
+        }
         BRRippleTransactionType txType = rippleTransactionGetType(transaction);
+        BRRippleAmount amount = rippleTransactionGetAmountRaw(transaction, RIPPLE_AMOUNT_TYPE_AMOUNT);
+        assert(amount.currencyType != -1); // -1 means we could not find an amount and just created a stub
+        if (amount.currencyType == 0) {
+            xrp_currency++;
+        } else {
+            other_currency++;
+        }
+        BRRippleUnitDrops fee = rippleTransactionGetFee(transaction);
+        assert(fee > 0);
+        BRRippleFeeBasis feeBasis = rippleTransactionGetFeeBasis(transaction);
+        assert(feeBasis.costFactor == 1);
+        assert(feeBasis.pricePerCostFactor == fee);
+        BRRippleAddress source = rippleTransactionGetSource(transaction);
+        assert(source);
+        rippleAddressFree(source);
+        // Get the sequence number
+        BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
+        assert(0 != sequence);
+
         if (txType == RIPPLE_TX_TYPE_PAYMENT) {
-            // Get the sequence number
-            BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
-            assert(0 != sequence);
-            // Record the currency type
-            BRRippleAmount amount = rippleTransactionGetAmountRaw(transaction, RIPPLE_AMOUNT_TYPE_AMOUNT);
-            if (amount.currencyType == 0) {
-                xrp_currency++;
-            } else {
-                other_currency++;
-            }
+            BRRippleAddress target = rippleTransactionGetTarget(transaction);
+            assert(target);
+            rippleAddressFree(target);
             payments++;
         } else {
             other_type++;
@@ -881,8 +898,11 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
         
         rippleTransactionFree(transaction);
     }
-    printf("list_name: %s, tx count: %d, payments: %d, other: %d, XRP: %d, other currency: %d\n",
-           tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency);
+    if (strcmp(tx_list_name, "200 new transactions") == 0) {
+        assert(destination_tag_count == 21);
+    }
+    printf("list_name: %s, tx count: %d, payments: %d, other: %d, XRP: %d, other currency: %d, dest_tag_cnt: %d\n",
+           tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency, destination_tag_count);
 }
 
 static void

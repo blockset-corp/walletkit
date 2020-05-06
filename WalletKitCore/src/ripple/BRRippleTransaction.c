@@ -599,6 +599,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
                 } else if (10 == field->fieldCode) {
                     transaction->payment.deliverMin = field->data.amount;
                 }
+                break;
             case 7: // Blob data
                 if (3 == field->fieldCode) { // public key
                     transaction->publicKey = field->data.publicKey;
@@ -612,6 +613,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
                 } else if (3 == field->fieldCode) { // target address
                     transaction->payment.targetAddress = field->data.address;
                 }
+                break;
             default:
                 break;
         }
@@ -619,7 +621,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
 }
 
 extern BRRippleTransaction
-rippleTransactionCreateFromBytes(uint8_t *bytes, int length)
+rippleTransactionCreateFromBytes(uint8_t *bytes, uint32_t length)
 {
     BRArrayOf(BRRippleField) fieldArray;
     array_new(fieldArray, 15);
@@ -650,6 +652,10 @@ rippleTransactionCreateFromBytes(uint8_t *bytes, int length)
     transaction->signedBytes->buffer = calloc(1, length);
     memcpy(transaction->signedBytes->buffer, bytes, length);
     transaction->signedBytes->size = length;
+
+    // Set the feeBasis values when creating a tx from raw bytes
+    transaction->feeBasis.costFactor = 1;
+    transaction->feeBasis.pricePerCostFactor = transaction->fee;
 
     return transaction;
 }
