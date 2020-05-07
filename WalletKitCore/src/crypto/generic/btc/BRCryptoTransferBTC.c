@@ -188,6 +188,18 @@ cryptoTransferGetHashBTC (BRCryptoTransfer transferBase) {
             : cryptoHashCreateAsBTC (hash));
 }
 
+extern uint8_t *
+cryptoTransferSerializeForSubmissionBTC (BRCryptoTransfer transferBase,
+                                         size_t *serializationCount) {
+    BRCryptoTransferBTC transfer    = cryptoTransferCoerce (transferBase);
+    BRTransaction      *transaction = transfer->tid;
+
+    *serializationCount = BRTransactionSerialize (transaction, NULL, 0);
+    uint8_t *serialization = malloc (*serializationCount);
+
+    BRTransactionSerialize(transfer->tid, serialization, serializationCount);
+    return serialization;
+}
 
 private_extern BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transferBase) {
@@ -233,5 +245,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferGetAmountAsSignBTC,
     cryptoTransferGetDirectionBTC,
     cryptoTransferGetHashBTC,
+    cryptoTransferSerializeForSubmissionBTC,
     cryptoTransferIsEqualBTC
 };

@@ -295,6 +295,10 @@ extern "C" {
     cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
                                   size_t index);
 
+    extern uint8_t *
+    cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                          size_t *serializationCount);
+
     extern BRCryptoBoolean
     cryptoTransferEqual (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2);
 

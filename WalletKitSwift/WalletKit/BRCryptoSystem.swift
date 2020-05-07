@@ -1385,7 +1385,7 @@ extension System {
 
         var data = model.raw!
         let bytesCount = data.count
-        return data.withUnsafeMutableBytes { (bytes: UnsafeMutableRawBufferPointer) -> Void in
+        return data.withUnsafeMutableBytes { (bytes: UnsafeMutableRawBufferPointer) -> BRCryptoClientTransactionBundle in
             let bytesAsUInt8 = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
             return cryptoClientTransactionBundleCreate (status, bytesAsUInt8, bytesCount, timestamp, height)
         }
@@ -1467,7 +1467,7 @@ extension System {
                         failure: { (_) in cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
                 }},
 
-            funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
+            funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
@@ -1485,13 +1485,14 @@ extension System {
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
                                                     success: {
-                                                        let bundles = $0.map { System.makeTransactionBundle ($0) }
-                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  bundles, bundles.count) },
+                                                        var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
+                                                            //.map { UnsafeMutablePointer<BRCryptoClientTransactionBundle?> ($0) }
+                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                                                     failure: { (_) in
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
                 }},
 
-            funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
+            funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
@@ -1509,8 +1510,8 @@ extension System {
                                                 defer { cryptoWalletManagerGive(cwm) }
                                                 res.resolve(
                                                     success: {
-                                                        let bundles = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
-                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  bundles, bundles.count) },
+                                                        var bundles: [BRCryptoClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
+                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                                                     failure: { (_) in
                                                         cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},

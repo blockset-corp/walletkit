@@ -127,17 +127,25 @@ cryptoClientP2PManagerAsSend (BRCryptoClientP2PManager p2p) {
 
 // MARK: Client QRY (QueRY)
 
+typedef enum {
+    CRYPTO_CLIENT_QRY_GET_TRANSFERS,
+    CRYPTO_CLIENT_QRY_GET_TRANSACTIONS,
+} BRCryptoClientQRYByType;
+
 struct BRCryptoClientQRYManagerRecord {
     BRCryptoClient client;
     BRCryptoWalletManager manager;
 
     size_t requestId;
+
+    BRCryptoClientQRYByType byType;
 };
 
 
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,
-                              BRCryptoWalletManager manager);
+                              BRCryptoWalletManager manager,
+                              BRCryptoClientQRYByType byType);
 
 extern void
 cryptoClientQRYManagerRelease (BRCryptoClientQRYManager qry);

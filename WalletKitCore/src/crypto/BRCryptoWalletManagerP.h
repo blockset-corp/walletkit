@@ -155,7 +155,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoAccount account,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
-                                 const char *path);
+                                 const char *path,
+                                 BRCryptoClientQRYByType byType);
 
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);

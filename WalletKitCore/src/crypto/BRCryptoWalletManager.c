@@ -118,7 +118,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoAccount account,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
-                                 const char *path) {
+                                 const char *path,
+                                 BRCryptoClientQRYByType byType) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
     assert (type == cryptoNetworkGetType(network));
 
@@ -172,7 +173,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                       (void*) cwm);
 
     cwm->p2pManager = cwm->handlers->createP2PManager (cwm);
-    cwm->qryManager = cryptoClientQRYManagerCreate(client, cwm);
+    cwm->qryManager = cryptoClientQRYManagerCreate(client, cwm, byType);
 
     cwm->syncMode = CRYPTO_SYNC_MODE_API_ONLY;
     cryptoWalletManagerSetMode (cwm, cwm->syncMode);

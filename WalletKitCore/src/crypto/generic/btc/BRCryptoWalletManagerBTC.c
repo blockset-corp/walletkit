@@ -65,7 +65,8 @@ cryptoWalletManagerCreateHandlerBTC (BRCryptoListener listener,
                                                                          account,
                                                                          network,
                                                                          scheme,
-                                                                         path);
+                                                                         path,
+                                                                         CRYPTO_CLIENT_QRY_GET_TRANSACTIONS);
     BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase);
 
     // BTC Stuff

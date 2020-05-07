@@ -282,6 +282,13 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
     return feeBasisConfirmed;
 }
 
+extern uint8_t *
+cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                      size_t *serializationCount) {
+    assert (NULL != serializationCount);
+    return transfer->handlers->serializeForSubmission (transfer, serializationCount);
+}
+
 extern BRCryptoBoolean
 cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
     return AS_CRYPTO_BOOLEAN (t1 == t2 ||
