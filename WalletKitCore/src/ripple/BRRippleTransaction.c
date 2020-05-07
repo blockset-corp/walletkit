@@ -652,6 +652,7 @@ rippleTransactionCreateFromBytes(uint8_t *bytes, uint32_t length)
     transaction->signedBytes->buffer = calloc(1, length);
     memcpy(transaction->signedBytes->buffer, bytes, length);
     transaction->signedBytes->size = length;
+    createTransactionHash(transaction->signedBytes);
 
     // Set the feeBasis values when creating a tx from raw bytes
     transaction->feeBasis.costFactor = 1;

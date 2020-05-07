@@ -844,6 +844,7 @@ static void comparebuffers(const char *input, uint8_t * output, size_t outputSiz
         assert(buffer[i] == output[i]);
     }
 }
+
 static void runDeserializeTests(const char* tx_list_name, const char* tx_list[], int num_elements)
 {
     int payments = 0;
@@ -852,16 +853,25 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
     int other_currency = 0;
     int destination_tag_count= 0;
     for(int i = 0; i <= num_elements - 2; i += 2) {
+        const char * inputHashString = tx_list[i];
+        size_t input_hash_size = strlen(inputHashString) / 2;
+        uint8_t inputHash[input_hash_size];
+        hex2bin(inputHashString, inputHash);
+
         size_t input_size = strlen(tx_list[i+1]) / 2;
         size_t output_size;
         BRRippleTransaction transaction = transactionDeserialize(tx_list[i+1], NULL);
+        // Compare the hash
+        BRRippleTransactionHash txHash = rippleTransactionGetHash(transaction);
+        assert(memcmp(txHash.bytes, inputHash, 32) == 0);
+
         uint8_t * signed_bytes = rippleTransactionSerialize(transaction, &output_size);
         assert(input_size == output_size);
         comparebuffers(tx_list[i+1], signed_bytes, output_size);
         free(signed_bytes);
 
         assert(transaction);
-        
+
         // Check if this is a transaction
         BRRippleDestinationTag tag = rippleTransactionGetDestinationTag(transaction);
         if (tag > 0) {
