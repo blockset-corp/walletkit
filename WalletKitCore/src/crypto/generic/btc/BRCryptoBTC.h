@@ -57,15 +57,30 @@ cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee);
 
 // MARK: - Transfer
 
-typedef struct BRCryptoTransferBTCRecord *BRCryptoTransferBTC;
+typedef struct BRCryptoTransferBTCRecord {
+    struct BRCryptoTransferRecord base;
+
+    bool isDeleted;
+    bool isResolved;
+    BRTransaction *refedTransaction;
+    BRTransaction *ownedTransaction;        // Release
+
+    uint64_t fee;
+    uint64_t send;
+    uint64_t recv;
+} *BRCryptoTransferBTC;
 
 extern BRCryptoTransferHandlers cryptoTransferHandlersBTC;
+
+extern BRCryptoTransferBTC
+cryptoTransferCoerceBTC (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
-                           OwnershipKept BRTransaction *tid,
+                           OwnershipGiven BRTransaction *ownedTransaction,
+                           OwnershipKept  BRTransaction *refedTransaction,
                            BRCryptoBlockChainType type);
 
 private_extern BRTransaction *

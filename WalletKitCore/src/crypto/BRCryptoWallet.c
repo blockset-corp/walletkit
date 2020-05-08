@@ -41,8 +41,8 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
     wallet->unitForFee = cryptoUnitTake (unitForFee);
 
     BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
-    assert (cryptoAmountHasCurrency (balanceMinimum, currency));
-    assert (cryptoAmountHasCurrency (balanceMaximum, currency));
+    assert (NULL == balanceMinimum || cryptoAmountHasCurrency (balanceMinimum, currency));
+    assert (NULL == balanceMaximum || cryptoAmountHasCurrency (balanceMaximum, currency));
     cryptoCurrencyGive (currency);
 
     wallet->balanceMinimum = (NULL == balanceMaximum ? NULL : cryptoAmountTake (balanceMinimum));

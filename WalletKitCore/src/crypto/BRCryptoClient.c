@@ -25,7 +25,7 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
                         uint64_t blockNumber) {
-
+    return;
 }
 
 // MARK: - Announce Transaction
@@ -65,11 +65,8 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
     switch (success) {
         case CRYPTO_TRUE: {
             for (size_t index = 0; index < bundlesCount; index++) {
-                BRArrayOf(BRCryptoTransfer) transfers = cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
+                cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
                 cryptoClientTransactionBundleRelease (bundles[index]);
-                for (size_t ti = 0; ti < array_count(transfers); ti++)
-                    cryptoWalletManagerHandleRecoveredTransfer (manager, transfers[ti]);
-                array_free (transfers);
             }
             break;
         }
@@ -121,7 +118,7 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
     switch (success) {
         case CRYPTO_TRUE: {
             for (size_t index = 0; index < bundlesCount; index++) {
-                cryptoWalletManagerHandleRecoveredTransfer (manager, cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]));
+                cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
                 cryptoClientTransferBundleRelease (bundles[index]);
             }
             break;
@@ -188,7 +185,7 @@ extern void
 cryptoClientSyncPeriodic (BRCryptoClientSync sync) {
     switch (sync.type) {
         case CRYPTO_CLIENT_P2P_MANAGER_TYPE: break;
-        case CRYPTO_CLIENT_QRY_MANAGER_TYPE: cryptoClientQRYManagerTickTock (sync.u.qryManager);
+        case CRYPTO_CLIENT_QRY_MANAGER_TYPE: cryptoClientQRYManagerTickTock (sync.u.qryManager); break;
     }
 }
 
@@ -292,19 +289,21 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
     BRCryptoClientCallbackState qryState = NULL;
 
     qry->client.funcGetBlockNumber (qry->client.context,
-                                    qry->manager,
+                                    cryptoWalletManagerTake (qry->manager),
                                     qryState);
 
-    const char **addresses = NULL;
-    size_t addressesCount = 0;
+    const char *addresses[] = {
+        "35qSFN1ktQBsrbK4bFUJfvFtzgrHDTSY4M"
+    };
+    size_t addressesCount = sizeof (addresses) / sizeof (char *);
 
-    uint64_t begBlockNumber = 0;
-    uint64_t endBlockNumber = BLOCK_HEIGHT_UNBOUND;
+    uint64_t begBlockNumber = 629535;
+    uint64_t endBlockNumber = 629543; // BLOCK_HEIGHT_UNBOUND;
 
     switch (qry->byType) {
         case CRYPTO_CLIENT_QRY_GET_TRANSFERS:
             qry->client.funcGetTransfers (qry->client.context,
-                                          qry->manager,
+                                          cryptoWalletManagerTake (qry->manager),
                                           qryState,
                                           addresses,
                                           addressesCount,
@@ -314,7 +313,7 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
 
         case CRYPTO_CLIENT_QRY_GET_TRANSACTIONS:
             qry->client.funcGetTransactions (qry->client.context,
-                                             qry->manager,
+                                             cryptoWalletManagerTake (qry->manager),
                                              qryState,
                                              addresses,
                                              addressesCount,

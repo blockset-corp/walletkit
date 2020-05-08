@@ -53,6 +53,7 @@ DEFINE_MODES            ("bitcoin-testnet", CRYPTO_SYNC_MODE_API_ONLY,          
 #undef NETWORK_NAME
 
 // MARK: - BCH
+#if 0
 
 #define NETWORK_NAME    "Bitcoin Cash"
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_BCH,  "bitcoincash-mainnet", NETWORK_NAME, "mainnet", true, 617640, 6, 10 * 60)
@@ -139,6 +140,8 @@ DEFINE_CURRENCY ("hedera-testnet",     "hedera-testnet:__native__",   NETWORK_NA
 DEFINE_ADDRESS_SCHEMES  ("hedera-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("hedera-testnet", CRYPTO_SYNC_MODE_API_ONLY)
 #undef NETWORK_NAME
+
+#endif
 
 // MARK: XLM Mainnet
 

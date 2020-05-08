@@ -110,6 +110,8 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
+#include <ctype.h>
+
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoBlockChainType type,
@@ -138,6 +140,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     cwm->addressScheme = scheme;
     cwm->path = strdup (path);
 
+    cwm->byType = byType;
+    
     // File Service
     const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cwm->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
@@ -156,6 +160,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     // Create the event handler name (useful for debugging).
     char handlerName[5 + strlen(currencyName) + 1];
     sprintf(handlerName, "Core %s", currencyName);
+    for (char *s = &handlerName[5]; *s; s++) *s = toupper (*s);
 
     // Get the event handler types.
     size_t eventTypesCount;
@@ -171,12 +176,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                       (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
                                       (void*) cwm);
-
-    cwm->p2pManager = cwm->handlers->createP2PManager (cwm);
-    cwm->qryManager = cryptoClientQRYManagerCreate(client, cwm, byType);
-
-    cwm->syncMode = CRYPTO_SYNC_MODE_API_ONLY;
-    cryptoWalletManagerSetMode (cwm, cwm->syncMode);
 
     cwm->wallet = NULL;
     array_new (cwm->wallets, 1);
@@ -228,17 +227,9 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     // This will fully configure the P2P and QRY managers.
     manager->handlers->initialize (manager);
 
-#if 0
-    // Primary wallet currency and unit.
-    BRCryptoCurrency currency = cryptoNetworkGetCurrency (manager->network);
-    BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault (manager->network, currency);
-
-    // TODO: Tranactions, Block, Peers
-    
-    // Create all wallets for 'network'
-    manager->wallets = manager->handlers->createWallets (manager, NULL, &manager->wallet);
-    // Announce wallets
-#endif
+    // Setup the P2P and QRY Managers
+    manager->p2pManager = manager->handlers->createP2PManager (manager);
+    manager->qryManager = cryptoClientQRYManagerCreate (client, manager, manager->byType);
 
     cryptoWalletManagerSetMode (manager, mode);
 
@@ -738,7 +729,7 @@ cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
 extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
-    eventHandlerStop (cwm->handler);
+    eventHandlerStart (cwm->handler);
 
     // P2P Manager
     // QRY Manager
@@ -783,8 +774,10 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
             BRCryptoWalletManagerState oldState = cwm->state;
             BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
-            cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
             cryptoClientQRYManagerConnect (cwm->qryManager);
+            if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
+                CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
+                cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
 
             cryptoWalletManagerSetState (cwm, newState);
 
@@ -2100,36 +2093,17 @@ cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
 
 // MARK: - Transaction/Transfer Bundle
 
-private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
+private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
                                                           OwnershipKept BRCryptoClientTransactionBundle bundle) {
-    return cwm->handlers->recoverTransfersFromTransactionBundle (cwm, bundle);
-}
-
-private_extern OwnershipGiven BRCryptoTransfer
-cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
-                                                      OwnershipKept BRCryptoClientTransferBundle bundle) {
-    return cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
+    cwm->handlers->recoverTransfersFromTransactionBundle (cwm, bundle);
 }
 
 private_extern void
-cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
-                                            OwnershipGiven BRCryptoTransfer transfer) {
-    private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
-    cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
-                                                              OwnershipKept BRCryptoClientTransactionBundle bundle);
-
-    private_extern OwnershipGiven BRCryptoTransfer
-    cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
-                                                          OwnershipKept BRCryptoClientTransferBundle bundle);
-
-    private_extern void
-    cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
-                                                OwnershipGiven BRCryptoTransfer transfer);
-
-
+cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransferBundle bundle) {
+    cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
 }
-
 
 // MARK: - Generate Events
 

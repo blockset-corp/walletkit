@@ -1375,7 +1375,7 @@ extension System {
             addresses[index] = asUTF8String (cAddresses.pointee!)
             cAddresses = cAddresses.advanced(by: 1)
         }
-        return addresses.map { $0.lowercased() }
+        return addresses // addresses.map { $0.lowercased() }
     }
 
     internal static func makeTransactionBundle (_ model: BlockChainDB.Model.Transaction) -> BRCryptoClientTransactionBundle {

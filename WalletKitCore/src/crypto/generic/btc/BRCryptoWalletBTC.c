@@ -180,7 +180,7 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet walletBase,
 
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, CRYPTO_TRUE));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif
@@ -218,7 +218,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
 
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, CRYPTO_TRUE));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif

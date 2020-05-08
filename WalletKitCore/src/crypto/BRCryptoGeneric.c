@@ -18,7 +18,43 @@ static BRCryptoGenericHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersBTC,
         &cryptoWalletHandlersBTC,
         &cryptoWalletManagerHandlersBTC
-    }
+    },
+
+    {
+         CRYPTO_NETWORK_TYPE_BCH,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    },
+
+    {
+         CRYPTO_NETWORK_TYPE_ETH,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    },
+
+    {
+         CRYPTO_NETWORK_TYPE_XRP,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    },
+
+    {
+         CRYPTO_NETWORK_TYPE_HBAR,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    },
 };
 
 const BRCryptoGenericHandlers *

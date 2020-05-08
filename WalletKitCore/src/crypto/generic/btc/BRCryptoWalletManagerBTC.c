@@ -82,8 +82,6 @@ cryptoWalletManagerReleaseHandlerBTC (BRCryptoWalletManager manager) {
 
 static void
 cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
-    BRCryptoBoolean isBTC = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == manager->type);
-
     // Get the btcMasterPublicKey
     BRMasterPubKey btcMPK = cryptoAccountAsBTC(manager->account);
 
@@ -131,8 +129,9 @@ cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
         BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (unitAsDefault,
                                                                unitAsBase,
                                                                btcWallet,
+                                                               BRTransactionCopy(btcTransactions[index]),
                                                                btcTransactions[index],
-                                                               isBTC);
+                                                               manager->type);
         cryptoWalletAddTransfer(manager->wallet, transfer);
     }
 
@@ -314,14 +313,69 @@ cryptoWalletManagerEstimateFeeBasisHandlerBTC (BRCryptoWalletManager cwm,
     return;
 }
 
-static OwnershipGiven BRArrayOf(BRCryptoTransfer)
-cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC (BRCryptoWalletManager cwm,
+static void
+cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC (BRCryptoWalletManager manager,
                                                                     OwnershipKept BRCryptoClientTransactionBundle bundle) {
-    assert (0);
-    return NULL;
+    BRTransaction *btcTransaction = BRTransactionParse (bundle->serialization, bundle->serializationCount);
+
+    bool error = TRANSFER_STATUS_ERRORED != bundle->status;
+    bool needRegistration = (!error && NULL != btcTransaction && BRTransactionIsSigned (btcTransaction));
+    bool needFree = true;
+
+    BRWallet *btcWallet = cryptoWalletAsBTC(manager->wallet);
+
+    //     if (needRegistration) {
+    //         if (0 == pthread_mutex_lock (&manager->lock)) {
+    //             // confirm completion is for in-progress sync
+    //             needRegistration &= (rid == BRClientSyncManagerScanStateGetRequestId (&manager->scanState) && manager->isConnected);
+    //             pthread_mutex_unlock (&manager->lock);
+    //         } else {
+    //             assert (0);
+    //         }
+    //     }
+
+    if (needRegistration) {
+        if (NULL == BRWalletTransactionForHash (btcWallet, btcTransaction->txHash)) {
+            // BRWalletRegisterTransaction doesn't reliably report if the txn was added to the wallet.
+            BRWalletRegisterTransaction (btcWallet, btcTransaction);
+            if (btcTransaction == BRWalletTransactionForHash (btcWallet, btcTransaction->txHash)) {
+                // If our transaction made it into the wallet, do not deallocate it
+                needFree = false;
+            }
+        }
+    }
+
+    // Check if the wallet knows about transaction.  This is an important check.  If the wallet
+    // does not know about the tranaction then the subsequent BRWalletUpdateTransactions will
+    // free the transaction (with BRTransactionFree()).
+    if (BRWalletContainsTransaction (btcWallet, btcTransaction)) {
+        if (error) {
+            // On an error, remove the transaction.  This will cascade through BRWallet callbacks
+            // to produce `balanceUpdated` and `txDeleted`.  The later will be handled by removing
+            // a BRTransactionWithState from the BRWalletManager.
+            BRWalletRemoveTransaction (btcWallet, btcTransaction->txHash);
+        }
+        else {
+            // If the transaction has transitioned from 'included' back to 'submitted' (like when
+            // there is a blockchain reord), the blockHeight will be TX_UNCONFIRMED and the
+            // timestamp will be 0.  This will cascade through BRWallet callbacks to produce
+            // 'balanceUpdated' and 'txUpdated'.
+            //
+            // If no longer 'included' this might cause dependent transactions to go to 'invalid'.
+            BRWalletUpdateTransactions (btcWallet,
+                                        &btcTransaction->txHash, 1,
+                                        (uint32_t) bundle->blockHeight,
+                                        bundle->timestamp);
+        }
+    }
+
+    // Free if ownership hasn't been passed
+    if (needFree) {
+        BRTransactionFree (btcTransaction);
+    }
 }
 
-static OwnershipGiven BRCryptoTransfer
+static void
 cryptoWalletManagerRecoverTransferFromTransferBundleHandlerBTC (BRCryptoWalletManager cwm,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle) {
     // Not BTC functionality
@@ -575,7 +629,7 @@ initialTransactionsLoad (BRCryptoWalletManager manager) {
     BRSetAll(transactionSet, (void**) transactions, transactionsCount);
     BRSetFree(transactionSet);
 
-    _peer_log ("BWM: loaded %zu transactions", transactionsCount);
+    _peer_log ("BWM: loaded %zu transactions\n", transactionsCount);
     return transactions;
 }
 
@@ -660,7 +714,7 @@ initialBlocksLoad (BRCryptoWalletManager manager) {
     BRSetAll(blockSet, (void**) blocks, blocksCount);
     BRSetFree(blockSet);
 
-    _peer_log ("BWM: loaded %zu blocks", blocksCount);
+    _peer_log ("BWM: loaded %zu blocks\n", blocksCount);
     return blocks;
 }
 
@@ -759,7 +813,7 @@ initialPeersLoad (BRCryptoWalletManager manager) {
     FOR_SET (BRPeer*, peer, peerSet) array_add (peers, *peer);
     BRSetFreeAll(peerSet, free);
 
-    _peer_log ("BWM: loaded %zu peers", peersCount);
+    _peer_log ("BWM: loaded %zu peers\n", peersCount);
     return peers;
 }
 
@@ -826,66 +880,88 @@ bwmHandleTxAdded (BRCryptoWalletManager manager,
                   OwnershipGiven BRTransaction *ownedTransaction,
                   OwnershipKept BRTransaction *refedTransaction) {
     printf ("BTC: TxAdded");
-#ifdef REFACTOR
+// #ifdef REFACTOR
     pthread_mutex_lock (&manager->lock);
-    int needEvents = 1;
+    bool needEvents = true;
 
-    // Find the transaction by `hash` but in the lookup ignore the deleted flag.
-    BRTransactionWithState txnWithState = BRWalletManagerFindTransactionByHash (manager, ownedTransaction->txHash, 1);
-    if (NULL == txnWithState) {
-        // first we've seen it, so it came from the network; add it to our list
-        txnWithState = BRWalletManagerAddTransaction (manager, ownedTransaction, refedTransaction);
-        if (BRWalletTransactionIsResolved (manager->wallet, refedTransaction)) {
-            BRTransactionWithStateSetResolved (txnWithState);
+    BRCryptoWallet  wallet    = manager->wallet;
+    BRWallet       *btcWallet = cryptoWalletAsBTC(wallet);
+
+    BRCryptoTransfer    transfer    = NULL;
+    BRCryptoTransferBTC transferBTC = NULL;
+
+    // Look for an existing transfer matching `txHash`
+    BRCryptoHash hash = cryptoHashCreateAsBTC (ownedTransaction->txHash);
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        if (CRYPTO_TRUE == cryptoHashEqual (hash, cryptoTransferGetHash(wallet->transfers[index]))) {
+            transfer = wallet->transfers[index];
+            transferBTC = cryptoTransferCoerceBTC (transfer);
+            break;
         }
-    } else {
-        if (txnWithState->isDeleted) {
+    }
+
+    if (NULL == transfer) {
+        // first we've seen it, so it came from the network; add it to our list
+        transfer = cryptoTransferCreateAsBTC (wallet->unit,
+                                              wallet->unitForFee,
+                                              btcWallet,
+                                              ownedTransaction,
+                                              refedTransaction,
+                                              wallet->type);
+        transferBTC = cryptoTransferCoerceBTC (transfer);
+
+        // TODO: Add to Wallet
+    }
+    else {
+        if (transferBTC->isDeleted) {
             // We've seen it before but has already been deleted, somewhow?  We are quietly going
             // to skip out and avoid signalling any events. Perhaps should assert(0) here.
-            needEvents = 0;
+            needEvents = false;
         }
         else {
             // this is a transaction we've submitted; set the reference transaction from the wallet
-            BRTransactionWithStateSetReferenced (txnWithState, refedTransaction);
-            BRTransactionWithStateSetBlock (txnWithState, ownedTransaction->blockHeight, ownedTransaction->timestamp);
+            transferBTC->refedTransaction = refedTransaction;
+            // TODO: This v
+            // BRTransactionWithStateSetBlock (txnWithState, ownedTransaction->blockHeight, ownedTransaction->timestamp);
         }
 
         // we already have an owned copy of this transaction; free up the passed one
         BRTransactionFree (ownedTransaction);
     }
-    assert (NULL != txnWithState);
+    assert (NULL != transfer);
 
-    if (BRWalletTransactionIsResolved (manager->wallet, refedTransaction))
-        BRTransactionWithStateSetResolved (txnWithState);
+    transferBTC->isResolved = BRWalletTransactionIsResolved (btcWallet, refedTransaction);
 
-    // Find other transactions that are now resolved.
+    // Find other transfers that are now resolved.
 
-    size_t transactionsCount = array_count (manager->transactions);
+    size_t transfersCount = array_count (wallet->transfers);
+    BRCryptoTransferBTC *resolvedTransfers = calloc (transfersCount, sizeof (BRCryptoTransferBTC));
 
     size_t resolvedTransactionIndex = 0;
-    BRTransactionWithState *resolvedTransactions = calloc (transactionsCount, sizeof (BRTransactionWithState));
+    for (size_t index = 0; index < transfersCount; index++) {
+        BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC (wallet->transfers[index]);
 
-    for (size_t index = 0; index < transactionsCount; index++) {
-        BRTransactionWithState txnWithState  = manager->transactions[index];
-        uint8_t nowResolved = BRWalletTransactionIsResolved (manager->wallet, txnWithState->refedTransaction);
+        bool nowResolved = BRWalletTransactionIsResolved (btcWallet, transferBTC->refedTransaction);
 
-        if (!txnWithState->isResolved && nowResolved) {
-            BRTransactionWithStateSetResolved (txnWithState);
-            resolvedTransactions[resolvedTransactionIndex++] = txnWithState;
+        if (nowResolved && !transferBTC->isResolved) {
+            transferBTC->isResolved = true;
+            resolvedTransfers[resolvedTransactionIndex++] = transferBTC;
         }
     }
 
     pthread_mutex_unlock (&manager->lock);
 
-    if (txnWithState->isResolved && needEvents)
+#if REFACTOR
+    if (transferBTC->isResolved && needEvents)
         bwmGenerateAddedEvents (manager, txnWithState);
 
     for (size_t index = 0; index < resolvedTransactionIndex; index++)
         bwmGenerateAddedEvents (manager, resolvedTransactions[index]);
-
-    free (resolvedTransactions);
-
 #endif
+
+    free (resolvedTransfers);
+
+//#endif
 }
 
 typedef struct {

@@ -95,11 +95,11 @@ typedef void
 typedef BRCryptoClientP2PManager
 (*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
-typedef OwnershipGiven BRArrayOf(BRCryptoTransfer)
+typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
                                                                       OwnershipKept BRCryptoClientTransactionBundle bundle);
 
-typedef OwnershipGiven BRCryptoTransfer
+typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
@@ -146,6 +146,8 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoClientP2PManager p2pManager;   // Null unless BTC, BCH, ETH, ...
     BRCryptoClientQRYManager qryManager;
 
+    BRCryptoClientQRYByType byType;
+    
     BRCryptoSyncMode syncMode;
     BRCryptoClientSync canSync;
     BRCryptoClientSend canSend;
@@ -241,16 +243,13 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRGenericTransferState newGenericState);
 #endif
 
-private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
+private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
                                                           OwnershipKept BRCryptoClientTransactionBundle bundle);
 
-private_extern OwnershipGiven BRCryptoTransfer
+private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
-private_extern void
-cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
-                                            OwnershipGiven BRCryptoTransfer transfer);
 
 private_extern void
 cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
