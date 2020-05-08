@@ -20,6 +20,22 @@
 extern "C" {
 #endif
 
+// MARK: - Transaction/Transfer Bundle
+
+struct BRCryptoClientTransactionBundleRecord {
+    BRCryptoTransferStateType status;
+    uint8_t *serialization;
+    size_t   serializationCount;
+    BRCryptoSyncTimestamp timestamp;
+    BRCryptoBlockChainHeight blockHeight;
+};
+
+struct BRCryptoClientTransferBundleRecord {
+    BRCryptoTransferStateType status;
+};
+
+// MARK: - P2P/QRY Type
+
 typedef struct BRCryptoClientP2PManagerRecord *BRCryptoClientP2PManager;
 typedef struct BRCryptoClientQRYManagerRecord *BRCryptoClientQRYManager;
 
@@ -178,6 +194,5 @@ cryptoClientQRYManagerAsSend (BRCryptoClientQRYManager qry) {
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* BRCryptoClientP_h */

@@ -314,6 +314,22 @@ cryptoWalletManagerEstimateFeeBasisHandlerBTC (BRCryptoWalletManager cwm,
     return;
 }
 
+static OwnershipGiven BRArrayOf(BRCryptoTransfer)
+cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC (BRCryptoWalletManager cwm,
+                                                                    OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    assert (0);
+    return NULL;
+}
+
+static OwnershipGiven BRCryptoTransfer
+cryptoWalletManagerRecoverTransferFromTransferBundleHandlerBTC (BRCryptoWalletManager cwm,
+                                                                OwnershipKept BRCryptoClientTransferBundle bundle) {
+    // Not BTC functionality
+    assert (0);
+    return NULL;
+}
+
+
 // MARK: - Client P2P
 
 typedef struct BRCryptoClientP2PManagerRecordBTC {
@@ -1381,5 +1397,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerSignTransactionWithKeyHandlerBTC,
     cryptoWalletManagerEstimateLimitHandlerBTC,
     cryptoWalletManagerEstimateFeeBasisHandlerBTC,
-    crytpWalletManagerCreateP2PManagerHandlerBTC
+    crytpWalletManagerCreateP2PManagerHandlerBTC,
+    cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC,
+    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerBTC
 };

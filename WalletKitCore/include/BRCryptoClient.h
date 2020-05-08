@@ -60,6 +60,9 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
                                      uint64_t blockHeight);
 
 extern void
+cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle);
+
+extern void
 cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
                          BRCryptoBoolean success,
@@ -96,6 +99,9 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
                                   size_t attributesCount,
                                   OwnershipKept const char **attributeKeys,
                                   OwnershipKept const char **attributeVals);
+
+extern void
+cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle);
 
 extern void
 cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,

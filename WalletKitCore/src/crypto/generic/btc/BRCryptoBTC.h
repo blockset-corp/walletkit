@@ -68,9 +68,6 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            OwnershipKept BRTransaction *tid,
                            BRCryptoBlockChainType type);
 
-extern BRCryptoHash
-cryptoTransferGetHashBTC (BRCryptoTransfer transferBase);
-
 private_extern BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transferBase);
 

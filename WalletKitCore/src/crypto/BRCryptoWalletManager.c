@@ -441,40 +441,30 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
     // Ensure CWM is stopped...
     cryptoWalletManagerStop (cwm);
 
+    // ... then release any type-specific resources
+    cwm->handlers->release (cwm);
+
     // ... then release memory.
     cryptoAccountGive (cwm->account);
     cryptoNetworkGive (cwm->network);
     if (NULL != cwm->wallet) cryptoWalletGive (cwm->wallet);
 
+    // .. then give all the wallets
     for (size_t index = 0; index < array_count(cwm->wallets); index++)
         cryptoWalletGive (cwm->wallets[index]);
     array_free (cwm->wallets);
 
+    // ... then the p2p and qry managers
     if (NULL != cwm->p2pManager) cryptoClientP2PManagerRelease(cwm->p2pManager);
     cryptoClientQRYManagerRelease (cwm->qryManager);
 
-    // File Service
+    // ... then the fileService
+    fileServiceRelease (cwm->fileService);
 
-    // Event Handler
+    // ... then the eventHandler
+    eventHandlerDestroy (cwm->handler);
 
-    #ifdef REFACTOR
-    // Release the specific cwm type, if it exists.
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            if (NULL != cwm->u.btc)
-                BRWalletManagerFree (cwm->u.btc);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            if (NULL != cwm->u.eth)
-                ewmDestroy (cwm->u.eth);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            if (NULL != cwm->u.gen)
-                genManagerRelease (cwm->u.gen);
-            break;
-    }
-    #endif
-
+    // ... and finally individual memory allocations
     free (cwm->path);
 
     pthread_mutex_destroy (&cwm->lock);
@@ -2107,6 +2097,39 @@ cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
     BRCryptoWalletManager cwm = (BRCryptoWalletManager) event->context;
     cryptoClientSyncPeriodic (cwm->canSync);
 }
+
+// MARK: - Transaction/Transfer Bundle
+
+private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
+cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
+                                                          OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    return cwm->handlers->recoverTransfersFromTransactionBundle (cwm, bundle);
+}
+
+private_extern OwnershipGiven BRCryptoTransfer
+cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransferBundle bundle) {
+    return cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
+}
+
+private_extern void
+cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
+                                            OwnershipGiven BRCryptoTransfer transfer) {
+    private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
+    cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
+                                                              OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+    private_extern OwnershipGiven BRCryptoTransfer
+    cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                          OwnershipKept BRCryptoClientTransferBundle bundle);
+
+    private_extern void
+    cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
+                                                OwnershipGiven BRCryptoTransfer transfer);
+
+
+}
+
 
 // MARK: - Generate Events
 

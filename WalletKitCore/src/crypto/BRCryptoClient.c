@@ -14,6 +14,10 @@
 #include <math.h>  // round()
 #include <stdbool.h>
 
+#include "support/BRArray.h"
+#include "BRCryptoTransferP.h"
+#include "BRCryptoWalletManagerP.h"
+
 // MARK: - Announce Block Number
 
 extern void
@@ -26,10 +30,6 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
 
 // MARK: - Announce Transaction
 
-struct BRCryptoClientTransactionBundleRecord {
-    BRCryptoTransferStateType status;
-};
-
 extern BRCryptoClientTransactionBundle
 cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
                                      OwnershipKept uint8_t *transaction,
@@ -40,23 +40,45 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
 
     bundle->status = status;
 
+    bundle->serialization = malloc(transactionLength);
+    memcpy (bundle->serialization, transaction, transactionLength);
+    bundle->serializationCount = transactionLength;
+
+    bundle->timestamp   = (BRCryptoSyncTimestamp) timestamp;
+    bundle->blockHeight = (BRCryptoBlockChainHeight) blockHeight;
+
     return bundle;
 }
 
 extern void
-cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
+cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle) {
+    free (bundle->serialization);
+    memset (bundle, 0, sizeof (struct BRCryptoClientTransactionBundleRecord));
+    free (bundle);
+}
+extern void
+cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
                          BRCryptoBoolean success,
                          BRCryptoClientTransactionBundle *bundles,
                          size_t bundlesCount) {
-
+    switch (success) {
+        case CRYPTO_TRUE: {
+            for (size_t index = 0; index < bundlesCount; index++) {
+                BRArrayOf(BRCryptoTransfer) transfers = cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
+                cryptoClientTransactionBundleRelease (bundles[index]);
+                for (size_t ti = 0; ti < array_count(transfers); ti++)
+                    cryptoWalletManagerHandleRecoveredTransfer (manager, transfers[ti]);
+                array_free (transfers);
+            }
+            break;
+        }
+        case CRYPTO_FALSE:
+            break;
+    }
 }
 
 // MARK: - Announce Transfer
-
-struct BRCryptoClientTransferBundleRecord {
-    BRCryptoTransferStateType status;
-};
 
 extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
@@ -78,16 +100,36 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     BRCryptoClientTransferBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransferBundleRecord));
 
     bundle->status = status;
+    //
 
     return bundle;
 }
 
 extern void
-cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,
+cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
+    //
+    memset (bundle, 0, sizeof (struct BRCryptoClientTransferBundleRecord));
+    free (bundle);
+}
+
+extern void
+cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                       OwnershipGiven BRCryptoClientCallbackState callbackState,
                       BRCryptoBoolean success,
-                      BRCryptoClientTransferBundle *bundles,
+                      OwnershipGiven BRCryptoClientTransferBundle *bundles,
                       size_t bundlesCount) {
+    switch (success) {
+        case CRYPTO_TRUE: {
+            for (size_t index = 0; index < bundlesCount; index++) {
+                cryptoWalletManagerHandleRecoveredTransfer (manager, cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]));
+                cryptoClientTransferBundleRelease (bundles[index]);
+            }
+            break;
+        }
+
+        case CRYPTO_FALSE:
+            break;
+    }
 }
 
 // MARK: Announce Submit Transfer

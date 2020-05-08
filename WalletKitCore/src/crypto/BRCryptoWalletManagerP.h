@@ -95,6 +95,16 @@ typedef void
 typedef BRCryptoClientP2PManager
 (*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
+typedef OwnershipGiven BRArrayOf(BRCryptoTransfer)
+(*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
+                                                                      OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+typedef OwnershipGiven BRCryptoTransfer
+(*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
+                                                                  OwnershipKept BRCryptoClientTransferBundle bundle);
+
+
+
 typedef struct {
     BERWalletManagerCreateHandler create;
     BRWalletManagerReleaseHandler release;
@@ -107,6 +117,8 @@ typedef struct {
     BRWalletManagerEstimateLimitHandler estimateLimit;
     BRWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRWalletManagerCreateP2PManagerHandler createP2PManager;
+    BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
+    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
 } BRCryptoWalletManagerHandlers;
 
 
@@ -229,11 +241,31 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRGenericTransferState newGenericState);
 #endif
 
+private_extern OwnershipGiven BRArrayOf(BRCryptoTransfer)
+cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
+                                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+private_extern OwnershipGiven BRCryptoTransfer
+cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransferBundle bundle);
+private_extern void
+cryptoWalletManagerHandleRecoveredTransfer (BRCryptoWalletManager cwm,
+                                            OwnershipGiven BRCryptoTransfer transfer);
+
 private_extern void
 cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
                                           BRCryptoWallet wallet,
                                           BRCryptoTransfer transfer,
                                           BRCryptoTransferEvent event);
+
+#if 0
+cryptoWalletCreateTransfer (BRCryptoWallet wallet,
+                            <#BRCryptoAddress target#>,
+                            <#BRCryptoAmount amount#>,
+                            <#BRCryptoFeeBasis estimatedFeeBasis#>
+                            <#size_t attributesCount#>,
+                            <#BRCryptoTransferAttribute *attributes#>);
+#endif
 
 #ifdef __cplusplus
 }
