@@ -2,11 +2,6 @@
 
 #include "bitcoin/BRWallet.h"
 
-struct BRCryptoWalletBTCRecord {
-    struct BRCryptoWalletRecord base;
-    BRWallet *wid;
-};
-
 static BRCryptoWalletBTC
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type);
@@ -180,7 +175,7 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet walletBase,
 
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, CRYPTO_TRUE));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif
@@ -218,7 +213,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
 
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, CRYPTO_TRUE));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif

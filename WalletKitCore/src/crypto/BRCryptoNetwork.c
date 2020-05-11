@@ -13,7 +13,8 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoAccountP.h"
-#include "BRCryptoGenericP.h"
+
+#include "BRCryptoHandlersP.h"
 
 // If '1' then display a detailed list of the builting currencies for each network
 #define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
@@ -122,7 +123,7 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     BRCryptoNetwork network = calloc (1, sizeInBytes);
 
     network->type = type;
-    network->handlers = cryptoGenericHandlersLookup(type)->network;
+    network->handlers = cryptoHandlersLookup(type)->network;
     network->sizeInBytes = sizeInBytes;
 
     network->uids = strdup (uids);
@@ -713,14 +714,16 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
     cryptoAccountInstall();
 
     assert (NULL != networksCount);
-    *networksCount = NUMBER_OF_NETWORKS;
+    size_t networksCountInstalled = 0;
     BRCryptoNetwork *networks = calloc (NUMBER_OF_NETWORKS, sizeof (BRCryptoNetwork));
 
     for (size_t networkIndex = 0; networkIndex < NUMBER_OF_NETWORKS; networkIndex++) {
         struct NetworkSpecification *networkSpec = &networkSpecifications[networkIndex];
 
-        const BRCryptoGenericHandlers *handlers = cryptoGenericHandlersLookup(networkSpec->type);
-        assert (NULL != handlers);
+        const BRCryptoHandlers *handlers = cryptoHandlersLookup(networkSpec->type);
+        // If the network handlers are NULL, then we'll skip that network.  This is only
+        // for debugging purposes - as a way to avoid unimplemented currencies.
+        if (NULL == handlers->network) break;
 
         BRCryptoNetwork network = handlers->network->create (networkSpec->networkId,
                                                              networkSpec->name,
@@ -843,7 +846,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
         cryptoNetworkSetConfirmationsUntilFinal (network, networkSpec->confirmations);
         cryptoNetworkSetHeight (network, networkSpec->height);
 
-        networks[networkIndex] = network;
+        networks[networksCountInstalled++] = network;
 
 #if SHOW_BUILTIN_CURRENCIES
         printf ("== Network: %s, '%s'\n", network->uids, network->name);
@@ -862,6 +865,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 #endif
     }
 
+    *networksCount = networksCountInstalled;
     return networks;
 }
 

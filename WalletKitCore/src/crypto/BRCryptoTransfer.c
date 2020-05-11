@@ -15,7 +15,8 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoFeeBasisP.h"
-#include "BRCryptoGenericP.h"
+
+#include "BRCryptoHandlersP.h"
 
 /// MARK: - Transfer State Type
 
@@ -46,7 +47,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     BRCryptoTransfer transfer = calloc (1, sizeInBytes);
 
     transfer->type  = type;
-    transfer->handlers = cryptoGenericHandlersLookup(type)->transfer;
+    transfer->handlers = cryptoHandlersLookup(type)->transfer;
     transfer->sizeInBytes = sizeInBytes;
 
     transfer->state = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
@@ -280,6 +281,13 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
     pthread_mutex_unlock (&transfer->lock);
 
     return feeBasisConfirmed;
+}
+
+extern uint8_t *
+cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                      size_t *serializationCount) {
+    assert (NULL != serializationCount);
+    return transfer->handlers->serializeForSubmission (transfer, serializationCount);
 }
 
 extern BRCryptoBoolean

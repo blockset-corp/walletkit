@@ -2,11 +2,7 @@
 #ifndef BRCryptoBTC_h
 #define BRCryptoBTC_h
 
-#include "../../BRCryptoAddressP.h"
-#include "../../BRCryptoNetworkP.h"
-#include "../../BRCryptoTransferP.h"
-#include "../../BRCryptoWalletP.h"
-#include "../../BRCryptoWalletManagerP.h"
+#include "../BRCryptoHandlersExport.h"
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRTransaction.h"
@@ -18,9 +14,13 @@ extern "C" {
 
 // MARK - Address
 
-typedef struct BRCryptoAddressBTCRecord  *BRCryptoAddressBTC;
+typedef struct BRCryptoAddressBTCRecord {
+    struct BRCryptoAddressRecord base;
 
-extern BRCryptoAddressHandlers cryptoAddressHandlersBTC;
+    /// The 'bitcoin/' address.  For BTC, addr.s is the string; for BCH, addr.s is
+    /// encoded in a 'BCH' specific way.
+    BRAddress addr;
+} *BRCryptoAddressBTC;
 
 extern BRCryptoAddress
 cryptoAddressCreateAsBTC (BRCryptoBlockChainType type,
@@ -36,17 +36,13 @@ private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
                     BRCryptoBoolean *isBitcoinAddr);
 
-#if 0
-
-
-
-#endif
-
 // MARK: - Network
 
-typedef struct BRCryptoNetworkBTCRecord  *BRCryptoNetworkBTC;
+typedef struct BRCryptoNetworkBTCRecord {
+    struct BRCryptoNetworkRecord base;
 
-extern BRCryptoNetworkHandlers cryptoNetworkHandlersBTC;
+    const BRChainParams *params;
+} *BRCryptoNetworkBTC;
 
 extern const BRChainParams *
 cryptoNetworkAsBTC (BRCryptoNetwork network);
@@ -57,19 +53,29 @@ cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee);
 
 // MARK: - Transfer
 
-typedef struct BRCryptoTransferBTCRecord *BRCryptoTransferBTC;
+typedef struct BRCryptoTransferBTCRecord {
+    struct BRCryptoTransferRecord base;
 
-extern BRCryptoTransferHandlers cryptoTransferHandlersBTC;
+    bool isDeleted;
+    bool isResolved;
+    BRTransaction *refedTransaction;
+    BRTransaction *ownedTransaction;        // Release
+
+    uint64_t fee;
+    uint64_t send;
+    uint64_t recv;
+} *BRCryptoTransferBTC;
+
+extern BRCryptoTransferBTC
+cryptoTransferCoerceBTC (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
-                           OwnershipKept BRTransaction *tid,
+                           OwnershipGiven BRTransaction *ownedTransaction,
+                           OwnershipKept  BRTransaction *refedTransaction,
                            BRCryptoBlockChainType type);
-
-extern BRCryptoHash
-cryptoTransferGetHashBTC (BRCryptoTransfer transferBase);
 
 private_extern BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transferBase);
@@ -80,7 +86,10 @@ cryptoTransferHasBTC (BRCryptoTransfer transferBase,
 
 // MARK: - Wallet
 
-typedef struct BRCryptoWalletBTCRecord   *BRCryptoWalletBTC;
+typedef struct BRCryptoWalletBTCRecord {
+    struct BRCryptoWalletRecord base;
+    BRWallet *wid;
+} *BRCryptoWalletBTC;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
 
@@ -118,12 +127,16 @@ cryptoWalletCreateAsBTC (BRCryptoUnit unit,
                          BRWallet *wid);
 
 #endif
+
 // MARK: - (Wallet) Manager
 
-typedef struct BRCryptoWalletManagerBTCRecord  *BRCryptoWalletManagerBTC;
+typedef struct BRCryptoWalletManagerBTCRecord {
+    struct BRCryptoWalletManagerRecord base;
+
+    int ignoreTBD;
+} *BRCryptoWalletManagerBTC;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
-
 
 #ifdef REFACTOR
 private_extern BRWalletManager

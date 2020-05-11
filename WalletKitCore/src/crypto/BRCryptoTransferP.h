@@ -46,6 +46,10 @@ typedef BRCryptoTransferDirection
 typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
+typedef uint8_t *
+(*BRCryptoTransferSerializeForSubmission) (BRCryptoTransfer transfer,
+                                           size_t *serializationCount);
+
 typedef int
 (*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
                                    BRCryptoTransfer t2);
@@ -55,6 +59,7 @@ typedef struct {
     BRCryptoTransferGetAmountAsSignHandler getAmountAsSign;
     BRCryptoTransferGetDirectionHandler getDirection;
     BRCryptoTransferGetHashHandler getHash;
+    BRCryptoTransferSerializeForSubmission serializeForSubmission;
     BRCryptoTransferIsEqualHandler isEqual;
 } BRCryptoTransferHandlers;
 

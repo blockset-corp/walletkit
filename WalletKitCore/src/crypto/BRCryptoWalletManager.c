@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <arpa/inet.h>      // struct in_addr
+#include <ctype.h>          // toupper()
 
 #include "BRCryptoBase.h"
 
@@ -27,7 +28,8 @@
 #include "BRCryptoWalletManager.h"
 #include "BRCryptoWalletManagerP.h"
 
-#include "BRCryptoGenericP.h"
+#include "BRCryptoHandlersP.h"
+
 #include "support/BRFileService.h"
 #include "ethereum/event/BREventAlarm.h"
 
@@ -118,7 +120,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoAccount account,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
-                                 const char *path) {
+                                 const char *path,
+                                 BRCryptoClientQRYByType byType) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
     assert (type == cryptoNetworkGetType(network));
 
@@ -126,7 +129,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     if (NULL == cwm) return NULL;
 
     cwm->type = type;
-    cwm->handlers = cryptoGenericHandlersLookup(type)->manager;
+    cwm->handlers = cryptoHandlersLookup(type)->manager;
     network->sizeInBytes = sizeInBytes;
 
     cwm->listener = listener;
@@ -137,6 +140,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     cwm->addressScheme = scheme;
     cwm->path = strdup (path);
 
+    cwm->byType = byType;
+    
     // File Service
     const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cwm->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
@@ -155,6 +160,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     // Create the event handler name (useful for debugging).
     char handlerName[5 + strlen(currencyName) + 1];
     sprintf(handlerName, "Core %s", currencyName);
+    for (char *s = &handlerName[5]; *s; s++) *s = toupper (*s);
 
     // Get the event handler types.
     size_t eventTypesCount;
@@ -170,12 +176,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                       (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
                                       (void*) cwm);
-
-    cwm->p2pManager = cwm->handlers->createP2PManager (cwm);
-    cwm->qryManager = cryptoClientQRYManagerCreate(client, cwm);
-
-    cwm->syncMode = CRYPTO_SYNC_MODE_API_ONLY;
-    cryptoWalletManagerSetMode (cwm, cwm->syncMode);
 
     cwm->wallet = NULL;
     array_new (cwm->wallets, 1);
@@ -208,7 +208,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
 
     // Lookup the handler for the network's type.
     BRCryptoBlockChainType type = cryptoNetworkGetType(network);
-    const BRCryptoWalletManagerHandlers *handlers = cryptoGenericHandlersLookup(type)->manager;
+    const BRCryptoWalletManagerHandlers *handlers = cryptoHandlersLookup(type)->manager;
 
     // Create the manager
     BRCryptoWalletManager manager = handlers->create (listener,
@@ -227,17 +227,9 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     // This will fully configure the P2P and QRY managers.
     manager->handlers->initialize (manager);
 
-#if 0
-    // Primary wallet currency and unit.
-    BRCryptoCurrency currency = cryptoNetworkGetCurrency (manager->network);
-    BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault (manager->network, currency);
-
-    // TODO: Tranactions, Block, Peers
-    
-    // Create all wallets for 'network'
-    manager->wallets = manager->handlers->createWallets (manager, NULL, &manager->wallet);
-    // Announce wallets
-#endif
+    // Setup the P2P and QRY Managers
+    manager->p2pManager = manager->handlers->createP2PManager (manager);
+    manager->qryManager = cryptoClientQRYManagerCreate (client, manager, manager->byType);
 
     cryptoWalletManagerSetMode (manager, mode);
 
@@ -440,40 +432,30 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
     // Ensure CWM is stopped...
     cryptoWalletManagerStop (cwm);
 
+    // ... then release any type-specific resources
+    cwm->handlers->release (cwm);
+
     // ... then release memory.
     cryptoAccountGive (cwm->account);
     cryptoNetworkGive (cwm->network);
     if (NULL != cwm->wallet) cryptoWalletGive (cwm->wallet);
 
+    // .. then give all the wallets
     for (size_t index = 0; index < array_count(cwm->wallets); index++)
         cryptoWalletGive (cwm->wallets[index]);
     array_free (cwm->wallets);
 
+    // ... then the p2p and qry managers
     if (NULL != cwm->p2pManager) cryptoClientP2PManagerRelease(cwm->p2pManager);
     cryptoClientQRYManagerRelease (cwm->qryManager);
 
-    // File Service
+    // ... then the fileService
+    fileServiceRelease (cwm->fileService);
 
-    // Event Handler
+    // ... then the eventHandler
+    eventHandlerDestroy (cwm->handler);
 
-    #ifdef REFACTOR
-    // Release the specific cwm type, if it exists.
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            if (NULL != cwm->u.btc)
-                BRWalletManagerFree (cwm->u.btc);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            if (NULL != cwm->u.eth)
-                ewmDestroy (cwm->u.eth);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            if (NULL != cwm->u.gen)
-                genManagerRelease (cwm->u.gen);
-            break;
-    }
-    #endif
-
+    // ... and finally individual memory allocations
     free (cwm->path);
 
     pthread_mutex_destroy (&cwm->lock);
@@ -747,7 +729,7 @@ cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
 extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
-    eventHandlerStop (cwm->handler);
+    eventHandlerStart (cwm->handler);
 
     // P2P Manager
     // QRY Manager
@@ -792,8 +774,10 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
             BRCryptoWalletManagerState oldState = cwm->state;
             BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
-            cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
             cryptoClientQRYManagerConnect (cwm->qryManager);
+            if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
+                CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
+                cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
 
             cryptoWalletManagerSetState (cwm, newState);
 
@@ -2105,6 +2089,20 @@ cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
                                        BREventTimeout *event) {
     BRCryptoWalletManager cwm = (BRCryptoWalletManager) event->context;
     cryptoClientSyncPeriodic (cwm->canSync);
+}
+
+// MARK: - Transaction/Transfer Bundle
+
+private_extern void
+cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
+                                                          OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    cwm->handlers->recoverTransfersFromTransactionBundle (cwm, bundle);
+}
+
+private_extern void
+cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransferBundle bundle) {
+    cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
 }
 
 // MARK: - Generate Events

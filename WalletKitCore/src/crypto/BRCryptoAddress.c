@@ -10,7 +10,8 @@
 
 #include "BRCryptoAddressP.h"
 #include "BRCryptoNetworkP.h"
-#include "BRCryptoGenericP.h"
+
+#include "BRCryptoHandlersP.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAddress, cryptoAddress);
 
@@ -22,7 +23,7 @@ cryptoAddressAllocAndInit (size_t sizeInBytes,
     BRCryptoAddress address = calloc (1, sizeInBytes);
 
     address->type = type;
-    address->handlers = cryptoGenericHandlersLookup(type)->address;
+    address->handlers = cryptoHandlersLookup(type)->address;
     address->ref = CRYPTO_REF_ASSIGN(cryptoAddressRelease);
     address->sizeInBytes = sizeInBytes;
 

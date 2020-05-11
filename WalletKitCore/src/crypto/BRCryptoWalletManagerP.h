@@ -95,6 +95,16 @@ typedef void
 typedef BRCryptoClientP2PManager
 (*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
+typedef void
+(*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
+                                                                      OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+typedef void
+(*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
+                                                                  OwnershipKept BRCryptoClientTransferBundle bundle);
+
+
+
 typedef struct {
     BERWalletManagerCreateHandler create;
     BRWalletManagerReleaseHandler release;
@@ -107,6 +117,8 @@ typedef struct {
     BRWalletManagerEstimateLimitHandler estimateLimit;
     BRWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRWalletManagerCreateP2PManagerHandler createP2PManager;
+    BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
+    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
 } BRCryptoWalletManagerHandlers;
 
 
@@ -134,6 +146,8 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoClientP2PManager p2pManager;   // Null unless BTC, BCH, ETH, ...
     BRCryptoClientQRYManager qryManager;
 
+    BRCryptoClientQRYByType byType;
+    
     BRCryptoSyncMode syncMode;
     BRCryptoClientSync canSync;
     BRCryptoClientSend canSend;
@@ -155,7 +169,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoAccount account,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
-                                 const char *path);
+                                 const char *path,
+                                 BRCryptoClientQRYByType byType);
 
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
@@ -229,10 +244,27 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 #endif
 
 private_extern void
+cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
+                                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+private_extern void
+cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransferBundle bundle);
+
+private_extern void
 cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
                                           BRCryptoWallet wallet,
                                           BRCryptoTransfer transfer,
                                           BRCryptoTransferEvent event);
+
+#if 0
+cryptoWalletCreateTransfer (BRCryptoWallet wallet,
+                            <#BRCryptoAddress target#>,
+                            <#BRCryptoAmount amount#>,
+                            <#BRCryptoFeeBasis estimatedFeeBasis#>
+                            <#size_t attributesCount#>,
+                            <#BRCryptoTransferAttribute *attributes#>);
+#endif
 
 #ifdef __cplusplus
 }

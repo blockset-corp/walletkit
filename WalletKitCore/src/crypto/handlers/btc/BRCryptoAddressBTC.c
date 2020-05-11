@@ -5,15 +5,6 @@
 #include "support/BRAddress.h"
 #include "bcash/BRBCashAddr.h"
 
-/// A BTC or BCH address
-struct BRCryptoAddressBTCRecord {
-    struct BRCryptoAddressRecord base;
-
-    /// The 'bitcoin/' address.  For BTC, addr.s is the string; for BCH, addr.s is
-    /// encoded in a 'BCH' specific way.
-    BRAddress addr;
-};
-
 static BRCryptoAddressBTC
 cryptoAddressCoerce (BRCryptoAddress address) {
     assert (CRYPTO_NETWORK_TYPE_BTC == address->type);

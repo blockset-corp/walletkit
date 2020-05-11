@@ -8,12 +8,6 @@
 #include "BRCryptoBTC.h"
 #include "bitcoin/BRChainParams.h"
 
-struct BRCryptoNetworkBTCRecord {
-    struct BRCryptoNetworkRecord base;
-
-    const BRChainParams *params;
-};
-
 static BRCryptoNetworkBTC
 cryptoNetworkCoerce (BRCryptoNetwork network) {
     assert (CRYPTO_NETWORK_TYPE_BTC == network->type);

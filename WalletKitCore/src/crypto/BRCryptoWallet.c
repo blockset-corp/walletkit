@@ -17,7 +17,8 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoNetworkP.h"
 #include "BRCryptoPaymentP.h"
-#include "BRCryptoGenericP.h"
+
+#include "BRCryptoHandlersP.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet)
 
@@ -34,15 +35,15 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
     wallet->sizeInBytes = sizeInBytes;
     wallet->type  = type;
-    wallet->handlers = cryptoGenericHandlersLookup(type)->wallet;
+    wallet->handlers = cryptoHandlersLookup(type)->wallet;
     wallet->state = CRYPTO_WALLET_STATE_CREATED;
     
     wallet->unit  = cryptoUnitTake (unit);
     wallet->unitForFee = cryptoUnitTake (unitForFee);
 
     BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
-    assert (cryptoAmountHasCurrency (balanceMinimum, currency));
-    assert (cryptoAmountHasCurrency (balanceMaximum, currency));
+    assert (NULL == balanceMinimum || cryptoAmountHasCurrency (balanceMinimum, currency));
+    assert (NULL == balanceMaximum || cryptoAmountHasCurrency (balanceMaximum, currency));
     cryptoCurrencyGive (currency);
 
     wallet->balanceMinimum = (NULL == balanceMaximum ? NULL : cryptoAmountTake (balanceMinimum));
@@ -484,7 +485,7 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
                                     size_t outputsCount,
                                     BRCryptoTransferOutput *outputs,
                                     BRCryptoFeeBasis estimatedFeeBasis) {
-//    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+    //    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
     if (0 == outputsCount) return NULL;
 
 
@@ -493,12 +494,12 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
     BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
 
     BRCryptoTransfer transfer = wallet->handlers->createTransferMultiple (wallet,
-                                                                         outputsCount,
-                                                                         outputs,
-                                                                         estimatedFeeBasis,
-                                                                         currency,
-                                                                         unit,
-                                                                         unitForFee);
+                                                                          outputsCount,
+                                                                          outputs,
+                                                                          estimatedFeeBasis,
+                                                                          currency,
+                                                                          unit,
+                                                                          unitForFee);
 
     cryptoCurrencyGive(currency);
     cryptoUnitGive (unitForFee);
@@ -515,7 +516,7 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
                             size_t attributesCount,
                             OwnershipKept BRCryptoTransferAttribute *attributes) {
     assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(target));
-//    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+    //    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
 
 
     BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
@@ -525,14 +526,14 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
     assert (cryptoAmountHasCurrency (amount, currency));
 
     BRCryptoTransfer transfer = wallet->handlers->createTransfer (wallet,
-                                                                 target,
-                                                                 amount,
-                                                                 estimatedFeeBasis,
-                                                                 attributesCount,
-                                                                 attributes,
-                                                                 currency,
-                                                                 unit,
-                                                                 unitForFee);
+                                                                  target,
+                                                                  amount,
+                                                                  estimatedFeeBasis,
+                                                                  attributesCount,
+                                                                  attributes,
+                                                                  currency,
+                                                                  unit,
+                                                                  unitForFee);
 
     if (NULL != transfer && attributesCount > 0) {
         BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
