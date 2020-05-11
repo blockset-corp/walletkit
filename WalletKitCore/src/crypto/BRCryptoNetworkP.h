@@ -106,7 +106,7 @@ struct BRCryptoNetworkRecord {
     char *desc;
     bool isMainnet;
 
-    BRCryptoBlockChainHeight height;
+    BRCryptoBlockNumber height;
 
     // Base and associated currencies.
     BRCryptoCurrency currency;
@@ -150,7 +150,7 @@ cryptoNetworkAnnounce (BRCryptoNetwork network);
 
 private_extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
-                        BRCryptoBlockChainHeight height);
+                        BRCryptoBlockNumber height);
 
 private_extern void
 cryptoNetworkSetConfirmationsUntilFinal (BRCryptoNetwork network,

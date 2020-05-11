@@ -285,6 +285,14 @@ cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
     return transfer->handlers->serializeForSubmission (transfer, serializationCount);
 }
 
+extern uint8_t *
+cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
+                                         size_t *serializationCount) {
+    assert (0);
+
+    return cryptoTransferSerializeForSubmission (transfer, serializationCount);
+}
+
 extern BRCryptoBoolean
 cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
     return AS_CRYPTO_BOOLEAN (t1 == t2 ||

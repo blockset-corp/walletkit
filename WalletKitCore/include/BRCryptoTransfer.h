@@ -299,6 +299,10 @@ extern "C" {
     cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
                                           size_t *serializationCount);
 
+    extern uint8_t *
+    cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
+                                             size_t *serializationCount);
+
     extern BRCryptoBoolean
     cryptoTransferEqual (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2);
 

@@ -13,153 +13,27 @@
 #include <errno.h>
 #include <math.h>  // round()
 #include <stdbool.h>
+#include <stdio.h>          // printf
 
 #include "support/BRArray.h"
+#include "BRCryptoAddressP.h"
 #include "BRCryptoTransferP.h"
+#include "BRCryptoNetworkP.h"
+#include "BRCryptoWalletP.h"
 #include "BRCryptoWalletManagerP.h"
 
-// MARK: - Announce Block Number
-
-extern void
-cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
-                        OwnershipGiven BRCryptoClientCallbackState callbackState,
-                        BRCryptoBoolean success,
-                        uint64_t blockNumber) {
-    return;
-}
-
-// MARK: - Announce Transaction
-
-extern BRCryptoClientTransactionBundle
-cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
-                                     OwnershipKept uint8_t *transaction,
-                                     size_t transactionLength,
-                                     uint64_t timestamp,
-                                     uint64_t blockHeight) {
-    BRCryptoClientTransactionBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransactionBundleRecord));
-
-    bundle->status = status;
-
-    bundle->serialization = malloc(transactionLength);
-    memcpy (bundle->serialization, transaction, transactionLength);
-    bundle->serializationCount = transactionLength;
-
-    bundle->timestamp   = (BRCryptoSyncTimestamp) timestamp;
-    bundle->blockHeight = (BRCryptoBlockChainHeight) blockHeight;
-
-    return bundle;
-}
-
-extern void
-cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle) {
-    free (bundle->serialization);
-    memset (bundle, 0, sizeof (struct BRCryptoClientTransactionBundleRecord));
-    free (bundle);
-}
-extern void
-cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
-                         OwnershipGiven BRCryptoClientCallbackState callbackState,
-                         BRCryptoBoolean success,
-                         BRCryptoClientTransactionBundle *bundles,
-                         size_t bundlesCount) {
-    switch (success) {
-        case CRYPTO_TRUE: {
-            for (size_t index = 0; index < bundlesCount; index++) {
-                cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
-                cryptoClientTransactionBundleRelease (bundles[index]);
-            }
-            break;
-        }
-        case CRYPTO_FALSE:
-            break;
-    }
-}
-
-// MARK: - Announce Transfer
-
-extern BRCryptoClientTransferBundle
-cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
-                                  OwnershipKept const char *hash,
-                                  OwnershipKept const char *uids,
-                                  OwnershipKept const char *from,
-                                  OwnershipKept const char *to,
-                                  OwnershipKept const char *amount,
-                                  OwnershipKept const char *currency,
-                                  OwnershipKept const char *fee,
-                                  uint64_t blockTimestamp,
-                                  uint64_t blockNumber,
-                                  uint64_t blockConfirmations,
-                                  uint64_t blockTransactionIndex,
-                                  OwnershipKept const char *blockHash,
-                                  size_t attributesCount,
-                                  OwnershipKept const char **attributeKeys,
-                                  OwnershipKept const char **attributeVals) {
-    BRCryptoClientTransferBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransferBundleRecord));
-
-    bundle->status = status;
-    //
-
-    return bundle;
-}
-
-extern void
-cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
-    //
-    memset (bundle, 0, sizeof (struct BRCryptoClientTransferBundleRecord));
-    free (bundle);
-}
-
-extern void
-cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
-                      OwnershipGiven BRCryptoClientCallbackState callbackState,
-                      BRCryptoBoolean success,
-                      OwnershipGiven BRCryptoClientTransferBundle *bundles,
-                      size_t bundlesCount) {
-    switch (success) {
-        case CRYPTO_TRUE: {
-            for (size_t index = 0; index < bundlesCount; index++) {
-                cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
-                cryptoClientTransferBundleRelease (bundles[index]);
-            }
-            break;
-        }
-
-        case CRYPTO_FALSE:
-            break;
-    }
-}
-
-// MARK: Announce Submit Transfer
-
-extern void
-cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
-                           OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           BRCryptoBoolean success,
-                           OwnershipKept const char *hash) {
-
-}
-
-// MARK: - Announce Estimate Transaction Fee
-
-extern void
-cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
-                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                   BRCryptoBoolean success,
-                                   OwnershipKept const char *hash,
-                                   uint64_t costUnits) {
-
-}
+#define OFFSET_BLOCKS_IN_SECONDS       (3 * 24 * 60 * 60)  // 3 days
 
 // MARK: Client Sync/Send Forward Declarations
 
 static void
-cryptoClientP2PManagerSync (BRCryptoClientP2PManager p2p, BRCryptoSyncDepth depth, BRCryptoBlockChainHeight height);
+cryptoClientP2PManagerSync (BRCryptoClientP2PManager p2p, BRCryptoSyncDepth depth, BRCryptoBlockNumber height);
 
 static void
 cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p, BRCryptoTransfer transfer);
 
 static void
-cryptoClientQRYManagerSync (BRCryptoClientQRYManager qry, BRCryptoSyncDepth depth, BRCryptoBlockChainHeight height);
+cryptoClientQRYManagerSync (BRCryptoClientQRYManager qry, BRCryptoSyncDepth depth, BRCryptoBlockNumber height);
 
 static void
 cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer);
@@ -170,7 +44,7 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer trans
 extern void
 cryptoClientSync (BRCryptoClientSync sync,
                   BRCryptoSyncDepth depth,
-                  BRCryptoBlockChainHeight height) {
+                  BRCryptoBlockNumber height) {
     switch (sync.type) {
         case CRYPTO_CLIENT_P2P_MANAGER_TYPE:
             cryptoClientP2PManagerSync (sync.u.p2pManager, depth, height);
@@ -184,8 +58,12 @@ cryptoClientSync (BRCryptoClientSync sync,
 extern void
 cryptoClientSyncPeriodic (BRCryptoClientSync sync) {
     switch (sync.type) {
-        case CRYPTO_CLIENT_P2P_MANAGER_TYPE: break;
-        case CRYPTO_CLIENT_QRY_MANAGER_TYPE: cryptoClientQRYManagerTickTock (sync.u.qryManager); break;
+        case CRYPTO_CLIENT_P2P_MANAGER_TYPE:
+            /* Nothing */
+            break;
+        case CRYPTO_CLIENT_QRY_MANAGER_TYPE:
+            cryptoClientQRYManagerTickTock (sync.u.qryManager);
+            break;
     }
 }
 
@@ -241,7 +119,7 @@ cryptoClientP2PManagerDisconnect (BRCryptoClientP2PManager p2p) {
 static void
 cryptoClientP2PManagerSync (BRCryptoClientP2PManager p2p,
                             BRCryptoSyncDepth depth,
-                            BRCryptoBlockChainHeight height) {
+                            BRCryptoBlockNumber height) {
     p2p->handlers->sync (p2p, depth, height);
 }
 
@@ -252,18 +130,43 @@ cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p, BRCryptoTransfer trans
 
 // MARK: Client QRY (QueRY)
 
+static void cryptoClientQRYRequestBlockNumber  (BRCryptoClientQRYManager qry);
+static void cryptoClientQRYRequestTransfers    (BRCryptoClientQRYManager qry,
+                                                OwnershipGiven BRSetOf(BRCryptoAddress) addresses);
+static void cryptoClientQRYRequestTransactions (BRCryptoClientQRYManager qry,
+                                                OwnershipGiven BRSetOf(BRCryptoAddress) addresses);
+static void cryptoClientQRYSubmitTransfer      (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer);
+
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,
                               BRCryptoWalletManager manager,
-                              BRCryptoClientQRYByType byType) {
-    BRCryptoClientQRYManager qryManager = calloc (1, sizeof (struct BRCryptoClientQRYManagerRecord));
+                              BRCryptoClientQRYByType byType,
+                              BRCryptoBlockNumber earliestBlockNumber,
+                              BRCryptoBlockNumber currentBlockNumber) {
+    BRCryptoClientQRYManager qry = calloc (1, sizeof (struct BRCryptoClientQRYManagerRecord));
 
-    qryManager->client  = client;
-    qryManager->manager = manager;
+    qry->client    = client;
+    qry->manager   = manager;
+    qry->requestId = 0;
+    qry->byType    = byType;
 
-    qryManager->byType = byType;
-    
-    return qryManager;
+    // For 'GET /transaction' we'll back up from the begBlockNumber by this offset.  Currently
+    // about three days.  If the User has their App open continuously and if `GET /transactions`
+    // fails for 2 days, then once it recovers, the App will get the 'missed' transactions back
+    // from 3 days agao.
+    qry->blockNumberOffset = OFFSET_BLOCKS_IN_SECONDS / manager->network->confirmationPeriodInSeconds;
+    qry->blockNumberOffset = MAX (qry->blockNumberOffset, 100);
+
+    // Initialize the `brdSync` struct
+    qry->sync.rid = SIZE_MAX;
+    qry->sync.begBlockNumber = earliestBlockNumber;
+    qry->sync.endBlockNumber = MAX (earliestBlockNumber, currentBlockNumber);
+    qry->sync.completed = true;
+    qry->sync.success = false;
+
+    // gwm->syncContext  = syncContext;
+    // gwm->syncCallback = syncCallback;
+    return qry;
 }
 
 extern void
@@ -271,8 +174,6 @@ cryptoClientQRYManagerRelease (BRCryptoClientQRYManager qry) {
     memset (qry, 0, sizeof(*qry));
     free (qry);
 }
-
-#include <stdio.h>
 
 extern void
 cryptoClientQRYManagerConnect (BRCryptoClientQRYManager qry) {
@@ -284,44 +185,71 @@ cryptoClientQRYManagerDisconnect (BRCryptoClientQRYManager qry) {
     printf ("QRY: Want to Disconnect\n");
 }
 
+
+static void
+cryptoClientQRYManagerSync (BRCryptoClientQRYManager qry,
+                            BRCryptoSyncDepth depth,
+                            BRCryptoBlockNumber height) {
+
+}
+
+static BRCryptoBlockNumber
+cryptoClientQRYGetNetworkBlockHeight (BRCryptoClientQRYManager qry){
+    return cryptoNetworkGetHeight (qry->manager->network);
+}
+
+static void
+cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer) {
+    cryptoClientQRYSubmitTransfer (qry, transfer);
+}
+
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
-    BRCryptoClientCallbackState qryState = NULL;
+    cryptoClientQRYRequestBlockNumber (qry);
 
-    qry->client.funcGetBlockNumber (qry->client.context,
-                                    cryptoWalletManagerTake (qry->manager),
-                                    qryState);
-
-    const char *addresses[] = {
-        "35qSFN1ktQBsrbK4bFUJfvFtzgrHDTSY4M"
-    };
-    size_t addressesCount = sizeof (addresses) / sizeof (char *);
-
-    uint64_t begBlockNumber = 629535;
-    uint64_t endBlockNumber = 629543; // BLOCK_HEIGHT_UNBOUND;
-
-    switch (qry->byType) {
-        case CRYPTO_CLIENT_QRY_GET_TRANSFERS:
-            qry->client.funcGetTransfers (qry->client.context,
-                                          cryptoWalletManagerTake (qry->manager),
-                                          qryState,
-                                          addresses,
-                                          addressesCount,
-                                          begBlockNumber,
-                                          endBlockNumber);
-            break;
-
-        case CRYPTO_CLIENT_QRY_GET_TRANSACTIONS:
-            qry->client.funcGetTransactions (qry->client.context,
-                                             cryptoWalletManagerTake (qry->manager),
-                                             qryState,
-                                             addresses,
-                                             addressesCount,
-                                             begBlockNumber,
-                                             endBlockNumber);
-
-            break;
+    if (qry->sync.completed && qry->sync.success) {
+        // 1a) if so, advance the sync range by updating `begBlockNumber`
+        qry->sync.begBlockNumber = (qry->sync.endBlockNumber >= qry->blockNumberOffset
+                                    ? qry->sync.endBlockNumber - qry->blockNumberOffset
+                                    : 0);
     }
+
+    // 2) completed or not, update the `endBlockNumber` to the current block height.
+    qry->sync.endBlockNumber = MAX (cryptoClientQRYGetNetworkBlockHeight (qry),
+                                    qry->sync.begBlockNumber);
+
+    // 3) we'll update transactions if there are more blocks to examine
+    if (qry->sync.begBlockNumber != qry->sync.endBlockNumber) {
+
+        // 3a) Save the current requestId and mark as not completed.
+        qry->sync.rid = qry->requestId;
+        qry->sync.completed = false;
+        qry->sync.success   = false;
+
+        BRCryptoWallet wallet = cryptoWalletManagerGetWallet (qry->manager);
+        BRSetOf(BRCryptoAddress) addresses = cryptoWalletGetAddressesForRecovery (wallet);
+
+        switch (qry->byType) {
+            case CRYPTO_CLIENT_REQUEST_USE_TRANSFERS:
+                cryptoClientQRYRequestTransfers (qry, addresses);
+                break;
+            case CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS:
+                cryptoClientQRYRequestTransactions (qry, addresses);
+                break;
+        }
+
+        cryptoWalletGive (wallet);
+    }
+
+//    if (NULL != gwm->syncCallback)
+//        gwm->syncCallback (gwm->syncContext,
+//                           gwm,
+//                           qry->sync.begBlockNumber,
+//                           qry->sync.endBlockNumber,
+//                           // lots of incremental sync 'slop'
+//                           2 * GWM_BRD_SYNC_START_BLOCK_OFFSET);
+
+}
 
 #ifdef REFACTOR /* BTC */
 static void
@@ -343,6 +271,7 @@ BRClientSyncManagerUpdateBlockNumber(BRClientSyncManager manager) {
                                                      BRClientSyncManagerAsSyncManager (manager),
                                                      rid);
     }
+}
 
 static void
 BRClientSyncManagerUpdateTransactions (BRClientSyncManager manager) {
@@ -423,6 +352,7 @@ BRClientSyncManagerUpdateTransactions (BRClientSyncManager manager) {
 #endif
 
 #ifdef REFACTOR /* GEN */
+{
     BRGenericManager gwm = (BRGenericManager) event->context;
 
      gwm->client.getBlockNumber (gwm->client.context,
@@ -490,19 +420,284 @@ BRClientSyncManagerUpdateTransactions (BRClientSyncManager manager) {
                             2 * GWM_BRD_SYNC_START_BLOCK_OFFSET);
 
      // End handling a BRD Sync
+         }
 #endif
+
+// MARK: - Client Callback State
+
+static BRCryptoClientCallbackState
+cryptoClientCallbackStateCreate (BRCryptoClientCallbackType type,
+                                 size_t rid) {
+    BRCryptoClientCallbackState state = calloc (1, sizeof (struct BRCryptoClientCallbackStateRecord));
+
+    state->type = type;
+    state->rid  = rid;
+
+    return state;
+}
+
+static BRCryptoClientCallbackState
+cryptoClientCallbackStateCreateGetTrans (BRCryptoClientCallbackType type,
+                                         OwnershipGiven BRSetOf(BRCryptoAddress) addresses,
+                                         size_t rid) {
+    assert (CLIENT_CALLBACK_REQUEST_TRANSFERS    == type ||
+            CLIENT_CALLBACK_REQUEST_TRANSACTIONS == type);
+    BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (type, rid);
+
+    switch (type) {
+        case CLIENT_CALLBACK_REQUEST_TRANSFERS:
+            state->u.getTransfers.addresses = addresses;
+            break;
+        case CLIENT_CALLBACK_REQUEST_TRANSACTIONS:
+            state->u.getTransactions.addresses = addresses;
+            break;
+        default:
+            assert (0);
+            break;
+    }
+
+    return state;
+}
+
+static BRCryptoClientCallbackState
+cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoHash hash,
+                                                  size_t rid) {
+    BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_SUBMIT_TRANSACTION, rid);
+
+    state->u.submitTransaction.hash = cryptoHashTake (hash);
+
+    return state;
+}
+
+static BRCryptoClientCallbackState
+cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
+                                                       BRCryptoCookie cookie,
+                                                       BRCryptoNetworkFee networkFee,
+                                                       size_t rid) {
+    BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
+
+    state->u.estimateTransactionFee.hash   = cryptoHashTake (hash);
+    state->u.estimateTransactionFee.cookie = cookie;
+    state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake(networkFee);
+
+    return state;
 }
 
 static void
-cryptoClientQRYManagerSync (BRCryptoClientQRYManager qry,
-                            BRCryptoSyncDepth depth,
-                            BRCryptoBlockChainHeight height) {
+cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
+    switch (state->type) {
+        case CLIENT_CALLBACK_REQUEST_TRANSFERS:
+            cryptoAddressSetRelease (state->u.getTransfers.addresses);
+            break;
 
+        case CLIENT_CALLBACK_REQUEST_TRANSACTIONS:
+            cryptoAddressSetRelease(state->u.getTransactions.addresses);
+            break;
+
+        case CLIENT_CALLBACK_SUBMIT_TRANSACTION:
+            cryptoHashGive (state->u.submitTransaction.hash);
+            break;
+
+        case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
+            cryptoHashGive (state->u.estimateTransactionFee.hash);
+            cryptoNetworkFeeGive (state->u.estimateTransactionFee.networkFee);
+            break;
+
+        default:
+            break;
+    }
+
+    memset (state, 0, sizeof (struct BRCryptoClientCallbackStateRecord));
+    free (state);
+}
+
+
+// MARK: - Reqeust/Announce Block Number
+
+static void
+cryptoClientQRYRequestBlockNumber (BRCryptoClientQRYManager qry) {
+    // Extract CWM, checking to make sure it still lives
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
+    if (NULL == cwm) return;
+
+    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_REQUEST_BLOCK_NUMBER,
+                                                                                 qry->requestId++);
+
+    qry->client.funcGetBlockNumber (qry->client.context,
+                                    cryptoWalletManagerTake (cwm),
+                                    callbackState);
+
+    cryptoWalletManagerGive (cwm);
+}
+
+extern void
+cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
+                        OwnershipGiven BRCryptoClientCallbackState callbackState,
+                        BRCryptoBoolean success,
+                        uint64_t blockNumber) {
+
+    BRCryptoBlockNumber oldBlockNumber = cryptoNetworkGetHeight (cwm->network);
+
+    if (oldBlockNumber != blockNumber) {
+        cryptoNetworkSetHeight (cwm->network, blockNumber);
+
+        cryptoWalletManagerGenerateManagerEvent (cwm, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
+            { .blockHeight = { blockNumber } }
+        });
+    }
+
+    cryptoClientCallbackStateRelease (callbackState);
+}
+
+// MARK: - Request/Announce Transaction
+
+static BRArrayOf(char *)
+cryptoClientQRYGetAddresses (BRCryptoClientQRYManager qry,
+                             OwnershipKept BRSetOf(BRCryptoAddress) addresses) {
+    BRArrayOf(char *) addressesEncoded;
+    array_new (addressesEncoded, BRSetCount (addresses));
+
+    FOR_SET (BRCryptoAddress, address, addresses) {
+        array_add (addressesEncoded, cryptoAddressAsString (address));
+    }
+
+    return addressesEncoded;
 }
 
 static void
-cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer) {
-    BRCryptoClientCallbackState qryState = NULL;
+cryptoClientQRYReleaseAddresses (BRArrayOf(char *) addresses) {
+    for (size_t index = 0; index < array_count(addresses); index++)
+        free (addresses[index]);
+    array_free (addresses);
+}
+
+static void
+cryptoClientQRYRequestTransactions (BRCryptoClientQRYManager qry,
+                                    OwnershipGiven BRSetOf(BRCryptoAddress) addresses) {
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
+    if (NULL == cwm) return;
+
+    BRArrayOf(char *) addressesEncoded = cryptoClientQRYGetAddresses (qry, addresses);
+
+    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateGetTrans (CLIENT_CALLBACK_REQUEST_TRANSACTIONS,
+                                                                                         addresses,
+                                                                                         qry->requestId++);
+
+    qry->client.funcGetTransactions (qry->client.context,
+                                     cryptoWalletManagerTake(cwm),
+                                     callbackState,
+                                     (const char **) addressesEncoded,
+                                     array_count(addressesEncoded),
+                                     qry->sync.begBlockNumber,
+                                     qry->sync.endBlockNumber);
+
+    cryptoClientQRYReleaseAddresses (addressesEncoded);
+}
+
+extern void
+cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
+                         OwnershipGiven BRCryptoClientCallbackState callbackState,
+                         BRCryptoBoolean success,
+                         BRCryptoClientTransactionBundle *bundles,
+                         size_t bundlesCount) {
+
+    BRCryptoClientQRYManager qry = manager->qryManager;
+
+    // Process the results if the bundles are for our rid; otherwise simply discard;
+    if (callbackState->rid == qry->sync.rid) {
+        qry->sync.completed = true;
+        qry->sync.success = CRYPTO_TRUE == success;
+
+        switch (success) {
+            case CRYPTO_TRUE: {
+                for (size_t index = 0; index < bundlesCount; index++)
+                    cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
+
+                // With transfers/transactions recovered, see if there is another set of
+                // addresses to recover.  If so, simply make another request with the new set.
+                BRCryptoWallet wallet = cryptoWalletManagerGetWallet(manager);
+                BRSetOf(BRCryptoAddress) addresses = cryptoWalletGetAddressesForRecovery (wallet);
+
+                BRSetMinus (addresses, callbackState->u.getTransactions.addresses);
+                if (BRSetCount(addresses) > 0)
+                    cryptoClientQRYRequestTransactions (qry, addresses);
+
+                cryptoWalletGive (wallet);
+                break;
+            case CRYPTO_FALSE:
+                break;
+            }
+        }
+    }
+
+    for (size_t index = 0; index < bundlesCount; index++)
+        cryptoClientTransactionBundleRelease (bundles[index]);
+
+    cryptoClientCallbackStateRelease(callbackState);
+}
+
+// MARK: - Announce Transfer
+
+static void
+cryptoClientQRYRequestTransfers (BRCryptoClientQRYManager qry,
+                                 OwnershipGiven BRSetOf(BRCryptoAddress) addresses) {
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
+    if (NULL == cwm) return;
+
+    BRArrayOf(char *) addressesEncoded = cryptoClientQRYGetAddresses (qry, addresses);
+
+    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateGetTrans (CLIENT_CALLBACK_REQUEST_TRANSACTIONS,
+                                                                                         addresses,
+                                                                                         qry->requestId++);
+
+    qry->client.funcGetTransfers (qry->client.context,
+                                     cryptoWalletManagerTake(cwm),
+                                     callbackState,
+                                     (const char **) addressesEncoded,
+                                     array_count(addressesEncoded),
+                                     qry->sync.begBlockNumber,
+                                     qry->sync.endBlockNumber);
+
+    cryptoClientQRYReleaseAddresses (addressesEncoded);
+}
+
+extern void
+cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
+                      OwnershipGiven BRCryptoClientCallbackState callbackState,
+                      BRCryptoBoolean success,
+                      OwnershipGiven BRCryptoClientTransferBundle *bundles,
+                      size_t bundlesCount) {
+    BRCryptoClientQRYManager qry = manager->qryManager;
+
+    // Process the results if the bundles are for our rid; otherwise simply discard;
+    if (callbackState->rid == qry->sync.rid) {
+        qry->sync.completed = true;
+        qry->sync.success = CRYPTO_TRUE == success;
+
+        switch (success) {
+            case CRYPTO_TRUE: {
+                for (size_t index = 0; index < bundlesCount; index++)
+                    cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
+                break;
+            case CRYPTO_FALSE:
+                break;
+            }
+        }
+    }
+
+    for (size_t index = 0; index < bundlesCount; index++)
+        cryptoClientTransferBundleRelease (bundles[index]);
+
+    cryptoClientCallbackStateRelease(callbackState);
+}
+
+// MARK: Announce Submit Transfer
+
+static void
+cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer) {
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
+    if (NULL == cwm) return;
 
     size_t   serializationCount;
     uint8_t *serialization = cryptoTransferSerializeForSubmission (transfer, &serializationCount);
@@ -510,17 +705,202 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer trans
 
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
     char *hashAsHex = cryptoHashString(hash);
-    cryptoHashGive (hash);
 
+    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateSubmitTransaction (hash, qry->requestId++);
 
     qry->client.funcSubmitTransaction (qry->client.context,
-                                       qry->manager,
-                                       qryState,
+                                       cryptoWalletManagerTake(cwm),
+                                       callbackState,
                                        serialization,
                                        serializationCount,
                                        hashAsHex);
 
+    cryptoHashGive (hash);
     free (serialization);
     free (hashAsHex);
+}
+
+extern void
+cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
+                           OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           BRCryptoBoolean success,
+                           OwnershipKept const char *hash) {
+    assert (CLIENT_CALLBACK_SUBMIT_TRANSACTION == callbackState->type);
+
+    cryptoClientCallbackStateRelease(callbackState);
+}
+
+
+// MARK: - Announce Estimate Transaction Fee
+
+extern void
+cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
+                                    BRCryptoCookie   cookie,
+                                    BRCryptoTransfer transfer,
+                                    BRCryptoNetworkFee networkFee) {
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
+    if (NULL == cwm) return;
+
+    size_t   serializationCount;
+    uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, &serializationCount);
+
+    BRCryptoHash hash = cryptoTransferGetHash (transfer);
+    char *hashAsHex = cryptoHashString(hash);
+
+    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
+                                                                                                       cookie,
+                                                                                                       networkFee,
+                                                                                                       qry->requestId++);
+
+    qry->client.funcEstimateTransactionFee (qry->client.context,
+                                            cryptoWalletManagerTake(cwm),
+                                            callbackState,
+                                            serialization,
+                                            serializationCount,
+                                            hashAsHex);
+
+}
+
+extern void
+cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
+                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                   BRCryptoBoolean success,
+                                   OwnershipKept const char *hash,
+                                   uint64_t costUnits) {
+    assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
+
+    BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
+
+    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
+    double costFactor = (double) costUnits;
+
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+
+    // Wallet Event Fee Estimated
+//    BRCryptoWalletEvent event = {
+//        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+//        { .feeBasisEstimated = { status, cookie, feeBasis }}
+//    };
+
+    cryptoAmountGive (pricePerCostFactor);
+    cryptoFeeBasisGive (feeBasis);
+    cryptoClientCallbackStateRelease (callbackState);
+}
+
+#if 0
+    const char *addresses[] = {
+        "35qSFN1ktQBsrbK4bFUJfvFtzgrHDTSY4M"
+    };
+    size_t addressesCount = sizeof (addresses) / sizeof (char *);
+
+    uint64_t begBlockNumber = 629535;
+    uint64_t endBlockNumber = 629543; // BLOCK_HEIGHT_UNBOUND;
+
+    switch (qry->byType) {
+        case CRYPTO_CLIENT_REQUEST_USE_TRANSFERS:
+            qry->client.funcGetTransfers (qry->client.context,
+                                          cryptoWalletManagerTake (qry->manager),
+                                          qryState,
+                                          addresses,
+                                          addressesCount,
+                                          begBlockNumber,
+                                          endBlockNumber);
+            break;
+
+        case CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS:
+            qry->client.funcGetTransactions (qry->client.context,
+                                             cryptoWalletManagerTake (qry->manager),
+                                             qryState,
+                                             addresses,
+                                             addressesCount,
+                                             begBlockNumber,
+                                             endBlockNumber);
+
+            break;
+    }
+#endif
+
+// MARK: - Transfer/Transaction Bundles
+
+extern BRCryptoClientTransferBundle
+cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
+                                  OwnershipKept const char *hash,
+                                  OwnershipKept const char *uids,
+                                  OwnershipKept const char *from,
+                                  OwnershipKept const char *to,
+                                  OwnershipKept const char *amount,
+                                  OwnershipKept const char *currency,
+                                  OwnershipKept const char *fee,
+                                  uint64_t blockTimestamp,
+                                  uint64_t blockNumber,
+                                  uint64_t blockConfirmations,
+                                  uint64_t blockTransactionIndex,
+                                  OwnershipKept const char *blockHash,
+                                  size_t attributesCount,
+                                  OwnershipKept const char **attributeKeys,
+                                  OwnershipKept const char **attributeVals) {
+    BRCryptoClientTransferBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransferBundleRecord));
+
+    bundle->status   = status;
+    bundle->hash     = strdup (hash);
+    bundle->uids     = strdup (uids);
+    bundle->from     = strdup (from);
+    bundle->to       = strdup (to);
+    bundle->amount   = strdup (amount);
+    bundle->currency = strdup (currency);
+    bundle->fee      = strdup (fee);
+
+    bundle->blockTimestamp = blockTimestamp;
+    bundle->blockNumber    = blockNumber;
+    bundle->blockConfirmations    = blockConfirmations;
+    bundle->blockTransactionIndex = blockTransactionIndex;
+    bundle->blockHash = strdup (blockHash);
+
+    // attributes
+
+    return bundle;
+}
+
+extern void
+cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
+    //
+    free (bundle->hash);
+    free (bundle->uids);
+    free (bundle->from);
+    free (bundle->to);
+    free (bundle->amount);
+    free (bundle->fee);
+
+    free (bundle->blockHash);
+
+    memset (bundle, 0, sizeof (struct BRCryptoClientTransferBundleRecord));
+    free (bundle);
+}
+
+extern BRCryptoClientTransactionBundle
+cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
+                                     OwnershipKept uint8_t *transaction,
+                                     size_t transactionLength,
+                                     uint64_t timestamp,
+                                     uint64_t blockHeight) {
+    BRCryptoClientTransactionBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransactionBundleRecord));
+
+    bundle->status = status;
+
+    bundle->serialization = malloc(transactionLength);
+    memcpy (bundle->serialization, transaction, transactionLength);
+    bundle->serializationCount = transactionLength;
+
+    bundle->timestamp   = (BRCryptoSyncTimestamp) timestamp;
+    bundle->blockHeight = (BRCryptoBlockNumber) blockHeight;
+
+    return bundle;
+}
+
+extern void
+cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle) {
+    free (bundle->serialization);
+    memset (bundle, 0, sizeof (struct BRCryptoClientTransactionBundleRecord));
+    free (bundle);
 }
 

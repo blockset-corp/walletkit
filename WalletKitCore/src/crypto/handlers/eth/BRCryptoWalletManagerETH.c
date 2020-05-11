@@ -64,3 +64,16 @@ cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm) {
     cryptoNetworkGive(network);
 }
 
+
+static void
+cryptoWalletManagerEstimateFeeBasisHandlerETH (BRCryptoWalletManager cwm,
+                                               BRCryptoWallet  wallet,
+                                               BRCryptoCookie cookie,
+                                               BRCryptoAddress target,
+                                               BRCryptoAmount amount,
+                                               BRCryptoNetworkFee networkFee) {
+    BRCryptoTransfer transfer = ...;
+
+    cryptoClientQRYEstimateTransferFee (cwm->qryManager, cookie, transfer, networkFee);
+    return;
+}

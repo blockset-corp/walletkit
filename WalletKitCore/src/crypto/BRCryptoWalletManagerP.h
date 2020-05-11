@@ -57,11 +57,6 @@ typedef const BREventType **
 (*BRWalletManagerGetEventTypesHandler) (BRCryptoWalletManager manager,
                                         size_t *eventTypesCount);
 
-typedef BRArrayOf(BRCryptoWallet)
-(*BRWalletManagerCreateWalletsHandler) (BRCryptoWalletManager manager,
-                                        BRArrayOf(BRCryptoTransfer) transfers,
-                                        BRCryptoWallet *primaryWallet);
-
 typedef BRCryptoBoolean
 (*BRWalletManagerSignTransactionWithSeedHandler) (BRCryptoWalletManager manager,
                                                   BRCryptoWallet wallet,
@@ -103,15 +98,12 @@ typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
-
-
 typedef struct {
     BERWalletManagerCreateHandler create;
     BRWalletManagerReleaseHandler release;
     BRWalletManagerInitializeHandler initialize;
     BRWalletManagerCreateFileService createFileService;
     BRWalletManagerGetEventTypesHandler getEventTypes;
-//    BRWalletManagerCreateWalletsHandler createWallets;
     BRWalletManagerSignTransactionWithSeedHandler signTransactionWithSeed;
     BRWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
     BRWalletManagerEstimateLimitHandler estimateLimit;
@@ -257,14 +249,14 @@ cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
                                           BRCryptoTransfer transfer,
                                           BRCryptoTransferEvent event);
 
-#if 0
-cryptoWalletCreateTransfer (BRCryptoWallet wallet,
-                            <#BRCryptoAddress target#>,
-                            <#BRCryptoAmount amount#>,
-                            <#BRCryptoFeeBasis estimatedFeeBasis#>
-                            <#size_t attributesCount#>,
-                            <#BRCryptoTransferAttribute *attributes#>);
-#endif
+private_extern void
+cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
+                                          BRCryptoWallet wallet,
+                                          BRCryptoWalletEvent event);
+
+private_extern void
+cryptoWalletManagerGenerateManagerEvent (BRCryptoWalletManager cwm,
+                                         BRCryptoWalletManagerEvent event);
 
 #ifdef __cplusplus
 }

@@ -60,7 +60,7 @@ cryptoWalletManagerCreateHandlerBTC (BRCryptoListener listener,
                                                                          network,
                                                                          scheme,
                                                                          path,
-                                                                         CRYPTO_CLIENT_QRY_GET_TRANSACTIONS);
+                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
     BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase);
 
     // BTC Stuff
@@ -451,7 +451,7 @@ cryptoClientP2PManagerCalculateSyncDepthHeight(BRCryptoSyncDepth depth,
 static void
 cryptoClientP2PManagerSyncHandlerBTC (BRCryptoClientP2PManager baseManager,
                                       BRCryptoSyncDepth depth,
-                                      BRCryptoBlockChainHeight height) {
+                                      BRCryptoBlockNumber height) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
     uint32_t calcHeight = cryptoClientP2PManagerCalculateSyncDepthHeight (depth,
@@ -862,7 +862,7 @@ static size_t fileServiceSpecificationsCount = (sizeof (fileServiceSpecification
 
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi) {
     BRCryptoWalletManagerBTC manager = info;
-    printf ("BTC: BalanceChanged");
+    printf ("BTC: BalanceChanged\n");
     (void) manager;
 }
 
@@ -872,7 +872,7 @@ static void
 bwmHandleTxAdded (BRCryptoWalletManager manager,
                   OwnershipGiven BRTransaction *ownedTransaction,
                   OwnershipKept BRTransaction *refedTransaction) {
-    printf ("BTC: TxAdded");
+    printf ("BTC: TxAdded\n");
 // #ifdef REFACTOR
     pthread_mutex_lock (&manager->lock);
     bool needEvents = true;
@@ -1004,7 +1004,7 @@ bwmHandleTxUpdated (BRCryptoWalletManager manager,
                     UInt256 hash,
                     uint32_t blockHeight,
                     uint32_t timestamp) {
-    printf ("BTC: TxUpdated");
+    printf ("BTC: TxUpdated\n");
 #ifdef REFACTOR
     pthread_mutex_lock (&manager->lock);
 
@@ -1085,7 +1085,7 @@ static void
 bwmHandleTxDeleted (BRCryptoWalletManager manager,
                     UInt256 hash,
                     int recommendRescan) {
-    printf ("BTC: TxDeleted");
+    printf ("BTC: TxDeleted\n");
 #ifdef REFACTOR
     pthread_mutex_lock (&manager->lock);
 

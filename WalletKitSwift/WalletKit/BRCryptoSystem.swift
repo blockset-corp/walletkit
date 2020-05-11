@@ -1410,24 +1410,6 @@ extension System {
                 var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
                     .map { UnsafePointer<Int8>(strdup($0)) }
                 defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
-                #if false
-                cwmAnnounceGetTransferItem (cwm, sid, status,
-                                               transaction.hash,
-                                               transfer.id,
-                                               transfer.source,
-                                               transfer.target,
-                                               transfer.amount.value,
-                                               transfer.amount.currency,
-                                               fee.map { $0.value },
-                                               blockTimestamp,
-                                               blockHeight,
-                                               blockConfirmations,
-                                               blockTransactionIndex,
-                                               blockHash,
-                                               metaKeysPtr.count,
-                                               &metaKeysPtr,
-                                               &metaValsPtr)
-                #endif
 
                 return cryptoClientTransferBundleCreate (status,
                                                          transaction.hash,

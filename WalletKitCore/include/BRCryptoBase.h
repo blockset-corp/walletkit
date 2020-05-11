@@ -58,11 +58,15 @@ extern "C" {
         free (memory);
     }
 
+    // Same as: BRBlockHeight
+    typedef uint64_t BRCryptoBlockNumber;
 #if !defined(BLOCK_HEIGHT_UNBOUND)
 // See BRBase.h
 #define BLOCK_HEIGHT_UNBOUND       (UINT64_MAX)
 #endif
 extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
+
+#define BLOCK_NUMBER_UNKNWON        (BLOCK_HEIGHT_UNBOUND)
 
     /// MARK: - Data32 / Data16
 
@@ -146,6 +150,7 @@ static int cryptoRefDebug = 0;
   static void preface##Release (type obj);                                        \
   extern type                                                                     \
   preface##Take (type obj) {                                                      \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_fetch_add (&obj->ref.count, 1);                      \
     /* catch take after release */                                                \
     assert (0 != _c);                                                             \
@@ -153,6 +158,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern type                                                                     \
   preface##TakeWeak (type obj) {                                                  \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_load(&obj->ref.count);                               \
     /* keep trying to take unless object is released */                           \
     while (_c != 0 &&                                                             \
@@ -162,6 +168,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern void                                                                     \
   preface##Give (type obj) {                                                      \
+    if (NULL == obj) return;                                                      \
     unsigned int _c = atomic_fetch_sub (&obj->ref.count, 1);                      \
     /* catch give after release */                                                \
     assert (0 != _c);                                                             \

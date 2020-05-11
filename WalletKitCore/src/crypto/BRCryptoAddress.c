@@ -17,7 +17,8 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAddress, cryptoAddress);
 
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
-                          BRCryptoBlockChainType type) {
+                           BRCryptoBlockChainType type,
+                           size_t hashValue) {
     assert (sizeInBytes >= sizeof (struct BRCryptoAddressRecord));
 
     BRCryptoAddress address = calloc (1, sizeInBytes);
@@ -26,6 +27,8 @@ cryptoAddressAllocAndInit (size_t sizeInBytes,
     address->handlers = cryptoHandlersLookup(type)->address;
     address->ref = CRYPTO_REF_ASSIGN(cryptoAddressRelease);
     address->sizeInBytes = sizeInBytes;
+
+    address->hashValue = hashValue;
 
     return address;
 }
@@ -43,25 +46,23 @@ cryptoAddressGetType (BRCryptoAddress address) {
     return address->type;
 }
 
-//extern BRCryptoAddress
-//cryptoAddressCreateFromString (BRCryptoNetwork network,
-//                               const char *string) {
-//    switch (cryptoNetworkGetType(network)) {
-//        case BLOCK_CHAIN_TYPE_BTC: {
-//            const BRChainParams *params = cryptoNetworkAsBTC (network);
-//            return (BRChainParamsIsBitcoin (params)
-//                    ? cryptoAddressCreateFromStringAsBTC (params->addrParams, string)
-//                    : cryptoAddressCreateFromStringAsBCH (params->addrParams, string));
-//        }
-//        case BLOCK_CHAIN_TYPE_ETH:
-//            return cryptoAddressCreateFromStringAsETH (string);
-//
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            BRGenericNetwork gen = cryptoNetworkAsGEN (network);
-//            return cryptoAddressCreateFromStringAsGEN (gen, string);
-//        }
-//    }
-//}
+private_extern size_t
+cryptoAddressGetHashValue (BRCryptoAddress address) {
+    return address->hashValue;;
+}
+
+private_extern BRSetOf(BRCryptoAddress)
+cryptoAddressSetCreate (size_t count) {
+    return BRSetNew ((size_t (*) (const void *)) cryptoAddressGetHashValue,
+                     (int (*) (const void *, const void *))cryptoAddressIsEqual,
+                     count);
+}
+
+private_extern void
+cryptoAddressSetRelease (BRSetOf(BRCryptoAddress) addresses) {
+    BRSetFreeAll (addresses,
+                  (void (*) (void *)) cryptoAddressGive);
+}
 
 extern char *
 cryptoAddressAsString (BRCryptoAddress address) {
@@ -71,6 +72,12 @@ cryptoAddressAsString (BRCryptoAddress address) {
 extern BRCryptoBoolean
 cryptoAddressIsIdentical (BRCryptoAddress a1,
                           BRCryptoAddress a2) {
+    return AS_CRYPTO_BOOLEAN(cryptoAddressIsEqual(a1, a2));
+}
+
+private_extern bool
+cryptoAddressIsEqual (BRCryptoAddress a1,
+                      BRCryptoAddress a2) {
     return (a1 == a2 ||
             (a1->type == a2->type &&
              a1->handlers->isEqual (a1, a2)));

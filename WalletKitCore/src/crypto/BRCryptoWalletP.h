@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "support/BRArray.h"
+#include "support/BRSet.h"
 
 #include "BRCryptoWallet.h"
 #include "BRCryptoBaseP.h"
@@ -70,6 +71,9 @@ typedef BRCryptoTransfer
                                                 BRCryptoUnit unit,
                                                 BRCryptoUnit unitForFee);
 
+typedef OwnershipGiven BRSetOf(BRCryptoAddress)
+(*BRCryptoWalletGetAddressesForRecovery) (BRCryptoWallet wallet);
+
 typedef bool
 (*BRCryptoWalletIsEqualHandler) (BRCryptoWallet wallet1, BRCryptoWallet wallet2);
 
@@ -82,6 +86,7 @@ typedef struct {
     BRCryptoWalletValidateTransferAttributeHandler validateTransferAttribute;
     BRCryptoWalletCreateTransferHandler createTransfer;
     BRCryptoWalletCreateTransferMultipleHandler createTransferMultiple;
+    BRCryptoWalletGetAddressesForRecovery getAddressesForRecovery;
     BRCryptoWalletIsEqualHandler isEqual;
 } BRCryptoWalletHandlers;
 
@@ -140,6 +145,9 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
 private_extern void
 cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
+
+private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
+cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
 /// MARK: - Wallet Sweeper
 

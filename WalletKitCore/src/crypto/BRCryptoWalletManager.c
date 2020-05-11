@@ -220,9 +220,17 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     // This will fully configure the P2P and QRY managers.
     manager->handlers->initialize (manager);
 
+    BRCryptoTransfer    earliestAccountTime = cryptoAccountGetTimestamp (account);
+    BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
+    BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
+    
     // Setup the P2P and QRY Managers
     manager->p2pManager = manager->handlers->createP2PManager (manager);
-    manager->qryManager = cryptoClientQRYManagerCreate (client, manager, manager->byType);
+    manager->qryManager = cryptoClientQRYManagerCreate (client,
+                                                        manager,
+                                                        manager->byType,
+                                                        earliestBlockNumber,
+                                                        latestBlockNumber);
 
     cryptoWalletManagerSetMode (manager, mode);
 
@@ -2101,13 +2109,32 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 // MARK: - Generate Events
 
 private_extern void
-cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
+cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager manager,
                                           BRCryptoWallet wallet,
                                           BRCryptoTransfer transfer,
                                           BRCryptoTransferEvent event) {
-    cwm->listener.transferEventCallback (cwm->listener.context,
-                                         cryptoWalletManagerTake (cwm),
-                                         cryptoWalletTake (wallet),
-                                         cryptoTransferTake (transfer),
-                                         event);
+    manager->listener.transferEventCallback (manager->listener.context,
+                                             cryptoWalletManagerTake (manager),
+                                             cryptoWalletTake (wallet),
+                                             cryptoTransferTake (transfer),
+                                             event);
+}
+
+private_extern void
+cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager manager,
+                                        BRCryptoWallet wallet,
+                                        BRCryptoWalletEvent event) {
+    manager->listener.walletEventCallback (manager->listener.context,
+                                           cryptoWalletManagerTake(manager),
+                                           cryptoWalletTake (wallet),
+                                           event);
+}
+
+private_extern void
+cryptoWalletManagerGenerateManagerEvent (BRCryptoWalletManager manager,
+                                         BRCryptoWalletManagerEvent event) {
+
+    manager->listener.walletManagerEventCallback (manager->listener.context,
+                                                  cryptoWalletManagerTake(manager),
+                                                  event);
 }

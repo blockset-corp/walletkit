@@ -181,6 +181,27 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet walletBase,
 #endif
 }
 
+static OwnershipGiven BRSetOf(BRCryptoAddress)
+cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet walletBase) {
+    BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (10);
+
+    BRCryptoWalletBTC wallet = cryptoWalletCoerce(walletBase);
+    BRWallet *btcWallet = wallet->wid;
+
+    size_t btcAddressesCount = BRWalletAllAddrs (btcWallet, NULL, 0);
+    BRAddress *btcAddresses = calloc (btcAddressesCount, sizeof (BRAddress));
+    BRWalletAllAddrs (btcWallet, btcAddresses, btcAddressesCount);
+
+    for (size_t index = 0; index < btcAddressesCount; index++) {
+        BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, btcAddresses[index]));
+        BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, BRWalletAddressToLegacy(btcWallet, &btcAddresses[index])));
+    }
+
+    free (btcAddresses);
+
+    return addresses;
+}
+
 extern BRCryptoTransfer
 cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
                                BRCryptoAddress target,
@@ -228,5 +249,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersBTC = {
     cryptoWalletValidateTransferAttributeBTC,
     cryptoWalletCreateTransferBTC,
     cryptoWalletCreateTransferMultipleBTC,
+    cryptoWalletGetAddressesForRecoveryBTC,
     cryptoWalletIsEqualBTC
 };

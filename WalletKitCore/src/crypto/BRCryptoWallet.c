@@ -256,6 +256,11 @@ cryptoWalletHasAddress (BRCryptoWallet wallet,
             : wallet->handlers->hasAdress (wallet, address));
 }
 
+private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
+cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet) {
+    return wallet->handlers->getAddressesForRecovery (wallet);
+}
+
 extern BRCryptoFeeBasis
 cryptoWalletGetDefaultFeeBasis (BRCryptoWallet wallet) {
     return wallet->defaultFeeBasis;

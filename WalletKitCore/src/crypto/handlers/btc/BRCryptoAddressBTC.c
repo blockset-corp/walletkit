@@ -13,7 +13,9 @@ cryptoAddressCoerce (BRCryptoAddress address) {
 
 extern BRCryptoAddress
 cryptoAddressCreateAsBTC (BRCryptoBlockChainType type, BRAddress addr) {
-    BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressBTCRecord), type);
+    BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressBTCRecord),
+                                                                type,
+                                                                BRAddressHash (addr.s));
     BRCryptoAddressBTC address     = cryptoAddressCoerce (addressBase);
 
     address->addr = addr;

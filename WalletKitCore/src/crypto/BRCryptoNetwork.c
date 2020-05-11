@@ -219,14 +219,14 @@ cryptoNetworkGetConfirmationPeriodInSeconds (BRCryptoNetwork network) {
     return network->confirmationPeriodInSeconds;
 }
 
-extern BRCryptoBlockChainHeight
+extern BRCryptoBlockNumber
 cryptoNetworkGetHeight (BRCryptoNetwork network) {
     return network->height;
 }
 
 extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
-                        BRCryptoBlockChainHeight height) {
+                        BRCryptoBlockNumber height) {
     network->height = height;
 }
 

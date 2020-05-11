@@ -13,6 +13,8 @@
 
 #include <stdbool.h>
 
+#include "support/BRSet.h"
+
 #include "BRCryptoBaseP.h"
 #include "BRCryptoAddress.h"
 
@@ -41,14 +43,30 @@ struct BRCryptoAddressRecord {
     const BRCryptoAddressHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
+
+    size_t hashValue;
 };
 
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
-                           BRCryptoBlockChainType type);
+                           BRCryptoBlockChainType type,
+                           size_t hashValue);
 
 private_extern BRCryptoBlockChainType
 cryptoAddressGetType (BRCryptoAddress address);
+
+private_extern size_t
+cryptoAddressGetHashValue (BRCryptoAddress address);
+
+private_extern bool
+cryptoAddressIsEqual (BRCryptoAddress a1,
+                      BRCryptoAddress a2);
+
+private_extern BRSetOf(BRCryptoAddress)
+cryptoAddressSetCreate (size_t count);
+
+private_extern void
+cryptoAddressSetRelease (BRSetOf(BRCryptoAddress) addresses);
 
 #ifdef __cplusplus
 }

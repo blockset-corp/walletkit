@@ -11,6 +11,8 @@
 #ifndef BRCryptoClientP_h
 #define BRCryptoClientP_h
 
+#include "support/BRSet.h"
+
 #include "BRCryptoClient.h"
 #include "BRCryptoSync.h"
 #include "BRCryptoTransfer.h"
@@ -27,11 +29,58 @@ struct BRCryptoClientTransactionBundleRecord {
     uint8_t *serialization;
     size_t   serializationCount;
     BRCryptoSyncTimestamp timestamp;
-    BRCryptoBlockChainHeight blockHeight;
+    BRCryptoBlockNumber blockHeight;
 };
 
 struct BRCryptoClientTransferBundleRecord {
     BRCryptoTransferStateType status;
+    char *hash;
+    char *uids;
+    char *from;
+    char *to;
+    char *amount;
+    char *currency;
+    char *fee;
+    uint64_t blockTimestamp;
+    uint64_t blockNumber;
+    uint64_t blockConfirmations;
+    uint64_t blockTransactionIndex;
+    char *blockHash;
+};
+
+// MARK: - Client Callback
+
+typedef enum  {
+    CLIENT_CALLBACK_REQUEST_BLOCK_NUMBER,
+    CLIENT_CALLBACK_REQUEST_TRANSFERS,
+    CLIENT_CALLBACK_REQUEST_TRANSACTIONS,
+    CLIENT_CALLBACK_SUBMIT_TRANSACTION,
+    CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE,
+} BRCryptoClientCallbackType;
+
+struct BRCryptoClientCallbackStateRecord {
+    BRCryptoClientCallbackType type;
+    union {
+        struct {
+            BRSetOf(BRCryptoAddress) addresses;
+        } getTransfers;
+
+        struct {
+            BRSetOf(BRCryptoAddress) addresses;
+        } getTransactions;
+
+        struct {
+            BRCryptoHash hash;
+        } submitTransaction;
+
+        struct {
+            BRCryptoHash hash;
+            BRCryptoCookie cookie;
+            BRCryptoNetworkFee networkFee;
+        } estimateTransactionFee;
+        // ...
+    } u;
+    size_t rid;
 };
 
 // MARK: - P2P/QRY Type
@@ -57,7 +106,7 @@ typedef struct {
 extern void
 cryptoClientSync (BRCryptoClientSync sync,
                   BRCryptoSyncDepth depth,
-                  BRCryptoBlockChainHeight height);
+                  BRCryptoBlockNumber height);
 
 extern void
 cryptoClientSyncPeriodic (BRCryptoClientSync sync);
@@ -90,7 +139,7 @@ typedef void
 typedef void
 (*BRCryptoClientP2PManagerSyncHandler) (BRCryptoClientP2PManager p2p,
                                         BRCryptoSyncDepth depth,
-                                        BRCryptoBlockChainHeight height);
+                                        BRCryptoBlockNumber height);
 
 typedef void
 (*BRCryptoClientP2PManagerSendHandler) (BRCryptoClientP2PManager p2p,
@@ -144,24 +193,34 @@ cryptoClientP2PManagerAsSend (BRCryptoClientP2PManager p2p) {
 // MARK: Client QRY (QueRY)
 
 typedef enum {
-    CRYPTO_CLIENT_QRY_GET_TRANSFERS,
-    CRYPTO_CLIENT_QRY_GET_TRANSACTIONS,
+    CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+    CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
 } BRCryptoClientQRYByType;
 
 struct BRCryptoClientQRYManagerRecord {
     BRCryptoClient client;
     BRCryptoWalletManager manager;
+    BRCryptoClientQRYByType byType;
+    BRCryptoBlockNumber blockNumberOffset;
+
+    struct {
+        bool completed;
+        bool success;
+        BRCryptoBlockNumber begBlockNumber;
+        BRCryptoBlockNumber endBlockNumber;
+        size_t rid;
+    } sync;
 
     size_t requestId;
-
-    BRCryptoClientQRYByType byType;
 };
 
 
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,
                               BRCryptoWalletManager manager,
-                              BRCryptoClientQRYByType byType);
+                              BRCryptoClientQRYByType byType,
+                              BRCryptoBlockNumber earliestBlockNumber,
+                              BRCryptoBlockNumber currentBlockNumber);
 
 extern void
 cryptoClientQRYManagerRelease (BRCryptoClientQRYManager qry);
@@ -174,6 +233,12 @@ cryptoClientQRYManagerDisconnect (BRCryptoClientQRYManager qry);
 
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry);
+
+extern void
+cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
+                                    BRCryptoCookie   cookie,
+                                    BRCryptoTransfer transfer,
+                                    BRCryptoNetworkFee networkFee);
 
 static inline BRCryptoClientSync
 cryptoClientQRYManagerAsSync (BRCryptoClientQRYManager qry) {

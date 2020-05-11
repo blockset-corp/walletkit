@@ -32,9 +32,6 @@ extern "C" {
 #define NUMBER_OF_ADDRESS_SCHEMES   (1 + CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 
 
-    // Same as: BRBlockHeight
-    typedef uint64_t BRCryptoBlockChainHeight;
-
     typedef struct BRCryptoNetworkFeeRecord *BRCryptoNetworkFee;
 
     extern BRCryptoNetworkFee
@@ -149,12 +146,12 @@ extern "C" {
                                   BRCryptoUnit unit);
 
 
-    extern BRCryptoBlockChainHeight
+    extern BRCryptoBlockNumber
     cryptoNetworkGetHeight (BRCryptoNetwork network);
 
     extern void
     cryptoNetworkSetHeight (BRCryptoNetwork network,
-                            BRCryptoBlockChainHeight height);
+                            BRCryptoBlockNumber height);
 
     extern uint32_t
     cryptoNetworkGetConfirmationsUntilFinal (BRCryptoNetwork network);
