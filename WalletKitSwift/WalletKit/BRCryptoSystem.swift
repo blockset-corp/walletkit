@@ -1417,7 +1417,7 @@ extension System {
                                                     success: {
                                                         $0.forEach { (model: BlockChainDB.Model.Transaction) in
                                                             let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let height    = model.blockHeight ?? 0
+                                                            let height    = model.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                             let status    = System.getTransferStatus (model.status)
 
                                                             if var data = model.raw {
@@ -1456,7 +1456,7 @@ extension System {
                                                     success: {
                                                         $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
                                                             let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let blockHeight    = transaction.blockHeight ?? 0
+                                                            let blockHeight    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                             let blockConfirmations = transaction.confirmations ?? 0
                                                             let blockTransactionIndex = transaction.index ?? 0
                                                             let blockHash             = transaction.blockHash
