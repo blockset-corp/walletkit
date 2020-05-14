@@ -32,7 +32,7 @@ struct BRCryptoAccountRecord {
     // ...
 
     char *uids;
-    uint64_t timestamp;
+    BRCryptoTimestamp timestamp;
     BRCryptoRef ref;
 };
 

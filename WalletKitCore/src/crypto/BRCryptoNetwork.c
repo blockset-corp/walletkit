@@ -610,7 +610,7 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
 
 private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
-                                                BRCryptoSyncTimestamp timestamp) {
+                                                BRCryptoTimestamp timestamp) {
     return network->handlers->getBlockNumberAtOrBeforeTimestamp (network, timestamp);
 }
 

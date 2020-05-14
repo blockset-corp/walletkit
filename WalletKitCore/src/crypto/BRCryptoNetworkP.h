@@ -63,7 +63,7 @@ typedef BRCryptoAddress
 
 typedef BRCryptoBlockNumber
 (*BRCryptoNetworkGetBlockNumberAtOrBeforeTimestampHandler) (BRCryptoNetwork network,
-                                                            BRCryptoSyncTimestamp timestamp);
+                                                            BRCryptoTimestamp timestamp);
 
 typedef BRCryptoBoolean
 (*BRCryptoNetworkIsAccountInitializedHandler) (BRCryptoNetwork network,
@@ -185,7 +185,7 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
 
 private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
-                                                BRCryptoSyncTimestamp timestamp);
+                                                BRCryptoTimestamp timestamp);
 
 #ifdef __cplusplus
 }

@@ -66,7 +66,7 @@ extern "C" {
      * @return The Account, or NULL.  In practice NULL is never returned.
      */
     extern BRCryptoAccount
-    cryptoAccountCreate (const char *paperKey, uint64_t timestamp, const char *uids);
+    cryptoAccountCreate (const char *paperKey, BRCryptoTimestamp timestamp, const char *uids);
 
     /**
      * Recreate an Account from a serialization
@@ -110,7 +110,7 @@ extern "C" {
                                         const uint8_t *bytes,
                                         size_t bytesCount);
 
-    extern uint64_t
+    extern BRCryptoTimestamp
     cryptoAccountGetTimestamp (BRCryptoAccount account);
 
     extern char *

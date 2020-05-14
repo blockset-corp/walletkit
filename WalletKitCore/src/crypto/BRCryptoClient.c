@@ -891,7 +891,7 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
     memcpy (bundle->serialization, transaction, transactionLength);
     bundle->serializationCount = transactionLength;
 
-    bundle->timestamp   = (BRCryptoSyncTimestamp) timestamp;
+    bundle->timestamp   = AS_CRYPTO_TIMESTAMP(timestamp);
     bundle->blockHeight = (BRCryptoBlockNumber) blockHeight;
 
     return bundle;

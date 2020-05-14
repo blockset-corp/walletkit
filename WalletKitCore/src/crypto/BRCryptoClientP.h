@@ -28,7 +28,7 @@ struct BRCryptoClientTransactionBundleRecord {
     BRCryptoTransferStateType status;
     uint8_t *serialization;
     size_t   serializationCount;
-    BRCryptoSyncTimestamp timestamp;
+    BRCryptoTimestamp timestamp;
     BRCryptoBlockNumber blockHeight;
 };
 

@@ -115,7 +115,7 @@ extern "C" {
             } wallet;
 
             struct {
-                BRCryptoSyncTimestamp timestamp;
+                BRCryptoTimestamp timestamp;
                 BRCryptoSyncPercentComplete percentComplete;
             } syncContinues;
 

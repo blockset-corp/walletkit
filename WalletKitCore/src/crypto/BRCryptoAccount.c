@@ -77,8 +77,8 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
                              BREthereumAccount eth,
                              BRRippleAccount xrp,
                              BRHederaAccount hbar,
-                             uint64_t timestamp,
-                             const char * uids) {
+                             BRCryptoTimestamp timestamp,
+                             const char *uids) {
     BRCryptoAccount account = malloc (sizeof (struct BRCryptoAccountRecord));
 
     account->btc = btc;
@@ -94,7 +94,7 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
 
 static BRCryptoAccount
 cryptoAccountCreateFromSeedInternal (UInt512 seed,
-                                     uint64_t timestamp,
+                                     BRCryptoTimestamp timestamp,
                                      const char *uids) {
     return cryptoAccountCreateInternal (BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8)),
                                         ethAccountCreateWithBIP32Seed(seed),
@@ -105,7 +105,9 @@ cryptoAccountCreateFromSeedInternal (UInt512 seed,
 }
 
 extern BRCryptoAccount
-cryptoAccountCreate (const char *phrase, uint64_t timestamp, const char *uids) {
+cryptoAccountCreate (const char *phrase,
+                     BRCryptoTimestamp timestamp,
+                     const char *uids) {
     cryptoAccountInstall();
 
     return cryptoAccountCreateFromSeedInternal (cryptoAccountDeriveSeedInternal(phrase), timestamp, uids);
@@ -138,7 +140,7 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     size_t chkSize = sizeof (uint16_t); // checksum
     size_t szSize  = sizeof (uint32_t); // size
     size_t verSize = sizeof (uint16_t); // version
-    size_t tsSize  = sizeof (uint64_t); // timestamp
+    size_t tsSize  = sizeof (uint64_t); // timestamp - read as uint64_t
 
     // Demand at least <checksum16><size32> in `bytes`
     if (bytesCount < (chkSize + szSize)) return NULL;
@@ -164,7 +166,7 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     // `cryptoAccountCreate()` and a re-serialization
     if (ACCOUNT_SERIALIZE_DEFAULT_VERSION != version) return NULL;
 
-    // Timestamp
+    // Timestamp - read as uint64_t
     uint64_t timestamp = UInt64GetBE (bytesPtr);
     BYTES_PTR_INCR_AND_CHECK (tsSize);
 
@@ -208,7 +210,7 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     assert (NULL != hbar);
     BYTES_PTR_INCR_AND_CHECK (hbarSize); // Move the pointer to the end of the Hedera account
 
-    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, timestamp, uids);
+    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, AS_CRYPTO_TIMESTAMP (timestamp), uids);
 #undef BYTES_PTR_INCR_AND_CHECK
 }
 
@@ -243,7 +245,7 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
     size_t chkSize = sizeof (uint16_t); // checksum
     size_t szSize  = sizeof (uint32_t); // size
     size_t verSize = sizeof (uint16_t); // version
-    size_t tsSize  = sizeof (uint64_t); // timestamp
+    size_t tsSize  = sizeof (uint64_t); // timestamp - written as uint64_t
 
     // Version
     uint16_t version = ACCOUNT_SERIALIZE_DEFAULT_VERSION;
@@ -286,7 +288,7 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
     UInt16SetBE (bytesPtr, version);
     bytesPtr += verSize;
 
-    // timestamp
+    // timestamp - written as uint64_t
     UInt64SetBE (bytesPtr, account->timestamp);
     bytesPtr += tsSize;
 
@@ -342,7 +344,7 @@ cryptoAccountValidateSerialization (BRCryptoAccount account,
     size_t chkSize = sizeof (uint16_t); // checksum
     size_t szSize  = sizeof (uint32_t); // size
     size_t verSize = sizeof (uint16_t); // version
-    size_t tsSize  = sizeof (uint64_t); // timestamp
+    size_t tsSize  = sizeof (uint64_t); // timestamp - as uint64_t
 
     // Skip directly to the BTC MPK
     bytesPtr += (chkSize + szSize + verSize + tsSize);
@@ -367,7 +369,7 @@ cryptoAccountValidateSerialization (BRCryptoAccount account,
     return AS_CRYPTO_BOOLEAN (0 == memcmp (mpkBytesToCheck, mpkBytes, mpkBytesCount));
 }
 
-extern uint64_t
+extern BRCryptoTimestamp
 cryptoAccountGetTimestamp (BRCryptoAccount account) {
     return account->timestamp;
 }

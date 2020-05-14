@@ -1718,7 +1718,7 @@ cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
             //                                                      cryptoWalletManagerTake (cwm),
             //                                                      (BRCryptoWalletManagerEvent) {
             //                CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
-            //                { .syncContinues = { NO_CRYPTO_SYNC_TIMESTAMP, 0 }}
+            //                { .syncContinues = { NO_CRYPTO_TIMESTAMP, 0 }}
             //            });
         }
         else {
@@ -1727,7 +1727,7 @@ cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
             //                                                      cryptoWalletManagerTake (cwm),
             //                                                      (BRCryptoWalletManagerEvent) {
             //                CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
-            //                { .syncContinues = { NO_CRYPTO_SYNC_TIMESTAMP, 100 }}
+            //                { .syncContinues = { NO_CRYPTO_TIMESTAMP, 100 }}
             //            });
 
             // ... and then a CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED

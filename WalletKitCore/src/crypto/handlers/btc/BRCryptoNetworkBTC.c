@@ -72,7 +72,7 @@ cryptoNetworkCreateAddressBTC (BRCryptoNetwork networkBase,
 
 static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork networkBase,
-                                                   BRCryptoSyncTimestamp timestamp) {
+                                                   BRCryptoTimestamp timestamp) {
     BRCryptoNetworkBTC network = (BRCryptoNetworkBTC) networkBase;
 
     const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (network->params, timestamp);

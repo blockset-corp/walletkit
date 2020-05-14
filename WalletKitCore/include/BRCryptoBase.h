@@ -68,6 +68,13 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
 #define BLOCK_NUMBER_UNKNWON        (BLOCK_HEIGHT_UNBOUND)
 
+    /// The Timestamp (in the Unix epoch) of the last block processed in a sync.
+    typedef uint32_t BRCryptoTimestamp;
+
+#define AS_CRYPTO_TIMESTAMP(unixSeconds)      ((BRCryptoTimestamp) (unixSeconds))
+#define NO_CRYPTO_TIMESTAMP                   (AS_CRYPTO_TIMESTAMP (0))
+
+
     /// MARK: - Data32 / Data16
 
     typedef struct {
