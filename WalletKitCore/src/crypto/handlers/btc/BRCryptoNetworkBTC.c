@@ -70,6 +70,16 @@ cryptoNetworkCreateAddressBTC (BRCryptoNetwork networkBase,
             : cryptoAddressCreateFromStringAsBCH (network->params->addrParams, addressAsString));
 }
 
+static BRCryptoBlockNumber
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork networkBase,
+                                                   BRCryptoSyncTimestamp timestamp) {
+    BRCryptoNetworkBTC network = (BRCryptoNetworkBTC) networkBase;
+
+    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (network->params, timestamp);
+
+    return (NULL == checkpoint ? 0 : checkpoint->height);
+}
+
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedBTC (BRCryptoNetwork network,
                                    BRCryptoAccount account) {
@@ -106,6 +116,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
     cyptoNetworkCreateBTC,
     cryptoNetworkReleaseBTC,
     cryptoNetworkCreateAddressBTC,
+    cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
     cryptoNetworkInitializeAccountBTC

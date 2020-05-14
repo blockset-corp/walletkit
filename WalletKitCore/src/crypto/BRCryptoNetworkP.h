@@ -61,6 +61,10 @@ typedef BRCryptoAddress
 (*BRCryptoNetworkCreateAddressHandler) (BRCryptoNetwork network,
                                         const char *addressAsString);
 
+typedef BRCryptoBlockNumber
+(*BRCryptoNetworkGetBlockNumberAtOrBeforeTimestampHandler) (BRCryptoNetwork network,
+                                                            BRCryptoSyncTimestamp timestamp);
+
 typedef BRCryptoBoolean
 (*BRCryptoNetworkIsAccountInitializedHandler) (BRCryptoNetwork network,
                                                BRCryptoAccount account);
@@ -81,6 +85,7 @@ typedef struct {
     BRCyptoNetworkCreateHandler create;
     BRCryptoNetworkReleaseHandler release;
     BRCryptoNetworkCreateAddressHandler createAddress;
+    BRCryptoNetworkGetBlockNumberAtOrBeforeTimestampHandler getBlockNumberAtOrBeforeTimestamp;
     BRCryptoNetworkIsAccountInitializedHandler isAccountInitialized;
     BRCryptoNetworkGetAccountInitializationDataHandler getAccountInitializationData;
     BRCryptoNetworkInitializeAccountHandler initializeAccount;
@@ -177,6 +182,10 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
+
+private_extern BRCryptoBlockNumber
+cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
+                                                BRCryptoSyncTimestamp timestamp);
 
 #ifdef __cplusplus
 }
