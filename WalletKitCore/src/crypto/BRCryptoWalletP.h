@@ -140,6 +140,9 @@ private_extern void
 cryptoWalletSetState (BRCryptoWallet wallet,
                       BRCryptoWalletState state);
 
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHash (BRCryptoWallet wallet, BRCryptoHash hashToMatch);
+
 private_extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 

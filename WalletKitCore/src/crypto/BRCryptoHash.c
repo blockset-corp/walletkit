@@ -57,7 +57,7 @@ _cryptoHashAddPrefix (char *hash, int freeHash) {
 
 extern char *
 cryptoHashString (BRCryptoHash hash) {
-    size_t stringLength = 2 * CRYPTO_HASH_BYTES + 1;
+    size_t stringLength = 2 * hash->bytesCount + 1;
     char string [stringLength];
 
     hexEncode (string, stringLength, hash->bytes, hash->bytesCount);

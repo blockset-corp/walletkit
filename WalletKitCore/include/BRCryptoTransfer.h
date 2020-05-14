@@ -44,6 +44,9 @@ extern "C" {
     extern BRCryptoTransferSubmitError
     cryptoTransferSubmitErrorPosix(int errnum);
 
+    extern bool
+    cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
+                                      const BRCryptoTransferSubmitError *e2);
     /**
      * Return a descriptive message as to why the error occurred.
      *

@@ -124,7 +124,6 @@ cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
                                                                unitAsBase,
                                                                btcWallet,
                                                                BRTransactionCopy(btcTransactions[index]),
-                                                               btcTransactions[index],
                                                                manager->type);
         cryptoWalletAddTransfer(manager->wallet, transfer);
     }
@@ -134,7 +133,6 @@ cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
     cryptoCurrencyGive (currency);
 
     return;
-
 }
 
 static BRFileService
@@ -860,52 +858,77 @@ static size_t fileServiceSpecificationsCount = (sizeof (fileServiceSpecification
 
 // MARK: BRWallet Callback Balance Changed
 
+static void
+cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
+                                      BRCryptoWallet wallet,
+                                      BRCryptoTransfer transfer,
+                                      bool needCreate,
+                                      bool needAdded,
+                                      bool needBalance) {
+    if (needCreate)
+        cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer, (BRCryptoTransferEvent) {
+            CRYPTO_TRANSFER_EVENT_CREATED
+        });
+
+
+    if (needAdded)
+        cryptoWalletManagerGenerateWalletEvent(manager, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
+            { .transfer = { cryptoTransferTake (transfer) }}
+        });
+
+
+    if (needBalance)
+        cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+            { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
+        });
+}
+
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi) {
     BRCryptoWalletManagerBTC manager = info;
-    printf ("BTC: BalanceChanged\n");
+    // printf ("BTC: BalanceChanged\n");
     (void) manager;
 }
 
 // MARK: - BRWallet Callback TX Added
 
-static void
-bwmHandleTxAdded (BRCryptoWalletManager manager,
-                  OwnershipGiven BRTransaction *ownedTransaction,
-                  OwnershipKept BRTransaction *refedTransaction) {
+static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
+    BRCryptoWalletManagerBTC manager = info;
+
+    // We have the possibility that the TID argument ceases to exist by the time this `TxAdded`
+    // function is invoked.  From the Bitcoin code: BRWalletRegisterTransaction is called but
+    // is interrupted just before wallet->txAdded in invoked; then, somehow, wallet->txDeleted
+    // is called (and assume BRTranactionFree() got invoked).  Gone.
+    tid = BRTransactionCopy (tid);
+
     printf ("BTC: TxAdded\n");
-// #ifdef REFACTOR
-    pthread_mutex_lock (&manager->lock);
+
+    pthread_mutex_lock (&manager->base.lock);
     bool needEvents = true;
+    bool needCreateEvent = false;
 
-    BRCryptoWallet  wallet    = manager->wallet;
-    BRWallet       *btcWallet = cryptoWalletAsBTC(wallet);
+    BRCryptoWallet  wallet = manager->base.wallet;
+    BRWallet       *wid    = cryptoWalletAsBTC(wallet);
 
-    BRCryptoTransfer    transfer    = NULL;
-    BRCryptoTransferBTC transferBTC = NULL;
-
-    // Look for an existing transfer matching `txHash`
-    BRCryptoHash hash = cryptoHashCreateAsBTC (ownedTransaction->txHash);
-    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        if (CRYPTO_TRUE == cryptoHashEqual (hash, cryptoTransferGetHash(wallet->transfers[index]))) {
-            transfer = wallet->transfers[index];
-            transferBTC = cryptoTransferCoerceBTC (transfer);
-            break;
-        }
-    }
+    BRCryptoTransferBTC transferBTC = cryptoWalletFindTransferByHashAsBTC (wallet, tid->txHash);
+    BRCryptoTransfer    transfer    = (BRCryptoTransfer) transferBTC;
 
     if (NULL == transfer) {
         // first we've seen it, so it came from the network; add it to our list
         transfer = cryptoTransferCreateAsBTC (wallet->unit,
                                               wallet->unitForFee,
-                                              btcWallet,
-                                              ownedTransaction,
-                                              refedTransaction,
+                                              wid,
+                                              tid,
                                               wallet->type);
         transferBTC = cryptoTransferCoerceBTC (transfer);
-
-        // TODO: Add to Wallet
+        cryptoWalletAddTransfer (wallet, transfer);
+        needCreateEvent = true;
     }
     else {
+        BRTransaction *oldTid = transferBTC->tid;
+        BRTransaction *newTid = tid;
+
         if (transferBTC->isDeleted) {
             // We've seen it before but has already been deleted, somewhow?  We are quietly going
             // to skip out and avoid signalling any events. Perhaps should assert(0) here.
@@ -913,17 +936,17 @@ bwmHandleTxAdded (BRCryptoWalletManager manager,
         }
         else {
             // this is a transaction we've submitted; set the reference transaction from the wallet
-            transferBTC->refedTransaction = refedTransaction;
-            // TODO: This v
-            // BRTransactionWithStateSetBlock (txnWithState, ownedTransaction->blockHeight, ownedTransaction->timestamp);
+            oldTid->blockHeight = newTid->blockHeight;
+            oldTid->timestamp   = newTid->timestamp;
         }
 
         // we already have an owned copy of this transaction; free up the passed one
-        BRTransactionFree (ownedTransaction);
+        BRTransactionFree (newTid);
+        tid = oldTid;
     }
     assert (NULL != transfer);
 
-    transferBTC->isResolved = BRWalletTransactionIsResolved (btcWallet, refedTransaction);
+    transferBTC->isResolved = BRWalletTransactionIsResolved (wid, tid);
 
     // Find other transfers that are now resolved.
 
@@ -934,7 +957,7 @@ bwmHandleTxAdded (BRCryptoWalletManager manager,
     for (size_t index = 0; index < transfersCount; index++) {
         BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC (wallet->transfers[index]);
 
-        bool nowResolved = BRWalletTransactionIsResolved (btcWallet, transferBTC->refedTransaction);
+        bool nowResolved = BRWalletTransactionIsResolved (wid, transferBTC->tid);
 
         if (nowResolved && !transferBTC->isResolved) {
             transferBTC->isResolved = true;
@@ -942,232 +965,106 @@ bwmHandleTxAdded (BRCryptoWalletManager manager,
         }
     }
 
-    pthread_mutex_unlock (&manager->lock);
+    pthread_mutex_unlock (&manager->base.lock);
 
-#if REFACTOR
-    if (transferBTC->isResolved && needEvents)
-        bwmGenerateAddedEvents (manager, txnWithState);
+    if (transferBTC->isResolved)
+        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, transfer, needCreateEvent, needCreateEvent, true);
 
     for (size_t index = 0; index < resolvedTransactionIndex; index++)
-        bwmGenerateAddedEvents (manager, resolvedTransactions[index]);
-#endif
+        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, &resolvedTransfers[index]->base, false, false, true);
+
+    // Only one UPDATE BALANCE?
 
     free (resolvedTransfers);
-
-//#endif
-}
-
-typedef struct {
-    struct BREventRecord base;
-    BRCryptoWalletManager manager;
-    BRTransaction *ownedTransaction;
-    BRTransaction *refedTransaction;
-} BRCryptoWalletManagerWalletTxAddedEvent;
-
-static void
-bwmSignalTxAddedDispatcher (BREventHandler ignore,
-                            BRCryptoWalletManagerWalletTxAddedEvent *event) {
-    bwmHandleTxAdded(event->manager, event->ownedTransaction, event->refedTransaction);
-}
-
-static void
-bwmSignalTxAddedDestroyer (BRCryptoWalletManagerWalletTxAddedEvent *event) {
-    BRTransactionFree (event->ownedTransaction);
-}
-
-static BREventType bwmSignalTxAddedEventType = {
-    "BTC: Wallet TX Added Event",
-    sizeof (BRCryptoWalletManagerWalletTxAddedEvent),
-    (BREventDispatcher) bwmSignalTxAddedDispatcher,
-    (BREventDestroyer) bwmSignalTxAddedDestroyer
-};
-
-extern void
-bwmSignalTxAdded (BRCryptoWalletManager manager,
-                  OwnershipGiven BRTransaction *ownedTransaction,
-                  OwnershipKept BRTransaction *refedTransaction) {
-    BRCryptoWalletManagerWalletTxAddedEvent message =
-    { { NULL, &bwmSignalTxAddedEventType}, manager, ownedTransaction, refedTransaction};
-    eventHandlerSignalEvent (manager->handler, (BREvent*) &message);
-}
-
-static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tx) {
-    BRCryptoWalletManagerBTC manager = info;
-    bwmSignalTxAdded (&manager->base, BRTransactionCopy (tx), tx);
-
 }
 
 // MARK: - BRWallet Callback TX Updated
 
-static void
-bwmHandleTxUpdated (BRCryptoWalletManager manager,
-                    UInt256 hash,
-                    uint32_t blockHeight,
-                    uint32_t timestamp) {
-    printf ("BTC: TxUpdated\n");
-#ifdef REFACTOR
-    pthread_mutex_lock (&manager->lock);
-
-    // We anticapte a case whereby a transaction has seen `txDeleted` but then `txUpdated`.  At
-    // least we postulate such a case because IOS crashes seem to indicate that it has occurred.
-    //
-    // A txDeleted is currently only produced in a BRSyncMode of P2P; but this might change as
-    // BlockSet deletes transactions from the mempool.
-    int needEvents = 1;
-
-    // Find the transaction by `hash` but in the lookup ignore the deleted flag.
-    BRTransactionWithState txnWithState = BRWalletManagerFindTransactionByHash (manager, hash, 1);
-
-    // A transaction must have been found, even if it is flagged as deleted.
-    assert (NULL != txnWithState);
-
-    // The transaction must be signed to be updated
-    assert (BRTransactionIsSigned (BRTransactionWithStateGetOwned (txnWithState)));
-
-    // If the transaction is deleted.... we'll avoid setting the block and the subsequent event.
-    if (txnWithState->isDeleted) needEvents = 0;
-    else {
-        BRTransactionWithStateSetBlock (txnWithState, blockHeight, timestamp);
-    }
-    pthread_mutex_unlock (&manager->lock);
-
-    if (txnWithState->isResolved && needEvents) {
-        bwmSignalTransactionEvent(manager,
-                                  manager->wallet,
-                                  BRTransactionWithStateGetOwned (txnWithState),
-                                  (BRTransactionEvent) {
-            BITCOIN_TRANSACTION_UPDATED,
-            { .updated = { blockHeight, timestamp }}
-        });
-    }
-#endif
-}
-
-typedef struct {
-    struct BREventRecord base;
-    BRCryptoWalletManager manager;
-    UInt256 hash;
-    uint32_t blockHeight;
-    uint32_t timestamp;
-} BRCryptoWalletManagerWalletTxUpdatedEvent;
-
-static void
-bwmSignalTxUpdatedDispatcher (BREventHandler ignore,
-                              BRCryptoWalletManagerWalletTxUpdatedEvent *event) {
-    bwmHandleTxUpdated(event->manager, event->hash, event->blockHeight, event->timestamp);
-}
-
-static BREventType bwmSignalTxUpdatedEventType = {
-    "BTC: Wallet TX Updated Event",
-    sizeof (BRCryptoWalletManagerWalletTxUpdatedEvent),
-    (BREventDispatcher) bwmSignalTxUpdatedDispatcher
-};
-
-static void
-bwmSignalTxUpdated (BRCryptoWalletManager manager,
-                    UInt256 hash,
-                    uint32_t blockHeight,
-                    uint32_t timestamp) {
-    BRCryptoWalletManagerWalletTxUpdatedEvent message =
-    { { NULL, &bwmSignalTxUpdatedEventType}, manager, hash, blockHeight, timestamp};
-    eventHandlerSignalEvent (manager->handler, (BREvent*) &message);
-}
-
-static void cryptoWalletManagerBTCTxUpdated (void *info, const UInt256 *hashes, size_t count, uint32_t blockHeight, uint32_t timestamp) {
+static void cryptoWalletManagerBTCTxUpdated (void *info,
+                                             const UInt256 *hashes, size_t count,
+                                             uint32_t blockHeight,
+                                             uint32_t timestamp) {
     BRCryptoWalletManagerBTC manager = info;
-    for (size_t index = 0; index < count; index++)
-        bwmSignalTxUpdated (&manager->base, hashes[index], blockHeight, timestamp);
+    (void) manager;
+
+    BRCryptoWallet wallet = manager->base.wallet;
+
+    printf ("BTC: TxUpdated\n");
+    for (size_t index = 0; index < count; index++) {
+        bool needEvents = true;
+
+        pthread_mutex_lock (&manager->base.lock);
+        BRCryptoTransferBTC transfer = cryptoWalletFindTransferByHashAsBTC(wallet, hashes[index]);
+        assert (NULL != transfer);
+
+        assert (BRTransactionIsSigned (transfer->tid));
+
+        if (transfer->isDeleted) needEvents = false;
+        else {
+            transfer->tid->blockHeight = blockHeight;
+            transfer->tid->timestamp   = timestamp;
+        }
+
+        if (transfer->isResolved && TX_UNCONFIRMED != blockHeight) {
+            BRCryptoFeeBasis      feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
+            BRCryptoTransferState oldState = cryptoTransferGetState (&transfer->base);
+            BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockHeight,
+                                                                              0,
+                                                                              timestamp,
+                                                                              feeBasis,
+                                                                              CRYPTO_TRUE,
+                                                                              NULL);
+            cryptoFeeBasisGive (feeBasis);
+            cryptoTransferSetState (&transfer->base, newState);
+            pthread_mutex_unlock (&manager->base.lock);
+
+            if (needEvents) { // } && !cryptoTransferStateIsEqual (&oldState, &newState)) {
+                cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
+                    CRYPTO_TRANSFER_EVENT_CHANGED,
+                    { .state = {
+                        cryptoTransferStateCopy (&oldState),
+                        cryptoTransferStateCopy (&newState) }}
+                });
+            }
+
+            cryptoTransferStateRelease (&oldState);
+            cryptoTransferStateRelease (&newState);
+        }
+        else pthread_mutex_unlock (&manager->base.lock);
+    }
 }
 
 // MARK: - BRWallet Callback TX Deleted
 
-static void
-bwmHandleTxDeleted (BRCryptoWalletManager manager,
-                    UInt256 hash,
-                    int recommendRescan) {
-    printf ("BTC: TxDeleted\n");
-#ifdef REFACTOR
-    pthread_mutex_lock (&manager->lock);
-
-    // We anticapte a case whereby a transaction has seen `txDeleted` but then `txDeleted` again.
-    // At least we postulate such a case because IOS crashes seem to indicate that it has occurred.
-    //
-    // See comment above in `bwmHandleTxUpdated()`
-    int needEvents = 1;
-
-    // Find the transaction by `hash` but in the lookup ignore the deleted flag.
-    BRTransactionWithState txnWithState = BRWalletManagerFindTransactionByHash (manager, hash, 1);
-
-    // A transaction must have been found, even if it is flagged as deleted.
-    assert (NULL != txnWithState);
-
-    // The transaction must be signed to be deleted
-    assert (BRTransactionIsSigned (BRTransactionWithStateGetOwned (txnWithState)));
-
-    // If the transaction is deleted.... we'll avoid setting the deleted flag (again) and also
-    // avoid the subsequent events.
-    if (txnWithState->isDeleted) needEvents = 0;
-    else {
-        BRTransactionWithStateSetDeleted (txnWithState);
-    }
-    pthread_mutex_unlock (&manager->lock);
-
-    if (needEvents) {
-        if (txnWithState->isResolved)
-            bwmSignalTransactionEvent(manager,
-                                      manager->wallet,
-                                      BRTransactionWithStateGetOwned (txnWithState),
-                                      (BRTransactionEvent) {
-                BITCOIN_TRANSACTION_DELETED
-            });
-
-        if (recommendRescan) {
-            // When that happens it's because the wallet believes its missing spend tx, causing new tx to get
-            // rejected as a double spend because of how the input selection works. You should only have to
-            // scan from the most recent successful spend.
-            bwmSignalWalletManagerEvent(manager,
-                                        (BRWalletManagerEvent) {
-                BITCOIN_WALLET_MANAGER_SYNC_RECOMMENDED,
-                { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
-            });
-        }
-    }
-
-#endif
-}
-
-typedef struct {
-    struct BREventRecord base;
-    BRCryptoWalletManager manager;
-    UInt256 hash;
-    int recommendRescan;
-} BRCryptoWalletManagerWalletTxDeletedEvent;
-
-static void
-bwmSignalTxDeletedDispatcher (BREventHandler ignore,
-                              BRCryptoWalletManagerWalletTxDeletedEvent *event) {
-    bwmHandleTxDeleted(event->manager, event->hash,  event->recommendRescan);
-}
-
-static BREventType bwmSignalTxDeletedEventType = {
-    "BTC: Wallet TX Deleted Event",
-    sizeof (BRCryptoWalletManagerWalletTxDeletedEvent),
-    (BREventDispatcher) bwmSignalTxDeletedDispatcher
-};
-
-extern void
-bwmSignalTxDeleted (BRCryptoWalletManager manager,
-                    UInt256 hash,
-                    int recommendRescan) {
-    BRCryptoWalletManagerWalletTxDeletedEvent message =
-    { { NULL, &bwmSignalTxDeletedEventType}, manager, hash, recommendRescan};
-    eventHandlerSignalEvent (manager->handler, (BREvent*) &message);
-}
-
-
 static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notifyUser, int recommendRescan) {
     BRCryptoWalletManagerBTC manager = info;
-    bwmSignalTxDeleted (&manager->base, hash, recommendRescan);
+    BRCryptoWallet           wallet = manager->base.wallet;
+
+    bool needEvents = true;
+    printf ("BTC: TxDeleted\n");
+
+    pthread_mutex_lock (&manager->base.lock);
+    BRCryptoTransferBTC transfer = cryptoWalletFindTransferByHashAsBTC (wallet, hash);
+
+    if (transfer->isDeleted) needEvents = false;
+    else {
+        transfer->isDeleted = true;
+        cryptoTransferSetState (&transfer->base, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_DELETED));
+    }
+
+    pthread_mutex_unlock (&manager->base.lock);
+    if (needEvents) {
+        if (transfer->isResolved)
+            cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
+                CRYPTO_TRANSFER_EVENT_DELETED
+            });
+
+        if (recommendRescan)
+            cryptoWalletManagerGenerateManagerEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+                CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
+                { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
+            });
+    }
 }
 
 // MARK: BRPeerManager Callbacks
@@ -1437,11 +1334,11 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
 }
 
 const BREventType *bwmEventTypes[] = {
+#if 0
     &bwmSignalTxAddedEventType,
     &bwmSignalTxUpdatedEventType,
     &bwmSignalTxDeletedEventType,
 
-#if 0
     &bwmWalletManagerEventType,
     &bwmWalletEventType,
     &bwmTransactionEventType,

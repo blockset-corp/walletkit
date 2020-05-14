@@ -12,25 +12,24 @@ cryptoTransferCoerceBTC (BRCryptoTransfer transfer) {
     return (BRCryptoTransferBTC) transfer;
 }
 
-private_extern BRTransaction *
+private_extern OwnershipKept BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transferBase) {
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-    return transfer->ownedTransaction;
+    return transfer->tid;
 }
 
 private_extern BRCryptoBoolean
 cryptoTransferHasBTC (BRCryptoTransfer transferBase,
                       BRTransaction *btc) {
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-    return AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == transferBase->type && btc == transfer->ownedTransaction);
+    return AS_CRYPTO_BOOLEAN (BRTransactionEq (btc, transfer->tid));
 }
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           BRWallet *wid,
-                           OwnershipGiven BRTransaction *ownedTransaction,
-                           OwnershipKept  BRTransaction *refedTransaction,
+                           OwnershipKept  BRWallet *wid,
+                           OwnershipGiven BRTransaction *tid,
                            BRCryptoBlockChainType type) {
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                                 type,
@@ -38,12 +37,9 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                                                                 unitForFee);
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
 
-    transfer->ownedTransaction = ownedTransaction;
-    transfer->refedTransaction = refedTransaction;
-    transfer->isResolved = (NULL != refedTransaction && BRWalletTransactionIsResolved (wid, refedTransaction));
+    transfer->tid  = tid;
+    transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
     transfer->isDeleted  = false;
-
-    BRTransaction *tid = transfer->ownedTransaction;
 
     // cache the values that require the wallet
     transfer->fee  = BRWalletFeeForTx (wid, tid);
@@ -134,8 +130,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
 static void
 cryptoTransferReleaseBTC (BRCryptoTransfer transferBase) {
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-
-    if (NULL != transfer->ownedTransaction) BRTransactionFree(transfer->ownedTransaction);
+    BRTransactionFree (transfer->tid);
 }
 
 static BRCryptoAmount
@@ -184,23 +179,22 @@ static BRCryptoHash
 cryptoTransferGetHashBTC (BRCryptoTransfer transferBase) {
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
 
-    BRTransaction *tid = transfer->ownedTransaction;
-
-    UInt256 hash = tid->txHash;
-    return (1 == UInt256IsZero(hash)
+    return (1 == UInt256IsZero(transfer->tid->txHash)
             ? NULL
-            : cryptoHashCreateAsBTC (hash));
+            : cryptoHashCreateAsBTC (transfer->tid->txHash));
 }
 
 extern uint8_t *
 cryptoTransferSerializeForSubmissionBTC (BRCryptoTransfer transferBase,
                                          size_t *serializationCount) {
-    BRCryptoTransferBTC transfer    = cryptoTransferCoerceBTC (transferBase);
+    BRTransaction *tid = cryptoTransferAsBTC     (transferBase);
 
-    *serializationCount = BRTransactionSerialize (transfer->ownedTransaction, NULL, 0);
+    if (NULL == tid) { *serializationCount = 0; return NULL; }
+
+    *serializationCount = BRTransactionSerialize (tid, NULL, 0);
     uint8_t *serialization = malloc (*serializationCount);
 
-    BRTransactionSerialize (transfer->ownedTransaction, serialization, *serializationCount);
+    BRTransactionSerialize (tid, serialization, *serializationCount);
     return serialization;
 }
 
@@ -213,7 +207,7 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     // are compared, one needs to be careful about the BRTransaction's timestamp.  Two transactions
     // with an identical hash can have different timestamps depending on how the transaction
     // is identified.  Specifically P2P and API found transactions *will* have different timestamps.
-    return BRTransactionEq (t1->ownedTransaction, t2->ownedTransaction);
+    return BRTransactionEq (t1->tid, t2->tid);
 }
 
 static BRCryptoTransferDirection

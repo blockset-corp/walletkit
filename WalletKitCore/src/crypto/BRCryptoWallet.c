@@ -121,38 +121,49 @@ cryptoWalletGetUnitForFee (BRCryptoWallet wallet) {
 
 extern BRCryptoAmount
 cryptoWalletGetBalance (BRCryptoWallet wallet) {
-    return wallet->balance;
+    return cryptoAmountTake (wallet->balance);
 }
 
 extern BRCryptoAmount /* nullable */
 cryptoWalletGetBalanceMinimum (BRCryptoWallet wallet) {
-    return wallet->balanceMinimum;
+    return cryptoAmountTake (wallet->balanceMinimum);
 }
 
 extern BRCryptoAmount /* nullable */
 cryptoWalletGetBalanceMaximum (BRCryptoWallet wallet) {
-    return wallet->balanceMaximum;
+    return cryptoAmountTake (wallet->balanceMaximum);
 }
 
+static BRCryptoBoolean
+cryptoWalletHasTransferLock (BRCryptoWallet wallet,
+                             BRCryptoTransfer transfer,
+                             bool needLock) {
+    BRCryptoBoolean r = CRYPTO_FALSE;
+    if (needLock) pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; index < array_count(wallet->transfers) && CRYPTO_FALSE == r; index++) {
+        r = cryptoTransferEqual (transfer, wallet->transfers[index]);
+    }
+    if (needLock) pthread_mutex_unlock (&wallet->lock);
+    return r;
+}
 
 extern BRCryptoBoolean
 cryptoWalletHasTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer) {
-    BRCryptoBoolean r = CRYPTO_FALSE;
-    pthread_mutex_lock (&wallet->lock);
-    for (size_t index = 0; index < array_count(wallet->transfers) && CRYPTO_FALSE == r; index++) {
-        r = cryptoTransferEqual (transfer, wallet->transfers[index]);
-    }
-    pthread_mutex_unlock (&wallet->lock);
-    return r;
+    return cryptoWalletHasTransferLock(wallet, transfer, true);
 }
 
 extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer) {
     pthread_mutex_lock (&wallet->lock);
-    if (CRYPTO_FALSE == cryptoWalletHasTransfer (wallet, transfer)) {
+    if (CRYPTO_FALSE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
         array_add (wallet->transfers, cryptoTransferTake(transfer));
+
+        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
+        BRCryptoAmount newBalance = cryptoAmountAdd (oldBalance, cryptoTransferGetAmountDirected(transfer));
+        cryptoAmountGive(oldBalance);
+        wallet->balance = newBalance;
     }
     pthread_mutex_unlock (&wallet->lock);
 }
@@ -165,6 +176,11 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
         if (CRYPTO_TRUE == cryptoTransferEqual (wallet->transfers[index], transfer)) {
             walletTransfer = wallet->transfers[index];
             array_rm (wallet->transfers, index);
+
+            BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
+            BRCryptoAmount newBalance = cryptoAmountSub (oldBalance, cryptoTransferGetAmountDirected(transfer));
+            cryptoAmountGive(oldBalance);
+            wallet->balance = newBalance;
             break;
         }
     }
@@ -187,6 +203,22 @@ cryptoWalletGetTransfers (BRCryptoWallet wallet, size_t *count) {
     }
     pthread_mutex_unlock (&wallet->lock);
     return transfers;
+}
+
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHash (BRCryptoWallet wallet, BRCryptoHash hashToMatch) {
+    BRCryptoTransfer transfer = NULL;
+
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
+        BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
+        if (cryptoHashEqual(hash, hashToMatch))
+            transfer = wallet->transfers[index];
+        cryptoHashGive(hash);
+    }
+    pthread_mutex_unlock (&wallet->lock);
+
+    return cryptoTransferTake (transfer);
 }
 
 extern BRCryptoAddress

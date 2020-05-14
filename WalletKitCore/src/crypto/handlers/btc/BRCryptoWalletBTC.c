@@ -54,6 +54,24 @@ cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
     return transfer;
 }
 
+private_extern BRCryptoTransferBTC
+cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
+                                     UInt256 hash) {
+
+    BRCryptoTransferBTC transfer = NULL;
+    if (! UInt256IsZero(hash)) {
+        pthread_mutex_lock (&wallet->lock);
+        for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+            transfer = (BRCryptoTransferBTC) wallet->transfers[index];
+            if (UInt256Eq (hash, transfer->tid->txHash))
+                break;
+            transfer = NULL;
+        }
+        pthread_mutex_unlock (&wallet->lock);
+    }
+    return transfer;
+}
+
 static BRCryptoAddress
 cryptoWalletGetAddressBTC (BRCryptoWallet walletBase,
                            BRCryptoAddressScheme addressScheme) {
@@ -175,7 +193,7 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet walletBase,
 
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif
@@ -229,12 +247,9 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
 
     BRTransaction *tid = BRWalletCreateTransactionWithFeePerKb (wid, feePerKb, value, address.s);
 
-//    BRTransaction *tid = BRWalletManagerCreateTransaction (bwm, wid, value, address,
-//                                                           cryptoFeeBasisAsBTC(estimatedFeeBasis));
-
     return (NULL == tid
             ? NULL
-            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, NULL, walletBase->type));
+            : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid, walletBase->type));
 #ifdef REFACTOR
                                          AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm))));
 #endif

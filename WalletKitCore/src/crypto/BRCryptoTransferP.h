@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+// MARK: - Transfer State
+
+private_extern bool
+cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
+                            const BRCryptoTransferState *s2);
+
 // MARK: - Transfer Confirmation
 
 typedef struct {

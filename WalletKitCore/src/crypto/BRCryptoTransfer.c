@@ -36,6 +36,24 @@ cryptoTransferStateTypeString (BRCryptoTransferStateType type) {
     return strings[type];
 }
 
+private_extern bool
+cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
+                            const BRCryptoTransferState *s2) {
+    if (s1->type != s2->type) return false;
+
+    switch (s1->type) {
+        case CRYPTO_TRANSFER_STATE_INCLUDED:
+            return false;
+
+        case CRYPTO_TRANSFER_STATE_ERRORED:
+            return cryptoTransferSubmitErrorIsEqual (&s1->u.errored.error, &s2->u.errored.error);
+
+        default:
+            return true;
+    }
+}
+
+
 /// MARK: Transfer
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoTransfer, cryptoTransfer)
@@ -530,6 +548,14 @@ cryptoTransferSubmitErrorPosix(int errnum) {
         { .posix = { errnum } }
     };
 }
+
+extern bool
+ cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
+                                   const BRCryptoTransferSubmitError *e2) {
+     return (e1->type == e2->type &&
+             (e1->type != CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX ||
+              e1->u.posix.errnum == e2->u.posix.errnum));
+ }
 
 extern char *
 cryptoTransferSubmitErrorGetMessage (BRCryptoTransferSubmitError *e) {

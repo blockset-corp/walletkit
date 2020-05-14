@@ -56,10 +56,13 @@ cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee);
 typedef struct BRCryptoTransferBTCRecord {
     struct BRCryptoTransferRecord base;
 
+    // The BRTransaction; this is 100% owned by BRCryptoTransfer.  It can be accessed at any time.
+    // Prior to signing the hash will be empty.
+    BRTransaction *tid;
+
+    // Tracking of 'deleted' and 'resolved'
     bool isDeleted;
     bool isResolved;
-    BRTransaction *refedTransaction;
-    BRTransaction *ownedTransaction;        // Release
 
     uint64_t fee;
     uint64_t send;
@@ -73,8 +76,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
-                           OwnershipGiven BRTransaction *ownedTransaction,
-                           OwnershipKept  BRTransaction *refedTransaction,
+                           BRTransaction *tid,
                            BRCryptoBlockChainType type);
 
 private_extern BRTransaction *
@@ -106,6 +108,9 @@ private_extern BRCryptoTransfer
 cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
                                BRTransaction *btc);
 
+private_extern BRCryptoTransferBTC
+cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
+                                     UInt256 hash);
 #if 0
 private_extern BRWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet);
