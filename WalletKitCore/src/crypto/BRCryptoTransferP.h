@@ -42,13 +42,6 @@ typedef struct {
 typedef void
 (*BRCryptoTransferReleaseHandler) (BRCryptoTransfer transfer);
 
-typedef BRCryptoAmount
-(*BRCryptoTransferGetAmountAsSignHandler) (BRCryptoTransfer transfer,
-                                           BRCryptoBoolean isNegative);
-
-typedef BRCryptoTransferDirection
-(*BRCryptoTransferGetDirectionHandler) (BRCryptoTransfer transfer);
-
 typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
@@ -62,8 +55,6 @@ typedef int
 
 typedef struct {
     BRCryptoTransferReleaseHandler release;
-    BRCryptoTransferGetAmountAsSignHandler getAmountAsSign;
-    BRCryptoTransferGetDirectionHandler getDirection;
     BRCryptoTransferGetHashHandler getHash;
     BRCryptoTransferSerializeForSubmission serializeForSubmission;
     BRCryptoTransferIsEqualHandler isEqual;
@@ -96,6 +87,10 @@ struct BRCryptoTransferRecord {
 
     /// Actually this can be derived from { btc.fee / txSize(btc.tid), txSize(btc.tid) }
     BRCryptoFeeBasis feeBasisEstimated;
+    
+    BRCryptoTransferDirection direction;
+    
+    BRCryptoAmount amount;
 
     BRArrayOf(BRCryptoTransferAttribute) attributes;
 };

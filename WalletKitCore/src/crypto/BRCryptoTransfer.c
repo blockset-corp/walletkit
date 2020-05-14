@@ -74,6 +74,8 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = NULL;
+    
+    transfer->direction = CRYPTO_TRANSFER_RECOVERED;
 
     array_new (transfer->attributes, 1);
 
@@ -123,13 +125,14 @@ cryptoTransferGetTargetAddress (BRCryptoTransfer transfer) {
 
 static BRCryptoAmount
 cryptoTransferGetAmountAsSign (BRCryptoTransfer transfer, BRCryptoBoolean isNegative) {
-    return transfer->handlers->getAmountAsSign (transfer, isNegative);
+    return NULL == transfer->amount ? NULL : cryptoAmountCreate (cryptoAmountGetUnit(transfer->amount),
+                                                                 isNegative,
+                                                                 cryptoAmountGetValue(transfer->amount));
 }
-
 
 extern BRCryptoAmount
 cryptoTransferGetAmount (BRCryptoTransfer transfer) {
-    return cryptoTransferGetAmountAsSign (transfer, CRYPTO_FALSE);
+    return NULL == transfer->amount ? NULL : cryptoAmountTake (transfer->amount);
 }
 
 extern BRCryptoAmount
@@ -265,7 +268,7 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
 
 extern BRCryptoTransferDirection
 cryptoTransferGetDirection (BRCryptoTransfer transfer) {
-    return transfer->handlers->getDirection (transfer);
+    return transfer->direction;
 }
 
 
