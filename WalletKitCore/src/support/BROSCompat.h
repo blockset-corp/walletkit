@@ -56,6 +56,9 @@ typedef void* (*ThreadRoutine) (void*);         // pthread_create
 extern int
 pthread_setname_brd(pthread_t,  const char *name);
 
+extern int
+pthread_mutex_init_brd (pthread_mutex_t *mutex, int type);
+
 extern void
 pthread_yield_brd (void);
 

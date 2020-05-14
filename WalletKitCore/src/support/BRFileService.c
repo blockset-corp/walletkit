@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include "support/BROSCompat.h"
+
 #include "../vendor/sqlite3/sqlite3.h"
 typedef int sqlite3_status_code;
 
@@ -253,14 +255,7 @@ fileServiceCreate (const char *basePath,
     // Create the file service itself
     BRFileService fs = calloc (1, sizeof (struct BRFileServiceRecord));
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-
-        pthread_mutex_init(&fs->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&fs->lock, PTHREAD_MUTEX_NORMAL);
 
     // Set the error handler - early
     fileServiceSetErrorHandler (fs, context, handler);

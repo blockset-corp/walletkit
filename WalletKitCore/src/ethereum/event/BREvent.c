@@ -102,14 +102,7 @@ eventHandlerCreate (const char *name,
     handler->lockOnDispatch = lockOnDispatch;
 
     // Create the PTHREAD LOCK variable
-    {
-        // The cacheLock is a normal, non-recursive lock
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init(&handler->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&handler->lock, PTHREAD_MUTEX_NORMAL);
 
     handler->thread = PTHREAD_NULL;
 

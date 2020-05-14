@@ -11,6 +11,8 @@
 
 #include <string.h>
 #include <pthread.h>
+#include "support/BROSCompat.h"
+
 #include "BREventQueue.h"
 
 #define EVENT_QUEUE_DEFAULT_INITIAL_CAPACITY   (1)
@@ -58,13 +60,8 @@ eventQueueCreate (size_t size) {
         pthread_condattr_destroy(&attr);
     }
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init(&queue->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+
+    pthread_mutex_init_brd (&queue->lock, PTHREAD_MUTEX_NORMAL);
 
     return queue;
 }

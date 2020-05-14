@@ -182,14 +182,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     cwm->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
-        pthread_mutex_init(&cwm->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&cwm->lock, PTHREAD_MUTEX_RECURSIVE);
 
     return cwm;
 }

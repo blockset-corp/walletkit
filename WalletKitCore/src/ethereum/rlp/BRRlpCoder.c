@@ -13,7 +13,9 @@
 #include <memory.h>
 #include <assert.h>
 #include <pthread.h>
+#include "support/BROSCompat.h"
 #include "ethereum/util/BRUtil.h"
+
 #include "BRRlpCoder.h"
 
 static int
@@ -105,13 +107,8 @@ rlpCoderCreate (void) {
     coder->free = NULL;
     coder->busy = NULL;
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init (&coder->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&coder->lock, PTHREAD_MUTEX_NORMAL);
+
 #if 0
     for (size_t index = 0; index < CODER_DEFAULT_ITEMS; index++) {
         BRRlpItem item = calloc (1, sizeof (struct BRRlpItemRecord));

@@ -8,6 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#include "support/BROSCompat.h"
+
 #include "BRCryptoTransferP.h"
 
 #include "BRCryptoBase.h"
@@ -59,14 +61,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
 
     transfer->ref = CRYPTO_REF_ASSIGN (cryptoTransferRelease);
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-
-        pthread_mutex_init(&transfer->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL);
 
     return transfer;
 }

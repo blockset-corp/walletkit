@@ -606,14 +606,7 @@ lesCreate (BREthereumNetwork network,
     nodeEndpointShowStatus (les->localEndpoint);
 
     // Create the PTHREAD LOCK variable
-    {
-        // The cacheLock is a normal, non-recursive lock
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); // overkill, but needed still
-        pthread_mutex_init(&les->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&les->lock, PTHREAD_MUTEX_RECURSIVE);
     les->thread = LES_PTHREAD_NULL;
 
     // Initialize requests

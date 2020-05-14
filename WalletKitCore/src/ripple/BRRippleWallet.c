@@ -49,14 +49,7 @@ rippleWalletCreate (BRRippleAccount account)
         10, 1
     };
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-
-        pthread_mutex_init(&wallet->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);
 
     return wallet;
 }
