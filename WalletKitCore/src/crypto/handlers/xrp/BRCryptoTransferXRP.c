@@ -1,77 +1,103 @@
 #include "BRCryptoXRP.h"
-#include "generic/BRGeneric.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "crypto/BRCryptoHashP.h"
+#include "ripple/BRRippleTransfer.h"
+#include "ripple/BRRipplePrivateStructs.h"
+#include "ethereum/util/BRUtilMath.h"
 
-// A XRP Transfer
-struct BRCryptoTransferXRPRecord {
-    struct BRCryptoTransferRecord base;
-    BRGenericTransfer gen;
-};
+static BRCryptoTransferDirection
+transferGetDirectionFromXRP (BRRippleTransfer transfer,
+                             BRRippleWallet wallet);
+
+extern BRCryptoTransferXRP
+cryptoTransferCoerceXRP (BRCryptoTransfer transfer) {
+    assert (CRYPTO_NETWORK_TYPE_XRP == transfer->type);
+    return (BRCryptoTransferXRP) transfer;
+}
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsGEN (BRCryptoUnit unit,
+cryptoTransferCreateAsXRP (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           OwnershipGiven BRGenericTransfer tid) {
-    BRCryptoTransfer transfer = cryptoTransferCreateInternal (BLOCK_CHAIN_TYPE_GEN, unit, unitForFee);
-    transfer->u.gen = tid;
+                           BRRippleWallet wallet,
+                           OwnershipGiven BRRippleTransfer xrpTransfer) {
+    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
+                                                                CRYPTO_NETWORK_TYPE_XRP,
+                                                                unit,
+                                                                unitForFee);
+    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
+    
+    transfer->xrpTransfer = xrpTransfer;
+    
+    transferBase->direction = transferGetDirectionFromXRP (xrpTransfer, wallet);
+    transferBase->amount = cryptoAmountCreateAsXRP (transferBase->unit,
+                                                    CRYPTO_FALSE,
+                                                    xrpTransfer->amount);
+    
+    BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (transferBase->unitForFee,
+                                                        CRYPTO_FALSE,
+                                                        xrpTransfer->fee);
+    transferBase->feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    
+    transferBase->sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
+    transferBase->targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
 
-    BRGenericFeeBasis gwmFeeBasis = genTransferGetFeeBasis (tid); // Will give ownership
-    transfer->feeBasisEstimated = cryptoFeeBasisCreateAsGEN (transfer->unitForFee, gwmFeeBasis);
-
-    transfer->sourceAddress = cryptoAddressCreateAsGEN (genTransferGetSourceAddress (tid));
-    transfer->targetAddress = cryptoAddressCreateAsGEN (genTransferGetTargetAddress (tid));
-
-    return transfer;
+    return (BRCryptoTransfer) transfer;
 }
 
 static void
-cryptoTransferReleaseBTC (BRCryptoTransfer transfer) {
-   genTransferRelease(transfer->u.gen);
-}
-
-
-static BRCryptoAmount
-cryptoTransferGetAmountAsSignXRP (BRCryptoTransfer transfer, BRCryptoBoolean isNegative) {
-    BRGenericTransfer tid = transfer->u.gen;
-
-    return cryptoAmountCreate (transfer->unit,
-                               isNegative,
-                               genTransferGetAmount (tid));
-}
-
-static BRCryptoTransferDirection
-cryptoTransferGetDirectionXRP (BRCryptoTransfer transfer) {
-            switch (genTransferGetDirection (transfer->u.gen)) {
-                case GENERIC_TRANSFER_SENT:      return CRYPTO_TRANSFER_SENT;
-                case GENERIC_TRANSFER_RECEIVED:  return CRYPTO_TRANSFER_RECEIVED;
-                case GENERIC_TRANSFER_RECOVERED: return CRYPTO_TRANSFER_RECOVERED;
-            }
+cryptoTransferReleaseXRP (BRCryptoTransfer transferBase) {
+    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
+    rippleTransferFree (transfer->xrpTransfer);
 }
 
 extern BRCryptoHash
-cryptoTransferGetHashXRP (BRCryptoTransfer transfer) {
-    BRGenericTransfer tid = transfer->u.gen;
-
-    BRGenericHash hash = genTransferGetHash (tid);
-    return (genericHashIsEmpty (hash)
-            ? NULL
-            : cryptoHashCreateAsGEN (hash));
+cryptoTransferGetHashXRP (BRCryptoTransfer transferBase) {
+    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
+    BRRippleTransactionHash hash = rippleTransferGetTransactionId (transfer->xrpTransfer);
+    return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XRP, sizeof (hash.bytes), hash.bytes);
 }
 
-private_extern BRGenericTransfer
-cryptoTransferAsGEN (BRCryptoTransfer transfer) {
-    assert (BLOCK_CHAIN_TYPE_GEN == transfer->type);
-    return transfer->u.gen;
-}
+extern uint8_t *
+cryptoTransferSerializeForSubmissionXRP (BRCryptoTransfer transferBase,
+                                         size_t *serializationCount) {
+    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
 
-private_extern BRCryptoBoolean
-cryptoTransferHasGEN (BRCryptoTransfer transfer,
-                      BRGenericTransfer gen) {
-    return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_GEN == transfer->type &&
-                              genTransferEqual (gen, transfer->u.gen));
+    uint8_t *serialization = NULL;
+    *serializationCount = 0;
+    BRRippleTransaction transaction = rippleTransferGetTransaction (transfer->xrpTransfer);
+    if (transaction) {
+        serialization = rippleTransactionSerialize (transaction, serializationCount);
+    }
+    
+    return serialization;
 }
 
 static int
-cryptoTransferEqualAsGEN (BRCryptoTransfer t1, BRCryptoTransfer t2) {
-    return genTransferEqual (t1->u.gen, t2->u.gen);
+cryptoTransferIsEqualXRP (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
+    return (tb1 == tb2 ||
+            cryptoHashEqual (cryptoTransferGetHashXRP(tb1),
+                             cryptoTransferGetHashXRP(tb2)));
 }
 
+static BRCryptoTransferDirection
+transferGetDirectionFromXRP (BRRippleTransfer transfer,
+                             BRRippleWallet wallet) {
+    BRRippleAddress source = rippleTransferGetSource (transfer);
+    BRRippleAddress target = rippleTransferGetTarget (transfer);
+    
+    int isSource = rippleWalletHasAddress (wallet, source);
+    int isTarget = rippleWalletHasAddress (wallet, target);
+    
+    return (isSource && isTarget
+            ? CRYPTO_TRANSFER_RECOVERED
+            : (isSource
+               ? CRYPTO_TRANSFER_SENT
+               : CRYPTO_TRANSFER_RECEIVED));
+}
+
+BRCryptoTransferHandlers cryptoTransferHandlersXRP = {
+    cryptoTransferReleaseXRP,
+    cryptoTransferGetHashXRP,
+    cryptoTransferSerializeForSubmissionXRP,
+    cryptoTransferIsEqualXRP
+};

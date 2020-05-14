@@ -40,12 +40,12 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
-         CRYPTO_NETWORK_TYPE_XRP,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        CRYPTO_NETWORK_TYPE_XRP,
+        &cryptoNetworkHandlersXRP,
+        &cryptoAddressHandlersXRP,
+        &cryptoTransferHandlersXRP,
+        &cryptoWalletHandlersXRP,
+        &cryptoWalletManagerHandlersXRP
     },
 
     {

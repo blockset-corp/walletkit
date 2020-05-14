@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-// MARK - BTC Handlers
+// MARK: - BTC Handlers
 
 extern BRCryptoAddressHandlers cryptoAddressHandlersBTC;
 extern BRCryptoNetworkHandlers cryptoNetworkHandlersBTC;
@@ -21,6 +21,14 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBCH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBCH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBCH;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH;
+
+// MARK: - XRP Handlers
+
+extern BRCryptoAddressHandlers cryptoAddressHandlersXRP;
+extern BRCryptoNetworkHandlers cryptoNetworkHandlersXRP;
+extern BRCryptoTransferHandlers cryptoTransferHandlersXRP;
+extern BRCryptoWalletHandlers cryptoWalletHandlersXRP;
+extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;
 
 #ifdef __cplusplus
 }
