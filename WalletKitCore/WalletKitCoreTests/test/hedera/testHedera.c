@@ -14,12 +14,14 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/time.h>
 #include "support/BRArray.h"
 #include "support/BRCrypto.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRBIP39WordsEn.h"
 #include "support/BRKey.h"
+#include "support/BRInt.h"
 
 #include "hedera/BRHederaTransaction.h"
 #include "hedera/BRHederaAccount.h"
@@ -72,6 +74,16 @@ static void printByteString(const char* message, uint8_t * bytes, size_t byteSiz
     printf("\n");
 }
 
+static void getPublicKey(const char * paper_key) {
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, paper_key, NULL); // no passphrase
+    BRHederaAccount account = hederaAccountCreateWithSeed(seed);
+    BRKey publicKey = hederaAccountGetPublicKey(account);
+    char publicKeyString[65] = {0};
+    bin2HexString(publicKey.pubKey, 32, publicKeyString);
+    printf("Public key: %s\n", publicKeyString);
+    hederaAccountFree(account);
+}
 /*
 const char * paper_key_24 = "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home";
 const char * public_key_24 = "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673";
@@ -96,10 +108,10 @@ struct account_info accounts[] = {
     } ,
     {"choose", "0.0.114009", "choose color rich dose toss winter dutch cannon over air cash market",
         "372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d454404" },
-    {"node3", "0.0.3", "", ""},
-    {"node2", "0.0.2", "", ""},
-    {"nodetest", "5412398.75.101101101", "", ""},
-    {"inmate", "0.0.38230", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
+    {"38618", "0.0.38618", "", ""}, // Our production operator account
+    {"38230", "0.0.38230", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
+    {"37664", "0.0.37664", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
+    {"42725", "0.0.42725", "", ""},
 };
 size_t num_accounts = sizeof (accounts) / sizeof (struct account_info);
 
@@ -152,13 +164,16 @@ static BRHederaAccount getAccount(const char * name)
     return account;
 }
 
-static BRHederaTransaction createSignedTransaction (const char * source, const char * target, const char * node,
+// For testing purposes just in case the Blockset code needs to be changed and we
+// want to test it...
+// - modify the code in hederaTransactionSignTransactionV0 to determine which node to use
+extern size_t hederaTransactionSignTransactionV0 (BRHederaTransaction transaction, BRKey publicKey, UInt512 seed);
+static BRHederaTransaction createSignedTransactionV0 (const char * source, const char * target,
                                   int64_t amount, int64_t seconds, int32_t nanos,
                                   int64_t fee, const char * memo)
 {
     struct account_info source_account = find_account (source);
     struct account_info target_account = find_account (target);
-    struct account_info node_account = find_account (node);
 
     // Create a hedera account
     UInt512 seed = UINT512_ZERO;
@@ -167,7 +182,6 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
 
     BRHederaAddress sourceAddress = hederaAddressCreateFromString (source_account.account_string, true);
     BRHederaAddress targetAddress = hederaAddressCreateFromString (target_account.account_string, true);
-    BRHederaAddress nodeAddress = hederaAddressCreateFromString (node_account.account_string, true);
     BRHederaTimeStamp timeStamp;
     timeStamp.seconds = seconds;
     timeStamp.nano = nanos;
@@ -175,7 +189,44 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     feeBasis.costFactor = 1;
     feeBasis.pricePerCostFactor = fee;
     BRHederaTransaction transaction = hederaTransactionCreateNew(sourceAddress, targetAddress, amount,
-                                                                 feeBasis, nodeAddress, &timeStamp);
+                                                                 feeBasis, &timeStamp);
+
+    if (memo) hederaTransactionSetMemo(transaction, memo);
+
+    // Sign the transaction
+    BRKey publicKey = hederaAccountGetPublicKey(account);
+    hederaTransactionSignTransactionV0 (transaction, publicKey, seed);
+
+    // Cleaup
+    hederaAddressFree (sourceAddress);
+    hederaAddressFree (targetAddress);
+    hederaAccountFree (account);
+
+    return transaction;
+}
+
+static BRHederaTransaction createSignedTransaction (const char * source, const char * target,
+                                  int64_t amount, int64_t seconds, int32_t nanos,
+                                  int64_t fee, const char * memo)
+{
+    struct account_info source_account = find_account (source);
+    struct account_info target_account = find_account (target);
+
+    // Create a hedera account
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, source_account.paper_key, NULL); // no passphrase
+    BRHederaAccount account = hederaAccountCreateWithSeed(seed);
+
+    BRHederaAddress sourceAddress = hederaAddressCreateFromString (source_account.account_string, true);
+    BRHederaAddress targetAddress = hederaAddressCreateFromString (target_account.account_string, true);
+    BRHederaTimeStamp timeStamp;
+    timeStamp.seconds = seconds;
+    timeStamp.nano = nanos;
+    BRHederaFeeBasis feeBasis;
+    feeBasis.costFactor = 1;
+    feeBasis.pricePerCostFactor = fee;
+    BRHederaTransaction transaction = hederaTransactionCreateNew(sourceAddress, targetAddress, amount,
+                                                                 feeBasis, &timeStamp);
 
     if (memo) hederaTransactionSetMemo(transaction, memo);
 
@@ -186,18 +237,17 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     // Cleaup
     hederaAddressFree (sourceAddress);
     hederaAddressFree (targetAddress);
-    hederaAddressFree (nodeAddress);
     hederaAccountFree (account);
 
     return transaction;
 }
 
-static void createNewTransaction (const char * source, const char * target, const char * node,
+static void createNewTransaction (const char * source, const char * target,
                                    int64_t amount, int64_t seconds, int32_t nanos,
                                    int64_t fee, const char * memo, const char * expectedOutput, bool printOutput,
                                   const char * expectedHash)
 {
-    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee, memo);
+    BRHederaTransaction transaction = createSignedTransaction(source, target, amount, seconds, nanos, fee, memo);
 
     // Get the signed bytes
     size_t serializedSize = 0;
@@ -230,10 +280,10 @@ static void createNewTransaction (const char * source, const char * target, cons
     free(transactionID);
 }
 
-static void transaction_value_test(const char * source, const char * target, const char * node, int64_t amount,
+static void transaction_value_test(const char * source, const char * target, int64_t amount,
                                    int64_t seconds, int32_t nanos, int64_t fee)
 {
-    BRHederaTransaction transaction = createSignedTransaction(source, target, node, amount, seconds, nanos, fee, NULL);
+    BRHederaTransaction transaction = createSignedTransaction(source, target, amount, seconds, nanos, fee, NULL);
     // Check the fee and amount
     BRHederaUnitTinyBar txFee = hederaTransactionGetFee (transaction);
     assert (txFee == fee);
@@ -488,10 +538,10 @@ static void walletBalanceTests()
     BRHederaUnitTinyBar expectedBalance = 0;
 
     // Now add a few transfers for this wallet (3 TO and 1 FROM)
-    BRHederaTransaction tx1 = createSignedTransaction("choose", "patient", "node3", 2000000000, 1, 0, 500000, NULL);
-    BRHederaTransaction tx2 = createSignedTransaction("choose", "patient", "node3", 1500000000, 2, 0, 500000, NULL);
-    BRHederaTransaction tx3 = createSignedTransaction("choose", "patient", "node3", 1400000000, 3, 0, 500000, NULL);
-    BRHederaTransaction tx4 = createSignedTransaction("patient", "choose", "node3", 1400000000, 4, 0, 500000, NULL);
+    BRHederaTransaction tx1 = createSignedTransaction("choose", "patient", 2000000000, 1, 0, 500000, NULL);
+    BRHederaTransaction tx2 = createSignedTransaction("choose", "patient", 1500000000, 2, 0, 500000, NULL);
+    BRHederaTransaction tx3 = createSignedTransaction("choose", "patient", 1400000000, 3, 0, 500000, NULL);
+    BRHederaTransaction tx4 = createSignedTransaction("patient", "choose", 1400000000, 4, 0, 500000, NULL);
     expectedBalance = 2000000000L + 1500000000L + 1400000000L;
     hederaWalletAddTransfer(wallet, tx1);
     hederaWalletAddTransfer(wallet, tx2);
@@ -512,31 +562,85 @@ static void walletBalanceTests()
     hederaTransactionFree(tx4);
 }
 
-static void create_real_transactions() {
-    // use the function to create sendable transactions to the hedera network
-    time_t now;
-    now = time(&now);
-    printf ("now: %ld\n", now);
-    // Send 10,000,000 tiny bars from patient to chose via node3
-    createNewTransaction ("patient", "choose", "node3", 10000000, now, 0, 500000, NULL, NULL, true, NULL);
-
-    createNewTransaction ("choose", "patient", "node3", 50000000, now, 0, 500000, NULL, NULL, true, NULL);
-
+static void create_real_v0_transactions() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
     // Create one with a memo
-    const char * memo = "BRD Memo";
-    //createNewTransaction ("inmate", "door", "node3", 1000, now, 0, 500000, memo, NULL, true, NULL);
+    const char * memo = "Version 0 transaction";
+    BRHederaTransaction transaction = createSignedTransactionV0("37664", "38230", 20000, tv.tv_sec, tv.tv_usec, 500000, memo);
+    size_t size = 0;
+    uint8_t * signedBytes = hederaTransactionSerialize(transaction, &size);
+
+    printf("V0 transaction start\n===========================\n");
+    for (int i = 0; i < size; i++) {
+        printf("%02X", signedBytes[i]);
+    }
+    printf("\n===========================\nV0 transaction end\n");
+
+    hederaTransactionFree(transaction);
+}
+
+static void create_real_v1_transactions() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    // Create one with a memo
+    const char * memo = "Version 1 transaction";
+    BRHederaTransaction transaction = createSignedTransaction("37664", "38230", 20000, tv.tv_sec, tv.tv_usec, 500000, memo);
+    size_t size = 0;
+    uint8_t * signedBytes = hederaTransactionSerialize(transaction, &size);
+
+    printf("V1 transaction start\n===========================\n");
+    for (int i = 0; i < size; i++) {
+        printf("%02X", signedBytes[i]);
+    }
+    printf("\n===========================\nV1 transaction end\n");
+
+    hederaTransactionFree(transaction);
+}
+
+static void multi_serialization_test()
+{
+    BRHederaTransaction transaction = createSignedTransaction("choose", "patient", 50000000,
+                                                              1571928273, 123456789, 500000, NULL);
+    size_t size = 0;
+    uint8_t * signedBytes = hederaTransactionSerialize(transaction, &size);
+
+    for (int i = 0; i < 10; i++) {
+        printf("%02X ", signedBytes[i]);
+    }
+    printf("\n");
+
+    // Check the version
+    char version = signedBytes[0];
+    assert(version == 1);
+
+    uint16_t numNodes = UInt16GetBE(&signedBytes[1]);
+    assert(numNodes == 10);
+
+    uint8_t * pBuffer = signedBytes + 3;
+    for (int i = 0; i < numNodes; i++) {
+        // Get the node number and length of the buffer
+        uint16_t nodeNumber = UInt16GetBE(pBuffer);
+        assert(nodeNumber >= 3 && nodeNumber <= 12);
+        pBuffer += 2;
+        uint32_t serializationSize = UInt32GetBE(pBuffer);
+        pBuffer += serializationSize + 4;
+    }
+
+    assert(pBuffer - signedBytes == size);
+    free(signedBytes);
 }
 
 static void create_new_transactions() {
-    const char * testOneOutput = "0000000000000000000000000000000000000000000000031a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40e9086013e266e779a08a6b5f56efef98a1d9a9a5d3dce2f40dba01b35ea429247872c98e2fe0f6150ba3d82e7b9848a2c95d118d9f8bc66ae285be42d1e94407223b0a0e0a060889f0c6ed05120418d8fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409";
+    const char * testOneOutput = "01000a0003000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40e9086013e266e779a08a6b5f56efef98a1d9a9a5d3dce2f40dba01b35ea429247872c98e2fe0f6150ba3d82e7b9848a2c95d118d9f8bc66ae285be42d1e94407223b0a0e0a060889f0c6ed05120418d8fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090004000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a4083b843f3ee19c153bc633d3ac9124f0d86714e6020cdb79410cc75db7aceb275ae7fc4522b4df230f3478c9cc7436477b0a416a9a7ae8db3d99219b50232d702223b0a0e0a060889f0c6ed05120418d8fa061202180418a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090005000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a406b9a5fd8bdba1f978dd7d57d84a609a75dbd17f4d4d544094f34dbae6a1b6b36488b2c902146c2220c7260159f69ae8e46b27f9c634bed3f72a8d24fb5069004223b0a0e0a060889f0c6ed05120418d8fa061202180518a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090006000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40326ca4a0557b7daad9d3acef8a7ef04883c428548fd875a35dab884ccc351381c235e0f3d3aaa11abe16dfd520cb8fcf79dcca31a052b635775a795dbc71f306223b0a0e0a060889f0c6ed05120418d8fa061202180618a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090007000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a4096709493797e5e479c21f922ba990cbf821c19d89a122bcf1644a261ccf1a67bc2f2e6b5c0d3d81ea89aaf3f785e54ee6f7f4ac6713fb489602f741531323404223b0a0e0a060889f0c6ed05120418d8fa061202180718a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090008000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a408ccabc857ac46d60880645df94063d1afc616288538751dc94377abb17d44fb93ce6c5cadc5a42c3c244896a600c470ed844c1f472aea1665233d2309d736c09223b0a0e0a060889f0c6ed05120418d8fa061202180818a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac4090009000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40d0c36c063ba36c55f00afe5c99c664d6d9510f0c436a9e34cacacf0cf2d9a28b597abbb7f3fa598e6baccd7f9fbef803b54d365da680d780720d168e5788a50a223b0a0e0a060889f0c6ed05120418d8fa061202180918a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409000a000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a407710b69ae3d25237e3c0d880690a8e72a2b3be76e34b833c33f3ed0e0f02d648581b8c632c3ee355610fd7a5658486ab3fe76bdd480da55b284a104fa83d0807223b0a0e0a060889f0c6ed05120418d8fa061202180a18a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409000b000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a400865e4812e0a8d5991553342f25686864e5fee4b9db08cbab9990555945ac326c5450da3b66e122f36660e54f44ea1c76433fe60b1b9c7dadcdc76602406d101223b0a0e0a060889f0c6ed05120418d8fa061202180b18a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409000c000000a51a660a640a20ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f6755851a40b80fa3a198ce5300735b09fc8feb4b9b869946901794de1c82db9631b154eb7030d6e99f0444f23b47b9bc0322c35d1cbbef47b1c10cba73a62c2f872c070503223b0a0e0a060889f0c6ed05120418d8fa061202180c18a0c21e220308b401721c0a1a0a0b0a0418d8fa0610ffd9c4090a0b0a0418d9fa061080dac409";
     // Send 10,000,000 tiny bars to "choose" from "patient" via node3.
-    char * hash = "E1CFDD4D80C768AF3C8DF0E88649C57F1DAF0A81F6269B59D75D03AEC6EF11A7CAE5BD5310801FF93553AD0BD6B8A194";
-    createNewTransaction ("patient", "choose", "node3", 10000000, 1571928073, 0, 500000, NULL, testOneOutput, false, hash);
+    char * hash = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    createNewTransaction ("patient", "choose", 10000000, 1571928073, 0, 500000, NULL, testOneOutput, false, hash);
 
-    const char * testTwoOutput = "0000000000000000000000000000000000000000000000031a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40be090d58fb3926c5e3e3f8bd19badca4189a42d7ce336bf4e736738bf3932c8b9a12e79bcab3e94beeca17e2acd027c6baedc8b74d70b63669319927bb39f700223b0a0e0a0608d1f1c6ed05120418d9fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f";
+    const char * testTwoOutput = "01000a0003000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40be090d58fb3926c5e3e3f8bd19badca4189a42d7ce336bf4e736738bf3932c8b9a12e79bcab3e94beeca17e2acd027c6baedc8b74d70b63669319927bb39f700223b0a0e0a0608d1f1c6ed05120418d9fa061202180318a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0004000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40ac13d0011874105ddf09d40362616c1fe529f85cf13e05764c563ecfe4daac6b91541c171c92346eac525eea5c83a47eb2a73f7c8251ca317fbb704839a09909223b0a0e0a0608d1f1c6ed05120418d9fa061202180418a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0005000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40cfa79836161be6504d735eedb587a699956b5bce84f5519f258d213c27c2d693726bab354f0e8ec5e94db08e46d59fc0a0e6a7ab36ba2f3b901e8c3d3bd7ef06223b0a0e0a0608d1f1c6ed05120418d9fa061202180518a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0006000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40995b7345099b2247654e95d1675126acc7de7d0ca03750ee47fc20d217538642a393c9eb8e0deca9c67bc71006af653f7a2e00f06b4a38a4337b332beeab0200223b0a0e0a0608d1f1c6ed05120418d9fa061202180618a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0007000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40e4ffe742416d5188adf42baad54c85aa1e6bdcbf9328d3d60684a3896a32cccd66c68ac17d8521cc2e1de4fc3a20d18f0673154d292d2544da7d7cdaa7a45f0b223b0a0e0a0608d1f1c6ed05120418d9fa061202180718a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0008000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40e1c4c43eeeb0456cc53052dbcf2d57441a035c781ed0f0b9997d4bee38840725adacd777ae4992631e7d5d8685b1e452318ba45e50dbf27801413f82324ff708223b0a0e0a0608d1f1c6ed05120418d9fa061202180818a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f0009000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a4084aa0821d1a527461ea8c877a672780b1bbd332e20767b083922394e92e16da7dcba26bfb8ba566351aba8b4c323819bf5475cff7bb602f7e56b15124ace7f0a223b0a0e0a0608d1f1c6ed05120418d9fa061202180918a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f000a000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a404d7fad58ab19cb898fc05910699cbb65b12f8b55853610f5f8971f056c5bedf130d00aaa0b4ab167306fe91b9f510aa5d867402fb70cf5377f732ace1ba5880a223b0a0e0a0608d1f1c6ed05120418d9fa061202180a18a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f000b000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a40daeb4fc4caf74170f253935682fdd6363cac8b10897c6f6e91da8aee1d4433b61f9bf6373f46325683556caf709ce7e467aa885eff8f160ffe019ae292a3750a223b0a0e0a0608d1f1c6ed05120418d9fa061202180b18a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f000c000000a51a660a640a20372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d4544041a4060fb5849e129ca0d5bf962c3e8e9dcfedee17709dad9633eac43e3e5bff725f34a25e4235e3a9ac7f6d50655c0ede1e440af429e168d8702b259f066ff6e0b05223b0a0e0a0608d1f1c6ed05120418d9fa061202180c18a0c21e220308b401721c0a1a0a0b0a0418d9fa0610ffc1d72f0a0b0a0418d8fa061080c2d72f";
     // Send 50,000,000 tiny bars to "patient" from "choose" via node3
-    const char * hash2 = "9C14E7FC73E35D978D160872C9CB2F02C373AA6CCE9A8EC587806AAA108B0FEBBF8F6D0525940869859E7437B421C7AF";
-    createNewTransaction ("choose", "patient", "node3", 50000000, 1571928273, 0, 500000, NULL, testTwoOutput, false, hash2);
+    const char * hash2 = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    createNewTransaction ("choose", "patient", 50000000, 1571928273, 0, 500000, NULL, testTwoOutput, false, hash2);
 }
 
 static void address_tests() {
@@ -547,7 +651,7 @@ static void address_tests() {
 }
 
 static void account_tests() {
-    hederaAccountCheckPublicKey("inmate");
+    hederaAccountCheckPublicKey("38230");
     hederaAccountCheckPublicKey("patient");
     hederaAccountCheckPublicKey("choose");
 
@@ -557,37 +661,17 @@ static void account_tests() {
     accountStringTest("patient");
 }
 
-static void nodeAddressTest()
-{
-    // Create a wallet
-    BRHederaAccount account = getAccount ("patient"); // Our wallet account
-    BRHederaWallet wallet = hederaWalletCreate (account);
-    for ( int i = HEDERA_NODE_START; i <= HEDERA_NODE_COUNT + HEDERA_NODE_START - 1; i++ ) {
-        // Get the first 10 nodes
-        BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
-        assert(hederaAddressGetAccount(address) == i);
-        assert(hederaAddressGetShard(address) == 0);
-        assert(hederaAddressGetRealm(address) == 0);
-        hederaAddressFree(address);
-    }
-    // Now get another one and see if we go back to the beginning
-    BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
-    assert(hederaAddressGetAccount(address) == HEDERA_NODE_START);
-    hederaAddressFree(address);
-}
-
 static void wallet_tests()
 {
     createAndDeleteWallet();
     walletBalanceTests();
-    nodeAddressTest();
 }
 
 static void transaction_tests() {
     createExistingTransaction("patient", "choose", 400);
     create_new_transactions();
-    transaction_value_test("patient", "choose", "node3", 10000000, 25, 4, 500000);
-    //create_real_transactions();
+    transaction_value_test("patient", "choose", 10000000, 25, 4, 500000);
+    multi_serialization_test();
 }
 
 static void txIDTests() {
@@ -605,4 +689,9 @@ runHederaTest (void /* ... */) {
     wallet_tests();
     transaction_tests();
     txIDTests();
+
+    getPublicKey("");
+
+    //create_real_v0_transactions();
+    //create_real_v1_transactions();
 }

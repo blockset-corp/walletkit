@@ -296,6 +296,11 @@ genTransferSetUIDS (BRGenericTransfer transfer,
     transfer->uids = (NULL == uids ? NULL : strdup (uids));
 }
 
+extern void
+genTransferUpdateHash (BRGenericTransfer transfer, BRGenericHash hash) {
+    transfer->handlers.updateHash(transfer->ref, hash);
+}
+
 extern BRGenericTransferState
 genTransferGetState (BRGenericTransfer transfer) {
     return transfer->state;
@@ -335,8 +340,7 @@ genTransferEqual (BRGenericTransfer t1,
     return (t1 == t2 ||
             (NULL != t1->uids && NULL != t2->uids
              ? 0 == strcmp (t1->uids, t2->uids)
-             : genericHashEqual (genTransferGetHash (t1),
-                                 genTransferGetHash (t2))));
+             : t1->handlers.isEqual(t1->ref, t2->ref)));
 }
 
 extern uint8_t *

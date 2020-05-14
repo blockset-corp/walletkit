@@ -161,6 +161,9 @@ extern "C" {
     extern BRSetOf (BRGenericTransfer)
     genTransferSetCreate (size_t capacity);
 
+    extern void
+    genTransferUpdateHash (BRGenericTransfer transfer, BRGenericHash hash);
+
     // MARK: - Generic Wallet
 
     /// Create the primary wallet.  The `account` is provided because wallet's create transfers which

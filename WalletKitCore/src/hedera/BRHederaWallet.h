@@ -20,9 +20,6 @@
 extern "C" {
 #endif
 
-#define HEDERA_NODE_COUNT 10
-#define HEDERA_NODE_START 3
-
 typedef struct BRHederaWalletRecord *BRHederaWallet;
 
 /**
@@ -103,9 +100,6 @@ extern BRHederaUnitTinyBar
 hederaWalletGetBalanceLimit (BRHederaWallet wallet,
                              int asMaximum,
                              int *hasLimit);
-
-extern BRHederaAddress /* Caller must free address using hederaAddressFree */
-hederaWalletGetNodeAddress(BRHederaWallet wallet);
 
 /**
  * Set the ripple fee basis default amount
