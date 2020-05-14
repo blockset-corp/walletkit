@@ -1495,6 +1495,10 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
         if (NULL == genTransferGetUIDS(transferGenericOrig))
             genTransferSetUIDS (transferGenericOrig,
                                 genTransferGetUIDS (transferGeneric));
+
+        // Get the hash from the incoming transfer - and give the GEN code a chance to update if necessary
+        BRGenericHash hash = genTransferGetHash(transferGeneric);
+        genTransferUpdateHash(transferGenericOrig, hash);
     }
 
     // Fill in any attributes

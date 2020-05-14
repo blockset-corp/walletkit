@@ -185,6 +185,25 @@ genericRippleTransferGetSerialization (BRGenericTransferRef transfer, size_t *by
     return result;
 }
 
+static int
+genericRippleTransferIsEqual (BRGenericTransferRef t1, BRGenericTransferRef t2)
+{
+    BRRippleTransfer transfer1 = (BRRippleTransfer)t1;
+    BRRippleTransfer transfer2 = (BRRippleTransfer)t2;
+    BRRippleTransactionHash hash1 = rippleTransferGetTransactionId(transfer1);
+    BRRippleTransactionHash hash2 = rippleTransferGetTransactionId(transfer2);
+    if (memcmp(hash1.bytes, hash2.bytes, sizeof(hash1.bytes)) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+static void
+genericRippleUpdateHash (BRGenericTransferRef transfer, BRGenericHash genericHash)
+{
+    // There should be no need to update the hash for Ripple
+}
+
 // MARK: Generic Wallet
 
 static BRGenericWalletRef
@@ -488,6 +507,8 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleTransferGetFeeBasis,
         genericRippleTransferGetHash,
         genericRippleTransferGetSerialization,
+        genericRippleTransferIsEqual,
+        genericRippleUpdateHash
     },
 
     {   // Wallet

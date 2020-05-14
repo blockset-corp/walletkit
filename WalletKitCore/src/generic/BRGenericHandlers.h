@@ -95,6 +95,8 @@ extern "C" {
     typedef BRGenericFeeBasis (*BRGenericTransferGetFeeBasis) (BRGenericTransferRef transfer);
     typedef BRGenericHash (*BRGenericTransferGetHash) (BRGenericTransferRef transfer);
     typedef uint8_t * (*BRGenericTransferGetSerialization) (BRGenericTransferRef transfer, size_t *bytesCount);
+    typedef int (*BRGenericTransferIsEqual) (BRGenericTransferRef t1, BRGenericTransferRef t2);
+    typedef void (*BRGenericTransferUpdateHash) (BRGenericTransferRef transfer, BRGenericHash hash);
 
     typedef struct {
         BRGenericTransferCreate create;
@@ -106,6 +108,8 @@ extern "C" {
         BRGenericTransferGetFeeBasis feeBasis;
         BRGenericTransferGetHash hash;
         BRGenericTransferGetSerialization getSerialization;
+        BRGenericTransferIsEqual isEqual;
+        BRGenericTransferUpdateHash updateHash;
     } BRGenericTransferHandlers;
 
     // MARK: - Generic Wallet
