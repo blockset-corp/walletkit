@@ -430,6 +430,8 @@ cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
 
 static void
 cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
+    pthread_mutex_lock (&cwm->lock);
+
     // Ensure CWM is stopped...
     cryptoWalletManagerStop (cwm);
 
@@ -459,6 +461,7 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
     // ... and finally individual memory allocations
     free (cwm->path);
 
+    pthread_mutex_unlock  (&cwm->lock);
     pthread_mutex_destroy (&cwm->lock);
 
     memset (cwm, 0, sizeof(*cwm));

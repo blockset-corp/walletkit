@@ -68,26 +68,20 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
 
 static void
 cryptoTransferRelease (BRCryptoTransfer transfer) {
-    if (NULL != transfer->sourceAddress) cryptoAddressGive (transfer->sourceAddress);
-    if (NULL != transfer->targetAddress) cryptoAddressGive (transfer->targetAddress);
+    pthread_mutex_lock (&transfer->lock);
+
+    cryptoAddressGive (transfer->sourceAddress);
+    cryptoAddressGive (transfer->targetAddress);
     cryptoUnitGive (transfer->unit);
     cryptoUnitGive (transfer->unitForFee);
     cryptoTransferStateRelease (&transfer->state);
-    if (NULL != transfer->feeBasisEstimated) cryptoFeeBasisGive (transfer->feeBasisEstimated);
+    cryptoFeeBasisGive (transfer->feeBasisEstimated);
 
     array_free_all(transfer->attributes, cryptoTransferAttributeGive);
 
     transfer->handlers->release (transfer);
-//    switch (transfer->type) {
-//        case BLOCK_CHAIN_TYPE_BTC:
-//            break;
-//        case BLOCK_CHAIN_TYPE_ETH:
-//            break;
-//        case BLOCK_CHAIN_TYPE_GEN:
-//            genTransferRelease(transfer->u.gen);
-//            break;
-//    }
 
+    pthread_mutex_unlock  (&transfer->lock);
     pthread_mutex_destroy (&transfer->lock);
 
     memset (transfer, 0, sizeof(*transfer));
@@ -101,12 +95,12 @@ cryptoTransferGetType (BRCryptoTransfer transfer) {
 
 extern BRCryptoAddress
 cryptoTransferGetSourceAddress (BRCryptoTransfer transfer) {
-    return NULL == transfer->sourceAddress ? NULL : cryptoAddressTake (transfer->sourceAddress);
+    return cryptoAddressTake (transfer->sourceAddress);
 }
 
 extern BRCryptoAddress
 cryptoTransferGetTargetAddress (BRCryptoTransfer transfer) {
-    return NULL == transfer->targetAddress ? NULL : cryptoAddressTake (transfer->targetAddress);
+    return cryptoAddressTake (transfer->targetAddress);
 }
 
 static BRCryptoAmount
@@ -264,7 +258,7 @@ cryptoTransferGetHash (BRCryptoTransfer transfer) {
 
 extern BRCryptoFeeBasis
 cryptoTransferGetEstimatedFeeBasis (BRCryptoTransfer transfer) {
-    return (NULL == transfer->feeBasisEstimated ? NULL : cryptoFeeBasisTake (transfer->feeBasisEstimated));
+    return cryptoFeeBasisTake (transfer->feeBasisEstimated);
 }
 
 extern BRCryptoFeeBasis

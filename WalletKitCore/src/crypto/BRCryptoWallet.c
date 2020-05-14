@@ -46,8 +46,8 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
     assert (NULL == balanceMaximum || cryptoAmountHasCurrency (balanceMaximum, currency));
     cryptoCurrencyGive (currency);
 
-    wallet->balanceMinimum = (NULL == balanceMaximum ? NULL : cryptoAmountTake (balanceMinimum));
-    wallet->balanceMaximum = (NULL == balanceMaximum ? NULL : cryptoAmountTake (balanceMaximum));
+    wallet->balanceMinimum = cryptoAmountTake (balanceMinimum);
+    wallet->balanceMaximum = cryptoAmountTake (balanceMaximum);
     wallet->balance = cryptoAmountCreateInteger(0, unit);
 
     array_new (wallet->transfers, 5);
@@ -61,11 +61,13 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
 static void
 cryptoWalletRelease (BRCryptoWallet wallet) {
+    pthread_mutex_lock (&wallet->lock);
+
     cryptoUnitGive (wallet->unit);
     cryptoUnitGive (wallet->unitForFee);
 
-    if (NULL != wallet->balanceMinimum) cryptoAmountGive (wallet->balanceMinimum);
-    if (NULL != wallet->balanceMaximum) cryptoAmountGive (wallet->balanceMaximum);
+    cryptoAmountGive (wallet->balanceMinimum);
+    cryptoAmountGive (wallet->balanceMaximum);
     cryptoAmountGive (wallet->balance);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++)
@@ -74,6 +76,7 @@ cryptoWalletRelease (BRCryptoWallet wallet) {
 
     wallet->handlers->release (wallet);
 
+    pthread_mutex_unlock  (&wallet->lock);
     pthread_mutex_destroy (&wallet->lock);
 
     memset (wallet, 0, sizeof(*wallet));
@@ -119,71 +122,16 @@ cryptoWalletGetUnitForFee (BRCryptoWallet wallet) {
 extern BRCryptoAmount
 cryptoWalletGetBalance (BRCryptoWallet wallet) {
     return wallet->balance;
-
-//    switch (wallet->type) {
-//        case BLOCK_CHAIN_TYPE_BTC: {
-//            BRWallet *wid = wallet->u.btc.wid;
-//
-//            UInt256 value = uint256Create (BRWalletBalance (wid));
-//            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-//            return amount;
-//        }
-//        case BLOCK_CHAIN_TYPE_ETH: {
-//            BREthereumEWM ewm = wallet->u.eth.ewm;
-//            BREthereumWallet wid =wallet->u.eth.wid;
-//
-//            BREthereumAmount balance = ewmWalletGetBalance (ewm, wid);
-//            UInt256 value = balance.type == AMOUNT_ETHER ? balance.u.ether.valueInWEI : balance.u.tokenQuantity.valueAsInteger;
-//            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-//            return amount;
-//        }
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            return cryptoAmountCreate (wallet->unit,
-//                                       CRYPTO_FALSE,
-//                                       genWalletGetBalance (cryptoWalletAsGEN(wallet)));
-//        }
-//    }
-
 }
 
 extern BRCryptoAmount /* nullable */
 cryptoWalletGetBalanceMinimum (BRCryptoWallet wallet) {
     return wallet->balanceMinimum;
-//    switch (wallet->type) {
-//        case BLOCK_CHAIN_TYPE_BTC:
-//            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, uint256Create(0));
-//
-//        case BLOCK_CHAIN_TYPE_ETH:
-//            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, uint256Create(0));
-//
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            BRCryptoBoolean hasLimit = 0;
-//            UInt256 limit = genWalletGetBalanceLimit (cryptoWalletAsGEN(wallet), CRYPTO_FALSE, &hasLimit);
-//            return (CRYPTO_FALSE == hasLimit
-//                    ? NULL
-//                    : cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, limit));
-//        }
-//    }
 }
 
 extern BRCryptoAmount /* nullable */
 cryptoWalletGetBalanceMaximum (BRCryptoWallet wallet) {
     return wallet->balanceMaximum;
-//    switch (wallet->type) {
-//        case BLOCK_CHAIN_TYPE_BTC:
-//            return NULL;
-//
-//        case BLOCK_CHAIN_TYPE_ETH:
-//            return NULL;
-//
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            BRCryptoBoolean hasLimit = 0;
-//            UInt256 limit = genWalletGetBalanceLimit (cryptoWalletAsGEN(wallet), CRYPTO_TRUE, &hasLimit);
-//            return (CRYPTO_FALSE == hasLimit
-//                    ? NULL
-//                    : cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, limit));
-//        }
-//    }
 }
 
 
@@ -341,15 +289,6 @@ extern size_t
 cryptoWalletGetTransferAttributeCount (BRCryptoWallet wallet,
                                        BRCryptoAddress target) {
     return wallet->handlers->getTransferAttributeCount (wallet, target);
-#ifdef REFACTOR
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return 0;
-        case BLOCK_CHAIN_TYPE_ETH: return 0;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            return genWalletGetTransferAttributeCount (wallet->u.gen, (NULL == target ? NULL : target->u.gen));
-        }
-    }
-#endif
 }
 
 extern BRCryptoTransferAttribute
@@ -357,18 +296,6 @@ cryptoWalletGetTransferAttributeAt (BRCryptoWallet wallet,
                                     BRCryptoAddress target,
                                     size_t index) {
     return wallet->handlers->getTransferAttributeAt (wallet, target, index);
-    #ifdef REFACTOR
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return NULL;
-        case BLOCK_CHAIN_TYPE_ETH: return NULL;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericTransferAttribute attribute = genWalletGetTransferAttributeAt (wallet->u.gen, (NULL == target ? NULL : target->u.gen), index);
-            return cryptoTransferAttributeCreate (genTransferAttributeGetKey(attribute),
-                                                  genTransferAttributeGetVal(attribute),  // Expect NULL from genWalletGetTransferAttributeAt()
-                                                  AS_CRYPTO_BOOLEAN(genTransferAttributeIsRequired(attribute)));
-        }
-    }
-    #endif
 }
 
 extern BRCryptoTransferAttributeValidationError
@@ -376,32 +303,6 @@ cryptoWalletValidateTransferAttribute (BRCryptoWallet wallet,
                                        OwnershipKept BRCryptoTransferAttribute attribute,
                                        BRCryptoBoolean *validates) {
     return wallet->handlers->validateTransferAttribute (wallet, attribute, validates);
-#ifdef REFACTOR
-    int ignore = 0;
-    *validates = CRYPTO_TRUE;
-
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return (BRCryptoTransferAttributeValidationError) ignore;
-        case BLOCK_CHAIN_TYPE_ETH: return (BRCryptoTransferAttributeValidationError) ignore;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            if (CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute) && NULL == cryptoTransferAttributeGetValue(attribute)) {
-                *validates = CRYPTO_FALSE;
-                return CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_REQUIRED_BUT_NOT_PROVIDED;
-            }
-
-            BRGenericTransferAttribute genAttribute =
-            genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
-                                        cryptoTransferAttributeGetValue(attribute),
-                                        CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
-
-            *validates = genWalletValidateTransferAttribute(wallet->u.gen, genAttribute);
-            genTransferAttributeRelease (genAttribute);
-            return (CRYPTO_FALSE == *validates
-                    ? CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE
-                    : (BRCryptoTransferAttributeValidationError) ignore);
-        }
-    }
-#endif
 }
 
 extern BRCryptoTransferAttributeValidationError
@@ -418,65 +319,7 @@ cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
     }
 
     return (BRCryptoTransferAttributeValidationError) 0;
-
-#ifdef REFACTOR
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: return (BRCryptoTransferAttributeValidationError) ignore;
-        case BLOCK_CHAIN_TYPE_ETH: return (BRCryptoTransferAttributeValidationError) ignore;
-        case BLOCK_CHAIN_TYPE_GEN: {
-            // Check if all required attributes are provided and have values
-
-            // If we've no attributes (and have no required attributes), success.
-            if (0 == attributesCount) return (BRCryptoTransferAttributeValidationError) ignore;
-
-            // Check individual validity
-            for (size_t index = 0; index < attributesCount; index++) {
-                BRCryptoTransferAttributeValidationError error = cryptoWalletValidateTransferAttribute (wallet, attributes[index], validates);
-                if (CRYPTO_FALSE == *validates) return error;
-            }
-
-            // Check joint validity
-            BRArrayOf(BRGenericTransferAttribute) genAttributes;
-            array_new (genAttributes, attributesCount);
-            for (size_t index = 0; index < attributesCount; index++) {
-                BRCryptoTransferAttribute attribute = attributes[index];
-                BRGenericTransferAttribute genAttribute =
-                genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
-                                            cryptoTransferAttributeGetValue(attribute),
-                                            CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
-                array_add (genAttributes, genAttribute);
-            }
-
-            *validates = genWalletValidateTransferAttributes (wallet->u.gen, genAttributes);
-            genTransferAttributeReleaseAll(genAttributes);
-
-            return (CRYPTO_FALSE == *validates
-                    ? CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY
-                    : (BRCryptoTransferAttributeValidationError) ignore);
-        }
-    }
-#endif
 }
-
-#ifdef REFACTOR
-private_extern BRWallet *
-cryptoWalletAsBTC (BRCryptoWallet wallet) {
-    assert (BLOCK_CHAIN_TYPE_BTC == wallet->type);
-    return wallet->u.btc.wid;
-}
-
-private_extern BREthereumWallet
-cryptoWalletAsETH (BRCryptoWallet wallet) {
-    assert (BLOCK_CHAIN_TYPE_ETH == wallet->type);
-    return wallet->u.eth.wid;
-}
-
-private_extern BRGenericWallet
-cryptoWalletAsGEN (BRCryptoWallet wallet) {
-    assert (BLOCK_CHAIN_TYPE_GEN == wallet->type);
-    return wallet->u.gen;
-}
-#endif
 
 extern BRCryptoTransfer
 cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
