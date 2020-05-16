@@ -19,6 +19,8 @@
 
 #define RIPPLE_WALLET_MINIMUM_IN_XRP            (20)
 
+#define RIPPLE_SEQUENCE_PROTOCOL_CHANGE 55313921
+
 //
 // Wallet
 //
@@ -183,10 +185,24 @@ static void rippleWalletUpdateSequence (BRRippleWallet wallet,
                                         OwnershipKept BRRippleAddress accountAddress) {
     // Now update the account's sequence id
     BRRippleSequence sequence = 0;
-    for (size_t index = 0; index < array_count(wallet->transfers); index++)
+    // We need to keep track of the first block where this account shows up due to a
+    // change in how ripple assigns the sequence number to new accounts
+    uint64_t minBlockHeight = INT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        uint64_t blockHeight = rippleTransferGetBlockHeight(wallet->transfers[index]);
+        minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
         if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
             sequence += 1;
+    }
 
+    // So now the hack part - at block 55,313,921 Ripple started using the block height
+    // as the start sequence, prior to that it was 1.
+    // If minBlockHeight is INT64_MAX then there are no transactions so ignore
+    // If the account was created prior to 55313921 then ignore
+    if (minBlockHeight != INT64_MAX && minBlockHeight >= RIPPLE_SEQUENCE_PROTOCOL_CHANGE) {
+        // Subtract 1 from the minBlockHieght since we add 1 to the sequence before signing
+        sequence += (minBlockHeight - 1);
+    }
     rippleAccountSetSequence (wallet->account, sequence);
 }
 

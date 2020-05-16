@@ -968,11 +968,97 @@ static void submitWithoutDestinationTag() {
     assembleTransaction(source_paper_key, sourceAccount, targetAddress, 300000, 4, 0);
     rippleAccountFree(sourceAccount);
 }
+
+
+static void testNewSequenceNumberNoTransfers()
+{
+    const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
+    BRRippleAccount account = rippleAccountCreate(paper_key);
+    BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
+    BRRippleWallet wallet = rippleWalletCreate(account);
+    assert(wallet);
+    BRRippleSequence sequence = rippleAccountGetSequence(account);
+    assert(sequence == 0);
+    rippleAddressFree(address);
+    rippleAccountFree(account);
+    rippleWalletFree(wallet);
+}
+
+static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_start_sequence)
+{
+    const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
+    BRRippleAccount account = rippleAccountCreate(paper_key);
+    BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
+    BRRippleWallet wallet = rippleWalletCreate(account);
+    assert(wallet);
+
+    const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
+    BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
+    BRRippleAddress targetAddress = rippleAccountGetPrimaryAddress(targetAccount);
+
+    // Create the initial transfer the creates the account (from target to us)
+    // NOTE: this transfer MUST use the start_block unaltered as the height
+    BRRippleTransactionHash hash;
+    hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
+    BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Add 2 more receives
+    hash.bytes[0] = 1; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+    hash.bytes[0] = 2; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Now get the sequence number - for new accounts with nothing sent yet it should start
+    // at the lowest block height found in the list
+    BRRippleSequence sequence = rippleAccountGetSequence(account);
+    assert(sequence == expected_start_sequence);
+
+    // Now add a new sent transfer
+    hash.bytes[0] = 3; // needs a different hash
+    transfer = rippleTransferCreate(address, targetAddress, 200000, 12, hash, 0, start_block + 30, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Now get the sequence number
+    sequence = rippleAccountGetSequence(account);
+    assert(sequence == expected_start_sequence + 1);
+
+    hash.bytes[0] = 4; // needs a different hash
+    transfer = rippleTransferCreate(address, targetAddress, 200000, 12, hash, 0, start_block + 40, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    sequence = rippleAccountGetSequence(account);
+    assert(sequence == expected_start_sequence + 2);
+
+    rippleAddressFree(address);
+    rippleAccountFree(account);
+    rippleAddressFree(targetAddress);
+    rippleAccountFree(targetAccount);
+    rippleWalletFree(wallet);
+}
+
+static void testStartingSequence()
+{
+    testNewSequenceNumberNoTransfers();
+    testStartingSequenceFromBlock(40000000, 0);
+    testStartingSequenceFromBlock(55313920, 0); // The last block before the new behavior
+    testStartingSequenceFromBlock(55313921, 55313920); // The first block after the new behavior
+}
+
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
 extern void
 runRippleTest (void /* ... */) {
+
+    testStartingSequence();
 
     // Read data from external file and deserialize
     runDeserializeTests("200 new transaction", test_tx_list, (int)(sizeof(test_tx_list)/sizeof(char*)));

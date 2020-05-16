@@ -219,3 +219,9 @@ rippleAccountSignTransaction(BRRippleAccount account, BRRippleTransaction transa
 
     return tx_size;
 }
+
+extern BRRippleSequence rippleAccountGetSequence (BRRippleAccount account)
+{
+    assert(account);
+    return account->sequence;
+}
