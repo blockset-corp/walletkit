@@ -885,6 +885,25 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
            tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency);
 }
 
+static
+BRRippleTransaction createTransaction(BRRippleAddress sourceAddress,
+                                      BRRippleAddress targetAddress,
+                                      BRRippleUnitDrops amount,
+                                      BRRippleUnitDrops fee)
+{
+    BRRippleFeeBasis feeBasis;
+    feeBasis.pricePerCostFactor = 10;
+    feeBasis.costFactor = 1;
+    return rippleTransactionCreate(sourceAddress, targetAddress, amount, feeBasis);
+}
+
+static void signTransaction(BRRippleAccount sourceAccount, BRRippleTransaction transaction, const char * paper_key)
+{
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, paper_key, NULL);
+    rippleAccountSignTransaction(sourceAccount, transaction, seed);
+}
+
 static void
 assembleTransaction (const char * source_paper_key,
                      BRRippleAccount sourceAccount,
@@ -969,22 +988,7 @@ static void submitWithoutDestinationTag() {
     rippleAccountFree(sourceAccount);
 }
 
-
-static void testNewSequenceNumberNoTransfers()
-{
-    const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
-    BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
-    BRRippleSequence sequence = rippleAccountGetSequence(account);
-    assert(sequence == 0);
-    rippleAddressFree(address);
-    rippleAccountFree(account);
-    rippleWalletFree(wallet);
-}
-
-static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_start_sequence)
+static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence)
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
@@ -1014,28 +1018,19 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
-    // Now get the sequence number - for new accounts with nothing sent yet it should start
-    // at the lowest block height found in the list
-    BRRippleSequence sequence = rippleAccountGetSequence(account);
-    assert(sequence == expected_start_sequence);
+    // Create a signed transaction for this account
+    BRRippleTransaction transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence);
+    rippleTransactionFree(transaction);
 
-    // Now add a new sent transfer
-    hash.bytes[0] = 3; // needs a different hash
-    transfer = rippleTransferCreate(address, targetAddress, 200000, 12, hash, 0, start_block + 30, 0);
-    rippleWalletAddTransfer(wallet, transfer);
-    rippleTransferFree(transfer);
-
-    // Now get the sequence number
-    sequence = rippleAccountGetSequence(account);
-    assert(sequence == expected_start_sequence + 1);
-
-    hash.bytes[0] = 4; // needs a different hash
-    transfer = rippleTransferCreate(address, targetAddress, 200000, 12, hash, 0, start_block + 40, 0);
-    rippleWalletAddTransfer(wallet, transfer);
-    rippleTransferFree(transfer);
-
-    sequence = rippleAccountGetSequence(account);
-    assert(sequence == expected_start_sequence + 2);
+    // Create a second signed transaction for this account
+    transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence + 1);
+    rippleTransactionFree(transaction);
 
     rippleAddressFree(address);
     rippleAccountFree(account);
@@ -1046,10 +1041,9 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
 
 static void testStartingSequence()
 {
-    testNewSequenceNumberNoTransfers();
-    testStartingSequenceFromBlock(40000000, 0);
-    testStartingSequenceFromBlock(55313920, 0); // The last block before the new behavior
-    testStartingSequenceFromBlock(55313921, 55313920); // The first block after the new behavior
+    testStartingSequenceFromBlock(40000000, 1); // Just an old account created at 40000000
+    testStartingSequenceFromBlock(55313920, 1); // The last block before the new behavior
+    testStartingSequenceFromBlock(55313921, 55313921); // The first block after the new behavior
 }
 
 #pragma clang diagnostic pop
