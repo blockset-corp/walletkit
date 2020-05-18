@@ -2061,15 +2061,13 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
     BRCryptoNetwork network = cryptoWalletManagerGetNetwork (cwm);
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, currency);
 
-    // Find the corresponding wallet.
-    BRCryptoWallet wallet = (NULL == walletCurrency
-                             ? NULL
-                             : cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency));
-
-    // If we have a wallet, then proceed
-    if (NULL != wallet) {
+    // If we have a walletCurrency, then proceed
+    if (NULL != walletCurrency) {
         switch (callbackState->type) {
             case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+                BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency);
+                assert (NULL != wallet);
+
                 // Create a 'GEN' transfer
                 BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
                 BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
@@ -2117,10 +2115,14 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 //
                 // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
                 cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
+
+                cryptoWalletGive (wallet);
                 break;
             }
 
             case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+                // We won't necessarily have a wallet here; specifically ewmAnnounceLog might
+                // create one... which will eventually flow to BRCryptoWallet creation.
                 bool error = false;
 
                 UInt256 value = cwmParseUInt256 (amount, &error);
@@ -2188,7 +2190,6 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
         }
     }
     
-    if (NULL != wallet) cryptoWalletGive (wallet);
     if (NULL != walletCurrency) cryptoCurrencyGive (walletCurrency);
 
     cryptoNetworkGive (network);
