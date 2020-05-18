@@ -1904,12 +1904,6 @@ ewmHandleTransaction (BREthereumEWM ewm,
 
         walletHandleTransfer (wallet, transfer);
 
-        // We've added a transfer and arguably we should update the wallet's balance.  But don't.
-        // Ethereum is 'account based'; we'll only update the balance based on a account state
-        // change (based on a P2P or API callback).
-        //
-        // walletUpdateBalance (wallet);
-
         ewmSignalTransferEvent (ewm, wallet, transfer, (BREthereumTransferEvent) {
             TRANSFER_EVENT_CREATED,
             SUCCESS
@@ -1944,6 +1938,14 @@ ewmHandleTransaction (BREthereumEWM ewm,
 
         ewmReportTransferStatusAsEvent(ewm, wallet, transfer);
     }
+
+    // We've added a transfer and should update the wallet's balance.  Ethereum is 'account based';
+    // but in API modes we don't have the account information - so we'll update the balance
+    // explicitly.  In P2P mode, we get the 'account'.
+    //
+    if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
+        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
+        walletUpdateBalance(wallet);
 
     ewmHandleTransactionOriginatingLog (ewm, type, transaction);
 }
@@ -1982,12 +1984,6 @@ ewmHandleLog (BREthereumEWM ewm,
 
         walletHandleTransfer (wallet, transfer);
 
-        // We've added a transfer and arguably we should update the wallet's balance.  But don't.
-        // Ethereum is 'account based'; we'll only update the balance based on a account state
-        // change (based on a P2P or API callback).
-        //
-        // walletUpdateBalance (wallet);
-
         ewmSignalTransferEvent (ewm, wallet, transfer, (BREthereumTransferEvent) {
             TRANSFER_EVENT_CREATED,
             SUCCESS
@@ -2024,6 +2020,14 @@ ewmHandleLog (BREthereumEWM ewm,
 
         ewmReportTransferStatusAsEvent (ewm, wallet, transfer);
     }
+
+    // We've added a transfer and should update the wallet's balance.  Ethereum is 'account based';
+    // but in API modes we don't have the account information - so we'll update the balance
+    // explicitly.  In P2P mode, we get the 'account'.
+    //
+    if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
+        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
+        walletUpdateBalance(wallet);
 }
 
 extern void
@@ -2856,6 +2860,10 @@ ewmTransferDelete (BREthereumEWM ewm,
                 TRANSFER_EVENT_DELETED,
                 SUCCESS
             });
+
+            if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
+                CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
+                 walletUpdateBalance(wallet);
         }
     }
     // Null the ewm's `tid` - MUST NOT array_rm() as all `tid` holders will be dead.

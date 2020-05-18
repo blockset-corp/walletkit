@@ -1240,6 +1240,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
 
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
+
                 cryptoUnitGive (unitForFee);
                 cryptoUnitGive (unit);
             }
@@ -1364,6 +1372,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
+
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
 
                 // State changed
                 BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
