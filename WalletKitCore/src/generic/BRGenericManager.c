@@ -633,6 +633,9 @@ genManagerPeriodicDispatcher (BREventHandler handler,
         // 3b) Query all transactions; each one found will have bwmAnnounceTransaction() invoked
         // which will process the transaction into the wallet.
 
+        // Force an unbounded 'GET' to ensure that every query provides all transactions.
+        uint64_t endBlockNumber = BLOCK_HEIGHT_UNBOUND;  // gwm->brdSync.endBlockNumber
+
         // Callback to 'client' to get all transactions (for all wallet addresses) between
         // a {beg,end}BlockNumber.  The client will gather the transactions and then call
         // bwmAnnounceTransaction()  (for each one or with all of them).
@@ -641,14 +644,14 @@ genManagerPeriodicDispatcher (BREventHandler handler,
                                       gwm,
                                       address,
                                       gwm->brdSync.begBlockNumber,
-                                      gwm->brdSync.endBlockNumber,
+                                      endBlockNumber,
                                       gwm->brdSync.rid);
         } else {
             gwm->client.getTransactions (gwm->client.context,
                                          gwm,
                                          address,
                                          gwm->brdSync.begBlockNumber,
-                                         gwm->brdSync.endBlockNumber,
+                                         endBlockNumber,
                                          gwm->brdSync.rid);
         }
 

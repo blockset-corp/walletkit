@@ -1923,8 +1923,10 @@ final class System implements com.breadwallet.crypto.System {
                                 break;
 
                             default:
-                                system.query.getTransactions(walletManager.getNetwork().getUids(), addresses, begBlockNumberUnsigned,
-                                        endBlockNumberUnsigned, false,
+                                system.query.getTransactions(walletManager.getNetwork().getUids(), addresses,
+                                        begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                                        endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                                        false,
                                         false, new CompletionHandler<List<Transaction>, QueryError>() {
                                             @Override
                                             public void handleData(List<Transaction> transactions) {
