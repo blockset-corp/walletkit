@@ -885,6 +885,25 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
            tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency);
 }
 
+static
+BRRippleTransaction createTransaction(BRRippleAddress sourceAddress,
+                                      BRRippleAddress targetAddress,
+                                      BRRippleUnitDrops amount,
+                                      BRRippleUnitDrops fee)
+{
+    BRRippleFeeBasis feeBasis;
+    feeBasis.pricePerCostFactor = 10;
+    feeBasis.costFactor = 1;
+    return rippleTransactionCreate(sourceAddress, targetAddress, amount, feeBasis);
+}
+
+static void signTransaction(BRRippleAccount sourceAccount, BRRippleTransaction transaction, const char * paper_key)
+{
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, paper_key, NULL);
+    rippleAccountSignTransaction(sourceAccount, transaction, seed);
+}
+
 static void
 assembleTransaction (const char * source_paper_key,
                      BRRippleAccount sourceAccount,
@@ -968,11 +987,72 @@ static void submitWithoutDestinationTag() {
     assembleTransaction(source_paper_key, sourceAccount, targetAddress, 300000, 4, 0);
     rippleAccountFree(sourceAccount);
 }
+
+static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence)
+{
+    const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
+    BRRippleAccount account = rippleAccountCreate(paper_key);
+    BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
+    BRRippleWallet wallet = rippleWalletCreate(account);
+    assert(wallet);
+
+    const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
+    BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
+    BRRippleAddress targetAddress = rippleAccountGetPrimaryAddress(targetAccount);
+
+    // Create the initial transfer the creates the account (from target to us)
+    // NOTE: this transfer MUST use the start_block unaltered as the height
+    BRRippleTransactionHash hash;
+    hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
+    BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Add 2 more receives
+    hash.bytes[0] = 1; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+    hash.bytes[0] = 2; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Create a signed transaction for this account
+    BRRippleTransaction transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence);
+    rippleTransactionFree(transaction);
+
+    // Create a second signed transaction for this account
+    transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence + 1);
+    rippleTransactionFree(transaction);
+
+    rippleAddressFree(address);
+    rippleAccountFree(account);
+    rippleAddressFree(targetAddress);
+    rippleAccountFree(targetAccount);
+    rippleWalletFree(wallet);
+}
+
+static void testStartingSequence()
+{
+    testStartingSequenceFromBlock(40000000, 1); // Just an old account created at 40000000
+    testStartingSequenceFromBlock(55313920, 1); // The last block before the new behavior
+    testStartingSequenceFromBlock(55313921, 55313921); // The first block after the new behavior
+}
+
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
 extern void
 runRippleTest (void /* ... */) {
+
+    testStartingSequence();
 
     // Read data from external file and deserialize
     runDeserializeTests("200 new transaction", test_tx_list, (int)(sizeof(test_tx_list)/sizeof(char*)));
