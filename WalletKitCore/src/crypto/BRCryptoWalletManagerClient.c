@@ -2128,7 +2128,6 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 UInt256 value = cwmParseUInt256 (amount, &error);
 
                 const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
-                char *data     = "";
                 uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
                 uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
                 UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
@@ -2152,7 +2151,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                     contract,
                                     topicsCount,
                                     (const char **) &topics[0],
-                                    data,
+                                    amount,
                                     gasPrice,
                                     gasUsed,
                                     logIndex,
@@ -2173,7 +2172,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                             value,
                                             gasLimit,
                                             gasPrice,
-                                            data,
+                                            "",
                                             nonce,
                                             gasUsed,
                                             blockNumber,
