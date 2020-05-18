@@ -1030,12 +1030,17 @@ static int _BRWalletContainsTxInput(BRWallet *wallet, const BRTransaction *tx, c
     return 0;
 }
 
+static void _IsResolvedWalletAssert      (int check) { assert (check); }
+static void _IsResolvedTransactionAssert (int check) { assert (check); }
+static void _IsResolvedSignatureAssert   (int check) { assert (check); }
+
 // true if all tx inputs that are contained in wallet have txs in wallet
 int BRWalletTransactionIsResolved (BRWallet *wallet, const BRTransaction *tx) {
     int r = 1;
 
-    assert(wallet != NULL);
-    assert(tx != NULL && BRTransactionIsSigned(tx));
+    _IsResolvedWalletAssert(wallet != NULL);
+    _IsResolvedTransactionAssert (tx != NULL);
+    _IsResolvedSignatureAssert (BRTransactionIsSigned(tx));
 
     pthread_mutex_lock(&wallet->lock);
     for (size_t i = 0; r && i < tx->inCount; i++) {
