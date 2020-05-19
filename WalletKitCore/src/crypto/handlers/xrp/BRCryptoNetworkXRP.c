@@ -52,6 +52,13 @@ cryptoNetworkCreateAddressXRP (BRCryptoNetwork networkBase,
     return cryptoAddressCreateFromStringAsXRP (addressAsString);
 }
 
+static BRCryptoBlockNumber
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP (BRCryptoNetwork networkBase,
+                                                   BRCryptoTimestamp timestamp) {
+    //TODO:XRP
+    return 0;
+}
+
 // MARK: Account Initialization
 
 static BRCryptoBoolean
@@ -89,6 +96,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
     cyptoNetworkCreateXRP,
     cryptoNetworkReleaseXRP,
     cryptoNetworkCreateAddressXRP,
+    cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP,
     cryptoNetworkIsAccountInitializedXRP,
     cryptoNetworkGetAccountInitializationDataXRP,
     cryptoNetworkInitializeAccountXRP

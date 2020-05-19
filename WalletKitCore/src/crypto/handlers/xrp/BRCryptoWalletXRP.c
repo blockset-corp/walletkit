@@ -109,26 +109,44 @@ cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
                                           BRCryptoBoolean *validates) {
     const char *key = cryptoTransferAttributeGetKey (attribute);
     const char *val = cryptoTransferAttributeGetValue (attribute);
-    int result;
+    BRCryptoTransferAttributeValidationError error = 0;
 
     // If attribute.value is NULL, we validate unless the attribute.value is required.
-    if (NULL == val) return !cryptoTransferAttributeIsRequired(attribute);
+    if (NULL == val) {
+        if (cryptoTransferAttributeIsRequired(attribute)) {
+            error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_REQUIRED_BUT_NOT_PROVIDED;
+            *validates = CRYPTO_FALSE;
+        } else {
+            *validates = CRYPTO_TRUE;
+        }
+        return error;
+    }
 
-#if REFACTOR //TODO:XRP
     if (rippleCompareFieldOption (key, FIELD_OPTION_DESTINATION_TAG)) {
         uint32_t tag;
-        return 1 == sscanf(val, "%u", &tag);
+        if (1 == sscanf(val, "%u", &tag)) {
+            *validates = CRYPTO_TRUE;
+        } else {
+            *validates = CRYPTO_FALSE;
+            error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
+        }
     }
     else if (rippleCompareFieldOption (key, FIELD_OPTION_INVOICE_ID)) {
         BRCoreParseStatus status;
         uint256CreateParse(val, 10, &status);
-        return CORE_PARSE_OK == status;
+        if (status) {
+            *validates = CRYPTO_TRUE;
+        } else {
+                *validates = CRYPTO_FALSE;
+                error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
+            }
     }
-    else return 0;
-#endif
+    else {
+        error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
+        *validates = CRYPTO_FALSE;
+    }
     
-    *validates = CRYPTO_TRUE;
-    return (BRCryptoTransferAttributeValidationError) 0;
+    return error;
 }
 
 extern BRCryptoTransfer

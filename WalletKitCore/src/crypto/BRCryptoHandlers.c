@@ -49,12 +49,12 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
-         CRYPTO_NETWORK_TYPE_HBAR,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        CRYPTO_NETWORK_TYPE_HBAR,
+        &cryptoNetworkHandlersHBAR,
+        &cryptoAddressHandlersHBAR,
+        &cryptoTransferHandlersHBAR,
+        &cryptoWalletHandlersHBAR,
+        &cryptoWalletManagerHandlersHBAR
     },
 };
 

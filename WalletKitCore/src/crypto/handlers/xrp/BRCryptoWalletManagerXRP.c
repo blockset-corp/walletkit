@@ -23,12 +23,13 @@
 // MARK: - Events
 
 //TODO:XRP make common
-const BREventType *gwmEventTypes[] = {
+const BREventType *xrpEventTypes[] = {
     // ...
 };
 
 const unsigned int
-gwmEventTypesCount = (sizeof (gwmEventTypes) / sizeof (BREventType*));
+xrpEventTypesCount = (sizeof (xrpEventTypes) / sizeof (BREventType*));
+
 
 static BRCryptoWalletManagerXRP
 cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
@@ -106,8 +107,8 @@ static const BREventType **
 cryptoWalletManagerGetEventTypesXRP (BRCryptoWalletManager manager,
                                      size_t *eventTypesCount) {
     assert (NULL != eventTypesCount);
-    *eventTypesCount = gwmEventTypesCount;
-    return gwmEventTypes;
+    *eventTypesCount = xrpEventTypesCount;
+    return xrpEventTypes;
 }
 
 static BRCryptoBoolean
@@ -179,7 +180,7 @@ cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
 
 static void
 cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet  wallet,
+                                               BRCryptoWallet wallet,
                                                BRCryptoCookie cookie,
                                                BRCryptoAddress target,
                                                BRCryptoAmount amount,
@@ -217,7 +218,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
     
-    rippleWalletAddTransfer (xrpWallet, xrpTransfer);
+    rippleWalletAddTransfer (xrpWallet, xrpTransfer); //TODO:XRP needed?
     
     // create BRCryptoTransfer
     
