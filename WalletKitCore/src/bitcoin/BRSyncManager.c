@@ -1442,6 +1442,12 @@ BRClientSyncManagerUpdateTransactions (BRClientSyncManager manager) {
     }
 
     if (needClientCall) {
+        // We'll force the 'client' to return all transactions w/o regard to the `endBlockNumber`
+        // Doing this ensures that the initial 'full-sync' returns everything.  Thus there is no
+        // need to wait for a future 'tick tock' to get the recent and pending transactions'.  For
+        // BTC the future 'tick tock' is minutes away; which is a burden on Users as they wait.
+        endBlockNumber = BLOCK_HEIGHT_UNBOUND;
+
         // Callback to 'client' to get all transactions (for all wallet addresses) between
         // a {beg,end}BlockNumber.  The client will gather the transactions and then call
         // bwmAnnounceTransaction()  (for each one or with all of them).

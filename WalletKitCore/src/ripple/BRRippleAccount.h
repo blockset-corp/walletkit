@@ -127,4 +127,10 @@ extern BRRippleAddress rippleAccountGetPrimaryAddress (BRRippleAccount account);
 
 extern BRKey rippleAccountGetPublicKey(BRRippleAccount account);
 
+// Internal
+extern BRRippleSequence rippleAccountGetSequence (BRRippleAccount account);
+
+// Internal
+extern void rippleAccountSetBlockNumberAtCreation (BRRippleAccount account, uint64_t blockHeight);
+
 #endif
