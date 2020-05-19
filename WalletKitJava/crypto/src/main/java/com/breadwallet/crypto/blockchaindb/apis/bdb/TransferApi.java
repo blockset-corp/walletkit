@@ -41,8 +41,8 @@ public class TransferApi {
 
     public void getTransfers(String id,
                              List<String> addresses,
-                             UnsignedLong beginBlockNumber,
-                             UnsignedLong endBlockNumber,
+                             @Nullable UnsignedLong beginBlockNumber,
+                             @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
                              CompletionHandler<List<Transfer>, QueryError> handler) {
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
@@ -55,8 +55,8 @@ public class TransferApi {
 
             ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
             paramsBuilder.put("blockchain_id", id);
-            paramsBuilder.put("start_height", beginBlockNumber.toString());
-            paramsBuilder.put("end_height", endBlockNumber.toString());
+            if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
+            if (endBlockNumber   != null) paramsBuilder.put("end_height",   endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();

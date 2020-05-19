@@ -252,8 +252,8 @@ public class BlockchainDb {
 
     public void getTransfers(String id,
                              List<String> addresses,
-                             UnsignedLong beginBlockNumber,
-                             UnsignedLong endBlockNumber,
+                             @Nullable UnsignedLong beginBlockNumber,
+                             @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
                              CompletionHandler<List<Transfer>, QueryError> handler) {
         transferApi.getTransfers(
