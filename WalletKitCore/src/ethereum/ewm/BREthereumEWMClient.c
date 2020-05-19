@@ -198,35 +198,14 @@ ewmGetGasEstimate (BREthereumEWM ewm,
             case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
                 pthread_mutex_lock (&ewm->lock);
 
-                // This will be ZERO if transaction amount is in TOKEN.
-                BREthereumEther amountInEther = transferGetEffectiveAmountInEther(transfer);
-                BREthereumFeeBasis feeBasis = transferGetFeeBasis (transfer);
-                BREthereumGasPrice gasPrice = ethFeeBasisGetGasPrice (feeBasis);
-                BREthereumTransaction transaction = transferGetOriginatingTransaction(transfer);
-
-                char *from = ethAddressGetEncodedString (transferGetEffectiveSourceAddress(transfer), 0);
-                char *to   = ethAddressGetEncodedString (transferGetEffectiveTargetAddress(transfer), 0);
-                char *amount = uint256CoerceStringPrefaced (amountInEther.valueInWEI, 16, "0x");
-                char *price  = uint256CoerceStringPrefaced (gasPrice.etherPerGas.valueInWEI, 16, "0x");
-                char *data = (char *) transactionGetData(transaction);
-
                 ewm->client.funcEstimateGas (ewm->client.context,
                                              ewm,
                                              wallet,
                                              transfer,
                                              cookie,
-                                             from,
-                                             to,
-                                             amount,
-                                             price,
-                                             data,
                                              ++ewm->requestId);
                 pthread_mutex_unlock (&ewm->lock);
 
-                free (from);
-                free (to);
-                free (amount);
-                free (price);
                 break;
             }
 

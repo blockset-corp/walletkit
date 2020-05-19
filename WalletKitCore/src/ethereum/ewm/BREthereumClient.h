@@ -76,11 +76,6 @@ extern "C" {
                                            BREthereumWallet wid,
                                            BREthereumTransfer tid,
                                            BREthereumCookie cookie,
-                                           const char *from,
-                                           const char *to,
-                                           const char *amount,
-                                           const char *gasPrice,
-                                           const char *data,
                                            int rid);
 
     extern BREthereumStatus

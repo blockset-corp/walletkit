@@ -1426,11 +1426,6 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
                         BREthereumWallet wid,
                         BREthereumTransfer tid,
                         BREthereumCookie cookie,
-                        const char *from,
-                        const char *to,
-                        const char *amount,
-                        const char *price,
-                        const char *data,
                         int rid) {
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
