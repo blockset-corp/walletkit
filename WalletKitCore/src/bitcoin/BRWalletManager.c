@@ -1719,6 +1719,8 @@ bwmGenerateAddedEvents (BRWalletManager manager,
     });
 }
 
+static void _IsResolvedTxnWithStateAssert (int check) { assert (check); }
+
 extern void
 bwmHandleTxAdded (BRWalletManager manager,
                   OwnershipGiven BRTransaction *ownedTransaction,
@@ -1752,7 +1754,7 @@ bwmHandleTxAdded (BRWalletManager manager,
         // we already have an owned copy of this transaction; free up the passed one
         BRTransactionFree (ownedTransaction);
     }
-    assert (NULL != txnWithState);
+    _IsResolvedTxnWithStateAssert (NULL != txnWithState);
 
     // Check 'IsResolved' based on the 'old' ownedTransaction; resolution does not depend on
     // any fields that might have changed in the ownedTransaction argument to this function.  Thus
