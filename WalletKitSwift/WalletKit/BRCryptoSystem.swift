@@ -1447,8 +1447,8 @@ extension System {
 
                 manager.query.getTransactions (blockchainId: manager.network.uids,
                                                addresses: addresses,
-                                               begBlockNumber: begBlockNumber,
-                                               endBlockNumber: endBlockNumber,
+                                               begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
+                                               endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
                                                includeRaw: false) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive(cwm) }

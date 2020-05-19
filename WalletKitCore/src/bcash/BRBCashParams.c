@@ -31,7 +31,7 @@
 static const char *BRBCashDNSSeeds[] = {
     "seed-abc.breadwallet.com.",
     "seed.bitcoinabc.org.",
-    "seed-abc.bitcoinforks.org.",
+    "seed-bch.bitcoinforks.org.",
     "seed.bitcoinunlimited.info.",
     "seed.bitprim.org.",
     "seed.deadalnix.me.",
@@ -41,7 +41,7 @@ static const char *BRBCashDNSSeeds[] = {
 static const char *BRBCashTestNetDNSSeeds[] = {
     "testnet-seed-abc.breadwallet.com",
     "testnet-seed.bitcoinabc.org",
-    "testnet-seed-abc.bitcoinforks.org",
+    "testnet-seed-bch.bitcoinforks.org",
     "testnet-seed.bitprim.org",
     "testnet-seed.deadalnix.me",
     "testnet-seeder.criptolayer.net",
