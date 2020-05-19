@@ -4,18 +4,20 @@
 
 static BRCryptoWalletBTC
 cryptoWalletCoerce (BRCryptoWallet wallet) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type);
+    assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type ||
+            CRYPTO_NETWORK_TYPE_BCH == wallet->type);
     return (BRCryptoWalletBTC) wallet;
 }
 
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoUnit unit,
+cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
 //                         BRWalletManager bwm,
                          BRWallet *wid) {
     BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletBTCRecord),
-                                                          CRYPTO_NETWORK_TYPE_BTC,
+                                                          type,
                                                           unit,
                                                           unitForFee,
                                                           cryptoAmountCreateInteger(0, unit),
@@ -87,7 +89,7 @@ cryptoWalletGetAddressBTC (BRCryptoWallet walletBase,
 #ifdef REFACTOR
     return cryptoAddressCreateAsBTC (btcAddress, AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC(wallet->u.btc.bwm)));
 #endif
-    return cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, btcAddress);
+    return cryptoAddressCreateAsBTC (walletBase->type, btcAddress);
 
 }
 
@@ -212,6 +214,7 @@ cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet walletBase) {
 
     for (size_t index = 0; index < btcAddressesCount; index++) {
         BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, btcAddresses[index]));
+        // TODO: BCH vs BTC
         BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, BRWalletAddressToLegacy(btcWallet, &btcAddresses[index])));
     }
 
@@ -256,6 +259,19 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
 }
 
 BRCryptoWalletHandlers cryptoWalletHandlersBTC = {
+    cryptoWalletReleaseBTC,
+    cryptoWalletGetAddressBTC,
+    cryptoWalletHasAddressBTC,
+    cryptoWalletGetTransferAttributeCountBTC,
+    cryptoWalletGetTransferAttributeAtBTC,
+    cryptoWalletValidateTransferAttributeBTC,
+    cryptoWalletCreateTransferBTC,
+    cryptoWalletCreateTransferMultipleBTC,
+    cryptoWalletGetAddressesForRecoveryBTC,
+    cryptoWalletIsEqualBTC
+};
+
+BRCryptoWalletHandlers cryptoWalletHandlersBCH = {
     cryptoWalletReleaseBTC,
     cryptoWalletGetAddressBTC,
     cryptoWalletHasAddressBTC,

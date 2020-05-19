@@ -22,12 +22,12 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
-         CRYPTO_NETWORK_TYPE_BCH,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        CRYPTO_NETWORK_TYPE_BCH,
+        &cryptoNetworkHandlersBCH,
+        &cryptoAddressHandlersBCH,
+        &cryptoTransferHandlersBCH,
+        &cryptoWalletHandlersBCH,
+        &cryptoWalletManagerHandlersBCH
     },
 
     {

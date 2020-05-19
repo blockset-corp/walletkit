@@ -99,9 +99,9 @@ private_extern BRWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoUnit unit,
+cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-//                         BRWalletManager bwm,
                          BRWallet *wid);
 
 private_extern BRCryptoTransfer

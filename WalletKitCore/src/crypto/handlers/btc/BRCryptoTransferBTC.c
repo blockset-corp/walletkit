@@ -8,7 +8,8 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee);
 
 extern BRCryptoTransferBTC
 cryptoTransferCoerceBTC (BRCryptoTransfer transfer) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == transfer->type);
+    assert (CRYPTO_NETWORK_TYPE_BTC == transfer->type ||
+            CRYPTO_NETWORK_TYPE_BCH == transfer->type);
     return (BRCryptoTransferBTC) transfer;
 }
 
@@ -70,8 +71,8 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (inputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->sourceAddress = cryptoAddressCreateAsBTC (type,
-                                                                            BRAddressFill (addressParams, address));
+                    transferBase->sourceAddress =
+                    cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
                 }
             }
@@ -99,8 +100,8 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (outputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->targetAddress = cryptoAddressCreateAsBTC (type,
-                                                                            BRAddressFill (addressParams, address));
+                    transferBase->targetAddress =
+                    cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
                 }
             }
@@ -225,6 +226,15 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 
 
 BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
+    cryptoTransferReleaseBTC,
+    cryptoTransferGetAmountAsSignBTC,
+    cryptoTransferGetDirectionBTC,
+    cryptoTransferGetHashBTC,
+    cryptoTransferSerializeForSubmissionBTC,
+    cryptoTransferIsEqualBTC
+};
+
+BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetAmountAsSignBTC,
     cryptoTransferGetDirectionBTC,

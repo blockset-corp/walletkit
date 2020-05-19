@@ -39,13 +39,13 @@ static void cryptoWalletManagerBTCThreadCleanup (void *info);
 static void cryptoWalletManagerBTCTxPublished (void *info, int error);
 
 static BRCryptoWalletManagerBTC
-cryptoWalletManagerCoerce (BRCryptoWalletManager wallet) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type);
-    return (BRCryptoWalletManagerBTC) wallet;
+cryptoWalletManagerCoerce (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
+    assert (type == manager->type);
+    return (BRCryptoWalletManagerBTC) manager;
 }
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateHandlerBTC (BRCryptoListener listener,
+cryptoWalletManagerCreateBTC (BRCryptoListener listener,
                                      BRCryptoClient client,
                                      BRCryptoAccount account,
                                      BRCryptoNetwork network,
@@ -61,7 +61,7 @@ cryptoWalletManagerCreateHandlerBTC (BRCryptoListener listener,
                                                                          scheme,
                                                                          path,
                                                                          CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
-    BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase, cryptoNetworkGetType(network));
 
     // BTC Stuff
     manager->ignoreTBD = 0;
@@ -70,12 +70,12 @@ cryptoWalletManagerCreateHandlerBTC (BRCryptoListener listener,
 }
 
 static void
-cryptoWalletManagerReleaseHandlerBTC (BRCryptoWalletManager manager) {
+cryptoWalletManagerReleaseBTC (BRCryptoWalletManager manager) {
 
 }
 
 static void
-cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
+cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     // Get the btcMasterPublicKey
     BRMasterPubKey btcMPK = cryptoAccountAsBTC(manager->account);
 
@@ -99,7 +99,7 @@ cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
 
     // Set the callbacks
     BRWalletSetCallbacks (btcWallet,
-                          cryptoWalletManagerCoerce(manager),
+                          cryptoWalletManagerCoerce(manager, manager->network->type),
                           cryptoWalletManagerBTCBalanceChanged,
                           cryptoWalletManagerBTCTxAdded,
                           cryptoWalletManagerBTCTxUpdated,
@@ -111,7 +111,7 @@ cryptoWalletManagerInitializeHandlerBTC (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    manager->wallet = cryptoWalletCreateAsBTC (unitAsDefault, unitAsBase, btcWallet);
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsBase, btcWallet);
     array_add (manager->wallets, manager->wallet);
 
     // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
@@ -158,7 +158,7 @@ cryptoWalletManagerGetEventTypesBTC (BRCryptoWalletManager manager,
 
 #if 0
 static BRArrayOf(BRCryptoWallet)
-cryptoWalletManagerCreateWalletsHandlerBTC (BRCryptoWalletManager manager,
+cryptoWalletManagerCreateWalletsBTC (BRCryptoWalletManager manager,
                                             BRArrayOf(BRCryptoTransfer) transfers,
                                             BRCryptoWallet *primaryWallet) {
     assert (NULL != primaryWallet);
@@ -219,7 +219,7 @@ cryptoWalletManagerCreateWalletsHandlerBTC (BRCryptoWalletManager manager,
 #endif
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithSeedHandlerBTC (BRCryptoWalletManager manager,
+cryptoWalletManagerSignTransactionWithSeedBTC (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
                                                       BRCryptoTransfer transfer,
                                                       UInt512 seed) {
@@ -231,7 +231,7 @@ cryptoWalletManagerSignTransactionWithSeedHandlerBTC (BRCryptoWalletManager mana
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithKeyHandlerBTC (BRCryptoWalletManager manager,
+cryptoWalletManagerSignTransactionWithKeyBTC (BRCryptoWalletManager manager,
                                                      BRCryptoWallet wallet,
                                                      BRCryptoTransfer transfer,
                                                      BRCryptoKey key) {
@@ -243,7 +243,7 @@ cryptoWalletManagerSignTransactionWithKeyHandlerBTC (BRCryptoWalletManager manag
 }
 
 static BRCryptoAmount
-cryptoWalletManagerEstimateLimitHandlerBTC (BRCryptoWalletManager cwm,
+cryptoWalletManagerEstimateLimitBTC (BRCryptoWalletManager cwm,
                                             BRCryptoWallet  wallet,
                                             BRCryptoBoolean asMaximum,
                                             BRCryptoAddress target,
@@ -277,7 +277,7 @@ cryptoWalletManagerEstimateLimitHandlerBTC (BRCryptoWalletManager cwm,
 }
 
 static void
-cryptoWalletManagerEstimateFeeBasisHandlerBTC (BRCryptoWalletManager cwm,
+cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
                                                BRCryptoWallet  wallet,
                                                BRCryptoCookie cookie,
                                                BRCryptoAddress target,
@@ -306,7 +306,7 @@ cryptoWalletManagerEstimateFeeBasisHandlerBTC (BRCryptoWalletManager cwm,
 }
 
 static void
-cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC (BRCryptoWalletManager manager,
+cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManager manager,
                                                                     OwnershipKept BRCryptoClientTransactionBundle bundle) {
     BRTransaction *btcTransaction = BRTransactionParse (bundle->serialization, bundle->serializationCount);
 
@@ -368,7 +368,7 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC (BRCryptoWall
 }
 
 static void
-cryptoWalletManagerRecoverTransferFromTransferBundleHandlerBTC (BRCryptoWalletManager cwm,
+cryptoWalletManagerRecoverTransferFromTransferBundleBTC (BRCryptoWalletManager cwm,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle) {
     // Not BTC functionality
     assert (0);
@@ -385,18 +385,19 @@ typedef struct BRCryptoClientP2PManagerRecordBTC {
 
 static BRCryptoClientP2PManagerBTC
 cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager managerBase) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == managerBase->type);
+    assert (CRYPTO_NETWORK_TYPE_BTC == managerBase->type ||
+            CRYPTO_NETWORK_TYPE_BCH == managerBase->type);
     return (BRCryptoClientP2PManagerBTC) managerBase;
 }
 
 static void
-cryptoClientP2PManagerReleaseHandlerBTC (BRCryptoClientP2PManager baseManager) {
+cryptoClientP2PManagerReleaseBTC (BRCryptoClientP2PManager baseManager) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
     BRPeerManagerFree (manager->btcPeerManager);
 }
 
 static void
-cryptoClientP2PManagerConnectHandlerBTC (BRCryptoClientP2PManager baseManager,
+cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
                                          BRCryptoPeer peer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
@@ -417,7 +418,7 @@ cryptoClientP2PManagerConnectHandlerBTC (BRCryptoClientP2PManager baseManager,
 }
 
 static void
-cryptoClientP2PManagerDisconnectHandlerBTC (BRCryptoClientP2PManager baseManager) {
+cryptoClientP2PManagerDisconnectBTC (BRCryptoClientP2PManager baseManager) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
     BRPeerManagerDisconnect (manager->btcPeerManager);
@@ -447,7 +448,7 @@ cryptoClientP2PManagerCalculateSyncDepthHeight(BRCryptoSyncDepth depth,
 }
 
 static void
-cryptoClientP2PManagerSyncHandlerBTC (BRCryptoClientP2PManager baseManager,
+cryptoClientP2PManagerSyncBTC (BRCryptoClientP2PManager baseManager,
                                       BRCryptoSyncDepth depth,
                                       BRCryptoBlockNumber height) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
@@ -472,7 +473,7 @@ typedef struct {
 } BRCryptoClientP2PManagerPublishInfo;
 
 static void
-cryptoClientP2PManagerSendHandlerBTC (BRCryptoClientP2PManager baseManager, BRCryptoTransfer transfer) {
+cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager, BRCryptoTransfer transfer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
     BRTransaction *btcTransaction = cryptoTransferAsBTC (transfer);
@@ -488,22 +489,22 @@ cryptoClientP2PManagerSendHandlerBTC (BRCryptoClientP2PManager baseManager, BRCr
 }
 
 static BRCryptoClientP2PHandlers p2pHandlersBTC = {
-    cryptoClientP2PManagerReleaseHandlerBTC,
-    cryptoClientP2PManagerConnectHandlerBTC,
-    cryptoClientP2PManagerDisconnectHandlerBTC,
-    cryptoClientP2PManagerSyncHandlerBTC,
-    cryptoClientP2PManagerSendHandlerBTC
+    cryptoClientP2PManagerReleaseBTC,
+    cryptoClientP2PManagerConnectBTC,
+    cryptoClientP2PManagerDisconnectBTC,
+    cryptoClientP2PManagerSyncBTC,
+    cryptoClientP2PManagerSendBTC
 };
 
 static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerHandlerBTC (BRCryptoWalletManager cwm) {
+crytpWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager cwm) {
     // load blocks, load peers
 
     BRCryptoClientP2PManager baseManager = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordBTC),
-                                                                         CRYPTO_NETWORK_TYPE_BTC,
+                                                                         cwm->type,
                                                                          &p2pHandlersBTC);
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-    manager->manager = cryptoWalletManagerCoerce(cwm);
+    manager->manager = cryptoWalletManagerCoerce(cwm, baseManager->type);
 
     const BRChainParams *btcChainParams = cryptoNetworkAsBTC(cwm->network);
     BRWallet *btcWallet = cryptoWalletAsBTC(cwm->wallet);
@@ -522,7 +523,7 @@ crytpWalletManagerCreateP2PManagerHandlerBTC (BRCryptoWalletManager cwm) {
     assert (NULL != manager->btcPeerManager);
 
     BRPeerManagerSetCallbacks (manager->btcPeerManager,
-                               cryptoWalletManagerCoerce(cwm),
+                               cryptoWalletManagerCoerce(cwm, baseManager->type),
                                cryptoWalletManagerBTCSyncStarted,
                                cryptoWalletManagerBTCSyncStopped,
                                cryptoWalletManagerBTCTxStatusUpdate,
@@ -1354,16 +1355,31 @@ const unsigned int
 bwmEventTypesCount = (sizeof (bwmEventTypes) / sizeof (BREventType*));
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
-    cryptoWalletManagerCreateHandlerBTC,
-    cryptoWalletManagerReleaseHandlerBTC,
-    cryptoWalletManagerInitializeHandlerBTC,
+    cryptoWalletManagerCreateBTC,
+    cryptoWalletManagerReleaseBTC,
+    cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
-    cryptoWalletManagerSignTransactionWithSeedHandlerBTC,
-    cryptoWalletManagerSignTransactionWithKeyHandlerBTC,
-    cryptoWalletManagerEstimateLimitHandlerBTC,
-    cryptoWalletManagerEstimateFeeBasisHandlerBTC,
-    crytpWalletManagerCreateP2PManagerHandlerBTC,
-    cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerBTC,
-    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerBTC
+    cryptoWalletManagerSignTransactionWithSeedBTC,
+    cryptoWalletManagerSignTransactionWithKeyBTC,
+    cryptoWalletManagerEstimateLimitBTC,
+    cryptoWalletManagerEstimateFeeBasisBTC,
+    crytpWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
+    cryptoWalletManagerRecoverTransferFromTransferBundleBTC
+};
+
+BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
+    cryptoWalletManagerCreateBTC,
+    cryptoWalletManagerReleaseBTC,
+    cryptoWalletManagerInitializeBTC,
+    crytpWalletManagerCreateFileServiceBTC,
+    cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerSignTransactionWithSeedBTC,
+    cryptoWalletManagerSignTransactionWithKeyBTC,
+    cryptoWalletManagerEstimateLimitBTC,
+    cryptoWalletManagerEstimateFeeBasisBTC,
+    crytpWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
+    cryptoWalletManagerRecoverTransferFromTransferBundleBTC
 };

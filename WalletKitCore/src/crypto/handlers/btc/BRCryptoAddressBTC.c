@@ -6,8 +6,8 @@
 #include "bcash/BRBCashAddr.h"
 
 static BRCryptoAddressBTC
-cryptoAddressCoerce (BRCryptoAddress address) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == address->type);
+cryptoAddressCoerce (BRCryptoAddress address, BRCryptoBlockChainType type) {
+    assert (type == address->type);
     return (BRCryptoAddressBTC) address;
 }
 
@@ -16,7 +16,7 @@ cryptoAddressCreateAsBTC (BRCryptoBlockChainType type, BRAddress addr) {
     BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressBTCRecord),
                                                                 type,
                                                                 BRAddressHash (addr.s));
-    BRCryptoAddressBTC address     = cryptoAddressCoerce (addressBase);
+    BRCryptoAddressBTC address     = cryptoAddressCoerce (addressBase, type);
 
     address->addr = addr;
 
@@ -51,28 +51,23 @@ cryptoAddressReleaseBTC (BRCryptoAddress addressBase) {
 
 static char *
 cryptoAddressAsStringBTC (BRCryptoAddress addressBase) {
-    BRCryptoAddressBTC address = (BRCryptoAddressBTC) addressBase;
+    BRCryptoAddressBTC address = cryptoAddressCoerce (addressBase, CRYPTO_NETWORK_TYPE_BTC);
+    return strdup (address->addr.s);
+}
 
-    switch (address->base.type) {
-        case CRYPTO_NETWORK_TYPE_BTC:
-            return strdup (address->addr.s);
+static char *
+cryptoAddressAsStringBCH (BRCryptoAddress addressBase) {
+    BRCryptoAddressBTC address = cryptoAddressCoerce (addressBase, CRYPTO_NETWORK_TYPE_BCH);
 
-        case CRYPTO_NETWORK_TYPE_BCH: {
-            char *result = malloc (55);
-            BRBCashAddrEncode(result, address->addr.s);
-            return result;
-        }
-
-        default:
-            assert (0);
-            return NULL;
-    }
+    char *result = malloc (55);
+    BRBCashAddrEncode(result, address->addr.s);
+    return result;
 }
 
 static bool
 cryptoAddressIsEqualBTC (BRCryptoAddress address1, BRCryptoAddress address2) {
-    BRCryptoAddressBTC a1 = (BRCryptoAddressBTC) address1;
-    BRCryptoAddressBTC a2 = (BRCryptoAddressBTC) address2;
+    BRCryptoAddressBTC a1 = cryptoAddressCoerce (address1, address1->type);
+    BRCryptoAddressBTC a2 = cryptoAddressCoerce (address2, address2->type);
 
     return (a1->base.type == a1->base.type &&
             0 == strcmp (a1->addr.s, a2->addr.s));
@@ -81,7 +76,7 @@ cryptoAddressIsEqualBTC (BRCryptoAddress address1, BRCryptoAddress address2) {
 private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress addressBase,
                     BRCryptoBoolean *isBitcoinAddr) {
-    BRCryptoAddressBTC address = (BRCryptoAddressBTC) addressBase;
+    BRCryptoAddressBTC address = cryptoAddressCoerce (addressBase, CRYPTO_NETWORK_TYPE_BCH);
 
     assert (NULL != isBitcoinAddr);
     *isBitcoinAddr = AS_CRYPTO_BOOLEAN (addressBase->type == CRYPTO_NETWORK_TYPE_BTC);
@@ -91,5 +86,11 @@ cryptoAddressAsBTC (BRCryptoAddress addressBase,
 BRCryptoAddressHandlers cryptoAddressHandlersBTC = {
     cryptoAddressReleaseBTC,
     cryptoAddressAsStringBTC,
+    cryptoAddressIsEqualBTC
+};
+
+BRCryptoAddressHandlers cryptoAddressHandlersBCH = {
+    cryptoAddressReleaseBTC,
+    cryptoAddressAsStringBCH,
     cryptoAddressIsEqualBTC
 };
