@@ -184,6 +184,7 @@ cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
                                                BRCryptoAddress target,
                                                BRCryptoAmount amount,
                                                BRCryptoNetworkFee networkFee) {
+    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     //TODO:XRP
 }
 
@@ -197,7 +198,42 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP (BRCryptoWall
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletManager cwm,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle) {
-    //TODO:XRP
+    // create BRRippleTransfer
+    
+    BRRippleWallet xrpWallet = cryptoWalletAsXRP (cwm->wallet);
+    
+    BRRippleUnitDrops amountDrops, feeDrops = 0;
+    sscanf(bundle->amount, "%" PRIu64, &amountDrops);
+    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeDrops);
+    BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
+    BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
+    // Convert the hash string to bytes
+    BRRippleTransactionHash txId;
+    hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
+    int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+
+    BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
+
+    rippleAddressFree (toAddress);
+    rippleAddressFree (fromAddress);
+    
+    rippleWalletAddTransfer (xrpWallet, xrpTransfer);
+    
+    // create BRCryptoTransfer
+    
+    BRCryptoWallet wallet = cryptoWalletManagerGetWallet (cwm);
+    
+    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->unit,
+                                                               wallet->unitForFee,
+                                                               xrpWallet,
+                                                               xrpTransfer);
+    cryptoWalletAddTransfer (wallet, baseTransfer);
+    
+    //TODO:XRP attributes
+    //TODO:XRP save to fileService
+    //TODO:XRP announce
+    
+    rippleTransferFree (xrpTransfer);
 }
 
 static BRCryptoClientP2PManager

@@ -53,7 +53,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRRippleWallet wallet,
-                           OwnershipGiven BRRippleTransfer xrpTransfer);
+                           BRRippleTransfer xrpTransfer);
 
 // MARK: - Wallet
 
