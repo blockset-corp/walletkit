@@ -20,18 +20,22 @@ cryptoTransferCreateAsXRP (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            OwnershipKept BRRippleWallet wallet,
                            OwnershipGiven BRRippleTransfer xrpTransfer) {
+    
+    BRCryptoTransferDirection direction = transferGetDirectionFromXRP (xrpTransfer, wallet);
+    
+    BRCryptoAmount amount = cryptoAmountCreateAsXRP (unit,
+                                                     CRYPTO_FALSE,
+                                                     xrpTransfer->amount);
+    
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
                                                                 CRYPTO_NETWORK_TYPE_XRP,
                                                                 unit,
-                                                                unitForFee);
+                                                                unitForFee,
+                                                                amount,
+                                                                direction);
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
     
     transfer->xrpTransfer = xrpTransfer;
-    
-    transferBase->direction = transferGetDirectionFromXRP (xrpTransfer, wallet);
-    transferBase->amount = cryptoAmountCreateAsXRP (transferBase->unit,
-                                                    CRYPTO_FALSE,
-                                                    xrpTransfer->amount);
     
     BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (transferBase->unitForFee,
                                                         CRYPTO_FALSE,

@@ -99,7 +99,9 @@ extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoUnit unit,
-                            BRCryptoUnit unitForFee);
+                            BRCryptoUnit unitForFee,
+                            BRCryptoAmount amount,
+                            BRCryptoTransferDirection direction);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);

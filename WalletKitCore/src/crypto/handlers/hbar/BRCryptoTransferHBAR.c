@@ -26,18 +26,22 @@ cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             OwnershipKept BRHederaWallet wallet,
                             OwnershipGiven BRHederaTransaction hbarTransaction) {
+    
+    BRCryptoTransferDirection direction = transferGetDirectionFromHBAR (hbarTransaction, wallet);
+    
+    BRCryptoAmount amount = cryptoAmountCreateAsHBAR (unit,
+                                                      CRYPTO_FALSE,
+                                                      hederaTransactionGetAmount (hbarTransaction));
+    
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
                                                                 CRYPTO_NETWORK_TYPE_HBAR,
                                                                 unit,
-                                                                unitForFee);
+                                                                unitForFee,
+                                                                amount,
+                                                                direction);
     BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
     
     transfer->hbarTransaction = hbarTransaction;
-    
-    transferBase->direction = transferGetDirectionFromHBAR (hbarTransaction, wallet);
-    transferBase->amount = cryptoAmountCreateAsHBAR (transferBase->unit,
-                                                     CRYPTO_FALSE,
-                                                     hederaTransactionGetAmount (hbarTransaction));
     
     BRCryptoAmount feeAmount = cryptoAmountCreateAsHBAR (transferBase->unitForFee,
                                                          CRYPTO_FALSE,

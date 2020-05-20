@@ -62,7 +62,9 @@ extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoUnit unit,
-                            BRCryptoUnit unitForFee) {
+                            BRCryptoUnit unitForFee,
+                            BRCryptoAmount amount,
+                            BRCryptoTransferDirection direction) {
     assert (sizeInBytes >= sizeof (struct BRCryptoTransferRecord));
     BRCryptoTransfer transfer = calloc (1, sizeInBytes);
 
@@ -75,7 +77,8 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = NULL;
     
-    transfer->direction = CRYPTO_TRANSFER_RECOVERED;
+    transfer->amount = cryptoAmountTake (amount);
+    transfer->direction = direction;
 
     array_new (transfer->attributes, 1);
 
@@ -96,6 +99,7 @@ cryptoTransferRelease (BRCryptoTransfer transfer) {
     cryptoUnitGive (transfer->unitForFee);
     cryptoTransferStateRelease (&transfer->state);
     cryptoFeeBasisGive (transfer->feeBasisEstimated);
+    cryptoAmountGive (transfer->amount);
 
     array_free_all(transfer->attributes, cryptoTransferAttributeGive);
 
