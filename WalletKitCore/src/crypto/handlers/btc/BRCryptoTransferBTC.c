@@ -233,8 +233,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
 
 BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
-    cryptoTransferGetAmountAsSignBTC,
-    cryptoTransferGetDirectionBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeForSubmissionBTC,
     cryptoTransferIsEqualBTC
