@@ -1672,7 +1672,7 @@ final class System implements com.breadwallet.crypto.System {
                                                     return;
                                                 }
 
-                                                UnsignedLong blockHeight = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+                                                UnsignedLong blockHeight = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                 UnsignedLong timestamp =
                                                         transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
 
@@ -1750,7 +1750,7 @@ final class System implements com.breadwallet.crypto.System {
                                             List<ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String>> merged;
 
                                             for (Transaction transaction : transactions) {
-                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                 UnsignedLong blockTimestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
                                                 UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
                                                 UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
