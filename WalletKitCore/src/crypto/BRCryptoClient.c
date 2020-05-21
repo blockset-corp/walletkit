@@ -850,7 +850,7 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     bundle->to       = strdup (to);
     bundle->amount   = strdup (amount);
     bundle->currency = strdup (currency);
-    bundle->fee      = strdup (fee);
+    bundle->fee      = NULL == fee ? NULL : strdup (fee);
 
     bundle->blockTimestamp = blockTimestamp;
     bundle->blockNumber    = blockNumber;
@@ -859,6 +859,17 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     bundle->blockHash = strdup (blockHash);
 
     // attributes
+    bundle->attributesCount = attributesCount;
+    bundle->attributeKeys = bundle->attributeVals = NULL;
+
+    if (bundle->attributesCount > 0) {
+        bundle->attributeKeys = calloc (bundle->attributesCount, sizeof (char*));
+        bundle->attributeVals = calloc (bundle->attributesCount, sizeof (char*));
+        for (size_t index = 0; index < bundle->attributesCount; index++) {
+            bundle->attributeKeys[index] = strdup (attributeKeys[index]);
+            bundle->attributeVals[index] = strdup (attributeVals[index]);
+        }
+    }
 
     return bundle;
 }
@@ -871,10 +882,19 @@ cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
     free (bundle->from);
     free (bundle->to);
     free (bundle->amount);
-    free (bundle->fee);
+    if (NULL != bundle->fee) free (bundle->fee);
 
     free (bundle->blockHash);
 
+    if (bundle->attributesCount > 0) {
+        for (size_t index = 0; index < bundle->attributesCount; index++) {
+            free (bundle->attributeKeys[index]);
+            free (bundle->attributeVals[index]);
+        }
+        free (bundle->attributeKeys);
+        free (bundle->attributeVals);
+    }
+    
     memset (bundle, 0, sizeof (struct BRCryptoClientTransferBundleRecord));
     free (bundle);
 }

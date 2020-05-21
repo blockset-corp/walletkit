@@ -2,21 +2,27 @@
 #include "BRCryptoETH.h"
 #include "ethereum/base/BREthereumAddress.h"
 
-/// A ETH address
-struct BRCryptoAddressETHRecord {
-    struct BRCryptoAddressRecord base;
+static BRCryptoAddressETH
+cryptoAddressCoerce (BRCryptoAddress address) {
+    assert (CRYPTO_NETWORK_TYPE_ETH == address->type);
+    return (BRCryptoAddressETH) address;
+}
 
-    BREthereumAddress eth;
-};
-
-static BRCryptoAddress
+private_extern BRCryptoAddress
 cryptoAddressCreateAsETH (BREthereumAddress eth) {
-    BRCryptoAddress address = cryptoAddressAllocAndInit (CRYPTO_NETWORK_TYPE_ETH,
-                                                         sizeof (struct BRCryptoAddressETHRecord));
+    BRCryptoAddress addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressETHRecord),
+                                                             CRYPTO_NETWORK_TYPE_ETH,
+                                                             (size_t) ethAddressHashValue (eth));
+    BRCryptoAddressETH address     = cryptoAddressCoerce (addressBase);
+    address->eth = eth;
 
-    ((BRCryptoAddressETH) address)->eth = eth;
+    return addressBase;
+}
 
-    return address;
+private_extern BREthereumAddress
+cryptoAddressAsETH (BRCryptoAddress addressBase) {
+    BRCryptoAddressETH address     = cryptoAddressCoerce (addressBase);
+    return address->eth;
 }
 
 extern BRCryptoAddress

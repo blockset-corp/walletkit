@@ -1,9 +1,5 @@
 #include "BRCryptoETH.h"
-
-struct BRCryptoWalletETHRecord {
-    struct BRCryptoWalletRecord base;
-//    BRWallet *wid;
-};
+#include "crypto/BRCryptoAmountP.h"
 
 static BRCryptoWalletETH
 cryptoWalletCoerce (BRCryptoWallet wallet) {
@@ -11,134 +7,177 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletETH) wallet;
 }
 
-private_extern BREthereumWallet
-cryptoWalletAsETH (BRCryptoWallet wallet);
-
 private_extern BRCryptoWallet
 cryptoWalletCreateAsETH (BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-                         BREthereumEWM ewm,
-                         BREthereumWallet wid);
+                         BREthereumAccount ethAccount) {
+    BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
+                                                      CRYPTO_NETWORK_TYPE_ETH,
+                                                      unit,
+                                                      unitForFee,
+                                                      NULL,
+                                                      NULL);
+    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
 
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsETH (BRCryptoWallet wallet,
-                               BREthereumTransfer eth);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BREthereumEWM ewm,
-                         BREthereumWallet wid) {
-    BRCryptoWallet wallet = cryptoWalletCreateInternal (BLOCK_CHAIN_TYPE_ETH, unit, unitForFee);
-
-    wallet->u.eth.ewm = ewm;
-    wallet->u.eth.wid = wid;
-
-    return wallet;
+    wallet->ethAccount = ethAccount;
+    return walletBase;
 }
 
 static void
 cryptoWalletReleaseETH (BRCryptoWallet wallet) {
 }
 
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsETH (BRCryptoWallet wallet,
-                               BREthereumTransfer eth) {
-    BRCryptoTransfer transfer = NULL;
-    pthread_mutex_lock (&wallet->lock);
-    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        if (CRYPTO_TRUE == cryptoTransferHasETH (wallet->transfers[index], eth)) {
-            transfer = cryptoTransferTake (wallet->transfers[index]);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&wallet->lock);
-    return transfer;
-}
 
 static BRCryptoAddress
-cryptoWalletGetAddressETH (BRCryptoWallet wallet,
-                        BRCryptoAddressScheme addressScheme) {
-    assert (CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT == addressScheme);
-    BREthereumEWM ewm = wallet->u.eth.ewm;
+cryptoWalletGetAddressETH (BRCryptoWallet walletBase,
+                           BRCryptoAddressScheme addressScheme) {
+    BRCryptoWalletETH wallet = cryptoWalletCoerce(walletBase);
+    BREthereumAddress ethAddress = ethAccountGetPrimaryAddress (wallet->ethAccount);
 
-    BREthereumAddress ethAddress = ethAccountGetPrimaryAddress (ewmGetAccount(ewm));
     return cryptoAddressCreateAsETH (ethAddress);
 }
 
-static BRCryptoBoolean
-cryptoWalletHasAddressETH (BRCryptoWallet wallet,
+static bool
+cryptoWalletHasAddressETH (BRCryptoWallet walletBase,
                            BRCryptoAddress address) {
-    BREthereumAddress ethAddress = cryptoAddressAsETH (address);
-    return AS_CRYPTO_BOOLEAN (ETHEREUM_BOOLEAN_TRUE == ewmWalletHasAddress(wallet->u.eth.ewm, wallet->u.eth.wid, ethAddress));
+    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+    return (ETHEREUM_BOOLEAN_TRUE == ethAddressEqual (cryptoAddressAsETH (address),
+                                                      ethAccountGetPrimaryAddress (wallet->ethAccount)));
 }
 
-static BRCryptoTransfer
-cryptoWalletCreateTransferMultipleETH (BRCryptoWallet wallet,
-                                    size_t outputsCount,
-                                    BRCryptoTransferOutput *outputs,
-                                    BRCryptoFeeBasis estimatedFeeBasis) {
-    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
-    if (0 == outputsCount) return NULL;
-
-    BRCryptoTransfer transfer = NULL;
-
-    BRCryptoUnit unit         = cryptoWalletGetUnit (wallet);
-    BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee(wallet);
-    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
-
-    cryptoCurrencyGive(currency);
-    cryptoUnitGive (unitForFee);
-    cryptoUnitGive (unit);
-
-    return transfer;
+extern size_t
+cryptoWalletGetTransferAttributeCountETH (BRCryptoWallet wallet,
+                                          BRCryptoAddress target) {
+    return 0;
 }
 
-static BRCryptoTransfer
-cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
+extern BRCryptoTransferAttribute
+cryptoWalletGetTransferAttributeAtETH (BRCryptoWallet wallet,
+                                       BRCryptoAddress target,
+                                       size_t index) {
+    return NULL;
+}
+
+extern BRCryptoTransferAttributeValidationError
+cryptoWalletValidateTransferAttributeETH (BRCryptoWallet wallet,
+                                          OwnershipKept BRCryptoTransferAttribute attribute,
+                                          BRCryptoBoolean *validates) {
+    *validates = CRYPTO_TRUE;
+    return (BRCryptoTransferAttributeValidationError) 0;
+}
+
+static char *
+cryptoTransferProvideOriginatingData (BREthereumTransferBasisType type,
+                                      BREthereumAddress targetAddress,
+                                      UInt256 value) {
+    switch (type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            return strdup ("");
+
+        case TRANSFER_BASIS_LOG: {
+            char address[ADDRESS_ENCODED_CHARS];
+            ethAddressFillEncodedString (targetAddress, 0, address);
+
+            // Data is a HEX ENCODED string
+            return (char *) ethContractEncode (ethContractERC20, ethFunctionERC20Transfer,
+                                               // Address
+                                               (uint8_t *) &address[2], strlen(address) - 2,
+                                               // Amount
+                                               (uint8_t *) &value, sizeof (UInt256),
+                                               NULL);
+        }
+    }
+}
+
+static BREthereumAddress
+cryptoTransferProvideOriginatingTargetAddress (BREthereumTransferBasisType type,
+                                               BREthereumAddress targetAddress,
+                                               BREthereumToken   token) {
+    switch (type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            return targetAddress;
+        case TRANSFER_BASIS_LOG:
+            return ethTokenGetAddressRaw (token);
+    }
+}
+
+static BREthereumEther
+cryptoTransferProvideOriginatingAmount (BREthereumTransferBasisType type,
+                                        UInt256 value) {
+    switch (type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            return ethEtherCreate(value);
+        case TRANSFER_BASIS_LOG:
+            return ethEtherCreateZero ();
+    }
+}
+
+#if 0
+static void
+transferProvideOriginatingTransaction (BREthereumTransfer transfer) {
+    if (NULL != transfer->originatingTransaction)
+        transactionRelease (transfer->originatingTransaction);
+
+    char *data = transferProvideOriginatingTransactionData(transfer);
+
+    transfer->originatingTransaction =
+    transactionCreate (transfer->sourceAddress,
+                       transferProvideOriginatingTransactionTargetAddress (transfer),
+                       transferProvideOriginatingTransactionAmount (transfer),
+                       ethFeeBasisGetGasPrice(transfer->feeBasis),
+                       ethFeeBasisGetGasLimit(transfer->feeBasis),
+                       data,
+                       TRANSACTION_NONCE_IS_NOT_ASSIGNED);
+    free (data);
+}
+#endif
+extern BRCryptoTransfer
+cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
                                size_t attributesCount,
-                               OwnershipKept BRCryptoTransferAttribute *attributes) {
-    assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(target));
-    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+                               OwnershipKept BRCryptoTransferAttribute *attributes,
+                               BRCryptoCurrency currency,
+                               BRCryptoUnit unit,
+                               BRCryptoUnit unitForFee) {
+    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+    assert (cryptoWalletGetType(walletBase) == cryptoAddressGetType(target));
+
+//    BRCryptoUnit unit       = cryptoWalletGetUnit       (walletBase);
+//    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (walletBase);
     
-    BRCryptoTransfer transfer;
-    
-    BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
-    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(wallet);
-    
-    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
+//    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
     assert (cryptoAmountHasCurrency (amount, currency));
-    cryptoCurrencyGive(currency);
-    
-    BREthereumEWM ewm = wallet->u.eth.ewm;
-    BREthereumWallet wid = wallet->u.eth.wid;
-    
-    UInt256 ethValue  = cryptoAmountGetValue (amount);
-    BREthereumToken  ethToken  = ewmWalletGetToken (ewm, wid);
-    BREthereumAmount ethAmount = (NULL != ethToken
-                                  ? ethAmountCreateToken (ethTokenQuantityCreate (ethToken, ethValue))
-                                  : ethAmountCreateEther (ethEtherCreate (ethValue)));
-    BREthereumFeeBasis ethFeeBasis = cryptoFeeBasisAsETH (estimatedFeeBasis);
-    
-    char *addr = cryptoAddressAsString(target); // Target address
-    
-    //
-    // We have a race condition here. `ewmWalletCreateTransferWithFeeBasis()` will generate
-    // a `TRANSFER_EVENT_CREATED` event; `cwmTransactionEventAsETH()` will eventually get
-    // called and attempt to find or create the BRCryptoTransfer.
-    //
-    // We might think about locking the wallet around the following two statements and then
-    // locking in `cwmTransactionEventAsETH()` too - perhaps justifying it with 'we are
-    // mucking w/ the wallet's transactions' so we should lock it (over a block of
-    // statements).
-    //
-    BREthereumTransfer tid = ewmWalletCreateTransferWithFeeBasis (ewm, wid, addr, ethAmount, ethFeeBasis);
-    transfer = NULL == tid ? NULL : cryptoTransferCreateAsETH (unit, unitForFee, ewm, tid, estimatedFeeBasis);
-    
-    free (addr);
+//    cryptoCurrencyGive(currency);
+
+    BREthereumToken    ethToken         = wallet->ethToken;
+    BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
+
+    BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (wallet->ethAccount);
+    BREthereumAddress  ethTargetAddress = cryptoAddressAsETH (target);
+
+    BREthereumTransferBasisType type = (NULL == ethToken ? TRANSFER_BASIS_TRANSACTION : TRANSFER_BASIS_LOG);
+
+    UInt256 value = cryptoAmountGetValue (amount);
+    char   *data  = cryptoTransferProvideOriginatingData (type, ethTargetAddress, value);
+
+    BREthereumTransaction ethTransaction =
+    transactionCreate (ethSourceAddress,
+                       cryptoTransferProvideOriginatingTargetAddress (type, ethTargetAddress, ethToken),
+                       cryptoTransferProvideOriginatingAmount (type, value),
+                       ethFeeBasisGetGasPrice(ethFeeBasis),
+                       ethFeeBasisGetGasLimit(ethFeeBasis),
+                       data,
+                       TRANSACTION_NONCE_IS_NOT_ASSIGNED);
+
+    free (data);
+
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (unit,
+                                                           unitForFee,
+                                                           wallet->ethAccount,
+                                                           type,
+                                                           ethTransaction);
     
     if (NULL != transfer && attributesCount > 0) {
         BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
@@ -148,10 +187,33 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
         array_free (transferAttributes);
     }
     
-    cryptoUnitGive (unitForFee);
-    cryptoUnitGive (unit);
+//    cryptoUnitGive (unitForFee);
+//    cryptoUnitGive (unit);
     
     return transfer;
+}
+
+static BRCryptoTransfer
+cryptoWalletCreateTransferMultipleETH (BRCryptoWallet walletBase,
+                                       size_t outputsCount,
+                                       BRCryptoTransferOutput *outputs,
+                                       BRCryptoFeeBasis estimatedFeeBasis,
+                                       BRCryptoCurrency currency,
+                                       BRCryptoUnit unit,
+                                       BRCryptoUnit unitForFee) {
+    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+    (void) wallet;
+
+    if (0 == outputsCount) return NULL;
+
+    return NULL;
+}
+
+static OwnershipGiven BRSetOf(BRCryptoAddress)
+cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet walletBase) {
+    BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
+    BRSetAdd (addresses, cryptoWalletGetAddressETH (walletBase, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT));
+    return addresses;
 }
 
 static bool
@@ -160,3 +222,16 @@ cryptoWalletIsEqualETH (BRCryptoWallet wb1, BRCryptoWallet wb2) {
 //            w1->u.eth.wid == w2->u.eth.wid);
     return true;
 }
+
+BRCryptoWalletHandlers cryptoWalletHandlersETH = {
+    cryptoWalletReleaseETH,
+    cryptoWalletGetAddressETH,
+    cryptoWalletHasAddressETH,
+    cryptoWalletGetTransferAttributeCountETH,
+    cryptoWalletGetTransferAttributeAtETH,
+    cryptoWalletValidateTransferAttributeETH,
+    cryptoWalletCreateTransferETH,
+    cryptoWalletCreateTransferMultipleETH,
+    cryptoWalletGetAddressesForRecoveryETH,
+    cryptoWalletIsEqualETH
+};

@@ -22,6 +22,12 @@ extern BRCryptoTransferHandlers cryptoTransferHandlersBCH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBCH;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH;
 
+extern BRCryptoAddressHandlers cryptoAddressHandlersETH;
+extern BRCryptoNetworkHandlers cryptoNetworkHandlersETH;
+extern BRCryptoTransferHandlers cryptoTransferHandlersETH;
+extern BRCryptoWalletHandlers cryptoWalletHandlersETH;
+extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH;
+
 #ifdef __cplusplus
 }
 #endif

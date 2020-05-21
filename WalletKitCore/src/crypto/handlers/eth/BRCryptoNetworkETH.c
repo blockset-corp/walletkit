@@ -7,29 +7,34 @@
 
 #include "BRCryptoETH.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
+#include "ethereum/blockchain/BREthereumBlock.h"
 
-struct BRCryptoNetworkETHRecord {
-    struct BRCryptoNetworkRecord base;
-
-    BREthereumNetwork eth;
-};
-
-static BRCryptoNetworkBTC
+static BRCryptoNetworkETH
 cryptoNetworkCoerce (BRCryptoNetwork network) {
     assert (CRYPTO_NETWORK_TYPE_ETH == network->type);
     return (BRCryptoNetworkETH) network;
 }
 
+private_extern BREthereumNetwork
+cryptoNetworkAsETH (BRCryptoNetwork networkBase) {
+    BRCryptoNetworkETH network = cryptoNetworkCoerce(networkBase);
+    return network->eth;
+}
+
 static BRCryptoNetwork
 cryptoNetworkCreateAsETH (const char *uids,
                           const char *name,
+                          const char *desc,
                           bool isMainnet,
+                          uint32_t confirmationPeriodInSeconds,
                           BREthereumNetwork eth) {
-    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
                                                              CRYPTO_NETWORK_TYPE_ETH,
                                                              uids,
                                                              name,
-                                                             isMainnet);
+                                                             desc,
+                                                             isMainnet,
+                                                             confirmationPeriodInSeconds);
     BRCryptoNetworkETH network = cryptoNetworkCoerce(networkBase);
     network->eth = eth;
 
@@ -39,14 +44,15 @@ cryptoNetworkCreateAsETH (const char *uids,
 static BRCryptoNetwork
 cyptoNetworkCreateETH (const char *uids,
                        const char *name,
-                       const char *network,
-                       bool isMainnet) {
-    if      (0 == strcmp ("mainnet", network))
-        return cryptoNetworkCreateAsETH (uids, name, true, ethNetworkMainnet);
-    else if (0 == strcmp ("testnet", network))
-        return cryptoNetworkCreateAsETH (uids, name, false, ethNetworkTestnet);
-    else if (0 == strcmp ("rinkeby", network))
-        return cryptoNetworkCreateAsETH (uids, name, false, ethNetworkRinkeby);
+                       const char *desc,
+                       bool isMainnet,
+                       uint32_t confirmationPeriodInSeconds) {
+    if      (0 == strcmp ("mainnet", desc))
+        return cryptoNetworkCreateAsETH (uids, name, desc, true, confirmationPeriodInSeconds, ethNetworkMainnet);
+    else if (0 == strcmp ("testnet", desc))
+        return cryptoNetworkCreateAsETH (uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkTestnet);
+    else if (0 == strcmp ("rinkeby", desc))
+        return cryptoNetworkCreateAsETH (uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkRinkeby);
     else {
         assert (false); return NULL;
     }
@@ -64,6 +70,15 @@ cryptoNetworkCreateAddressETH (BRCryptoNetwork networkBase,
                                 const char *addressAsString) {
     return cryptoAddressCreateFromStringAsETH (addressAsString);
 }
+
+static BRCryptoBlockNumber
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH (BRCryptoNetwork networkBase,
+                                                   BRCryptoTimestamp timestamp) {
+    BRCryptoNetworkETH network = cryptoNetworkCoerce (networkBase);
+    const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network->eth, timestamp);
+    return (NULL == checkpoint ? 0 : checkpoint->number);
+}
+
 
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedETH (BRCryptoNetwork network,
@@ -88,8 +103,10 @@ cryptoNetworkInitializeAccountETH (BRCryptoNetwork network,
 }
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersETH = {
+    cyptoNetworkCreateETH,
     cryptoNetworkReleaseETH,
     cryptoNetworkCreateAddressETH,
+    cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH,
     cryptoNetworkIsAccountInitializedETH,
     cryptoNetworkGetAccountInitializationDataETH,
     cryptoNetworkInitializeAccountETH

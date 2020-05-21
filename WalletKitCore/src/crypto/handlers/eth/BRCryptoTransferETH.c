@@ -1,59 +1,33 @@
 #include "BRCryptoETH.h"
 #include "support/BRInt.h"
+#include "crypto/BRCryptoAmountP.h"
 
 #include "ethereum/blockchain/BREthereumTransaction.h"
 #include "ethereum/blockchain/BREthereumLog.h"
 
-typedef enum  {
-    TRANSFER_BASIS_TRANSACTION,
-    TRANSFER_BASIS_LOG
-} BREthereumTransferBasisType;
+static BRCryptoTransferDirection
+cryptoTransferFindDirection (BREthereumAccount account,
+                             BREthereumAddress source,
+                             BREthereumAddress target);
 
-typedef struct {
-    BREthereumTransferBasisType type;
-    union {
-        BREthereumTransaction transaction;
-        BREthereumLog log;
-    } u;
-} BREthereumTransferBasis;
-
-
-/// A ETH Transfer
-struct BRCryptoTransferETHRecord {
-    struct BRCryptoTransferRecord base;
-//    BREthereumEWM ewm;
-//    BREthereumTransfer tid;
-    BREthereumAddress accountAddress;
-
-
-//    BREthereumAddress sourceAddress;
-//    BREthereumAddress targetAddress;
-//    BREthereumAmount amount;
-//    BREthereumFeeBasis feeBasis;
-    BREthereumGas gasEstimate;
-    BREthereumTransaction originatingTransaction;
-    BREthereumTransferBasis basis;
-    BREthereumTransferStatus status;
-
-};
-
-static BRCryptoTransferETH
+extern BRCryptoTransferETH
 cryptoTransferCoerce (BRCryptoTransfer transfer) {
     assert (CRYPTO_NETWORK_TYPE_ETH == transfer->type);
     return (BRCryptoTransferETH) transfer;
 }
 
+#if 0
 private_extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
 //                           BREthereumEWM ewm,
- //                          BREthereumTransfer tid,
+//                           BREthereumTransfer tid,
                            BRCryptoFeeBasis feeBasisEstimated) {
-    BRCryptoTransferETH transfer = (BRCryptoTransferETH)
-    cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
-                                CRYPTO_NETWORK_TYPE_ETH,
-                                unit,
-                                unitForFee);
+    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
+                                                                CRYPTO_NETWORK_TYPE_ETH,
+                                                                unit,
+                                                                unitForFee);
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
 
 //    transfer->ewm = ewm;
 //    transfer->tid = tid;
@@ -101,54 +75,111 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
 
     return (BRCryptoTransfer) transfer;
 }
+#endif
+
+extern BRCryptoTransfer
+cryptoTransferCreateAsETH (BRCryptoUnit unit,
+                           BRCryptoUnit unitForFee,
+                           BREthereumAccount account,
+                           BREthereumTransferBasisType type,
+                           OwnershipGiven BREthereumTransaction originatingTransaction) {
+    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
+                                                                 CRYPTO_NETWORK_TYPE_ETH,
+                                                                 unit,
+                                                                 unitForFee);
+     BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+    transfer->account = account;
+    transfer->type = type;
+    transfer->originatingTransaction = originatingTransaction;
+
+    return transferBase;
+}
+
+extern BRCryptoTransfer
+cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
+                                          BRCryptoUnit unitForFee,
+                                          BREthereumAccount account,
+                                          OwnershipGiven BREthereumTransaction ethTransaction) {
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+                                                               unitForFee,
+                                                               account,
+                                                               TRANSFER_BASIS_TRANSACTION,
+                                                               NULL);
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+    transfer->basis.transaction = ethTransaction;
+    transferBase->sourceAddress = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
+    transferBase->targetAddress = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));
+    transferBase->feeBasisEstimated = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
+
+    transfer->direction = cryptoTransferFindDirection (account,
+                                                       transactionGetSourceAddress (ethTransaction),
+                                                       transactionGetTargetAddress (ethTransaction));
+
+    BREthereumEther amount = transactionGetAmount(ethTransaction);
+    transfer->amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethEtherGetValue(amount, WEI));
+
+    return transferBase;
+}
+
+extern BRCryptoTransfer
+cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
+                                  BRCryptoUnit unitForFee,
+                                  BREthereumAccount account,
+                                  OwnershipGiven BREthereumLog ethLog) {
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+                                                               unitForFee,
+                                                               account,
+                                                               TRANSFER_BASIS_LOG,
+                                                               NULL);
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+    transfer->basis.log = ethLog;
+    transferBase->sourceAddress = cryptoAddressCreateAsETH (logTopicAsAddress(logGetTopic(ethLog, 1)));
+    transferBase->targetAddress = cryptoAddressCreateAsETH (logTopicAsAddress(logGetTopic(ethLog, 2)));
+
+    //        // Only at this point do we know that log->data is a number.
+    //        BRRlpItem  item  = rlpDataGetItem (coder, logGetDataShared(log));
+    //        UInt256 value = rlpDecodeUInt256(coder, item, 1);
+    //        rlpItemRelease (coder, item);
+    //
+    //        BREthereumAmount  amount = ethAmountCreateToken (ethTokenQuantityCreate(token, value));
+
+    return transferBase;
+}
 
 static void
-cryptoTransferReleaseETH (BRCryptoTransfer transfer) {
+cryptoTransferReleaseETH (BRCryptoTransfer transferBase) {
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+
+    if (NULL != transfer->originatingTransaction)
+        transactionRelease(transfer->originatingTransaction);
+
+    switch (transfer->type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            transactionRelease (transfer->basis.transaction);
+            break;
+
+        case TRANSFER_BASIS_LOG:
+            logRelease (transfer->basis.log);
+            break;
+    }
 }
 
 static BRCryptoAmount
 cryptoTransferGetAmountAsSignETH (BRCryptoTransfer transferBase, BRCryptoBoolean isNegative) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
-
-    uint64_t fee = transfer->u.btc.fee;
-    if (UINT64_MAX == fee) fee = 0;
-
-    uint64_t recv = transfer->u.btc.recv;
-    uint64_t send = transfer->u.btc.send;
-
-    switch (cryptoTransferGetDirection(transferBase)) {
-        case CRYPTO_TRANSFER_RECOVERED:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(send));
-
-
-        case CRYPTO_TRANSFER_SENT:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(send - fee - recv));
-
-        case CRYPTO_TRANSFER_RECEIVED:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(recv));
-
-        default: assert(0); return UINT256_ZERO;
-    }
+    return cryptoAmountTake (transfer->amount);
 }
 
 static BRCryptoTransferDirection
-cryptoTransferGetDirectionETH (BRCryptoTransfer transferBase) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
-
-    BREthereumEWM      ewm = transfer->ewm;
-    BREthereumTransfer tid = transfer->tid;
-
-    BREthereumAddress source = ewmTransferGetSource (ewm, tid);
-    BREthereumAddress target = ewmTransferGetTarget (ewm, tid);
-
-    BREthereumBoolean accountIsSource = ethAddressEqual (source, transfer->accountAddress);
-    BREthereumBoolean accountIsTarget = ethAddressEqual (target, transfer->accountAddress);
+cryptoTransferFindDirection (BREthereumAccount account,
+                             BREthereumAddress source,
+                             BREthereumAddress target) {
+    BREthereumBoolean accountIsSource = ethAccountHasAddress (account, source);
+    BREthereumBoolean accountIsTarget = ethAccountHasAddress (account, target);
 
     if (accountIsSource == ETHEREUM_BOOLEAN_TRUE && accountIsTarget == ETHEREUM_BOOLEAN_TRUE) {
         return CRYPTO_TRANSFER_RECOVERED;
@@ -161,18 +192,52 @@ cryptoTransferGetDirectionETH (BRCryptoTransfer transferBase) {
     }
 }
 
-extern BRCryptoHash
-cryptoTransferGetHashETH (BRCryptoTransfer transferBase) {
+static BRCryptoTransferDirection
+cryptoTransferGetDirectionETH (BRCryptoTransfer transferBase) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
-    BREthereumEWM      ewm = transfer->ewm;
-    BREthereumTransfer tid = transfer->tid;
-
-    BREthereumHash hash = ewmTransferGetOriginatingTransactionHash (ewm, tid);
-    return (ETHEREUM_BOOLEAN_TRUE == ethHashEqual(hash, ethHashCreateEmpty())
-            ? NULL
-            : cryptoHashCreateAsETH (hash));
+    return transfer->direction;
 }
 
+static BREthereumHash
+cryptoTransferGetEthHash (BRCryptoTransfer transferBase) {
+    BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
+
+    return (NULL != transfer->originatingTransaction
+            ? transactionGetHash (transfer->originatingTransaction)
+            : (TRANSFER_BASIS_TRANSACTION == transfer->type
+               ? (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.transaction))
+               : (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log))));
+}
+
+extern BRCryptoHash
+cryptoTransferGetHashETH (BRCryptoTransfer transferBase) {
+    BREthereumHash ethHash = cryptoTransferGetEthHash (transferBase);
+    return (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (ethHash, EMPTY_HASH_INIT)
+            ? NULL
+            : cryptoHashCreateAsETH (ethHash));
+}
+
+extern uint8_t *
+cryptoTransferSerializeForSubmissionETH (BRCryptoTransfer transferBase,
+                                         BRCryptoNetwork  network,
+                                         size_t *serializationCount) {
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+    if (NULL == transfer->originatingTransaction || ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transfer->originatingTransaction)) {
+        *serializationCount = 0;
+        return NULL;
+    }
+
+    BRRlpData data = transactionGetRlpData (transfer->originatingTransaction,
+                                            cryptoNetworkAsETH(network),
+                                            RLP_TYPE_TRANSACTION_SIGNED);
+
+    *serializationCount = data.bytesCount;
+    return data.bytes;
+}
+
+
+#if 0
 private_extern BREthereumTransfer
 cryptoTransferAsETH (BRCryptoTransfer transferBase) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
@@ -185,11 +250,112 @@ cryptoTransferHasETH (BRCryptoTransfer transferBase,
     BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
     return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == transfer->type && eth == transfer->tid);
 }
+#endif
+
 static int
 cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
-    BRCryptoTransferETH t1 = cryptoTransferCoerce(tb1);
-    BRCryptoTransferETH t2 = cryptoTransferCoerce(tb2);
+    if (tb1 == tb2) return 1;
 
-    return t1->tid == t2->tid;
+    BREthereumHash h1 = cryptoTransferGetEthHash (tb1);
+    BREthereumHash h2 = cryptoTransferGetEthHash (tb2);
+
+    return (ETHEREUM_BOOLEAN_FALSE != ethHashEqual (h1, EMPTY_HASH_INIT) &&
+            ETHEREUM_BOOLEAN_TRUE  == ethHashEqual (h1, h2));
 }
 
+#if 0
+extern void
+transferSign (BREthereumTransfer transfer,
+              BREthereumNetwork network,
+              BREthereumAccount account,
+              BREthereumAddress address,
+              const char *paperKey) {
+
+    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == transactionGetNonce(transfer->originatingTransaction))
+        transactionSetNonce (transfer->originatingTransaction,
+                             ethAccountGetThenIncrementAddressNonce(account, address));
+
+    // RLP Encode the UNSIGNED transfer
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpItem item = transactionRlpEncode (transfer->originatingTransaction,
+                                           network,
+                                           RLP_TYPE_TRANSACTION_UNSIGNED,
+                                           coder);
+    BRRlpData data = rlpItemGetDataSharedDontRelease(coder, item);
+
+    // Sign the RLP Encoded bytes.
+    BREthereumSignature signature = ethAccountSignBytes (account,
+                                                      address,
+                                                      SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+                                                      data.bytes,
+                                                      data.bytesCount,
+                                                      paperKey);
+
+    rlpItemRelease(coder, item);
+
+    // Attach the signature
+    transactionSign (transfer->originatingTransaction, signature);
+    // Compute the hash
+    item = transactionRlpEncode (transfer->originatingTransaction,
+                                 network,
+                                 RLP_TYPE_TRANSACTION_SIGNED,
+                                 coder);
+    transactionSetHash (transfer->originatingTransaction,
+                        ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
+
+    rlpItemRelease(coder, item);
+    rlpCoderRelease(coder);
+}
+
+extern void
+transferSignWithKey (BREthereumTransfer transfer,
+                     BREthereumNetwork network,
+                     BREthereumAccount account,
+                     BREthereumAddress address,
+                     BRKey privateKey) {
+
+    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == transactionGetNonce(transfer->originatingTransaction))
+        transactionSetNonce (transfer->originatingTransaction,
+                             ethAccountGetThenIncrementAddressNonce(account, address));
+
+    // RLP Encode the UNSIGNED transfer
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpItem item = transactionRlpEncode (transfer->originatingTransaction,
+                                           network,
+                                           RLP_TYPE_TRANSACTION_UNSIGNED,
+                                           coder);
+    BRRlpData data = rlpItemGetDataSharedDontRelease (coder, item);
+
+    // Sign the RLP Encoded bytes.
+    BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (account,
+                                                                    address,
+                                                                    SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+                                                                    data.bytes,
+                                                                    data.bytesCount,
+                                                                    privateKey);
+
+    rlpItemRelease(coder, item);
+
+    // Attach the signature
+    transactionSign(transfer->originatingTransaction, signature);
+
+    // Compute the hash
+    item = transactionRlpEncode (transfer->originatingTransaction,
+                                 network,
+                                 RLP_TYPE_TRANSACTION_SIGNED,
+                                 coder);
+    transactionSetHash (transfer->originatingTransaction,
+                        ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
+
+    rlpItemRelease(coder, item);
+    rlpCoderRelease(coder);
+}
+#endif
+BRCryptoTransferHandlers cryptoTransferHandlersETH = {
+    cryptoTransferReleaseETH,
+    cryptoTransferGetAmountAsSignETH,
+    cryptoTransferGetDirectionETH,
+    cryptoTransferGetHashETH,
+    cryptoTransferSerializeForSubmissionETH,
+    cryptoTransferEqualAsETH
+};

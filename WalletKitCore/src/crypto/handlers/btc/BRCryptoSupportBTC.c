@@ -1,6 +1,6 @@
 
 #include "BRCryptoBTC.h"
-#include "../../BRCryptoHashP.h"
+#include "crypto/BRCryptoHashP.h"
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
