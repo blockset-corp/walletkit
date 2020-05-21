@@ -187,6 +187,7 @@ cryptoTransferGetHashBTC (BRCryptoTransfer transferBase) {
 
 extern uint8_t *
 cryptoTransferSerializeForSubmissionBTC (BRCryptoTransfer transferBase,
+                                         BRCryptoNetwork  network,
                                          size_t *serializationCount) {
     BRTransaction *tid = cryptoTransferAsBTC     (transferBase);
 

@@ -700,7 +700,9 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer tr
     if (NULL == cwm) return;
 
     size_t   serializationCount;
-    uint8_t *serialization = cryptoTransferSerializeForSubmission (transfer, &serializationCount);
+    uint8_t *serialization = cryptoTransferSerializeForSubmission (transfer,
+                                                                   cwm->network,
+                                                                   &serializationCount);
 
 
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
@@ -742,7 +744,7 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
     if (NULL == cwm) return;
 
     size_t   serializationCount;
-    uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, &serializationCount);
+    uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, cwm->network, &serializationCount);
 
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
     char *hashAsHex = cryptoHashString(hash);
