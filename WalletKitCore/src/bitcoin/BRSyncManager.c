@@ -1185,6 +1185,11 @@ BRClientSyncManagerAnnounceGetTransactionsItem (BRClientSyncManager manager,
     uint8_t needRegistration = NULL != transaction && BRTransactionIsSigned (transaction);
     uint8_t needFree = 1;
 
+    // Convert from `uint64_t` to `uint32_t` with a bit of care regarding BLOCK_HEIGHT_UNBOUND
+    // and TX_UNCONFIRMED - they are directly coercible but be explicit about it.
+    uint32_t btcBlockHeight = (BLOCK_HEIGHT_UNBOUND == blockHeight ? TX_UNCONFIRMED : (uint32_t) blockHeight);
+    uint32_t btcTimestamp   = (uint32_t) timestamp;
+
     if (needRegistration) {
         if (0 == pthread_mutex_lock (&manager->lock)) {
             // confirm completion is for in-progress sync
@@ -1210,11 +1215,11 @@ BRClientSyncManagerAnnounceGetTransactionsItem (BRClientSyncManager manager,
     // does not know about the tranaction then the subsequent BRWalletUpdateTransactions will
     // free the transaction (with BRTransactionFree()).
     if (BRWalletContainsTransaction (manager->wallet, transaction)) {
-        BRWalletUpdateTransactions (manager->wallet, &transaction->txHash, 1, (uint32_t) blockHeight, (uint32_t) timestamp);
+        BRWalletUpdateTransactions (manager->wallet, &transaction->txHash, 1, btcBlockHeight, btcTimestamp);
     }
 
     // Free if ownership hasn't been passed
-   if (needFree) {
+    if (needFree) {
         BRTransactionFree (transaction);
     }
 }
