@@ -1,10 +1,10 @@
 #include "BRCryptoBTC.h"
 
-#include "../../BRCryptoAccountP.h"
-#include "../../BRCryptoNetworkP.h"
-#include "../../BRCryptoKeyP.h"
-#include "../../BRCryptoClientP.h"
-#include "../../BRCryptoWalletManagerP.h"
+#include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoKeyP.h"
+#include "crypto/BRCryptoClientP.h"
+#include "crypto/BRCryptoWalletManagerP.h"
 
 // #include "bitcoin/BRWallet.h"
 // #include "bitcoin/BRPeerManager.h"

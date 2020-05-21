@@ -1,8 +1,8 @@
 
 #include "BRCryptoXRP.h"
 #include "ripple/BRRippleBase.h"
-#include "../../BRCryptoHashP.h"
-#include "../../BRCryptoAmountP.h"
+#include "crypto/BRCryptoHashP.h"
+#include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtilMath.h"
 
 private_extern BRCryptoAmount

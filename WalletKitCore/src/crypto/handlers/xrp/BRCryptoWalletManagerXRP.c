@@ -7,14 +7,14 @@
 
 #include "BRCryptoXRP.h"
 
-#include "../../BRCryptoAccountP.h"
-#include "../../BRCryptoNetworkP.h"
-#include "../../BRCryptoKeyP.h"
-#include "../../BRCryptoClientP.h"
-#include "../../BRCryptoWalletP.h"
-#include "../../BRCryptoAmountP.h"
-#include "../../BRCryptoWalletManagerP.h"
-#include "../../BRCryptoFileService.h"
+#include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoKeyP.h"
+#include "crypto/BRCryptoClientP.h"
+#include "crypto/BRCryptoWalletP.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "crypto/BRCryptoWalletManagerP.h"
+#include "crypto/BRCryptoFileService.h"
 
 #include "ripple/BRRippleWallet.h"
 #include "ripple/BRRippleAccount.h"

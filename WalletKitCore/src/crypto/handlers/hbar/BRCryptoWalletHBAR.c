@@ -7,9 +7,9 @@
 
 #include "BRCryptoHBAR.h"
 #include "BRCryptoBase.h"
-#include "../../BRCryptoWalletP.h"
-#include "../../BRCryptoAmountP.h"
-#include "../../BRCryptoFeeBasisP.h"
+#include "crypto/BRCryptoWalletP.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "crypto/BRCryptoFeeBasisP.h"
 #include "hedera/BRHederaWallet.h"
 #include "hedera/BRHederaTransaction.h"
 #include "support/BRSet.h"

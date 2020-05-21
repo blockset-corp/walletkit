@@ -90,6 +90,7 @@ struct BRCryptoTransferRecord {
     
     BRCryptoTransferDirection direction;
     
+    /// The amount (unsigned value).
     BRCryptoAmount amount;
 
     BRArrayOf(BRCryptoTransferAttribute) attributes;

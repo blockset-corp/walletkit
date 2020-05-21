@@ -7,8 +7,7 @@
 
 #include "BRCryptoHBAR.h"
 #include "hedera/BRHederaBase.h"
-#include "../../BRCryptoHashP.h"
-#include "../../BRCryptoAmountP.h"
+#include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtilMath.h"
 
 static uint64_t

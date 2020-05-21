@@ -6,7 +6,7 @@
 //
 
 #include "BRCryptoXRP.h"
-#include "../../BRCryptoAccountP.h"
+#include "crypto/BRCryptoAccountP.h"
 
 
 static BRCryptoNetwork

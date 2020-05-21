@@ -136,7 +136,7 @@ cryptoTransferGetAmountAsSign (BRCryptoTransfer transfer, BRCryptoBoolean isNega
 
 extern BRCryptoAmount
 cryptoTransferGetAmount (BRCryptoTransfer transfer) {
-    return NULL == transfer->amount ? NULL : cryptoAmountTake (transfer->amount);
+    return cryptoAmountTake (transfer->amount);
 }
 
 extern BRCryptoAmount
@@ -178,9 +178,7 @@ cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
 
     BRCryptoFeeBasis feeBasis = cryptoTransferGetConfirmedFeeBasis(transfer);
     if (NULL == feeBasis)
-        feeBasis = (NULL == transfer->feeBasisEstimated
-                    ? NULL
-                    : cryptoFeeBasisTake (transfer->feeBasisEstimated));
+        feeBasis = cryptoFeeBasisTake (transfer->feeBasisEstimated);
 
     // If there is no fee basis, then there is no fee
     if (NULL == feeBasis)
