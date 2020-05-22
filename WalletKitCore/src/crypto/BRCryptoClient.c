@@ -472,7 +472,7 @@ cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoHash hash,
 static BRCryptoClientCallbackState
 cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
                                                        BRCryptoCookie cookie,
-                                                       BRCryptoNetworkFee networkFee,
+                                                       OwnershipKept BRCryptoNetworkFee networkFee,
                                                        size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
@@ -738,8 +738,8 @@ cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
 extern void
 cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                     BRCryptoCookie   cookie,
-                                    BRCryptoTransfer transfer,
-                                    BRCryptoNetworkFee networkFee) {
+                                    OwnershipKept BRCryptoTransfer transfer,
+                                    OwnershipKept BRCryptoNetworkFee networkFee) {
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
     if (NULL == cwm) return;
 
@@ -760,7 +760,6 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                             serialization,
                                             serializationCount,
                                             hashAsHex);
-
 }
 
 extern void

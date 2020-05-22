@@ -431,59 +431,41 @@ cryptoWalletManagerEstimateLimitETH (BRCryptoWalletManager cwm,
             : cryptoAmountCreateInteger (0, unit));  // No minimum
 }
 
-static void
-cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet  wallet,
+static BRCryptoFeeBasis
+cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager managerBase,
+                                               BRCryptoWallet  walletBase,
                                                BRCryptoCookie cookie,
                                                BRCryptoAddress target,
                                                BRCryptoAmount amount,
                                                BRCryptoNetworkFee networkFee) {
-#if 0
-    BREthereumEWM ewm = cwm->u.eth;
-    BREthereumWallet wid = cryptoWalletAsETH(wallet);
+    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
 
-    BRCryptoAddress source = cryptoWalletGetAddress (wallet, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT);
-    UInt256 ethValue       = cryptoAmountGetValue (amount);
+    BREthereumFeeBasis ethFeeBasis = {
+        FEE_BASIS_GAS,
+        { .gas = { wallet->ethGasLimit, cryptoNetworkFeeAsETH (networkFee) }}
+    };
 
-    BREthereumToken  ethToken  = ewmWalletGetToken (ewm, wid);
-    BREthereumAmount ethAmount = (NULL != ethToken
-                                  ? ethAmountCreateToken (ethTokenQuantityCreate (ethToken, ethValue))
-                                  : ethAmountCreateEther (ethEtherCreate (ethValue)));
+    BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (walletBase,
+                                                               target,
+                                                               amount,
+                                                               cryptoFeeBasisCreateAsETH (walletBase->unitForFee, ethFeeBasis),
+                                                               0, NULL,
+                                                               currency,
+                                                               walletBase->unit,
+                                                               walletBase->unitForFee);
 
-    ewmWalletEstimateTransferFeeForTransfer (ewm,
-                                             wid,
-                                             cookie,
-                                             cryptoAddressAsETH (source),
-                                             cryptoAddressAsETH (target),
-                                             ethAmount,
-                                             cryptoNetworkFeeAsETH (fee),
-                                             ewmWalletGetDefaultGasLimit (ewm, wid));
+    cryptoCurrencyGive(currency);
 
-    cryptoAddressGive (source);
-#endif
+    cryptoClientQRYEstimateTransferFee (managerBase->qryManager,
+                                        cookie,
+                                        transfer,
+                                        networkFee);
 
-#if 0
-    BRWallet *btcWallet = cryptoWalletAsBTC(wallet);
+    cryptoTransferGive (transfer);
 
-    BRCryptoBoolean overflow = CRYPTO_FALSE;
-    uint64_t btcFeePerKB = 1000 * cryptoNetworkFeeAsBTC (networkFee);
-    uint64_t btcAmount   = cryptoAmountGetIntegerRaw (amount, &overflow);
-    assert(CRYPTO_FALSE == overflow);
-
-    uint64_t btcFee = (0 == btcAmount ? 0 : BRWalletFeeForTxAmountWithFeePerKb (btcWallet, btcFeePerKB, btcAmount));
-    uint32_t btcSizeInBytes = (uint32_t) ((1000 * btcFee) / btcFeePerKB);
-
-    (void) btcSizeInBytes;
-#ifdef REFACTOR
-    bwmSignalWalletEvent(manager,
-                         wallet,
-                         (BRWalletEvent) {
-        BITCOIN_WALLET_FEE_ESTIMATED,
-        { .feeEstimated = { cookie, btcFeePerKB, btcSizeInBytes }}
-    });
-#endif
-#endif
-    return;
+    // Require QRY with cookie - made above
+    return NULL;
 }
 
 static const char *
