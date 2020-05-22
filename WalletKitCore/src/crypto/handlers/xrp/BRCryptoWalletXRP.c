@@ -1,9 +1,13 @@
 #include "BRCryptoXRP.h"
+#include "BRCryptoBase.h"
+#include "crypto/BRCryptoWalletP.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "ripple/BRRippleWallet.h"
+#include "ripple/BRRippleTransaction.h"
+#include "support/BRSet.h"
+#include "ethereum/util/BRUtilMath.h"
+#include <stdio.h>
 
-struct BRCryptoWalletXRPRecord {
-    struct BRCryptoWalletRecord base;
-//    BRWallet *wid;
-};
 
 static BRCryptoWalletXRP
 cryptoWalletCoerce (BRCryptoWallet wallet) {
@@ -11,153 +15,231 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletXRP) wallet;
 }
 
-private_extern BRGenericWallet
-cryptoWalletAsGEN (BRCryptoWallet wallet);
-
 private_extern BRCryptoWallet
-cryptoWalletCreateAsGEN (BRCryptoUnit unit,
+cryptoWalletCreateAsXRP (BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-                         BRGenericWallet wid);
+                         BRRippleWallet wid) {
+    int hasMinBalance;
+    int hasMaxBalance;
+    BRRippleUnitDrops minBalanceDrops = rippleWalletGetBalanceLimit (wid, 0, &hasMinBalance);
+    BRRippleUnitDrops maxBalanceDrops = rippleWalletGetBalanceLimit (wid, 1, &hasMaxBalance);
 
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsGEN (BRCryptoWallet wallet,
-                               BRGenericTransfer gen);
+    BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
+                                                          CRYPTO_NETWORK_TYPE_XRP,
+                                                          unit,
+                                                          unitForFee,
+                                                          hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
+                                                          hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL);
 
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    wallet->wid = wid;
 
-private_extern BRCryptoWallet
-cryptoWalletCreateAsGEN (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         OwnershipKept BRGenericWallet wid) {
-    BRCryptoWallet wallet = cryptoWalletCreateInternal (BLOCK_CHAIN_TYPE_GEN, unit, unitForFee);
+    return walletBase;
+}
 
-    wallet->u.gen = wid;
-
-    return wallet;
+private_extern BRRippleWallet
+cryptoWalletAsXRP (BRCryptoWallet walletBase) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce(walletBase);
+    return wallet->wid;
 }
 
 static void
-cryptoWalletReleaseXRP (BRCryptoWallet wallet) {
-}
-
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsGEN (BRCryptoWallet wallet,
-                               BRGenericTransfer gen) {
-    BRCryptoTransfer transfer = NULL;
-    pthread_mutex_lock (&wallet->lock);
-    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        if (CRYPTO_TRUE == cryptoTransferHasGEN (wallet->transfers[index], gen)) {
-            transfer = cryptoTransferTake (wallet->transfers[index]);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&wallet->lock);
-    return transfer;
+cryptoWalletReleaseXRP (BRCryptoWallet walletBase) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    rippleWalletFree (wallet->wid);
 }
 
 static BRCryptoAddress
-cryptoWalletGetAddressXRP (BRCryptoWallet wallet,
+cryptoWalletGetAddressXRP (BRCryptoWallet walletBase,
                            BRCryptoAddressScheme addressScheme) {
     assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
-    BRGenericWallet wid = wallet->u.gen;
-
-    BRGenericAddress genAddress = genWalletGetAddress (wid);
-    return cryptoAddressCreateAsGEN (genAddress);
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    BRRippleAddress address = rippleWalletGetSourceAddress (wallet->wid);
+    return cryptoAddressCreateAsXRP (address);
 }
 
-static BRCryptoBoolean
-cryptoWalletHasAddressXRP (BRCryptoWallet wallet,
-                        BRCryptoAddress address) {
-             return AS_CRYPTO_BOOLEAN (genWalletHasAddress (wallet->u.gen, address->u.gen));
- }
-
-static BRCryptoTransfer
-cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet wallet,
-                                    size_t outputsCount,
-                                    BRCryptoTransferOutput *outputs,
-                                    BRCryptoFeeBasis estimatedFeeBasis) {
-    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
-    if (0 == outputsCount) return NULL;
-
-    BRCryptoTransfer transfer = NULL;
-
-    BRCryptoUnit unit         = cryptoWalletGetUnit (wallet);
-    BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee(wallet);
-    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
-
-    cryptoCurrencyGive(currency);
-    cryptoUnitGive (unitForFee);
-    cryptoUnitGive (unit);
-
-    return transfer;
+static bool
+cryptoWalletHasAddressXRP (BRCryptoWallet walletBase,
+                           BRCryptoAddress address) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    
+    BRRippleWallet xrpWallet = wallet->wid;
+    BRRippleAddress xrpAddress = cryptoAddressAsXRP (address);
+    
+    return rippleWalletHasAddress (xrpWallet, xrpAddress);
 }
 
-static BRCryptoTransfer
-cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
+extern size_t
+cryptoWalletGetTransferAttributeCountXRP (BRCryptoWallet walletBase,
+                                          BRCryptoAddress target) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    BRRippleWallet xrpWallet = wallet->wid;
+    BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
+    
+    size_t countRequired, countOptional;
+    rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 1, &countRequired);
+    rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 0, &countOptional);
+    return countRequired + countOptional;
+}
+
+extern BRCryptoTransferAttribute
+cryptoWalletGetTransferAttributeAtXRP (BRCryptoWallet walletBase,
+                                       BRCryptoAddress target,
+                                       size_t index) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    BRRippleWallet xrpWallet = wallet->wid;
+    BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
+    
+    size_t countRequired, countOptional;
+    const char **keysRequired = rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 1, &countRequired);
+    const char **keysOptional = rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 0, &countOptional);
+
+    assert (index < (countRequired + countOptional));
+
+    BRCryptoBoolean isRequired = AS_CRYPTO_BOOLEAN (index < countRequired);
+    const char **keys      = (isRequired ? keysRequired : keysOptional);
+    size_t       keysIndex = (isRequired ? index : (index - countRequired));
+
+    return cryptoTransferAttributeCreate(keys[keysIndex], NULL, isRequired);
+}
+
+extern BRCryptoTransferAttributeValidationError
+cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
+                                          OwnershipKept BRCryptoTransferAttribute attribute,
+                                          BRCryptoBoolean *validates) {
+    const char *key = cryptoTransferAttributeGetKey (attribute);
+    const char *val = cryptoTransferAttributeGetValue (attribute);
+    BRCryptoTransferAttributeValidationError error = 0;
+
+    // If attribute.value is NULL, we validate unless the attribute.value is required.
+    if (NULL == val) {
+        if (cryptoTransferAttributeIsRequired(attribute)) {
+            error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_REQUIRED_BUT_NOT_PROVIDED;
+            *validates = CRYPTO_FALSE;
+        } else {
+            *validates = CRYPTO_TRUE;
+        }
+        return error;
+    }
+
+    if (rippleCompareFieldOption (key, FIELD_OPTION_DESTINATION_TAG)) {
+        uint32_t tag;
+        if (1 == sscanf(val, "%u", &tag)) {
+            *validates = CRYPTO_TRUE;
+        } else {
+            *validates = CRYPTO_FALSE;
+            error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
+        }
+    }
+    else if (rippleCompareFieldOption (key, FIELD_OPTION_INVOICE_ID)) {
+        BRCoreParseStatus status;
+        uint256CreateParse(val, 10, &status);
+        if (status) {
+            *validates = CRYPTO_TRUE;
+        } else {
+                *validates = CRYPTO_FALSE;
+                error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
+            }
+    }
+    else {
+        error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
+        *validates = CRYPTO_FALSE;
+    }
+    
+    return error;
+}
+
+extern BRCryptoTransfer
+cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
                                size_t attributesCount,
-                               OwnershipKept BRCryptoTransferAttribute *attributes) {
-    assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(target));
-    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
+                               OwnershipKept BRCryptoTransferAttribute *attributes,
+                               BRCryptoCurrency currency,
+                               BRCryptoUnit unit,
+                               BRCryptoUnit unitForFee) {
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
+    BRRippleWallet xrpWallet = wallet->wid;
 
-    BRCryptoTransfer transfer;
+    UInt256 value = cryptoAmountGetValue (amount);
+    
+    BRRippleAddress source  = rippleWalletGetSourceAddress (xrpWallet);
+    BRRippleUnitDrops drops = value.u64[0];
 
-    BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
-    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(wallet);
+    BRRippleTransfer xrpTransfer = rippleTransferCreateNew (source,
+                                                            cryptoAddressAsXRP (target),
+                                                            drops);
+    if (NULL == xrpTransfer) {
+        return NULL;
+    }
 
-    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
-    assert (cryptoAmountHasCurrency (amount, currency));
-    cryptoCurrencyGive(currency);
+    BRRippleTransaction transaction = rippleTransferGetTransaction (xrpTransfer);
 
-    BRGenericWallet wid = wallet->u.gen;
-
-    UInt256 genValue  = cryptoAmountGetValue (amount);
-    BRGenericAddress genAddr = cryptoAddressAsGEN (target);
-    BRGenericFeeBasis genFeeBasis = cryptoFeeBasisAsGEN (estimatedFeeBasis);
-
-    // The GEN Wallet is holding the `tid` memory
-    BRGenericTransfer tid = NULL;
-
-    if (0 == attributesCount)
-        tid = genWalletCreateTransfer (wid, genAddr, genValue, genFeeBasis);
-    else {
-        BRArrayOf(BRGenericTransferAttribute) genAttributes;
-        array_new (genAttributes, attributesCount);
-        for (size_t index = 0; index < attributesCount; index++) {
-            // There is no need to give/take this attribute.  It is OwnershipKept
-            // (by the caller) and we only extract info.
-            BRCryptoTransferAttribute attribute = attributes[index];
-            BRGenericTransferAttribute genAttribute =
-            genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
-                                        cryptoTransferAttributeGetValue(attribute),
-                                        CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
-            array_add (genAttributes, genAttribute);
+    for (size_t index = 0; index < attributesCount; index++) {
+        BRCryptoTransferAttribute attribute = attributes[index];
+        if (NULL != cryptoTransferAttributeGetValue(attribute)) {
+            if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
+                BRCoreParseStatus tag;
+                sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &tag);
+                rippleTransactionSetDestinationTag (transaction, tag);
+            }
+            else if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
+                // TODO:
+            }
+            else {
+                // TODO: Impossible if validated?
+            }
         }
-        tid = genWalletCreateTransferWithAttributes (wid, genAddr, genValue, genFeeBasis, genAttributes);
-        genTransferAttributeReleaseAll(genAttributes);
     }
 
-    // The CRYPTO Transfer holds the `tid` memory (w/ REF count of 1)
-    transfer = NULL == tid ? NULL : cryptoTransferCreateAsGEN (unit, unitForFee, tid);
+    rippleAddressFree(source);
+    
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsXRP (unit, unitForFee, xrpWallet, xrpTransfer);
+    cryptoTransferSetAttributes (transferBase, attributes);
+    
+    return transferBase;
+}
 
-    if (NULL != transfer && attributesCount > 0) {
-        BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
-        array_new (transferAttributes, attributesCount);
-        array_add_array (transferAttributes, attributes, attributesCount);
-        cryptoTransferSetAttributes (transfer, transferAttributes);
-        array_free (transferAttributes);
-    }
+extern BRCryptoTransfer
+cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet walletBase,
+                                       size_t outputsCount,
+                                       BRCryptoTransferOutput *outputs,
+                                       BRCryptoFeeBasis estimatedFeeBasis,
+                                       BRCryptoCurrency currency,
+                                       BRCryptoUnit unit,
+                                       BRCryptoUnit unitForFee) {
+    return NULL;
+}
 
-    cryptoUnitGive (unitForFee);
-    cryptoUnitGive (unit);
+static OwnershipGiven BRSetOf(BRCryptoAddress)
+cryptoWalletGetAddressesForRecoveryXRP (BRCryptoWallet walletBase) {
+    BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
 
-    return transfer;
+    BRCryptoWalletXRP wallet = cryptoWalletCoerce(walletBase);
+    BRRippleWallet xrpWallet = wallet->wid;
+
+    BRSetAdd (addresses, cryptoAddressCreateAsXRP (rippleWalletGetSourceAddress (xrpWallet)));
+
+    return addresses;
 }
 
 static bool
 cryptoWalletIsEqualXRP (BRCryptoWallet wb1, BRCryptoWallet wb2) {
-//    return (w1->u.gen == w2->u.gen);
-    return true;
+    BRCryptoWalletXRP w1 = cryptoWalletCoerce(wb1);
+    BRCryptoWalletXRP w2 = cryptoWalletCoerce(wb2);
+    return w1->wid == w2->wid;
 }
 
+BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
+    cryptoWalletReleaseXRP,
+    cryptoWalletGetAddressXRP,
+    cryptoWalletHasAddressXRP,
+    cryptoWalletGetTransferAttributeCountXRP,
+    cryptoWalletGetTransferAttributeAtXRP,
+    cryptoWalletValidateTransferAttributeXRP,
+    cryptoWalletCreateTransferXRP,
+    cryptoWalletCreateTransferMultipleXRP,
+    cryptoWalletGetAddressesForRecoveryXRP,
+    cryptoWalletIsEqualXRP
+};

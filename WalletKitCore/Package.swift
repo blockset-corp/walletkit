@@ -66,7 +66,6 @@ let package = Package(
 
                 "archive",
                 "crypto/BRCryptoPayment.c",
-                "crypto/handlers/xrp",
                 "crypto/BRCryptoWalletManagerClient.c"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers

@@ -1,79 +1,68 @@
 
+#include <assert.h>
+
 #include "BRCryptoXRP.h"
 #include "ripple/BRRippleAddress.h"
 
-/// A GEN address
-struct BRCryptoAddressXRPRecord {
-    BRRippleAddress xrp;
-};
 
-private_extern BRCryptoAddress
-cryptoAddressCreateAsGEN (OwnershipGiven BRGenericAddress gen);
-
-private_extern BRGenericAddress
-cryptoAddressAsGEN (BRCryptoAddress address);
-
-
-
-private_extern BRCryptoAddress
-cryptoAddressCreateAsGEN (OwnershipGiven BRGenericAddress gen) {
-    BRCryptoAddress address = cryptoAddressCreate (BLOCK_CHAIN_TYPE_GEN);
-    address->u.gen = gen;
-    return address;
+static BRCryptoAddressXRP
+cryptoAddressCoerce (BRCryptoAddress address) {
+    assert (CRYPTO_NETWORK_TYPE_XRP == address->type);
+    return (BRCryptoAddressXRP) address;
 }
 
-private_extern BRGenericAddress
-cryptoAddressAsGEN (BRCryptoAddress address) {
-    assert (BLOCK_CHAIN_TYPE_GEN == address->type);
-    return address->u.gen;
+extern BRCryptoAddress
+cryptoAddressCreateAsXRP (BRRippleAddress addr) {
+    BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
+                                                                CRYPTO_NETWORK_TYPE_XRP,
+                                                                0); //TODO:XRP address hash
+    BRCryptoAddressXRP address     = cryptoAddressCoerce (addressBase);
+
+    address->addr = addr;
+
+    return addressBase;
 }
 
-static BRCryptoAddress
-cryptoAddressCreateFromStringAsGEN (BRGenericNetwork network, const char *string) {
-    BRGenericAddress address = genAddressCreate (genNetworkGetType(network), string);
+extern BRCryptoAddress
+cryptoAddressCreateFromStringAsXRP (const char *string) {
+    assert(string);
+    
+    BRRippleAddress address = rippleAddressCreateFromString (string, true);
     return (NULL != address
-            ? cryptoAddressCreateAsGEN (address)
+            ? cryptoAddressCreateAsXRP (address)
             : NULL);
 }
 
+private_extern BRRippleAddress
+cryptoAddressAsXRP (BRCryptoAddress addressBase) {
+    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
+    return address->addr;
+}
 
+// MARK: - Handlers
 
-
-static BRGenericAddressRef
-genericRippleAddressCreate (const char *string) {
-    return (BRGenericAddressRef) rippleAddressCreateFromString (string, true);
+static void
+cryptoAddressReleaseXRP (BRCryptoAddress addressBase) {
+    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
+    rippleAddressFree (address->addr);
 }
 
 static char *
-genericRippleAddressAsString (BRGenericAddressRef address) {
-    return rippleAddressAsString ((BRRippleAddress) address);
+cryptoAddressAsStringXRP (BRCryptoAddress addressBase) {
+    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
+    return rippleAddressAsString (address->addr);
 }
 
-static int
-genericRippleAddressEqual (BRGenericAddressRef address1,
-                           BRGenericAddressRef address2) {
-    return rippleAddressEqual ((BRRippleAddress) address1,
-                               (BRRippleAddress) address2);
+static bool
+cryptoAddressIsEqualXRP (BRCryptoAddress address1, BRCryptoAddress address2) {
+    BRCryptoAddressXRP a1 = (BRCryptoAddressXRP) address1;
+    BRCryptoAddressXRP a2 = (BRCryptoAddressXRP) address2;
+
+    return rippleAddressEqual (a1->addr, a2->addr);
 }
 
-static void
-genericRippleAddressFree (BRGenericAddressRef address) {
-    rippleAddressFree ((BRRippleAddress) address);
-}
-
-// Release
-//            genAddressRelease (address->u.gen);
-
-// extern char *
-// cryptoAddressAsString (BRCryptoAddress address) {
-//            return genAddressAsString (address->u.gen);
-//    }
-
-
-// Equal
-// genAddressEqual (a1->u.gen, a2->u.gen))
-
-// createFromString
-//            BRGenericNetwork gen = cryptoNetworkAsGEN (network);
-//            return cryptoAddressCreateFromStringAsGEN (gen, string);
-
+BRCryptoAddressHandlers cryptoAddressHandlersXRP = {
+    cryptoAddressReleaseXRP,
+    cryptoAddressAsStringXRP,
+    cryptoAddressIsEqualXRP
+};

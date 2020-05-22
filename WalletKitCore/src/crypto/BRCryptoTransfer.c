@@ -62,7 +62,9 @@ extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoUnit unit,
-                            BRCryptoUnit unitForFee) {
+                            BRCryptoUnit unitForFee,
+                            BRCryptoAmount amount,
+                            BRCryptoTransferDirection direction) {
     assert (sizeInBytes >= sizeof (struct BRCryptoTransferRecord));
     BRCryptoTransfer transfer = calloc (1, sizeInBytes);
 
@@ -74,6 +76,9 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = NULL;
+    
+    transfer->amount = cryptoAmountTake (amount);
+    transfer->direction = direction;
 
     array_new (transfer->attributes, 1);
 
@@ -94,6 +99,7 @@ cryptoTransferRelease (BRCryptoTransfer transfer) {
     cryptoUnitGive (transfer->unitForFee);
     cryptoTransferStateRelease (&transfer->state);
     cryptoFeeBasisGive (transfer->feeBasisEstimated);
+    cryptoAmountGive (transfer->amount);
 
     array_free_all(transfer->attributes, cryptoTransferAttributeGive);
 
@@ -123,13 +129,14 @@ cryptoTransferGetTargetAddress (BRCryptoTransfer transfer) {
 
 static BRCryptoAmount
 cryptoTransferGetAmountAsSign (BRCryptoTransfer transfer, BRCryptoBoolean isNegative) {
-    return transfer->handlers->getAmountAsSign (transfer, isNegative);
+    return NULL == transfer->amount ? NULL : cryptoAmountCreate (cryptoAmountGetUnit(transfer->amount),
+                                                                 isNegative,
+                                                                 cryptoAmountGetValue(transfer->amount));
 }
-
 
 extern BRCryptoAmount
 cryptoTransferGetAmount (BRCryptoTransfer transfer) {
-    return cryptoTransferGetAmountAsSign (transfer, CRYPTO_FALSE);
+    return cryptoAmountTake (transfer->amount);
 }
 
 extern BRCryptoAmount
@@ -171,9 +178,7 @@ cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
 
     BRCryptoFeeBasis feeBasis = cryptoTransferGetConfirmedFeeBasis(transfer);
     if (NULL == feeBasis)
-        feeBasis = (NULL == transfer->feeBasisEstimated
-                    ? NULL
-                    : cryptoFeeBasisTake (transfer->feeBasisEstimated));
+        feeBasis = cryptoFeeBasisTake (transfer->feeBasisEstimated);
 
     // If there is no fee basis, then there is no fee
     if (NULL == feeBasis)
@@ -265,7 +270,7 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
 
 extern BRCryptoTransferDirection
 cryptoTransferGetDirection (BRCryptoTransfer transfer) {
-    return transfer->handlers->getDirection (transfer);
+    return transfer->direction;
 }
 
 
