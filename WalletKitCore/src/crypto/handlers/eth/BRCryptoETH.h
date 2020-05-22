@@ -77,7 +77,8 @@ cryptoTransferCoerce (BRCryptoTransfer transfer);
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           // ...
+                           BRCryptoAmount amount,
+                           BRCryptoTransferDirection direction,
                            BREthereumAccount account,
                            BREthereumTransferBasisType type,
                            OwnershipGiven BREthereumTransaction originatingTransaction);
@@ -92,6 +93,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
                                   BRCryptoUnit unitForFee,
                                   BREthereumAccount account,
+                                  UInt256 ethAmount,
                                   OwnershipGiven BREthereumLog ethLog);
 
 // MARK: - Wallet

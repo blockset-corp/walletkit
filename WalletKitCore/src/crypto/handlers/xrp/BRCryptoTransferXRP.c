@@ -54,15 +54,16 @@ cryptoTransferReleaseXRP (BRCryptoTransfer transferBase) {
     rippleTransferFree (transfer->xrpTransfer);
 }
 
-extern BRCryptoHash
+static BRCryptoHash
 cryptoTransferGetHashXRP (BRCryptoTransfer transferBase) {
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
     BRRippleTransactionHash hash = rippleTransferGetTransactionId (transfer->xrpTransfer);
     return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XRP, sizeof (hash.bytes), hash.bytes);
 }
 
-extern uint8_t *
+static uint8_t *
 cryptoTransferSerializeForSubmissionXRP (BRCryptoTransfer transferBase,
+                                         BRCryptoNetwork network,
                                          size_t *serializationCount) {
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
 

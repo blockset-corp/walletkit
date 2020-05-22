@@ -143,13 +143,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                BRCryptoUnit unitForFee) {
     BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
     assert (cryptoWalletGetType(walletBase) == cryptoAddressGetType(target));
-
-//    BRCryptoUnit unit       = cryptoWalletGetUnit       (walletBase);
-//    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (walletBase);
-    
-//    BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
     assert (cryptoAmountHasCurrency (amount, currency));
-//    cryptoCurrencyGive(currency);
 
     BREthereumToken    ethToken         = wallet->ethToken;
     BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
@@ -173,8 +167,14 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
 
     free (data);
 
+    BRCryptoTransferDirection direction = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (wallet->ethAccount, ethTargetAddress)
+                                           ? CRYPTO_TRANSFER_RECOVERED
+                                           : CRYPTO_TRANSFER_SENT);
+
     BRCryptoTransfer transfer = cryptoTransferCreateAsETH (unit,
                                                            unitForFee,
+                                                           amount,
+                                                           direction,
                                                            wallet->ethAccount,
                                                            type,
                                                            ethTransaction);
@@ -186,9 +186,6 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
         cryptoTransferSetAttributes (transfer, transferAttributes);
         array_free (transferAttributes);
     }
-    
-//    cryptoUnitGive (unitForFee);
-//    cryptoUnitGive (unit);
     
     return transfer;
 }
@@ -218,9 +215,7 @@ cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet walletBase) {
 
 static bool
 cryptoWalletIsEqualETH (BRCryptoWallet wb1, BRCryptoWallet wb2) {
-//    return (w1->u.eth.ewm == w2->u.eth.ewm &&
-//            w1->u.eth.wid == w2->u.eth.wid);
-    return true;
+    return wb1 == wb2;
 }
 
 BRCryptoWalletHandlers cryptoWalletHandlersETH = {

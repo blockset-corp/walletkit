@@ -60,15 +60,16 @@ cryptoTransferReleaseHBAR (BRCryptoTransfer transferBase) {
     hederaTransactionFree (transfer->hbarTransaction);
 }
 
-extern BRCryptoHash
+static BRCryptoHash
 cryptoTransferGetHashHBAR (BRCryptoTransfer transferBase) {
     BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR(transferBase);
     BRHederaTransactionHash hash = hederaTransactionGetHash (transfer->hbarTransaction);
     return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_HBAR, sizeof (hash.bytes), hash.bytes);
 }
 
-extern uint8_t *
+static uint8_t *
 cryptoTransferSerializeForSubmissionHBAR (BRCryptoTransfer transferBase,
+                                          BRCryptoNetwork network,
                                           size_t *serializationCount) {
     BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
     return hederaTransactionSerialize (transfer->hbarTransaction, serializationCount);
