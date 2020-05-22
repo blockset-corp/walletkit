@@ -1134,7 +1134,6 @@ cryptoWalletManagerEstimateLimit (BRCryptoWalletManager manager,
                                                              isZeroIfInsuffientFunds,
                                                              unit);
 
-
     cryptoUnitGive (unit);
     return limit;
 

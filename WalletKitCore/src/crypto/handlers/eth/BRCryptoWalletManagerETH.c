@@ -251,7 +251,7 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    managerBase->wallet = cryptoWalletCreateAsETH (unitAsDefault, unitAsDefault, manager->account);
+    managerBase->wallet = cryptoWalletCreateAsETH (unitAsDefault, unitAsDefault, NULL, manager->account);
     array_add (managerBase->wallets, managerBase->wallet);
 
 #if 0
@@ -331,89 +331,104 @@ walletSignTransferWithPrivateKey (BREthereumWallet wallet,
 #endif
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager manager,
-                                                      BRCryptoWallet wallet,
-                                                      BRCryptoTransfer transfer,
-                                                      UInt512 seed) {
-#if 0
-    BRWallet      *btcWallet       = cryptoWalletAsBTC   (wallet);
-    BRTransaction *btcTransaction  = cryptoTransferAsBTC (transfer);         // OWN/REF ?
-    const BRChainParams *btcParams = cryptoNetworkAsBTC  (manager->network);
+cryptoWalletManagerSignTransaction (BRCryptoWalletManager managerBase,
+                                    BRCryptoWallet walletBase,
+                                    BRCryptoTransfer transferBase,
+                                    BRKey *key) {
+    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoTransferETH      transfer = cryptoTransferCoerce      (transferBase);
 
-    return AS_CRYPTO_BOOLEAN (1 == BRWalletSignTransaction (btcWallet, btcTransaction, btcParams->forkId, seed.u8, sizeof(UInt512)));
-#endif
-    return CRYPTO_FALSE;
+
+    BREthereumNetwork     ethNetwork     = manager->network;
+    BREthereumAccount     ethAccount     = manager->account;
+    BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
+    BREthereumTransaction ethTransaction = transfer->originatingTransaction;
+
+    assert (NULL != ethTransaction);
+
+    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == transactionGetNonce (ethTransaction))
+        transactionSetNonce (ethTransaction,
+                             ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
+
+    // RLP Encode the UNSIGNED transaction
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpItem item = transactionRlpEncode (ethTransaction,
+                                           ethNetwork,
+                                           RLP_TYPE_TRANSACTION_UNSIGNED,
+                                           coder);
+    BRRlpData data = rlpItemGetDataSharedDontRelease (coder, item);
+
+    // Sign the RLP Encoded UNSIGNED transaction bytes.
+    BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
+                                                                       ethAddress,
+                                                                       SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+                                                                       data.bytes,
+                                                                       data.bytesCount,
+                                                                       *key);
+    rlpItemRelease(coder, item);
+    BRKeyClean(key);
+
+    // Attach the signature
+    transactionSign (ethTransaction, signature);
+
+    // RLP Encode the SIGNED transaction and then assign the hash.
+    item = transactionRlpEncode (ethTransaction,
+                                 ethNetwork,
+                                 RLP_TYPE_TRANSACTION_SIGNED,
+                                 coder);
+    transactionSetHash (ethTransaction,
+                        ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
+
+    rlpItemRelease(coder, item);
+    rlpCoderRelease(coder);
+
+    return CRYPTO_TRUE;
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithKeyETH (BRCryptoWalletManager manager,
-                                                     BRCryptoWallet wallet,
-                                                     BRCryptoTransfer transfer,
-                                                     BRCryptoKey key) {
-#if 0
-    BRTransaction *btcTransaction  = cryptoTransferAsBTC (transfer);         // OWN/REF ?
-    BRKey         *btcKey          = cryptoKeyGetCore (key);
-    const BRChainParams *btcParams = cryptoNetworkAsBTC  (manager->network);
+cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager managerBase,
+                                                      BRCryptoWallet walletBase,
+                                                      BRCryptoTransfer transferBase,
+                                                      UInt512 seed) {
+    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
 
-    return AS_CRYPTO_BOOLEAN (1 == BRTransactionSign (btcTransaction, btcParams->forkId, btcKey, 1));
-#endif
-    return CRYPTO_FALSE;
+    BREthereumAccount     ethAccount     = manager->account;
+    BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
+
+    BRKey key = derivePrivateKeyFromSeed (seed, ethAccountGetAddressIndex (ethAccount, ethAddress));
+    
+    return cryptoWalletManagerSignTransaction (managerBase,
+                                               walletBase,
+                                               transferBase,
+                                               &key);
+}
+
+static BRCryptoBoolean
+cryptoWalletManagerSignTransactionWithKeyETH (BRCryptoWalletManager managerBase,
+                                              BRCryptoWallet walletBase,
+                                              BRCryptoTransfer transferBase,
+                                              BRCryptoKey key) {
+    return cryptoWalletManagerSignTransaction (managerBase,
+                                               walletBase,
+                                               transferBase,
+                                               cryptoKeyGetCore (key));
 }
 
 static BRCryptoAmount
 cryptoWalletManagerEstimateLimitETH (BRCryptoWalletManager cwm,
-                                            BRCryptoWallet  wallet,
-                                            BRCryptoBoolean asMaximum,
-                                            BRCryptoAddress target,
-                                            BRCryptoNetworkFee networkFee,
-                                            BRCryptoBoolean *needEstimate,
-                                            BRCryptoBoolean *isZeroIfInsuffientFunds,
-                                            BRCryptoUnit unit) {
-#if 0
-    BREthereumEWM ewm = wallet->u.eth.ewm;
-    BREthereumWallet wid = wallet->u.eth.wid;
-
+                                     BRCryptoWallet  wallet,
+                                     BRCryptoBoolean asMaximum,
+                                     BRCryptoAddress target,
+                                     BRCryptoNetworkFee networkFee,
+                                     BRCryptoBoolean *needEstimate,
+                                     BRCryptoBoolean *isZeroIfInsuffientFunds,
+                                     BRCryptoUnit unit) {
     // We always need an estimate as we do not know the fees.
     *needEstimate = CRYPTO_TRUE;
 
-    if (CRYPTO_FALSE == asMaximum)
-        amount = uint256Create(0);
-    else {
-        BREthereumAmount ethAmount = ewmWalletGetBalance (ewm, wid);
-
-        // NOTE: We know ETH has a minimum balance of zero.
-
-        amount = (AMOUNT_ETHER == ethAmountGetType(ethAmount)
-                  ? ethAmountGetEther(ethAmount).valueInWEI
-                  : ethAmountGetTokenQuantity(ethAmount).valueAsInteger);
-    }
-#endif
-#if 0
-    BRWallet *btcWallet = cryptoWalletAsBTC (wallet);
-
-    // Amount may be zero if insufficient fees
-    *isZeroIfInsuffientFunds = CRYPTO_TRUE;
-
-    // NOTE: We know BTC/BCH has a minimum balance of zero.
-
-    uint64_t balance     = BRWalletBalance (btcWallet);
-    uint64_t feePerKB    = 1000 * cryptoNetworkFeeAsBTC (networkFee);
-    uint64_t amountInSAT = (CRYPTO_FALSE == asMaximum
-                            ? BRWalletMinOutputAmountWithFeePerKb (btcWallet, feePerKB)
-                            : BRWalletMaxOutputAmountWithFeePerKb (btcWallet, feePerKB));
-    uint64_t fee         = (amountInSAT > 0
-                            ? BRWalletFeeForTxAmountWithFeePerKb (btcWallet, feePerKB, amountInSAT)
-                            : 0);
-
-    //            if (CRYPTO_TRUE == asMaximum)
-    //                assert (balance == amountInSAT + fee);
-
-    if (amountInSAT + fee > balance)
-        amountInSAT = 0;
-
-    return cryptoAmountCreateInteger ((int64_t) amountInSAT, unit);
-#endif
-    return cryptoAmountCreateDouble (0.0, wallet->unit);
+    return (CRYPTO_TRUE == asMaximum
+            ? cryptoWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'
+            : cryptoAmountCreateInteger (0, unit));  // No minimum
 }
 
 static void

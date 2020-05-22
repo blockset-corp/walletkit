@@ -35,6 +35,9 @@ typedef struct BRCryptoNetworkETHRecord {
 private_extern BREthereumNetwork
 cryptoNetworkAsETH (BRCryptoNetwork network);
 
+private_extern BREthereumGasPrice
+cryptoNetworkFeeAsETH (BRCryptoNetworkFee fee);
+
 // MARK: - Transfer
 
 typedef enum  {
@@ -104,9 +107,13 @@ typedef struct BRCryptoWalletETHRecord {
     BREthereumToken   ethToken;    // NULL if `ETH`
 } *BRCryptoWalletETH;
 
+extern BRCryptoWalletETH
+cryptoWalletCoerce (BRCryptoWallet wallet);
+
 private_extern BRCryptoWallet
 cryptoWalletCreateAsETH (BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
+                         BREthereumToken   ethToken,
                          BREthereumAccount ethAccount);
 
 // MARK: - Wallet Manager

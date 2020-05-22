@@ -1,7 +1,7 @@
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoAmountP.h"
 
-static BRCryptoWalletETH
+extern BRCryptoWalletETH
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_ETH == wallet->type);
     return (BRCryptoWalletETH) wallet;
@@ -10,6 +10,7 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 private_extern BRCryptoWallet
 cryptoWalletCreateAsETH (BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
+                         BREthereumToken   ethToken,
                          BREthereumAccount ethAccount) {
     BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
                                                       CRYPTO_NETWORK_TYPE_ETH,
@@ -19,7 +20,8 @@ cryptoWalletCreateAsETH (BRCryptoUnit unit,
                                                       NULL);
     BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
 
-    wallet->ethAccount = ethAccount;
+    wallet->ethAccount  = ethAccount;
+    wallet->ethToken    = ethToken;
     return walletBase;
 }
 
