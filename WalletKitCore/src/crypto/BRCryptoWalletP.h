@@ -19,6 +19,7 @@
 
 #include "BRCryptoWallet.h"
 #include "BRCryptoBaseP.h"
+#include "BRCryptoClient.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,12 +153,6 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
-/// MARK: - Wallet Sweeper
-
-#if 0
-private_extern BRWalletSweeper
-cryptoWalletSweeperAsBTC (BRCryptoWalletSweeper sweeper);
-#endif
 
 #ifdef __cplusplus
 }

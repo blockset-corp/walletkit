@@ -225,13 +225,11 @@ public final class WalletManager: Equatable, CustomStringConvertible {
                                                 isNetworkReachable ? CRYPTO_TRUE : CRYPTO_FALSE)
     }
 
-    #if false
     public func createSweeper (wallet: Wallet,
                                key: Key,
                                completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         WalletSweeper.create(wallet: wallet, key: key, bdb: query, completion: completion)
     }
-    #endif
 
     internal init (core: BRCryptoWalletManager,
                    system: System,
@@ -346,7 +344,6 @@ extension WalletManager {
 ///
 /// The WalletSweeper
 ///
-#if false
 public enum WalletSweeperError: Error {
     case unsupportedCurrency
     case invalidKey
@@ -381,10 +378,9 @@ public final class WalletSweeper {
                                 bdb: BlockChainDB,
                                 completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         // check that requested combination of manager, wallet, key can be used for sweeping
-        if let e = WalletSweeperError(cryptoWalletSweeperValidateSupported(wallet.manager.network.core,
-                                                                           wallet.currency.core,
-                                                                           key.core,
-                                                                           wallet.core)) {
+        if let e = WalletSweeperError(cryptoWalletManagerWalletSweeperValidateSupported(wallet.manager.core,
+                                                                                        wallet.core,
+                                                                                        key.core)) {
             completion(Result.failure(e))
             return
         }
@@ -404,10 +400,9 @@ public final class WalletSweeper {
 
     private static func createAsBtc(wallet: Wallet,
                                     key: Key) -> WalletSweeper {
-        return WalletSweeper(core: cryptoWalletSweeperCreateAsBtc(wallet.manager.network.core,
-                                                                  wallet.currency.core,
-                                                                  key.core,
-                                                                  wallet.manager.addressScheme.core),
+        return WalletSweeper(core: cryptoWalletManagerCreateWalletSweeper(wallet.manager.core,
+                                                                          wallet.core,
+                                                                          key.core),
                              wallet: wallet,
                              key: key)
     }
@@ -447,38 +442,31 @@ public final class WalletSweeper {
     private func initAsBTC(bdb: BlockChainDB,
                            completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         let network = manager.network
-        let address = asUTF8String(cryptoWalletSweeperGetAddress(core)!, true)
+        let address = Address (core: cryptoWalletSweeperGetAddress(core)!).description
 
         bdb.getTransactions(blockchainId: network.uids,
                             addresses: [address],
                             begBlockNumber: 0,
                             endBlockNumber: network.height,
                             includeRaw: true) {
-                            (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                 res.resolve(
                                     success: {
+                                        let bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
                                         // populate the underlying BRCryptoWalletSweeper with BTC transaction data
-                                        $0.forEach { (model: BlockChainDB.Model.Transaction) in
-                                            if var data = model.raw {
-                                                let bytesCount = data.count
-                                                data.withUnsafeMutableBytes { (bytes: UnsafeMutableRawBufferPointer) -> Void in
-                                                    let bytesAsUInt8 = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
-                                                    if let e = WalletSweeperError(cryptoWalletSweeperHandleTransactionAsBTC(self.core,
-                                                                                                                            bytesAsUInt8,
-                                                                                                                            bytesCount)) {
-                                                        completion(Result.failure(e))
-                                                        return
-                                                    }
-                                                }
+                                        for bundle in bundles {
+                                            if let e = WalletSweeperError(cryptoWalletSweeperAddTransactionFromBundle(self.core, bundle)) {
+                                                completion(Result.failure(e))
+                                                return
                                             }
                                         }
-
+                                        
                                         // validate that the sweeper has the necessary info
                                         if let e = WalletSweeperError(cryptoWalletSweeperValidate(self.core)) {
                                             completion(Result.failure(e))
                                             return
                                         }
-
+                                        
                                         // return the sweeper for use in estimation/submission
                                         completion(Result.success(self))},
                                     failure: { completion(Result.failure(.queryError($0))) })
@@ -489,7 +477,6 @@ public final class WalletSweeper {
         cryptoWalletSweeperRelease(core)
     }
 }
-#endif
 
 public enum WalletManagerDisconnectReason: Equatable {
     case requested

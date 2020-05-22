@@ -13,6 +13,7 @@
 #include "BRCryptoTransferP.h"
 #include "BRCryptoWalletP.h"
 #include "BRCryptoWalletManagerP.h"
+#include "BRCryptoWalletSweeperP.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,7 @@ typedef struct {
     const BRCryptoTransferHandlers *transfer;
     const BRCryptoWalletHandlers   *wallet;
     const BRCryptoWalletManagerHandlers *manager;
+    const BRCryptoWalletSweeperHandlers *sweeper;
 } BRCryptoHandlers;
 
 extern const BRCryptoHandlers *

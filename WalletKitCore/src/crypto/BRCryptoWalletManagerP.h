@@ -98,6 +98,16 @@ typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
+typedef BRCryptoWalletSweeperStatus
+(*BRCryptoWalletManagerWalletSweeperValidateSupportedHandler) (BRCryptoWalletManager cwm,
+                                                               BRCryptoWallet wallet,
+                                                               BRCryptoKey key);
+
+typedef BRCryptoWalletSweeper
+(*BRCryptoWalletManagerCreateWalletSweeperHandler) (BRCryptoWalletManager cwm,
+                                                    BRCryptoWallet wallet,
+                                                    BRCryptoKey key);
+
 typedef struct {
     BERWalletManagerCreateHandler create;
     BRWalletManagerReleaseHandler release;
@@ -111,6 +121,8 @@ typedef struct {
     BRWalletManagerCreateP2PManagerHandler createP2PManager;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
+    BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
 
 

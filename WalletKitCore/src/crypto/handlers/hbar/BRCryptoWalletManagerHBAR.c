@@ -252,6 +252,22 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR (BRCryptoWalletM
 
 static BRCryptoClientP2PManager
 crytpWalletManagerCreateP2PManagerHandlerHBAR (BRCryptoWalletManager cwm) {
+    // not supported
+    return NULL;
+}
+
+extern BRCryptoWalletSweeperStatus
+cryptoWalletManagerWalletSweeperValidateSupportedHBAR (BRCryptoWalletManager cwm,
+                                                       BRCryptoWallet wallet,
+                                                       BRCryptoKey key) {
+    return CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY;
+}
+
+extern BRCryptoWalletSweeper
+cryptoWalletManagerCreateWalletSweeperHBAR (BRCryptoWalletManager cwm,
+                                            BRCryptoWallet wallet,
+                                            BRCryptoKey key) {
+    // not supported
     return NULL;
 }
 
@@ -267,5 +283,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerEstimateFeeBasisHandlerHBAR,
     crytpWalletManagerCreateP2PManagerHandlerHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerHBAR,
-    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR
+    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR,
+    cryptoWalletManagerWalletSweeperValidateSupportedHBAR,
+    cryptoWalletManagerCreateWalletSweeperHBAR
 };

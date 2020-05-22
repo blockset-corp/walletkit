@@ -20,6 +20,7 @@
 #include "BRCryptoWallet.h"
 #include "BRCryptoSync.h"
 #include "BRCryptoClient.h"
+#include "BRCryptoWalletSweeper.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -350,6 +351,16 @@ extern "C" {
                                                        BRCryptoCookie cookie,
                                                        BRCryptoWalletSweeper sweeper,
                                                        BRCryptoNetworkFee fee);
+
+    extern BRCryptoWalletSweeperStatus
+    cryptoWalletManagerWalletSweeperValidateSupported (BRCryptoWalletManager cwm,
+                                                       BRCryptoWallet wallet,
+                                                       BRCryptoKey key);
+
+    extern BRCryptoWalletSweeper
+    cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager manager,
+                                            BRCryptoWallet wallet,
+                                            BRCryptoKey key);
 
     extern void
     cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletManager manager,
