@@ -66,7 +66,6 @@ let package = Package(
 
                 "archive",
                 "crypto/BRCryptoPayment.c",
-                "crypto/handlers/xrp",
                 "crypto/handlers/eth",
                 "crypto/BRCryptoWalletManagerClient.c"
             ],

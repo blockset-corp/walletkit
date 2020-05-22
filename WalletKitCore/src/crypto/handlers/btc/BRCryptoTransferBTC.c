@@ -6,6 +6,13 @@
 static BRCryptoTransferDirection
 cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee);
 
+static BRCryptoAmount
+cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,
+                             BRCryptoUnit unit,
+                             uint64_t send,
+                             uint64_t recv,
+                             uint64_t fee);
+
 extern BRCryptoTransferBTC
 cryptoTransferCoerceBTC (BRCryptoTransfer transfer) {
     assert (CRYPTO_NETWORK_TYPE_BTC == transfer->type ||
@@ -32,26 +39,32 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            OwnershipKept  BRWallet *wid,
                            OwnershipGiven BRTransaction *tid,
                            BRCryptoBlockChainType type) {
+    uint64_t fee  = BRWalletFeeForTx (wid, tid);
+    uint64_t send = BRWalletAmountReceivedFromTx (wid, tid);
+    uint64_t recv = BRWalletAmountSentByTx (wid, tid);
+    
+    BRAddressParams  addressParams = BRWalletGetAddressParams (wid);
+
+    BRCryptoTransferDirection direction = cryptoTransferDirectionFromBTC (send, recv, fee);
+    
+    BRCryptoAmount amount = cryptoTransferAmountFromBTC (direction, unit, send, recv, fee);
+    
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                                 type,
                                                                 unit,
-                                                                unitForFee);
+                                                                unitForFee,
+                                                                amount,
+                                                                direction);
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
 
     transfer->tid  = tid;
     transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
     transfer->isDeleted  = false;
-
+    
     // cache the values that require the wallet
-    transfer->fee  = BRWalletFeeForTx (wid, tid);
-    transfer->recv = BRWalletAmountReceivedFromTx (wid, tid);
-    transfer->send = BRWalletAmountSentByTx (wid, tid);
-
-    BRAddressParams  addressParams = BRWalletGetAddressParams (wid);
-
-    BRCryptoTransferDirection direction = cryptoTransferDirectionFromBTC (transfer->send,
-                                                                          transfer->recv,
-                                                                          transfer->fee);
+    transfer->fee  = fee;
+    transfer->recv = send;
+    transfer->send = recv;
 
     {
         size_t     inputsCount = tid->inCount;
@@ -114,7 +127,6 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
     // BRCryptoFeeBasis is long gone.  The best we can do is reconstruct the feeBasis from the
     // BRTransaction itself.
     //
-    uint64_t fee = transfer->fee;
     uint32_t feePerKB = 0;  // assume not our transaction (fee == UINT64_MAX)
     uint32_t sizeInByte = (uint32_t) BRTransactionVSize (tid);
 
@@ -123,7 +135,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
         feePerKB = (uint32_t) (((1000 * fee) + (sizeInByte/2)) / sizeInByte);
     }
 
-    transferBase->feeBasisEstimated = cryptoFeeBasisCreateAsBTC (transferBase->unitForFee, feePerKB, sizeInByte);;
+    transferBase->feeBasisEstimated = cryptoFeeBasisCreateAsBTC (transferBase->unitForFee, feePerKB, sizeInByte);
 
     return (BRCryptoTransfer) transfer;
 }
@@ -132,48 +144,6 @@ static void
 cryptoTransferReleaseBTC (BRCryptoTransfer transferBase) {
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
     BRTransactionFree (transfer->tid);
-}
-
-static BRCryptoAmount
-cryptoTransferGetAmountAsSignBTC  (BRCryptoTransfer transferBase, BRCryptoBoolean isNegative) {
-    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-    uint64_t fee = transfer->fee;
-    if (UINT64_MAX == fee) fee = 0;
-    
-    uint64_t recv = transfer->recv;
-    uint64_t send = transfer->send;
-    
-    switch (cryptoTransferGetDirection(transferBase)) {
-        case CRYPTO_TRANSFER_RECOVERED:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(send));
-            
-        case CRYPTO_TRANSFER_SENT:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(send - fee - recv));
-            
-        case CRYPTO_TRANSFER_RECEIVED:
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       uint256Create(recv));
-            break;
-            
-        default:
-            assert(0);
-            return cryptoAmountCreate (transferBase->unit,
-                                       isNegative,
-                                       UINT256_ZERO);
-    }
-}
-
-static BRCryptoTransferDirection
-cryptoTransferGetDirectionBTC (BRCryptoTransfer transferBase) {
-    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-    return cryptoTransferDirectionFromBTC (transfer->send,
-                                           transfer->recv,
-                                           transfer->fee);
 }
 
 static BRCryptoHash
@@ -211,6 +181,40 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     return BRTransactionEq (t1->tid, t2->tid);
 }
 
+
+static BRCryptoAmount
+cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,
+                             BRCryptoUnit unit,
+                             uint64_t send,
+                             uint64_t recv,
+                             uint64_t fee) {
+    if (UINT64_MAX == fee) fee = 0;
+    
+    switch (direction) {
+        case CRYPTO_TRANSFER_RECOVERED:
+            return cryptoAmountCreate (unit,
+                                       CRYPTO_FALSE,
+                                       uint256Create(send));
+            
+        case CRYPTO_TRANSFER_SENT:
+            return cryptoAmountCreate (unit,
+                                       CRYPTO_FALSE,
+                                       uint256Create(send - fee - recv));
+            
+        case CRYPTO_TRANSFER_RECEIVED:
+            return cryptoAmountCreate (unit,
+                                       CRYPTO_FALSE,
+                                       uint256Create(recv));
+            break;
+            
+        default:
+            assert(0);
+            return cryptoAmountCreate (unit,
+                                       CRYPTO_FALSE,
+                                       UINT256_ZERO);
+    }
+}
+
 static BRCryptoTransferDirection
 cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
     if (UINT64_MAX == fee) fee = 0;
@@ -227,8 +231,6 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 
 BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,
-    cryptoTransferGetAmountAsSignBTC,
-    cryptoTransferGetDirectionBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeForSubmissionBTC,
     cryptoTransferIsEqualBTC
@@ -236,8 +238,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
 
 BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
-    cryptoTransferGetAmountAsSignBTC,
-    cryptoTransferGetDirectionBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeForSubmissionBTC,
     cryptoTransferIsEqualBTC

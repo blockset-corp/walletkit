@@ -139,14 +139,14 @@ cryptoWalletGetTransferAttributeCountBTC (BRCryptoWallet wallet,
 
 extern BRCryptoTransferAttribute
 cryptoWalletGetTransferAttributeAtBTC (BRCryptoWallet wallet,
-                                    BRCryptoAddress target,
+                                       BRCryptoAddress target,
                                        size_t index) {
     return NULL;
 }
 
 extern BRCryptoTransferAttributeValidationError
 cryptoWalletValidateTransferAttributeBTC (BRCryptoWallet wallet,
-                                       OwnershipKept BRCryptoTransferAttribute attribute,
+                                          OwnershipKept BRCryptoTransferAttribute attribute,
                                           BRCryptoBoolean *validates) {
     *validates = CRYPTO_TRUE;
     return (BRCryptoTransferAttributeValidationError) 0;

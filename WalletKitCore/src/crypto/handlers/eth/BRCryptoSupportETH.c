@@ -1,6 +1,6 @@
 
 #include "BRCryptoBTC.h"
-#include "../../BRCryptoHashP.h"
+#include "crypto/BRCryptoHashP.h"
 
 #ifdef REFACTOR
 private_extern BRCryptoFeeBasis

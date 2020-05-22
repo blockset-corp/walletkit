@@ -1,10 +1,10 @@
 #ifndef BRCryptoETH_h
 #define BRCryptoETH_h
 
-#include "../../BRCryptoAddressP.h"
-#include "../../BRCryptoNetworkP.h"
-#include "../../BRCryptoTransferP.h"
-#include "../../BRCryptoWalletP.h"
+#include "crypto/BRCryptoAddressP.h"
+#include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoTransferP.h"
+#include "crypto/BRCryptoWalletP.h"
 
 #include "ethereum/base/BREthereumAccount.h"
 #include "ethereum/base/BREthereumHash.h"
