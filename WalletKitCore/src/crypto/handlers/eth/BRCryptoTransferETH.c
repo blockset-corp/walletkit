@@ -244,19 +244,24 @@ cryptoTransferGetHashETH (BRCryptoTransfer transferBase) {
 }
 
 extern uint8_t *
-cryptoTransferSerializeForSubmissionETH (BRCryptoTransfer transferBase,
+cryptoTransferSerializeETH (BRCryptoTransfer transferBase,
                                          BRCryptoNetwork  network,
+                                         BRCryptoBoolean  requireSignature,
                                          size_t *serializationCount) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
 
-    if (NULL == transfer->originatingTransaction || ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transfer->originatingTransaction)) {
+    if (NULL == transfer->originatingTransaction ||
+        (CRYPTO_TRUE == requireSignature &&
+        ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transfer->originatingTransaction))) {
         *serializationCount = 0;
         return NULL;
     }
 
     BRRlpData data = transactionGetRlpData (transfer->originatingTransaction,
                                             cryptoNetworkAsETH(network),
-                                            RLP_TYPE_TRANSACTION_SIGNED);
+                                            (CRYPTO_TRUE == requireSignature
+                                             ? RLP_TYPE_TRANSACTION_SIGNED
+                                             : RLP_TYPE_TRANSACTION_UNSIGNED));
 
     *serializationCount = data.bytesCount;
     return data.bytes;
@@ -364,6 +369,6 @@ transferSignWithKey (BREthereumTransfer transfer,
 BRCryptoTransferHandlers cryptoTransferHandlersETH = {
     cryptoTransferReleaseETH,
     cryptoTransferGetHashETH,
-    cryptoTransferSerializeForSubmissionETH,
+    cryptoTransferSerializeETH,
     cryptoTransferEqualAsETH
 };

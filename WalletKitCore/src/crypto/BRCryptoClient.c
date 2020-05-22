@@ -746,8 +746,9 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
     size_t   serializationCount;
     uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, cwm->network, &serializationCount);
 
-    BRCryptoHash hash = cryptoTransferGetHash (transfer);
-    char *hashAsHex = cryptoHashString(hash);
+    // There is no hash... transfer is not guaranteed to be signed; likely unsigned.
+    BRCryptoHash hash      = NULL;
+    const char  *hashAsHex = "";
 
     BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
                                                                                                        cookie,
@@ -770,18 +771,19 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    uint64_t costUnits) {
     assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
 
+    BRCryptoStatus status = (CRYPTO_TRUE == success ? CRYPTO_SUCCESS : CRYPTO_ERROR_FAILED);
+    BRCryptoCookie cookie = callbackState->u.estimateTransactionFee.cookie;
+
     BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
-
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 
-    // Wallet Event Fee Estimated
-//    BRCryptoWalletEvent event = {
-//        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-//        { .feeBasisEstimated = { status, cookie, feeBasis }}
-//    };
+    cryptoWalletManagerGenerateWalletEvent (cwm, cwm->wallet, (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+        { .feeBasisEstimated = { status, cookie, feeBasis }}
+    });
 
     cryptoAmountGive (pricePerCostFactor);
     cryptoFeeBasisGive (feeBasis);

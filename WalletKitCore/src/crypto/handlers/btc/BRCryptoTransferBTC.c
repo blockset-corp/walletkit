@@ -165,9 +165,11 @@ cryptoTransferGetHashBTC (BRCryptoTransfer transferBase) {
 }
 
 extern uint8_t *
-cryptoTransferSerializeForSubmissionBTC (BRCryptoTransfer transferBase,
-                                         BRCryptoNetwork  network,
-                                         size_t *serializationCount) {
+cryptoTransferSerializeBTC (BRCryptoTransfer transferBase,
+                            BRCryptoNetwork  network,
+                            BRCryptoBoolean  requireSignature,
+                            size_t *serializationCount) {
+    assert (CRYPTO_TRUE == requireSignature);
     BRTransaction *tid = cryptoTransferAsBTC     (transferBase);
 
     if (NULL == tid) { *serializationCount = 0; return NULL; }
@@ -242,13 +244,13 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
-    cryptoTransferSerializeForSubmissionBTC,
+    cryptoTransferSerializeBTC,
     cryptoTransferIsEqualBTC
 };
 
 BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
-    cryptoTransferSerializeForSubmissionBTC,
+    cryptoTransferSerializeBTC,
     cryptoTransferIsEqualBTC
 };

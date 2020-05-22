@@ -190,7 +190,11 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                                            wallet->ethAccount,
                                                            type,
                                                            ethTransaction);
-    
+
+    transfer->sourceAddress = cryptoAddressCreateAsETH (ethSourceAddress);
+    transfer->targetAddress = cryptoAddressCreateAsETH (ethTargetAddress);
+    transfer->feeBasisEstimated = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
+
     if (NULL != transfer && attributesCount > 0) {
         BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
         array_new (transferAttributes, attributesCount);
