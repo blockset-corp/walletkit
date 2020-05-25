@@ -52,20 +52,12 @@ cryptoWalletSweeperAddTransactionFromBundle (BRCryptoWalletSweeper sweeper,
     return sweeper->handlers->addTranactionFromBundle (sweeper, bundle);
 }
 
-extern BRCryptoWalletSweeperStatus
-cryptoWalletSweeperHandleTransactionAsBTC (BRCryptoWalletSweeper sweeper,
-                                           OwnershipKept uint8_t *transaction,
-                                           size_t transactionLen) {
-    BRCryptoWalletSweeperStatus status = CRYPTO_WALLET_SWEEPER_ILLEGAL_OPERATION;
-
-    //TODO:SWEEPER
-#ifdef REFACTOR
-    status = BRWalletSweeperStatusToCrypto (
-                                            BRWalletSweeperHandleTransaction (sweeper->u.btc.sweeper,
-                                                                              transaction, transactionLen)
-                                            );
-#endif
-    return status;
+extern BRCryptoTransfer
+cryptoWalletSweeperCreateTransferForWalletSweep (BRCryptoWalletSweeper sweeper,
+                                                 BRCryptoWalletManager cwm,
+                                                 BRCryptoWallet wallet,
+                                                 BRCryptoFeeBasis estimatedFeeBasis) {
+    return sweeper->handlers->createTransfer (cwm, wallet, sweeper, estimatedFeeBasis);
 }
 
 extern BRCryptoKey
@@ -75,60 +67,17 @@ cryptoWalletSweeperGetKey (BRCryptoWalletSweeper sweeper) {
 
 extern BRCryptoAddress
 cryptoWalletSweeperGetAddress (BRCryptoWalletSweeper sweeper) {
-    //TODO:SWEEPER
-#ifdef REFACTOR
-    char * address = NULL;
-
-    switch (sweeper->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            address = BRWalletSweeperGetLegacyAddress (sweeper->u.btc.sweeper);
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
-
-    return address;
-#endif
-    return NULL;
+    return sweeper->handlers->getAddress (sweeper);
 }
 
 extern BRCryptoAmount
 cryptoWalletSweeperGetBalance (BRCryptoWalletSweeper sweeper) {
-    BRCryptoAmount amount = NULL;
-#ifdef REFACTOR
-    switch (sweeper->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            UInt256 value = uint256Create (BRWalletSweeperGetBalance (sweeper->u.btc.sweeper));
-            amount = cryptoAmountCreate (sweeper->unit, CRYPTO_FALSE, value);
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
-#endif
-    return amount;
+    return sweeper->handlers->getBalance (sweeper);
 }
 
 extern BRCryptoWalletSweeperStatus
 cryptoWalletSweeperValidate (BRCryptoWalletSweeper sweeper) {
-    BRCryptoWalletSweeperStatus status = CRYPTO_WALLET_SWEEPER_ILLEGAL_OPERATION;
-#ifdef REFACTOR
-    switch (sweeper->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            status = BRWalletSweeperStatusToCrypto (
-                BRWalletSweeperValidate(sweeper->u.btc.sweeper)
-            );
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
-#endif
-    return status;
+    return sweeper->handlers->validate (sweeper);
 }
 
 extern void
@@ -137,31 +86,9 @@ cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager cwm,
                                                    BRCryptoCookie cookie,
                                                    BRCryptoWalletSweeper sweeper,
                                                    BRCryptoNetworkFee fee) {
-#ifdef REFACTOR//TODO:SWEEP
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            BRWalletManager bwm = cwm->u.btc;
-            BRWallet *wid = cryptoWalletAsBTC (wallet);
-            uint64_t feePerKB = 1000 * cryptoNetworkFeeAsBTC (fee);
-
-            BRWalletManagerEstimateFeeForSweep (bwm,
-                                                wid,
-                                                cookie,
-                                                cryptoWalletSweeperAsBTC(sweeper),
-                                                feePerKB);
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
-#endif
+    sweeper->handlers->estimateFeeBasis (cwm,
+                                         wallet,
+                                         cookie,
+                                         sweeper,
+                                         fee);
 }
-
-#ifdef REFACTOR
-private_extern BRWalletSweeper
-cryptoWalletSweeperAsBTC (BRCryptoWalletSweeper sweeper) {
-    assert (BLOCK_CHAIN_TYPE_BTC == sweeper->type);
-    return sweeper->u.btc.sweeper;
-}
-#endif

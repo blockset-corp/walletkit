@@ -23,21 +23,39 @@ extern "C" {
 typedef void
 (*BRCryptoWalletSweeperReleaseHandler) (BRCryptoWalletSweeper sweeper);
 
+typedef BRCryptoAddress
+(*BRCryptoWalletSweeperGetAddressHandler) (BRCryptoWalletSweeper);
+
+typedef BRCryptoAmount
+(*BRCryptoWalletSweeperGetBalanceHandler) (BRCryptoWalletSweeper);
+
 typedef BRCryptoWalletSweeperStatus
 (*BRCryptoWalletSweeperAddTransactionFromBundleHandler) (BRCryptoWalletSweeper sweeper,
                                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
 
 typedef void
-(*BRCryptoWalletSweeperEstimateFeeBasisForWalletSweep) (BRCryptoWalletManager cwm,
-                                                        BRCryptoWallet wallet,
-                                                        BRCryptoCookie cookie,
-                                                        BRCryptoWalletSweeper sweeper,
-                                                        BRCryptoNetworkFee fee);
+(*BRCryptoWalletSweeperEstimateFeeBasisHandler) (BRCryptoWalletManager cwm,
+                                                 BRCryptoWallet wallet,
+                                                 BRCryptoCookie cookie,
+                                                 BRCryptoWalletSweeper sweeper,
+                                                 BRCryptoNetworkFee fee);
+
+typedef BRCryptoTransfer
+(*BRCryptoWalletSweeperCreateTransferHandler) (BRCryptoWalletManager cwm,
+                                               BRCryptoWallet wallet,
+                                               BRCryptoWalletSweeper sweeper,
+                                               BRCryptoFeeBasis estimatedFeeBasis);
+typedef BRCryptoWalletSweeperStatus
+(*BRCryptoWalletSweeperValidateHandler) (BRCryptoWalletSweeper sweeper);
 
 typedef struct {
     BRCryptoWalletSweeperReleaseHandler release;
+    BRCryptoWalletSweeperGetAddressHandler getAddress;
+    BRCryptoWalletSweeperGetBalanceHandler getBalance;
     BRCryptoWalletSweeperAddTransactionFromBundleHandler addTranactionFromBundle;
-    BRCryptoWalletSweeperEstimateFeeBasisForWalletSweep estimateFeeBasis;
+    BRCryptoWalletSweeperEstimateFeeBasisHandler estimateFeeBasis;
+    BRCryptoWalletSweeperCreateTransferHandler createTransfer;
+    BRCryptoWalletSweeperValidateHandler validate;
 } BRCryptoWalletSweeperHandlers;
 
 // MARK: - Sweeper

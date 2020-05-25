@@ -10,6 +10,8 @@
 
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoWalletSweeperP.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "ethereum/util/BRUtilMath.h"
 
 // MARK: Forward Declarations
 
@@ -19,13 +21,36 @@ BRWalletSweeperEstimateFee (BRCryptoWalletSweeperBTC sweeper,
                             uint64_t feePerKb,
                             uint64_t *feeEstimate);
 
-// MARK: -
+static BRCryptoWalletSweeperStatus
+BRWalletSweeperCreateTransaction (BRCryptoWalletSweeperBTC sweeper,
+                                  BRWallet * wallet,
+                                  uint64_t feePerKb,
+                                  BRTransaction **transaction);
+
+static uint64_t
+BRWalletSweeperGetBalance (BRCryptoWalletSweeperBTC sweeper);
+
+// MARK: - Handlers
 
 static BRCryptoWalletSweeperBTC
 cryptoWalletSweeperCoerce (BRCryptoWalletSweeper sweeper) {
     assert (CRYPTO_NETWORK_TYPE_BTC == sweeper->type ||
             CRYPTO_NETWORK_TYPE_BCH == sweeper->type);
     return (BRCryptoWalletSweeperBTC) sweeper;
+}
+
+private_extern BRCryptoAddress
+cryptoWalletSweeperGetAddressBTC (BRCryptoWalletSweeper sweeperBase) {
+    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    return cryptoAddressCreateFromStringAsBTC (sweeper->addrParams, sweeper->sourceAddress);
+    //return BRWalletSweeperGetLegacyAddress (sweeper);
+}
+
+private_extern BRCryptoAmount
+cryptoWalletSweeperGetBalanceBTC (BRCryptoWalletSweeper sweeperBase) {
+    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    UInt256 value = uint256Create (BRWalletSweeperGetBalance (sweeper));
+    return cryptoAmountCreateInternal(sweeperBase->unit, CRYPTO_FALSE, value, 0);
 }
 
 private_extern BRCryptoWalletSweeperStatus
@@ -44,14 +69,13 @@ cryptoWalletSweeperAddTransactionFromBundleBTC (BRCryptoWalletSweeper sweeperBas
     return status;
 }
 
-void
+private_extern void
 cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
                                                       BRCryptoWallet walletBase,
                                                       BRCryptoCookie cookie,
                                                       BRCryptoWalletSweeper sweeperBase,
                                                       BRCryptoNetworkFee networkFee) {
-    BRCryptoWalletBTC wallet = (BRCryptoWalletBTC) walletBase;
-    BRWallet *wid = wallet->wid;
+    BRWallet *wid = cryptoWalletAsBTC (walletBase);
     
     BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
     
@@ -72,6 +96,84 @@ cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
                                 { .feeEstimated = { cookie, feePerKb, sizeInByte }}
                          });
 #endif
+}
+
+static BRTransaction *
+cryptoWalletSweeperTransactionForSweepAsBTC (BRCryptoWalletManager manager,
+                                             BRWallet *wallet,
+                                             BRCryptoWalletSweeperBTC sweeper,
+                                             uint64_t feePerKb) {
+    assert (wallet == cryptoWalletAsBTC (manager->wallet));
+
+    pthread_mutex_lock (&manager->lock);
+
+    // TODO(fix): We should move this, along with BRWalletManagerCreateTransaction, to
+    //            a model where they return a status code. We are currently providing no
+    //            context to the caller.
+    BRTransaction *transaction = NULL;
+    BRWalletSweeperCreateTransaction (sweeper, wallet, feePerKb, &transaction);
+#ifdef REFACTOR //TODO:SWEEP
+    BRTransactionWithState txnWithState = (NULL != transaction) ? BRWalletManagerAddTransaction (manager, transaction, NULL) : NULL;
+
+    BRTransaction *ownedTransaction = NULL;
+    if (NULL != txnWithState) {
+        BRTransactionWithStateSetResolved (txnWithState);  // Always resolved if created
+        ownedTransaction = BRTransactionWithStateGetOwned (txnWithState);
+    }
+    pthread_mutex_unlock (&manager->lock);
+
+    if (NULL != ownedTransaction)
+        bwmSignalTransactionEvent(manager,
+                                  wallet,
+                                  ownedTransaction,
+                                  (BRTransactionEvent) {
+                                      BITCOIN_TRANSACTION_CREATED
+                                  });
+#endif
+    return transaction;
+}
+
+private_extern BRCryptoTransfer
+cryptoWalletSweeperCreateTransferForWalletSweepBTC (BRCryptoWalletManager cwm,
+                                                    BRCryptoWallet walletBase,
+                                                    BRCryptoWalletSweeper sweeperBase,
+                                                    BRCryptoFeeBasis estimatedFeeBasis) {
+    BRCryptoUnit unit       = cryptoWalletGetUnit (walletBase);
+    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(walletBase);
+    
+    BRCryptoWalletBTC wallet = (BRCryptoWalletBTC) walletBase;
+    BRWallet *wid = wallet->wid;
+    
+    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    
+    BRTransaction *tid = cryptoWalletSweeperTransactionForSweepAsBTC (cwm,
+                                                                      wid,
+                                                                      sweeper,
+                                                                      cryptoFeeBasisAsBTC(estimatedFeeBasis));
+    if (NULL == tid) {
+        return NULL;
+    } else {
+        return cryptoTransferCreateAsBTC (unit,
+                                          unitForFee,
+                                          wid,
+                                          tid,
+                                          cwm->type);
+    }
+}
+
+private_extern BRCryptoWalletSweeperStatus
+cryptoWalletSweeperValidateBTC (BRCryptoWalletSweeper sweeperBase) {
+    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    
+    if (0 == array_count (sweeper->txns)) {
+        return CRYPTO_WALLET_SWEEPER_NO_TRANSFERS_FOUND;
+    }
+
+    if (0 == BRWalletSweeperGetBalance (sweeper)) {
+        return CRYPTO_WALLET_SWEEPER_INSUFFICIENT_FUNDS;
+    }
+
+    return CRYPTO_WALLET_SWEEPER_SUCCESS;
 }
 
 private_extern void
@@ -294,28 +396,7 @@ BRWalletSweeperEstimateFee (BRCryptoWalletSweeperBTC sweeper,
     return BRWalletSweeperBuildTransaction (sweeper, wallet, feePerKb, NULL, feeEstimate, NULL);
 }
 
-extern BRCryptoWalletSweeperStatus
-BRWalletSweeperHandleTransaction (BRCryptoWalletSweeperBTC sweeper,
-                                  OwnershipKept uint8_t *transaction,
-                                  size_t transactionLen) {
-    BRCryptoWalletSweeperStatus status = CRYPTO_WALLET_SWEEPER_SUCCESS;
-
-    BRTransaction * txn = BRTransactionParse (transaction, transactionLen);
-    if (NULL != txn) {
-        array_add (sweeper->txns, txn);
-    } else {
-        status = CRYPTO_WALLET_SWEEPER_INVALID_TRANSACTION;
-    }
-
-    return status;
-}
-
-extern char *
-BRWalletSweeperGetLegacyAddress (BRCryptoWalletSweeperBTC sweeper) {
-    return strdup (sweeper->sourceAddress);
-}
-
-extern uint64_t
+static uint64_t
 BRWalletSweeperGetBalance (BRCryptoWalletSweeperBTC sweeper) {
     uint64_t balance = 0;
 
@@ -328,7 +409,7 @@ BRWalletSweeperGetBalance (BRCryptoWalletSweeperBTC sweeper) {
     return balance;
 }
 
-extern BRCryptoWalletSweeperStatus
+static BRCryptoWalletSweeperStatus
 BRWalletSweeperValidate (BRCryptoWalletSweeperBTC sweeper) {
     if (0 == array_count (sweeper->txns)) {
         return CRYPTO_WALLET_SWEEPER_NO_TRANSFERS_FOUND;
@@ -347,6 +428,20 @@ BRWalletSweeperValidate (BRCryptoWalletSweeperBTC sweeper) {
 
 BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBTC = {
     cryptoWalletSweeperReleaseBTC,
+    cryptoWalletSweeperGetAddressBTC,
+    cryptoWalletSweeperGetBalanceBTC,
     cryptoWalletSweeperAddTransactionFromBundleBTC,
-    cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC
+    cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC,
+    cryptoWalletSweeperCreateTransferForWalletSweepBTC,
+    cryptoWalletSweeperValidateBTC
+};
+
+BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBCH = {
+    cryptoWalletSweeperReleaseBTC,
+    cryptoWalletSweeperGetAddressBTC,
+    cryptoWalletSweeperGetBalanceBTC,
+    cryptoWalletSweeperAddTransactionFromBundleBTC,
+    cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC,
+    cryptoWalletSweeperCreateTransferForWalletSweepBTC,
+    cryptoWalletSweeperValidateBTC
 };

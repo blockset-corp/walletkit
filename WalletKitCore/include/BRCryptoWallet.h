@@ -23,10 +23,6 @@
 extern "C" {
 #endif
 
-    /// MARK: Forward Declarations
-
-    typedef struct BRCryptoWalletSweeperRecord *BRCryptoWalletSweeper;
-
     /// MARK: Wallet Event
 
     typedef enum {
@@ -218,11 +214,6 @@ extern "C" {
                                 BRCryptoFeeBasis estimatedFeeBasis,
                                 size_t attributesCount,
                                 OwnershipKept BRCryptoTransferAttribute *attributes);
-
-    extern BRCryptoTransfer
-    cryptoWalletCreateTransferForWalletSweep (BRCryptoWallet  wallet,
-                                              BRCryptoWalletSweeper sweeper,
-                                              BRCryptoFeeBasis estimatedFeeBasis);
 
     extern BRCryptoTransfer
     cryptoWalletCreateTransferForPaymentProtocolRequest (BRCryptoWallet wallet,

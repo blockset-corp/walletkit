@@ -424,45 +424,6 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
 }
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferForWalletSweep (BRCryptoWallet  wallet,
-                                          BRCryptoWalletSweeper sweeper,
-                                          BRCryptoFeeBasis estimatedFeeBasis) {
-    
-    BRCryptoTransfer transfer = NULL;
-
-    BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
-    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(wallet);
-
-#ifdef REFACTOR//TODO:SWEEP
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            BRWalletManager bwm = wallet->u.btc.bwm;
-            BRWallet *wid = wallet->u.btc.wid;
-
-            BRTransaction *tid = BRWalletManagerCreateTransactionForSweep (bwm,
-                                                                           wid,
-                                                                           cryptoWalletSweeperAsBTC(sweeper),
-                                                                           cryptoFeeBasisAsBTC(estimatedFeeBasis));
-            transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit,
-                                                                       unitForFee,
-                                                                       wid,
-                                                                       tid,
-                                                                       AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
-#endif
-
-    cryptoUnitGive (unitForFee);
-    cryptoUnitGive (unit);
-
-    return transfer;
-}
-
-extern BRCryptoTransfer
 cryptoWalletCreateTransferForPaymentProtocolRequest (BRCryptoWallet wallet,
                                                      BRCryptoPaymentProtocolRequest request,
                                                      BRCryptoFeeBasis estimatedFeeBasis) {

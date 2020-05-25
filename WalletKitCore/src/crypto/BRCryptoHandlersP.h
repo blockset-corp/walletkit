@@ -31,8 +31,8 @@ typedef struct {
     const BRCryptoAddressHandlers  *address;
     const BRCryptoTransferHandlers *transfer;
     const BRCryptoWalletHandlers   *wallet;
-    const BRCryptoWalletManagerHandlers *manager;
     const BRCryptoWalletSweeperHandlers *sweeper;
+    const BRCryptoWalletManagerHandlers *manager;
 } BRCryptoHandlers;
 
 extern const BRCryptoHandlers *

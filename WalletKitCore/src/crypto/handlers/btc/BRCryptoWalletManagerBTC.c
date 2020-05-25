@@ -306,32 +306,6 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
     return;
 }
 
-//TODO:SWEEP add cryptoWalletManagerEstimateFeeBasisForWalletSweepBTC (OR implement as generic?)
-#ifdef REFACTOR
-extern void
-cryptoWalletManagerEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
-                                                      BRCryptoWallet wallet,
-                                                      BRCookie cookie,
-                                                      BRWalletSweeper sweeper,
-                                                      uint64_t feePerKb) {
-    BRWallet *btcWallet = cryptoWalletAsBTC(wallet);
-
-    // TODO(fix): We should move this, along with BRWalletManagerEstimateFeeForTransfer, to
-    //            a model where they return a status code. We are currently providing no
-    //            context to the caller.
-    uint64_t fee = 0;
-    BRWalletSweeperEstimateFee (sweeper, wallet, feePerKb, &fee);
-    uint32_t sizeInByte = (uint32_t) ((1000 * fee)/ feePerKb);
-
-    bwmSignalWalletEvent(manager,
-                         wallet,
-                         (BRWalletEvent) {
-                             BITCOIN_WALLET_FEE_ESTIMATED,
-                                { .feeEstimated = { cookie, feePerKb, sizeInByte }}
-                         });
-}
-#endif
-
 static void
 cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManager manager,
                                                              OwnershipKept BRCryptoClientTransactionBundle bundle) {
