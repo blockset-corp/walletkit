@@ -242,6 +242,11 @@ extern BRRippleSequence rippleAccountGetSequence (BRRippleAccount account)
 extern void rippleAccountSetBlockNumberAtCreation (BRRippleAccount account, uint64_t blockHeight)
 {
     assert(account);
+    if (blockHeight == UINT64_MAX) {
+        // Probably doesn't make much difference but UINT64_MAX probably means
+        // we don't have any transfers.
+        blockHeight = 0;
+    }
     // Block heights from Blockset are unsigned 64-bits, but the Ripple block (ledger index) is
     // only an unsigned 32-bit value
     account->blockNumberAtCreation = (uint32_t)blockHeight;
