@@ -33,23 +33,26 @@ cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
                                                       CRYPTO_FALSE,
                                                       hederaTransactionGetAmount (hbarTransaction));
     
+    BRCryptoAmount feeAmount = cryptoAmountCreateAsHBAR (unitForFee,
+                                                         CRYPTO_FALSE,
+                                                         hederaTransactionGetFee (hbarTransaction));
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    
+    BRCryptoAddress sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));
+    BRCryptoAddress targetAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetTarget (hbarTransaction));
+    
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
                                                                 CRYPTO_NETWORK_TYPE_HBAR,
                                                                 unit,
                                                                 unitForFee,
+                                                                feeBasisEstimated,
                                                                 amount,
-                                                                direction);
+                                                                direction,
+                                                                sourceAddress,
+                                                                targetAddress);
     BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
     
     transfer->hbarTransaction = hbarTransaction;
-    
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsHBAR (transferBase->unitForFee,
-                                                         CRYPTO_FALSE,
-                                                         hederaTransactionGetFee (hbarTransaction));
-    transferBase->feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
-    
-    transferBase->sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));
-    transferBase->targetAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetTarget (hbarTransaction));
     
     return (BRCryptoTransfer) transfer;
 }

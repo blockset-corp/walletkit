@@ -101,8 +101,11 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
+                            BRCryptoFeeBasis feeBasisEstimated,
                             BRCryptoAmount amount,
-                            BRCryptoTransferDirection direction);
+                            BRCryptoTransferDirection direction,
+                            BRCryptoAddress sourceAddress,
+                            BRCryptoAddress targetAddress);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
