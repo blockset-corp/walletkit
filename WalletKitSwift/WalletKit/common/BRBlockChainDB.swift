@@ -1056,9 +1056,17 @@ public class BlockChainDB {
                      path: "/transactions",
                      query: zip(["estimate_fee"], ["true"]),
                      data: json,
-                     httpMethod: "POST",
-                     // deserializer: { (_) in Result.success(()) },
-                     completion: completion)
+                     httpMethod: "POST") {
+                        self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                            (more: URL?, res: Result<[JSON], QueryError>) in
+                            precondition (nil == more)
+                            completion (res.flatMap {
+                                BlockChainDB.getOneExpected (id: "POST /transactions?estimate_fee",
+                                                             data: $0,
+                                                             transform: Model.asTransactionFee)
+                            })
+                        }
+        }
     }
 
     // Blocks
