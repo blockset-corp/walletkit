@@ -80,8 +80,11 @@ cryptoTransferCoerce (BRCryptoTransfer transfer);
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoFeeBasis feeBasisEstimated,
                            BRCryptoAmount amount,
                            BRCryptoTransferDirection direction,
+                           BRCryptoAddress sourceAddress,
+                           BRCryptoAddress targetAddress,
                            BREthereumAccount account,
                            BREthereumTransferBasisType type,
                            OwnershipGiven BREthereumTransaction originatingTransaction);

@@ -173,10 +173,14 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                            ? CRYPTO_TRANSFER_RECOVERED
                                            : CRYPTO_TRANSFER_SENT);
 
+    BRCryptoAddress  source   = cryptoAddressCreateAsETH  (ethSourceAddress);
     BRCryptoTransfer transfer = cryptoTransferCreateAsETH (unit,
                                                            unitForFee,
+                                                           estimatedFeeBasis,
                                                            amount,
                                                            direction,
+                                                           source,
+                                                           target,
                                                            wallet->ethAccount,
                                                            type,
                                                            ethTransaction);
@@ -188,7 +192,9 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
         cryptoTransferSetAttributes (transfer, transferAttributes);
         array_free (transferAttributes);
     }
-    
+
+    cryptoAddressGive(source);
+
     return transfer;
 }
 
