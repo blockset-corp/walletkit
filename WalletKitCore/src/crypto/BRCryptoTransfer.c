@@ -78,13 +78,13 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->state = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
-    transfer->feeBasisEstimated = feeBasisEstimated;
+    transfer->feeBasisEstimated = cryptoFeeBasisTake (feeBasisEstimated);
     
     transfer->amount = cryptoAmountTake (amount);
     transfer->direction = direction;
     
-    transfer->sourceAddress = sourceAddress;
-    transfer->targetAddress = targetAddress;
+    transfer->sourceAddress = cryptoAddressTake (sourceAddress);
+    transfer->targetAddress = cryptoAddressTake (targetAddress);
 
     array_new (transfer->attributes, 1);
 

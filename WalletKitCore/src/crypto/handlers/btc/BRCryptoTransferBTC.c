@@ -131,7 +131,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                                                                 direction,
                                                                 sourceAddress,
                                                                 targetAddress);
-    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
+    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC (transferBase);
 
     transfer->tid  = tid;
     transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
@@ -141,6 +141,10 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
     transfer->fee  = fee;
     transfer->recv = send;
     transfer->send = recv;
+    
+    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAddressGive (sourceAddress);
+    cryptoAddressGive (targetAddress);
 
     return (BRCryptoTransfer) transfer;
 }
