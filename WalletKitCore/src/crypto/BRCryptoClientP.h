@@ -46,6 +46,10 @@ struct BRCryptoClientTransferBundleRecord {
     uint64_t blockConfirmations;
     uint64_t blockTransactionIndex;
     char *blockHash;
+
+    size_t attributesCount;
+    char **attributeKeys;
+    char **attributeVals;
 };
 
 // MARK: - Client Callback

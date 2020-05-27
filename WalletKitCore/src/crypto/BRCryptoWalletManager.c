@@ -435,24 +435,24 @@ cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
     switch (error.type) {
         case FILE_SERVICE_IMPL:
             // This actually a FATAL - an unresolvable coding error.
-            _peer_log ("BWM: FileService Error: IMPL: %s", error.u.impl.reason);
+            _peer_log ("CRY: FileService Error: IMPL: %s\n", error.u.impl.reason);
             break;
         case FILE_SERVICE_UNIX:
-            _peer_log ("BWM: FileService Error: UNIX: %s", strerror(error.u.unx.error));
+            _peer_log ("CRY: FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
             break;
         case FILE_SERVICE_ENTITY:
             // This is likely a coding error too.
-            _peer_log ("BWM: FileService Error: ENTITY (%s): %s",
+            _peer_log ("CRY: FileService Error: ENTITY (%s): %s\n",
                      error.u.entity.type,
                      error.u.entity.reason);
             break;
         case FILE_SERVICE_SDB:
-            _peer_log ("BWM: FileService Error: SDB: (%d): %s",
+            _peer_log ("CRY: FileService Error: SDB: (%d): %s\n",
                        error.u.sdb.code,
                        error.u.sdb.reason);
             break;
     }
-    _peer_log ("BWM: FileService Error: FORCED SYNC%s", "");
+    _peer_log ("CRY: FileService Error: FORCED SYNC%s\n", "");
 
     // BRWalletManager bwm = (BRWalletManager) context;
     // TODO(fix): What do we actually want to happen here?
@@ -1133,7 +1133,6 @@ cryptoWalletManagerEstimateLimit (BRCryptoWalletManager manager,
                                                              needEstimate,
                                                              isZeroIfInsuffientFunds,
                                                              unit);
-
 
     cryptoUnitGive (unit);
     return limit;

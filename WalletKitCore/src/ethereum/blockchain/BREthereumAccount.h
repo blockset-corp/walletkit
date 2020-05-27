@@ -13,7 +13,7 @@
 
 #include "support/BRInt.h"
 #include "support/BRKey.h"
-#include "BREthereumBase.h"
+#include "ethereum/base/BREthereumBase.h"
 
 #ifdef __cplusplus
 extern "C" {

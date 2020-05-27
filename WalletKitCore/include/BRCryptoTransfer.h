@@ -15,6 +15,7 @@
 #include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoFeeBasis.h"
+#include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -300,10 +301,12 @@ extern "C" {
 
     extern uint8_t *
     cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                          BRCryptoNetwork  network,
                                           size_t *serializationCount);
 
     extern uint8_t *
     cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
+                                             BRCryptoNetwork  network,
                                              size_t *serializationCount);
 
     extern BRCryptoBoolean

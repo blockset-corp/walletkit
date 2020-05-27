@@ -238,7 +238,6 @@ cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
 private_extern BRCryptoHash
 cryptoHashCreateAsBTC (UInt256 btc);
 
-
 #ifdef __cplusplus
 }
 #endif

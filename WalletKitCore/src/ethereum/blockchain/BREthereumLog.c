@@ -237,6 +237,13 @@ logExtractIdentifier (BREthereumLog log,
     return ETHEREUM_BOOLEAN_TRUE;
 }
 
+extern BREthereumHash
+logGetIdentifier (BREthereumLog log) {
+    return (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex
+            ? EMPTY_HASH_INIT
+            : log->identifier.transactionHash);
+}
+
 static inline int
 logHasStatus (BREthereumLog log,
               BREthereumTransactionStatusType type) {

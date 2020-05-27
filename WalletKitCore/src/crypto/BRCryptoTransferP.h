@@ -15,6 +15,7 @@
 #include "support/BRArray.h"
 
 #include "BRCryptoTransfer.h"
+#include "BRCryptoNetwork.h"
 #include "BRCryptoBaseP.h"
 
 
@@ -47,6 +48,7 @@ typedef BRCryptoHash
 
 typedef uint8_t *
 (*BRCryptoTransferSerializeForSubmission) (BRCryptoTransfer transfer,
+                                           BRCryptoNetwork  network,
                                            size_t *serializationCount);
 
 typedef int

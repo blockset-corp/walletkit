@@ -1375,7 +1375,7 @@ extension System {
             addresses[index] = asUTF8String (cAddresses.pointee!)
             cAddresses = cAddresses.advanced(by: 1)
         }
-        return addresses // addresses.map { $0.lowercased() }
+        return addresses.map { $0.lowercased() }
     }
 
     internal static func makeTransactionBundle (_ model: BlockChainDB.Model.Transaction) -> BRCryptoClientTransactionBundle {
@@ -1403,11 +1403,13 @@ extension System {
             .map { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
                 let (transfer, fee) = arg
 
-                var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
+                let metaData = (transaction.metaData ?? [:]).merging (transfer.metaData ?? [:]) { (cur, new) in new }
+
+                var metaKeysPtr = Array(metaData.keys)
                     .map { UnsafePointer<Int8>(strdup($0)) }
                 defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
-                var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
+                var metaValsPtr = Array(metaData.values)
                     .map { UnsafePointer<Int8>(strdup($0)) }
                 defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 

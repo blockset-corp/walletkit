@@ -16,11 +16,21 @@ extern BRCryptoTransferHandlers cryptoTransferHandlersBTC;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
 
+// MARK: - BCH Handlers
+
 extern BRCryptoAddressHandlers cryptoAddressHandlersBCH;
 extern BRCryptoNetworkHandlers cryptoNetworkHandlersBCH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBCH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBCH;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH;
+
+// MARK: - ETH Handlers
+
+extern BRCryptoAddressHandlers cryptoAddressHandlersETH;
+extern BRCryptoNetworkHandlers cryptoNetworkHandlersETH;
+extern BRCryptoTransferHandlers cryptoTransferHandlersETH;
+extern BRCryptoWalletHandlers cryptoWalletHandlersETH;
+extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH;
 
 // MARK: - XRP Handlers
 
