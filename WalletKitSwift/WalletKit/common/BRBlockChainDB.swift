@@ -854,6 +854,10 @@ public class BlockChainDB {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[Model.Transfer], QueryError>) -> Void) {
+        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
+            ? addresses.map { $0.lowercased() }
+            : addresses)
+
         self.queue.async {
             var error: QueryError? = nil
             var results = [Model.Transfer]()
@@ -931,6 +935,11 @@ public class BlockChainDB {
                                  includeProof: Bool = false,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
+        // Ethereum addresses must be lowercased as the query is case-sensitive.
+        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
+            ? addresses.map { $0.lowercased() }
+            : addresses)
+
         // This query could overrun the endpoint's page size (typically 5,000).  If so, we'll need
         // to repeat the request for the next batch.
         self.queue.async {
