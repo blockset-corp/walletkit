@@ -47,6 +47,10 @@ cryptoTransferCreateAsXRP (BRCryptoUnit unit,
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
     
     transfer->xrpTransfer = xrpTransfer;
+    
+    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAddressGive (sourceAddress);
+    cryptoAddressGive (targetAddress);
 
     return (BRCryptoTransfer) transfer;
 }

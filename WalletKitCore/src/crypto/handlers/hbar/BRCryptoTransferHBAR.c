@@ -54,6 +54,10 @@ cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
     
     transfer->hbarTransaction = hbarTransaction;
     
+    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAddressGive (sourceAddress);
+    cryptoAddressGive (targetAddress);
+    
     return (BRCryptoTransfer) transfer;
 }
 
