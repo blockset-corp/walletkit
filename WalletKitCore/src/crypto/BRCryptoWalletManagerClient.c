@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <math.h>  // round()
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "BRCryptoBase.h"
 #include "BRCryptoStatusP.h"
@@ -1240,6 +1241,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
 
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
+
                 cryptoUnitGive (unitForFee);
                 cryptoUnitGive (unit);
             }
@@ -1364,6 +1373,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
+
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
 
                 // State changed
                 BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
@@ -1490,6 +1507,15 @@ cwmSubmitTransactionAsETH (BREthereumClientContext context,
     cryptoWalletManagerGive (cwm);
 }
 
+static char *
+strcase (const char *s, bool upper) {
+    if (NULL == s) return NULL;
+    char *result = malloc (1 + strlen (s)), *r = result;
+    while (*s) *r++ = (upper ? toupper (*s++) : tolower (*s++));
+    *r = '\0';
+    return result;
+}
+
 static void
 cwmGetTransactionsAsETH (BREthereumClientContext context,
                          BREthereumEWM ewm,
@@ -1505,13 +1531,30 @@ cwmGetTransactionsAsETH (BREthereumClientContext context,
     callbackState->type = CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS;
     callbackState->rid = rid;
 
+    // ETH addresses are formally case-insensitive.  Other blockchains, such at BTC, are formally
+    // case-sensitive.  Therefore the defined `funcGetTransfers` interface cannot force a specific
+    // case for all blockchains.  Rather, `funcGetTransfers` is required to accept addresses in
+    // the blockchain's canonical format(s).
+    //
+    // In this ETH context, the address can by any case (a 'Hex' String [0-9a-fA-f]).  However,
+    // we'll force the addresses to be lowercase, in light of: a) ETH check-summed addresses being
+    // an Ethereum after-throught and b) our current implementation of `funcGetTransfers` IS case
+    // sensitive.
+    //
+    // All the same applies to `funcGetTranactions.  That function is not used for ETH.
+#define NUMBER_OF_ADDRESSES         (1)
+    char *addresses[NUMBER_OF_ADDRESSES];
+    addresses[0] = strcase (address, false);
+
     cwm->client.funcGetTransfers (cwm->client.context,
                                   cryptoWalletManagerTake (cwm),
                                   callbackState,
-                                  &address, 1,
+                                  (const char **) addresses, NUMBER_OF_ADDRESSES,
                                   "__native__",
                                   begBlockNumber, endBlockNumber);
 
+    free (addresses[0]);
+#undef NUMBER_OF_ADDRESSES
     cryptoWalletManagerGive (cwm);
 }
 
@@ -2061,15 +2104,13 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
     BRCryptoNetwork network = cryptoWalletManagerGetNetwork (cwm);
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, currency);
 
-    // Find the corresponding wallet.
-    BRCryptoWallet wallet = (NULL == walletCurrency
-                             ? NULL
-                             : cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency));
-
-    // If we have a wallet, then proceed
-    if (NULL != wallet) {
+    // If we have a walletCurrency, then proceed
+    if (NULL != walletCurrency) {
         switch (callbackState->type) {
             case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+                BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency);
+                assert (NULL != wallet);
+
                 // Create a 'GEN' transfer
                 BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
                 BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
@@ -2117,16 +2158,19 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 //
                 // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
                 cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
+
+                cryptoWalletGive (wallet);
                 break;
             }
 
             case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+                // We won't necessarily have a wallet here; specifically ewmAnnounceLog might
+                // create one... which will eventually flow to BRCryptoWallet creation.
                 bool error = false;
 
                 UInt256 value = cwmParseUInt256 (amount, &error);
 
                 const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
-                char *data     = "";
                 uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
                 uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
                 UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
@@ -2150,7 +2194,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                     contract,
                                     topicsCount,
                                     (const char **) &topics[0],
-                                    data,
+                                    amount,
                                     gasPrice,
                                     gasUsed,
                                     logIndex,
@@ -2171,7 +2215,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                             value,
                                             gasLimit,
                                             gasPrice,
-                                            data,
+                                            "",
                                             nonce,
                                             gasUsed,
                                             blockNumber,
@@ -2188,7 +2232,6 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
         }
     }
     
-    if (NULL != wallet) cryptoWalletGive (wallet);
     if (NULL != walletCurrency) cryptoCurrencyGive (walletCurrency);
 
     cryptoNetworkGive (network);

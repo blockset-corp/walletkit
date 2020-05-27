@@ -1672,7 +1672,7 @@ final class System implements com.breadwallet.crypto.System {
                                                     return;
                                                 }
 
-                                                UnsignedLong blockHeight = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+                                                UnsignedLong blockHeight = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                 UnsignedLong timestamp =
                                                         transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
 
@@ -1750,7 +1750,7 @@ final class System implements com.breadwallet.crypto.System {
                                             List<ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String>> merged;
 
                                             for (Transaction transaction : transactions) {
-                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                 UnsignedLong blockTimestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
                                                 UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
                                                 UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
@@ -1761,6 +1761,11 @@ final class System implements com.breadwallet.crypto.System {
                                                 merged = System.mergeTransfers(transaction, addresses);
                                                 for (ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String> o : merged) {
                                                     Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback  announcing " + o.o1.getId());
+
+                                                    // Merge Transfer 'meta' into Transaction' meta; duplicates from Transfer
+                                                    Map<String,String> meta = new HashMap<>(transaction.getMeta());
+                                                    meta.putAll(o.o1.getMeta());
+
                                                     walletManager.getCoreBRCryptoWalletManager().announceGetTransfersItem(callbackState, status,
                                                             transaction.getHash(),
                                                             o.o1.getId(),
@@ -1774,7 +1779,7 @@ final class System implements com.breadwallet.crypto.System {
                                                             blockConfirmations,
                                                             blockTransactionIndex,
                                                             blockHash,
-                                                            o.o1.getMeta());
+                                                            meta);
                                                 }
                                             }
 

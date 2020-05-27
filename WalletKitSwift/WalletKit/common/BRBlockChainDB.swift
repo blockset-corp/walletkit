@@ -397,7 +397,8 @@ public class BlockChainDB {
             index: UInt64,
             transactionId: String?,
             blockchainId: String,
-            metaData: Dictionary<String,String>?)
+            metaData: Dictionary<String,String>?
+        )
 
         static internal func asTransfer (json: JSON) -> Model.Transfer? {
             guard let id   = json.asString (name: "transfer_id"),
@@ -439,7 +440,8 @@ public class BlockChainDB {
             raw: Data?,
             fee: Amount,
             transfers: [Transfer],
-            acknowledgements: UInt64
+            acknowledgements: UInt64,
+            metaData: Dictionary<String,String>?
         )
 
         static internal func asTransactionValidateStatus (_ status: String) -> Bool {
@@ -479,6 +481,7 @@ public class BlockChainDB {
             let index         = json.asUInt64 (name: "index")
             let confirmations = json.asUInt64 (name: "confirmations")
             let timestamp     = json.asDate   (name: "timestamp")
+            let meta          = json.asDict(name: "meta")?.mapValues { return $0 as! String }
 
             let raw = json.asData (name: "raw")
 
@@ -499,7 +502,8 @@ public class BlockChainDB {
                      raw: raw,
                      fee: fee,
                      transfers: transfers,
-                     acknowledgements: acks)
+                     acknowledgements: acks,
+                     metaData: meta)
         }
 
         /// Transaction Fee
@@ -1062,9 +1066,17 @@ public class BlockChainDB {
                      path: "/transactions",
                      query: zip(["estimate_fee"], ["true"]),
                      data: json,
-                     httpMethod: "POST",
-                     // deserializer: { (_) in Result.success(()) },
-                     completion: completion)
+                     httpMethod: "POST") {
+                        self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                            (more: URL?, res: Result<[JSON], QueryError>) in
+                            precondition (nil == more)
+                            completion (res.flatMap {
+                                BlockChainDB.getOneExpected (id: "POST /transactions?estimate_fee",
+                                                             data: $0,
+                                                             transform: Model.asTransactionFee)
+                            })
+                        }
+        }
     }
 
     // Blocks

@@ -1375,7 +1375,7 @@ extension System {
             addresses[index] = asUTF8String (cAddresses.pointee!)
             cAddresses = cAddresses.advanced(by: 1)
         }
-        return addresses.map { $0.lowercased() }
+        return addresses
     }
 
     internal var cryptoClient: BRCryptoClient {
@@ -1417,7 +1417,7 @@ extension System {
                                                     success: {
                                                         $0.forEach { (model: BlockChainDB.Model.Transaction) in
                                                             let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let height    = model.blockHeight ?? 0
+                                                            let height    = model.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                             let status    = System.getTransferStatus (model.status)
 
                                                             if var data = model.raw {
@@ -1456,7 +1456,7 @@ extension System {
                                                     success: {
                                                         $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
                                                             let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                            let blockHeight    = transaction.blockHeight ?? 0
+                                                            let blockHeight    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                             let blockConfirmations = transaction.confirmations ?? 0
                                                             let blockTransactionIndex = transaction.index ?? 0
                                                             let blockHash             = transaction.blockHash
@@ -1467,11 +1467,13 @@ extension System {
                                                                 .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
                                                                     let (transfer, fee) = arg
 
-                                                                    var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
+                                                                    let metaData = (transaction.metaData ?? [:]).merging (transfer.metaData ?? [:]) { (cur, new) in new }
+
+                                                                    var metaKeysPtr = Array(metaData.keys)
                                                                         .map { UnsafePointer<Int8>(strdup($0)) }
                                                                     defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
-                                                                    var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
+                                                                    var metaValsPtr = Array(metaData.values)
                                                                         .map { UnsafePointer<Int8>(strdup($0)) }
                                                                     defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 

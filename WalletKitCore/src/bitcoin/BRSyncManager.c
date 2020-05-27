@@ -22,6 +22,8 @@
 #include "BRSyncManager.h"
 #include "BRPeerManager.h"
 
+#include "BRCryptoBase.h"
+
 /// MARK: - Common Decls & Defs
 
 #if !defined (MAX)
@@ -1189,6 +1191,11 @@ BRClientSyncManagerAnnounceGetTransactionsItem (BRClientSyncManager manager,
     uint8_t needRegistration = !error && NULL != transaction && BRTransactionIsSigned (transaction);
     uint8_t needFree = 1;
 
+    // Convert from `uint64_t` to `uint32_t` with a bit of care regarding BLOCK_HEIGHT_UNBOUND
+    // and TX_UNCONFIRMED - they are directly coercible but be explicit about it.
+    uint32_t btcBlockHeight = (BLOCK_HEIGHT_UNBOUND == blockHeight ? TX_UNCONFIRMED : (uint32_t) blockHeight);
+    uint32_t btcTimestamp   = (uint32_t) timestamp;
+
     if (needRegistration) {
         if (0 == pthread_mutex_lock (&manager->lock)) {
             // confirm completion is for in-progress sync
@@ -1227,7 +1234,7 @@ BRClientSyncManagerAnnounceGetTransactionsItem (BRClientSyncManager manager,
             // 'balanceUpdated' and 'txUpdated'.
             //
             // If no longer 'included' this might cause dependent transactions to go to 'invalid'.
-            BRWalletUpdateTransactions (manager->wallet, &transaction->txHash, 1, (uint32_t) blockHeight, (uint32_t) timestamp);
+            BRWalletUpdateTransactions (manager->wallet, &transaction->txHash, 1, btcBlockHeight, btcTimestamp);
         }
     }
 

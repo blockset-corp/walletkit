@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -42,7 +43,8 @@ public class Transaction {
                                      @JsonProperty("acknowledgements") @Nullable UnsignedLong acknowledgements,
                                      @JsonProperty("confirmations") @Nullable UnsignedLong confirmations,
                                      @JsonProperty("raw") @Nullable String raw,
-                                     @JsonProperty("proof") @Nullable String proof) {
+                                     @JsonProperty("proof") @Nullable String proof,
+                                     @JsonProperty("meta") Map<String, String> meta) {
         return new Transaction(
                 checkNotNull(transactionId),
                 checkNotNull(identifier),
@@ -60,7 +62,8 @@ public class Transaction {
                 acknowledgements,
                 confirmations,
                 raw,
-                proof
+                proof,
+                meta
         );
     }
 
@@ -83,6 +86,7 @@ public class Transaction {
     private final @Nullable UnsignedLong confirmations;
     private final @Nullable String raw;
     private final @Nullable String proof;
+    private final Map<String, String> meta;
 
     private Transaction(String transactionId,
                         String identifier,
@@ -100,7 +104,8 @@ public class Transaction {
                         @Nullable UnsignedLong acknowledgements,
                         @Nullable UnsignedLong confirmations,
                         @Nullable String raw,
-                        @Nullable String proof) {
+                        @Nullable String proof,
+                        Map<String, String> meta) {
         this.transactionId = transactionId;
         this.identifier = identifier;
         this.hash = hash;
@@ -118,6 +123,7 @@ public class Transaction {
         this.confirmations = confirmations;
         this.raw = raw;
         this.proof = proof;
+        this.meta = meta;
     }
     // getters
 
@@ -204,6 +210,11 @@ public class Transaction {
     @JsonProperty("proof")
     public Optional<String> getProof() {
         return Optional.fromNullable(proof);
+    }
+
+    @JsonProperty("meta")
+    public Map<String, String> getMeta() {
+        return meta;
     }
 
     @JsonProperty("_embedded")
