@@ -240,22 +240,6 @@ cryptoTransferSerializeForSubmissionETH (BRCryptoTransfer transferBase,
     return data.bytes;
 }
 
-
-#if 0
-private_extern BREthereumTransfer
-cryptoTransferAsETH (BRCryptoTransfer transferBase) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
-    return transfer->tid;
-}
-
-private_extern BRCryptoBoolean
-cryptoTransferHasETH (BRCryptoTransfer transferBase,
-                      BREthereumTransfer eth) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
-    return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == transfer->type && eth == transfer->tid);
-}
-#endif
-
 static int
 cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     if (tb1 == tb2) return 1;
