@@ -49,23 +49,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
     
     BRCryptoAmount amount = cryptoTransferAmountFromBTC (direction, unit, send, recv, fee);
     
-    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
-                                                                type,
-                                                                unit,
-                                                                unitForFee,
-                                                                amount,
-                                                                direction);
-    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC(transferBase);
-
-    transfer->tid  = tid;
-    transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
-    transfer->isDeleted  = false;
-    
-    // cache the values that require the wallet
-    transfer->fee  = fee;
-    transfer->recv = send;
-    transfer->send = recv;
-
+    BRCryptoAddress sourceAddress = NULL;
     {
         size_t     inputsCount = tid->inCount;
         BRTxInput *inputs      = tid->inputs;
@@ -84,7 +68,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (inputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->sourceAddress =
+                    sourceAddress =
                     cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
                 }
@@ -92,6 +76,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
         }
     }
 
+    BRCryptoAddress targetAddress = NULL;
     {
         size_t      outputsCount = tid->outCount;
         BRTxOutput *outputs      = tid->outputs;
@@ -113,7 +98,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
                 if (outputsContain == BRWalletContainsAddress(wid, address)) {
-                    transferBase->targetAddress =
+                    targetAddress =
                     cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
                 }
@@ -134,8 +119,32 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
         // round to nearest satoshi per kb
         feePerKB = (uint32_t) (((1000 * fee) + (sizeInByte/2)) / sizeInByte);
     }
+    
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsBTC (unitForFee, feePerKB, sizeInByte);
+    
+    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
+                                                                type,
+                                                                unit,
+                                                                unitForFee,
+                                                                feeBasisEstimated,
+                                                                amount,
+                                                                direction,
+                                                                sourceAddress,
+                                                                targetAddress);
+    BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC (transferBase);
 
-    transferBase->feeBasisEstimated = cryptoFeeBasisCreateAsBTC (transferBase->unitForFee, feePerKB, sizeInByte);
+    transfer->tid  = tid;
+    transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
+    transfer->isDeleted  = false;
+    
+    // cache the values that require the wallet
+    transfer->fee  = fee;
+    transfer->recv = send;
+    transfer->send = recv;
+    
+    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAddressGive (sourceAddress);
+    cryptoAddressGive (targetAddress);
 
     return (BRCryptoTransfer) transfer;
 }
