@@ -1241,6 +1241,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
 
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
+
                 cryptoUnitGive (unitForFee);
                 cryptoUnitGive (unit);
             }
@@ -1365,6 +1373,14 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
                                                        CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                                                        { .transfer = { cryptoTransferTake (transfer) }}
                                                    });
+
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = cryptoWalletGetBalance (wallet) }
+                });
 
                 // State changed
                 BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
@@ -2088,15 +2104,13 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
     BRCryptoNetwork network = cryptoWalletManagerGetNetwork (cwm);
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, currency);
 
-    // Find the corresponding wallet.
-    BRCryptoWallet wallet = (NULL == walletCurrency
-                             ? NULL
-                             : cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency));
-
-    // If we have a wallet, then proceed
-    if (NULL != wallet) {
+    // If we have a walletCurrency, then proceed
+    if (NULL != walletCurrency) {
         switch (callbackState->type) {
             case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+                BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency);
+                assert (NULL != wallet);
+
                 // Create a 'GEN' transfer
                 BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
                 BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
@@ -2144,16 +2158,19 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                 //
                 // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
                 cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
+
+                cryptoWalletGive (wallet);
                 break;
             }
 
             case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+                // We won't necessarily have a wallet here; specifically ewmAnnounceLog might
+                // create one... which will eventually flow to BRCryptoWallet creation.
                 bool error = false;
 
                 UInt256 value = cwmParseUInt256 (amount, &error);
 
                 const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
-                char *data     = "";
                 uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
                 uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
                 UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
@@ -2177,7 +2194,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                     contract,
                                     topicsCount,
                                     (const char **) &topics[0],
-                                    data,
+                                    amount,
                                     gasPrice,
                                     gasUsed,
                                     logIndex,
@@ -2198,7 +2215,7 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                             value,
                                             gasLimit,
                                             gasPrice,
-                                            data,
+                                            "",
                                             nonce,
                                             gasUsed,
                                             blockNumber,
@@ -2215,7 +2232,6 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
         }
     }
     
-    if (NULL != wallet) cryptoWalletGive (wallet);
     if (NULL != walletCurrency) cryptoCurrencyGive (walletCurrency);
 
     cryptoNetworkGive (network);
