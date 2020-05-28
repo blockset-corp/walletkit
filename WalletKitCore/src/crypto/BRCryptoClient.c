@@ -472,7 +472,7 @@ cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoHash hash,
 static BRCryptoClientCallbackState
 cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
                                                        BRCryptoCookie cookie,
-                                                       BRCryptoNetworkFee networkFee,
+                                                       OwnershipKept BRCryptoNetworkFee networkFee,
                                                        size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
@@ -700,7 +700,9 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer tr
     if (NULL == cwm) return;
 
     size_t   serializationCount;
-    uint8_t *serialization = cryptoTransferSerializeForSubmission (transfer, &serializationCount);
+    uint8_t *serialization = cryptoTransferSerializeForSubmission (transfer,
+                                                                   cwm->network,
+                                                                   &serializationCount);
 
 
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
@@ -736,16 +738,17 @@ cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
 extern void
 cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                     BRCryptoCookie   cookie,
-                                    BRCryptoTransfer transfer,
-                                    BRCryptoNetworkFee networkFee) {
+                                    OwnershipKept BRCryptoTransfer transfer,
+                                    OwnershipKept BRCryptoNetworkFee networkFee) {
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
     if (NULL == cwm) return;
 
     size_t   serializationCount;
-    uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, &serializationCount);
+    uint8_t *serialization = cryptoTransferSerializeForFeeEstimation (transfer, cwm->network, &serializationCount);
 
-    BRCryptoHash hash = cryptoTransferGetHash (transfer);
-    char *hashAsHex = cryptoHashString(hash);
+    // There is no hash... transfer is not guaranteed to be signed; likely unsigned.
+    BRCryptoHash hash      = NULL;
+    const char  *hashAsHex = "";
 
     BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
                                                                                                        cookie,
@@ -758,7 +761,6 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                             serialization,
                                             serializationCount,
                                             hashAsHex);
-
 }
 
 extern void
@@ -769,18 +771,19 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    uint64_t costUnits) {
     assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
 
+    BRCryptoStatus status = (CRYPTO_TRUE == success ? CRYPTO_SUCCESS : CRYPTO_ERROR_FAILED);
+    BRCryptoCookie cookie = callbackState->u.estimateTransactionFee.cookie;
+
     BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
-
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 
-    // Wallet Event Fee Estimated
-//    BRCryptoWalletEvent event = {
-//        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-//        { .feeBasisEstimated = { status, cookie, feeBasis }}
-//    };
+    cryptoWalletManagerGenerateWalletEvent (cwm, cwm->wallet, (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+        { .feeBasisEstimated = { status, cookie, feeBasis }}
+    });
 
     cryptoAmountGive (pricePerCostFactor);
     cryptoFeeBasisGive (feeBasis);
@@ -848,7 +851,7 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     bundle->to       = strdup (to);
     bundle->amount   = strdup (amount);
     bundle->currency = strdup (currency);
-    bundle->fee      = strdup (fee);
+    bundle->fee      = NULL == fee ? NULL : strdup (fee);
 
     bundle->blockTimestamp = blockTimestamp;
     bundle->blockNumber    = blockNumber;
@@ -857,6 +860,17 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     bundle->blockHash = strdup (blockHash);
 
     // attributes
+    bundle->attributesCount = attributesCount;
+    bundle->attributeKeys = bundle->attributeVals = NULL;
+
+    if (bundle->attributesCount > 0) {
+        bundle->attributeKeys = calloc (bundle->attributesCount, sizeof (char*));
+        bundle->attributeVals = calloc (bundle->attributesCount, sizeof (char*));
+        for (size_t index = 0; index < bundle->attributesCount; index++) {
+            bundle->attributeKeys[index] = strdup (attributeKeys[index]);
+            bundle->attributeVals[index] = strdup (attributeVals[index]);
+        }
+    }
 
     return bundle;
 }
@@ -869,10 +883,19 @@ cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
     free (bundle->from);
     free (bundle->to);
     free (bundle->amount);
-    free (bundle->fee);
+    if (NULL != bundle->fee) free (bundle->fee);
 
     free (bundle->blockHash);
 
+    if (bundle->attributesCount > 0) {
+        for (size_t index = 0; index < bundle->attributesCount; index++) {
+            free (bundle->attributeKeys[index]);
+            free (bundle->attributeVals[index]);
+        }
+        free (bundle->attributeKeys);
+        free (bundle->attributeVals);
+    }
+    
     memset (bundle, 0, sizeof (struct BRCryptoClientTransferBundleRecord));
     free (bundle);
 }

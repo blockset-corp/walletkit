@@ -178,7 +178,7 @@ cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
                                        0);
 }
 
-static void
+static BRCryptoFeeBasis
 cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
                                                BRCryptoWallet wallet,
                                                BRCryptoCookie cookie,
@@ -186,7 +186,9 @@ cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
                                                BRCryptoAmount amount,
                                                BRCryptoNetworkFee networkFee) {
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    //TODO:XRP
+    double costFactor = 1.0;  // 'cost factor' is 'transaction'
+
+    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 }
 
 static void

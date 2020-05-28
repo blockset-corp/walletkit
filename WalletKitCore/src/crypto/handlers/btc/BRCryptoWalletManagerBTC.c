@@ -277,7 +277,7 @@ cryptoWalletManagerEstimateLimitBTC (BRCryptoWalletManager cwm,
     return cryptoAmountCreateInteger ((int64_t) amountInSAT, unit);
 }
 
-static void
+static BRCryptoFeeBasis
 cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
                                         BRCryptoWallet wallet,
                                         BRCryptoCookie cookie,
@@ -294,16 +294,7 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
     uint64_t btcFee = (0 == btcAmount ? 0 : BRWalletFeeForTxAmountWithFeePerKb (btcWallet, btcFeePerKB, btcAmount));
     uint32_t btcSizeInBytes = (uint32_t) ((1000 * btcFee) / btcFeePerKB);
 
-    (void) btcSizeInBytes;
-#ifdef REFACTOR
-    bwmSignalWalletEvent(manager,
-                         wallet,
-                         (BRWalletEvent) {
-        BITCOIN_WALLET_FEE_ESTIMATED,
-        { .feeEstimated = { cookie, btcFeePerKB, btcSizeInBytes }}
-    });
-#endif
-    return;
+    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFeePerKB, btcSizeInBytes);
 }
 
 static void

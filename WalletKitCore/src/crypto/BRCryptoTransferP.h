@@ -15,6 +15,7 @@
 #include "support/BRArray.h"
 
 #include "BRCryptoTransfer.h"
+#include "BRCryptoNetwork.h"
 #include "BRCryptoBaseP.h"
 
 
@@ -46,8 +47,10 @@ typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
 typedef uint8_t *
-(*BRCryptoTransferSerializeForSubmission) (BRCryptoTransfer transfer,
-                                           size_t *serializationCount);
+(*BRCryptoTransferSerialize) (BRCryptoTransfer transfer,
+                              BRCryptoNetwork  network,
+                              BRCryptoBoolean  requireSignature,
+                              size_t *serializationCount);
 
 typedef int
 (*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
@@ -56,7 +59,7 @@ typedef int
 typedef struct {
     BRCryptoTransferReleaseHandler release;
     BRCryptoTransferGetHashHandler getHash;
-    BRCryptoTransferSerializeForSubmission serializeForSubmission;
+    BRCryptoTransferSerialize serialize;
     BRCryptoTransferIsEqualHandler isEqual;
 } BRCryptoTransferHandlers;
 
@@ -101,8 +104,11 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
+                            BRCryptoFeeBasis feeBasisEstimated,
                             BRCryptoAmount amount,
-                            BRCryptoTransferDirection direction);
+                            BRCryptoTransferDirection direction,
+                            BRCryptoAddress sourceAddress,
+                            BRCryptoAddress targetAddress);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);

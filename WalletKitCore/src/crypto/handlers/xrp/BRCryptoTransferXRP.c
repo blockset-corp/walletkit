@@ -27,23 +27,30 @@ cryptoTransferCreateAsXRP (BRCryptoUnit unit,
                                                      CRYPTO_FALSE,
                                                      xrpTransfer->amount);
     
+    BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (unitForFee,
+                                                        CRYPTO_FALSE,
+                                                        xrpTransfer->fee);
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    
+    BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
+    BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
+    
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
                                                                 CRYPTO_NETWORK_TYPE_XRP,
                                                                 unit,
                                                                 unitForFee,
+                                                                feeBasisEstimated,
                                                                 amount,
-                                                                direction);
+                                                                direction,
+                                                                sourceAddress,
+                                                                targetAddress);
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
     
     transfer->xrpTransfer = xrpTransfer;
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (transferBase->unitForFee,
-                                                        CRYPTO_FALSE,
-                                                        xrpTransfer->fee);
-    transferBase->feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
-    
-    transferBase->sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
-    transferBase->targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
+    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAddressGive (sourceAddress);
+    cryptoAddressGive (targetAddress);
 
     return (BRCryptoTransfer) transfer;
 }
@@ -54,16 +61,19 @@ cryptoTransferReleaseXRP (BRCryptoTransfer transferBase) {
     rippleTransferFree (transfer->xrpTransfer);
 }
 
-extern BRCryptoHash
+static BRCryptoHash
 cryptoTransferGetHashXRP (BRCryptoTransfer transferBase) {
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
     BRRippleTransactionHash hash = rippleTransferGetTransactionId (transfer->xrpTransfer);
     return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XRP, sizeof (hash.bytes), hash.bytes);
 }
 
-extern uint8_t *
-cryptoTransferSerializeForSubmissionXRP (BRCryptoTransfer transferBase,
-                                         size_t *serializationCount) {
+static uint8_t *
+cryptoTransferSerializeXRP (BRCryptoTransfer transferBase,
+                            BRCryptoNetwork network,
+                            BRCryptoBoolean  requireSignature,
+                            size_t *serializationCount) {
+    assert (CRYPTO_TRUE == requireSignature);
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
 
     uint8_t *serialization = NULL;
@@ -102,6 +112,6 @@ transferGetDirectionFromXRP (BRRippleTransfer transfer,
 BRCryptoTransferHandlers cryptoTransferHandlersXRP = {
     cryptoTransferReleaseXRP,
     cryptoTransferGetHashXRP,
-    cryptoTransferSerializeForSubmissionXRP,
+    cryptoTransferSerializeXRP,
     cryptoTransferIsEqualXRP
 };

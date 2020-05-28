@@ -1,33 +1,39 @@
 
-#include "BRCryptoBTC.h"
+#include "BRCryptoETH.h"
 #include "crypto/BRCryptoHashP.h"
+#include "crypto/BRCryptoAmountP.h"
 
-#ifdef REFACTOR
+#include <math.h>
+
 private_extern BRCryptoFeeBasis
-cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint32_t feePerKB,
-                           uint32_t sizeInByte) {
-    return cryptoFeeBasisCreate (cryptoAmountCreateInteger (feePerKB, unit),
-                                 sizeInByte / 1000.0);
+cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
+                           BREthereumFeeBasis feeBasis) {
+    double costFactor = (double) feeBasis.u.gas.limit.amountOfGas;
+    BRCryptoAmount pricePerCostFactor = cryptoAmountCreate (unit,
+                                                            CRYPTO_FALSE,
+                                                            feeBasis.u.gas.price.etherPerGas.valueInWEI);
+
+    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 }
 
-private_extern uint64_t // SAT-per-KB
-cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis) {
-#ifdef REFACTOR
-    assert (BLOCK_CHAIN_TYPE_BTC == feeBasis->type);
-#endif
-    BRCryptoBoolean overflow;
-    BRCryptoAmount costPerPriceFactor = cryptoFeeBasisGetPricePerCostFactor(feeBasis);
-    uint64_t satPerKb = cryptoAmountGetIntegerRaw(costPerPriceFactor, &overflow);
+private_extern BREthereumFeeBasis
+cryptoFeeBasisAsETH (BRCryptoFeeBasis feeBasis) {
+    double         costFactor         = cryptoFeeBasisGetCostFactor(feeBasis);
+    BRCryptoAmount pricePerCostFactor = cryptoFeeBasisGetPricePerCostFactor(feeBasis);
 
-    assert (CRYPTO_FALSE == overflow);
-    return satPerKb;
+    BREthereumGas ethGas = ethGasCreate ((uint64_t) lround (costFactor));
+    BREthereumGasPrice ethGasPrice = ethGasPriceCreate (ethEtherCreate (cryptoAmountGetValue(pricePerCostFactor)));
+
+    return (BREthereumFeeBasis) {
+        FEE_BASIS_GAS,
+        { .gas = { ethGas, ethGasPrice }}
+    };
 }
-#endif
+
 
 private_extern BRCryptoHash
 cryptoHashCreateAsETH (BREthereumHash eth) {
-    return cryptoHashCreateInternal (ethHashSetValue (eth),
+    return cryptoHashCreateInternal ((uint32_t) ethHashSetValue (&eth),
                                      ETHEREUM_HASH_BYTES,
                                      eth.bytes);
 }
@@ -40,31 +46,6 @@ private_extern BRCryptoHash
 cryptoHashCreateAsGEN (BRGenericHash gen);
 #endif
 
-#ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsBTC (UInt256 btc) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_BTC);
-    hash->u.btc = btc;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_ETH);
-    hash->u.eth = eth;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_GEN);
-    hash->u.gen = gen;
-
-    return hash;
-}
-#endif
 
 #ifdef REFACTOR
     extern char *
@@ -99,3 +80,20 @@ switch (hash->type) {
 
 #endif
 
+private_extern BRCryptoCurrency
+cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,
+                                     BREthereumToken token) {
+    BRCryptoCurrency tokenCurrency = NULL;
+    pthread_mutex_lock (&network->lock);
+    for (size_t index = 0; index < array_count(network->associations); index++) {
+        BRCryptoCurrency currency = network->associations[index].currency;
+        const char *address = cryptoCurrencyGetIssuer (currency);
+
+        if (NULL != address && ETHEREUM_BOOLEAN_IS_TRUE (ethTokenHasAddress (token, address))) {
+            tokenCurrency = cryptoCurrencyTake (currency);
+            break;
+        }
+    }
+    pthread_mutex_unlock (&network->lock);
+    return tokenCurrency;
+}

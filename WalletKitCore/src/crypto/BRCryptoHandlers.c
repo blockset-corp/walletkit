@@ -33,13 +33,13 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
-         CRYPTO_NETWORK_TYPE_ETH,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        CRYPTO_NETWORK_TYPE_ETH,
+        &cryptoNetworkHandlersETH,
+        &cryptoAddressHandlersETH,
+        &cryptoTransferHandlersETH,
+        &cryptoWalletHandlersETH,
+        NULL,//BRCryptoWalletSweeperHandlers not supported
+        &cryptoWalletManagerHandlersETH
     },
 
     {
