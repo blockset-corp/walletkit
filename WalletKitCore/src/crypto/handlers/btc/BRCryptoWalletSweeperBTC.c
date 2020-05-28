@@ -69,7 +69,7 @@ cryptoWalletSweeperAddTransactionFromBundleBTC (BRCryptoWalletSweeper sweeperBas
     return status;
 }
 
-private_extern void
+private_extern BRCryptoFeeBasis
 cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
                                                       BRCryptoWallet walletBase,
                                                       BRCryptoCookie cookie,
@@ -88,14 +88,7 @@ cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
     BRWalletSweeperEstimateFee (sweeper, wid, feePerKb, &fee);
     uint32_t sizeInByte = (uint32_t) ((1000 * fee)/ feePerKb);
     
-#if REFACTOR // TODO:SWEEP
-    bwmSignalWalletEvent(manager,
-                         wallet,
-                         (BRWalletEvent) {
-                             BITCOIN_WALLET_FEE_ESTIMATED,
-                                { .feeEstimated = { cookie, feePerKb, sizeInByte }}
-                         });
-#endif
+    return cryptoFeeBasisCreateAsBTC (walletBase->unitForFee, (uint32_t) feePerKb, sizeInByte);
 }
 
 static BRTransaction *
@@ -112,24 +105,7 @@ cryptoWalletSweeperTransactionForSweepAsBTC (BRCryptoWalletManager manager,
     //            context to the caller.
     BRTransaction *transaction = NULL;
     BRWalletSweeperCreateTransaction (sweeper, wallet, feePerKb, &transaction);
-#ifdef REFACTOR //TODO:SWEEP
-    BRTransactionWithState txnWithState = (NULL != transaction) ? BRWalletManagerAddTransaction (manager, transaction, NULL) : NULL;
 
-    BRTransaction *ownedTransaction = NULL;
-    if (NULL != txnWithState) {
-        BRTransactionWithStateSetResolved (txnWithState);  // Always resolved if created
-        ownedTransaction = BRTransactionWithStateGetOwned (txnWithState);
-    }
-    pthread_mutex_unlock (&manager->lock);
-
-    if (NULL != ownedTransaction)
-        bwmSignalTransactionEvent(manager,
-                                  wallet,
-                                  ownedTransaction,
-                                  (BRTransactionEvent) {
-                                      BITCOIN_TRANSACTION_CREATED
-                                  });
-#endif
     return transaction;
 }
 

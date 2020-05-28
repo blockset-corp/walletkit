@@ -45,6 +45,13 @@ extern "C" {
     cryptoWalletSweeperAddTransactionFromBundle (BRCryptoWalletSweeper sweeper,
                                                  OwnershipKept BRCryptoClientTransactionBundle bundle);
 
+    extern void
+    cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletSweeper sweeper,
+                                                       BRCryptoWalletManager manager,
+                                                       BRCryptoWallet wallet,
+                                                       BRCryptoCookie cookie,
+                                                       BRCryptoNetworkFee fee);
+
     extern BRCryptoTransfer
     cryptoWalletSweeperCreateTransferForWalletSweep (BRCryptoWalletSweeper sweeper,
                                                      BRCryptoWalletManager manager,

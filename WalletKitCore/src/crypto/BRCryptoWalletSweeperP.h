@@ -33,7 +33,7 @@ typedef BRCryptoWalletSweeperStatus
 (*BRCryptoWalletSweeperAddTransactionFromBundleHandler) (BRCryptoWalletSweeper sweeper,
                                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
 
-typedef void
+typedef BRCryptoFeeBasis
 (*BRCryptoWalletSweeperEstimateFeeBasisHandler) (BRCryptoWalletManager cwm,
                                                  BRCryptoWallet wallet,
                                                  BRCryptoCookie cookie,

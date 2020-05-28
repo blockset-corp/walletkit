@@ -52,12 +52,38 @@ cryptoWalletSweeperAddTransactionFromBundle (BRCryptoWalletSweeper sweeper,
     return sweeper->handlers->addTranactionFromBundle (sweeper, bundle);
 }
 
+extern void
+cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletSweeper sweeper,
+                                                   BRCryptoWalletManager cwm,
+                                                   BRCryptoWallet wallet,
+                                                   BRCryptoCookie cookie,
+                                                   BRCryptoNetworkFee fee) {
+    BRCryptoFeeBasis feeBasis = sweeper->handlers->estimateFeeBasis (cwm,
+                                                                     wallet,
+                                                                     cookie,
+                                                                     sweeper,
+                                                                     fee);
+    
+    if (NULL != feeBasis)
+        cryptoWalletManagerGenerateWalletEvent (cwm, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
+        });
+}
+
 extern BRCryptoTransfer
 cryptoWalletSweeperCreateTransferForWalletSweep (BRCryptoWalletSweeper sweeper,
                                                  BRCryptoWalletManager cwm,
                                                  BRCryptoWallet wallet,
                                                  BRCryptoFeeBasis estimatedFeeBasis) {
-    return sweeper->handlers->createTransfer (cwm, wallet, sweeper, estimatedFeeBasis);
+    BRCryptoTransfer transfer = sweeper->handlers->createTransfer (cwm, wallet, sweeper, estimatedFeeBasis);
+    
+    cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
+                                              (BRCryptoTransferEvent) {
+        CRYPTO_TRANSFER_EVENT_CREATED
+    });
+    
+    return transfer;
 }
 
 extern BRCryptoKey
@@ -78,17 +104,4 @@ cryptoWalletSweeperGetBalance (BRCryptoWalletSweeper sweeper) {
 extern BRCryptoWalletSweeperStatus
 cryptoWalletSweeperValidate (BRCryptoWalletSweeper sweeper) {
     return sweeper->handlers->validate (sweeper);
-}
-
-extern void
-cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager cwm,
-                                                   BRCryptoWallet wallet,
-                                                   BRCryptoCookie cookie,
-                                                   BRCryptoWalletSweeper sweeper,
-                                                   BRCryptoNetworkFee fee) {
-    sweeper->handlers->estimateFeeBasis (cwm,
-                                         wallet,
-                                         cookie,
-                                         sweeper,
-                                         fee);
 }

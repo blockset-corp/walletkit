@@ -345,13 +345,6 @@ extern "C" {
                                          BRCryptoAmount  amount,
                                          BRCryptoNetworkFee fee);
 
-    extern void
-    cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager manager,
-                                                       BRCryptoWallet wallet,
-                                                       BRCryptoCookie cookie,
-                                                       BRCryptoWalletSweeper sweeper,
-                                                       BRCryptoNetworkFee fee);
-
     extern BRCryptoWalletSweeperStatus
     cryptoWalletManagerWalletSweeperValidateSupported (BRCryptoWalletManager cwm,
                                                        BRCryptoWallet wallet,

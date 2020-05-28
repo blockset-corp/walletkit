@@ -540,10 +540,10 @@ public final class Wallet: Equatable {
     internal func estimateFee (sweeper: WalletSweeper,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
-        cryptoWalletManagerEstimateFeeBasisForWalletSweep (self.manager.core,
+        cryptoWalletManagerEstimateFeeBasisForWalletSweep (sweeper.core,
+                                                           self.manager.core,
                                                            self.core,
                                                            callbackCoordinator.addWalletFeeEstimateHandler(completion),
-                                                           sweeper.core,
                                                            fee.core)
     }
     
