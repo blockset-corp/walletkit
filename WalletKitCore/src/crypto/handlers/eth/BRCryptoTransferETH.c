@@ -245,13 +245,66 @@ cryptoTransferGetEthHash (BRCryptoTransfer transferBase) {
                : (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log))));
 }
 
-extern BRCryptoHash
+static BRCryptoHash
 cryptoTransferGetHashETH (BRCryptoTransfer transferBase) {
     BREthereumHash ethHash = cryptoTransferGetEthHash (transferBase);
     return (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (ethHash, EMPTY_HASH_INIT)
             ? NULL
             : cryptoHashCreateAsETH (ethHash));
 }
+
+extern const BREthereumHash
+cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer) {
+    switch (transfer->type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            return (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash(transfer->basis.transaction));
+        case TRANSFER_BASIS_LOG:
+            return (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetHash(transfer->basis.log));
+    }
+}
+
+#if 0
+static BREthereumHash
+transferBasisGetHash (BREthereumTransferBasis *basis) {
+    switch (basis->type) {
+        case TRANSFER_BASIS_TRANSACTION: {
+            if (NULL == basis->u.transaction) return EMPTY_HASH_INIT;
+
+            return transactionGetHash (basis->u.transaction);
+        }
+
+        case TRANSFER_BASIS_LOG: {
+            if (NULL == basis->u.log) return EMPTY_HASH_INIT;
+
+            BREthereumHash hash = EMPTY_HASH_INIT;
+            logExtractIdentifier(basis->u.log, &hash, NULL);
+            return hash;
+        }
+    }
+}
+#endif
+
+extern const BREthereumHash
+cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer) {
+    // If we have an originatingTransaction - becasue we created the transfer - then return its
+    // hash.  Otherwise use the transfer's basis to get the hash
+    return  (NULL != transfer->originatingTransaction
+             ? transactionGetHash (transfer->originatingTransaction)
+             : (TRANSFER_BASIS_TRANSACTION == transfer->type
+                 ? (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.transaction))
+                 : (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log))));
+}
+
+#if 0
+extern uint64_t
+transferGetNonce (BREthereumTransfer transfer) {
+    return (NULL != transfer->originatingTransaction
+            ? transactionGetNonce (transfer->originatingTransaction)
+            : (TRANSFER_BASIS_TRANSACTION == transfer->basis.type && NULL != transfer->basis.u.transaction
+               ? transactionGetNonce(transfer->basis.u.transaction)
+               : TRANSACTION_NONCE_IS_NOT_ASSIGNED));
+}
+#endif
 
 extern uint8_t *
 cryptoTransferSerializeETH (BRCryptoTransfer transferBase,

@@ -112,6 +112,12 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
                                   UInt256 ethAmount,
                                   OwnershipGiven BREthereumLog ethLog);
 
+extern const BREthereumHash
+cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer);
+
+extern const BREthereumHash
+cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer);
+
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletETHRecord {
@@ -140,6 +146,13 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee);
+
+extern BRCryptoTransferETH
+cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH wallet,
+                                        BREthereumHash identifier);
+extern BRCryptoTransferETH
+cryptoWalletLookupTransferByOriginatingHash (BRCryptoWalletETH wallet,
+                                             BREthereumHash hash);
 
 // MARK: - Wallet Manager
 

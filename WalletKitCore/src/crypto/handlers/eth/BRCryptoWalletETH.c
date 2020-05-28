@@ -241,6 +241,34 @@ cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet walletBase) {
     return addresses;
 }
 
+extern BRCryptoTransferETH
+cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH wallet,
+                                        BREthereumHash hash) {
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
+
+    for (int i = 0; i < array_count(wallet->base.transfers); i++) {
+        BRCryptoTransferETH transfer = cryptoTransferCoerce (wallet->base.transfers[i]);
+        BREthereumHash identifier = cryptoTransferGetIdentifierETH(transfer);
+        if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, identifier)))
+            return transfer;
+    }
+    return NULL;
+}
+
+extern BRCryptoTransferETH
+cryptoWalletLookupTransferByOriginatingHash (BRCryptoWalletETH wallet,
+                                             BREthereumHash hash) {
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
+
+    for (int i = 0; i < array_count(wallet->base.transfers); i++) {
+        BRCryptoTransferETH transfer = cryptoTransferCoerce (wallet->base.transfers[i]);
+        BREthereumTransaction transaction = transfer->originatingTransaction;
+        if (NULL != transaction && ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, transactionGetHash (transaction))))
+            return transfer;
+    }
+    return NULL;
+}
+
 static bool
 cryptoWalletIsEqualETH (BRCryptoWallet wb1, BRCryptoWallet wb2) {
     return wb1 == wb2;
