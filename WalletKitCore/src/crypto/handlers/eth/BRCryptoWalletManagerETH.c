@@ -22,7 +22,14 @@
 #include "ethereum/les/BREthereumLES.h"
 #include "ethereum/bcs/BREthereumBCS.h"
 
-// MARK: - BCH Listener Forward Declarations
+// MARK: - Forward Declarations
+
+static void
+cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
+                                           BRCryptoCurrency currency,
+                                           BRCryptoUnit     unitDefault);
+
+// MARK: - BCS Listener Forward Declarations
 
 static void
 ewmHandleBlockChain (BREthereumBCSCallbackContext context,
@@ -78,8 +85,7 @@ cryptoWalletManagerCreateInitialSets (BRCryptoWalletManager manager,
                                       BRSetOf(BREthereumLog) *logs,
                                       BRSetOf(BREthereumNodeConfig) *nodes,
                                       BRSetOf(BREthereumBlock) *blocks,
-                                      BRSetOf(BREthereumToken) *tokens,
-                                      BRSetOf(BREthereumWalletState) *states) {
+                                      BRSetOf(BREthereumToken) *tokens) {
 
     *transactions = initialTransactionsLoadETH (manager);
     *logs   = initialLogsLoadETH   (manager);
@@ -94,7 +100,7 @@ cryptoWalletManagerCreateInitialSets (BRCryptoWalletManager manager,
     // started automatically, as part of the normal processing, of 'blocks' (we'll use a checkpoint,
     // before the `accountTimestamp, which will be well in the past and we'll sync up to the
     // head of the blockchain).
-    if (NULL == *transactions || NULL == *logs || NULL == *nodes || NULL == *blocks || NULL == *tokens || NULL == *states) {
+    if (NULL == *transactions || NULL == *logs || NULL == *nodes || NULL == *blocks || NULL == *tokens /* || NULL == *states */) {
         // If the set exists, clear it out completely and then create another one.  Note, since
         // we have `BRSetFreeAll()` we'll use that even though it frees the set and then we
         // create one again, minimally wastefully.
@@ -163,41 +169,46 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
 }
 
 static void
-cryptoWalletManagerReleaseETH (BRCryptoWalletManager manager) {
+cryptoWalletManagerReleaseETH (BRCryptoWalletManager managerBase) {
+    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+
+    rlpCoderRelease (manager->coder);
+    if (NULL != manager->tokens)
+        BRSetFreeAll(manager->tokens, (void (*) (void*)) ethTokenRelease);
 }
+
 
 static void
 cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
     BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
 
-//    BREthereumAccount ethAccount = cryptoAccountAsETH (managerBase->account);
-//    BREthereumNetwork ethNetwork = cryptoNetworkAsETH (managerBase->network);
-
-    BRSetOf(BREthereumTransaction) transactions;
-    BRSetOf(BREthereumLog) logs;
-    BRSetOf(BREthereumNodeConfig) nodes;
-    BRSetOf(BREthereumBlock) blocks;
-    BRSetOf(BREthereumToken) tokens;
-    BRSetOf(BREthereumWalletState) walletStates;
-
-    cryptoWalletManagerCreateInitialSets (managerBase,
-                                          manager->network,
-                                          cryptoAccountGetTimestamp (managerBase->account),
-                                          &transactions, &logs, &nodes, &blocks, &tokens, &walletStates);
-
-    // Save the recovered tokens
-#if 0
-    ewm->tokens = tokens;
-#endif
-
-    // Create the primary BRCryptoWallet
     BRCryptoNetwork  network       = managerBase->network;
     BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
+    // Create the primary BRCryptoWallet
     managerBase->wallet = cryptoWalletCreateAsETH (unitAsDefault, unitAsDefault, NULL, manager->account);
     array_add (managerBase->wallets, managerBase->wallet);
+
+    // Load the persistently stored data.
+    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (managerBase);
+    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (managerBase);
+
+    // Save the recovered tokens
+    manager->tokens = initialTokensLoadETH (managerBase);
+
+    // Ensure a token (but not a wallet) for each currency
+    size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
+    for (size_t index = 0; index < currencyCount; index++) {
+        BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
+        if (c != currency) {
+            BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
+            cryptoWalletManagerCreateTokenForCurrency (manager, c, unitDefault);
+            cryptoUnitGive (unitDefault);
+        }
+        cryptoCurrencyGive (c);
+    }
 
 #if 0
     // Announce all the provided transactions...
@@ -379,6 +390,91 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager managerBase,
     cryptoTransferGive (transfer);
 
     // Require QRY with cookie - made above
+    return NULL;
+}
+
+static void
+cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
+                                           BRCryptoCurrency currency,
+                                           BRCryptoUnit     unitDefault) {
+    const char *address = cryptoCurrencyGetIssuer(currency);
+
+    if (NULL == address || 0 == strlen(address)) return;
+    if (ETHEREUM_BOOLEAN_FALSE == ethAddressValidateString(address)) return;
+
+    BREthereumAddress addr = ethAddressCreate(address);
+
+    const char *code = cryptoCurrencyGetCode (currency);
+    const char *name = cryptoCurrencyGetName (currency);
+    const char *desc = cryptoCurrencyGetUids (currency);
+    unsigned int decimals = cryptoUnitGetBaseDecimalOffset(unitDefault);
+
+    BREthereumGas      defaultGasLimit = ethGasCreate(TOKEN_BRD_DEFAULT_GAS_LIMIT);
+    BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
+
+    // Check for an existing token
+    BREthereumToken token = BRSetGet (manager->tokens, &addr);
+
+    if (NULL == token) {
+        token = ethTokenCreate (address,
+                             code,
+                             name,
+                             desc,
+                             decimals,
+                             defaultGasLimit,
+                             defaultGasPrice);
+        BRSetAdd (manager->tokens, token);
+    }
+    else {
+        ethTokenUpdate (token,
+                     code,
+                     name,
+                     desc,
+                     decimals,
+                     defaultGasLimit,
+                     defaultGasPrice);
+    }
+
+    fileServiceSave (manager->base.fileService, fileServiceTypeTokensETH, token);
+}
+
+static BRCryptoWallet
+cryptoWalletManagerRegisterWalletETH (BRCryptoWalletManager managerBase,
+                                      BRCryptoCurrency currency) {
+    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
+
+    const char *issuer = cryptoCurrencyGetIssuer (currency);
+    BREthereumAddress ethAddress = ethAddressCreate (issuer);
+    BREthereumToken ethToken = BRSetGet (manager->tokens, &ethAddress);
+    assert (NULL != ethToken);
+
+    BRCryptoUnit     unit       = cryptoNetworkGetUnitAsBase (managerBase->network, currency);
+    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (managerBase->network, currency);
+
+    BRCryptoWallet wallet = cryptoWalletCreateAsETH (unit,
+                                                     unitForFee,
+                                                     ethToken,
+                                                     manager->account);
+
+    cryptoWalletManagerAddWallet (managerBase, wallet);
+//    cryptoWalletMangerSignalWalletCreated (managerBase, wallet);
+
+    cryptoUnitGive (unitForFee);
+    cryptoUnitGive (unit);
+
+    return wallet;
+}
+
+static BRCryptoWalletETH
+cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH manager,
+                                         BREthereumToken token) {
+    if (NULL == token) return (BRCryptoWalletETH) cryptoWalletTake (manager->base.wallet);
+
+    for (size_t index = 0; index < array_count(manager->base.wallets); index++) {
+        BRCryptoWalletETH wallet = cryptoWalletCoerce (manager->base.wallets[index]);
+        if (token == wallet->ethToken)
+            return wallet;
+    }
     return NULL;
 }
 
@@ -716,8 +812,6 @@ static BRCryptoClientP2PHandlers p2pHandlersETH = {
 
 static BRCryptoClientP2PManager
 crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager cwm) {
-    // load blocks, load peers
-
     BRCryptoClientP2PManager p2pBase = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordETH),
                                                                          cwm->type,
                                                                          &p2pHandlersETH);
@@ -736,20 +830,31 @@ crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager cwm) {
         ewmHandleGetBlocks
     };
 
-//    BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoad (cwm);
-//    BRArrayOf(BRPeer)         peers  = initialPeersLoad  (cwm);
-
     BREthereumNetwork network = p2p->manager->network;
     BREthereumAddress address = ethAccountGetPrimaryAddress (p2p->manager->account);
+
+    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (cwm);
+    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (cwm);
+    BRSetOf(BREthereumNodeConfig)  nodes        = initialNodesLoadETH        (cwm);
+    BRSetOf(BREthereumBlock)       blocks       = initialBlocksLoadETH       (cwm);
+
+    // If we have no blocks; then add a checkpoint
+    if (0 == BRSetCount(blocks)) {
+        const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network, cryptoAccountGetTimestamp (cwm->account));
+        BREthereumBlock block = blockCreate (blockCheckpointCreatePartialBlockHeader (checkpoint));
+        blockSetTotalDifficulty (block, checkpoint->u.td);
+        BRSetAdd (blocks, block);
+    }
 
     p2p->bcs = bcsCreate (network,
                           address,
                           listener,
                           p2p->manager->base.syncMode,
-                          NULL,
-                          NULL,
-                          NULL,
-                          NULL);
+                          nodes,
+                          blocks,
+                          transactions,
+                          logs);
+
 
 //    if (NULL != blocks) array_free (blocks);
 //    if (NULL != peers ) array_free (peers);
@@ -771,64 +876,11 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
     crytpWalletManagerCreateP2PManagerETH,
+    cryptoWalletManagerRegisterWalletETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH
 };
 
-static void
-cryptoWalletManagerInstallETHTokensForCurrencies (BRCryptoWalletManager cwm) {
-    BRCryptoNetwork  network    = cryptoNetworkTake (cwm->network);
-    BRCryptoCurrency currency   = cryptoNetworkGetCurrency(network);
-    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (network, currency);
-
-    size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
-    for (size_t index = 0; index < currencyCount; index++) {
-        BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
-        if (c != currency) {
-            BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
-
-#ifdef REFACTOR
-            switch (cwm->type) {
-                case BLOCK_CHAIN_TYPE_BTC:
-                    break;
-                case BLOCK_CHAIN_TYPE_ETH: {
-                    const char *address = cryptoCurrencyGetIssuer(c);
-                    if (NULL != address) {
-                        BREthereumGas      ethGasLimit = ethGasCreate(TOKEN_BRD_DEFAULT_GAS_LIMIT);
-                        BREthereumGasPrice ethGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
-
-                        // This has the perhaps surprising side-effect of updating the properties
-                        // of an existing token.  That is, `address` is used to locate a token and
-                        // if found it is updated.  Either created or updated the token will be
-                        // persistently saved.
-                        //
-                        // Argubably EWM should create a wallet for the token.  But, it doesn't.
-                        // So we'll call `ewmGetWalletHoldingToken()` to get a wallet.
-
-                        BREthereumToken token = ewmCreateToken (cwm->u.eth,
-                                                                address,
-                                                                cryptoCurrencyGetCode (c),
-                                                                cryptoCurrencyGetName(c),
-                                                                cryptoCurrencyGetUids(c), // description
-                                                                cryptoUnitGetBaseDecimalOffset(unitDefault),
-                                                                ethGasLimit,
-                                                                ethGasPrice);
-                        assert (NULL != token); (void) &token;
-                    }
-                    break;
-                }
-                case BLOCK_CHAIN_TYPE_GEN:
-                    break;
-            }
-#endif
-            cryptoUnitGive(unitDefault);
-        }
-        cryptoCurrencyGive(c);
-    }
-    cryptoUnitGive(unitForFee);
-    cryptoCurrencyGive(currency);
-    cryptoNetworkGive(network);
-}
 
 #if 0
 static void

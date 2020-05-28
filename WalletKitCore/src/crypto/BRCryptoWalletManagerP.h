@@ -91,6 +91,10 @@ typedef BRCryptoFeeBasis // If NULL, don't generate WalletEvent; expect QRY call
 typedef BRCryptoClientP2PManager
 (*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
+typedef BRCryptoWallet
+(*BRCryptoWalletManagerRegisterWallet) (BRCryptoWalletManager cwm,
+                                        BRCryptoCurrency currency);
+
 typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
                                                                       OwnershipKept BRCryptoClientTransactionBundle bundle);
@@ -120,6 +124,7 @@ typedef struct {
     BRWalletManagerEstimateLimitHandler estimateLimit;
     BRWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRWalletManagerCreateP2PManagerHandler createP2PManager;
+    BRCryptoWalletManagerRegisterWallet registerWallet;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;

@@ -665,28 +665,9 @@ extern BRCryptoWallet
 cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
                                    BRCryptoCurrency currency) {
     BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
-    if (NULL == wallet) {
-#ifdef REFACTOR
-        switch (cwm->type) {
-            case BLOCK_CHAIN_TYPE_BTC:
-                assert (0); // Only BTC currency; has `primaryWallet
-                break;
-
-            case BLOCK_CHAIN_TYPE_ETH: {
-                const char *issuer = cryptoCurrencyGetIssuer (currency);
-                BREthereumAddress ethAddress = ethAddressCreate (issuer);
-                BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
-                assert (NULL != ethToken);
-                ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
-                break;
-            }
-            case BLOCK_CHAIN_TYPE_GEN:
-                assert (0);
-                break;
-        }
-#endif
-    }
-    return wallet;
+    return (NULL == wallet
+            ? cwm->handlers->registerWallet (cwm, currency)
+            : wallet);
 }
 
 extern BRCryptoBoolean

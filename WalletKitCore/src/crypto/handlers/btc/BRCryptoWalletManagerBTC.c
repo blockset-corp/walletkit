@@ -299,6 +299,12 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
     return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFeePerKB, btcSizeInBytes);
 }
 
+static BRCryptoWallet
+cryptoWalletManagerRegisterWalletBTC (BRCryptoWalletManager managerBase,
+                                      BRCryptoCurrency currency) {
+    return NULL;
+}
+
 static void
 cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManager manager,
                                                              OwnershipKept BRCryptoClientTransactionBundle bundle) {
@@ -1100,6 +1106,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
@@ -1117,6 +1124,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,

@@ -148,7 +148,11 @@ typedef struct BRCryptoWalletManagerETHRecord {
 
     BREthereumNetwork network;
     BREthereumAccount account;
+
+    BRSetOf(BREthereumToken) tokens;
+
     BRRlpCoder coder;
+
 } *BRCryptoWalletManagerETH;
 
 // MARK: - Support
