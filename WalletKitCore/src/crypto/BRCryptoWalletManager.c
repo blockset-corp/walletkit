@@ -999,11 +999,11 @@ cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                                             estimatedFeeBasis,
                                                             attributesCount,
                                                             attributes);
-
-    cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_CREATED
-    });
+    if (NULL != transfer)
+        cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
+                                                  (BRCryptoTransferEvent) {
+            CRYPTO_TRANSFER_EVENT_CREATED
+        });
 
     return transfer;
 }

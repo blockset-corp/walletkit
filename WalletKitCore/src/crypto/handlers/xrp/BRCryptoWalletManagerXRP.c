@@ -80,7 +80,7 @@ cryptoWalletManagerInitializeHandlerXRP (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
     
-    manager->wallet = cryptoWalletCreateAsXRP (unitAsDefault, unitAsBase, xrpWallet);
+    manager->wallet = cryptoWalletCreateAsXRP (unitAsDefault, unitAsDefault, xrpWallet);
     array_add (manager->wallets, manager->wallet);
     
     //TODO:XRP load transfers from fileService

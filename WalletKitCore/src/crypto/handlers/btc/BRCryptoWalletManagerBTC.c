@@ -112,7 +112,7 @@ cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsBase, btcWallet);
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
     array_add (manager->wallets, manager->wallet);
 
     // Process existing btcTransactions in the btcWallet into BRCryptoTransfers

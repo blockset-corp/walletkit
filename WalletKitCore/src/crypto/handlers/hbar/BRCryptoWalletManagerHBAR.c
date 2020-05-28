@@ -80,7 +80,7 @@ cryptoWalletManagerInitializeHandlerHBAR (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
     
-    manager->wallet = cryptoWalletCreateAsHBAR (unitAsDefault, unitAsBase, hbarWallet);
+    manager->wallet = cryptoWalletCreateAsHBAR (unitAsDefault, unitAsDefault, hbarWallet);
     array_add (manager->wallets, manager->wallet);
     
     //TODO:HBAR load transfers from fileService
