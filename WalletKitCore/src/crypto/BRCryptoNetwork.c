@@ -317,7 +317,7 @@ cryptoNetworkGetCurrencyForUids (BRCryptoNetwork network,
     BRCryptoCurrency currency = NULL;
     pthread_mutex_lock (&network->lock);
     for (size_t index = 0; index < array_count(network->associations); index++) {
-        if (0 == strcmp (uids, cryptoCurrencyGetUids (network->associations[index].currency))) {
+        if (0 == strcasecmp (uids, cryptoCurrencyGetUids (network->associations[index].currency))) {
             currency = cryptoCurrencyTake (network->associations[index].currency);
             break;
         }

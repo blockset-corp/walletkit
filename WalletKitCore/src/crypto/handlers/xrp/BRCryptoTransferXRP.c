@@ -69,9 +69,11 @@ cryptoTransferGetHashXRP (BRCryptoTransfer transferBase) {
 }
 
 static uint8_t *
-cryptoTransferSerializeForSubmissionXRP (BRCryptoTransfer transferBase,
-                                         BRCryptoNetwork network,
-                                         size_t *serializationCount) {
+cryptoTransferSerializeXRP (BRCryptoTransfer transferBase,
+                            BRCryptoNetwork network,
+                            BRCryptoBoolean  requireSignature,
+                            size_t *serializationCount) {
+    assert (CRYPTO_TRUE == requireSignature);
     BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
 
     uint8_t *serialization = NULL;
@@ -110,6 +112,6 @@ transferGetDirectionFromXRP (BRRippleTransfer transfer,
 BRCryptoTransferHandlers cryptoTransferHandlersXRP = {
     cryptoTransferReleaseXRP,
     cryptoTransferGetHashXRP,
-    cryptoTransferSerializeForSubmissionXRP,
+    cryptoTransferSerializeXRP,
     cryptoTransferIsEqualXRP
 };

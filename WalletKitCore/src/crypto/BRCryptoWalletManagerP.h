@@ -79,7 +79,8 @@ typedef BRCryptoAmount
                                         BRCryptoBoolean *isZeroIfInsuffientFunds,
                                         BRCryptoUnit unit);
 
-typedef void
+
+typedef BRCryptoFeeBasis // If NULL, don't generate WalletEvent; expect QRY callback invoked.
 (*BRWalletManagerEstimateFeeBasisHandler) (BRCryptoWalletManager cwm,
                                            BRCryptoWallet  wallet,
                                            BRCryptoCookie cookie,

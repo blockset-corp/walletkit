@@ -1,6 +1,8 @@
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoAmountP.h"
 
+#define DEFAULT_ETHER_GAS_LIMIT    21000ull
+
 extern BRCryptoWalletETH
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_ETH == wallet->type);
@@ -22,6 +24,10 @@ cryptoWalletCreateAsETH (BRCryptoUnit unit,
 
     wallet->ethAccount  = ethAccount;
     wallet->ethToken    = ethToken;
+    wallet->ethGasLimit = (NULL == ethToken
+                           ? ethGasCreate (DEFAULT_ETHER_GAS_LIMIT)
+                           : ethTokenGetGasLimit (ethToken));
+    
     return walletBase;
 }
 
@@ -184,7 +190,11 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                                            wallet->ethAccount,
                                                            type,
                                                            ethTransaction);
-    
+
+    transfer->sourceAddress = cryptoAddressCreateAsETH (ethSourceAddress);
+    transfer->targetAddress = cryptoAddressCreateAsETH (ethTargetAddress);
+    transfer->feeBasisEstimated = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
+
     if (NULL != transfer && attributesCount > 0) {
         BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
         array_new (transferAttributes, attributesCount);

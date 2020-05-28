@@ -75,9 +75,11 @@ cryptoTransferGetHashHBAR (BRCryptoTransfer transferBase) {
 }
 
 static uint8_t *
-cryptoTransferSerializeForSubmissionHBAR (BRCryptoTransfer transferBase,
-                                          BRCryptoNetwork network,
-                                          size_t *serializationCount) {
+cryptoTransferSerializeHBAR (BRCryptoTransfer transferBase,
+                             BRCryptoNetwork network,
+                             BRCryptoBoolean  requireSignature,
+                             size_t *serializationCount) {
+    assert (CRYPTO_TRUE == requireSignature);
     BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
     return hederaTransactionSerialize (transfer->hbarTransaction, serializationCount);
 }
@@ -108,6 +110,6 @@ transferGetDirectionFromHBAR (BRHederaTransaction transaction,
 BRCryptoTransferHandlers cryptoTransferHandlersHBAR = {
     cryptoTransferReleaseHBAR,
     cryptoTransferGetHashHBAR,
-    cryptoTransferSerializeForSubmissionHBAR,
+    cryptoTransferSerializeHBAR,
     cryptoTransferIsEqualHBAR
 };

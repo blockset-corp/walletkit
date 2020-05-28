@@ -1249,89 +1249,17 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                      BRCryptoAddress target,
                                      BRCryptoAmount  amount,
                                      BRCryptoNetworkFee fee) {
-    manager->handlers->estimateFeeBasis (manager,
-                                         wallet,
-                                         cookie,
-                                         target,
-                                         amount,
-                                         fee);
-#ifdef REFACTOR
-    //    assert (cryptoWalletGetType (wallet) == cryptoFeeBasisGetType(feeBasis));
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            BRWalletManager bwm = cwm->u.btc;
-            BRWallet *wid = cryptoWalletAsBTC(wallet);
-
-            BRCryptoBoolean overflow = CRYPTO_FALSE;
-            uint64_t feePerKB        = 1000 * cryptoNetworkFeeAsBTC (fee);
-            uint64_t btcAmount       = cryptoAmountGetIntegerRaw (amount, &overflow);
-            assert(CRYPTO_FALSE == overflow);
-
-            BRWalletManagerEstimateFeeForTransfer (bwm,
-                                                   wid,
-                                                   cookie,
-                                                   btcAmount,
-                                                   feePerKB);
-            break;
-        }
-
-        case BLOCK_CHAIN_TYPE_ETH: {
-            BREthereumEWM ewm = cwm->u.eth;
-            BREthereumWallet wid = cryptoWalletAsETH(wallet);
-
-            BRCryptoAddress source = cryptoWalletGetAddress (wallet, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT);
-            UInt256 ethValue       = cryptoAmountGetValue (amount);
-
-            BREthereumToken  ethToken  = ewmWalletGetToken (ewm, wid);
-            BREthereumAmount ethAmount = (NULL != ethToken
-                                          ? ethAmountCreateToken (ethTokenQuantityCreate (ethToken, ethValue))
-                                          : ethAmountCreateEther (ethEtherCreate (ethValue)));
-
-            ewmWalletEstimateTransferFeeForTransfer (ewm,
-                                                     wid,
-                                                     cookie,
-                                                     cryptoAddressAsETH (source),
-                                                     cryptoAddressAsETH (target),
-                                                     ethAmount,
-                                                     cryptoNetworkFeeAsETH (fee),
-                                                     ewmWalletGetDefaultGasLimit (ewm, wid));
-
-            cryptoAddressGive (source);
-            break;
-        }
-
-        case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericWallet  genWallet  = cryptoWalletAsGEN (wallet);
-            BRGenericAddress genAddress = cryptoAddressAsGEN (target);
-
-            UInt256 genValue = cryptoAmountGetValue(amount);
-            UInt256 genPricePerCostFactor = uint256Create (cryptoNetworkFeeAsGEN(fee));
-
-            BRGenericFeeBasis genFeeBasis = genWalletEstimateTransferFee (genWallet,
-                                                                          genAddress,
-                                                                          genValue,
-                                                                          genPricePerCostFactor);
-
-            BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (wallet);
-            BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsGEN (unitForFee, genFeeBasis);
-            
-            cwm->listener.walletEventCallback (cwm->listener.context,
-                                               cryptoWalletManagerTake (cwm),
-                                               cryptoWalletTake (wallet),
-                                               (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-                { .feeBasisEstimated = {
-                    CRYPTO_SUCCESS,
-                    cookie,
-                    cryptoFeeBasisTake (feeBasis)
-                }}
-            });
-
-            cryptoFeeBasisGive (feeBasis);
-            cryptoUnitGive(unitForFee);
-        }
-    }
-#endif
+    BRCryptoFeeBasis feeBasis = manager->handlers->estimateFeeBasis (manager,
+                                                                     wallet,
+                                                                     cookie,
+                                                                     target,
+                                                                     amount,
+                                                                     fee);
+    if (NULL != feeBasis)
+        cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
+        });
 }
 
 extern void

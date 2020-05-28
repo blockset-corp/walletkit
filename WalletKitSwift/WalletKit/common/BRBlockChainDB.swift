@@ -854,6 +854,10 @@ public class BlockChainDB {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[Model.Transfer], QueryError>) -> Void) {
+        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
+            ? addresses.map { $0.lowercased() }
+            : addresses)
+
         self.queue.async {
             var error: QueryError? = nil
             var results = [Model.Transfer]()
@@ -931,6 +935,11 @@ public class BlockChainDB {
                                  includeProof: Bool = false,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
+        // Ethereum addresses must be lowercased as the query is case-sensitive.
+        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
+            ? addresses.map { $0.lowercased() }
+            : addresses)
+
         // This query could overrun the endpoint's page size (typically 5,000).  If so, we'll need
         // to repeat the request for the next batch.
         self.queue.async {
@@ -1056,9 +1065,17 @@ public class BlockChainDB {
                      path: "/transactions",
                      query: zip(["estimate_fee"], ["true"]),
                      data: json,
-                     httpMethod: "POST",
-                     // deserializer: { (_) in Result.success(()) },
-                     completion: completion)
+                     httpMethod: "POST") {
+                        self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                            (more: URL?, res: Result<[JSON], QueryError>) in
+                            precondition (nil == more)
+                            completion (res.flatMap {
+                                BlockChainDB.getOneExpected (id: "POST /transactions?estimate_fee",
+                                                             data: $0,
+                                                             transform: Model.asTransactionFee)
+                            })
+                        }
+        }
     }
 
     // Blocks

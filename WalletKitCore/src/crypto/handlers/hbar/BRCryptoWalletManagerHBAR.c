@@ -175,7 +175,7 @@ cryptoWalletManagerEstimateLimitHandlerHBAR (BRCryptoWalletManager cwm,
                                        0);
 }
 
-static void
+static BRCryptoFeeBasis
 cryptoWalletManagerEstimateFeeBasisHandlerHBAR (BRCryptoWalletManager cwm,
                                                 BRCryptoWallet  wallet,
                                                 BRCryptoCookie cookie,
@@ -183,7 +183,9 @@ cryptoWalletManagerEstimateFeeBasisHandlerHBAR (BRCryptoWalletManager cwm,
                                                 BRCryptoAmount amount,
                                                 BRCryptoNetworkFee networkFee) {
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    //TODO:HBAR
+    double costFactor = 1.0;  // 'cost factor' is 'transaction'
+
+    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 }
 
 static void

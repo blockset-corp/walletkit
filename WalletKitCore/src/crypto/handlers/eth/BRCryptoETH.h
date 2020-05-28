@@ -108,6 +108,7 @@ typedef struct BRCryptoWalletETHRecord {
     struct BRCryptoWalletRecord base;
     BREthereumAccount ethAccount;
     BREthereumToken   ethToken;    // NULL if `ETH`
+    BREthereumGas     ethGasLimit;
 } *BRCryptoWalletETH;
 
 extern BRCryptoWalletETH
@@ -118,6 +119,17 @@ cryptoWalletCreateAsETH (BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount);
+
+extern BRCryptoTransfer
+cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
+                               BRCryptoAddress target,
+                               BRCryptoAmount  amount,
+                               BRCryptoFeeBasis estimatedFeeBasis,
+                               size_t attributesCount,
+                               OwnershipKept BRCryptoTransferAttribute *attributes,
+                               BRCryptoCurrency currency,
+                               BRCryptoUnit unit,
+                               BRCryptoUnit unitForFee);
 
 // MARK: - Wallet Manager
 
