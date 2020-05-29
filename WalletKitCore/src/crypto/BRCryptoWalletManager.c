@@ -848,7 +848,7 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
             BRCryptoWalletManagerState oldState = cwm->state;
             BRCryptoWalletManagerState newState = cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested());
 
-            cryptoClientP2PManagerDisconnect (cwm->p2pManager);
+            if (NULL != cwm->p2pManager) cryptoClientP2PManagerDisconnect (cwm->p2pManager);
             cryptoClientQRYManagerDisconnect (cwm->qryManager);
 
             cryptoWalletManagerSetState (cwm, newState);

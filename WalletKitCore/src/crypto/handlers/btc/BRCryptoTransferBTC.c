@@ -40,8 +40,8 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
                            OwnershipGiven BRTransaction *tid,
                            BRCryptoBlockChainType type) {
     uint64_t fee  = BRWalletFeeForTx (wid, tid);
-    uint64_t send = BRWalletAmountReceivedFromTx (wid, tid);
-    uint64_t recv = BRWalletAmountSentByTx (wid, tid);
+    uint64_t recv = BRWalletAmountReceivedFromTx (wid, tid);
+    uint64_t send = BRWalletAmountSentByTx (wid, tid);
     
     BRAddressParams  addressParams = BRWalletGetAddressParams (wid);
 
@@ -134,13 +134,13 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
     BRCryptoTransferBTC transfer = cryptoTransferCoerceBTC (transferBase);
 
     transfer->tid  = tid;
-    transfer->isResolved = BRWalletTransactionIsResolved (wid, tid);
+    transfer->isResolved = false;
     transfer->isDeleted  = false;
     
     // cache the values that require the wallet
     transfer->fee  = fee;
-    transfer->recv = send;
-    transfer->send = recv;
+    transfer->recv = recv;
+    transfer->send = send;
     
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
