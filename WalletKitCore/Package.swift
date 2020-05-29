@@ -52,6 +52,7 @@ let package = Package(
                 .linkedLibrary("resolv"),
                 .linkedLibrary("pthread"),
                 .linkedLibrary("bsd", .when(platforms: [.linux])),
+                .linkedLibrary("m", .when(platforms: [.linux]))
             ]
         ),
 
@@ -183,6 +184,7 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("pthread"),
                 .linkedLibrary("bsd", .when(platforms: [.linux])),
+                .linkedLibrary("m", .when(platforms: [.linux]))
             ]
         ),
     ]

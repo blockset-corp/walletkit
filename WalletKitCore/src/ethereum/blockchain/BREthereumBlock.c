@@ -1629,55 +1629,65 @@ initializeGenesisBlocks (void) {
 
 /// MARK: - Block Checkpoint
 
-static BREthereumBlockCheckpoint
-ethereumMainnetCheckpoints [] = {
-    {       0, HASH_INIT("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), { .std = "17179869184"              },          0 },
-    { 4000000, HASH_INIT("b8a3f7f5cfc1748f91a684f20fe89031202cbadcd15078c49b85ec2a57f43853"), { .std = "469024977881526938386"    }, 1499633567 },
-    { 4500000, HASH_INIT("43340a6d232532c328211d8a8c0fa84af658dbff1f4906ab7a7d4e41f82fe3a3"), { .std = "1386905480746946772236"   }, 1509953783 },
-    { 5000000, HASH_INIT("7d5a4369273c723454ac137f48a4f142b097aa2779464e6505f1b1c5e37b5382"), { .std = "2285199027754071740498"   }, 1517319693 },
-    { 5500000, HASH_INIT("2d3a154eee9f90666c6e824f11e15f2d60b05323a81254f60075c34a61ef124d"), { .std = "3825806101695195923560"   }, 1524611221 },
-    { 6000000, HASH_INIT("be847be2bceb74e660daf96b3f0669d58f59dc9101715689a00ef864a5408f43"), { .std = "5484495551037046114587"   }, 1532118564 },
-    { 6500000, HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "7174074700595750315193"   }, 1539330275 },
-    { 7000000, HASH_INIT("17aa411843cb100e57126e911f51f295f5ddb7e9a3bd25e708990534a828c4b7"), { .std = "8545742390070173675989"   }, 1546466952 },
-    { 7500000, HASH_INIT("b3cd718643c475c18efe4e2177777d38bdca3b9fb1eb9d9155db1365d6e5e8fd"), { .std = "9703290027978634211190"   }, 1554358137 },
-    { 8000000, HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "10690776258913596267754"  }, 1561100149 },
-    { 8500000, HASH_INIT("86ea48a5ae641bd1830426c45d14315862488a749c9e93fb228c23ca07237dab"), { .std = "11798521320484609094896"  }, 1567820847 },
-    { 9000000, HASH_INIT("388f34dd94b899f65bbd23006ee93d61434a2f2a57053c9870466d8e142960e3"), { .std = "13014076996386893192616"  }, 1574706444 },
-};
-#define CHECKPOINT_MAINNET_COUNT      (sizeof (ethereumMainnetCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumMainnetCheckpoints;
+static size_t ethereumMainnetCheckpointsCount;
 
-static BREthereumBlockCheckpoint
-ethereumTestnetCheckpoints [] = {
-    {       0, HASH_INIT("41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"), { .std = "0x100000" },  0 }, // 1061 days  6 hrs ago (Jul-30-2015 03:26:13 PM +UTC)
-};
-#define CHECKPOINT_TESTNET_COUNT      (sizeof (ethereumTestnetCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumTestnetCheckpoints;
+static size_t ethereumTestnetCheckpointsCount;
 
-static BREthereumBlockCheckpoint
-ethereumRinkebyCheckpoints [] = {
-    {       0, HASH_INIT("6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177"), { .std = "0x01" },  0 }, //  439 days  6 hrs ago (Apr-12-2017 03:20:50 PM +UTC)
-};
-#define CHECKPOINT_RINKEBY_COUNT      (sizeof (ethereumRinkebyCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumRinkebyCheckpoints;
+static size_t ethereumRinkebyCheckpointsCount;
 
 static void blockCheckpointInitialize (void) {
     static int needInitialization = 1;
     if (needInitialization) {
         needInitialization = 0;
 
+        BREthereumBlockCheckpoint mainnetCheckpoints[] = {
+                {       0, HASH_INIT("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), { .std = "17179869184"              },          0 },
+                { 4000000, HASH_INIT("b8a3f7f5cfc1748f91a684f20fe89031202cbadcd15078c49b85ec2a57f43853"), { .std = "469024977881526938386"    }, 1499633567 },
+                { 4500000, HASH_INIT("43340a6d232532c328211d8a8c0fa84af658dbff1f4906ab7a7d4e41f82fe3a3"), { .std = "1386905480746946772236"   }, 1509953783 },
+                { 5000000, HASH_INIT("7d5a4369273c723454ac137f48a4f142b097aa2779464e6505f1b1c5e37b5382"), { .std = "2285199027754071740498"   }, 1517319693 },
+                { 5500000, HASH_INIT("2d3a154eee9f90666c6e824f11e15f2d60b05323a81254f60075c34a61ef124d"), { .std = "3825806101695195923560"   }, 1524611221 },
+                { 6000000, HASH_INIT("be847be2bceb74e660daf96b3f0669d58f59dc9101715689a00ef864a5408f43"), { .std = "5484495551037046114587"   }, 1532118564 },
+                { 6500000, HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "7174074700595750315193"   }, 1539330275 },
+                { 7000000, HASH_INIT("17aa411843cb100e57126e911f51f295f5ddb7e9a3bd25e708990534a828c4b7"), { .std = "8545742390070173675989"   }, 1546466952 },
+                { 7500000, HASH_INIT("b3cd718643c475c18efe4e2177777d38bdca3b9fb1eb9d9155db1365d6e5e8fd"), { .std = "9703290027978634211190"   }, 1554358137 },
+                { 8000000, HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "10690776258913596267754"  }, 1561100149 },
+                { 8500000, HASH_INIT("86ea48a5ae641bd1830426c45d14315862488a749c9e93fb228c23ca07237dab"), { .std = "11798521320484609094896"  }, 1567820847 },
+                { 9000000, HASH_INIT("388f34dd94b899f65bbd23006ee93d61434a2f2a57053c9870466d8e142960e3"), { .std = "13014076996386893192616"  }, 1574706444 },
+        };
+        BREthereumBlockCheckpoint testnetCheckpoints [] = {
+                {       0, HASH_INIT("41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"), { .std = "0x100000" },  0 }, // 1061 days  6 hrs ago (Jul-30-2015 03:26:13 PM +UTC)
+        };
+        BREthereumBlockCheckpoint rinkebyCheckpoints [] = {
+                {       0, HASH_INIT("6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177"), { .std = "0x01" },  0 }, //  439 days  6 hrs ago (Apr-12-2017 03:20:50 PM +UTC)
+        };
+
+        ethereumMainnetCheckpoints = mainnetCheckpoints;
+        ethereumMainnetCheckpointsCount = sizeof(mainnetCheckpoints) / sizeof(BREthereumBlockCheckpoint);
+
+        ethereumTestnetCheckpoints = testnetCheckpoints;
+        ethereumTestnetCheckpointsCount = sizeof(testnetCheckpoints) / sizeof(BREthereumBlockCheckpoint);
+
+        ethereumRinkebyCheckpoints = rinkebyCheckpoints;
+        ethereumRinkebyCheckpointsCount = sizeof(rinkebyCheckpoints) / sizeof(BREthereumBlockCheckpoint);
+
         BRCoreParseStatus status;
 
-        for (size_t index = 0; index < CHECKPOINT_MAINNET_COUNT; index++) {
+        for (size_t index = 0; index < ethereumMainnetCheckpointsCount; index++) {
             BREthereumBlockCheckpoint *cp = &ethereumMainnetCheckpoints[index];
             cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
             assert (CORE_PARSE_OK == status);
         }
 
-        for (size_t index = 0; index < CHECKPOINT_TESTNET_COUNT; index++) {
+        for (size_t index = 0; index < ethereumTestnetCheckpointsCount; index++) {
             BREthereumBlockCheckpoint *cp = &ethereumTestnetCheckpoints[index];
             cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
             assert (CORE_PARSE_OK == status);
         }
 
-        for (size_t index = 0; index < CHECKPOINT_RINKEBY_COUNT; index++) {
+        for (size_t index = 0; index < ethereumRinkebyCheckpointsCount; index++) {
             BREthereumBlockCheckpoint *cp = &ethereumRinkebyCheckpoints[index];
             cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
             assert (CORE_PARSE_OK == status);
@@ -1692,17 +1702,17 @@ blockCheckpointFindForNetwork (BREthereumNetwork network,
     assert (NULL != count);
 
     if (network == ethNetworkMainnet) {
-        *count = CHECKPOINT_MAINNET_COUNT;
+        *count = ethereumMainnetCheckpointsCount;
         return ethereumMainnetCheckpoints;
     }
 
     if (network == ethNetworkTestnet) {
-        *count = CHECKPOINT_TESTNET_COUNT;
+        *count = ethereumTestnetCheckpointsCount;
         return ethereumTestnetCheckpoints;
     }
 
     if (network == ethNetworkRinkeby) {
-        *count = CHECKPOINT_RINKEBY_COUNT;
+        *count = ethereumRinkebyCheckpointsCount;
         return ethereumRinkebyCheckpoints;
     }
     *count = 0;
