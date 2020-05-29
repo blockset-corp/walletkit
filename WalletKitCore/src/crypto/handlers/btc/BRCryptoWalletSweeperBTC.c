@@ -161,8 +161,6 @@ cryptoWalletSweeperReleaseBTC (BRCryptoWalletSweeper sweeperBase) {
         BRTransactionFree (sweeper->txns[index]);
     }
     array_free (sweeper->txns);
-    memset (sweeper, 0, sizeof(struct BRCryptoWalletSweeperBTCRecord));
-    free (sweeper);
 }
 
 // MARK: - Support
