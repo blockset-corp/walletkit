@@ -304,10 +304,10 @@ public class BRCryptoWalletManager extends PointerType {
         Pointer thisPtr = this.getPointer();
 
         CryptoLibraryDirect.cryptoWalletManagerEstimateFeeBasisForWalletSweep(
+                sweeper.getPointer(),
                 thisPtr,
                 wallet.getPointer(),
                 cookie.getPointer(),
-                sweeper.getPointer(),
                 fee.getPointer());
     }
 

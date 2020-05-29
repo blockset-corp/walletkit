@@ -383,20 +383,6 @@ BRWalletSweeperGetBalance (BRCryptoWalletSweeperBTC sweeper) {
     return balance;
 }
 
-static BRCryptoWalletSweeperStatus
-BRWalletSweeperValidate (BRCryptoWalletSweeperBTC sweeper) {
-    if (0 == array_count (sweeper->txns)) {
-        return CRYPTO_WALLET_SWEEPER_NO_TRANSFERS_FOUND;
-    }
-
-    if (0 == BRWalletSweeperGetBalance (sweeper)) {
-        return CRYPTO_WALLET_SWEEPER_INSUFFICIENT_FUNDS;
-    }
-
-    return CRYPTO_WALLET_SWEEPER_SUCCESS;
-}
-
-
 
 // MARK: -
 

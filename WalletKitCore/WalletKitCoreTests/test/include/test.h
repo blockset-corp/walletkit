@@ -12,7 +12,7 @@
 #define BR_Ethereum_Test_H
 
 #include "ethereum/blockchain/BREthereumNetwork.h"
-#include "ethereum/ewm/BREthereumAccount.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 #include "BRCryptoSync.h"
 #include "BRCryptoAccount.h"
 #include "BRCryptoNetwork.h"

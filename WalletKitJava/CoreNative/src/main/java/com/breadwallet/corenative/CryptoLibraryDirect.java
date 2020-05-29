@@ -331,7 +331,7 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletManagerSubmitSigned(Pointer cwm, Pointer wid, Pointer tid);
     public static native Pointer cryptoWalletManagerEstimateLimit(Pointer cwm, Pointer wid, int asMaximum, Pointer target, Pointer fee, IntByReference needEstimate, IntByReference isZeroIfInsuffientFunds);
     public static native void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee);
-    public static native void cryptoWalletManagerEstimateFeeBasisForWalletSweep(Pointer cwm, Pointer wid, Pointer cookie, Pointer sweeper, Pointer fee);
+    public static native void cryptoWalletManagerEstimateFeeBasisForWalletSweep(Pointer sweeper, Pointer cwm, Pointer wid, Pointer cookie, Pointer fee);
     public static native void cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest(Pointer cwm, Pointer wid, Pointer cookie, Pointer request, Pointer fee);
     public static native Pointer cryptoWalletManagerTake(Pointer cwm);
     public static native void cryptoWalletManagerGive(Pointer cwm);
@@ -350,12 +350,12 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletMigratorRelease(Pointer migrator);
 
     // crypto/BRCryptoWalletManager.h (BRCryptoWalletSweeper)
-    public static native int cryptoWalletSweeperValidateSupported(Pointer network, Pointer currency, Pointer key, Pointer wallet);
-    public static native Pointer cryptoWalletSweeperCreateAsBtc(Pointer network, Pointer currency, Pointer key, int scheme);
+    public static native int cryptoWalletSweeperValidateSupported(Pointer cwm, Pointer wallet, Pointer key);
+    public static native Pointer cryptoWalletManagerCreateWalletSweeper(Pointer cwm, Pointer wallet, Pointer key);
     public static native Pointer cryptoWalletSweeperGetKey(Pointer sweeper);
     public static native Pointer cryptoWalletSweeperGetBalance(Pointer sweeper);
     public static native Pointer cryptoWalletSweeperGetAddress(Pointer sweeper);
-    public static native int cryptoWalletSweeperHandleTransactionAsBTC(Pointer sweeper, byte[] transaction, SizeT transactionLen);
+    public static native int cryptoWalletSweeperAddTransactionFromBundle(Pointer sweeper, byte[] transaction, SizeT transactionLen);//TODO:SWEEP use transaction bundle
     public static native int cryptoWalletSweeperValidate(Pointer sweeper);
     public static native void cryptoWalletSweeperRelease(Pointer sweeper);
 
