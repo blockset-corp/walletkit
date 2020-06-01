@@ -153,18 +153,18 @@ public class BRCryptoAccount extends PointerType {
     }
 
     public boolean isInitialized(BRCryptoNetwork network) {
-        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoAccountIsInitialized(
-                this.getPointer(),
-                network.getPointer());
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoNetworkIsAccountInitialized(
+                network.getPointer(),
+                this.getPointer());
     }
 
     public byte[] getInitializationData(BRCryptoNetwork network) {
         Pointer thisPtr = this.getPointer();
 
         SizeTByReference bytesCount = new SizeTByReference();
-        Pointer serializationPtr = CryptoLibraryDirect.cryptoAccountGetInitializationData(
-                thisPtr,
+        Pointer serializationPtr = CryptoLibraryDirect.cryptoNetworkGetAccountInitializationData(
                 network.getPointer(),
+                thisPtr,
                 bytesCount);
         if (null == serializationPtr) return null;
 
@@ -178,9 +178,9 @@ public class BRCryptoAccount extends PointerType {
     public void initialize(BRCryptoNetwork network, byte[] data) {
         Pointer thisPtr = this.getPointer();
 
-        CryptoLibraryDirect.cryptoAccountInitialize(
-                thisPtr,
+        CryptoLibraryDirect.cryptoNetworkInitializeAccount(
                 network.getPointer(),
+                thisPtr,
                 data,
                 new SizeT(data.length));
     }

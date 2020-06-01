@@ -335,19 +335,13 @@ public class BRCryptoWalletManager extends PointerType {
         CryptoLibraryDirect.cwmAnnounceGetBlockNumberFailure(thisPtr, callbackState.getPointer());
     }
 
-    public void announceGetTransactionsItem(BRCryptoClientCallbackState callbackState, BRCryptoTransferStateType status, byte[] transaction, UnsignedLong timestamp,
-                                            UnsignedLong blockHeight) {
+    public void announceTransactions(BRCryptoClientCallbackState callbackState, List<BRCryptoClientTransactionBundle> bundles) {
         Pointer thisPtr = this.getPointer();
 
-        CryptoLibraryDirect.cwmAnnounceGetTransactionsItem(thisPtr, callbackState.getPointer(), status.toCore(), transaction, new SizeT(transaction.length),
-                timestamp.longValue(), blockHeight.longValue());
-    }
+        int bundlesCount = bundles.size();
+        BRCryptoClientTransactionBundle[] bundlesArr = bundles.toArray(new BRCryptoClientTransactionBundle[bundlesCount]);
 
-    public void announceGetTransactionsComplete(BRCryptoClientCallbackState callbackState, boolean success) {
-        Pointer thisPtr = this.getPointer();
-
-        CryptoLibraryDirect.cwmAnnounceGetTransactionsComplete(thisPtr, callbackState.getPointer(), success ? BRCryptoBoolean.CRYPTO_TRUE :
-                BRCryptoBoolean.CRYPTO_FALSE);
+        CryptoLibraryDirect.cwmAnnounceTransactions(thisPtr, callbackState.getPointer(), bundlesArr, new SizeT(bundlesCount));
     }
 
     public void announceGetTransfersItem(BRCryptoClientCallbackState callbackState,
