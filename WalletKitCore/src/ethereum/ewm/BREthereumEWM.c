@@ -362,7 +362,7 @@ ewmCreate (BREthereumNetwork network,
                                     : ethAmountCreateToken (ethTokenQuantityCreate (token, walletStateGetAmount (state))));
 
         // Finally, update the balance; this will create TOK wallets as required.
-        ewmHandleBalance (ewm, balance);
+        ewmHandleBalance (ewm, balance, ETHEREUM_BOOLEAN_FALSE);
 
         if (NULL == token) {
             ethAccountSetAddressNonce (ewm->account,
@@ -1437,8 +1437,10 @@ extern unsigned int
 ewmWalletGetTransferNonce (BREthereumEWM ewm,
                            BREthereumWallet wallet) {
     pthread_mutex_lock(&ewm->lock);
+    // If countAsSource is 0; the next nonce is 0.
     unsigned int countAsSource = walletGetTransferCountAsSource(wallet);
-    unsigned int nonceMaximum  = walletGetTransferNonceMaximumAsSource(wallet);
+    // If nonceMaximum is 100; the next nonce is 101 => `1 + ...`
+    unsigned int nonceMaximum  = 1 + walletGetTransferNonceMaximumAsSource(wallet);
     pthread_mutex_unlock(&ewm->lock);
 
     return nonceMaximum > countAsSource ? nonceMaximum : countAsSource;
@@ -1722,14 +1724,16 @@ ewmHandleAccountState (BREthereumEWM ewm,
 
 extern void
 ewmHandleBalance (BREthereumEWM ewm,
-                  BREthereumAmount amount) {
+                  BREthereumAmount amount,
+                  BREthereumBoolean force) {
     BREthereumWallet wallet = (AMOUNT_ETHER == ethAmountGetType(amount)
                                ? ewmGetWallet(ewm)
                                : ewmGetWalletHoldingToken(ewm, ethAmountGetToken (amount)));
 
     int amountTypeMismatch;
 
-    if (ETHEREUM_COMPARISON_EQ != ethAmountCompare(amount, walletGetBalance(wallet), &amountTypeMismatch)) {
+    if (ETHEREUM_BOOLEAN_TRUE == force ||
+        ETHEREUM_COMPARISON_EQ != ethAmountCompare(amount, walletGetBalance(wallet), &amountTypeMismatch)) {
         walletSetBalance(wallet, amount);
         ewmSignalWalletEvent (ewm,
                               wallet,
@@ -1870,6 +1874,27 @@ ewmHandleLogFeeBasis (BREthereumEWM ewm,
         }
 }
 
+static void
+ewmUpdateAndReportWalletState (BREthereumEWM ewm,
+                               BREthereumWallet wallet) {
+    int ignoreTypeMismatch;
+
+    // If this is the primary wallet, update the nonce
+    if (wallet == ewm->walletHoldingEther) {
+        ewmHandleAnnounceNonce (ewm,
+                                ethAccountGetPrimaryAddress(ewm->account),
+                                ewmWalletGetTransferNonce (ewm, wallet),
+                                0);
+    }
+
+    // Update the balance
+    BREthereumAmount oldBalance = ewmWalletGetBalance (ewm, wallet);
+    walletUpdateBalance (wallet);
+    BREthereumAmount newBalance = ewmWalletGetBalance (ewm, wallet);
+    if (ETHEREUM_COMPARISON_EQ != ethAmountCompare (oldBalance, newBalance, &ignoreTypeMismatch))
+        ewmHandleBalance (ewm, newBalance, ETHEREUM_BOOLEAN_TRUE);
+}
+
 extern void
 ewmHandleTransaction (BREthereumEWM ewm,
                       BREthereumBCSCallbackTransactionType type,
@@ -1945,7 +1970,7 @@ ewmHandleTransaction (BREthereumEWM ewm,
     //
     if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
         CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
-        walletUpdateBalance(wallet);
+        ewmUpdateAndReportWalletState (ewm, wallet);
 
     ewmHandleTransactionOriginatingLog (ewm, type, transaction);
 }
@@ -2027,7 +2052,7 @@ ewmHandleLog (BREthereumEWM ewm,
     //
     if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
         CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
-        walletUpdateBalance(wallet);
+        ewmUpdateAndReportWalletState (ewm, wallet);
 }
 
 extern void
