@@ -1301,17 +1301,17 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
             if (NULL != transfer ){
                 uint64_t blockNumber, blockTransactionIndex, blockTimestamp;
                 BREthereumGas gasUsed;
+                ewmTransferExtractStatusIncluded(ewm, tid, NULL, &blockNumber, &blockTransactionIndex, &blockTimestamp, &gasUsed);
 
                 BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
 
-                BREthereumFeeBasis ethFeeBasis = ewmTransferGetFeeBasis (ewm, tid);
+                BREthereumFeeBasis ethFeeBasisEstimated = ewmTransferGetFeeBasis (ewm, tid);
 
                 BRCryptoUnit unit = cryptoTransferGetUnitForFee(transfer);
                 BRCryptoFeeBasis feeBasisConfirmed = cryptoFeeBasisCreateAsETH (unit,
-                                                                                ethFeeBasisGetGasLimit(ethFeeBasis),
-                                                                                ethFeeBasisGetGasPrice(ethFeeBasis));
+                                                                                gasUsed,
+                                                                                ethFeeBasisGetGasPrice(ethFeeBasisEstimated));
 
-                ewmTransferExtractStatusIncluded(ewm, tid, NULL, &blockNumber, &blockTransactionIndex, &blockTimestamp, &gasUsed);
                 BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockNumber,
                                                                                   blockTransactionIndex,
                                                                                   blockTimestamp,
