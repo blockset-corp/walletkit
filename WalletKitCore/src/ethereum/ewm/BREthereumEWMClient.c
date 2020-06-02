@@ -577,6 +577,118 @@ ewmAnnounceLog (BREthereumEWM ewm,
     return SUCCESS;
 }
 
+// ==============================================================================================
+//
+// Get Transfers
+//
+static uint64_t
+cwmParseUInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return strtoull(string, NULL, 0);
+}
+
+static UInt256
+cwmParseUInt256 (const char *string, bool *error) {
+    if (!string) { *error = true; return UINT256_ZERO; }
+
+    BRCoreParseStatus status;
+    UInt256 result = uint256CreateParse (string, 0, &status);
+    if (CORE_PARSE_OK != status) { *error = true; return UINT256_ZERO; }
+
+    return result;
+}
+
+
+extern BREthereumStatus
+ewmAnnounceTransfer (BREthereumEWM ewm,
+                    int id,
+                    const char *hash,
+                    const char *from,
+                    const char *to,
+                    const char *contract,
+                    const char *amount, // value
+                    uint64_t gasLimit,
+                    UInt256 gasPrice,
+                    const char *data,
+                    uint64_t  nonce,
+                    uint64_t  gasUsed,
+                    uint64_t logIndex,
+                    uint64_t  blockNumber,
+                    const char *blockHash,
+                    uint64_t blockConfirmations,
+                    uint64_t blockTransactionIndex,
+                    uint64_t blockTimestamp,
+                    bool isError) {
+    bool parseError = false;
+    UInt256 value = cwmParseUInt256 (amount, &parseError);
+
+    isError |= parseError;
+
+    bool needTransaction = true;
+    bool needLog         = !isError && NULL != contract;
+
+    if (needLog) {
+        size_t topicsCount = 3;
+        char *topics[3] = {
+            (char *) ethEventGetSelector(ethEventERC20Transfer),
+            ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, from),
+            ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, to)
+        };
+
+        size_t logIndex = 0;
+
+        // This function is safe to call even if `contract` does not correspond to a known token.
+        ewmAnnounceLog (ewm,
+                        id,
+                        hash,
+                        contract,
+                        topicsCount,
+                        (const char **) &topics[0],
+                        amount,
+                        gasPrice,
+                        gasUsed,
+                        logIndex,
+                        blockNumber,
+                        blockTransactionIndex,
+                        blockTimestamp);
+
+        free (topics[1]);
+        free (topics[2]);
+
+        // If `from` is our address, then this log has a transaction that
+        //     a) holds the fee; and
+        //     b) increases the nonce.
+        needTransaction = (0 == strcasecmp (from, ewmGetAccountPrimaryAddress (ewm)));
+        if (needTransaction) {
+            value = UINT256_ZERO;
+            to    = contract;
+        }
+    }
+
+    if (needTransaction) {
+        ewmAnnounceTransaction (ewm,
+                                id,
+                                hash,
+                                from,
+                                to,
+                                contract,
+                                value,
+                                gasLimit,
+                                gasPrice,
+                                data,
+                                nonce,
+                                gasUsed,
+                                blockNumber,
+                                blockHash,
+                                blockConfirmations,
+                                blockTransactionIndex,
+                                blockTimestamp,
+                                isError);
+    }
+
+    return SUCCESS;
+}
+
 extern void
 ewmAnnounceLogComplete (BREthereumEWM ewm,
                         int id,

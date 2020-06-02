@@ -209,6 +209,29 @@ extern "C" {
                             int id,
                             BREthereumBoolean success);
 
+    /// MARK: - Get Transfers
+
+    extern BREthereumStatus
+    ewmAnnounceTransfer(BREthereumEWM ewm,
+                        int id,
+                        const char *strHash,
+                        const char *from,
+                        const char *to,
+                        const char *contract,
+                        const char *amount, // value
+                        uint64_t gasLimit,
+                        UInt256 gasPrice,
+                        const char *data,
+                        uint64_t  nonce,
+                        uint64_t  gasUsed,
+                        uint64_t logIndex,
+                        uint64_t  blockNumber,
+                        const char *strBlockHash,
+                        uint64_t blockConfirmations,
+                        uint64_t blockTransactionIndex,
+                        uint64_t blockTimestamp,
+                        bool isError);
+
     /// MARK: - Get Tokens
 
     typedef void
