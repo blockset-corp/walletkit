@@ -193,7 +193,8 @@ ewmSignalAccountState (BREthereumEWM ewm,
 //
 extern void
 ewmHandleBalance (BREthereumEWM ewm,
-                  BREthereumAmount balance);
+                  BREthereumAmount balance,
+                  BREthereumBoolean force);
 
 extern void
 ewmSignalBalance (BREthereumEWM ewm,

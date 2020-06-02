@@ -58,8 +58,9 @@ struct BRCryptoClientCallbackStateRecord {
         } ethWithWallet;
         struct {
             BREthereumWallet wid;
+            BREthereumGasPrice gasPrice;
             BREthereumCookie cookie;
-        } ethWithWalletAndCookie;
+        } ethEstimateFee;
         struct {
             BREthereumWallet wid;
             BREthereumTransfer tid;
@@ -1443,11 +1444,6 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
                         BREthereumWallet wid,
                         BREthereumTransfer tid,
                         BREthereumCookie cookie,
-                        const char *from,
-                        const char *to,
-                        const char *amount,
-                        const char *price,
-                        const char *data,
                         int rid) {
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
@@ -1455,8 +1451,9 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
 
     BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
     callbackState->type = CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS;
-    callbackState->u.ethWithWalletAndCookie.wid = wid;
-    callbackState->u.ethWithWalletAndCookie.cookie = cookie;
+    callbackState->u.ethEstimateFee.wid = wid;
+    callbackState->u.ethEstimateFee.gasPrice = ewmTransferGetGasPrice (ewm, tid, WEI);
+    callbackState->u.ethEstimateFee.cookie = cookie;
     callbackState->rid = rid;
 
     BREthereumBoolean encoded = ETHEREUM_BOOLEAN_FALSE;
@@ -2417,28 +2414,24 @@ cwmAnnounceEstimateTransactionFeeSuccess (OwnershipKept BRCryptoWalletManager cw
 
     switch (callbackState->type) {
         case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS: {
-            //
-            BREthereumHash hash = ethHashCreate (strHash);
-            BREthereumTransfer transfer =  ewmWalletGetTransferByOriginatingTransactionHash (cwm->u.eth,
-                                                                                             callbackState->u.ethWithWalletAndCookie.wid,
-                                                                                             hash);
+
             char strGasEstimate[128];
             bool error = sprintf (strGasEstimate, "%" PRIu64, costUnits) < 0;
 
-            if (NULL == transfer || error) {
+//            if (NULL == transfer || error) {
+            if (error) {
                 ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                               callbackState->u.ethWithWalletAndCookie.wid,
-                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               callbackState->u.ethEstimateFee.wid,
+                                               callbackState->u.ethEstimateFee.cookie,
                                                (error ? ERROR_NUMERIC_PARSE : ERROR_FAILED),
                                                callbackState->rid);
             }
             else {
-                BREthereumGasPrice gasPrice = ewmTransferGetGasPrice (cwm->u.eth, transfer, WEI);
-                char *strGasPrice = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
+                char *strGasPrice = ethEtherGetValueString (callbackState->u.ethEstimateFee.gasPrice.etherPerGas, WEI);
 
                 ewmAnnounceGasEstimateSuccess (cwm->u.eth,
-                                               callbackState->u.ethWithWalletAndCookie.wid,
-                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               callbackState->u.ethEstimateFee.wid,
+                                               callbackState->u.ethEstimateFee.cookie,
                                                strGasEstimate,
                                                strGasPrice,
                                                callbackState->rid);
@@ -2466,8 +2459,8 @@ cwmAnnounceEstimateTransactionFeeFailure (OwnershipKept BRCryptoWalletManager cw
     switch (callbackState->type) {
         case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS:
             ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                           callbackState->u.ethWithWalletAndCookie.wid,
-                                           callbackState->u.ethWithWalletAndCookie.cookie,
+                                           callbackState->u.ethEstimateFee.wid,
+                                           callbackState->u.ethEstimateFee.cookie,
                                            ERROR_FAILED,
                                            callbackState->rid);
             break;

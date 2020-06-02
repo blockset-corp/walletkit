@@ -586,8 +586,13 @@ walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet) {
 
 #define MAX(x,y)    ((x) >= (y) ? (x) : (y))
     for (int i = 0; i < array_count(wallet->transfers); i++)
-        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i]))))
-            nonce = MAX (nonce, (unsigned int) transferGetNonce(wallet->transfers[i]));
+        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i])))) {
+            uint64_t newNonce = (unsigned int) transferGetNonce(wallet->transfers[i]);
+            // wallet->transfers can have a newly created transfer that does not yet have
+            // an assigned nonce - avoid such a transfer.
+            if (TRANSACTION_NONCE_IS_NOT_ASSIGNED != newNonce && newNonce > nonce)
+                nonce = (unsigned int) newNonce;
+        }
 #undef MAX
     return nonce;
 }

@@ -98,7 +98,7 @@ typedef struct {
 static void
 ewmHandleBalanceEventDispatcher(BREventHandler ignore,
                                 BREthereumHandleBalanceEvent *event) {
-    ewmHandleBalance(event->ewm, event->amount);
+    ewmHandleBalance(event->ewm, event->amount, ETHEREUM_BOOLEAN_FALSE);
 }
 
 BREventType handleBalanceEventType = {
