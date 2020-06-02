@@ -453,7 +453,7 @@ ewmSignalAnnounceTransaction(BREthereumEWM ewm,
 typedef struct {
     BREthereumHash hash;
     BREthereumAddress contract;
-    int topicCount;
+    size_t topicCount;
     char **arrayTopics;
     char *data;
     UInt256 gasPrice;

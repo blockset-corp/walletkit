@@ -496,7 +496,7 @@ ewmHandleAnnounceLog (BREthereumEWM ewm,
             BRRlpItem  item  = rlpEncodeUInt256 (ewm->coder, value, 1);
 
             BREthereumLog log = logCreate(bundle->contract,
-                                          bundle->topicCount,
+                                          (unsigned int) bundle->topicCount,
                                           topics,
                                           rlpItemGetDataSharedDontRelease(ewm->coder, item));
             rlpItemRelease (ewm->coder, item);
@@ -581,12 +581,6 @@ ewmAnnounceLog (BREthereumEWM ewm,
 //
 // Get Transfers
 //
-static uint64_t
-cwmParseUInt64 (const char *string, bool *error) {
-    if (!string) { *error = true; return 0; }
-    return strtoull(string, NULL, 0);
-}
-
 static UInt256
 cwmParseUInt256 (const char *string, bool *error) {
     if (!string) { *error = true; return UINT256_ZERO; }

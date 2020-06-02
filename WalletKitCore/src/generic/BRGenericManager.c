@@ -181,7 +181,9 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
                                                             strFee,
                                                             timestamp,
                                                             blockHeight,
-                                                            GENERIC_TRANSFER_STATE_ERRORED == state.type);
+                                                            GENERIC_TRANSFER_STATE_ERRORED == state.type ||
+                                                            (GENERIC_TRANSFER_STATE_INCLUDED == state.type
+                                                             && CRYPTO_FALSE == state.u.included.success));
 
     // Set the transfer's `state` and `attributes` from the read values.  For`state`, this will
     // overwrite what `genManagerRecoverTransfer()` assigned but will be correct with the saved

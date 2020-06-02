@@ -1239,7 +1239,7 @@ BRClientSyncManagerAnnounceGetTransactionsItem (BRClientSyncManager manager,
     }
 
     // Free if ownership hasn't been passed
-   if (needFree) {
+    if (needFree) {
         BRTransactionFree (transaction);
     }
 }

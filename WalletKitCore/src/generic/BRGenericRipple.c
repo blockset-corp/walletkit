@@ -8,6 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#include <errno.h>
+
 #include "BRGenericRipple.h"
 #include "ripple/BRRippleAccount.h"
 #include "ripple/BRRippleWallet.h"
@@ -372,8 +374,11 @@ genericRippleWalletValidateTransactionAttribute (BRGenericWalletRef wallet,
     if (NULL == val) return !genTransferAttributeIsRequired(attribute);
 
     if (genericRippleCompareFieldOption (key, FIELD_OPTION_DESTINATION_TAG)) {
-        uint32_t tag;
-        return 1 == sscanf(val, "%u", &tag);
+        char *end = NULL;
+        errno = 0;
+
+        uintmax_t tag = strtoumax (val, &end, 10);
+        return (ERANGE != errno && EINVAL != errno && '\0' == end[0] && tag <= UINT32_MAX);
     }
     else if (genericRippleCompareFieldOption (key, FIELD_OPTION_INVOICE_ID)) {
         BRCoreParseStatus status;
