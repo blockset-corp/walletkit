@@ -878,13 +878,15 @@ cwmWalletManagerEventAsETH (BREthereumClientContext context,
                                                           });
             }
 
+            BRCryptoWalletManagerState newState = cwmStateFromETH (event.u.changed.newState);
             cwmEvent = (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = {
                     cwmStateFromETH (event.u.changed.oldState),
-                    cwmStateFromETH (event.u.changed.newState)
+                    newState
                 }}};
 
+            cryptoWalletManagerSetState (cwm, newState);
             break;
 
         case EWM_EVENT_SYNC_PROGRESS:
