@@ -17,6 +17,7 @@
 #include "BRCryptoWalletP.h"
 #include "BRCryptoWalletManagerP.h"
 #include "BRCryptoWalletSweeperP.h"
+#include "BRCryptoPaymentP.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,7 @@ typedef struct {
     // Will be NULL if wallet sweeping is unsupported for the currency
     // (cryptoWalletManagerWalletSweeperValidateSupported status is CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY)
     const BRCryptoWalletSweeperHandlers *sweeper;
+    const BRCryptoPaymentProtocolHandlers *payment;
     const BRCryptoWalletManagerHandlers *manager;
 } BRCryptoHandlers;
 

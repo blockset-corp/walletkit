@@ -15,10 +15,12 @@
 #include "../BRCryptoHandlersExport.h"
 
 #include "crypto/BRCryptoWalletSweeperP.h"
+#include "crypto/BRCryptoPaymentP.h"
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRTransaction.h"
 #include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRPaymentProtocol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +146,47 @@ typedef struct BRCryptoWalletSweeperBTCRecord {
     char * sourceAddress;
     BRArrayOf(BRTransaction *) txns;
 } *BRCryptoWalletSweeperBTC;
+
+// MARK: - Payment Protocol
+
+// MARK: Payment Protocol Bitpay Builder
+
+typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderBTCRecord {
+    struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord base;
+    
+    BRArrayOf(BRTxOutput) outputs;
+} *BRCryptoPaymentProtocolRequestBitPayBuilderBTC;
+
+extern BRCryptoPaymentProtocolRequestBitPayBuilder
+cryptoPaymentProtocolRequestBitPayBuilderCreateAsBTC (BRCryptoBlockChainType type,
+                                                      BRCryptoNetwork cryptoNetwork,
+                                                      BRCryptoCurrency cryptoCurrency,
+                                                      BRCryptoPayProtReqBitPayCallbacks callbacks,
+                                                      const char *network,
+                                                      uint64_t time,
+                                                      uint64_t expires,
+                                                      double feeCostFactor,
+                                                      const char *memo,
+                                                      const char *paymentURL,
+                                                      const uint8_t *merchantData,
+                                                      size_t merchantDataLen);
+
+// MARK: Payment Protocol Request
+
+typedef struct BRCryptoPaymentProtocolRequestBTCRecord {
+    struct BRCryptoPaymentProtocolRequestRecord base;
+    
+    BRPaymentProtocolRequest *request;
+} *BRCryptoPaymentProtocolRequestBTC;
+
+// MARK: Payment Protocol Payment
+
+typedef struct BRCryptoPaymentProtocolPaymentBTCRecord {
+    struct BRCryptoPaymentProtocolPaymentRecord base;
+    
+    BRTransaction *transaction;
+    BRPaymentProtocolPayment *payment; // only used for BIP70
+} *BRCryptoPaymentProtocolPaymentBTC;
 
 // MARK: - Support
 
