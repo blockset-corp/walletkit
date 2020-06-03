@@ -132,11 +132,6 @@ typedef struct BRCryptoWalletManagerBTCRecord {
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
 
-// MARK: - Events
-
-extern const BREventType *bwmEventTypes[];
-extern const unsigned int bwmEventTypesCount;
-
 // MARK: - Support
 
 private_extern BRCryptoFeeBasis
@@ -149,6 +144,25 @@ cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
 
 private_extern BRCryptoHash
 cryptoHashCreateAsBTC (UInt256 btc);
+
+/// MARK: - File Service
+
+extern const char *fileServiceTypeTransactionsBTC;
+extern const char *fileServiceTypeBlocksBTC;
+extern const char *fileServiceTypePeersBTC;
+
+extern size_t fileServiceSpecificationsCountBTC;
+extern BRFileServiceTypeSpecification *fileServiceSpecificationsBTC;
+
+extern BRArrayOf(BRTransaction*) initialTransactionsLoadBTC (BRCryptoWalletManager manager);
+extern BRArrayOf(BRPeer)         initialPeersLoadBTC        (BRCryptoWalletManager manager);
+extern BRArrayOf(BRMerkleBlock*) initialBlocksLoadBTC       (BRCryptoWalletManager manager);
+
+// MARK: - Events
+
+extern const BREventType *eventTypesBTC[];
+extern const unsigned int eventTypesCountBTC;
+
 
 #ifdef __cplusplus
 }

@@ -70,71 +70,6 @@ ewmHandleGetBlocks (BREthereumBCSCallbackContext context,
 
 /// MARK: - File Service, Initial Load
 
-#define EWM_INITIAL_SET_SIZE_DEFAULT  (10)
-
-static BRSetOf(BREthereumTransaction)
-initialTransactionsLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumTransaction) transactions = BRSetNew(transactionHashValue, transactionHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != transactions && 1 != fileServiceLoad (manager->fileService, transactions, fileServiceTypeTransactionsETH, 1)) {
-        BRSetFreeAll (transactions, (void (*) (void*)) transactionRelease);
-        return NULL;
-    }
-    return transactions;
-}
-
-static BRSetOf(BREthereumLog)
-initialLogsLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumLog) logs = BRSetNew(logHashValue, logHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != logs && 1 != fileServiceLoad (manager->fileService, logs, fileServiceTypeLogsETH, 1)) {
-        BRSetFreeAll (logs, (void (*) (void*)) logRelease);
-        return NULL;
-    }
-    return logs;
-}
-
-
-static BRSetOf(BREthereumBlock)
-initialBlocksLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumBlock) blocks = BRSetNew(blockHashValue, blockHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != blocks && 1 != fileServiceLoad (manager->fileService, blocks, fileServiceTypeBlocksETH, 1)) {
-        BRSetFreeAll (blocks,  (void (*) (void*)) blockRelease);
-        return NULL;
-    }
-    return blocks;
-}
-
-static BRSetOf(BREthereumNodeConfig)
-initialNodesLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumNodeConfig) nodes = BRSetNew(nodeConfigHashValue, nodeConfigHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != nodes && 1 != fileServiceLoad (manager->fileService, nodes, fileServiceTypeNodesETH, 1)) {
-        BRSetFreeAll (nodes, (void (*) (void*)) nodeConfigRelease);
-        return NULL;
-    }
-    return nodes;
-}
-
-static BRSetOf(BREthereumToken)
-initialTokensLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumToken) tokens = ethTokenSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != tokens && 1 != fileServiceLoad (manager->fileService, tokens, fileServiceTypeTokensETH, 1)) {
-        BRSetFreeAll (tokens, (void (*) (void*)) ethTokenRelease);
-        return NULL;
-    }
-    return tokens;
-}
-
-#if 0
-static BRSetOf(BREthereumWalletState)
-initialWalletsLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BREthereumWalletState) states = walletStateSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
-    if (NULL != states && 1 != fileServiceLoad (manager->fileService, states, ewmFileServiceTypeWallets, 1)) {
-        BRSetFreeAll (states, (void (*) (void*)) walletStateRelease);
-        return NULL;
-    }
-    return states;
-}
-#endif
-
 static void
 cryptoWalletManagerCreateInitialSets (BRCryptoWalletManager manager,
                                       BREthereumNetwork network,
@@ -146,13 +81,13 @@ cryptoWalletManagerCreateInitialSets (BRCryptoWalletManager manager,
                                       BRSetOf(BREthereumToken) *tokens,
                                       BRSetOf(BREthereumWalletState) *states) {
 
-    *transactions = initialTransactionsLoad (manager);
-    *logs   = initialLogsLoad   (manager);
-    *nodes  = initialNodesLoad  (manager);
-    *blocks = initialBlocksLoad (manager);
-    *tokens = initialTokensLoad  (manager);
+    *transactions = initialTransactionsLoadETH (manager);
+    *logs   = initialLogsLoadETH   (manager);
+    *nodes  = initialNodesLoadETH  (manager);
+    *blocks = initialBlocksLoadETH (manager);
+    *tokens = initialTokensLoadETH  (manager);
 #if 0
-    *states = initialWalletsLoad (manager);
+    *states = initialWalletsLoadETH (manager);
 #endif
 
     // If any are NULL, then we have an error and a full sync is required.  The sync will be
