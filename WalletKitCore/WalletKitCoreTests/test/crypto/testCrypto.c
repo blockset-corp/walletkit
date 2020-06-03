@@ -24,8 +24,11 @@
 
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
+#include "support/util/BRHex.h"
 #include "bitcoin/BRChainParams.h"
 #include "bitcoin/BRWallet.h"
+
+#include "crypto/handlers/btc/BRCryptoBTC.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -371,7 +374,6 @@ _CWMNopGetTransactionsCallback (BRCryptoClientContext context,
                                 OwnershipGiven BRCryptoClientCallbackState callbackState,
                                 OwnershipKept const char **addresses,
                                 size_t addressCount,
-                                OwnershipKept const char *currency,
                                 uint64_t begBlockNumber,
                                 uint64_t endBlockNumber) {
     cryptoWalletManagerGive (manager);
@@ -383,7 +385,6 @@ _CWMNopGetTransfersCallback (BRCryptoClientContext context,
                              OwnershipGiven BRCryptoClientCallbackState callbackState,
                              OwnershipKept const char **addresses,
                              size_t addressCount,
-                             OwnershipKept const char *currency,
                              uint64_t begBlockNumber,
                              uint64_t endBlockNumber) {
     cryptoWalletManagerGive (manager);
@@ -569,7 +570,7 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                         success = CRYPTO_COMPARE_EQ == cryptoAmountCompare (e1->u.w.event.u.balanceUpdated.amount, e2->u.w.event.u.balanceUpdated.amount);
                         break;
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-                        success = CRYPTO_TRUE == cryptoFeeBasisIsIdentical (e1->u.w.event.u.feeBasisUpdated.basis, e2->u.w.event.u.feeBasisUpdated.basis);
+                        success = CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisUpdated.basis, e2->u.w.event.u.feeBasisUpdated.basis);
                         break;
                     case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
@@ -580,7 +581,7 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
                         success = (e1->u.w.event.u.feeBasisEstimated.cookie == e2->u.w.event.u.feeBasisEstimated.cookie &&
                                    e1->u.w.event.u.feeBasisEstimated.status == e2->u.w.event.u.feeBasisEstimated.status &&
-                                   CRYPTO_TRUE == cryptoFeeBasisIsIdentical (e1->u.w.event.u.feeBasisEstimated.basis, e2->u.w.event.u.feeBasisEstimated.basis));
+                                   CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisEstimated.basis, e2->u.w.event.u.feeBasisEstimated.basis));
                         break;
                     default:
                         break;
