@@ -22,7 +22,7 @@
 
 #include "BRCryptoClientP.h"
 #include "support/BRFileService.h"
-#include "ethereum/event/BREvent.h"
+#include "support/event/BREvent.h"
 
 #ifdef __cplusplus
 extern "C" {

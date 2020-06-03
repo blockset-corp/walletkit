@@ -10,16 +10,16 @@ let package = Package(
             targets: ["WalletKitCore"]
         ),
         
-//        .executable(
-//            name: "WalletKitCoreExplore",
-//            targets: ["WalletKitCoreExplore"]
-//        ),
-//
-//
-//        .executable(
-//            name: "WalletKitCorePerf",
-//            targets: ["WalletKitCorePerf"]
-//        ),
+        .executable(
+            name: "WalletKitCoreExplore",
+            targets: ["WalletKitCoreExplore"]
+        ),
+
+
+        .executable(
+            name: "WalletKitCorePerf",
+            targets: ["WalletKitCorePerf"]
+        ),
     ],
     dependencies: [],
     targets: [
@@ -62,11 +62,7 @@ let package = Package(
             path: "src",
             exclude: [
                 "hedera/proto",      // See target: WalletKitHederaProto
-                "version",
-
-                "archive",
-                "crypto/BRCryptoPayment.c",
-                "crypto/BRCryptoWalletManagerClient.c"
+                "version"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
@@ -138,56 +134,56 @@ let package = Package(
 
         // MARK: - Core Misc Targets
 
-//        .target (
-//            name: "WalletKitCoreExplore",
-//            dependencies: ["WalletKitCore"],
-//            path: "WalletKitCoreExplore",
-//            cSettings: [
-//                .headerSearchPath("../include"),
-//                .headerSearchPath("../src"),
-//            ]
-//        ),
-//
-//        .target (
-//            name: "WalletKitCorePerf",
-//            dependencies: ["WalletKitCore", "WalletKitCoreSupportTests"],
-//            path: "WalletKitCorePerf",
-//            cSettings: [
-//                .headerSearchPath("../include"),
-//                .headerSearchPath("../src"),
-//            ]
-//        ),
+        .target (
+            name: "WalletKitCoreExplore",
+            dependencies: ["WalletKitCore"],
+            path: "WalletKitCoreExplore",
+            cSettings: [
+                .headerSearchPath("../include"),
+                .headerSearchPath("../src"),
+            ]
+        ),
+
+        .target (
+            name: "WalletKitCorePerf",
+            dependencies: ["WalletKitCore", "WalletKitCoreSupportTests"],
+            path: "WalletKitCorePerf",
+            cSettings: [
+                .headerSearchPath("../include"),
+                .headerSearchPath("../src"),
+            ]
+        ),
 
         // MARK: - Core Test Targets
 
-//        .target(
-//            name: "WalletKitCoreSupportTests",
-//            dependencies: ["WalletKitCore"],
-//            path: "WalletKitCoreTests/test",
-//            publicHeadersPath: "include",
-//            cSettings: [
-//                .define("BITCOIN_TEST_NO_MAIN"),
-//                .headerSearchPath("../../include"),
-//                .headerSearchPath("../../src"),
-//            ]
-//        ),
-//
-//        .testTarget(
-//            name: "WalletKitCoreTests",
-//            dependencies: [
-//                "WalletKitCoreSupportTests"
-//            ],
-//            path: "WalletKitCoreTests",
-//            exclude: [
-//                "test"
-//            ],
-//            cSettings: [
-//                .headerSearchPath("../src"),
-//            ],
-//            linkerSettings: [
-//                .linkedLibrary("pthread"),
-//                .linkedLibrary("bsd", .when(platforms: [.linux])),
-//            ]
-//        ),
+        .target(
+            name: "WalletKitCoreSupportTests",
+            dependencies: ["WalletKitCore"],
+            path: "WalletKitCoreTests/test",
+            publicHeadersPath: "include",
+            cSettings: [
+                .define("BITCOIN_TEST_NO_MAIN"),
+                .headerSearchPath("../../include"),
+                .headerSearchPath("../../src"),
+            ]
+        ),
+
+        .testTarget(
+            name: "WalletKitCoreTests",
+            dependencies: [
+                "WalletKitCoreSupportTests"
+            ],
+            path: "WalletKitCoreTests",
+            exclude: [
+                "test"
+            ],
+            cSettings: [
+                .headerSearchPath("../src"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("pthread"),
+                .linkedLibrary("bsd", .when(platforms: [.linux])),
+            ]
+        ),
     ]
 )

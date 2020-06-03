@@ -31,7 +31,7 @@
 #include "BRCryptoHandlersP.h"
 
 #include "support/BRFileService.h"
-#include "ethereum/event/BREventAlarm.h"
+#include "support/event/BREventAlarm.h"
 
 // We'll do a period QRY 'tick-tock' CWM_CONFIRMATION_PERIOD_FACTOR times in
 // each network's ConfirmationPeriod.  Thus, for example, the Bitcoin confirmation period is

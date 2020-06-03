@@ -22,7 +22,7 @@
 #include "bitcoin/BRWallet.h"
 #include "bcash/BRBCashAddr.h"
 
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "ethereum/util/BRUtil.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
 #include "ethereum/ewm/BREthereumAccount.h"

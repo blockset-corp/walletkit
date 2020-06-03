@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include "support/BRArray.h"
 #include "support/BRSet.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "BREthereumBlock.h"
 
 #define POW_WORD_BYTES            (4)

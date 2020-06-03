@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "support/BRInt.h"
-#include "BRUtilHex.h"
+#include "BRHex.h"
 
 // Convert a char into uint8_t (decode)
 #define decodeChar(c)           ((uint8_t) _hexu(c))
