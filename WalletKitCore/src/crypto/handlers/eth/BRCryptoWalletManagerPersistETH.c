@@ -1,14 +1,13 @@
 //
-//  BREthereumEWMPersist.c
-//  BRCore
+//  BRCryptoWalletManagerETH.c
+//  Core
 //
-//  Created by Ed Gamble on 9/24/19.
-//  Copyright © 2019 Breadwinner AG. All rights reserved.
-//
+//  Created by Ed Gamble on 05/22/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
-
+//
 #include "BRCryptoETH.h"
 
 #include "ethereum/blockchain/BREthereumBlock.h"
