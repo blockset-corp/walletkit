@@ -91,16 +91,10 @@ target_sources (corecrypto
                 src/main/cpp/core/bitcoin/BRPeer.h
                 src/main/cpp/core/bitcoin/BRPeerManager.c
                 src/main/cpp/core/bitcoin/BRPeerManager.h
-                src/main/cpp/core/bitcoin/BRSyncManager.c
-                src/main/cpp/core/bitcoin/BRSyncManager.h
                 src/main/cpp/core/bitcoin/BRTransaction.c
                 src/main/cpp/core/bitcoin/BRTransaction.h
                 src/main/cpp/core/bitcoin/BRWallet.c
-                src/main/cpp/core/bitcoin/BRWallet.h
-                src/main/cpp/core/bitcoin/BRWalletManager.c
-                src/main/cpp/core/bitcoin/BRWalletManager.h
-                src/main/cpp/core/bitcoin/BRWalletManagerEvent.c
-                src/main/cpp/core/bitcoin/BRWalletManagerPrivate.h)
+                src/main/cpp/core/bitcoin/BRWallet.h)
 
 # Bitcoin Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -121,7 +115,6 @@ target_sources (corecrypto
 # Ethereum
 target_sources (corecrypto
                 PRIVATE
-                src/main/cpp/core/ethereum/BREthereum.h
                 # Util
                 src/main/cpp/core/ethereum/util/BRKeccak.c
                 src/main/cpp/core/ethereum/util/BRKeccak.h
@@ -160,6 +153,8 @@ target_sources (corecrypto
                 src/main/cpp/core/ethereum/base/BREthereumSignature.c
                 src/main/cpp/core/ethereum/base/BREthereumSignature.h
                 # Block Chain
+                src/main/cpp/core/ethereum/blockchain/BREthereumAccount.c
+                src/main/cpp/core/ethereum/blockchain/BREthereumAccount.h
                 src/main/cpp/core/ethereum/blockchain/BREthereumAccountState.c
                 src/main/cpp/core/ethereum/blockchain/BREthereumAccountState.h
                 src/main/cpp/core/ethereum/blockchain/BREthereumBlock.c
@@ -227,24 +222,7 @@ target_sources (corecrypto
                 src/main/cpp/core/ethereum/bcs/BREthereumBCSEvent.c
                 src/main/cpp/core/ethereum/bcs/BREthereumBCSPrivate.h
                 src/main/cpp/core/ethereum/bcs/BREthereumBCSSync.c
-                src/main/cpp/core/ethereum/bcs/BREthereumBlockChainSlice.h
-                #EWM
-                src/main/cpp/core/ethereum/ewm/BREthereumBase.h
-                src/main/cpp/core/ethereum/ewm/BREthereumAccount.c
-                src/main/cpp/core/ethereum/ewm/BREthereumAccount.h
-                src/main/cpp/core/ethereum/ewm/BREthereumAmount.c
-                src/main/cpp/core/ethereum/ewm/BREthereumAmount.h
-                src/main/cpp/core/ethereum/ewm/BREthereumTransfer.c
-                src/main/cpp/core/ethereum/ewm/BREthereumTransfer.h
-                src/main/cpp/core/ethereum/ewm/BREthereumWallet.c
-                src/main/cpp/core/ethereum/ewm/BREthereumWallet.h
-                src/main/cpp/core/ethereum/ewm/BREthereumClient.h
-                src/main/cpp/core/ethereum/ewm/BREthereumEWM.c
-                src/main/cpp/core/ethereum/ewm/BREthereumEWM.h
-                src/main/cpp/core/ethereum/ewm/BREthereumEWMClient.c
-                src/main/cpp/core/ethereum/ewm/BREthereumEWMEvent.c
-                src/main/cpp/core/ethereum/ewm/BREthereumEWMPersist.c
-                src/main/cpp/core/ethereum/ewm/BREthereumEWMPrivate.h)
+                src/main/cpp/core/ethereum/bcs/BREthereumBlockChainSlice.h)
 
 # Ethereum Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -297,26 +275,16 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     src/main/cpp/core/ripple/testRippleTxList2.h)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-# Generic
-target_sources (corecrypto
-                PRIVATE
-                src/main/cpp/core/generic/BRGenericBase.h
-                src/main/cpp/core/generic/BRGeneric.c
-                src/main/cpp/core/generic/BRGeneric.h
-                src/main/cpp/core/generic/BRGenericClient.c
-                src/main/cpp/core/generic/BRGenericClient.h
-                src/main/cpp/core/generic/BRGenericHandlers.c
-                src/main/cpp/core/generic/BRGenericHandlers.h
-                src/main/cpp/core/generic/BRGenericManager.c
-                src/main/cpp/core/generic/BRGenericRipple.h
-                src/main/cpp/core/generic/BRGenericRipple.c)
-
 # Crypto
 target_sources (corecrypto
                 PRIVATE
                 #  Dependency Order
                 src/main/cpp/core/include/BRCryptoBase.h
                 src/main/cpp/core/crypto/BRCryptoBaseP.h
+
+                src/main/cpp/core/crypto/handlers/BRCryptoHandlersExport.h
+                src/main/cpp/core/crypto/BRCryptoHandlersP.h
+                src/main/cpp/core/crypto/BRCryptoHandlers.c
 
                 src/main/cpp/core/include/BRCryptoStatus.h
                 src/main/cpp/core/crypto/BRCryptoStatusP.h
@@ -373,8 +341,12 @@ target_sources (corecrypto
 
                 src/main/cpp/core/include/BRCryptoSync.h
 
-                src/main/cpp/core/include/BRCryptoWalletManagerClient.h
-                src/main/cpp/core/crypto/BRCryptoWalletManagerClient.c
+                src/main/cpp/core/include/BRCryptoClient.h
+                src/main/cpp/core/crypto/BRCryptoClientP.h
+                src/main/cpp/core/crypto/BRCryptoClient.c
+
+                src/main/cpp/core/crypto/BRCryptoFileService.h
+                src/main/cpp/core/crypto/BRCryptoFileService.c
 
                 src/main/cpp/core/include/BRCryptoWalletManager.h
                 src/main/cpp/core/crypto/BRCryptoWalletManagerP.h
@@ -391,7 +363,62 @@ target_sources (corecrypto
 
                 src/main/cpp/core/include/BRCryptoSigner.h
                 src/main/cpp/core/crypto/BRCryptoSigner.c
+
+                src/main/cpp/core/include/BRCryptoWalletSweeper.h
+                src/main/cpp/core/crypto/BRCryptoWalletSweeperP.h
+                src/main/cpp/core/crypto/BRCryptoWalletSweeper.c
                 )
+
+# Crypto BTC
+target_sources (corecrypto
+                PRIVATE
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoBTC.h
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoSupportBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoNetworkBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoAddressBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoTransferBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoWalletBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoWalletSweeperBTC.c
+                src/main/cpp/core/crypto/handlers/btc/BRCryptoWalletManagerBTC.c
+                )
+
+# Crypto ETH
+target_sources (corecrypto
+                PRIVATE
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoETH.h
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoSupportETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoNetworkETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoAddressETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoTransferETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoWalletETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoWalletManagerPersistETH.c
+                src/main/cpp/core/crypto/handlers/eth/BRCryptoWalletManagerETH.c
+                )
+
+# Crypto XRP
+target_sources (corecrypto
+                PRIVATE
+                src/main/cpp/core/crypto/handlers/xrp/handlers/BRCryptoXRP.h
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoSupportXRP.c
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoNetworkXRP.c
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoAddressXRP.c
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoTransferXRP.c
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoWalletXRP.c
+                src/main/cpp/core/crypto/handlers/xrp/BRCryptoWalletManagerXRP.c
+                )
+
+# Crypto HBAR
+target_sources (corecrypto
+                PRIVATE
+                src/main/cpp/core/crypto/handlers/hbar/handlers/BRCryptoHBAR.h
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoSupportHBAR.c
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoNetworkHBAR.c
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoAddressHBAR.c
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoTransferHBAR.c
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoWalletHBAR.c
+                src/main/cpp/core/crypto/handlers/hbar/BRCryptoWalletManagerHBAR.c
+                )
+
 
 # Crypto Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)

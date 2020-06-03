@@ -5,6 +5,7 @@
 #include "crypto/BRCryptoKeyP.h"
 #include "crypto/BRCryptoClientP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
+#include "crypto/BRCryptoWalletSweeperP.h"
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRPeerManager.h"
@@ -111,7 +112,7 @@ cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsBase, btcWallet);
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
     array_add (manager->wallets, manager->wallet);
 
     // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
@@ -278,11 +279,11 @@ cryptoWalletManagerEstimateLimitBTC (BRCryptoWalletManager cwm,
 
 static BRCryptoFeeBasis
 cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet  wallet,
-                                               BRCryptoCookie cookie,
-                                               BRCryptoAddress target,
-                                               BRCryptoAmount amount,
-                                               BRCryptoNetworkFee networkFee) {
+                                        BRCryptoWallet wallet,
+                                        BRCryptoCookie cookie,
+                                        BRCryptoAddress target,
+                                        BRCryptoAmount amount,
+                                        BRCryptoNetworkFee networkFee) {
     BRWallet *btcWallet = cryptoWalletAsBTC(wallet);
 
     BRCryptoBoolean overflow = CRYPTO_FALSE;
@@ -298,7 +299,7 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
 
 static void
 cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManager manager,
-                                                                    OwnershipKept BRCryptoClientTransactionBundle bundle) {
+                                                             OwnershipKept BRCryptoClientTransactionBundle bundle) {
     BRTransaction *btcTransaction = BRTransactionParse (bundle->serialization, bundle->serializationCount);
 
     bool error = TRANSFER_STATUS_ERRORED != bundle->status;
@@ -527,6 +528,66 @@ crytpWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager cwm) {
     if (NULL != peers ) array_free (peers);
 
     return baseManager;
+}
+
+/// MARK: - Wallet Sweeper
+
+extern BRCryptoWalletSweeperStatus
+cryptoWalletManagerWalletSweeperValidateSupportedBTC (BRCryptoWalletManager cwm,
+                                                      BRCryptoWallet wallet,
+                                                      BRCryptoKey key) {
+    BRWallet * wid          = cryptoWalletAsBTC (wallet);
+    BRKey * keyCore            = cryptoKeyGetCore (key);
+    BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
+    
+    // encode using legacy format (only supported method for BTC)
+    size_t addrLength = BRKeyLegacyAddr (keyCore, NULL, 0, addrParams);
+    char  *addr = malloc (addrLength + 1);
+    BRKeyLegacyAddr (keyCore, addr, addrLength, addrParams);
+    addr[addrLength] = '\0';
+
+    // check if we are trying to sweep ourselves
+    int containsAddr = BRWalletContainsAddress (wid, addr);
+    free (addr);
+
+    if (containsAddr) {
+        return CRYPTO_WALLET_SWEEPER_INVALID_SOURCE_WALLET;
+    }
+
+    return CRYPTO_WALLET_SWEEPER_SUCCESS;
+}
+
+extern BRCryptoWalletSweeper
+cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
+                                           BRCryptoWallet wallet,
+                                           BRCryptoKey key) {
+    BRCryptoCurrency currency = cryptoWalletGetCurrency (wallet);
+    BRCryptoUnit unit = cryptoNetworkGetUnitAsBase (cwm->network, currency);
+    
+    BRCryptoWalletSweeper sweeperBase = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
+                                                                         cwm->type,
+                                                                         key,
+                                                                         unit);
+    
+    BRCryptoWalletSweeperBTC sweeper = (BRCryptoWalletSweeperBTC) sweeperBase;
+    
+    BRKey *keyCore = cryptoKeyGetCore (key);
+    BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
+    
+    size_t addressLength = BRKeyLegacyAddr (keyCore, NULL, 0, addrParams);
+    char  *address = malloc (addressLength + 1);
+    BRKeyLegacyAddr (keyCore, address, addressLength, addrParams);
+    address[addressLength] = '\0';
+    
+    sweeper->addrParams = addrParams;
+    sweeper->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
+    sweeper->sourceAddress = address;
+    array_new (sweeper->txns, 100);
+    
+    cryptoUnitGive (unit);
+    cryptoCurrencyGive (currency);
+    
+    return sweeperBase;
 }
 
 /// MARK: - Transaction File Service
@@ -1357,7 +1418,9 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
-    cryptoWalletManagerRecoverTransferFromTransferBundleBTC
+    cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    cryptoWalletManagerWalletSweeperValidateSupportedBTC,
+    cryptoWalletManagerCreateWalletSweeperBTC
 };
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
@@ -1372,5 +1435,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
-    cryptoWalletManagerRecoverTransferFromTransferBundleBTC
+    cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    cryptoWalletManagerWalletSweeperValidateSupportedBTC,
+    cryptoWalletManagerCreateWalletSweeperBTC
 };
