@@ -309,37 +309,6 @@ cryptoWalletManagerGetEventTypesETH (BRCryptoWalletManager manager,
     return eventTypesETH;
 }
 
-#if 0
-extern void
-walletSignTransfer (BREthereumWallet wallet,
-                    BREthereumTransfer transfer,
-                    const char *paperKey) {
-    transferSign (transfer,
-                  wallet->network,
-                  wallet->account,
-                  wallet->address,
-                  paperKey);
-}
-
-/**
- * Sign the transfer with a private key
- *
- * @param wallet
- * @param transfer
- * @param privateKey
- */
-extern void
-walletSignTransferWithPrivateKey (BREthereumWallet wallet,
-                                  BREthereumTransfer transfer,
-                                  BRKey privateKey) {
-    transferSignWithKey (transfer,
-                         wallet->network,
-                         wallet->account,
-                         wallet->address,
-                         privateKey);
-}
-#endif
-
 static BRCryptoBoolean
 cryptoWalletManagerSignTransaction (BRCryptoWalletManager managerBase,
                                     BRCryptoWallet walletBase,

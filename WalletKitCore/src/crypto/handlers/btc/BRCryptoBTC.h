@@ -121,27 +121,6 @@ cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
 private_extern BRCryptoTransferBTC
 cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
                                      UInt256 hash);
-#if 0
-private_extern BRWallet *
-cryptoWalletAsBTC (BRCryptoWallet wallet);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRWalletManager bwm,
-                         BRWallet *wid);
-
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
-                               BRTransaction *btc);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRWalletManager bwm,
-                         BRWallet *wid);
-
-#endif
 
 // MARK: - (Wallet) Manager
 
@@ -152,83 +131,6 @@ typedef struct BRCryptoWalletManagerBTCRecord {
 } *BRCryptoWalletManagerBTC;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
-
-#ifdef REFACTOR
-private_extern BRWalletManager
-cryptoWalletManagerAsBTC (BRCryptoWalletManager manager) {
-    assert (BLOCK_CHAIN_TYPE_BTC == manager->type);
-    return manager->u.btc;
-}
-
-private_extern BREthereumEWM
-cryptoWalletManagerAsETH (BRCryptoWalletManager manager) {
-    assert (BLOCK_CHAIN_TYPE_ETH == manager->type);
-    return manager->u.eth;
-}
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasBTC (BRCryptoWalletManager manager,
-                           BRWalletManager bwm) {
-    return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == manager->type && bwm == manager->u.btc);
-}
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasETH (BRCryptoWalletManager manager,
-                           BREthereumEWM ewm) {
-    return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == manager->type && ewm == manager->u.eth);
-}
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasGEN (BRCryptoWalletManager manager,
-                           BRGenericManager gwm) {
-    return AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_GEN == manager->type && gwm == manager->u.gen);
-}
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsBTC (BRCryptoWalletManager cwm,
-                                    BRWallet *btc) {
-    BRCryptoWallet wallet = NULL;
-    pthread_mutex_lock (&cwm->lock);
-    for (size_t index = 0; index < array_count (cwm->wallets); index++) {
-        if (btc == cryptoWalletAsBTC (cwm->wallets[index])) {
-            wallet = cryptoWalletTake (cwm->wallets[index]);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&cwm->lock);
-    return wallet;
-}
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsETH (BRCryptoWalletManager cwm,
-                                    BREthereumWallet eth) {
-    BRCryptoWallet wallet = NULL;
-    pthread_mutex_lock (&cwm->lock);
-    for (size_t index = 0; index < array_count (cwm->wallets); index++) {
-        if (eth == cryptoWalletAsETH (cwm->wallets[index])) {
-            wallet = cryptoWalletTake (cwm->wallets[index]);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&cwm->lock);
-    return wallet;
-}
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsGEN (BRCryptoWalletManager cwm,
-                                    BRGenericWallet gen) {
-    BRCryptoWallet wallet = NULL;
-    pthread_mutex_lock (&cwm->lock);
-    for (size_t index = 0; index < array_count (cwm->wallets); index++) {
-        if (gen == cryptoWalletAsGEN (cwm->wallets[index])) {
-            wallet = cryptoWalletTake (cwm->wallets[index]);
-            break;
-        }
-    }
-    pthread_mutex_unlock (&cwm->lock);
-    return wallet;
-}
-#endif
 
 // MARK: - Events
 

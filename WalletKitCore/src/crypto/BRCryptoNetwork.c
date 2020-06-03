@@ -87,22 +87,6 @@ cryptoNetworkFeeRelease (BRCryptoNetworkFee networkFee) {
     free (networkFee);
 }
 
-#ifdef REFACTOR
-private_extern BREthereumGasPrice
-cryptoNetworkFeeAsETH (BRCryptoNetworkFee networkFee) {
-    UInt256 value = cryptoAmountGetValue (networkFee->pricePerCostFactor);
-    return ethGasPriceCreate (ethEtherCreate(value));
-}
-
-private_extern uint64_t
-cryptoNetworkFeeAsGEN( BRCryptoNetworkFee networkFee) {
-    BRCryptoBoolean overflow;
-    uint64_t value = cryptoAmountGetIntegerRaw (networkFee->pricePerCostFactor, &overflow);
-    assert (CRYPTO_FALSE == overflow);
-    return value;
-}
-#endif
-
 /// MARK: - Network
 
 #define CRYPTO_NETWORK_DEFAULT_CURRENCY_ASSOCIATIONS        (2)
@@ -579,27 +563,6 @@ extern const char *
 cryptoNetworkGetETHNetworkName (BRCryptoNetwork network) {
     BREthereumNetwork ethNetwork = cryptoNetworkAsETH(network);
     return ethNetworkGetName (ethNetwork);
-}
-
-// TODO(discuss): Is it safe to give out this pointer?
-private_extern const BRChainParams *
-cryptoNetworkAsBTC (BRCryptoNetwork network) {
-    assert (BLOCK_CHAIN_TYPE_BTC == network->type);
-    return network->u.btc;
-}
-
-// TODO(discuss): Is it safe to give out this pointer?
-private_extern BREthereumNetwork
-cryptoNetworkAsETH (BRCryptoNetwork network) {
-    assert (BLOCK_CHAIN_TYPE_ETH == network->type);
-    return network->u.eth;
-}
-
-// TODO(discuss): Is it safe to give out this pointer?
-private_extern BRGenericNetwork
-cryptoNetworkAsGEN (BRCryptoNetwork network) {
-    assert (BLOCK_CHAIN_TYPE_GEN == network->type);
-    return network->u.gen;
 }
 #endif
 

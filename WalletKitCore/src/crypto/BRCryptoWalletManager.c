@@ -551,24 +551,6 @@ cryptoWalletManagerSetMode (BRCryptoWalletManager cwm, BRCryptoSyncMode mode) {
     }
     cwm->syncMode = mode;
     pthread_mutex_unlock (&cwm->lock);
-
-#ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerSetMode (cwm->u.btc, mode);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            ewmUpdateMode (cwm->u.eth, mode);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            assert (CRYPTO_SYNC_MODE_API_ONLY == mode);
-            break;
-        default:
-            assert (0);
-            break;
-    }
-#endif
-
 }
 
 extern BRCryptoSyncMode
@@ -577,20 +559,6 @@ cryptoWalletManagerGetMode (BRCryptoWalletManager cwm) {
     BRCryptoSyncMode mode = cwm->syncMode;
     pthread_mutex_unlock (&cwm->lock);
     return mode;
-#ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-           return BRWalletManagerGetMode (cwm->u.btc);
-        case BLOCK_CHAIN_TYPE_ETH:
-            return ewmGetMode (cwm->u.eth);
-        case BLOCK_CHAIN_TYPE_GEN:
-            return CRYPTO_SYNC_MODE_API_ONLY;
-        default:
-            assert (0);
-            return CRYPTO_SYNC_MODE_API_ONLY;
-
-    }
-#endif
 }
 
 extern BRCryptoWalletManagerState
@@ -781,24 +749,6 @@ cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
 
     // P2P Manager
     // QRY Manager
-
-    #ifdef REFACTOR
-    // Stop the specific cwm type, if it exists.
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            if (NULL != cwm->u.btc)
-                BRWalletManagerStop (cwm->u.btc);
-            break;
-        case BLOCK_CHAIN_TYPE_ETH:
-            if (NULL != cwm->u.eth)
-                ewmStop (cwm->u.eth);
-            break;
-        case BLOCK_CHAIN_TYPE_GEN:
-            if (NULL != cwm->u.gen)
-                genManagerStop (cwm->u.gen);
-            break;
-    }
-#endif
 }
 
 /// MARK: - Connect/Disconnect/Sync
@@ -819,15 +769,10 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
 
             cryptoWalletManagerSetState (cwm, newState);
 
-            (void) oldState;
-#ifdef REFACTOR
-            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                      cryptoWalletManagerTake (cwm),
-                                                      (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateManagerEvent(cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = { oldState, newState }}
             });
-#endif
             break;
         }
         case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
@@ -853,15 +798,10 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
 
             cryptoWalletManagerSetState (cwm, newState);
 
-            (void) oldState;
-#ifdef REFACTOR
-            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                      cryptoWalletManagerTake (cwm),
-                                                      (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateManagerEvent(cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = { oldState, newState }}
             });
-#endif
             break;
         }
 

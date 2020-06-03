@@ -43,40 +43,6 @@ cryptoHashCreateAsBTC (UInt256 btc) {
 }
 
 #ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth);
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen);
-#endif
-
-#ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsBTC (UInt256 btc) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_BTC);
-    hash->u.btc = btc;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_ETH);
-    hash->u.eth = eth;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_GEN);
-    hash->u.gen = gen;
-
-    return hash;
-}
-#endif
-
-#ifdef REFACTOR
     extern char *
     cryptoHashString (BRCryptoHash hash) {
     switch (hash->type) {

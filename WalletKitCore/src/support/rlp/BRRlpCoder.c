@@ -122,13 +122,6 @@ rlpCoderCreate (void) {
 
     pthread_mutex_init_brd (&coder->lock, PTHREAD_MUTEX_NORMAL);
 
-#if 0
-    for (size_t index = 0; index < CODER_DEFAULT_ITEMS; index++) {
-        BRRlpItem item = calloc (1, sizeof (struct BRRlpItemRecord));
-        item->next = coder->free;
-        coder->free = item;
-    }
-#endif
     return coder;
 }
 
@@ -390,15 +383,6 @@ encodeLengthIntoBytes (uint64_t length, uint8_t baseline,
         *bytes9Count = 1 + bytesCount;
     }
 }
-
-#if 0
-static BRRlpItem
-coderEncodeLength (BRRlpCoder coder, uint64_t length, uint8_t baseline) {
-    uint8_t bytesCount, bytes[9];
-    coderEncodeLengthIntoBytes(coder, length, baseline, bytes, &bytesCount);
-    return itemCreate (coder, bytes, bytesCount, 0);
-}
-#endif
 
 /**
  * The value of `length` is used throughout for memcpy() and releated functions; it must

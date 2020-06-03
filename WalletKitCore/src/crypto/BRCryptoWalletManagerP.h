@@ -196,35 +196,6 @@ cryptoWalletManagerClientCreateETHClient (OwnershipKept BRCryptoWalletManager cw
 private_extern BRGenericClient
 cryptoWalletManagerClientCreateGENClient (OwnershipKept BRCryptoWalletManager cwm);
 
-private_extern BRWalletManager
-cryptoWalletManagerAsBTC (BRCryptoWalletManager manager);
-
-private_extern BREthereumEWM
-cryptoWalletManagerAsETH (BRCryptoWalletManager manager);
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasBTC (BRCryptoWalletManager manager,
-                           BRWalletManager bwm);
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasETH (BRCryptoWalletManager manager,
-                           BREthereumEWM ewm);
-
-private_extern BRCryptoBoolean
-cryptoWalletManagerHasGEN (BRCryptoWalletManager manager,
-                           BRGenericManager gwm);
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsBTC (BRCryptoWalletManager manager,
-                                    BRWallet *btc);
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsETH (BRCryptoWalletManager manager,
-                                    BREthereumWallet eth);
-
-private_extern BRCryptoWallet
-cryptoWalletManagerFindWalletAsGEN (BRCryptoWalletManager cwm,
-                                    BRGenericWallet gen);
 extern void
 cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
                                       OwnershipGiven BRGenericTransfer transferGeneric);

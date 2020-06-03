@@ -48,15 +48,6 @@ cryptoHashCreateAsETH (BREthereumHash eth) {
 }
 
 #ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth);
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen);
-#endif
-
-
-#ifdef REFACTOR
     extern char *
     cryptoHashString (BRCryptoHash hash) {
     switch (hash->type) {
@@ -86,7 +77,6 @@ switch (hash->type) {
             return (int) genericHashSetValue (hash->u.gen);
     }
 }
-
 #endif
 
 private_extern BRCryptoCurrency
