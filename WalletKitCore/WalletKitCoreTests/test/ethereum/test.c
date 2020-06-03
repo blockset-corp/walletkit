@@ -26,10 +26,7 @@
 #include "support/BRBIP39WordsEn.h"
 #include "support/event/BREventAlarm.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
-#include "ethereum/ewm/BREthereumAccount.h"
-#include "ethereum/ewm/BREthereumWallet.h"
-#include "ethereum/ewm/BREthereumTransfer.h"
-#include "ethereum/BREthereum.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 
 #include "test.h"
 
@@ -119,6 +116,7 @@ void runAddressTests (BREthereumAccount account) {
 
 #define TEST_TRANS1_RESULT "ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080"
 
+#if REFACTOR
 void runTransactionTests1 (BREthereumAccount account, BREthereumNetwork network) {
     printf ("     TEST 1\n");
     
@@ -566,3 +564,4 @@ int main(int argc, const char *argv[]) {
 }
 #endif
 
+#endif

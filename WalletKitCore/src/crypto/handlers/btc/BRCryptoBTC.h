@@ -14,6 +14,8 @@
 
 #include "../BRCryptoHandlersExport.h"
 
+#include "crypto/BRCryptoWalletSweeperP.h"
+
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRTransaction.h"
 #include "bitcoin/BRChainParams.h"
@@ -131,6 +133,17 @@ typedef struct BRCryptoWalletManagerBTCRecord {
 } *BRCryptoWalletManagerBTC;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
+
+// MARK: - Wallet Sweeper
+
+typedef struct BRCryptoWalletSweeperBTCRecord {
+    struct BRCryptoWalletSweeperRecord base;
+
+    BRAddressParams addrParams;
+    uint8_t isSegwit;
+    char * sourceAddress;
+    BRArrayOf(BRTransaction *) txns;
+} *BRCryptoWalletSweeperBTC;
 
 // MARK: - Support
 

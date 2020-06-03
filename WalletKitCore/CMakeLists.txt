@@ -135,16 +135,10 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeer.h
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeerManager.c
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeerManager.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRSyncManager.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRSyncManager.h
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRTransaction.c
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRTransaction.h
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWallet.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWallet.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWalletManager.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWalletManager.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWalletManagerEvent.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWalletManagerPrivate.h)
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWallet.h)
 
 # Bitcoin Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -165,7 +159,6 @@ target_sources (corecrypto
 # Ethereum
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/ethereum/BREthereum.h
                 # Util
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.h
@@ -176,7 +169,6 @@ target_sources (corecrypto
                 # Base
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumAddress.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumAddress.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumBase.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumEther.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumEther.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumGas.c
@@ -191,6 +183,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.h
                 # Block Chain
+                ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumAccount.c
+                ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumAccount.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumAccountState.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumAccountState.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumBlock.c
@@ -258,24 +252,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSEvent.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSPrivate.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSSync.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBlockChainSlice.h
-                #EWM
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumBase.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumAccount.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumAccount.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumAmount.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumAmount.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumTransfer.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumTransfer.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumWallet.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumWallet.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumClient.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWM.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWM.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWMClient.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWMEvent.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWMPersist.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/ewm/BREthereumEWMPrivate.h)
+                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBlockChainSlice.h)
 
 # Ethereum Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -372,28 +349,16 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/hedera/testHedera.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-# Generic
-target_sources (corecrypto
-                PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericBase.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGeneric.c
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGeneric.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericClient.c
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericClient.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHandlers.c
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHandlers.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericManager.c
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericRipple.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericRipple.c
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHedera.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHedera.c)
-
 # Crypto
 target_sources (corecrypto
                 PRIVATE
                 #  Dependency Order
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoBase.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoBaseP.h
+
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/BRCryptoHandlersExport.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHandlersP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHandlers.c
 
                 ${PROJECT_SOURCE_DIR}/src/version/BRCryptoVersion.c
 
@@ -442,9 +407,9 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoTransferP.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoTransfer.c
 
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoPayment.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPaymentP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPayment.c
+                # ${PROJECT_SOURCE_DIR}/include/BRCryptoPayment.h
+                # ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPaymentP.h
+                # ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPayment.c
 
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoWallet.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletP.h
@@ -452,8 +417,12 @@ target_sources (corecrypto
 
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoSync.h
 
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoWalletManagerClient.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletManagerClient.c
+                ${PROJECT_SOURCE_DIR}/include/BRCryptoClient.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClientP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClient.c
+
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFileService.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFileService.c
 
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoWalletManager.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletManagerP.h
@@ -470,7 +439,62 @@ target_sources (corecrypto
 
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoSigner.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSigner.c
+
+                ${PROJECT_SOURCE_DIR}/include/BRCryptoWalletSweeper.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletSweeperP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletSweeper.c
                 )
+
+# Crypto BTC
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoBTC.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoSupportBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoNetworkBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoAddressBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoTransferBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletSweeperBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerBTC.c
+                )
+
+# Crypto ETH
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoETH.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoSupportETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoNetworkETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoAddressETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoTransferETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerPersistETH.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerETH.c
+                )
+
+# Crypto XRP
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoXRP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoSupportXRP.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoNetworkXRP.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoAddressXRP.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoTransferXRP.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoWalletXRP.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoWalletManagerXRP.c
+                )
+
+# Crypto HBAR
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoHBAR.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoSupportHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoNetworkHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoAddressHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoTransferHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoWalletHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoWalletManagerHBAR.c
+                )
+
 
 # Crypto Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)

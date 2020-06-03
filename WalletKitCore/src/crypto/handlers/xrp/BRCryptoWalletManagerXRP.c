@@ -83,7 +83,7 @@ cryptoWalletManagerInitializeHandlerXRP (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
     
-    manager->wallet = cryptoWalletCreateAsXRP (unitAsDefault, unitAsBase, xrpWallet);
+    manager->wallet = cryptoWalletCreateAsXRP (unitAsDefault, unitAsDefault, xrpWallet);
     array_add (manager->wallets, manager->wallet);
     
     //TODO:XRP load transfers from fileService
@@ -244,6 +244,22 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
 
 static BRCryptoClientP2PManager
 crytpWalletManagerCreateP2PManagerHandlerXRP (BRCryptoWalletManager cwm) {
+    // not supported
+    return NULL;
+}
+
+extern BRCryptoWalletSweeperStatus
+cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager cwm,
+                                                      BRCryptoWallet wallet,
+                                                      BRCryptoKey key) {
+    return CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY;
+}
+
+extern BRCryptoWalletSweeper
+cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
+                                           BRCryptoWallet wallet,
+                                           BRCryptoKey key) {
+    // not supported
     return NULL;
 }
 
@@ -259,5 +275,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerEstimateFeeBasisHandlerXRP,
     crytpWalletManagerCreateP2PManagerHandlerXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP,
-    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP
+    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP,
+    cryptoWalletManagerWalletSweeperValidateSupportedXRP,
+    cryptoWalletManagerCreateWalletSweeperXRP
 };

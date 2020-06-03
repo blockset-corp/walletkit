@@ -245,16 +245,14 @@ public final class Wallet: Equatable {
         }
     }
 
-    #if false
     internal func createTransfer(sweeper: WalletSweeper,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
-        return cryptoWalletCreateTransferForWalletSweep(self.core, sweeper.core, estimatedFeeBasis.core)
+        return cryptoWalletSweeperCreateTransferForWalletSweep(sweeper.core, manager.core, self.core, estimatedFeeBasis.core)
             .map { Transfer (core: $0,
                              wallet: self,
                              take: false)
         }
     }
-    #endif
 
     #if false
     internal func createTransfer(request: PaymentProtocolRequest,
@@ -539,17 +537,15 @@ public final class Wallet: Equatable {
                                              fee.core)
     }
 
-    #if false
     internal func estimateFee (sweeper: WalletSweeper,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
-        cryptoWalletManagerEstimateFeeBasisForWalletSweep (self.manager.core,
+        cryptoWalletManagerEstimateFeeBasisForWalletSweep (sweeper.core,
+                                                           self.manager.core,
                                                            self.core,
                                                            callbackCoordinator.addWalletFeeEstimateHandler(completion),
-                                                           sweeper.core,
                                                            fee.core)
     }
-    #endif
     
     #if false
     internal func estimateFee (request: PaymentProtocolRequest,

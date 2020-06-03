@@ -793,7 +793,7 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
             BRCryptoWalletManagerState oldState = cwm->state;
             BRCryptoWalletManagerState newState = cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested());
 
-            cryptoClientP2PManagerDisconnect (cwm->p2pManager);
+            if (NULL != cwm->p2pManager) cryptoClientP2PManagerDisconnect (cwm->p2pManager);
             cryptoClientQRYManagerDisconnect (cwm->qryManager);
 
             cryptoWalletManagerSetState (cwm, newState);
@@ -939,11 +939,11 @@ cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                                             estimatedFeeBasis,
                                                             attributesCount,
                                                             attributes);
-
-    cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_CREATED
-    });
+    if (NULL != transfer)
+        cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
+                                                  (BRCryptoTransferEvent) {
+            CRYPTO_TRANSFER_EVENT_CREATED
+        });
 
     return transfer;
 }
@@ -1202,31 +1202,30 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
         });
 }
 
-extern void
-cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager cwm,
+extern BRCryptoWalletSweeperStatus
+cryptoWalletManagerWalletSweeperValidateSupported (BRCryptoWalletManager cwm,
                                                    BRCryptoWallet wallet,
-                                                   BRCryptoCookie cookie,
-                                                   BRCryptoWalletSweeper sweeper,
-                                                   BRCryptoNetworkFee fee) {
-#ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            BRWalletManager bwm = cwm->u.btc;
-            BRWallet *wid = cryptoWalletAsBTC (wallet);
-            uint64_t feePerKB = 1000 * cryptoNetworkFeeAsBTC (fee);
-
-            BRWalletManagerEstimateFeeForSweep (bwm,
-                                                wid,
-                                                cookie,
-                                                cryptoWalletSweeperAsBTC(sweeper),
-                                                feePerKB);
-            break;
-        }
-        default:
-            assert (0);
-            break;
+                                                   BRCryptoKey key) {
+    if (cryptoNetworkGetType (cwm->network) != cryptoWalletGetType (wallet)) {
+        return CRYPTO_WALLET_SWEEPER_INVALID_ARGUMENTS;
     }
-#endif
+    
+    if (CRYPTO_FALSE == cryptoKeyHasSecret (key)) {
+        return CRYPTO_WALLET_SWEEPER_INVALID_KEY;
+    }
+    
+    return cwm->handlers->validateSweeperSupported (cwm, wallet, key);
+}
+
+extern BRCryptoWalletSweeper
+cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager cwm,
+                                        BRCryptoWallet wallet,
+                                        BRCryptoKey key) {
+    assert (cryptoKeyHasSecret (key));
+    
+    return cwm->handlers->createSweeper (cwm,
+                                         wallet,
+                                         key);
 }
 
 #ifdef REFACTOR

@@ -11,12 +11,16 @@
 
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoHashP.h"
+#include "crypto/BRCryptoAmountP.h"
+#include "ethereum/util/BRUtilMath.h"
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
                            uint32_t feePerKB,
                            uint32_t sizeInByte) {
-    return cryptoFeeBasisCreate (cryptoAmountCreateInteger (feePerKB, unit),
+    return cryptoFeeBasisCreate (cryptoAmountCreate (unit,
+                                                     CRYPTO_FALSE,
+                                                     uint256Create(feePerKB)),
                                  sizeInByte / 1000.0);
 }
 

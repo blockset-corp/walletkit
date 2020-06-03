@@ -219,6 +219,7 @@ cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet walletBase,
                                        BRCryptoCurrency currency,
                                        BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee) {
+    // not supported
     return NULL;
 }
 

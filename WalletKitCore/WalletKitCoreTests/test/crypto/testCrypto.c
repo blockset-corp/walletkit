@@ -659,7 +659,7 @@ CWMEventRecordingStateFree (CWMEventRecordingState *state) {
 // TODO(fix): The below callbacks leak managers/wallets/transfers, as well as any ref counted event fields
 
 static void
-_CWMEventRecordingManagerCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingManagerCallback (BRCryptoListenerContext context,
                                    BRCryptoWalletManager manager,
                                    BRCryptoWalletManagerEvent event) {
     CWMEventRecordingState *state = (CWMEventRecordingState*) context;
@@ -675,7 +675,7 @@ _CWMEventRecordingManagerCallback (BRCryptoCWMListenerContext context,
 }
 
 static void
-_CWMEventRecordingWalletCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingWalletCallback (BRCryptoListenerContext context,
                                   BRCryptoWalletManager manager,
                                   BRCryptoWallet wallet,
                                   BRCryptoWalletEvent event) {
@@ -693,7 +693,7 @@ _CWMEventRecordingWalletCallback (BRCryptoCWMListenerContext context,
 }
 
 static void
-_CWMEventRecordingTransferCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingTransferCallback (BRCryptoListenerContext context,
                                     BRCryptoWalletManager manager,
                                     BRCryptoWallet wallet,
                                     BRCryptoTransfer transfer,
@@ -867,7 +867,7 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
                                             BRCryptoAddressScheme scheme,
                                             const char *storagePath)
 {
-    BRCryptoCWMListener listener = (BRCryptoCWMListener) {
+    BRCryptoListener listener = (BRCryptoListener) {
         state,
         _CWMEventRecordingManagerCallback,
         _CWMEventRecordingWalletCallback,
@@ -895,7 +895,7 @@ runCryptoWalletManagerLifecycleTest (BRCryptoAccount account,
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
-    BRCryptoBlockChainHeight originalNetworkHeight = cryptoNetworkGetHeight (network);
+    BRCryptoBlockNumber originalNetworkHeight = cryptoNetworkGetHeight (network);
 
     printf("Testing BRCryptoWalletManager events for mode=\"%s\", network=\"%s (%s)\" and path=\"%s\"...\n",
            cryptoSyncModeString (mode),
@@ -1219,9 +1219,9 @@ runCryptoWalletManagerLifecycleTest (BRCryptoAccount account,
     }
 
     printf("Testing BRCryptoWalletManager threading...\n");
-    if (mode == CRYPTO_SYNC_MODE_P2P_ONLY && BLOCK_CHAIN_TYPE_BTC == cryptoNetworkGetType (network)) {
+    if (mode == CRYPTO_SYNC_MODE_P2P_ONLY && CRYPTO_NETWORK_TYPE_BTC == cryptoNetworkGetType (network)) {
         // TODO(fix): There is a thread-related issue in BRPeerManager/BRPeer where we have a use after free; re-enable once that is fixed
-        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and BLOCK_CHAIN_TYPE_BTC\n", __func__, __LINE__);
+        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and CRYPTO_NETWORK_TYPE_BTC\n", __func__, __LINE__);
 
     } else {
         // Test setup
@@ -1297,7 +1297,7 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
-    BRCryptoBlockChainHeight originalNetworkHeight = cryptoNetworkGetHeight (network);
+    BRCryptoBlockNumber originalNetworkHeight = cryptoNetworkGetHeight (network);
 
     printf("Testing BRCryptoWalletManager events for mode=\"%s/%s\", network=\"%s (%s)\" and path=\"%s\"...\n",
            cryptoSyncModeString (primaryMode),
@@ -1434,10 +1434,10 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
    }
 
     printf("Testing BRCryptoWalletManager mode swap threading...\n");
-    if (BLOCK_CHAIN_TYPE_BTC == cryptoNetworkGetType (network) &&
+    if (CRYPTO_NETWORK_TYPE_BTC == cryptoNetworkGetType (network) &&
         (primaryMode == CRYPTO_SYNC_MODE_P2P_ONLY || secondaryMode == CRYPTO_SYNC_MODE_P2P_ONLY)) {
         // TODO(fix): There is a thread-related issue in BRPeerManager/BRPeer where we have a use after free; re-enable once that is fixed
-        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and BLOCK_CHAIN_TYPE_BTC\n", __func__, __LINE__);
+        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and CRYPTO_NETWORK_TYPE_BTC\n", __func__, __LINE__);
 
     } else {
         // Test setup
@@ -1509,6 +1509,7 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
 /// Mark: Entrypoints
 ///
 
+#if REFACTOR
 extern BRCryptoBoolean
 runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
                                      BRCryptoNetwork network,
@@ -1517,11 +1518,11 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     BRCryptoBlockChainType chainType = cryptoNetworkGetType (network);
 
-    BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_GEN == chainType);
-    BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == chainType);
-    BRCryptoBoolean isBtc = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
+    BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_GEN == chainType);
+    BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_ETH == chainType);
+    BRCryptoBoolean isBtc = (AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType)
                              && (cryptoNetworkAsBTC (network) == BRMainNetParams || cryptoNetworkAsBTC (network) == BRTestNetParams));
-    BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
+    BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType)
                              && (cryptoNetworkAsBTC (network) == BRBCashParams || cryptoNetworkAsBTC (network) == BRBCashTestNetParams));
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
@@ -1616,6 +1617,7 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     return success;
 }
+#endif
 
 extern void
 runCryptoTests (void) {

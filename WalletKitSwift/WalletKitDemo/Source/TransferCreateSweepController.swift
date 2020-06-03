@@ -15,15 +15,11 @@ import WalletKit
 class TransferCreateSweepController: TransferCreateController {
 
     let bitcoinTestnetPrivateKey = "92ihfZg8rvDhyY2siUG5zTB9PvZju6KJQJWkeQPp99NSD93zPS3"
-//    var walletSweeper: WalletSweeper! = nil
+    var walletSweeper: WalletSweeper! = nil
     var walletSweeperFeeBasis: TransferFeeBasis! = nil
 
     var walletSweeperAmount: Amount? {
-        #if false
         return walletSweeper?.balance?.convert(to: wallet.manager.network.defaultUnitFor (currency: wallet.currency)!)
-        #else
-        return nil
-        #endif
     }
 
     override func viewDidLoad() {
@@ -76,7 +72,7 @@ class TransferCreateSweepController: TransferCreateController {
                 self.feeLabel.text = nil
             }
 
-            #if false
+//            self.walletSweeper = nil
             self.wallet.manager.createSweeper (wallet: wallet, key: key) {
                 (res: Result<WalletSweeper, WalletSweeperError>) in
                 guard case let .success (sweeper) = res
@@ -125,14 +121,12 @@ class TransferCreateSweepController: TransferCreateController {
                     }
                 }
             }
-            #endif
         }
     }
 
     @IBAction func submit(_ sender: Any) {
         print ("APP: TCSC: Want to Submit")
 
-        #if false
         let alert = UIAlertController (title: "Sweep for \(walletSweeperAmount?.description ?? "?") \(wallet.name)",
             message: "Are you sure?",
             preferredStyle: UIAlertController.Style.actionSheet)
@@ -148,7 +142,6 @@ class TransferCreateSweepController: TransferCreateController {
         })
 
         self.present (alert, animated: true) {}
-        #endif
     }
 
     @IBAction func cancel(_ sender: Any) {
