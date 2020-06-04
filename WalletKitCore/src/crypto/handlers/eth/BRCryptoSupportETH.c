@@ -1,4 +1,13 @@
-
+//
+//  BRCryptoSupportETH.c
+//  Core
+//
+//  Created by Ed Gamble on 05/07/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
@@ -39,15 +48,6 @@ cryptoHashCreateAsETH (BREthereumHash eth) {
 }
 
 #ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth);
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen);
-#endif
-
-
-#ifdef REFACTOR
     extern char *
     cryptoHashString (BRCryptoHash hash) {
     switch (hash->type) {
@@ -77,7 +77,6 @@ switch (hash->type) {
             return (int) genericHashSetValue (hash->u.gen);
     }
 }
-
 #endif
 
 private_extern BRCryptoCurrency

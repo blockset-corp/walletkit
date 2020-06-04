@@ -12,7 +12,7 @@
 #include <time.h>
 #include <assert.h>
 #include <unistd.h>
-#include "ethereum/event/BREventAlarm.h"
+#include "support/event/BREventAlarm.h"
 
 #if REFACTOR
 //

@@ -25,6 +25,8 @@
 #include "bitcoin/BRPaymentProtocol.h"
 #include "support/BRArray.h"
 
+#ifdef REFACTOR
+
 /// Mark: - Private Declarations
 
 /// MARK: - BitPay Payment Protocol Request Builder Declarations
@@ -896,3 +898,4 @@ cryptoPaymentProtocolPaymentACKGetMemo (BRCryptoPaymentProtocolPaymentACK protoA
 
     return memo;
 }
+#endif

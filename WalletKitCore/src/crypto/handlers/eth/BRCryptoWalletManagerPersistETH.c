@@ -1,14 +1,13 @@
 //
-//  BREthereumEWMPersist.c
-//  BRCore
+//  BRCryptoWalletManagerETH.c
+//  Core
 //
-//  Created by Ed Gamble on 9/24/19.
-//  Copyright © 2019 Breadwinner AG. All rights reserved.
-//
+//  Created by Ed Gamble on 05/22/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
-
+//
 #include "BRCryptoETH.h"
 
 #include "ethereum/blockchain/BREthereumBlock.h"
@@ -67,6 +66,16 @@ fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
     return transaction;
 }
 
+extern BRSetOf(BREthereumTransaction)
+initialTransactionsLoad (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumTransaction) transactions = BRSetNew(transactionHashValue, transactionHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != transactions && 1 != fileServiceLoad (manager->fileService, transactions, fileServiceTypeTransactionsETH, 1)) {
+        BRSetFreeAll (transactions, (void (*) (void*)) transactionRelease);
+        return NULL;
+    }
+    return transactions;
+}
+
 /// MARK: - Log File Service
 
 #define fileServiceTypeLogs "logs"
@@ -119,6 +128,16 @@ fileServiceTypeLogV1Reader (BRFileServiceContext context,
     return log;
 }
 
+extern BRSetOf(BREthereumLog)
+initialLogsLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumLog) logs = BRSetNew(logHashValue, logHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != logs && 1 != fileServiceLoad (manager->fileService, logs, fileServiceTypeLogsETH, 1)) {
+        BRSetFreeAll (logs, (void (*) (void*)) logRelease);
+        return NULL;
+    }
+    return logs;
+}
+
 /// MARK: - Block File Service
 
 #define fileServiceTypeBlocks "blocks"
@@ -168,6 +187,16 @@ fileServiceTypeBlockV1Reader (BRFileServiceContext context,
     rlpItemRelease (manager->coder, item);
 
     return block;
+}
+
+extern BRSetOf(BREthereumBlock)
+initialBlocksLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumBlock) blocks = BRSetNew(blockHashValue, blockHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != blocks && 1 != fileServiceLoad (manager->fileService, blocks, fileServiceTypeBlocksETH, 1)) {
+        BRSetFreeAll (blocks,  (void (*) (void*)) blockRelease);
+        return NULL;
+    }
+    return blocks;
 }
 
 // MARK: - Node File Service
@@ -222,6 +251,16 @@ fileServiceTypeNodeV1Reader (BRFileServiceContext context,
     return node;
 }
 
+extern BRSetOf(BREthereumNodeConfig)
+initialNodesLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumNodeConfig) nodes = BRSetNew(nodeConfigHashValue, nodeConfigHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != nodes && 1 != fileServiceLoad (manager->fileService, nodes, fileServiceTypeNodesETH, 1)) {
+        BRSetFreeAll (nodes, (void (*) (void*)) nodeConfigRelease);
+        return NULL;
+    }
+    return nodes;
+}
+
 /// MARK: - Token File Service
 
 #define fileServiceTypeTokens "tokens"
@@ -274,6 +313,16 @@ fileServiceTypeTokenV1Reader (BRFileServiceContext context,
     return token;
 }
 
+extern BRSetOf(BREthereumToken)
+initialTokensLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumToken) tokens = ethTokenSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != tokens && 1 != fileServiceLoad (manager->fileService, tokens, fileServiceTypeTokensETH, 1)) {
+        BRSetFreeAll (tokens, (void (*) (void*)) ethTokenRelease);
+        return NULL;
+    }
+    return tokens;
+}
+
 /// MARK: - Wallet File Service
 #if 0
 #define fileServiceTypeWallets "wallets"
@@ -324,6 +373,16 @@ fileServiceTypeWalletV1Reader (BRFileServiceContext context,
     rlpItemRelease (manager->coder, item);
 
     return state;
+}
+
+extern BRSetOf(BREthereumWalletState)
+initialWalletsLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumWalletState) states = walletStateSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != states && 1 != fileServiceLoad (manager->fileService, states, ewmFileServiceTypeWallets, 1)) {
+        BRSetFreeAll (states, (void (*) (void*)) walletStateRelease);
+        return NULL;
+    }
+    return states;
 }
 #endif
 
@@ -423,4 +482,3 @@ const char *fileServiceTypeTokensETH       = fileServiceTypeTokens;
 
 size_t fileServiceSpecificationsCountETH = sizeof(fileServiceSpecifications)/sizeof(BRFileServiceTypeSpecification);
 BRFileServiceTypeSpecification *fileServiceSpecificationsETH = fileServiceSpecifications;
-

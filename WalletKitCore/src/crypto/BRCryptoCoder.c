@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "BRCryptoCoder.h"
-#include "ethereum/util/BRUtilHex.h"
+#include "support/util/BRHex.h"
 #include "support/BRBase58.h"
 
 struct BRCryptoCoderRecord {

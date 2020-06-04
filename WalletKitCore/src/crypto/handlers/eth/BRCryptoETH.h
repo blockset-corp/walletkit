@@ -1,3 +1,13 @@
+//
+//  BRCryptoETH.h
+//  Core
+//
+//  Created by Ed Gamble on 05/07/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #ifndef BRCryptoETH_h
 #define BRCryptoETH_h
 
@@ -149,8 +159,6 @@ cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,
 
 // MARK: - Support
 
-
-
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
                            BREthereumFeeBasis feeBasis);
@@ -173,6 +181,17 @@ extern const char *fileServiceTypeWalletsETH;
 
 extern size_t fileServiceSpecificationsCountETH;
 extern BRFileServiceTypeSpecification *fileServiceSpecificationsETH;
+
+#define EWM_INITIAL_SET_SIZE_DEFAULT  (10)
+
+extern BRSetOf(BREthereumTransaction) initialTransactionsLoadETH (BRCryptoWalletManager manager);
+extern BRSetOf(BREthereumLog)         initialLogsLoadETH         (BRCryptoWalletManager manager);
+extern BRSetOf(BREthereumBlock)       initialBlocksLoadETH       (BRCryptoWalletManager manager);
+extern BRSetOf(BREthereumNodeConfig)  initialNodesLoadETH        (BRCryptoWalletManager manager);
+extern BRSetOf(BREthereumToken)       initialTokensLoadETH       (BRCryptoWalletManager manager);
+#if 0
+extern BRSetOf(BREthereumWalletState) initialWalletsLoadETH      (BRCryptoWalletManager manager);
+#endif
 
 // MARK: - Events
 

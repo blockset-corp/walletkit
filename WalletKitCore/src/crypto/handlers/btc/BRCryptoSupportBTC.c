@@ -1,3 +1,13 @@
+//
+//  BRCryptoSupportBTC.c
+//  Core
+//
+//  Created by Ed Gamble on 05/07/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoHashP.h"
@@ -35,40 +45,6 @@ cryptoHashCreateAsBTC (UInt256 btc) {
                                      sizeof (revBtc.u8),
                                      revBtc.u8);
 }
-
-#ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth);
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen);
-#endif
-
-#ifdef REFACTOR
-private_extern BRCryptoHash
-cryptoHashCreateAsBTC (UInt256 btc) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_BTC);
-    hash->u.btc = btc;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_ETH);
-    hash->u.eth = eth;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_GEN);
-    hash->u.gen = gen;
-
-    return hash;
-}
-#endif
 
 #ifdef REFACTOR
     extern char *

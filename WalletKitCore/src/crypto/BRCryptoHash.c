@@ -12,7 +12,7 @@
 #include "BRCryptoHashP.h"
 #include "BRCryptoBaseP.h"
 
-#include "ethereum/util/BRUtilHex.h"
+#include "support/util/BRHex.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoHash, cryptoHash)
 

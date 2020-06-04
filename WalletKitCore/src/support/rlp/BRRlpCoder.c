@@ -1,6 +1,6 @@
 //
 //  rlp
-//  Core Ethereum
+//  Core
 //
 //  Created by Ed Gamble on 2/25/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -14,9 +14,22 @@
 #include <assert.h>
 #include <pthread.h>
 #include "support/BROSCompat.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRHex.h"
 
 #include "BRRlpCoder.h"
+
+#define rlp_log(topic, formatter, ...)   _rlp_log("ETH: RLP: %s: " formatter "\n", (topic), __VA_ARGS__)
+
+#if defined(TARGET_OS_MAC)
+#  include <Foundation/Foundation.h>
+#  define _rlp_log(...) NSLog(__VA_ARGS__)
+#elif defined(__ANDROID__)
+#  include <android/log.h>
+#  define _rlp_log(...) __android_log_print(ANDROID_LOG_INFO, "bread", __VA_ARGS__)
+#else
+#  include <stdio.h>
+#  define _rlp_log(...) printf(__VA_ARGS__)
+#endif
 
 static int
 rlpDecodeStringEmptyCheck (BRRlpCoder coder, BRRlpItem item);
@@ -109,13 +122,6 @@ rlpCoderCreate (void) {
 
     pthread_mutex_init_brd (&coder->lock, PTHREAD_MUTEX_NORMAL);
 
-#if 0
-    for (size_t index = 0; index < CODER_DEFAULT_ITEMS; index++) {
-        BRRlpItem item = calloc (1, sizeof (struct BRRlpItemRecord));
-        item->next = coder->free;
-        coder->free = item;
-    }
-#endif
     return coder;
 }
 
@@ -378,15 +384,6 @@ encodeLengthIntoBytes (uint64_t length, uint8_t baseline,
     }
 }
 
-#if 0
-static BRRlpItem
-coderEncodeLength (BRRlpCoder coder, uint64_t length, uint8_t baseline) {
-    uint8_t bytesCount, bytes[9];
-    coderEncodeLengthIntoBytes(coder, length, baseline, bytes, &bytesCount);
-    return itemCreate (coder, bytes, bytesCount, 0);
-}
-#endif
-
 /**
  * The value of `length` is used throughout for memcpy() and releated functions; it must
  * be a valid `size_t` type.  Ethereum RLP defines a length as a maximum of 8 bytes which
@@ -595,7 +592,7 @@ rlpDecodeUInt64(BRRlpCoder coder, BRRlpItem item, int zeroAsEmptyString) {
 //
 extern BRRlpItem
 rlpEncodeUInt256(BRRlpCoder coder, UInt256 value, int zeroAsEmptyString) {
-    return (1 == zeroAsEmptyString && 0 == uint256Compare (value, UINT256_ZERO)
+    return (1 == zeroAsEmptyString && 0 == UInt256Eq (value, UINT256_ZERO)
             ? rlpEncodeString(coder, "")
             : coderEncodeUInt256(coder, value));
 }
@@ -982,15 +979,15 @@ rlpItemShowInternal (BRRlpCoder coder, BRRlpItem context, const char *topic, int
     switch (context->type) {
         case CODER_LIST:
             if (0 == context->itemsCount)
-                eth_log(topic, "%sL  0: []", spaces);
+                rlp_log(topic, "%sL  0: []", spaces);
             else {
-                eth_log(topic, "%sL%3zu: [", spaces, context->itemsCount);
+                rlp_log(topic, "%sL%3zu: [", spaces, context->itemsCount);
                 for (int i = 0; i < context->itemsCount; i++)
                     rlpItemShowInternal(coder,
                                         context->items[i],
                                         topic,
                                         indent + RLP_SHOW_INDENT_INCREMENT);
-                eth_log(topic, "%s]", spaces);
+                rlp_log(topic, "%s]", spaces);
             }
             break;
         case CODER_ITEM: {
@@ -1004,7 +1001,7 @@ rlpItemShowInternal (BRRlpCoder coder, BRRlpItem context, const char *topic, int
             char string[1024 + 1];
             hexEncode(string, 2 * bytesCount + 1, &context->bytes[offset], bytesCount);
 
-            eth_log(topic, "%sI%3zu: 0x%s%s", spaces, length, string,
+            rlp_log(topic, "%sI%3zu: 0x%s%s", spaces, length, string,
                     (bytesCount == length ? "" : "..."));
             break;
         }

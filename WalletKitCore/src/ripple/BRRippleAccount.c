@@ -17,7 +17,7 @@
 #include "support/BRKey.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39WordsEn.h"
-#include "ethereum/util/BRUtilHex.h"
+#include "support/util/BRHex.h"
 #include "BRRipple.h"
 #include "BRRippleBase.h"
 #include "BRRippleAccount.h"

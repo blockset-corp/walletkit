@@ -125,48 +125,6 @@ private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
 
-#if 0
-private_extern BRCryptoTransfer
-cryptoTransferCreateAsBTC (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BRWallet *wid,
-                           OwnershipKept BRTransaction *tid,
-                           BRCryptoBoolean isBTC); // TRUE if BTC; FALSE if BCH
-
-private_extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BREthereumEWM ewm,
-                           BREthereumTransfer tid,
-                           BRCryptoFeeBasis feeBasisEstimated);
-
-extern BRCryptoTransfer
-cryptoTransferCreateAsGEN (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BRGenericTransfer tid);
-
-private_extern BRTransaction *
-cryptoTransferAsBTC (BRCryptoTransfer transfer);
-
-private_extern BREthereumTransfer
-cryptoTransferAsETH (BRCryptoTransfer transfer);
-
-private_extern BRGenericTransfer
-cryptoTransferAsGEN (BRCryptoTransfer transfer);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasBTC (BRCryptoTransfer transfer,
-                      BRTransaction *btc);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasETH (BRCryptoTransfer transfer,
-                      BREthereumTransfer eth);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasGEN (BRCryptoTransfer transfer,
-                      BRGenericTransfer gen);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

@@ -95,7 +95,21 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/support/BRKeyECIES.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRKeyECIES.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRSet.c
-                ${PROJECT_SOURCE_DIR}/src/support/BRSet.h)
+                ${PROJECT_SOURCE_DIR}/src/support/BRSet.h
+                # RLP
+                ${PROJECT_SOURCE_DIR}/src/support/rlp/BRRlp.h
+                ${PROJECT_SOURCE_DIR}/src/support/rlp/BRRlpCoder.c
+                ${PROJECT_SOURCE_DIR}/src/support/rlp/BRRlpCoder.h
+                # Event
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREvent.c
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREvent.h
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREventAlarm.c
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREventAlarm.h
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.c
+                ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.h
+		# Util
+                ${PROJECT_SOURCE_DIR}/src/util/BRHex.c
+                ${PROJECT_SOURCE_DIR}/src/util/BRHex.h)
 
 # Support Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -149,22 +163,9 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtil.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilHex.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilHex.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMath.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMath.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMathParse.c
-                # RLP
-                ${PROJECT_SOURCE_DIR}/src/ethereum/rlp/BRRlp.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/rlp/BRRlpCoder.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/rlp/BRRlpCoder.h
-                # Event
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREvent.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREvent.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREventAlarm.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREventAlarm.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREventQueue.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/event/BREventQueue.h
                 # Base
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumAddress.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumAddress.h

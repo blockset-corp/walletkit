@@ -12,7 +12,7 @@
 #define BR_Ethereum_BCS_Private_h
 
 #include "ethereum/blockchain/BREthereumBlockChain.h"
-#include "ethereum/event/BREvent.h"
+#include "support/event/BREvent.h"
 #include "BREthereumBCS.h"
 
 #ifdef __cplusplus

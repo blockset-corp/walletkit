@@ -1,10 +1,13 @@
 //
 //  BRCryptoHBAR.h
-//
+//  Core
 //
 //  Created by Ehsan Rezaie on 2020-05-19.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
 //
-
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #ifndef BRCryptoHBAR_h
 #define BRCryptoHBAR_h
 

@@ -1,3 +1,13 @@
+//
+//  BRCryptoWalletManagerBTC.c
+//  Core
+//
+//  Created by Ed Gamble on 05/07/2020.
+//  Copyright © 2019 Breadwallet AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #include "BRCryptoBTC.h"
 
 #include "crypto/BRCryptoAccountP.h"
@@ -9,14 +19,6 @@
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRPeerManager.h"
-
-// BRFileService
-
-static BRArrayOf(BRTransaction*) initialTransactionsLoad (BRCryptoWalletManager manager);
-static BRArrayOf(BRPeer)         initialPeersLoad (BRCryptoWalletManager manager);
-static BRArrayOf(BRMerkleBlock*) initialBlocksLoad (BRCryptoWalletManager manager);
-static BRFileServiceTypeSpecification fileServiceSpecifications[];
-static size_t fileServiceSpecificationsCount;
 
 // BRWallet Callbacks
 
@@ -84,7 +86,7 @@ cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
 
     // Load the BTC transactions from the fileService
-    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoad (manager);
+    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
     if (NULL == transactions) array_new (transactions, 1);
 
     // Create the BTC wallet
@@ -145,16 +147,16 @@ crytpWalletManagerCreateFileServiceBTC (BRCryptoWalletManager manager,
                                         BRFileServiceErrorHandler handler) {
     return fileServiceCreateFromTypeSpecfications (basePath, currency, network,
                                                    context, handler,
-                                                   fileServiceSpecificationsCount,
-                                                   fileServiceSpecifications);
+                                                   fileServiceSpecificationsCountBTC,
+                                                   fileServiceSpecificationsBTC);
 }
 
 static const BREventType **
 cryptoWalletManagerGetEventTypesBTC (BRCryptoWalletManager manager,
                                      size_t *eventTypesCount) {
     assert (NULL != eventTypesCount);
-    *eventTypesCount = bwmEventTypesCount;
-    return bwmEventTypes;
+    *eventTypesCount = eventTypesCountBTC;
+    return eventTypesBTC;
 }
 
 #if 0
@@ -502,8 +504,8 @@ crytpWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager cwm) {
     BRWallet *btcWallet = cryptoWalletAsBTC(cwm->wallet);
     uint32_t btcEarliestKeyTime = (uint32_t) cryptoAccountGetTimestamp(cwm->account);
 
-    BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoad (cwm);
-    BRArrayOf(BRPeer)         peers  = initialPeersLoad  (cwm);
+    BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoadBTC (cwm);
+    BRArrayOf(BRPeer)         peers  = initialPeersLoadBTC  (cwm);
 
     manager->btcPeerManager = BRPeerManagerNew (btcChainParams,
                                                 btcWallet,
@@ -539,7 +541,7 @@ cryptoWalletManagerWalletSweeperValidateSupportedBTC (BRCryptoWalletManager cwm,
     BRWallet * wid          = cryptoWalletAsBTC (wallet);
     BRKey * keyCore            = cryptoKeyGetCore (key);
     BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
-    
+
     // encode using legacy format (only supported method for BTC)
     size_t addrLength = BRKeyLegacyAddr (keyCore, NULL, 0, addrParams);
     char  *addr = malloc (addrLength + 1);
@@ -563,351 +565,32 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
                                            BRCryptoKey key) {
     BRCryptoCurrency currency = cryptoWalletGetCurrency (wallet);
     BRCryptoUnit unit = cryptoNetworkGetUnitAsBase (cwm->network, currency);
-    
+
     BRCryptoWalletSweeper sweeperBase = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
                                                                          cwm->type,
                                                                          key,
                                                                          unit);
-    
+
     BRCryptoWalletSweeperBTC sweeper = (BRCryptoWalletSweeperBTC) sweeperBase;
-    
+
     BRKey *keyCore = cryptoKeyGetCore (key);
     BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
-    
+
     size_t addressLength = BRKeyLegacyAddr (keyCore, NULL, 0, addrParams);
     char  *address = malloc (addressLength + 1);
     BRKeyLegacyAddr (keyCore, address, addressLength, addrParams);
     address[addressLength] = '\0';
-    
+
     sweeper->addrParams = addrParams;
     sweeper->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
     sweeper->sourceAddress = address;
     array_new (sweeper->txns, 100);
-    
+
     cryptoUnitGive (unit);
     cryptoCurrencyGive (currency);
-    
+
     return sweeperBase;
 }
-
-/// MARK: - Transaction File Service
-
-#define fileServiceTypeTransactions     "transactions"
-
-enum {
-    WALLET_MANAGER_TRANSACTION_VERSION_1
-};
-
-static UInt256
-fileServiceTypeTransactionV1Identifier (BRFileServiceContext context,
-                                        BRFileService fs,
-                                        const void *entity) {
-    const BRTransaction *transaction = entity;
-    return transaction->txHash;
-}
-
-static uint8_t *
-fileServiceTypeTransactionV1Writer (BRFileServiceContext context,
-                                    BRFileService fs,
-                                    const void* entity,
-                                    uint32_t *bytesCount) {
-    const BRTransaction *transaction = entity;
-
-    size_t txTimestampSize  = sizeof (uint32_t);
-    size_t txBlockHeightSize = sizeof (uint32_t);
-    size_t txSize = BRTransactionSerialize (transaction, NULL, 0);
-
-    assert (txTimestampSize   == sizeof(transaction->timestamp));
-    assert (txBlockHeightSize == sizeof(transaction->blockHeight));
-
-    *bytesCount = (uint32_t) (txSize + txBlockHeightSize + txTimestampSize);
-
-    uint8_t *bytes = calloc (*bytesCount, 1);
-
-    size_t bytesOffset = 0;
-
-    BRTransactionSerialize (transaction, &bytes[bytesOffset], txSize);
-    bytesOffset += txSize;
-
-    UInt32SetLE (&bytes[bytesOffset], transaction->blockHeight);
-    bytesOffset += txBlockHeightSize;
-
-    UInt32SetLE(&bytes[bytesOffset], transaction->timestamp);
-
-    return bytes;
-}
-
-static void *
-fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
-                                    BRFileService fs,
-                                    uint8_t *bytes,
-                                    uint32_t bytesCount) {
-    size_t txTimestampSize  = sizeof (uint32_t);
-    size_t txBlockHeightSize = sizeof (uint32_t);
-    if (bytesCount < (txTimestampSize + txBlockHeightSize)) return NULL;
-
-    BRTransaction *transaction = BRTransactionParse (bytes, bytesCount - txTimestampSize - txBlockHeightSize);
-    if (NULL == transaction) return NULL;
-
-    transaction->blockHeight = UInt32GetLE (&bytes[bytesCount - txTimestampSize - txBlockHeightSize]);
-    transaction->timestamp   = UInt32GetLE (&bytes[bytesCount - txTimestampSize]);
-
-    return transaction;
-}
-
-static BRArrayOf(BRTransaction*)
-initialTransactionsLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BRTransaction*) transactionSet = BRSetNew(BRTransactionHash, BRTransactionEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, transactionSet, fileServiceTypeTransactions, 1)) {
-        BRSetFreeAll(transactionSet, (void (*) (void*)) BRTransactionFree);
-        _peer_log ("BWM: failed to load transactions");
-        return NULL;
-    }
-
-    size_t transactionsCount = BRSetCount(transactionSet);
-
-    BRArrayOf(BRTransaction*) transactions;
-    array_new (transactions, transactionsCount);
-    array_set_count(transactions, transactionsCount);
-
-    BRSetAll(transactionSet, (void**) transactions, transactionsCount);
-    BRSetFree(transactionSet);
-
-    _peer_log ("BWM: loaded %zu transactions\n", transactionsCount);
-    return transactions;
-}
-
-/// MARK: - Block File Service
-
-#define fileServiceTypeBlocks       "blocks"
-enum {
-    WALLET_MANAGER_BLOCK_VERSION_1
-};
-
-static UInt256
-fileServiceTypeBlockV1Identifier (BRFileServiceContext context,
-                                  BRFileService fs,
-                                  const void *entity) {
-    const BRMerkleBlock *block = (BRMerkleBlock*) entity;
-    return block->blockHash;
-}
-
-static uint8_t *
-fileServiceTypeBlockV1Writer (BRFileServiceContext context,
-                              BRFileService fs,
-                              const void* entity,
-                              uint32_t *bytesCount) {
-    const BRMerkleBlock *block = entity;
-
-    // The serialization of a block does not include the block height.  Thus, we'll need to
-    // append the height.
-
-    // These are serialization sizes
-    size_t blockHeightSize = sizeof (uint32_t);
-    size_t blockSize = BRMerkleBlockSerialize(block, NULL, 0);
-
-    // Confirm.
-    assert (blockHeightSize == sizeof (block->height));
-
-    // Update bytesCound with the total of what is written.
-    *bytesCount = (uint32_t) (blockSize + blockHeightSize);
-
-    // Get our bytes
-    uint8_t *bytes = calloc (*bytesCount, 1);
-
-    // We'll serialize the block itself first
-    BRMerkleBlockSerialize(block, bytes, blockSize);
-
-    // And then the height.
-    UInt32SetLE(&bytes[blockSize], block->height);
-
-    return bytes;
-}
-
-static void *
-fileServiceTypeBlockV1Reader (BRFileServiceContext context,
-                              BRFileService fs,
-                              uint8_t *bytes,
-                              uint32_t bytesCount) {
-    size_t blockHeightSize = sizeof (uint32_t);
-    if (bytesCount < blockHeightSize) return NULL;
-
-    BRMerkleBlock *block = BRMerkleBlockParse (bytes, bytesCount - blockHeightSize);
-    if (NULL == block) return NULL;
-
-    block->height = UInt32GetLE(&bytes[bytesCount - blockHeightSize]);
-
-    return block;
-}
-
-static BRArrayOf(BRMerkleBlock*)
-initialBlocksLoad (BRCryptoWalletManager manager) {
-    BRSetOf(BRMerkleBlock*) blockSet = BRSetNew(BRMerkleBlockHash, BRMerkleBlockEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, blockSet, fileServiceTypeBlocks, 1)) {
-        BRSetFreeAll(blockSet, (void (*) (void*)) BRMerkleBlockFree);
-        _peer_log ("BWM: failed to load blocks");
-        return NULL;
-    }
-
-    size_t blocksCount = BRSetCount(blockSet);
-
-    BRArrayOf(BRMerkleBlock*) blocks;
-    array_new (blocks, blocksCount);
-    array_set_count(blocks, blocksCount);
-
-    BRSetAll(blockSet, (void**) blocks, blocksCount);
-    BRSetFree(blockSet);
-
-    _peer_log ("BWM: loaded %zu blocks\n", blocksCount);
-    return blocks;
-}
-
-/// MARK: - Peer File Service
-
-#define fileServiceTypePeers        "peers"
-enum {
-    WALLET_MANAGER_PEER_VERSION_1
-};
-
-static UInt256
-fileServiceTypePeerV1Identifier (BRFileServiceContext context,
-                                 BRFileService fs,
-                                 const void *entity) {
-    const BRPeer *peer = entity;
-
-    UInt256 hash;
-    BRSHA256 (&hash, peer, sizeof(BRPeer));
-
-    return hash;
-}
-
-static uint8_t *
-fileServiceTypePeerV1Writer (BRFileServiceContext context,
-                             BRFileService fs,
-                             const void* entity,
-                             uint32_t *bytesCount) {
-    const BRPeer *peer = entity;
-    size_t offset = 0;
-
-    *bytesCount = sizeof (BRPeer);
-    uint8_t *bytes = malloc (*bytesCount);
-
-    memcpy (&bytes[offset], peer->address.u8, sizeof (UInt128));
-    offset += sizeof (UInt128);
-
-    UInt16SetBE (&bytes[offset], peer->port);
-    offset += sizeof (uint16_t);
-
-    UInt64SetBE (&bytes[offset], peer->services);
-    offset += sizeof (uint64_t);
-
-    UInt64SetBE (&bytes[offset], peer->timestamp);
-    offset += sizeof (uint64_t);
-
-    bytes[offset] = peer->flags;
-    offset += sizeof(uint8_t); (void) offset;
-
-    return bytes;
-}
-
-static void *
-fileServiceTypePeerV1Reader (BRFileServiceContext context,
-                             BRFileService fs,
-                             uint8_t *bytes,
-                             uint32_t bytesCount) {
-    assert (bytesCount == sizeof (BRPeer));
-
-    size_t offset = 0;
-
-    BRPeer *peer = malloc (bytesCount);
-
-    memcpy (peer->address.u8, &bytes[offset], sizeof (UInt128));
-    offset += sizeof (UInt128);
-
-    peer->port = UInt16GetBE (&bytes[offset]);
-    offset += sizeof (uint16_t);
-
-    peer->services = UInt64GetBE(&bytes[offset]);
-    offset += sizeof (uint64_t);
-
-    peer->timestamp = UInt64GetBE(&bytes[offset]);
-    offset += sizeof (uint64_t);
-
-    peer->flags = bytes[offset];
-    offset += sizeof(uint8_t); (void) offset;
-
-    return peer;
-}
-
-static BRArrayOf(BRPeer)
-initialPeersLoad (BRCryptoWalletManager manager) {
-    /// Load peers for the wallet manager.
-    BRSetOf(BRPeer*) peerSet = BRSetNew(BRPeerHash, BRPeerEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, peerSet, fileServiceTypePeers, 1)) {
-        BRSetFreeAll(peerSet, free);
-        _peer_log ("BWM: failed to load peers");
-        return NULL;
-    }
-
-    size_t peersCount = BRSetCount(peerSet);
-
-    BRArrayOf(BRPeer) peers;
-    array_new (peers, peersCount);
-
-    FOR_SET (BRPeer*, peer, peerSet) array_add (peers, *peer);
-    BRSetFreeAll(peerSet, free);
-
-    _peer_log ("BWM: loaded %zu peers\n", peersCount);
-    return peers;
-}
-
-static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
-    {
-        fileServiceTypeTransactions,
-        WALLET_MANAGER_TRANSACTION_VERSION_1,
-        1,
-        {
-            {
-                WALLET_MANAGER_TRANSACTION_VERSION_1,
-                fileServiceTypeTransactionV1Identifier,
-                fileServiceTypeTransactionV1Reader,
-                fileServiceTypeTransactionV1Writer
-            }
-        }
-    },
-
-    {
-        fileServiceTypeBlocks,
-        WALLET_MANAGER_BLOCK_VERSION_1,
-        1,
-        {
-            {
-                WALLET_MANAGER_BLOCK_VERSION_1,
-                fileServiceTypeBlockV1Identifier,
-                fileServiceTypeBlockV1Reader,
-                fileServiceTypeBlockV1Writer
-            }
-        }
-    },
-
-    {
-        fileServiceTypePeers,
-        WALLET_MANAGER_PEER_VERSION_1,
-        1,
-        {
-            {
-                WALLET_MANAGER_PEER_VERSION_1,
-                fileServiceTypePeerV1Identifier,
-                fileServiceTypePeerV1Reader,
-                fileServiceTypePeerV1Writer
-            }
-        }
-    }
-};
-static size_t fileServiceSpecificationsCount = (sizeof (fileServiceSpecifications) /
-                                                sizeof (BRFileServiceTypeSpecification));
-
-
 
 // MARK: BRWallet Callback Balance Changed
 
@@ -1302,11 +985,11 @@ static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleB
     BRCryptoWalletManagerBTC manager = info;
 
     if (replace) {
-        fileServiceReplace (manager->base.fileService, fileServiceTypeBlocks, (const void **) blocks, count);
+        fileServiceReplace (manager->base.fileService, fileServiceTypeBlocksBTC, (const void **) blocks, count);
     }
     else {
         for (size_t index = 0; index < count; index++)
-            fileServiceSave (manager->base.fileService, fileServiceTypeBlocks, blocks[index]);
+            fileServiceSave (manager->base.fileService, fileServiceTypeBlocksBTC, blocks[index]);
     }
 }
 
@@ -1318,12 +1001,12 @@ static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRP
     if (!replace) {
         // save each peer, one-by-one
         for (size_t index = 0; index < count; index++)
-            fileServiceSave (manager->base.fileService, fileServiceTypePeers, &peers[index]);
+            fileServiceSave (manager->base.fileService, fileServiceTypePeersBTC, &peers[index]);
     }
 
     else if (0 == count) {
         // no peers to set, just do a clear
-        fileServiceClear (manager->base.fileService, fileServiceTypePeers);
+        fileServiceClear (manager->base.fileService, fileServiceTypePeersBTC);
     }
 
     else {
@@ -1335,7 +1018,7 @@ static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRP
             peerRefs[i] = &peers[i];
         }
 
-        fileServiceReplace (manager->base.fileService, fileServiceTypePeers, (const void **) peerRefs, count);
+        fileServiceReplace (manager->base.fileService, fileServiceTypePeersBTC, (const void **) peerRefs, count);
         free (peerRefs);
     }
 }
@@ -1386,7 +1069,7 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
     free (info);
 }
 
-const BREventType *bwmEventTypes[] = {
+const BREventType *eventTypesBTC[] = {
 #if 0
     &bwmSignalTxAddedEventType,
     &bwmSignalTxUpdatedEventType,
@@ -1404,7 +1087,7 @@ const BREventType *bwmEventTypes[] = {
 };
 
 const unsigned int
-bwmEventTypesCount = (sizeof (bwmEventTypes) / sizeof (BREventType*));
+eventTypesCountBTC = (sizeof (eventTypesBTC) / sizeof (BREventType*));
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerCreateBTC,
