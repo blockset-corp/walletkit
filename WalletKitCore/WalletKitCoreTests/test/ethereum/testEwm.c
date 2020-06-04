@@ -186,13 +186,14 @@ clientEstimateGas (BREthereumClientContext context,
                    BREthereumWallet wid,
                    BREthereumTransfer tid,
                    BREthereumCookie cookie,
-                   const char *from,
-                   const char *to,
-                   const char *amount,
-                   const char *price,
-                   const char *data,
                    int rid) {
-    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, "0x77", price, rid);
+    BREthereumGasPrice gasPrice =  ewmTransferGetGasPrice (ewm, tid, WEI);
+
+    char *gasPriceStr = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
+    char *gasLimitStr = "0x77";
+
+    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, gasLimitStr, gasPriceStr, rid);
+    free (gasPriceStr);
 }
 
 static void
