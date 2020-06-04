@@ -187,6 +187,9 @@ cryptoFeeBasisAsETH (BRCryptoFeeBasis feeBasis);
 private_extern BRCryptoHash
 cryptoHashCreateAsETH (BREthereumHash hash);
 
+private_extern BREthereumHash
+cryptoHashAsETH (BRCryptoHash hash);
+
 /// MARK: - File Service
 
 extern const char *fileServiceTypeTransactionsETH;

@@ -954,48 +954,46 @@ ewmHandleAccountState (BREthereumBCSCallbackContext context,
 #endif
 }
 
-#if 0
 static void
-ewmHandleLogFeeBasis (BREthereumEWM ewm,
+ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
                       BREthereumHash hash,
-                      BREthereumTransfer transferTransaction,
-                      BREthereumTransfer transferLog) {
+                      BRCryptoTransfer transferTransaction,
+                      BRCryptoTransfer transferLog) {
+    BRCryptoWallet wallet = manager->base.wallet;
 
     // Find the ETH transfer, if needed
     if (NULL == transferTransaction)
-        transferTransaction = walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
+        transferTransaction = NULL; //  walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
 
     // If none exists, then the transaction hasn't been 'synced' yet.
     if (NULL == transferTransaction) return;
 
     // If we have a TOK transfer, set the fee basis.
     if (NULL != transferLog)
-        transferSetFeeBasis(transferLog, transferGetFeeBasis(transferTransaction));
+        cryptoTransferSetConfirmedFeeBasis(transferLog, cryptoTransferGetConfirmedFeeBasis(transferTransaction));
 
     // but if we don't have a TOK transfer, find every transfer referencing `hash` and set the basis.
     else
-        for (size_t wid = 0; wid < array_count(ewm->wallets); wid++) {
-            BREthereumWallet wallet = ewm->wallets[wid];
+        for (size_t wid = 0; wid < array_count(manager->base.wallets); wid++) {
+            BRCryptoWallet wallet = manager->base.wallets[wid];
 
             // We are only looking for TOK transfers (non-ETH).
-            if (wallet == ewm->walletHoldingEther) continue;
+            if (wallet == manager->base.wallet) continue;
 
-            size_t tidLimit = walletGetTransferCount (wallet);
-            for (size_t tid = 0; tid < tidLimit; tid++) {
-                transferLog = walletGetTransferByIndex (wallet, tid);
+            for (size_t tid = 0; tid < array_count(wallet->transfers); tid++) {
+                transferLog = wallet->transfers[tid];
 
                 // Look for a log that has a matching transaction hash
-                BREthereumLog log = transferGetBasisLog(transferLog);
+                BREthereumLog log = cryptoTransferCoerce(transferLog)->basis.log;
                 if (NULL != log) {
                     BREthereumHash transactionHash;
                     if (ETHEREUM_BOOLEAN_TRUE == logExtractIdentifier (log, &transactionHash, NULL) &&
                         ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash))
-                        ewmHandleLogFeeBasis (ewm, hash, transferTransaction, transferLog);
+                        ewmHandleLogFeeBasis (manager, hash, transferTransaction, transferLog);
                 }
             }
         }
 }
-#endif
 
 static void
 ewmHandleTransaction (BREthereumBCSCallbackContext context,
@@ -1004,7 +1002,8 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
     BRCryptoWalletManagerETH manager = context;
     (void) manager;
 
-    BRCryptoHash hash = cryptoHashCreateAsETH (transactionGetHash(transaction));
+    BREthereumHash ethHash = transactionGetHash(transaction);
+    BRCryptoHash      hash = cryptoHashCreateAsETH (ethHash);
     BRCryptoWallet wallet = manager->base.wallet;
 
     BRCryptoTransfer transfer = cryptoWalletGetTransferByHash (wallet, hash);
@@ -1030,8 +1029,8 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
             { .transfer = { cryptoTransferTake (transfer) }}
         });
 
-         // If this transfer is referenced by a log, fill out the log's fee basis.
-//        ewmHandleLogFeeBasis (ewm, hash, transfer, NULL);
+        // If this transfer is referenced by a log, fill out the log's fee basis.
+        ewmHandleLogFeeBasis (manager, ethHash, transfer, NULL);
 
     }
 
@@ -1274,11 +1273,9 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
         // If this transfer references a transaction, fill out this log's fee basis
-#ifdef REFACTOR
-        ewmHandleLogFeeBasis (ewm, transactionHash, NULL, transfer);
-#endif
-        needStatusEvent = 1;
+        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transfer->base);
 
+        needStatusEvent = 1;
     }
 
     // We've got a transfer for log.  We'll update the transfer's basis and check if we need

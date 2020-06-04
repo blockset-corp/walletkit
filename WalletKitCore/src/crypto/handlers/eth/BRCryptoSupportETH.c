@@ -47,6 +47,14 @@ cryptoHashCreateAsETH (BREthereumHash eth) {
                                      eth.bytes);
 }
 
+private_extern BREthereumHash
+cryptoHashAsETH (BRCryptoHash hash) {
+    assert (ETHEREUM_HASH_BYTES == hash->bytesCount);
+    BREthereumHash eth;
+    memcpy (eth.bytes, hash->bytes, ETHEREUM_HASH_BYTES);
+    return eth;
+}
+
 #ifdef REFACTOR
     extern char *
     cryptoHashString (BRCryptoHash hash) {
