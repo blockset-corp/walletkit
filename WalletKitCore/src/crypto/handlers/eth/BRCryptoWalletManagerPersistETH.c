@@ -67,7 +67,7 @@ fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
 }
 
 extern BRSetOf(BREthereumTransaction)
-initialTransactionsLoad (BRCryptoWalletManager manager) {
+initialTransactionsLoadETH (BRCryptoWalletManager manager) {
     BRSetOf(BREthereumTransaction) transactions = BRSetNew(transactionHashValue, transactionHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
     if (NULL != transactions && 1 != fileServiceLoad (manager->fileService, transactions, fileServiceTypeTransactionsETH, 1)) {
         BRSetFreeAll (transactions, (void (*) (void*)) transactionRelease);
