@@ -205,6 +205,10 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer trans
 
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
+    // Skip out if not an API sync.
+    if (CRYPTO_SYNC_MODE_API_ONLY          != qry->manager->syncMode &&
+        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND != qry->manager->syncMode) return;
+
     cryptoClientQRYRequestBlockNumber (qry);
 
     if (qry->sync.completed && qry->sync.success) {

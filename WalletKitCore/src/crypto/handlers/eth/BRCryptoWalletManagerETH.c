@@ -471,6 +471,34 @@ cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH manager,
     return NULL;
 }
 
+static BRCryptoWalletETH
+cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH manager,
+                                         BREthereumToken token) {
+    BRCryptoWallet wallet = (BRCryptoWallet) cryptoWalletManagerLookupWalletForToken (manager, token);
+
+    if (NULL == wallet) {
+        BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer (manager->base.network, ethTokenGetAddress(token));
+        BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault     (manager->base.network, currency);
+
+        wallet = cryptoWalletCreateAsETH (unit, unit, token, manager->account);
+        assert (NULL != wallet);
+
+        cryptoWalletManagerAddWallet (&manager->base, wallet);
+        cryptoWalletManagerGenerateWalletEvent (&manager->base, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_CREATED
+        });
+        cryptoWalletManagerGenerateManagerEvent(&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
+            { .wallet = cryptoWalletTake (wallet) }
+        });
+
+        cryptoUnitGive (unit);
+        cryptoCurrencyGive (currency);
+    }
+
+    return (BRCryptoWalletETH) wallet;
+}
+
 static const char *
 cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
     for (size_t index = 0; index < count; index++)
@@ -518,6 +546,11 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     *error |= (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 }
 
+static bool
+cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
+                                  const char *address) {
+    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
+}
 
 static void
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager managerBase,
@@ -588,7 +621,7 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager managerBase,
     ewmHandleTransaction (manager, BCS_CALLBACK_TRANSACTION_UPDATED, transaction);
 }
 
-static void
+static bool // true if error
 cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
                                const char *contract,
                                OwnershipKept BRCryptoClientTransferBundle bundle) {
@@ -604,6 +637,8 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
     size_t logIndex = 0;
 
     cwmExtractAttributes(bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
+    if (error) return true;
+
 #if 0
     size_t topicsCount = 3;
     char *topics[3] = {
@@ -691,6 +726,7 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
     //
     // Of course, see the comment in bcsHandleLog asking how to tell the client about a Log...
 
+    return false; // no error
 }
 
 
@@ -702,26 +738,64 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleETH (BRCryptoWalletManag
 assert (0);
 }
 
+static const char *
+cryptoWalletManagerParseIssuer (const char *currency) {
+    // Parse: "<blockchain-id>:<issuer>"
+    return 1 + strrchr (currency, ':');
+}
+
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager managerBase,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
-    BRCryptoWalletManagerETH    manager = cryptoWalletManagerCoerce (managerBase);
-    (void) manager;
-//    BRCryptoClientP2PManagerETH p2p     = cryptoClientP2PManagerCoerce (manager->base.p2pManager);
+    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
 
-    BRCryptoNetwork  network        = cryptoWalletManagerGetNetwork (managerBase);
+    BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (managerBase);
+
+    // We'll only have a `walletCurrency` if the bundle->currency is for ETH or fro an ERC20 token
+    // that is known.  If `bundle` indicates a `transfer` that we sent and we do not know about
+    // the ERC20 token we STILL MUST process the fee and the nonce.
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, bundle->currency);
-    if (NULL == walletCurrency) return;
-    const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
+
+    // The contract is NULL or an ERC20 Smart Contract address.
+    const char *contract = (NULL == walletCurrency
+                            ? cryptoWalletManagerParseIssuer (bundle->currency)
+                            : cryptoCurrencyGetIssuer(walletCurrency));
 
     switch (managerBase->syncMode) {
         case CRYPTO_SYNC_MODE_API_ONLY:
-        case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND:
-            if (NULL != contract)
+        case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
+            bool error = CRYPTO_TRANSFER_STATE_ERRORED == bundle->status;
+
+            bool needTransaction = true;
+            bool needLog         = (!error && NULL != contract);
+
+            if (needLog) {
+                // This could produce an error - generally a parse error.  We'll soldier on.
                 cryptoWalletManagerRecoverLog (managerBase, contract, bundle);
-            else
+
+                // If `from` is our address, then this log has a transaction that
+                 //     a) holds the fee; and
+                 //     b) increases the nonce.
+                needTransaction = cryptoWalletManagerHasAddressETH (manager, bundle->from);
+
+                // Destructively modify the bundle
+                if (needTransaction) {
+                    // No amount; just the fee
+                    free (bundle->amount);
+                    bundle->amount = strdup ("0x0");
+
+                    // The contract is the target
+                    free (bundle->to);
+                    bundle->to = strdup (contract);
+                 }
+            }
+
+            if (needTransaction) {
+                // bundle->data?
                 cryptoWalletManagerRecoverTransaction (managerBase, bundle);
+            }
             break;
+        }
 
         case CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC:
         case CRYPTO_SYNC_MODE_P2P_ONLY:
@@ -806,13 +880,16 @@ static BRCryptoClientP2PHandlers p2pHandlersETH = {
 static BRCryptoClientP2PManager
 crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager cwm) {
     BRCryptoClientP2PManager p2pBase = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordETH),
-                                                                         cwm->type,
-                                                                         &p2pHandlersETH);
+                                                                     cwm->type,
+                                                                     &p2pHandlersETH);
     BRCryptoClientP2PManagerETH p2p = cryptoClientP2PManagerCoerce (p2pBase);
     p2p->manager = cryptoWalletManagerCoerce(cwm);
 
+    // TODO: Handle Callbacks Correctly
+    cwm->p2pManager = p2pBase;
+
     BREthereumBCSListener listener = {
-        p2p,
+        cwm,
         ewmHandleBlockChain,
         ewmHandleAccountState,
         ewmHandleTransaction,
@@ -910,11 +987,18 @@ ewmHandleBlockChain (BREthereumBCSCallbackContext context,
                      uint64_t headBlockNumber,
                      uint64_t headBlockTimestamp) {
     BRCryptoWalletManagerETH manager = context;
+
+    // IF API_ONLY mode, do nothing
+    if (CRYPTO_SYNC_MODE_API_ONLY          == manager->base.syncMode ||
+        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == manager->base.syncMode) return;
+
+
+    // TODO: Handle Callbacks Correctly (Racy)
+    // if (NULL == manager->base.p2pManager) return;
     BRCryptoClientP2PManagerETH p2p = cryptoClientP2PManagerCoerce (manager->base.p2pManager);
 
     // Don't report during BCS sync.
-    if (CRYPTO_SYNC_MODE_API_ONLY == manager->base.syncMode ||
-        ETHEREUM_BOOLEAN_IS_FALSE(bcsSyncInProgress (p2p->bcs)))
+    if (ETHEREUM_BOOLEAN_IS_FALSE(bcsSyncInProgress (p2p->bcs)))
         eth_log ("EWM", "BlockChain: %" PRIu64, headBlockNumber);
 
     // At least this - allows for: ewmGetBlockHeight
@@ -954,23 +1038,69 @@ ewmHandleAccountState (BREthereumBCSCallbackContext context,
 #endif
 }
 
+//
+// We have `transaction` but we don't know if it originated a log.  If it did originate a log then
+// we need to update that log's status.  We don't know what logs the transaction originated so
+// we'll look through all wallets and all their transfers for any one transfer that matches the
+// provided transaction.
+//
+// Note: that `transaction` is owned by another; thus we won't hold it.
+//
+static void
+ewmHandleTransactionOriginatingLog (BRCryptoWalletManagerETH manager,
+                                    BREthereumBCSCallbackTransactionType type,
+                                    BRCryptoTransfer transfer) {
+
+//    BREthereumHash hash = transactionGetHash(transaction);
+    for (size_t wid = 0; wid < array_count(manager->base.wallets); wid++) {
+        BRCryptoWallet wallet = manager->base.wallets[wid];
+
+        // We already handle the ETH wallet.  See ewmHandleTransaction.
+        if (wallet == manager->base.wallet) continue;
+
+#if 0
+        BREthereumTransfer transfer = walletGetTransferByOriginatingHash (wallet, hash);
+        if (NULL != transfer) {
+            // If this transaction is the transfer's originatingTransaction, then update the
+            // originatingTransaction's status.
+            BREthereumTransaction original = transferGetOriginatingTransaction (transfer);
+            if (NULL != original && ETHEREUM_BOOLEAN_IS_TRUE(ethHashEqual (transactionGetHash(original),
+                                                                        transactionGetHash(transaction))))
+            transactionSetStatus (original, transactionGetStatus(transaction));
+
+            //
+            transferSetStatusForBasis (transfer, transactionGetStatus(transaction));
+
+            // NOTE: So `transaction` applies to `transfer`.  If the transfer's basis is 'log'
+            // then we'd like to update the log's identifier.... alas, we cannot because we need
+            // the 'logIndex' and no way to get that from the originating transaction's status.
+
+            ewmReportTransferStatusAsEvent(ewm, wallet, transfer);
+        }
+#endif
+    }
+}
+
+
 static void
 ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
                       BREthereumHash hash,
                       BRCryptoTransfer transferTransaction,
                       BRCryptoTransfer transferLog) {
-    BRCryptoWallet wallet = manager->base.wallet;
+    BRCryptoWallet wallet = manager->base.wallet; // Wallet Holding ETH
 
     // Find the ETH transfer, if needed
-    if (NULL == transferTransaction)
-        transferTransaction = NULL; //  walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
-
+    if (NULL == transferTransaction) {
+        BRCryptoHash cryHash = cryptoHashCreateAsETH(hash);
+        transferTransaction = cryptoWalletGetTransferByHash (wallet, cryHash); //  walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
+        cryptoHashGive(cryHash);
+    }
     // If none exists, then the transaction hasn't been 'synced' yet.
     if (NULL == transferTransaction) return;
 
     // If we have a TOK transfer, set the fee basis.
     if (NULL != transferLog)
-        cryptoTransferSetConfirmedFeeBasis(transferLog, cryptoTransferGetConfirmedFeeBasis(transferTransaction));
+        cryptoTransferSetState (transferLog, cryptoTransferGetState(transferTransaction));
 
     // but if we don't have a TOK transfer, find every transfer referencing `hash` and set the basis.
     else
@@ -1004,7 +1134,7 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
 
     BREthereumHash ethHash = transactionGetHash(transaction);
     BRCryptoHash      hash = cryptoHashCreateAsETH (ethHash);
-    BRCryptoWallet wallet = manager->base.wallet;
+    BRCryptoWallet  wallet = manager->base.wallet;
 
     BRCryptoTransfer transfer = cryptoWalletGetTransferByHash (wallet, hash);
 
@@ -1079,7 +1209,7 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
         //            ewmReportTransferStatusAsEvent(ewm, wallet, transfer);
     }
 
-//  ewmHandleTransactionOriginatingLog (ewm, type, transaction);
+    ewmHandleTransactionOriginatingLog (manager, type, transfer);
 
 #if 0
     BREthereumHash hash = transactionGetHash(transaction);
@@ -1232,7 +1362,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     // TODO: Confirm LogTopic[0] is 'transfer'
     if (3 != logGetTopicsCount(log)) { logRelease(log); return; }
 
-    BRCryptoWalletETH wallet = cryptoWalletManagerLookupWalletForToken (manager, token);
+    BRCryptoWalletETH wallet = cryptoWalletManagerEnsureWalletForToken (manager, token);
     assert (NULL != wallet);
 
     BRCryptoTransferETH transfer = cryptoWalletLookupTransferByIdentifier (wallet, logHash);
@@ -1257,7 +1387,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
                                                                            amount,
                                                                            log);
 
-//        walletHandleTransfer (wallet, transfer);
+        cryptoWalletAddTransfer (&wallet->base, &transfer->base);
 
         // We've added a transfer and arguably we should update the wallet's balance.  But don't.
         // Ethereum is 'account based'; we'll only update the balance based on a account state
@@ -1270,10 +1400,15 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
             CRYPTO_TRANSFER_EVENT_CREATED,
         });
 
-        oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
+        cryptoWalletManagerGenerateWalletEvent (&manager->base, &wallet->base, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
+            { .transfer = { cryptoTransferTake (&transfer->base) }}
+        });
 
         // If this transfer references a transaction, fill out this log's fee basis
         ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transfer->base);
+
+        oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
         needStatusEvent = 1;
     }

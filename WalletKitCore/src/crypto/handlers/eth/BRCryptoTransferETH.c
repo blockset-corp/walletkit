@@ -166,13 +166,16 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
 
     BRCryptoAmount  amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethAmount);
 
-    // TODO: FeeBasis
+    BREthereumFeeBasis ethFeeBasis = ethFeeBasisCreate (ethGasCreate(0),
+                                                        ethGasPriceCreate(ethEtherCreateZero()));
+    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH(unitForFee, ethFeeBasis);
+
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
     BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
                                                                unitForFee,
-                                                               NULL,
+                                                               estimatedFeeBasis,
                                                                amount,
                                                                direction,
                                                                source,

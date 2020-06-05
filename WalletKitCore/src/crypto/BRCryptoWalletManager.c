@@ -244,8 +244,14 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
     BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
     
-    // Setup the P2P and QRY Managers
+    // Setup the P2P Manager.  We have a race here... `createP2PManager` might generate callbacks
+    // as initial blocks, nodes, etc are added.  The callbacks currently are handled directly,
+    // without using the event queue - but eventually the event queue must be used.
+    //
+    // TODO: Handle Callbacks Correctly
     manager->p2pManager = manager->handlers->createP2PManager (manager);
+
+    // Setup the QRY Manager
     manager->qryManager = cryptoClientQRYManagerCreate (client,
                                                         manager,
                                                         manager->byType,

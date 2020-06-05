@@ -118,10 +118,6 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
                         BRCryptoTransferState state);
 
 private_extern void
-cryptoTransferSetConfirmedFeeBasis (BRCryptoTransfer transfer,
-                                    BRCryptoFeeBasis feeBasisConfirmed);
-
-private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
 
