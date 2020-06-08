@@ -193,7 +193,8 @@ ewmSignalAccountState (BREthereumEWM ewm,
 //
 extern void
 ewmHandleBalance (BREthereumEWM ewm,
-                  BREthereumAmount balance);
+                  BREthereumAmount balance,
+                  BREthereumBoolean force);
 
 extern void
 ewmSignalBalance (BREthereumEWM ewm,
@@ -452,7 +453,7 @@ ewmSignalAnnounceTransaction(BREthereumEWM ewm,
 typedef struct {
     BREthereumHash hash;
     BREthereumAddress contract;
-    int topicCount;
+    size_t topicCount;
     char **arrayTopics;
     char *data;
     UInt256 gasPrice;

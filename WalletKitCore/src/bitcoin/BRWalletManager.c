@@ -1771,6 +1771,11 @@ bwmHandleTxAdded (BRWalletManager manager,
 
     for (size_t index = 0; index < transactionsCount; index++) {
         BRTransactionWithState txnWithState  = manager->transactions[index];
+        // The manager->transactions list contains transactions that have been created but not
+        // signed.  Such transactions are in BRWalletManager but are not in BRWallet; thus they
+        // cannot possibly be resolved themselves or participate in resolving other transactions.
+        //
+        // BRWalletTransactionIsResolved() will return `false` for unsigned transactions.
         uint8_t nowResolved = BRWalletTransactionIsResolved (manager->wallet, txnWithState->ownedTransaction);
 
         if (!txnWithState->isResolved && nowResolved) {

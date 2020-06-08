@@ -58,8 +58,9 @@ struct BRCryptoClientCallbackStateRecord {
         } ethWithWallet;
         struct {
             BREthereumWallet wid;
+            BREthereumGasPrice gasPrice;
             BREthereumCookie cookie;
-        } ethWithWalletAndCookie;
+        } ethEstimateFee;
         struct {
             BREthereumWallet wid;
             BREthereumTransfer tid;
@@ -877,13 +878,15 @@ cwmWalletManagerEventAsETH (BREthereumClientContext context,
                                                           });
             }
 
+            BRCryptoWalletManagerState newState = cwmStateFromETH (event.u.changed.newState);
             cwmEvent = (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = {
                     cwmStateFromETH (event.u.changed.oldState),
-                    cwmStateFromETH (event.u.changed.newState)
+                    newState
                 }}};
 
+            cryptoWalletManagerSetState (cwm, newState);
             break;
 
         case EWM_EVENT_SYNC_PROGRESS:
@@ -1300,17 +1303,17 @@ cwmTransactionEventAsETH (BREthereumClientContext context,
             if (NULL != transfer ){
                 uint64_t blockNumber, blockTransactionIndex, blockTimestamp;
                 BREthereumGas gasUsed;
+                ewmTransferExtractStatusIncluded(ewm, tid, NULL, &blockNumber, &blockTransactionIndex, &blockTimestamp, &gasUsed);
 
                 BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
 
-                BREthereumFeeBasis ethFeeBasis = ewmTransferGetFeeBasis (ewm, tid);
+                BREthereumFeeBasis ethFeeBasisEstimated = ewmTransferGetFeeBasis (ewm, tid);
 
                 BRCryptoUnit unit = cryptoTransferGetUnitForFee(transfer);
                 BRCryptoFeeBasis feeBasisConfirmed = cryptoFeeBasisCreateAsETH (unit,
-                                                                                ethFeeBasisGetGasLimit(ethFeeBasis),
-                                                                                ethFeeBasisGetGasPrice(ethFeeBasis));
+                                                                                gasUsed,
+                                                                                ethFeeBasisGetGasPrice(ethFeeBasisEstimated));
 
-                ewmTransferExtractStatusIncluded(ewm, tid, NULL, &blockNumber, &blockTransactionIndex, &blockTimestamp, &gasUsed);
                 BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockNumber,
                                                                                   blockTransactionIndex,
                                                                                   blockTimestamp,
@@ -1443,11 +1446,6 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
                         BREthereumWallet wid,
                         BREthereumTransfer tid,
                         BREthereumCookie cookie,
-                        const char *from,
-                        const char *to,
-                        const char *amount,
-                        const char *price,
-                        const char *data,
                         int rid) {
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
@@ -1455,8 +1453,9 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
 
     BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
     callbackState->type = CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS;
-    callbackState->u.ethWithWalletAndCookie.wid = wid;
-    callbackState->u.ethWithWalletAndCookie.cookie = cookie;
+    callbackState->u.ethEstimateFee.wid = wid;
+    callbackState->u.ethEstimateFee.gasPrice = ewmTransferGetGasPrice (ewm, tid, WEI);
+    callbackState->u.ethEstimateFee.cookie = cookie;
     callbackState->rid = rid;
 
     BREthereumBoolean encoded = ETHEREUM_BOOLEAN_FALSE;
@@ -2076,6 +2075,12 @@ cwmParseUInt256 (const char *string, bool *error) {
     return result;
 }
 
+static const char *
+cwmParseIssuer (const char *currency) {
+    // Parse: "<blockchain-id>:<issuer>"
+    return 1 + strrchr (currency, ':');
+}
+
 extern void
 cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                             BRCryptoClientCallbackState callbackState,
@@ -2104,134 +2109,119 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
     BRCryptoNetwork network = cryptoWalletManagerGetNetwork (cwm);
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, currency);
 
-    // If we have a walletCurrency, then proceed
-    if (NULL != walletCurrency) {
-        switch (callbackState->type) {
-            case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
-                BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency);
-                assert (NULL != wallet);
+    switch (callbackState->type) {
+        case CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS: {
+            // If we do not have a walletCurrency, then skip out.
+            if (NULL == walletCurrency) break /* switch/case */;
 
-                // Create a 'GEN' transfer
-                BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
-                BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
-                                                                           from, to,
-                                                                           amount, currency, fee,
-                                                                           blockTimestamp, blockNumber,
-                                                                           CRYPTO_TRANSFER_STATE_ERRORED == status);
+            BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, walletCurrency);
+            assert (NULL != wallet);
 
-                genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, blockTimestamp, blockNumber));
+            // Create a 'GEN' transfer
+            BRGenericWallet   genWallet   = cryptoWalletAsGEN(wallet);
+            BRGenericTransfer genTransfer = genManagerRecoverTransfer (cwm->u.gen, genWallet, hash, uids,
+                                                                       from, to,
+                                                                       amount, currency, fee,
+                                                                       blockTimestamp, blockNumber,
+                                                                       CRYPTO_TRANSFER_STATE_ERRORED == status);
 
-                // If we are passed in attribues, they will replace any attribute already held
-                // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
-                // we might have a 'DestinationTag'.  If the attributes provided do not include
-                // 'DestinatinTag' then that attribute will be lost.  Losing such an attribute would
-                // indicate a BlockSet error in processing transfers.
-                if (attributesCount > 0) {
-                    BRGenericAddress genTarget = genTransferGetTargetAddress (genTransfer);
+            genTransferSetState (genTransfer, cwmAnnounceGetTransferStateGEN (genTransfer, status, blockTimestamp, blockNumber));
 
-                    // Build the transfer attributes
-                    BRArrayOf(BRGenericTransferAttribute) genAttributes;
-                    array_new(genAttributes, attributesCount);
-                    for (size_t index = 0; index < attributesCount; index++) {
-                        const char *keyFound;
-                        BRCryptoBoolean isRequiredAttribute;
-                        BRCryptoBoolean isAttribute = genWalletHasTransferAttributeForKey (genWallet,
-                                                                                           genTarget,
-                                                                                           attributeKeys[index],
-                                                                                           &keyFound,
-                                                                                           &isRequiredAttribute);
-                        if (CRYPTO_TRUE == isAttribute)
-                            array_add (genAttributes,
-                                       genTransferAttributeCreate (keyFound,
-                                                                   attributeVals[index],
-                                                                   CRYPTO_TRUE == isRequiredAttribute));
-                    }
-                    genTransferSetAttributes(genTransfer, genAttributes);
-                    genTransferAttributeReleaseAll(genAttributes);
-                    genAddressRelease(genTarget);
+            // If we are passed in attribues, they will replace any attribute already held
+            // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
+            // we might have a 'DestinationTag'.  If the attributes provided do not include
+            // 'DestinatinTag' then that attribute will be lost.  Losing such an attribute would
+            // indicate a BlockSet error in processing transfers.
+            if (attributesCount > 0) {
+                BRGenericAddress genTarget = genTransferGetTargetAddress (genTransfer);
+
+                // Build the transfer attributes
+                BRArrayOf(BRGenericTransferAttribute) genAttributes;
+                array_new(genAttributes, attributesCount);
+                for (size_t index = 0; index < attributesCount; index++) {
+                    const char *keyFound;
+                    BRCryptoBoolean isRequiredAttribute;
+                    BRCryptoBoolean isAttribute = genWalletHasTransferAttributeForKey (genWallet,
+                                                                                       genTarget,
+                                                                                       attributeKeys[index],
+                                                                                       &keyFound,
+                                                                                       &isRequiredAttribute);
+                    if (CRYPTO_TRUE == isAttribute)
+                        array_add (genAttributes,
+                                   genTransferAttributeCreate (keyFound,
+                                                               attributeVals[index],
+                                                               CRYPTO_TRUE == isRequiredAttribute));
                 }
-
-                // Announce to GWM.  Note: the equivalent BTC+ETH announce transaction is going to
-                // create BTC+ETH wallet manager + wallet + transfer events that we'll handle by
-                // incorporating the BTC+ETH transfer into 'crypto'.  However, GEN does not generate
-                // similar events.
-                //
-                // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
-                cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
-
-                cryptoWalletGive (wallet);
-                break;
+                genTransferSetAttributes(genTransfer, genAttributes);
+                genTransferAttributeReleaseAll(genAttributes);
+                genAddressRelease(genTarget);
             }
 
-            case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
-                // We won't necessarily have a wallet here; specifically ewmAnnounceLog might
-                // create one... which will eventually flow to BRCryptoWallet creation.
-                bool error = false;
+            // Announce to GWM.  Note: the equivalent BTC+ETH announce transaction is going to
+            // create BTC+ETH wallet manager + wallet + transfer events that we'll handle by
+            // incorporating the BTC+ETH transfer into 'crypto'.  However, GEN does not generate
+            // similar events.
+            //
+            // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
+            cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
 
-                UInt256 value = cwmParseUInt256 (amount, &error);
-
-                const char *contract = cryptoCurrencyGetIssuer(walletCurrency);
-                uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
-                uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
-                UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
-                uint64_t nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), &error);
-
-                error |= (CRYPTO_TRANSFER_STATE_ERRORED == status);
-
-                if (NULL != contract) {
-                    size_t topicsCount = 3;
-                    char *topics[3] = {
-                        (char *) ethEventGetSelector(ethEventERC20Transfer),
-                        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, from),
-                        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, to)
-                    };
-
-                    size_t logIndex = 0;
-
-                    ewmAnnounceLog (cwm->u.eth,
-                                    callbackState->rid,
-                                    hash,
-                                    contract,
-                                    topicsCount,
-                                    (const char **) &topics[0],
-                                    amount,
-                                    gasPrice,
-                                    gasUsed,
-                                    logIndex,
-                                    blockNumber,
-                                    blockTransactionIndex,
-                                    blockTimestamp);
-
-                    free (topics[1]);
-                    free (topics[2]);
-                }
-                else {
-                    ewmAnnounceTransaction (cwm->u.eth,
-                                            callbackState->rid,
-                                            hash,
-                                            from,
-                                            to,
-                                            contract,
-                                            value,
-                                            gasLimit,
-                                            gasPrice,
-                                            "",
-                                            nonce,
-                                            gasUsed,
-                                            blockNumber,
-                                            blockHash,
-                                            blockConfirmations,
-                                            blockTransactionIndex,
-                                            blockTimestamp,
-                                            error);
-                }
-                break;
-            }
-
-            default: assert (0);
+            cryptoWalletGive (wallet);
+            break;
         }
+
+        case CWM_CALLBACK_TYPE_ETH_GET_TRANSACTIONS: {
+            // We won't necessarily have a wallet here; specifically ewmAnnounceLog might
+            // create one... which will eventually flow to BRCryptoWallet creation.
+
+            // Catch parsing errors, minimally
+            bool error = false;
+
+            // If we don't have a `walletCurrency` then the `currency` is for an ERC20 transfer
+            // for a TOKEN that is not handled in our wallet - the BREthereumToken is unknown.
+            // If the transfer is sent then we MUST handle the transfer because a) a fee was
+            // paid and b) the nonce increased.
+            //
+            // If the walletCurrency is unknown, we'll extract the ERC20 Smart Contract by
+            // directly parsing the `currency` - which is known to have the form of:
+            //    <blockchain-id>:<smart-contract-address>
+            const char *contract = (NULL == walletCurrency
+                                    ? cwmParseIssuer(currency)
+                                    : cryptoCurrencyGetIssuer(walletCurrency));
+            uint64_t gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), &error);
+            uint64_t gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), &error); // strtoull(strGasUsed, NULL, 0);
+            UInt256  gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), &error);
+            uint64_t nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), &error);
+            size_t   logIndex = 0;
+
+            error |= (CRYPTO_TRANSFER_STATE_ERRORED == status);
+
+            // This may create an Ethereum Log and/or a Transaction - depending on the
+            // contract provided and the direction of the transfer.
+            ewmAnnounceTransfer (cwm->u.eth,
+                                 callbackState->rid,
+                                 hash,
+                                 from,
+                                 to,
+                                 contract,
+                                 amount,
+                                 gasLimit,
+                                 gasPrice,
+                                 "",
+                                 nonce,
+                                 gasUsed,
+                                 logIndex,
+                                 blockNumber,
+                                 blockHash,
+                                 blockConfirmations,
+                                 blockTransactionIndex,
+                                 blockTimestamp,
+                                 error);
+            break;
+        }
+
+        default: assert (0);
     }
-    
+
     if (NULL != walletCurrency) cryptoCurrencyGive (walletCurrency);
 
     cryptoNetworkGive (network);
@@ -2417,28 +2407,24 @@ cwmAnnounceEstimateTransactionFeeSuccess (OwnershipKept BRCryptoWalletManager cw
 
     switch (callbackState->type) {
         case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS: {
-            //
-            BREthereumHash hash = ethHashCreate (strHash);
-            BREthereumTransfer transfer =  ewmWalletGetTransferByOriginatingTransactionHash (cwm->u.eth,
-                                                                                             callbackState->u.ethWithWalletAndCookie.wid,
-                                                                                             hash);
+
             char strGasEstimate[128];
             bool error = sprintf (strGasEstimate, "%" PRIu64, costUnits) < 0;
 
-            if (NULL == transfer || error) {
+//            if (NULL == transfer || error) {
+            if (error) {
                 ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                               callbackState->u.ethWithWalletAndCookie.wid,
-                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               callbackState->u.ethEstimateFee.wid,
+                                               callbackState->u.ethEstimateFee.cookie,
                                                (error ? ERROR_NUMERIC_PARSE : ERROR_FAILED),
                                                callbackState->rid);
             }
             else {
-                BREthereumGasPrice gasPrice = ewmTransferGetGasPrice (cwm->u.eth, transfer, WEI);
-                char *strGasPrice = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
+                char *strGasPrice = ethEtherGetValueString (callbackState->u.ethEstimateFee.gasPrice.etherPerGas, WEI);
 
                 ewmAnnounceGasEstimateSuccess (cwm->u.eth,
-                                               callbackState->u.ethWithWalletAndCookie.wid,
-                                               callbackState->u.ethWithWalletAndCookie.cookie,
+                                               callbackState->u.ethEstimateFee.wid,
+                                               callbackState->u.ethEstimateFee.cookie,
                                                strGasEstimate,
                                                strGasPrice,
                                                callbackState->rid);
@@ -2466,8 +2452,8 @@ cwmAnnounceEstimateTransactionFeeFailure (OwnershipKept BRCryptoWalletManager cw
     switch (callbackState->type) {
         case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS:
             ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                           callbackState->u.ethWithWalletAndCookie.wid,
-                                           callbackState->u.ethWithWalletAndCookie.cookie,
+                                           callbackState->u.ethEstimateFee.wid,
+                                           callbackState->u.ethEstimateFee.cookie,
                                            ERROR_FAILED,
                                            callbackState->rid);
             break;

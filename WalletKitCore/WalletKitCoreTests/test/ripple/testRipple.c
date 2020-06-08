@@ -1018,7 +1018,8 @@ static void submitWithoutDestinationTag() {
     rippleAccountFree(sourceAccount);
 }
 
-static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence)
+static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence,
+                                          int addFailedFirstTransfer)
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
@@ -1030,9 +1031,16 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
     BRRippleAddress targetAddress = rippleAccountGetPrimaryAddress(targetAccount);
 
+    BRRippleTransactionHash hash;
+    hex2bin("A3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
+    if (addFailedFirstTransfer) {
+        // Add a failed transfer at an earlier block - we should ignore this when determing
+        // the block where the account is created
+        BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 0, 12, hash, 0, start_block - 1000, 1);
+    }
+
     // Create the initial transfer the creates the account (from target to us)
     // NOTE: this transfer MUST use the start_block unaltered as the height
-    BRRippleTransactionHash hash;
     hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
     BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
     rippleWalletAddTransfer(wallet, transfer);
@@ -1071,9 +1079,12 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
 
 static void testStartingSequence()
 {
-    testStartingSequenceFromBlock(40000000, 1); // Just an old account created at 40000000
-    testStartingSequenceFromBlock(55313920, 1); // The last block before the new behavior
-    testStartingSequenceFromBlock(55313921, 55313921); // The first block after the new behavior
+    testStartingSequenceFromBlock(40000000, 1, 0); // Just an old account created at 40000000
+    testStartingSequenceFromBlock(40000000, 1, 1); // This time with a failed first transfer
+    testStartingSequenceFromBlock(55313920, 1, 0); // The last block before the new behavior
+    testStartingSequenceFromBlock(55313920, 1, 1); // This time with a failed first transfer
+    testStartingSequenceFromBlock(55313921, 55313921, 0); // The first block after the new behavior
+    testStartingSequenceFromBlock(55313921, 55313921, 1); // This time with a failed first transfer
 }
 
 #pragma clang diagnostic pop
