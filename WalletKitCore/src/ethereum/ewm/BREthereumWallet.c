@@ -389,18 +389,29 @@ walletUpdateBalance (BREthereumWallet wallet) {
                          ? ethAmountGetEther(amount).valueInWEI
                          : ethAmountGetTokenQuantity(amount).valueAsInteger);
 
-        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(transfer)))) {
+        // Will be ZERO if transfer is not for ETH
+        BREthereumEther fee = transferGetFee(transfer, &fee_overflow);
+
+        BREthereumBoolean isSend = ethAddressEqual(wallet->address, transferGetSourceAddress(transfer));
+        BREthereumBoolean isRecv = ethAddressEqual(wallet->address, transferGetTargetAddress(transfer));
+
+        if (ETHEREUM_BOOLEAN_IS_TRUE (isSend)) {
             sent = uint256Add_Overflow(sent, value, &overflow);
+            assert (!overflow);
 
-            BREthereumEther fee = transferGetFee(transfer, &fee_overflow);
             fees = uint256Add_Overflow(fees, fee.valueInWEI, &fee_overflow);
+            assert (!fee_overflow);
         }
-        else
-            recv = uint256Add_Overflow(recv, value, &overflow);
 
-        assert (!overflow);
+        if (ETHEREUM_BOOLEAN_IS_TRUE (isRecv)) {
+            recv = uint256Add_Overflow(recv, value, &overflow);
+            assert (!overflow);
+        }
     }
 
+    // A wallet balance can never be negative; however, as transfers arrive in a sporadic manner,
+    // the balance could be negative until all transfers arrive, eventually.  If negative, we'll
+    // set the balance to zero.
     UInt256 balance = uint256Sub_Negative(recv, sent, &negative);
 
     // If we are going to be changing the balance here then 1) shouldn't we call walletSetBalance()
@@ -409,10 +420,13 @@ walletUpdateBalance (BREthereumWallet wallet) {
 
     if (AMOUNT_ETHER == ethAmountGetType(wallet->balance)) {
         balance = uint256Sub_Negative(balance, fees, &negative);
+        if (negative) balance = UINT256_ZERO;
         wallet->balance = ethAmountCreateEther (ethEtherCreate(balance));
     }
-    else
+    else {
+        if (negative) balance = UINT256_ZERO;
         wallet->balance = ethAmountCreateToken (ethTokenQuantityCreate(ethAmountGetToken (wallet->balance), balance));
+    }
 }
 // Gas Limit
 
