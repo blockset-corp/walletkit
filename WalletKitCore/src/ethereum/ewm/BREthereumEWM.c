@@ -1433,17 +1433,34 @@ ewmWalletCreateTransferToReplace (BREthereumEWM ewm,
     return transfer;
 }
 
-extern unsigned int
+extern uint64_t
 ewmWalletGetTransferNonce (BREthereumEWM ewm,
                            BREthereumWallet wallet) {
     pthread_mutex_lock(&ewm->lock);
-    // If countAsSource is 0; the next nonce is 0.
-    unsigned int countAsSource = walletGetTransferCountAsSource(wallet);
+    // This Ethereum Wallet will hold Transfers based on either Logs or Transactions.  The
+    // Transactions can be wither 'Primary' or 'Internal' Transactions - where 'internal' is a lousy
+    // Ethereum concept that we unfortunately need to deal with.
+    //
+    // An Internal Transaction, like a Primary transaction, can represent the transfer of Ether
+    // and be either sent or received.  Unlike a Primary transaction, an Internal one won't
+    // necessarily be associated with a Primary transaction.  Thus, it is possible to have a
+    // wallet filled with Internal Transaction but no Primary ones.
+    //
+    // The account nonce is based on the number of sent Primary transactions.  We don't have a
+    // `flag` to identify a Primary vs Internal Transaction (maybe we should?).  Until we have
+    // such a flag, we cannot count sent transfers to derive the nonce.
+    //
+    // We'll need to rely on the nonce that gets assigned to each Transfer.  The assignment
+    // occurs for both P2P and API-based Transfers.
+
+    // If wallet has no sent transfers, then `nonceMax` is TRANSACTION_NONCE_IS_NOT_ASSIGNED.
+    uint64_t nonceMax = walletGetTransferNonceMaximumAsSource(wallet);
+
     // If nonceMaximum is 100; the next nonce is 101 => `1 + ...`
-    unsigned int nonceMaximum  = 1 + walletGetTransferNonceMaximumAsSource(wallet);
+    uint64_t nonce  = (TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonceMax ? 0 : (1 + nonceMax));
     pthread_mutex_unlock(&ewm->lock);
 
-    return nonceMaximum > countAsSource ? nonceMaximum : countAsSource;
+    return nonce;
 }
 
 static void

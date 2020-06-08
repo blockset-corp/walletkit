@@ -295,7 +295,7 @@ ewmWalletCreateTransferToReplace(BREthereumEWM ewm,
                                  BREthereumBoolean updateGasLimit,
                                  BREthereumBoolean updateNonce);
 
-extern unsigned int
+extern uint64_t
 ewmWalletGetTransferNonce (BREthereumEWM ewm,
                            BREthereumWallet wallet);
 
@@ -321,7 +321,6 @@ ewmTransferGetIdentifier (BREthereumEWM ewm,
 extern BREthereumHash
 ewmTransferGetOriginatingTransactionHash (BREthereumEWM ewm,
                                           BREthereumTransfer transfer);
-
 
 extern BREthereumAmount
 ewmTransferGetAmount(BREthereumEWM ewm,

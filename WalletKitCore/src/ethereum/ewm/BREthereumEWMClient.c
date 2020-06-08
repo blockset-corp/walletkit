@@ -346,6 +346,8 @@ ewmHandleAnnounceNonce (BREthereumEWM ewm,
         // Only save the primaryWallet if the nonce has, in fact, changed.
         if (oldNonce != ethAccountGetAddressNonce (ewm->account, address))
             ewmHandleSaveWallet (ewm, ewmGetWallet(ewm), CLIENT_CHANGE_UPD);
+
+        eth_log ("EWM", "Nonce: %" PRIu64, newNonce);
     }
     pthread_mutex_unlock (&ewm->lock);
 }
