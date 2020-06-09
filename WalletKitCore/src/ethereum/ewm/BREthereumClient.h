@@ -209,6 +209,24 @@ extern "C" {
                             int id,
                             BREthereumBoolean success);
 
+    /// MARK: - Get Exchanges
+
+    extern BREthereumStatus
+    ewmAnnounceExchange (BREthereumEWM ewm,
+                         int id,
+                         const char *hash,
+                         const char *from,
+                         const char *to,
+                         const char *contract,
+                         UInt256  amount,
+                         UInt256  gasPrice,
+                         uint64_t gasUsed,
+                         uint64_t logIndex,
+                         uint64_t blockNumber,
+                         uint64_t blockTransactionIndex,
+                         uint64_t blockTimestamp);
+
+
     /// MARK: - Get Transfers
 
     extern BREthereumStatus
@@ -219,6 +237,7 @@ extern "C" {
                         const char *to,
                         const char *contract,
                         const char *amount, // value
+                        const char *fee,
                         uint64_t gasLimit,
                         UInt256 gasPrice,
                         const char *data,

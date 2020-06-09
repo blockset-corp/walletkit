@@ -15,6 +15,7 @@
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/blockchain/BREthereumTransaction.h"
 #include "ethereum/blockchain/BREthereumLog.h"
+#include "ethereum/contract/BREthereumExchange.h"
 #include "BREthereumBase.h"
 #include "BREthereumAmount.h"
 #include "BREthereumAccount.h"
@@ -27,7 +28,8 @@ extern "C" {
 
 typedef enum  {
     TRANSFER_BASIS_TRANSACTION,
-    TRANSFER_BASIS_LOG
+    TRANSFER_BASIS_LOG,
+    TRANSFER_BASIS_EXCHANGE
 } BREthereumTransferBasisType;
 
 /**
@@ -59,6 +61,10 @@ extern BREthereumTransfer
 transferCreateWithLog (OwnershipGiven BREthereumLog log,
                        BREthereumToken token,
                        BRRlpCoder coder);           // For decoding log->data into UInt256
+
+extern BREthereumTransfer
+transferCreateWithExchange (OwnershipGiven BREthereumExchange exchange,
+                            BRSetOf (BREthereumToken) tokens);
 
 extern void
 transferRelease (BREthereumTransfer transfer);
@@ -172,6 +178,10 @@ transferSetBasisForTransaction (BREthereumTransfer transfer,
 extern void
 transferSetBasisForLog (BREthereumTransfer transfer,
                         OwnershipGiven BREthereumLog log);
+
+extern void
+transferSetBasisForExchange (BREthereumTransfer transfer,
+                             OwnershipGiven BREthereumExchange exchange);
 
 //
 //

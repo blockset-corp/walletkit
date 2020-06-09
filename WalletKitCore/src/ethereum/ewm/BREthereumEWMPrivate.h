@@ -274,6 +274,22 @@ ewmSignalLog (BREthereumEWM ewm,
               OwnershipGiven BREthereumLog log);
 
 //
+// Signal/Handle Exchange (x-BCS Callback)
+//
+// See the comments for ewm{Handle,Signal}Transaction() above
+//
+extern void
+ewmHandleExchange (BREthereumEWM ewm,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
+
+extern void
+ewmSignalExchange (BREthereumEWM ewm,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
+
+
+//
 // Signal/Handle Save Blocks (BCS Callback)
 //
 extern void
@@ -475,13 +491,47 @@ ewmClientAnnounceLogBundleRelease (BREthereumEWMClientAnnounceLogBundle *bundle)
 
 extern void
 ewmSignalAnnounceLog (BREthereumEWM ewm,
-                            BREthereumEWMClientAnnounceLogBundle *bundle,
-                            int id);
+                      BREthereumEWMClientAnnounceLogBundle *bundle,
+                      int id);
 
 extern void
 ewmHandleAnnounceLog (BREthereumEWM ewm,
-                            BREthereumEWMClientAnnounceLogBundle *bundle,
-                            int id);
+                      BREthereumEWMClientAnnounceLogBundle *bundle,
+                      int id);
+
+/// MARK: - Exchanges
+
+typedef struct {
+    BREthereumHash hash;
+    BREthereumAddress from;
+    BREthereumAddress to;
+    BREthereumAddress contract;
+    UInt256  amount;
+    uint64_t gasLimit;
+    UInt256 gasPrice;
+    uint64_t gasUsed;
+    uint64_t blockNumber;
+    BREthereumHash blockHash;
+    uint64_t blockConfirmations;
+    uint64_t blockTransactionIndex;
+    uint64_t blockTimestamp;
+    BREthereumBoolean isError;
+} BREthereumEWMClientAnnounceExchangeBundle;
+
+static inline void
+ewmClientAnnounceExchangeBundleRelease (BREthereumEWMClientAnnounceExchangeBundle *bundle) {
+    free (bundle);
+}
+
+extern void
+ewmSignalAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int id);
+
+extern void
+ewmHandleAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int id);
 
 /// MARK: - Account Complete
 

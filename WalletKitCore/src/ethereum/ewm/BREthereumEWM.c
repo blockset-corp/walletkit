@@ -2073,6 +2073,82 @@ ewmHandleLog (BREthereumEWM ewm,
 }
 
 extern void
+ewmHandleExchange (BREthereumEWM ewm,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange) {
+    BREthereumHash exchangeHash = ethExchangeGetHash(exchange);
+
+    BREthereumHash transactionHash;
+    size_t exchangeIndex;
+
+    // Assert that we always have an identifier for `log`.
+    BREthereumBoolean extractedIdentifier = ethExchangeExtractIdentifier (exchange, &transactionHash, &exchangeIndex);
+    assert (ETHEREUM_BOOLEAN_IS_TRUE (extractedIdentifier));
+
+    BREthereumAddress contract = ethExchangeGetContract(exchange);
+    BREthereumToken   token    = ewmLookupToken (ewm, contract);
+    BREthereumWallet  wallet = (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (contract, EMPTY_ADDRESS_INIT))
+                                ? ewmGetWallet (ewm)
+                                : (NULL == token ? NULL : ewmGetWalletHoldingToken (ewm, token)));
+
+    // TODO: Nothing to do?
+    if (NULL == wallet) { ethExchangeRelease(exchange); return; }
+
+    BREthereumTransfer transfer = walletGetTransferByIdentifier (wallet, exchangeHash);
+    // TODO: Never an originating transfer?
+
+    bool needStatusEvent = false;
+
+    if (NULL == transfer) {
+        transfer = transferCreateWithExchange(exchange, ewm->tokens);
+
+        walletHandleTransfer (wallet, transfer);
+
+        ewmSignalTransferEvent (ewm, wallet, transfer, (BREthereumTransferEvent) {
+            TRANSFER_EVENT_CREATED,
+            SUCCESS
+        });
+
+        // If this transfer references a transaction, fill out this log's fee basis
+        // TODO: Something?
+//        ewmHandleLogFeeBasis (ewm, transactionHash, NULL, transfer);
+
+        needStatusEvent = true;
+    }
+    else {
+        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (ewm, wallet, transfer,
+                                                                  ethExchangeGetStatus(exchange));
+
+        // Exchange becomes the new basis for transfer
+        transferSetBasisForExchange (transfer, exchange);
+    }
+
+    if (needStatusEvent) {
+        BREthereumHashString exchnageHashString;
+        ethHashFillString(exchangeHash, exchnageHashString);
+
+        BREthereumHashString transactionHashString;
+        ethHashFillString(transactionHash, transactionHashString);
+
+        eth_log ("EWM", "Exchnage: %s { %8s @ %zu }, Change: %s, Status: %d",
+                 exchnageHashString, transactionHashString, exchangeIndex,
+                 BCS_CALLBACK_TRANSACTION_TYPE_NAME(type),
+                 ethExchangeGetStatus (exchange).type);
+
+        ewmReportTransferStatusAsEvent (ewm, wallet, transfer);
+    }
+
+    // We've added a transfer and should update the wallet's balance.  Ethereum is 'account based';
+    // but in API modes we don't have the account information - so we'll update the balance
+    // explicitly.  In P2P mode, we get the 'account'.
+    //
+    if (CRYPTO_SYNC_MODE_API_ONLY          == ewm->mode ||
+        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND == ewm->mode)
+        ewmUpdateAndReportWalletState (ewm, wallet);
+
+}
+
+extern void
 ewmHandleSaveBlocks (BREthereumEWM ewm,
                      OwnershipGiven BRArrayOf(BREthereumBlock) blocks) {
     size_t count = array_count(blocks);

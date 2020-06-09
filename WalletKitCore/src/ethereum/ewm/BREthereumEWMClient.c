@@ -581,6 +581,103 @@ ewmAnnounceLog (BREthereumEWM ewm,
 
 // ==============================================================================================
 //
+// Get Exchanges
+//
+extern void
+ewmHandleAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int id) {
+    switch (ewm->mode) {
+        case CRYPTO_SYNC_MODE_API_ONLY:
+        case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
+            BREthereumExchange exchange = ethExchangeCreate (bundle->from,
+                                                             bundle->to,
+                                                             bundle->contract,
+                                                             0,
+                                                             bundle->amount);
+
+            // TODO: Exchange Index
+            ethExchangeInitializeIdentifier (exchange, bundle->hash, 0);
+
+            BREthereumTransactionStatus status =
+            transactionStatusCreateIncluded (ethHashCreateEmpty(),
+                                             bundle->blockNumber,
+                                             bundle->blockTransactionIndex,
+                                             bundle->blockTimestamp,
+                                             ethGasCreate(bundle->gasUsed));
+
+            ethExchangeSetStatus (exchange, status);
+
+            ewmSignalExchange (ewm, BCS_CALLBACK_EXCHANGE_UPDATED, exchange);
+#if 0
+            // The `bundle` has `gasPrice` and `gasUsed` values.  The above `ewmSignalLog()` is
+            // going to create a `transfer` and that transfer needs a correct `feeBasis`.  We will
+            // not use this bundle's feeBasis and put in place something that works for P2P modes
+            // as well.  So instead will use the feeBasis derived from this log transfer's
+            // transaction.  See ewmHandleLog, ewmHandleTransaction and their calls to
+            // ewmHandleLogFeeBasis.
+
+            // Do we need a transaction here?  No, if another originated this Log, then we can't ever
+            // care and if we originated this Log, then we'll get the transaction (as part of the BRD
+            // 'getTransactions' endpoint).
+            //
+            // Of course, see the comment in bcsHandleLog asking how to tell the client about a Log...
+#endif
+            break;
+        }
+
+        case CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC:
+        case CRYPTO_SYNC_MODE_P2P_ONLY:
+            // bcsSendExchangeRequest (... );
+            break;
+    }
+    ewmClientAnnounceExchangeBundleRelease(bundle);
+}
+
+extern BREthereumStatus
+ewmAnnounceExchange (BREthereumEWM ewm,
+                     int id,
+                     const char *hash,
+                     const char *from,
+                     const char *to,
+                     const char *contract,
+                     UInt256 amount,
+                     UInt256  gasPrice,
+                     uint64_t gasUsed,
+                     uint64_t logIndex,
+                     uint64_t blockNumber,
+                     uint64_t blockTransactionIndex,
+                     uint64_t blockTimestamp) {
+
+    BREthereumEWMClientAnnounceExchangeBundle *bundle = malloc(sizeof (BREthereumEWMClientAnnounceExchangeBundle));
+
+    bundle->hash = ethHashCreate(hash);
+
+    bundle->from = ethAddressCreate(from);
+    bundle->to   = ethAddressCreate(to);
+    bundle->contract = (NULL == contract || '\0' == contract[0]
+                        ? EMPTY_ADDRESS_INIT
+                        : ethAddressCreate(contract));
+
+    bundle->amount = amount; // uint256CreateParse(strAmount, 0, &parseStatus);
+
+    bundle->gasPrice = gasPrice; // uint256CreateParse(strGasPrice, 0, &parseStatus);
+    bundle->gasUsed  = gasUsed;
+
+    bundle->blockNumber = blockNumber;
+//    bundle->blockHash = ethHashCreate (strBlockHash);
+//    bundle->blockConfirmations = blockConfirmations;
+    bundle->blockTransactionIndex = blockTransactionIndex;
+    bundle->blockTimestamp = blockTimestamp;
+
+//    bundle->isError = AS_ETHEREUM_BOOLEAN(isError);
+
+    ewmSignalAnnounceExchange(ewm, bundle, id);
+    return SUCCESS;
+}
+
+// ==============================================================================================
+//
 // Get Transfers
 //
 static UInt256
@@ -594,36 +691,66 @@ cwmParseUInt256 (const char *string, bool *error) {
     return result;
 }
 
+bool strPrefix(const char *pre, const char *str)
+{
+    return strncmp (pre, str, strlen(pre)) == 0;
+}
 
 extern BREthereumStatus
 ewmAnnounceTransfer (BREthereumEWM ewm,
-                    int id,
-                    const char *hash,
-                    const char *from,
-                    const char *to,
-                    const char *contract,
-                    const char *amount, // value
-                    uint64_t gasLimit,
-                    UInt256 gasPrice,
-                    const char *data,
-                    uint64_t  nonce,
-                    uint64_t  gasUsed,
-                    uint64_t logIndex,
-                    uint64_t  blockNumber,
-                    const char *blockHash,
-                    uint64_t blockConfirmations,
-                    uint64_t blockTransactionIndex,
-                    uint64_t blockTimestamp,
-                    bool isError) {
+                     int id,
+                     const char *hash,
+                     const char *from,
+                     const char *to,
+                     const char *contract,
+                     const char *amount, // value
+                     const char *fee,
+                     uint64_t gasLimit,
+                     UInt256 gasPrice,
+                     const char *data,
+                     uint64_t  nonce,
+                     uint64_t  gasUsed,
+                     uint64_t logIndex,
+                     uint64_t  blockNumber,
+                     const char *blockHash,
+                     uint64_t blockConfirmations,
+                     uint64_t blockTransactionIndex,
+                     uint64_t blockTimestamp,
+                     bool isError) {
     bool parseError = false;
     UInt256 value = cwmParseUInt256 (amount, &parseError);
 
     isError |= parseError;
 
-    bool needTransaction = true;
-    bool needLog         = !isError && NULL != contract;
+    bool needTransaction = false;
+    bool needLog         = false;
+    bool needExchange    = false;
+
+    // A Primary Transaction of ETH
+    if (strcasecmp (data, "0x") == 0 || (NULL == contract && NULL != fee)) {
+        needTransaction = true;
+    }
+
+    // A Primary Transaction of ERC20 Transfer
+    else if (strPrefix ("0xa9059cbb", data)) {
+        needLog = true;
+        needTransaction = (0 == strcasecmp (from, ewmGetAccountPrimaryAddress (ewm)));
+    }
+
+    // A Primary Transaction of some arbitrary asset
+    else {
+        needExchange = true;
+
+        // TODO: Can't be this - another's transaction produces our exchange
+        // needTransaction = (0 == strcasecmp (from, ewmGetAccountPrimaryAddress (ewm)));
+    }
+
+    //
+    needLog      &= !isError;
+    needExchange &= !isError;
 
     if (needLog) {
+        assert (NULL != contract);
         size_t topicsCount = 3;
         char *topics[3] = {
             (char *) ethEventGetSelector(ethEventERC20Transfer),
@@ -650,18 +777,35 @@ ewmAnnounceTransfer (BREthereumEWM ewm,
 
         free (topics[1]);
         free (topics[2]);
+    }
 
-        // If `from` is our address, then this log has a transaction that
-        //     a) holds the fee; and
-        //     b) increases the nonce.
-        needTransaction = (0 == strcasecmp (from, ewmGetAccountPrimaryAddress (ewm)));
-        if (needTransaction) {
-            value = UINT256_ZERO;
-            to    = contract;
-        }
+    if (needExchange) {
+        size_t exchangeIndex = 0;
+
+        ewmAnnounceExchange (ewm,
+                             id,
+                             hash,
+                             from,
+                             to,
+                             contract,
+                             value,
+                             gasPrice,
+                             gasUsed,
+                             exchangeIndex,
+                             blockNumber,
+                             blockTransactionIndex,
+                             blockTimestamp);
     }
 
     if (needTransaction) {
+        if (needLog || needExchange) {
+            // If needLog or needExchange w/ needTransaction then the transaction
+            //     a) holds the fee; and
+            //     b) increases the nonce.
+            value = UINT256_ZERO;
+            to    = contract;
+        }
+
         ewmAnnounceTransaction (ewm,
                                 id,
                                 hash,
