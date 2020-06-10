@@ -98,6 +98,33 @@ transactionStatusEqual (BREthereumTransactionStatus ts1,
                                  0 == strcmp (ts1.u.errored.detail, ts2.u.errored.detail))));
 }
 
+extern BREthereumComparison
+transactionStatusCompare (const BREthereumTransactionStatus *ts1,
+                          const BREthereumTransactionStatus *ts2) {
+    int t1Blocked = ts1->type == TRANSACTION_STATUS_INCLUDED;
+    int t2Blocked = ts2->type == TRANSACTION_STATUS_INCLUDED;
+
+    if (t1Blocked && t2Blocked)
+        return (ts1->u.included.blockNumber < ts2->u.included.blockNumber
+                ? ETHEREUM_COMPARISON_LT
+                : (ts1->u.included.blockNumber > ts2->u.included.blockNumber
+                   ? ETHEREUM_COMPARISON_GT
+                   : (ts1->u.included.transactionIndex < ts2->u.included.transactionIndex
+                      ? ETHEREUM_COMPARISON_LT
+                      : (ts1->u.included.transactionIndex > ts2->u.included.transactionIndex
+                         ? ETHEREUM_COMPARISON_GT
+                         : ETHEREUM_COMPARISON_EQ))));
+
+    else if (!t1Blocked && t2Blocked)
+        return ETHEREUM_COMPARISON_GT;
+
+    else if (t1Blocked && !t2Blocked)
+        return ETHEREUM_COMPARISON_LT;
+
+    else
+        return ETHEREUM_COMPARISON_EQ;
+}
+
 extern BREthereumTransactionErrorType
 lookupTransactionErrorType (const char *reasons[],
                             const char *reason) {

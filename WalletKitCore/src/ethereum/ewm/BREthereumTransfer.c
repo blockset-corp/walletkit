@@ -853,14 +853,45 @@ transferGetEffectiveSourceAddress (BREthereumTransfer transfer) {
 extern BREthereumComparison
 transferCompare (BREthereumTransfer t1,
                  BREthereumTransfer t2) {
-    assert (t1->basis.type == t2->basis.type);
-    switch (t1->basis.type) {
-        case TRANSFER_BASIS_TRANSACTION:
-            return transactionCompare (t1->basis.u.transaction, t2->basis.u.transaction);
-        case TRANSFER_BASIS_LOG:
-            return logCompare (t1->basis.u.log, t2->basis.u.log);
-        case TRANSFER_BASIS_EXCHANGE:
-            return ethExchangeCompare (t1->basis.u.exchange, t2->basis.u.exchange);
+
+    if (  t1 == t2) return ETHEREUM_COMPARISON_EQ;
+    if (NULL == t2) return ETHEREUM_COMPARISON_LT;
+    if (NULL == t1) return ETHEREUM_COMPARISON_GT;
+
+    BREthereumTransactionStatus ts1 = transferGetStatusForBasis (t1);
+    BREthereumTransactionStatus ts2 = transferGetStatusForBasis (t2);
+
+    BREthereumComparison result = transactionStatusCompare (&ts1, &ts2);
+    if (ETHEREUM_COMPARISON_EQ != result) return result;
+
+    // The statuses of t1 and t2 are equal.  We need a tie breaker
+    BREthereumTransferBasisType tb1 = t1->basis.type;
+    BREthereumTransferBasisType tb2 = t2->basis.type;
+
+    if (tb1 == tb2) {
+        switch (tb1) {
+            case TRANSFER_BASIS_TRANSACTION:
+                return transactionCompare (t1->basis.u.transaction, t2->basis.u.transaction);
+            case TRANSFER_BASIS_LOG:
+                return logCompare (t1->basis.u.log, t2->basis.u.log);
+            case TRANSFER_BASIS_EXCHANGE:
+                return ethExchangeCompare (t1->basis.u.exchange, t2->basis.u.exchange);
+        }
+    }
+
+    else if (TRANSFER_BASIS_TRANSACTION == tb1 && TRANSFER_BASIS_EXCHANGE    == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE    == tb1 && TRANSFER_BASIS_TRANSACTION == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else if (TRANSFER_BASIS_LOG      == tb1 && TRANSFER_BASIS_EXCHANGE == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE == tb1 && TRANSFER_BASIS_LOG      == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else {
+        assert (0);
+        return ETHEREUM_COMPARISON_EQ;
     }
 }
 
