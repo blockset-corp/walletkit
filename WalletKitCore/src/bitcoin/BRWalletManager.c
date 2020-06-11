@@ -22,6 +22,7 @@
 #include "support/BRBase58.h"
 #include "BRChainParams.h"
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 
 #include "support/BRFileService.h"
 #include "ethereum/event/BREvent.h"
@@ -81,9 +82,15 @@ getCurrencyName (const BRChainParams *params) {
         params->magicNumber == BRTestNetParams->magicNumber)
         return "btc";
 
-    if (params->magicNumber == BRBCashParams->magicNumber ||
-        params->magicNumber == BRBCashTestNetParams->magicNumber)
+    if (params == BRBCashParams ||
+        params == BRBCashTestNetParams) {
         return "bch";
+    }
+    
+    if (params == BRBSVParams ||
+        params == BRBSVTestNetParams) {
+        return "bsv";
+    }
 
     // this should never happen!
     assert (0);
@@ -1216,6 +1223,11 @@ BRWalletManagerGetWallet (BRWalletManager manager) {
 extern int
 BRWalletManagerHandlesBTC (BRWalletManager manager) {
     return BRChainParamsIsBitcoin (manager->chainParams);
+}
+
+extern int
+BRWalletManagerHandlesBCH (BRWalletManager manager) {
+    return BRChainParamsIsBitcash (manager->chainParams);
 }
 
 extern void

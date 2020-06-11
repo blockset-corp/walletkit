@@ -16,6 +16,7 @@
 #include "BRCryptoSync.h"
 #include "BRCryptoAccount.h"
 #include "BRCryptoNetwork.h"
+#include "bitcoin/BRChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,29 +70,41 @@ extern void
 runPerfTestsCoder (int repeat, int many);
 
 // Bitcoin
+typedef enum {
+    BITCOIN_CHAIN_BTC,
+    BITCOIN_CHAIN_BCH,
+    BITCOIN_CHAIN_BSV
+} BRBitcoinChain;
+
+extern const BRChainParams*
+getChainParams (BRBitcoinChain chain, int isMainnet);
+
+extern const char *
+getChainName (BRBitcoinChain chain);
+
 extern int BRRunSupTests (void);
 
 extern int BRRunTests();
 
 extern int BRRunTestsSync (const char *paperKey,
-                           int isBTC,
+                           BRBitcoinChain bitcoinChain,
                            int isMainnet);
 
 extern int BRRunTestWalletManagerSync (const char *paperKey,
                                        const char *storagePath,
-                                       int isBTC,
+                                       BRBitcoinChain bitcoinChain,
                                        int isMainnet);
 
 extern int BRRunTestWalletManagerSyncStress(const char *paperKey,
                                             const char *storagePath,
                                             uint32_t earliestKeyTime,
                                             uint64_t blockHeight,
-                                            int isBTC,
+                                            BRBitcoinChain bitcoinChain,
                                             int isMainnet);
 
 extern int BRRunTestsBWM (const char *paperKey,
                           const char *storagePath,
-                          int isBTC,
+                          BRBitcoinChain bitcoinChain,
                           int isMainnet);
 
 extern void BRRandInit (void);

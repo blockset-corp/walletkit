@@ -17,6 +17,7 @@
 
 #include "support/BRArray.h"
 #include "support/BRAddress.h"
+#include "bcash/BRBCashParams.h"
 #include "bcash/BRBCashAddr.h"
 
 #include "BRSyncManager.h"
@@ -1234,8 +1235,8 @@ BRClientSyncManagerConvertAddressToString (BRClientSyncManager manager,
 
     BRArrayOf(char *) addressesAsString = NULL;
 
-    // For BTC, simply extract the BRAddress' string
-    if (BRChainParamsIsBitcoin (manager->chainParams)) {
+    // For BTC/BSV, simply extract the BRAddress' string
+    if (0 == BRChainParamsIsBitcash (manager->chainParams)) {
         array_new(addressesAsString, addressesCount);
         array_set_count(addressesAsString, addressesCount);
 
