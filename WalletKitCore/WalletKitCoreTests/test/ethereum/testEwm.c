@@ -231,13 +231,13 @@ clientGetTransactions (BREthereumClientContext context,
                                21000,
                                uint256CreateParse ("21000000000", 10, &ignore),
                                "",
-                               118,
-                               21000,
-                               1627184,
                                "0x0ef0110d68ee3af220e0d7c10d644fea98252180dbfc8a94cab9f0ea8b1036af",
+                               1627184,
                                "339050",
                                "3",
                                "1516477482",
+                               21000,
+                               118,
                                "0");
 
         ewmAnnounceTransaction(ewm, rid,
@@ -249,13 +249,13 @@ clientGetTransactions (BREthereumClientContext context,
                                21000,
                                uint256CreateParse ("21000000000", 10, &ignore),
                                "",
-                               118,
-                               21000,
-                               1627184,
                                "0x0ef0110d68ee3af220e0d7c10d644fea98252180dbfc8a94cab9f0ea8b1036af",
+                               1627184,
                                "339050",
                                "3",
                                "1516477482",
+                               21000,
+                               118,
                                "0");
     }
     ewmAnnounceTransactionComplete(ewm, rid, ETHEREUM_BOOLEAN_TRUE);
@@ -286,13 +286,13 @@ clientGetLogs (BREthereumClientContext context,
                         getTokenBRDAddress(ewm->network),
                         3,
                         topics,
-                        "0x0000000000000000000000000000000000000000000000000000000000002328",
-                        uint256CreateParse ("0xba43b7400", 16, &ignore),
-                        0xc64e,
-                        0x0,
+                        uint256CreateParse ("0x2328", 16, &ignore),
+                        "0xbc07f9de46ff70e74d024dc1b8a3730ca54829741418eb50e0511845a02ead9d",
                         0x1e487e,
                         0x0,
-                        0x59fa1ac9);
+                        0x59fa1ac9,
+                        0xc64e,
+                        0x0);
     ewmAnnounceLogComplete(ewm, rid, ETHEREUM_BOOLEAN_TRUE);
 
     free (address);

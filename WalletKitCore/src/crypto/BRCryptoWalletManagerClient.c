@@ -2210,13 +2210,13 @@ cwmAnnounceGetTransferItem (BRCryptoWalletManager cwm,
                                  gasPrice,
                                  input,
                                  nonce,
-                                 gasUsed,
-                                 logIndex,
-                                 blockNumber,
                                  blockHash,
+                                 blockNumber,
                                  blockConfirmations,
                                  blockTransactionIndex,
                                  blockTimestamp,
+                                 gasUsed,
+                                 logIndex,
                                  error);
             break;
         }

@@ -471,13 +471,15 @@ typedef struct {
     BREthereumAddress contract;
     size_t topicCount;
     char **arrayTopics;
-    char *data;
-    UInt256 gasPrice;
-    uint64_t gasUsed;
-    uint64_t logIndex;
+    UInt256 value;
+
+    BREthereumHash blockHash;
     uint64_t blockNumber;
     uint64_t blockTransactionIndex;
     uint64_t blockTimestamp;
+    uint64_t gasUsed;
+
+    uint64_t logIndex;
 } BREthereumEWMClientAnnounceLogBundle;
 
 static inline void
@@ -485,7 +487,7 @@ ewmClientAnnounceLogBundleRelease (BREthereumEWMClientAnnounceLogBundle *bundle)
     for (int i = 0; i < bundle->topicCount; i++)
         free (bundle->arrayTopics[i]);
     free (bundle->arrayTopics);
-    free (bundle->data);
+//    free (bundle->data);
     free (bundle);
 }
 
@@ -507,15 +509,12 @@ typedef struct {
     BREthereumAddress to;
     BREthereumAddress contract;
     UInt256  amount;
-    uint64_t gasLimit;
-    UInt256 gasPrice;
-    uint64_t gasUsed;
-    uint64_t blockNumber;
     BREthereumHash blockHash;
-    uint64_t blockConfirmations;
+    uint64_t blockNumber;
     uint64_t blockTransactionIndex;
     uint64_t blockTimestamp;
-    BREthereumBoolean isError;
+    uint64_t gasUsed;
+    uint64_t exchangeIndex;
 } BREthereumEWMClientAnnounceExchangeBundle;
 
 static inline void

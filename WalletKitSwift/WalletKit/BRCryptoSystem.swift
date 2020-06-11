@@ -1328,11 +1328,12 @@ extension System {
                 // We may or may not have a non-fee transfer matching `transferWithFee`.  We
                 // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-                // Find the first of the non-fee transfers matching `transferWithFee`
+                // Find the first of the non-fee transfers matching `transferWithFee`.
                 let transferMatchingFee = transfers[partition...]
                     .first {
                         $0.transactionId == transferWithFee.transactionId &&
-                            $0.source == transferWithFee.source
+                            $0.source == transferWithFee.source &&
+                            $0.amount.currency == transferWithFee.amount.currency
                 }
 
                 // We must have a transferMatchingFee; if we don't add one
@@ -1462,10 +1463,10 @@ extension System {
                                                             let blockHash             = transaction.blockHash
                                                             let status    = System.getTransferStatus (transaction.status)
 
-
                                                             System.mergeTransfers (transaction, with: addresses)
                                                                 .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
                                                                     let (transfer, fee) = arg
+                                                                    precondition (fee.map { $0.currency == transfer.amount.currency } ?? true)
 
                                                                     let metaData = (transaction.metaData ?? [:]).merging (transfer.metaData ?? [:]) { (cur, new) in new }
 
