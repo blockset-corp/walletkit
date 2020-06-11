@@ -78,8 +78,8 @@ getNetworkName (const BRChainParams *params) {
 
 static const char *
 getCurrencyName (const BRChainParams *params) {
-    if (params->magicNumber == BRMainNetParams->magicNumber ||
-        params->magicNumber == BRTestNetParams->magicNumber)
+    if (params == BRMainNetParams ||
+        params == BRTestNetParams)
         return "btc";
 
     if (params == BRBCashParams ||
