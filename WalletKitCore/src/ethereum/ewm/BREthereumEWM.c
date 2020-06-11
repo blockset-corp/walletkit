@@ -1892,6 +1892,47 @@ ewmHandleLogFeeBasis (BREthereumEWM ewm,
 }
 
 static void
+ewmHandleExchangeFeeBasis (BREthereumEWM ewm,
+                      BREthereumHash hash,
+                      BREthereumTransfer transferTransaction,
+                      BREthereumTransfer transferExchange) {
+
+    // Find the ETH transfer, if needed
+    if (NULL == transferTransaction)
+        transferTransaction = walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
+
+    // If none exists, then the transaction hasn't been 'synced' yet.
+    if (NULL == transferTransaction) return;
+
+    // If we have an exchange transfer, set the fee basis.
+    if (NULL != transferExchange)
+        transferSetFeeBasis(transferExchange, transferGetFeeBasis(transferTransaction));
+
+    // but if we don't have an exchanage transfer, find every transfer referencing `hash` and set the basis.
+    else
+        for (size_t wid = 0; wid < array_count(ewm->wallets); wid++) {
+            BREthereumWallet wallet = ewm->wallets[wid];
+
+            // We are only looking for TOK transfers (non-ETH).
+            if (wallet == ewm->walletHoldingEther) continue;
+
+            size_t tidLimit = walletGetTransferCount (wallet);
+            for (size_t tid = 0; tid < tidLimit; tid++) {
+                transferExchange = walletGetTransferByIndex (wallet, tid);
+
+                // Look for a log that has a matching transaction hash
+                BREthereumExchange exchange = transferGetBasisExchange(transferExchange);
+                if (NULL != exchange) {
+                    BREthereumHash transactionHash;
+                    if (ETHEREUM_BOOLEAN_TRUE == ethExchangeExtractIdentifier (exchange, &transactionHash, NULL) &&
+                        ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash))
+                        ewmHandleExchangeFeeBasis (ewm, hash, transferTransaction, transferExchange);
+                }
+            }
+        }
+}
+
+static void
 ewmUpdateAndReportWalletState (BREthereumEWM ewm,
                                BREthereumWallet wallet) {
     int ignoreTypeMismatch;
@@ -1951,8 +1992,9 @@ ewmHandleTransaction (BREthereumEWM ewm,
             SUCCESS
         });
 
-         // If this transfer is referenced by a log, fill out the log's fee basis.
-        ewmHandleLogFeeBasis (ewm, hash, transfer, NULL);
+         // If this transfer is referenced by a log or exchange, fill out the fee basis.
+        ewmHandleLogFeeBasis      (ewm, hash, transfer, NULL);
+        ewmHandleExchangeFeeBasis (ewm, hash, transfer, NULL);
 
         needStatusEvent = 1;
     }
@@ -2095,7 +2137,7 @@ ewmHandleExchange (BREthereumEWM ewm,
     if (NULL == wallet) { ethExchangeRelease(exchange); return; }
 
     BREthereumTransfer transfer = walletGetTransferByIdentifier (wallet, exchangeHash);
-    // TODO: Never an originating transfer?
+    // We never have an originating transfers as we can't create internal transactions
 
     bool needStatusEvent = false;
 
@@ -2109,9 +2151,9 @@ ewmHandleExchange (BREthereumEWM ewm,
             SUCCESS
         });
 
-        // If this transfer references a transaction, fill out this log's fee basis
-        // TODO: Something?
-//        ewmHandleLogFeeBasis (ewm, transactionHash, NULL, transfer);
+        // If this transfer references a transaction, fill out this exchanges's fee basis
+        if (wallet != ewmGetWallet(ewm))
+            ewmHandleExchangeFeeBasis (ewm, transactionHash, NULL, transfer);
 
         needStatusEvent = true;
     }

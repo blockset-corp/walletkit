@@ -101,6 +101,9 @@ transferGetBasisTransaction (BREthereumTransfer transfer);
 extern BREthereumLog
 transferGetBasisLog (BREthereumTransfer transfer);
 
+extern BREthereumExchange
+transferGetBasisExchange (BREthereumTransfer transfer);
+
 extern void
 transferSign (BREthereumTransfer transfer,
               BREthereumNetwork network,

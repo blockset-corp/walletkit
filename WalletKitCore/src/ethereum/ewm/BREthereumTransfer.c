@@ -459,6 +459,13 @@ transferGetBasisLog (BREthereumTransfer transfer) {
             : NULL);
 }
 
+extern BREthereumExchange
+transferGetBasisExchange (BREthereumTransfer transfer) {
+    return (TRANSFER_BASIS_EXCHANGE == transfer->basis.type
+            ? transfer->basis.u.exchange
+            : NULL);
+}
+
 extern void
 transferSign (BREthereumTransfer transfer,
               BREthereumNetwork network,
