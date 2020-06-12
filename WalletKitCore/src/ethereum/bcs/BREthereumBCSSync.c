@@ -273,7 +273,7 @@ syncRangeRemChild (BREthereumBCSSyncRange child) {
 
     int index = syncRangeLookupChild(parent, child);
     if (-1 != index) {
-        array_rm (parent->children, index);
+        array_rm (parent->children, (size_t) index);
         child->parent = NULL;
     }
 }

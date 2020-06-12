@@ -2919,7 +2919,7 @@ ewmTransferStatusGetErrorType (BREthereumEWM ewm,
     transferExtractStatusErrorType (transfer, &type);
     pthread_mutex_unlock (&ewm->lock);
 
-    return type;
+    return (int) type;
 }
 
 extern BREthereumBoolean

@@ -111,7 +111,7 @@ cryptoHashGetHashValue (BRCryptoHash hash) {
             return (int) hash->u.btc.u32[0];
 
         case BLOCK_CHAIN_TYPE_ETH:
-            return ethHashSetValue (&hash->u.eth);
+            return (int) ethHashSetValue (&hash->u.eth);
 
         case BLOCK_CHAIN_TYPE_GEN:
             return (int) genericHashSetValue (hash->u.gen);
