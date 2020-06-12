@@ -800,7 +800,7 @@ blockGetTransactionTrieRoot (BREthereumBlock block) {
 
 extern BREthereumBoolean
 blockTransactionsAreValid (BREthereumBlock block) {
-    return (ethHashCompare(block->header->transactionsRoot, blockGetTransactionTrieRoot(block)));
+    return AS_ETHEREUM_BOOLEAN (ETHEREUM_COMPARISON_EQ == ethHashCompare(block->header->transactionsRoot, blockGetTransactionTrieRoot(block)));
 }
 
 extern unsigned long

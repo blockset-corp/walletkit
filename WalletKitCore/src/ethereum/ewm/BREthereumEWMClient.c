@@ -1121,7 +1121,7 @@ extern void
 ewmAnnounceTokenComplete (BREthereumEWM ewm,
                           int rid,
                           BREthereumBoolean success) {
-    ewmSignalAnnounceTokenComplete (ewm, success, rid);
+    ewmSignalAnnounceTokenComplete (ewm, rid, success);
 }
 
 // ==============================================================================================
