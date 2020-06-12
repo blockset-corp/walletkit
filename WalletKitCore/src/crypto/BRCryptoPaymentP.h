@@ -18,6 +18,22 @@
 extern "C" {
 #endif
 
+// MARK: Handlers
+
+typedef BRCryptoPaymentProtocolRequestBitPayBuilder
+(*BRCryptoPaymentProtocolRquestBitPayBuilderCreate) (BRCryptoBlockChainType chainType,
+                                                     BRCryptoNetwork cryptoNetwork,
+                                                     BRCryptoCurrency cryptoCurrency,
+                                                     BRCryptoPayProtReqBitPayCallbacks callbacks,
+                                                     const char *network,
+                                                     uint64_t time,
+                                                     uint64_t expires,
+                                                     double feeCostFactor,
+                                                     const char *memo,
+                                                     const char *paymentURL,
+                                                     const uint8_t *merchantData,
+                                                     size_t merchantDataLen);
+
 typedef void
 (*BRCryptoPaymentProtocolRequestBitPayBuilderAddOutputHandler) (BRCryptoPaymentProtocolRequestBitPayBuilder builder,
                                                                 const char *address,
@@ -29,7 +45,6 @@ typedef void
 typedef BRCryptoBoolean
 (*BRCryptoPaymentProtocolRequestValidateSupportedHandler) (BRCryptoPaymentProtocolType type);
 
-
 typedef BRCryptoPaymentProtocolRequest
 (*BRCryptoPaymentProtocolRequestCreateForBitPayHandler) (BRCryptoPaymentProtocolRequestBitPayBuilder builder);
 
@@ -39,6 +54,18 @@ typedef BRCryptoPaymentProtocolRequest
                                                         BRCryptoPayProtReqBip70Callbacks callbacks,
                                                         uint8_t *serialization,
                                                         size_t serializationLen);
+
+typedef BRCryptoFeeBasis
+(*BRCryptoPaymentProtocolRequestEstimateFeeBasisHandler) (BRCryptoPaymentProtocolRequest request,
+                                                          BRCryptoWalletManager cwm,
+                                                          BRCryptoWallet wallet,
+                                                          BRCryptoCookie cookie,
+                                                          BRCryptoNetworkFee fee);
+
+typedef BRCryptoTransfer
+(*BRCryptoPaymentProtocolRequestCreateTransferHandler) (BRCryptoPaymentProtocolRequest req,
+                                                        BRCryptoWallet wallet,
+                                                        BRCryptoFeeBasis estimatedFeeBasis);
 
 typedef BRCryptoBoolean
 (*BRCryptoPaymentProtocolRequestIsSecureHandler) (BRCryptoPaymentProtocolRequest req);
@@ -55,26 +82,51 @@ typedef BRCryptoAmount
 typedef BRCryptoAddress
 (*BRCryptoPaymentProtocolRequestGetPrimaryTargetAddressHandler) (BRCryptoPaymentProtocolRequest req);
 
-typedef const char *
+typedef char *
 (*BRCryptoPaymentProtocolRequestGetCommonNameHandler) (BRCryptoPaymentProtocolRequest req);
 
 typedef BRCryptoPaymentProtocolError
 (*BRCryptoPaymentProtocolRequestIsValidHandler) (BRCryptoPaymentProtocolRequest req);
 
-typedef const uint8_t*
-(*BRCryptoPaymentProtocolRequestGetMerchantDataHandler) (BRCryptoPaymentProtocolRequest req, size_t *merchantDataLen);
-
 typedef void
 (*BRCryptoPaymentProtocolRequestReleaseHandler) (BRCryptoPaymentProtocolRequest req);
 
+typedef BRCryptoPaymentProtocolPayment
+(*BRCryptoPaymentProtocolPaymentCreateHandler) (BRCryptoPaymentProtocolRequest protoReq,
+                                                BRCryptoTransfer transfer,
+                                                BRCryptoAddress refundAddress);
+
+typedef uint8_t *
+(*BRCryptoPaymentProtocolPaymentEncodeHandler) (BRCryptoPaymentProtocolPayment protoPay,
+                                                size_t *encodedLen);
+
+typedef void
+(*BRCryptoPaymentProtocolPaymentReleaseHandler) (BRCryptoPaymentProtocolPayment protoPay);
+
 typedef struct {
+    BRCryptoPaymentProtocolRquestBitPayBuilderCreate createBitPayBuilder;
     BRCryptoPaymentProtocolRequestBitPayBuilderAddOutputHandler bitPayBuilderAddOutput;
     BRCryptoPaymentProtocolRequestBitPayBuilderReleaseHandler releaseBitPayBuilder;
     
     BRCryptoPaymentProtocolRequestValidateSupportedHandler validateSupported;
     BRCryptoPaymentProtocolRequestCreateForBitPayHandler requestCreateForBitPay;
     BRCryptoPaymentProtocolRequestCreateForBip70Handler requestCreateForBip70;
-    BRCryptoPaymentProtocolRequestReleaseHandler release;
+    BRCryptoPaymentProtocolRequestEstimateFeeBasisHandler estimateFeeBasis;
+    BRCryptoPaymentProtocolRequestCreateTransferHandler createTransfer;
+    
+    BRCryptoPaymentProtocolRequestIsSecureHandler isSecure;
+    BRCryptoPaymentProtocolRequestGetMemoHandler getMemo;
+    BRCryptoPaymentProtocolRequestGetPaymentURLHandler getPaymentURL;
+    BRCryptoPaymentProtocolRequestGetTotalAmountHandler getTotalAmount;
+    BRCryptoPaymentProtocolRequestGetPrimaryTargetAddressHandler getPrimaryTargetAddress;
+    BRCryptoPaymentProtocolRequestGetCommonNameHandler getCommonName;
+    BRCryptoPaymentProtocolRequestIsValidHandler isValid;
+    BRCryptoPaymentProtocolRequestReleaseHandler releaseRequest;
+    
+    BRCryptoPaymentProtocolPaymentCreateHandler createPayment;
+    BRCryptoPaymentProtocolPaymentEncodeHandler encodePayment;
+    BRCryptoPaymentProtocolPaymentReleaseHandler releasePayment;
+    
 } BRCryptoPaymentProtocolHandlers;
 
 // MARK: - BitPay Payment Protocol Request Builder
@@ -117,7 +169,7 @@ cryptoPaymentProtocolRequestBitPayBuilderAllocAndInit (size_t sizeInBytes,
 // MARK: - Payment Protocol Request
 
 struct BRCryptoPaymentProtocolRequestRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoBlockChainType chainType;
     const BRCryptoPaymentProtocolHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -142,26 +194,20 @@ cryptoPaymentProtocolRequestAllocAndInit (size_t sizeInBytes,
 // MARK: - Payment Protocol Payment
 
 struct BRCryptoPaymentProtocolPaymentRecord {
-    BRCryptoPaymentProtocolType type;
+    BRCryptoBlockChainType chainType;
+    BRCryptoRef ref;
+    size_t sizeInBytes;
+    
+    BRCryptoPaymentProtocolType paymentProtocolType;
     BRCryptoPaymentProtocolRequest request;
 
     BRCryptoNetwork cryptoNetwork;
     BRCryptoCurrency cryptoCurrency;
-
-    BRCryptoRef ref;
 };
 
 private_extern BRCryptoPaymentProtocolPayment
 cryptoPaymentProtocolPaymentAllocAndInit (size_t sizeInBytes,
-                                          BRCryptoBlockChainType type,
-                                          BRCryptoPaymentProtocolRequest request,
-                                          BRCryptoNetwork cryptoNetwork,
-                                          BRCryptoCurrency cryptoCurrency);
-
-// MARK: -
-
-//private_extern BRArrayOf(BRTxOutput)
-//cryptoPaymentProtocolRequestGetOutputsAsBTC (BRCryptoPaymentProtocolRequest request);
+                                          BRCryptoPaymentProtocolRequest protoReq);
 
 #ifdef __cplusplus
 }

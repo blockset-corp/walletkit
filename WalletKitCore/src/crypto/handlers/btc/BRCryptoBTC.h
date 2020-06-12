@@ -157,20 +157,6 @@ typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderBTCRecord {
     BRArrayOf(BRTxOutput) outputs;
 } *BRCryptoPaymentProtocolRequestBitPayBuilderBTC;
 
-extern BRCryptoPaymentProtocolRequestBitPayBuilder
-cryptoPaymentProtocolRequestBitPayBuilderCreateAsBTC (BRCryptoBlockChainType type,
-                                                      BRCryptoNetwork cryptoNetwork,
-                                                      BRCryptoCurrency cryptoCurrency,
-                                                      BRCryptoPayProtReqBitPayCallbacks callbacks,
-                                                      const char *network,
-                                                      uint64_t time,
-                                                      uint64_t expires,
-                                                      double feeCostFactor,
-                                                      const char *memo,
-                                                      const char *paymentURL,
-                                                      const uint8_t *merchantData,
-                                                      size_t merchantDataLen);
-
 // MARK: Payment Protocol Request
 
 typedef struct BRCryptoPaymentProtocolRequestBTCRecord {
@@ -192,7 +178,7 @@ typedef struct BRCryptoPaymentProtocolPaymentBTCRecord {
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint32_t feePerKB,
+                           uint64_t feePerKB,
                            uint32_t sizeInByte);
 
 private_extern uint64_t // SAT-per-KB

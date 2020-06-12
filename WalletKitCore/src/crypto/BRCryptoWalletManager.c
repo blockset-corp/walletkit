@@ -1228,43 +1228,27 @@ cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager cwm,
                                          key);
 }
 
-#ifdef REFACTOR
 extern void
 cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletManager cwm,
                                                               BRCryptoWallet wallet,
                                                               BRCryptoCookie cookie,
                                                               BRCryptoPaymentProtocolRequest request,
                                                               BRCryptoNetworkFee fee) {
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            BRWalletManager bwm = cwm->u.btc;
-            BRWallet *wid = cryptoWalletAsBTC (wallet);
-            uint64_t feePerKB = 1000 * cryptoNetworkFeeAsBTC (fee);
-
-            switch (cryptoPaymentProtocolRequestGetType (request)) {
-                case CRYPTO_PAYMENT_PROTOCOL_TYPE_BITPAY:
-                case CRYPTO_PAYMENT_PROTOCOL_TYPE_BIP70: {
-                    BRArrayOf(BRTxOutput) outputs = cryptoPaymentProtocolRequestGetOutputsAsBTC (request);
-                    if (NULL != outputs) {
-                        BRWalletManagerEstimateFeeForOutputs (bwm, wid, cookie, outputs, array_count (outputs),
-                                                              feePerKB);
-                        array_free (outputs);
-                    }
-                    break;
-                }
-                default: {
-                    assert (0);
-                    break;
-                }
-            }
-            break;
-        }
-        default:
-            assert (0);
-            break;
-    }
+    const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup(cryptoWalletGetType(wallet))->payment;
+    
+    assert (NULL != paymentHandlers);
+    
+    BRCryptoFeeBasis feeBasis = paymentHandlers->estimateFeeBasis (request,
+                                                                   cwm,
+                                                                   wallet,
+                                                                   cookie,
+                                                                   fee);
+    if (NULL != feeBasis)
+        cryptoWalletManagerGenerateWalletEvent (cwm, wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
+        });
 }
-#endif
 
 #ifdef REFACTOR
 extern void

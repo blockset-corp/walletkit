@@ -44,6 +44,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersETH,
         &cryptoWalletHandlersETH,
         NULL,//BRCryptoWalletSweeperHandlers not supported
+        NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoWalletManagerHandlersETH
     },
 
@@ -54,7 +55,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersXRP,
         &cryptoWalletHandlersXRP,
         NULL,//BRCryptoWalletSweeperHandlers not supported
-        NULL,
+        NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoWalletManagerHandlersXRP
     },
 
@@ -65,7 +66,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersHBAR,
         &cryptoWalletHandlersHBAR,
         NULL,//BRCryptoWalletSweeperHandlers not supported
-        NULL,
+        NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoWalletManagerHandlersHBAR
     },
 };

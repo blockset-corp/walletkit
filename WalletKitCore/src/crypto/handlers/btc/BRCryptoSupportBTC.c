@@ -16,7 +16,7 @@
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint32_t feePerKB,
+                           uint64_t feePerKB,
                            uint32_t sizeInByte) {
     return cryptoFeeBasisCreate (cryptoAmountCreate (unit,
                                                      CRYPTO_FALSE,
