@@ -67,6 +67,7 @@ typedef struct {
     union {
         BREthereumTransaction transaction;
         BREthereumLog log;
+        BREthereumExchange exchange;
     } u;
 } BREthereumTransferBasis;
 
@@ -81,6 +82,11 @@ transferBasisRelease (BREthereumTransferBasis *basis) {
         case TRANSFER_BASIS_LOG:
             logRelease (basis->u.log);
             basis->u.log = NULL;
+            break;
+
+        case TRANSFER_BASIS_EXCHANGE:
+            ethExchangeRelease (basis->u.exchange);
+            basis->u.exchange = NULL;
             break;
     }
 }
@@ -99,6 +105,14 @@ transferBasisGetHash (BREthereumTransferBasis *basis) {
 
             BREthereumHash hash = EMPTY_HASH_INIT;
             logExtractIdentifier(basis->u.log, &hash, NULL);
+            return hash;
+        }
+
+        case TRANSFER_BASIS_EXCHANGE: {
+            if (NULL == basis->u.exchange) return EMPTY_HASH_INIT;
+
+            BREthereumHash hash = EMPTY_HASH_INIT;
+            ethExchangeExtractIdentifier (basis->u.exchange, &hash, NULL);
             return hash;
         }
     }
@@ -334,6 +348,39 @@ transferCreateWithLog (OwnershipGiven BREthereumLog log,
     return transfer;
 }
 
+extern BREthereumTransfer
+transferCreateWithExchange (OwnershipGiven BREthereumExchange exchange,
+                            BRSetOf (BREthereumToken) tokens) {
+    BREthereumFeeBasis feeBasis = {
+         FEE_BASIS_NONE
+     };
+
+    BREthereumAddress address = ethExchangeGetContract (exchange);
+    BREthereumToken   token  = BRSetGet (tokens, &address);
+
+    UInt256          value  = ethExchangeGetAssetValue (exchange);
+    BREthereumAmount amount = (NULL == token
+                               ? ethAmountCreateEther (ethEtherCreate (value))
+                               : ethAmountCreateToken (ethTokenQuantityCreate(token, value)));
+
+    // No originating transaction
+    BREthereumTransfer transfer = transferCreateDetailed (ethExchangeGetSourceAddress (exchange),
+                                                          ethExchangeGetTargetAddress (exchange),
+                                                          amount,
+                                                          feeBasis,
+                                                          NULL);
+    // Basis - the transfer now owns the log
+    transfer->basis = (BREthereumTransferBasis) {
+        TRANSFER_BASIS_EXCHANGE,
+        { .exchange = exchange }
+    };
+
+    // Status
+    transfer->status = transferStatusCreate(ethExchangeGetStatus(exchange));
+
+    return transfer;
+}
+
 extern void
 transferRelease (BREthereumTransfer transfer) {
     transactionRelease (transfer->originatingTransaction);
@@ -409,6 +456,13 @@ extern BREthereumLog
 transferGetBasisLog (BREthereumTransfer transfer) {
     return (TRANSFER_BASIS_LOG == transfer->basis.type
             ? transfer->basis.u.log
+            : NULL);
+}
+
+extern BREthereumExchange
+transferGetBasisExchange (BREthereumTransfer transfer) {
+    return (TRANSFER_BASIS_EXCHANGE == transfer->basis.type
+            ? transfer->basis.u.exchange
             : NULL);
 }
 
@@ -517,6 +571,8 @@ transferGetIdentifier (BREthereumTransfer transfer) {
             return (NULL == transfer->basis.u.transaction ? EMPTY_HASH_INIT : transactionGetHash(transfer->basis.u.transaction));
         case TRANSFER_BASIS_LOG:
             return (NULL == transfer->basis.u.log ? EMPTY_HASH_INIT : logGetHash(transfer->basis.u.log));
+        case TRANSFER_BASIS_EXCHANGE:
+            return (NULL == transfer->basis.u.exchange ? EMPTY_HASH_INIT : ethExchangeGetHash (transfer->basis.u.exchange));
     }
 }
 
@@ -594,6 +650,23 @@ transferSetBasisForLog (BREthereumTransfer transfer,
     transfer->status = transferStatusCreate (logGetStatus(log));
 }
 
+extern void
+transferSetBasisForExchange (BREthereumTransfer transfer,
+                             OwnershipGiven BREthereumExchange exchange) {
+    assert (TRANSFER_BASIS_EXCHANGE == transfer->basis.type);
+    assert (NULL != exchange);
+
+    if (transfer->basis.u.exchange != exchange)
+        transferBasisRelease (&transfer->basis);
+
+    transfer->basis = (BREthereumTransferBasis) {
+        TRANSFER_BASIS_EXCHANGE,
+        { .exchange = exchange}
+    };
+
+    transfer->status = transferStatusCreate (ethExchangeGetStatus (exchange));
+}
+
 /// MARK: - Status
 
 extern BREthereumTransactionStatus
@@ -609,6 +682,12 @@ transferGetStatusForBasis (BREthereumTransfer transfer) {
             assert (NULL != transfer->basis.u.log || NULL != transfer->originatingTransaction);
             return (NULL != transfer->basis.u.log
                     ? logGetStatus (transfer->basis.u.log)
+                    : transactionGetStatus (transfer->originatingTransaction));
+
+        case TRANSFER_BASIS_EXCHANGE:
+            assert (NULL != transfer->basis.u.exchange || NULL != transfer->originatingTransaction);
+            return (NULL != transfer->basis.u.exchange
+                    ? ethExchangeGetStatus (transfer->basis.u.exchange)
                     : transactionGetStatus (transfer->originatingTransaction));
     }
 }
@@ -751,6 +830,14 @@ transferProvideOriginatingTransaction (BREthereumTransfer transfer) {
 private_extern BREthereumEther
 transferGetEffectiveAmountInEther(BREthereumTransfer transfer) {
     switch (transfer->basis.type) {
+        case TRANSFER_BASIS_EXCHANGE:
+            if (NULL == transfer->basis.u.exchange) return ethEtherCreateZero();
+            else {
+                BREthereumAddress contract = ethExchangeGetContract (transfer->basis.u.exchange);
+                return (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (EMPTY_ADDRESS_INIT, contract))
+                        ? ethEtherCreate (ethExchangeGetAssetValue (transfer->basis.u.exchange))
+                        : ethEtherCreateZero());
+            }
         case TRANSFER_BASIS_LOG:
             return ethEtherCreateZero();
         case TRANSFER_BASIS_TRANSACTION:
@@ -773,12 +860,45 @@ transferGetEffectiveSourceAddress (BREthereumTransfer transfer) {
 extern BREthereumComparison
 transferCompare (BREthereumTransfer t1,
                  BREthereumTransfer t2) {
-    assert (t1->basis.type == t2->basis.type);
-    switch (t1->basis.type) {
-        case TRANSFER_BASIS_TRANSACTION:
-            return transactionCompare (t1->basis.u.transaction, t2->basis.u.transaction);
-        case TRANSFER_BASIS_LOG:
-            return logCompare (t1->basis.u.log, t2->basis.u.log);
+
+    if (  t1 == t2) return ETHEREUM_COMPARISON_EQ;
+    if (NULL == t2) return ETHEREUM_COMPARISON_LT;
+    if (NULL == t1) return ETHEREUM_COMPARISON_GT;
+
+    BREthereumTransactionStatus ts1 = transferGetStatusForBasis (t1);
+    BREthereumTransactionStatus ts2 = transferGetStatusForBasis (t2);
+
+    BREthereumComparison result = transactionStatusCompare (&ts1, &ts2);
+    if (ETHEREUM_COMPARISON_EQ != result) return result;
+
+    // The statuses of t1 and t2 are equal.  We need a tie breaker
+    BREthereumTransferBasisType tb1 = t1->basis.type;
+    BREthereumTransferBasisType tb2 = t2->basis.type;
+
+    if (tb1 == tb2) {
+        switch (tb1) {
+            case TRANSFER_BASIS_TRANSACTION:
+                return transactionCompare (t1->basis.u.transaction, t2->basis.u.transaction);
+            case TRANSFER_BASIS_LOG:
+                return logCompare (t1->basis.u.log, t2->basis.u.log);
+            case TRANSFER_BASIS_EXCHANGE:
+                return ethExchangeCompare (t1->basis.u.exchange, t2->basis.u.exchange);
+        }
+    }
+
+    else if (TRANSFER_BASIS_TRANSACTION == tb1 && TRANSFER_BASIS_EXCHANGE    == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE    == tb1 && TRANSFER_BASIS_TRANSACTION == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else if (TRANSFER_BASIS_LOG      == tb1 && TRANSFER_BASIS_EXCHANGE == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE == tb1 && TRANSFER_BASIS_LOG      == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else {
+        assert (0);
+        return ETHEREUM_COMPARISON_EQ;
     }
 }
 

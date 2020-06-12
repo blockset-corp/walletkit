@@ -150,27 +150,24 @@ extern "C" {
                                                int rid);
 
     extern BREthereumStatus
-    ewmAnnounceTransaction(BREthereumEWM ewm,
-                           int id,
-                           const char *hashString,
-                           const char *from,
-                           const char *to,
-                           const char *contract,
-                           UInt256 amount, // value
-                           uint64_t gasLimit,
-                           UInt256 gasPrice,
-                           const char *data,
-                           uint64_t nonce,
-                           uint64_t  gasUsed,
-                           uint64_t  blockNumber,
-                           const char *strBlockHash,
-                           uint64_t blockConfirmations,
-                           uint64_t blockTransactionIndex,
-                           uint64_t blockTimestamp,
-                           // cumulative gas used,
-                           // confirmations
-                           // txreceipt_status
-                           bool isError);
+    ewmAnnounceTransaction (BREthereumEWM ewm,
+                            int id,
+                            const char *hash,
+                            const char *from,
+                            const char *to,
+                            const char *contract,
+                            UInt256  amount, // value
+                            uint64_t gasLimit,
+                            UInt256  gasPrice,
+                            const char *data,
+                            const char *blockHash,
+                            uint64_t  blockNumber,
+                            uint64_t blockConfirmations,
+                            uint64_t blockTransactionIndex,
+                            uint64_t blockTimestamp,
+                            uint64_t  gasUsed,
+                            uint64_t nonce,
+                            bool isError);
 
     extern void
     ewmAnnounceTransactionComplete (BREthereumEWM ewm,
@@ -189,48 +186,67 @@ extern "C" {
                                        uint64_t endBlockNumber,
                                        int rid);
 
-    extern BREthereumStatus
-    ewmAnnounceLog (BREthereumEWM ewm,
-                    int id,
-                    const char *hash,
-                    const char *contract,
-                    size_t topicCount,
-                    const char **arrayTopics,
-                    const char *strData,
-                    UInt256  gasPrice,
-                    uint64_t gasUsed,
-                    uint64_t logIndex,
-                    uint64_t blockNumber,
-                    uint64_t blockTransactionIndex,
-                    uint64_t blockTimestamp);
+extern BREthereumStatus
+ewmAnnounceLog (BREthereumEWM ewm,
+                int id,
+                const char *hash,
+                const char *contract,
+                size_t topicsCount,
+                const char **arrayTopics,
+                UInt256 amount,
+                const char *blockHash,
+                uint64_t blockNumber,
+                uint64_t blockTransactionIndex,
+                uint64_t blockTimestamp,
+                uint64_t gasUsed,
+                uint64_t logIndex);
 
     extern void
     ewmAnnounceLogComplete (BREthereumEWM ewm,
                             int id,
                             BREthereumBoolean success);
 
+    /// MARK: - Get Exchanges
+
+    extern BREthereumStatus
+    ewmAnnounceExchange (BREthereumEWM ewm,
+                         int id,
+                         const char *hash,
+                         const char *from,
+                         const char *to,
+                         const char *contract,
+                         UInt256  amount,
+                         const char *blockHash,
+                         uint64_t blockNumber,
+                         uint64_t blockTransactionIndex,
+                         uint64_t blockTimestamp,
+                         uint64_t gasUsed,
+                         uint64_t exchangeIndex);
+
+
     /// MARK: - Get Transfers
 
     extern BREthereumStatus
-    ewmAnnounceTransfer(BREthereumEWM ewm,
-                        int id,
-                        const char *strHash,
-                        const char *from,
-                        const char *to,
-                        const char *contract,
-                        const char *amount, // value
-                        uint64_t gasLimit,
-                        UInt256 gasPrice,
-                        const char *data,
-                        uint64_t  nonce,
-                        uint64_t  gasUsed,
-                        uint64_t logIndex,
-                        uint64_t  blockNumber,
-                        const char *strBlockHash,
-                        uint64_t blockConfirmations,
-                        uint64_t blockTransactionIndex,
-                        uint64_t blockTimestamp,
-                        bool isError);
+    ewmAnnounceTransfer (BREthereumEWM ewm,
+                         int id,
+                         const char *hash,
+                         const char *from,
+                         const char *to,
+                         const char *contract,
+                         const char *amount, // value
+                         const char *fee,
+                         uint64_t gasLimit,
+                         UInt256  gasPrice,
+                         const char *data,
+                         uint64_t  nonce,
+                         const char *blockHash,
+                         uint64_t blockNumber,
+                         uint64_t blockConfirmations,
+                         uint64_t blockTransactionIndex,
+                         uint64_t blockTimestamp,
+                         uint64_t gasUsed,
+                         uint64_t logIndex,
+                         bool isError);
 
     /// MARK: - Get Tokens
 
