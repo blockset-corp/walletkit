@@ -1579,6 +1579,8 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
                              && (cryptoNetworkAsBTC (network) == BRMainNetParams || cryptoNetworkAsBTC (network) == BRTestNetParams));
     BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
                              && (cryptoNetworkAsBTC (network) == BRBCashParams || cryptoNetworkAsBTC (network) == BRBCashTestNetParams));
+    BRCryptoBoolean isBsv = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
+                             && (cryptoNetworkAsBTC (network) == BRBSVParams || cryptoNetworkAsBTC (network) == BRBSVTestNetParams));
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
                                     CRYPTO_ADDRESS_SCHEME_BTC_LEGACY :
@@ -1598,7 +1600,7 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
         }
     }
 
-    if (isBtc || isBch || isEth) {
+    if (isBtc || isBch || isBsv || isEth) {
         success = AS_CRYPTO_BOOLEAN(runCryptoWalletManagerLifecycleTest (account,
                                                                          network,
                                                                          CRYPTO_SYNC_MODE_P2P_ONLY,

@@ -120,7 +120,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
         currencyCodesToMode = [
             "btc" : .api_only,
             "eth" : .api_only,
-            "bch" : .p2p_only,
+            "bch" : .api_only,
+            "bsv" : .p2p_only,
             "xrp" : .api_only,
             "hbar" : .api_only
             ]
@@ -371,6 +372,7 @@ extension Network {
         switch type {
         case .btc: return "bitcoin"
         case .bch: return (isMainnet ? "bitcoincash" : "bchtest")
+        case .bsv: return "bitcoinsv"
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"

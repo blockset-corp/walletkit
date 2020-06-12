@@ -324,6 +324,13 @@ extern int
 BRWalletManagerHandlesBTC (BRWalletManager manager);
 
 /**
+ * Return `1` if `manager` handles BCH; otherwise `0` if BTC/BSV.  Note: the `BRChainParams` determine
+ * BTC vs BCH vs BSV.
+ */
+extern int
+BRWalletManagerHandlesBCH (BRWalletManager manager);
+
+/**
  * Creates an unsigned transaction that sends the specified amount from the wallet to the given
  * address.  The address must satisfy BRAddressIsValid() using the provided BRWalletManager
  * address parameters.  In particular, a BCH address (either mainnet or testnet) *does not*
