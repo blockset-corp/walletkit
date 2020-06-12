@@ -583,7 +583,7 @@ walletGetTransferCount (BREthereumWallet wallet) {
     return array_count(wallet->transfers);
 }
 
-extern unsigned int
+extern uint64_t
 walletGetTransferCountAsSource (BREthereumWallet wallet) {
     unsigned int count = 0;
 
@@ -594,9 +594,9 @@ walletGetTransferCountAsSource (BREthereumWallet wallet) {
     return count;
 }
 
-extern unsigned int
+extern uint64_t
 walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet) {
-    unsigned int nonce = 0;
+    uint64_t nonce = TRANSACTION_NONCE_IS_NOT_ASSIGNED;
 
 #define MAX(x,y)    ((x) >= (y) ? (x) : (y))
     for (int i = 0; i < array_count(wallet->transfers); i++)
@@ -604,7 +604,8 @@ walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet) {
             uint64_t newNonce = (unsigned int) transferGetNonce(wallet->transfers[i]);
             // wallet->transfers can have a newly created transfer that does not yet have
             // an assigned nonce - avoid such a transfer.
-            if (TRANSACTION_NONCE_IS_NOT_ASSIGNED != newNonce && newNonce > nonce)
+            if ( TRANSACTION_NONCE_IS_NOT_ASSIGNED != newNonce  &&
+                (TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce     || newNonce > nonce))
                 nonce = (unsigned int) newNonce;
         }
 #undef MAX

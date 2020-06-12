@@ -1948,7 +1948,8 @@ final class System implements com.breadwallet.crypto.System {
             com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
             for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
-                    transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
+                    transferWithFee.getFromAddress().equals(transfer.getFromAddress()) &&
+                    transferWithFee.getAmount().getCurrencyId().equals(transfer.getAmount().getCurrencyId())) {
                     transferMatchingFee = transfer;
                     break;
                 }

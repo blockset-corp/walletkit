@@ -230,10 +230,10 @@ walletGetTransferByIndex(BREthereumWallet wallet,
 extern unsigned long
 walletGetTransferCount (BREthereumWallet wallet);
 
-extern unsigned int
+extern uint64_t
 walletGetTransferCountAsSource (BREthereumWallet wallet);
 
-extern unsigned int
+extern uint64_t
 walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet);
 
 //

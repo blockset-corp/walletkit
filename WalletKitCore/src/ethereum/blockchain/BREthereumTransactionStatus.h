@@ -132,6 +132,10 @@ extern BREthereumBoolean
 transactionStatusEqual (BREthereumTransactionStatus ts1,
                         BREthereumTransactionStatus ts2);
 
+extern BREthereumComparison
+transactionStatusCompare (const BREthereumTransactionStatus *ts1,
+                          const BREthereumTransactionStatus *ts2);
+
 extern BREthereumTransactionStatus
 transactionStatusRLPDecode (BRRlpItem item,
                             const char *reasons[],
