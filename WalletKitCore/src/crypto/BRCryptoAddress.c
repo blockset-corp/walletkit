@@ -131,9 +131,9 @@ cryptoAddressCreateFromString (BRCryptoNetwork network,
     switch (cryptoNetworkGetType(network)) {
         case BLOCK_CHAIN_TYPE_BTC: {
             const BRChainParams *params = cryptoNetworkAsBTC (network);
-            return (BRChainParamsIsBitcoin (params)
-                    ? cryptoAddressCreateFromStringAsBTC (params->addrParams, string)
-                    : cryptoAddressCreateFromStringAsBCH (params->addrParams, string));
+            return (BRChainParamsIsBitcash (params)
+                    ? cryptoAddressCreateFromStringAsBCH (params->addrParams, string)
+                    : cryptoAddressCreateFromStringAsBTC (params->addrParams, string));
         }
         case BLOCK_CHAIN_TYPE_ETH:
             return cryptoAddressCreateFromStringAsETH (string);
