@@ -14,7 +14,7 @@ import WalletKit
 
 class TransferCreatePaymentController: TransferCreateController {
 
-//    var payment: PaymentProtocolRequest! = nil
+    var payment: PaymentProtocolRequest! = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,7 +41,6 @@ class TransferCreatePaymentController: TransferCreateController {
     }
 
     @IBAction func updateButtonAction(_ sender: Any) {
-        #if false
         // Build a URL Request
         guard let url = bitpayURLTextField.text,
             var request = URLComponents (string: url)
@@ -85,7 +84,6 @@ class TransferCreatePaymentController: TransferCreateController {
                     self.submitButton.isEnabled = true
                 }
             }.resume()
-        #endif
     }
 
     @IBOutlet var submitButton: UIBarButtonItem!

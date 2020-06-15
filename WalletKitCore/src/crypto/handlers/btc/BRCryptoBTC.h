@@ -15,10 +15,12 @@
 #include "../BRCryptoHandlersExport.h"
 
 #include "crypto/BRCryptoWalletSweeperP.h"
+#include "crypto/BRCryptoPaymentP.h"
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRTransaction.h"
 #include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRPaymentProtocol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,11 +147,38 @@ typedef struct BRCryptoWalletSweeperBTCRecord {
     BRArrayOf(BRTransaction *) txns;
 } *BRCryptoWalletSweeperBTC;
 
+// MARK: - Payment Protocol
+
+// MARK: Payment Protocol Bitpay Builder
+
+typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderBTCRecord {
+    struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord base;
+    
+    BRArrayOf(BRTxOutput) outputs;
+} *BRCryptoPaymentProtocolRequestBitPayBuilderBTC;
+
+// MARK: Payment Protocol Request
+
+typedef struct BRCryptoPaymentProtocolRequestBTCRecord {
+    struct BRCryptoPaymentProtocolRequestRecord base;
+    
+    BRPaymentProtocolRequest *request;
+} *BRCryptoPaymentProtocolRequestBTC;
+
+// MARK: Payment Protocol Payment
+
+typedef struct BRCryptoPaymentProtocolPaymentBTCRecord {
+    struct BRCryptoPaymentProtocolPaymentRecord base;
+    
+    BRTransaction *transaction;
+    BRPaymentProtocolPayment *payment; // only used for BIP70
+} *BRCryptoPaymentProtocolPaymentBTC;
+
 // MARK: - Support
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint32_t feePerKB,
+                           uint64_t feePerKB,
                            uint32_t sizeInByte);
 
 private_extern uint64_t // SAT-per-KB

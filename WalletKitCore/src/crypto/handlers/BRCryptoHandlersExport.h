@@ -24,6 +24,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBTC;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBTC;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
 extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBTC;
+extern BRCryptoPaymentProtocolHandlers cryptoPaymentProtocolHandlersBTC;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
 
 // MARK: - BCH Handlers
