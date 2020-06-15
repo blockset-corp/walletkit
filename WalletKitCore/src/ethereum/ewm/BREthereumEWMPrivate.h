@@ -328,6 +328,11 @@ ewmHandleSaveLog (BREthereumEWM ewm,
                   BREthereumClientChangeType type);
 
 extern void
+ewmHandleSaveExchange (BREthereumEWM ewm,
+                       BREthereumExchange exchange,
+                       BREthereumClientChangeType type);
+
+extern void
 ewmHandleSaveWallet (BREthereumEWM ewm,
                      BREthereumWallet wallet,
                      BREthereumClientChangeType type);
@@ -687,6 +692,7 @@ extern const unsigned int ewmEventTypesCount;
 
 extern const char *ewmFileServiceTypeTransactions;
 extern const char *ewmFileServiceTypeLogs;
+extern const char *ewmFileServiceTypeExchanges;
 extern const char *ewmFileServiceTypeBlocks;
 extern const char *ewmFileServiceTypeNodes;
 extern const char *ewmFileServiceTypeTokens;
