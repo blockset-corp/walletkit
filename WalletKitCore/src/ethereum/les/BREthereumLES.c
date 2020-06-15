@@ -597,7 +597,7 @@ lesCreate (BREthereumNetwork network,
     // preserved.
     nodeEndpointSetStatus (les->localEndpoint,
                            messageP2PStatusCreate (0x00,  // ignored
-                                                   ethNetworkGetChainId(network),
+                                                   (uint64_t) ethNetworkGetChainId(network),
                                                    les->head.number,
                                                    les->head.hash,
                                                    les->head.totalDifficulty,

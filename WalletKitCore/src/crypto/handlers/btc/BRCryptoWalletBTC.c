@@ -15,7 +15,8 @@
 static BRCryptoWalletBTC
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type ||
-            CRYPTO_NETWORK_TYPE_BCH == wallet->type);
+            CRYPTO_NETWORK_TYPE_BCH == wallet->type ||
+            CRYPTO_NETWORK_TYPE_BSV == wallet->type);
     return (BRCryptoWalletBTC) wallet;
 }
 
@@ -87,18 +88,20 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
 static BRCryptoAddress
 cryptoWalletGetAddressBTC (BRCryptoWallet walletBase,
                            BRCryptoAddressScheme addressScheme) {
+    // TODO: Match Wallet type - not always SEGWIT/LEGACY
     assert (CRYPTO_ADDRESS_SCHEME_BTC_LEGACY == addressScheme ||
             CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme);
 
     BRCryptoWalletBTC wallet = cryptoWalletCoerce(walletBase);
 
     BRWallet *wid = wallet->wid;
+#ifdef REFACTOR
+    // BSV
+#endif
     BRAddress btcAddress = (CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme
                             ? BRWalletReceiveAddress(wid)
                             : BRWalletLegacyAddress (wid));
-#ifdef REFACTOR
-    return cryptoAddressCreateAsBTC (btcAddress, AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC(wallet->u.btc.bwm)));
-#endif
+
     return cryptoAddressCreateAsBTC (walletBase->type, btcAddress);
 
 }
@@ -109,7 +112,9 @@ cryptoWalletHasAddressBTC (BRCryptoWallet walletBase,
     BRCryptoWalletBTC wallet = cryptoWalletCoerce(walletBase);
 
     BRCryptoBoolean isBitcoinAddress;
-
+#ifdef REFACTOR
+    // BSV
+#endif
     BRWallet *btcWallet = wallet->wid;
     BRAddress btcAddress = cryptoAddressAsBTC (address, &isBitcoinAddress);
 
@@ -188,6 +193,9 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet walletBase,
         assert (cryptoAmountHasCurrency (output->amount, currency));
 
         BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
+#ifdef REFACTOR
+        // BSV
+#endif
         BRAddress address = cryptoAddressAsBTC (output->target, &isBitcoinAddr);
  //       assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
 
@@ -224,7 +232,7 @@ cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet walletBase) {
 
     for (size_t index = 0; index < btcAddressesCount; index++) {
         BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, btcAddresses[index]));
-        // TODO: BCH vs BTC
+        // TODO: BCH vs BTC vs BSV
         BRSetAdd (addresses, cryptoAddressCreateAsBTC (walletBase->type, BRWalletAddressToLegacy(btcWallet, &btcAddresses[index])));
     }
 
@@ -249,6 +257,9 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  walletBase,
     BRWallet *wid = wallet->wid;
 
     BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
+    #ifdef REFACTOR
+            // BSV
+    #endif
     BRAddress address = cryptoAddressAsBTC (target, &isBitcoinAddr);
 //    assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
 
@@ -282,6 +293,19 @@ BRCryptoWalletHandlers cryptoWalletHandlersBTC = {
 };
 
 BRCryptoWalletHandlers cryptoWalletHandlersBCH = {
+    cryptoWalletReleaseBTC,
+    cryptoWalletGetAddressBTC,
+    cryptoWalletHasAddressBTC,
+    cryptoWalletGetTransferAttributeCountBTC,
+    cryptoWalletGetTransferAttributeAtBTC,
+    cryptoWalletValidateTransferAttributeBTC,
+    cryptoWalletCreateTransferBTC,
+    cryptoWalletCreateTransferMultipleBTC,
+    cryptoWalletGetAddressesForRecoveryBTC,
+    cryptoWalletIsEqualBTC
+};
+
+BRCryptoWalletHandlers cryptoWalletHandlersBSV = {
     cryptoWalletReleaseBTC,
     cryptoWalletGetAddressBTC,
     cryptoWalletHasAddressBTC,

@@ -79,10 +79,8 @@ ethEtherCreateZero(void) {
 }
 
 extern BREthereumEther
-ethEtherCreateString(const char *number, BREthereumEtherUnit unit, BRCoreParseStatus *status) {
-    int decimals = 3 * (int) unit;
-    
-    UInt256 value = uint256CreateParseDecimal(number, decimals, status);
+ethEtherCreateString(const char *number, BREthereumEtherUnit unit, BRCoreParseStatus *status) {    
+    UInt256 value = uint256CreateParseDecimal(number, 3 * (int) unit, status);
     return ethEtherCreate(value);
 }
 

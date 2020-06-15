@@ -1643,7 +1643,7 @@ final class System implements com.breadwallet.crypto.System {
             Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
             return Optional.absent();
         }
-        UnsignedLong blockHeight = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+        UnsignedLong blockHeight = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
         UnsignedLong timestamp =
                 transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
 
@@ -1745,9 +1745,12 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), addresses, begBlockNumberUnsigned,
-                                endBlockNumberUnsigned, false,
-                                false, new CompletionHandler<List<Transaction>, QueryError>() {
+                        system.query.getTransactions(walletManager.getNetwork().getUids(), addresses,
+                                begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                                endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                                false,
+                                false,
+                                new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
                                         boolean success = false;
@@ -1757,7 +1760,7 @@ final class System implements com.breadwallet.crypto.System {
                                             List<ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String>> merged;
 
                                             for (Transaction transaction : transactions) {
-                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(UnsignedLong.ZERO);
+                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                 UnsignedLong blockTimestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
                                                 UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
                                                 UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
@@ -1955,7 +1958,8 @@ final class System implements com.breadwallet.crypto.System {
             com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
             for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
-                    transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
+                    transferWithFee.getFromAddress().equals(transfer.getFromAddress()) &&
+                    transferWithFee.getAmount().getCurrencyId().equals(transfer.getAmount().getCurrencyId())) {
                     transferMatchingFee = transfer;
                     break;
                 }

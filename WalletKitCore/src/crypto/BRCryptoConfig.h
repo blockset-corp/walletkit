@@ -72,6 +72,26 @@ DEFINE_ADDRESS_SCHEMES  ("bitcoincash-testnet", CRYPTO_ADDRESS_SCHEME_BTC_LEGACY
 DEFINE_MODES            ("bitcoincash-testnet", CRYPTO_SYNC_MODE_API_ONLY,  CRYPTO_SYNC_MODE_P2P_ONLY)
 #undef NETWORK_NAME
 
+// MARK: - BSV
+
+#define NETWORK_NAME    "Bitcoin SV"
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_BSV,  "bitcoinsv-mainnet", NETWORK_NAME, "mainnet", true, 617640, 6, 10 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("bitcoinsv-mainnet", "2", "10m", 20 * 60 * 1000)
+DEFINE_CURRENCY ("bitcoinsv-mainnet",     "bitcoinsv-mainnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_BSV,  "native",   NULL,   true)
+    DEFINE_UNIT ("bitcoinsv-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
+    DEFINE_UNIT ("bitcoinsv-mainnet:__native__",      NETWORK_NAME, "bsv",      8,      "BSV")
+DEFINE_ADDRESS_SCHEMES  ("bitcoinsv-mainnet", CRYPTO_ADDRESS_SCHEME_BTC_LEGACY)
+DEFINE_MODES            ("bitcoinsv-mainnet", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_SYNC_MODE_P2P_ONLY)
+
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_BSV,  "bitcoinsv-testnet", NETWORK_NAME, "testnet", false, 1353306, 6, 10 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("bitcoinsv-testnet", "2", "10m", 20 * 60 * 1000)
+DEFINE_CURRENCY ("bitcoinsv-testnet",     "bitcoinsv-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_BSV,  "native",   NULL,   true)
+    DEFINE_UNIT ("bitcoinsv-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
+    DEFINE_UNIT ("bitcoinsv-testnet:__native__",      NETWORK_NAME, "bsv",      8,      "BSV")
+DEFINE_ADDRESS_SCHEMES  ("bitcoinsv-testnet", CRYPTO_ADDRESS_SCHEME_BTC_LEGACY)
+DEFINE_MODES            ("bitcoinsv-testnet", CRYPTO_SYNC_MODE_API_ONLY,  CRYPTO_SYNC_MODE_P2P_ONLY)
+#undef NETWORK_NAME
+
 // MARK: - ETH
 
 #define NETWORK_NAME    "Ethereum"

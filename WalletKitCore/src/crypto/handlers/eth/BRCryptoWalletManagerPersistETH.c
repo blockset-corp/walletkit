@@ -138,6 +138,69 @@ initialLogsLoadETH (BRCryptoWalletManager manager) {
     return logs;
 }
 
+/// MARK: - Exchange File Service
+
+#define fileServiceTypeExchanges "exchanges"
+
+enum {
+    EWM_EXCHANGE_VERSION_1
+};
+
+static UInt256
+fileServiceTypeExchangeV1Identifier (BRFileServiceContext context,
+                                     BRFileService fs,
+                                     const void *entity) {
+    const BREthereumExchange exchange = (BREthereumExchange) entity;
+    BREthereumHash hash = ethExchangeGetHash(exchange);
+
+    UInt256 result;
+    memcpy (result.u8, hash.bytes, ETHEREUM_HASH_BYTES);
+    return result;
+}
+
+static uint8_t *
+fileServiceTypeExchangeV1Writer (BRFileServiceContext context,
+                                 BRFileService fs,
+                                 const void* entity,
+                                 uint32_t *bytesCount) {
+    BRCryptoWalletManagerETH manager = context;
+    BREthereumExchange exchange = (BREthereumExchange) entity;
+
+    BRRlpItem item = ethExchangeRlpEncode (exchange, RLP_TYPE_ARCHIVE, manager->coder);
+    BRRlpData data = rlpItemGetData (manager->coder, item);
+    rlpItemRelease (manager->coder, item);
+
+    *bytesCount = (uint32_t) data.bytesCount;
+    return data.bytes;
+}
+
+static void *
+fileServiceTypeExchangeV1Reader (BRFileServiceContext context,
+                                 BRFileService fs,
+                                 uint8_t *bytes,
+                                 uint32_t bytesCount) {
+    BRCryptoWalletManagerETH manager = context;
+
+    BRRlpData data = { bytesCount, bytes };
+    BRRlpItem item = rlpDataGetItem (manager->coder, data);
+
+    BREthereumExchange exchange = ethExchangeRlpDecode (item, RLP_TYPE_ARCHIVE, manager->coder);
+    rlpItemRelease (manager->coder, item);
+
+    return exchange;
+}
+
+
+extern BRSetOf(BREthereumExchange)
+initialExchangesLoadETH (BRCryptoWalletManager manager) {
+    BRSetOf(BREthereumExchange) exchanges = BRSetNew(ethExchangeHashValue, ethExchangeHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != exchanges && 1 != fileServiceLoad (manager->fileService, exchanges, fileServiceTypeExchangesETH, 1)) {
+        BRSetFreeAll (exchanges, (void (*) (void*)) ethExchangeRelease);
+        return NULL;
+    }
+    return exchanges;
+}
+
 /// MARK: - Block File Service
 
 #define fileServiceTypeBlocks "blocks"
@@ -416,6 +479,20 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
     },
 
     {
+        fileServiceTypeExchanges,
+        EWM_EXCHANGE_VERSION_1,
+        1,
+        {
+            {
+                EWM_EXCHANGE_VERSION_1,
+                fileServiceTypeExchangeV1Identifier,
+                fileServiceTypeExchangeV1Reader,
+                fileServiceTypeExchangeV1Writer
+            }
+        }
+    },
+
+    {
         fileServiceTypeBlocks,
         EWM_BLOCK_VERSION_1,
         1,
@@ -475,6 +552,7 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
 
 const char *fileServiceTypeTransactionsETH = fileServiceTypeTransactions;
 const char *fileServiceTypeLogsETH         = fileServiceTypeLogs;
+const char *fileServiceTypeExchangesETH    = fileServiceTypeExchanges;
 const char *fileServiceTypeBlocksETH       = fileServiceTypeBlocks;
 const char *fileServiceTypeNodesETH        = fileServiceTypeNodes;
 const char *fileServiceTypeTokensETH       = fileServiceTypeTokens;

@@ -38,6 +38,17 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
+        CRYPTO_NETWORK_TYPE_BSV,
+        &cryptoNetworkHandlersBSV,
+        &cryptoAddressHandlersBSV,
+        &cryptoTransferHandlersBSV,
+        &cryptoWalletHandlersBSV,
+        &cryptoWalletSweeperHandlersBSV,
+        &cryptoPaymentProtocolHandlersBTC,
+        &cryptoWalletManagerHandlersBSV
+    },
+
+    {
         CRYPTO_NETWORK_TYPE_ETH,
         &cryptoNetworkHandlersETH,
         &cryptoAddressHandlersETH,

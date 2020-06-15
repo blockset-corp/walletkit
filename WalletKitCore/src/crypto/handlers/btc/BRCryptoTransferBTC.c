@@ -25,7 +25,8 @@ cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,
 extern BRCryptoTransferBTC
 cryptoTransferCoerceBTC (BRCryptoTransfer transfer) {
     assert (CRYPTO_NETWORK_TYPE_BTC == transfer->type ||
-            CRYPTO_NETWORK_TYPE_BCH == transfer->type);
+            CRYPTO_NETWORK_TYPE_BCH == transfer->type ||
+            CRYPTO_NETWORK_TYPE_BSV == transfer->type);
     return (BRCryptoTransferBTC) transfer;
 }
 
@@ -258,6 +259,13 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
 };
 
 BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
+    cryptoTransferReleaseBTC,
+    cryptoTransferGetHashBTC,
+    cryptoTransferSerializeBTC,
+    cryptoTransferIsEqualBTC
+};
+
+BRCryptoTransferHandlers cryptoTransferHandlersBSV = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeBTC,

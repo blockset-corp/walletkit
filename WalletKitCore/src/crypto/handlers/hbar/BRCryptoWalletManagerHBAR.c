@@ -58,7 +58,7 @@ cryptoWalletManagerCreateHandlerHBAR (BRCryptoListener listener,
                                                                          network,
                                                                          scheme,
                                                                          path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
+                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
     BRCryptoWalletManagerHBAR manager = cryptoWalletManagerCoerce (managerBase);
     
     // Hedera Stuff

@@ -37,6 +37,8 @@
 #include "bcash/BRBCashParams.h"
 #include "bcash/BRBCashAddr.h"
 
+#include "bsv/BRBSVParams.h"
+
 #include "bitcoin/BRBloomFilter.h"
 #include "bitcoin/BRMerkleBlock.h"
 #include "bitcoin/BRWallet.h"
@@ -46,6 +48,8 @@
 #include "bitcoin/BRChainParams.h"
 #include "bitcoin/BRPaymentProtocol.h"
 #include "bitcoin/BRTransaction.h"
+
+#include "test.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,6 +70,40 @@
 #define _va_first(first, ...) first
 #define _va_rest(first, ...) __VA_ARGS__
 #endif
+
+extern const BRChainParams* getChainParams (BRBitcoinChain chain, int isMainnet) {
+    switch (chain) {
+        case BITCOIN_CHAIN_BTC:
+            return isMainnet ? BRMainNetParams : BRTestNetParams;
+            
+        case BITCOIN_CHAIN_BCH:
+            return isMainnet ? BRBCashParams : BRBCashTestNetParams;
+            
+        case BITCOIN_CHAIN_BSV:
+            return isMainnet ? BRBSVParams : BRBSVTestNetParams;
+            
+        default:
+            assert(0);
+            return NULL;
+    }
+}
+
+extern const char * getChainName (BRBitcoinChain chain) {
+    switch (chain) {
+        case BITCOIN_CHAIN_BTC:
+            return "btc";
+            
+        case BITCOIN_CHAIN_BCH:
+            return "bch";
+            
+        case BITCOIN_CHAIN_BSV:
+            return "bsv";
+            
+        default:
+            assert(0);
+            return NULL;
+    }
+}
 
 int BRIntsTests()
 {
@@ -3304,11 +3342,9 @@ static void testSyncSaveBlocks (void *c, int replace, BRMerkleBlock *blocks[], s
 }
 
 extern int BRRunTestsSync (const char *paperKey,
-                           int isBTC,
+                           BRBitcoinChain bitcoinChain,
                            int isMainnet) {
-    const BRChainParams *params = (isBTC & isMainnet ? BRMainNetParams
-                                   : (isBTC & !isMainnet ? BRTestNetParams
-                                      : (isMainnet ? BRBCashParams : BRBCashTestNetParams)));
+    const BRChainParams *params = getChainParams(bitcoinChain, isMainnet);
 
     uint32_t epoch;
     int needPaperKey = NULL == paperKey;

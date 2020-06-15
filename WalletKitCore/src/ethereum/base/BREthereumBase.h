@@ -11,6 +11,7 @@
 #ifndef BR_Ethereum_Base_H
 #define BR_Ethereum_Base_H
 
+#include <stdbool.h>
 #include "support/BRArray.h"
 #include "support/BRBase.h"
 #include "support/BRSet.h"
@@ -71,7 +72,7 @@ typedef enum {
  */
 typedef unsigned int BREthereumSyncInterestSet;
 
-static inline int // 1 if match; 0 if not
+static inline bool // 1/true if match; 0/false if not
 syncInterestMatch(BREthereumSyncInterestSet interests,
                   BREthereumSyncInterest interest) {
     return interests & interest;

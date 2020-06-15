@@ -109,6 +109,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
     typedef enum {
         CRYPTO_NETWORK_TYPE_BTC,
         CRYPTO_NETWORK_TYPE_BCH,
+        CRYPTO_NETWORK_TYPE_BSV,
         CRYPTO_NETWORK_TYPE_ETH,
         CRYPTO_NETWORK_TYPE_XRP,
         CRYPTO_NETWORK_TYPE_HBAR,
@@ -125,6 +126,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
     //
 #    define CRYPTO_NETWORK_CURRENCY_BTC     "btc"
 #    define CRYPTO_NETWORK_CURRENCY_BCH     "bch"
+#    define CRYPTO_NETWORK_CURRENCY_BSV     "bsv"
 #    define CRYPTO_NETWORK_CURRENCY_ETH     "eth"
 #    define CRYPTO_NETWORK_CURRENCY_XRP     "xrp"
 #    define CRYPTO_NETWORK_CURRENCY_HBAR    "hbar"

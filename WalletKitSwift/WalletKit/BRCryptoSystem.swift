@@ -1328,11 +1328,12 @@ extension System {
                 // We may or may not have a non-fee transfer matching `transferWithFee`.  We
                 // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-                // Find the first of the non-fee transfers matching `transferWithFee`
+                // Find the first of the non-fee transfers matching `transferWithFee`.
                 let transferMatchingFee = transfers[partition...]
                     .first {
                         $0.transactionId == transferWithFee.transactionId &&
-                            $0.source == transferWithFee.source
+                            $0.source == transferWithFee.source &&
+                            $0.amount.currency == transferWithFee.amount.currency
                 }
 
                 // We must have a transferMatchingFee; if we don't add one
@@ -1393,7 +1394,7 @@ extension System {
 
     internal static func makeTransferBundles (_ transaction: BlockChainDB.Model.Transaction, addresses:[String]) -> [BRCryptoClientTransferBundle] {
         let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
-        let blockHeight    = transaction.blockHeight ?? 0
+        let blockHeight    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
         let blockConfirmations = transaction.confirmations ?? 0
         let blockTransactionIndex = transaction.index ?? 0
         let blockHash             = transaction.blockHash
@@ -1487,8 +1488,8 @@ extension System {
 
                 manager.query.getTransactions (blockchainId: manager.network.uids,
                                                addresses: addresses,
-                                               begBlockNumber: begBlockNumber,
-                                               endBlockNumber: endBlockNumber,
+                                               begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
+                                               endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
                                                includeRaw: false) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive(cwm) }
@@ -1525,8 +1526,8 @@ extension System {
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: SubmitTransaction: Missed {cwm}", cwm: cwm); return }
-                print ("SYS: SubmitTransaction")
+                    else { System.cleanup  ("SYS: EstimateTransactionFee: Missed {cwm}", cwm: cwm); return }
+                print ("SYS: EstimateTransactionFee")
 
                 let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)

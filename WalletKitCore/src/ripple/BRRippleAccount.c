@@ -32,6 +32,8 @@
 
 #define WORD_LIST_LENGTH 2048
 
+#define RIPPLE_SEQUENCE_PROTOCOL_CHANGE_BLOCK 55313921
+
 struct BRRippleAccountRecord {
     BRRippleAddress address; // The 20 byte account id
 
@@ -39,6 +41,9 @@ struct BRRippleAccountRecord {
     BRKey publicKey;  // BIP44: 'Master Public Key 'M' (264 bits) - 8
 
     uint32_t index;     // The BIP-44 Index used for this key.
+
+    // This is the Ripple Ledger index where the account was created (unsigned 32-bits)
+    uint32_t blockNumberAtCreation;
     
     BRRippleSequence sequence;   // The NEXT valid sequence number, must be exactly 1 greater
                                  // than the last transaction sent
@@ -207,9 +212,17 @@ rippleAccountSignTransaction(BRRippleAccount account, BRRippleTransaction transa
     // Create the private key from the paperKey
     BRKey key = deriveRippleKeyFromSeed (seed, 0, false);
 
+    // Figure out the sequence number - first of all increment by 1
+    uint32_t sequence = account->sequence + 1;
+    // Due to a change in the Ripple protocol, the starting sequence value changed
+    // from 1 to the block where the account was created.
+    // NOTE that we need to subtract 1 from the blockNumberAtCreation since that value
+    // is the explicitly set value that we need to use for the first send - and since
+    // we added 1 in the above statement we would be off by 1.
+    sequence += account->blockNumberAtCreation >= RIPPLE_SEQUENCE_PROTOCOL_CHANGE_BLOCK ? account->blockNumberAtCreation - 1 : 0;
     size_t tx_size =
         rippleTransactionSerializeAndSign(transaction, &key, &account->publicKey,
-                                          account->sequence + 1,  // next sequence number
+                                          sequence,  // next sequence number
                                           account->lastLedgerSequence);
 
     // Increment the sequence number if we were able to sign the bytes
@@ -218,4 +231,23 @@ rippleAccountSignTransaction(BRRippleAccount account, BRRippleTransaction transa
     }
 
     return tx_size;
+}
+
+extern BRRippleSequence rippleAccountGetSequence (BRRippleAccount account)
+{
+    assert(account);
+    return account->sequence;
+}
+
+extern void rippleAccountSetBlockNumberAtCreation (BRRippleAccount account, uint64_t blockHeight)
+{
+    assert(account);
+    if (blockHeight == UINT64_MAX) {
+        // Probably doesn't make much difference but UINT64_MAX probably means
+        // we don't have any transfers.
+        blockHeight = 0;
+    }
+    // Block heights from Blockset are unsigned 64-bits, but the Ripple block (ledger index) is
+    // only an unsigned 32-bit value
+    account->blockNumberAtCreation = (uint32_t)blockHeight;
 }

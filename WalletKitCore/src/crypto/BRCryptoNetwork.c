@@ -29,6 +29,7 @@ cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         CRYPTO_NETWORK_CURRENCY_BTC,
         CRYPTO_NETWORK_CURRENCY_BCH,
+        CRYPTO_NETWORK_CURRENCY_BSV,
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,

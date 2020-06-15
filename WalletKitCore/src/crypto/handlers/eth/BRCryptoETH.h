@@ -17,6 +17,7 @@
 #include "ethereum/blockchain/BREthereumAccount.h"
 #include "ethereum/blockchain/BREthereumTransaction.h"
 #include "ethereum/blockchain/BREthereumLog.h"
+#include "ethereum/contract/BREthereumExchange.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +53,8 @@ cryptoNetworkFeeAsETH (BRCryptoNetworkFee fee);
 
 typedef enum  {
     TRANSFER_BASIS_TRANSACTION,
-    TRANSFER_BASIS_LOG
+    TRANSFER_BASIS_LOG,
+    TRANSFER_BASIS_EXCHANGE
 } BREthereumTransferBasisType;
 
 
@@ -74,6 +76,7 @@ typedef struct BRCryptoTransferETHRecord {
     union {
         BREthereumTransaction transaction;
         BREthereumLog log;
+        BREthereumExchange exchange;
     } basis;
 
     BREthereumTransaction originatingTransaction;
@@ -111,6 +114,13 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
                                   BREthereumAccount account,
                                   UInt256 ethAmount,
                                   OwnershipGiven BREthereumLog ethLog);
+
+extern BRCryptoTransfer
+cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
+                                       BRCryptoUnit unitForFee,
+                                       BREthereumAccount account,
+                                       UInt256 ethAmount,
+                                       OwnershipGiven BREthereumExchange ethExchange);
 
 extern const BREthereumHash
 cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer);
@@ -194,6 +204,7 @@ cryptoHashAsETH (BRCryptoHash hash);
 
 extern const char *fileServiceTypeTransactionsETH;
 extern const char *fileServiceTypeLogsETH;
+extern const char *fileServiceTypeExchangesETH;
 extern const char *fileServiceTypeBlocksETH;
 extern const char *fileServiceTypeNodesETH;
 extern const char *fileServiceTypeTokensETH;
@@ -206,6 +217,7 @@ extern BRFileServiceTypeSpecification *fileServiceSpecificationsETH;
 
 extern BRSetOf(BREthereumTransaction) initialTransactionsLoadETH (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumLog)         initialLogsLoadETH         (BRCryptoWalletManager manager);
+extern BRSetOf(BREthereumExchange)    initialExchangesLoadETH    (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumBlock)       initialBlocksLoadETH       (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumNodeConfig)  initialNodesLoadETH        (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumToken)       initialTokensLoadETH       (BRCryptoWalletManager manager);

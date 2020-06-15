@@ -284,8 +284,8 @@ logCompare (BREthereumLog l1,
 
     else
         return ETHEREUM_COMPARISON_EQ;
-
 }
+
 extern BREthereumTransactionStatus
 logGetStatus (BREthereumLog log) {
     return log->status;

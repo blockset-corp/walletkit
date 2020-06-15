@@ -234,6 +234,16 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
         BRCryptoWallet wallet = cryptoWalletManagerGetWallet (qry->manager);
         BRSetOf(BRCryptoAddress) addresses = cryptoWalletGetAddressesForRecovery (wallet);
 
+        // We'll force the 'client' to return all transactions w/o regard to the `endBlockNumber`
+        // Doing this ensures that the initial 'full-sync' returns everything.  Thus there is no
+        // need to wait for a future 'tick tock' to get the recent and pending transactions'.  For
+        // BTC the future 'tick tock' is minutes away; which is a burden on Users as they wait.
+
+
+#ifdef REFACTOR
+        qry->sync.endBlockNumber = BLOCK_HEIGHT_UNBOUND;
+#endif
+
         switch (qry->byType) {
             case CRYPTO_CLIENT_REQUEST_USE_TRANSFERS:
                 cryptoClientQRYRequestTransfers (qry, addresses);

@@ -11,6 +11,7 @@
 #include "BRCryptoBTC.h"
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 
 static BRCryptoNetworkBTC
 cryptoNetworkCoerce (BRCryptoNetwork network, BRCryptoBlockChainType type) {
@@ -75,6 +76,22 @@ cyptoNetworkCreateBCH (const char *uids,
     }
 }
 
+static BRCryptoNetwork
+cyptoNetworkCreateBSV (const char *uids,
+                       const char *name,
+                       const char *desc,
+                       bool isMainnet,
+                       uint32_t confirmationPeriodInSeconds) {
+    if      (0 == strcmp ("mainnet", desc))
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, uids, name, desc, true, confirmationPeriodInSeconds,  BRBSVParams);
+    else if (0 == strcmp ("testnet", desc))
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, uids, name, desc, false, confirmationPeriodInSeconds, BRBSVTestNetParams);
+    else {
+        assert (false); return NULL;
+    }
+}
+
+
 static void
 cryptoNetworkReleaseBTC (BRCryptoNetwork network) {
 }
@@ -94,6 +111,14 @@ cryptoNetworkCreateAddressBCH (BRCryptoNetwork networkBase,
     BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, CRYPTO_NETWORK_TYPE_BCH);
     assert (!BRChainParamsIsBitcoin (network->params));
     return cryptoAddressCreateFromStringAsBCH (network->params->addrParams, addressAsString);
+}
+
+static BRCryptoAddress
+cryptoNetworkCreateAddressBSV (BRCryptoNetwork networkBase,
+                                const char *addressAsString) {
+    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, CRYPTO_NETWORK_TYPE_BSV);
+    assert (BRChainParamsIsBSV (network->params));
+    return cryptoAddressCreateFromStringAsBSV (network->params->addrParams, addressAsString);
 }
 
 static BRCryptoBlockNumber
@@ -156,8 +181,15 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
     cryptoNetworkInitializeAccountBTC
 };
 
-
-
+BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
+    cyptoNetworkCreateBSV,
+    cryptoNetworkReleaseBTC,
+    cryptoNetworkCreateAddressBSV,
+    cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
+    cryptoNetworkIsAccountInitializedBTC,
+    cryptoNetworkGetAccountInitializationDataBTC,
+    cryptoNetworkInitializeAccountBTC
+};
 
 
 //static BRCryptoNetwork

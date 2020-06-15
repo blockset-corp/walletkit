@@ -176,10 +176,27 @@ static void rippleWalletUpdateSequence (BRRippleWallet wallet,
                                         OwnershipKept BRRippleAddress accountAddress) {
     // Now update the account's sequence id
     BRRippleSequence sequence = 0;
-    for (size_t index = 0; index < array_count(wallet->transfers); index++)
+    // We need to keep track of the first block where this account shows up due to a
+    // change in how ripple assigns the sequence number to new accounts
+    uint64_t minBlockHeight = UINT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRRippleTransfer transfer = wallet->transfers[index];
+        BRRippleAddress targetAddress = rippleTransferGetTarget(transfer);
+        if (rippleTransferHasError(transfer) == 0
+            && rippleAddressEqual(accountAddress, targetAddress)) {
+            // We trying to find the lowest block number where we were sent
+            // currency successful - basically this is the block where our account
+            // was created *** ignore failed transfers TO us since we end up seeing
+            // items before our account is actually created.
+            uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        }
+        rippleAddressFree(targetAddress);
         if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
             sequence += 1;
+    }
 
+    rippleAccountSetBlockNumberAtCreation(wallet->account, minBlockHeight);
     rippleAccountSetSequence (wallet->account, sequence);
 }
 

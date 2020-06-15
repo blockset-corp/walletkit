@@ -34,7 +34,18 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBCH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBCH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBCH;
 extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBCH;
+// Payment Protocol
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH;
+
+// MARK: - BSV Handlers
+
+extern BRCryptoAddressHandlers cryptoAddressHandlersBSV;
+extern BRCryptoNetworkHandlers cryptoNetworkHandlersBSV;
+extern BRCryptoTransferHandlers cryptoTransferHandlersBSV;
+extern BRCryptoWalletHandlers cryptoWalletHandlersBSV;
+extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBSV;
+// Payment Protocol
+extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV;
 
 // MARK: - ETH Handlers
 
@@ -42,6 +53,8 @@ extern BRCryptoAddressHandlers cryptoAddressHandlersETH;
 extern BRCryptoNetworkHandlers cryptoNetworkHandlersETH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersETH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersETH;
+// Wallet Sweep
+// Payment Protocol
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH;
 
 // MARK: - XRP Handlers
@@ -50,6 +63,8 @@ extern BRCryptoAddressHandlers cryptoAddressHandlersXRP;
 extern BRCryptoNetworkHandlers cryptoNetworkHandlersXRP;
 extern BRCryptoTransferHandlers cryptoTransferHandlersXRP;
 extern BRCryptoWalletHandlers cryptoWalletHandlersXRP;
+// Wallet Sweep
+// Payment Protocol
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;
 
 // MARK: - HBAR Handlers
@@ -58,6 +73,8 @@ extern BRCryptoAddressHandlers cryptoAddressHandlersHBAR;
 extern BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR;
 extern BRCryptoTransferHandlers cryptoTransferHandlersHBAR;
 extern BRCryptoWalletHandlers cryptoWalletHandlersHBAR;
+// Wallet Sweep
+// Payment Protocol
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR;
 
 #ifdef __cplusplus

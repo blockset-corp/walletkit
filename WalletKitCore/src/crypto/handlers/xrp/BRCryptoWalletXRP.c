@@ -16,7 +16,9 @@
 #include "ripple/BRRippleTransaction.h"
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilMath.h"
+
 #include <stdio.h>
+#include <errno.h>
 
 
 static BRCryptoWalletXRP
@@ -133,8 +135,11 @@ cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
     }
 
     if (rippleCompareFieldOption (key, FIELD_OPTION_DESTINATION_TAG)) {
-        uint32_t tag;
-        if (1 == sscanf(val, "%u", &tag)) {
+        char *end = NULL;
+        errno = 0;
+
+        uintmax_t tag = strtoumax (val, &end, 10);
+        if (ERANGE != errno && EINVAL != errno && '\0' == end[0] && tag <= UINT32_MAX) {
             *validates = CRYPTO_TRUE;
         } else {
             *validates = CRYPTO_FALSE;

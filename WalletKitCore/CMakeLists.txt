@@ -155,7 +155,12 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashAddr.h
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashParams.h
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashParams.c)
-
+# BSV
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.h
+                ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.c)
+                
 # Ethereum
 target_sources (corecrypto
                 PRIVATE
@@ -208,6 +213,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumContract.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumToken.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumToken.h
+                ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumExchange.c
+                ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumExchange.h
                 # MPT
                 ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.h

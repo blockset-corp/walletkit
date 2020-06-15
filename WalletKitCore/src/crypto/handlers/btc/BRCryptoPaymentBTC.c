@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "bcash/BRBCashAddr.h"
+#include "bcash/BRBCashParams.h"
 #include "support/BRArray.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtil.h"
@@ -74,16 +75,16 @@ static void cryptoPaymentProtocolRequestBitPayBuilderAddOutputBTC (BRCryptoPayme
     
     if (satoshis) {
         const BRChainParams * chainParams = cryptoNetworkAsBTC (builderBase->cryptoNetwork);
-        int isBTC = BRChainParamsIsBitcoin (chainParams);
 
-        if (isBTC) {
+        // TODO: Use CRYPTO_NETWORK_TYPE_{BTC,BCH,BSV}
+        if (BRChainParamsIsBitcoin (chainParams)) {
             if (BRAddressIsValid (chainParams->addrParams, address)) {
                 BRTxOutput output = {0};
                 BRTxOutputSetAddress (&output, chainParams->addrParams, address);
                 output.amount = satoshis;
                 array_add (builder->outputs, output);
             }
-        } else {
+        } else if (BRChainParamsIsBitcash (chainParams)) {
             char cashAddr[36];
             if (0 != BRBCashAddrDecode (cashAddr, address) && !BRAddressIsValid(chainParams->addrParams, address)) {
                 BRTxOutput output = {0};
@@ -91,6 +92,8 @@ static void cryptoPaymentProtocolRequestBitPayBuilderAddOutputBTC (BRCryptoPayme
                 output.amount = satoshis;
                 array_add (builder->outputs, output);
             }
+        } else {
+            // No BitcoinSV
         }
     }
 }

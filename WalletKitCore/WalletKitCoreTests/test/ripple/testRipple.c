@@ -403,7 +403,7 @@ static BRRippleTransaction transactionDeserialize(const char * trans_bytes, cons
     memset(bytes,0x00, sizeof(bytes));
     hex2bin(tx_blob, bytes);
 
-    BRRippleTransaction transaction = rippleTransactionCreateFromBytes(bytes, (int)sizeof(bytes));
+    BRRippleTransaction transaction = rippleTransactionCreateFromBytes(bytes, (uint32_t)sizeof(bytes));
     return transaction;
 }
 
@@ -844,36 +844,63 @@ static void comparebuffers(const char *input, uint8_t * output, size_t outputSiz
         assert(buffer[i] == output[i]);
     }
 }
+
 static void runDeserializeTests(const char* tx_list_name, const char* tx_list[], int num_elements)
 {
     int payments = 0;
     int other_type = 0;
     int xrp_currency = 0;
     int other_currency = 0;
+    int destination_tag_count= 0;
     for(int i = 0; i <= num_elements - 2; i += 2) {
+        const char * inputHashString = tx_list[i];
+        size_t input_hash_size = strlen(inputHashString) / 2;
+        uint8_t inputHash[input_hash_size];
+        hex2bin(inputHashString, inputHash);
+
         size_t input_size = strlen(tx_list[i+1]) / 2;
         size_t output_size;
         BRRippleTransaction transaction = transactionDeserialize(tx_list[i+1], NULL);
+        // Compare the hash
+        BRRippleTransactionHash txHash = rippleTransactionGetHash(transaction);
+        assert(memcmp(txHash.bytes, inputHash, 32) == 0);
+
         uint8_t * signed_bytes = rippleTransactionSerialize(transaction, &output_size);
         assert(input_size == output_size);
         comparebuffers(tx_list[i+1], signed_bytes, output_size);
         free(signed_bytes);
 
         assert(transaction);
-        
+
         // Check if this is a transaction
+        BRRippleDestinationTag tag = rippleTransactionGetDestinationTag(transaction);
+        if (tag > 0) {
+            destination_tag_count++;
+        }
         BRRippleTransactionType txType = rippleTransactionGetType(transaction);
+        BRRippleAmount amount = rippleTransactionGetAmountRaw(transaction, RIPPLE_AMOUNT_TYPE_AMOUNT);
+        assert(amount.currencyType != -1); // -1 means we could not find an amount and just created a stub
+        if (amount.currencyType == 0) {
+            xrp_currency++;
+        } else {
+            other_currency++;
+        }
+        BRRippleUnitDrops fee = rippleTransactionGetFee(transaction);
+        assert(fee > 0);
+        BRRippleFeeBasis feeBasis = rippleTransactionGetFeeBasis(transaction);
+        assert(feeBasis.costFactor == 1);
+        assert(feeBasis.pricePerCostFactor == fee);
+        BRRippleAddress source = rippleTransactionGetSource(transaction);
+        assert(source);
+        rippleAddressFree(source);
+        // Get the sequence number
+        BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
+        assert(0 != sequence);
+
         if (txType == RIPPLE_TX_TYPE_PAYMENT) {
-            // Get the sequence number
-            BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
-            assert(0 != sequence);
-            // Record the currency type
-            BRRippleAmount amount = rippleTransactionGetAmountRaw(transaction, RIPPLE_AMOUNT_TYPE_AMOUNT);
-            if (amount.currencyType == 0) {
-                xrp_currency++;
-            } else {
-                other_currency++;
-            }
+            BRRippleAddress target = rippleTransactionGetTarget(transaction);
+            assert(target);
+            rippleAddressFree(target);
             payments++;
         } else {
             other_type++;
@@ -881,8 +908,30 @@ static void runDeserializeTests(const char* tx_list_name, const char* tx_list[],
         
         rippleTransactionFree(transaction);
     }
-    printf("list_name: %s, tx count: %d, payments: %d, other: %d, XRP: %d, other currency: %d\n",
-           tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency);
+    if (strcmp(tx_list_name, "200 new transactions") == 0) {
+        assert(destination_tag_count == 21);
+    }
+    printf("list_name: %s, tx count: %d, payments: %d, other: %d, XRP: %d, other currency: %d, dest_tag_cnt: %d\n",
+           tx_list_name, num_elements/2, payments, other_type, xrp_currency, other_currency, destination_tag_count);
+}
+
+static
+BRRippleTransaction createTransaction(BRRippleAddress sourceAddress,
+                                      BRRippleAddress targetAddress,
+                                      BRRippleUnitDrops amount,
+                                      BRRippleUnitDrops fee)
+{
+    BRRippleFeeBasis feeBasis;
+    feeBasis.pricePerCostFactor = 10;
+    feeBasis.costFactor = 1;
+    return rippleTransactionCreate(sourceAddress, targetAddress, amount, feeBasis);
+}
+
+static void signTransaction(BRRippleAccount sourceAccount, BRRippleTransaction transaction, const char * paper_key)
+{
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, paper_key, NULL);
+    rippleAccountSignTransaction(sourceAccount, transaction, seed);
 }
 
 static void
@@ -968,11 +1017,83 @@ static void submitWithoutDestinationTag() {
     assembleTransaction(source_paper_key, sourceAccount, targetAddress, 300000, 4, 0);
     rippleAccountFree(sourceAccount);
 }
+
+static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence,
+                                          int addFailedFirstTransfer)
+{
+    const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
+    BRRippleAccount account = rippleAccountCreate(paper_key);
+    BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
+    BRRippleWallet wallet = rippleWalletCreate(account);
+    assert(wallet);
+
+    const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
+    BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
+    BRRippleAddress targetAddress = rippleAccountGetPrimaryAddress(targetAccount);
+
+    BRRippleTransactionHash hash;
+    hex2bin("A3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
+    if (addFailedFirstTransfer) {
+        // Add a failed transfer at an earlier block - we should ignore this when determing
+        // the block where the account is created
+        BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 0, 12, hash, 0, start_block - 1000, 1);
+    }
+
+    // Create the initial transfer the creates the account (from target to us)
+    // NOTE: this transfer MUST use the start_block unaltered as the height
+    hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
+    BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Add 2 more receives
+    hash.bytes[0] = 1; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+    hash.bytes[0] = 2; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Create a signed transaction for this account
+    BRRippleTransaction transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    BRRippleSequence sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence);
+    rippleTransactionFree(transaction);
+
+    // Create a second signed transaction for this account
+    transaction = createTransaction(address, targetAddress, 5000000, 12);
+    signTransaction(account, transaction, paper_key);
+    sequence = rippleTransactionGetSequence(transaction);
+    assert(sequence == expected_sequence + 1);
+    rippleTransactionFree(transaction);
+
+    rippleAddressFree(address);
+    rippleAccountFree(account);
+    rippleAddressFree(targetAddress);
+    rippleAccountFree(targetAccount);
+    rippleWalletFree(wallet);
+}
+
+static void testStartingSequence()
+{
+    testStartingSequenceFromBlock(40000000, 1, 0); // Just an old account created at 40000000
+    testStartingSequenceFromBlock(40000000, 1, 1); // This time with a failed first transfer
+    testStartingSequenceFromBlock(55313920, 1, 0); // The last block before the new behavior
+    testStartingSequenceFromBlock(55313920, 1, 1); // This time with a failed first transfer
+    testStartingSequenceFromBlock(55313921, 55313921, 0); // The first block after the new behavior
+    testStartingSequenceFromBlock(55313921, 55313921, 1); // This time with a failed first transfer
+}
+
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
 extern void
 runRippleTest (void /* ... */) {
+
+    testStartingSequence();
 
     // Read data from external file and deserialize
     runDeserializeTests("200 new transaction", test_tx_list, (int)(sizeof(test_tx_list)/sizeof(char*)));

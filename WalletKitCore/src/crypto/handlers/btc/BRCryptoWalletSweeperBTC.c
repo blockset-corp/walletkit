@@ -405,3 +405,13 @@ BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBCH = {
     cryptoWalletSweeperCreateTransferForWalletSweepBTC,
     cryptoWalletSweeperValidateBTC
 };
+
+BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBSV = {
+    cryptoWalletSweeperReleaseBTC,
+    cryptoWalletSweeperGetAddressBTC,
+    cryptoWalletSweeperGetBalanceBTC,
+    cryptoWalletSweeperAddTransactionFromBundleBTC,
+    cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC,
+    cryptoWalletSweeperCreateTransferForWalletSweepBTC,
+    cryptoWalletSweeperValidateBTC
+};

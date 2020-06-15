@@ -14,6 +14,7 @@
 
 #include "ethereum/blockchain/BREthereumTransaction.h"
 #include "ethereum/blockchain/BREthereumLog.h"
+#include "ethereum/contract/BREthereumExchange.h"
 
 static BRCryptoTransferDirection
 cryptoTransferFindDirection (BREthereumAccount account,
@@ -200,6 +201,53 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
     return transferBase;
 }
 
+extern BRCryptoTransfer
+cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
+                                       BRCryptoUnit unitForFee,
+                                       BREthereumAccount account,
+                                       UInt256 ethAmount,
+                                       OwnershipGiven BREthereumExchange ethExchange) {
+    BREthereumAddress ethSource = ethExchangeGetSourceAddress (ethExchange);
+    BREthereumAddress ethTarget = ethExchangeGetTargetAddress (ethExchange);
+
+    BRCryptoTransferDirection direction = cryptoTransferFindDirection (account, ethSource, ethTarget);
+
+    BRCryptoAmount  amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethAmount);
+
+    BREthereumFeeBasis ethFeeBasis = ethFeeBasisCreate (ethGasCreate(0),
+                                                        ethGasPriceCreate(ethEtherCreateZero()));
+    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH(unitForFee, ethFeeBasis);
+
+    BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
+    BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
+
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+                                                               unitForFee,
+                                                               estimatedFeeBasis,
+                                                               amount,
+                                                               direction,
+                                                               source,
+                                                               target,
+                                                               account,
+                                                               TRANSFER_BASIS_EXCHANGE,
+                                                               NULL);
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+
+    transfer->basis.exchange = ethExchange;
+
+    //        // Only at this point do we know that log->data is a number.
+    //        BRRlpItem  item  = rlpDataGetItem (coder, logGetDataShared(log));
+    //        UInt256 value = rlpDecodeUInt256(coder, item, 1);
+    //        rlpItemRelease (coder, item);
+    //
+    //        BREthereumAmount  amount = ethAmountCreateToken (ethTokenQuantityCreate(token, value));
+
+    cryptoAddressGive(source);
+    cryptoAddressGive(target);
+
+    return transferBase;
+}
+
 static void
 cryptoTransferReleaseETH (BRCryptoTransfer transferBase) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
@@ -215,6 +263,10 @@ cryptoTransferReleaseETH (BRCryptoTransfer transferBase) {
 
         case TRANSFER_BASIS_LOG:
             logRelease (transfer->basis.log);
+            break;
+
+        case TRANSFER_BASIS_EXCHANGE:
+            ethExchangeRelease (transfer->basis.exchange);
             break;
     }
 }
@@ -241,11 +293,18 @@ static BREthereumHash
 cryptoTransferGetEthHash (BRCryptoTransfer transferBase) {
     BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
 
-    return (NULL != transfer->originatingTransaction
-            ? transactionGetHash (transfer->originatingTransaction)
-            : (TRANSFER_BASIS_TRANSACTION == transfer->type
-               ? (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.transaction))
-               : (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log))));
+    if (NULL != transfer->originatingTransaction)
+        return transactionGetHash (transfer->originatingTransaction);
+
+
+    switch (transfer->type) {
+        case TRANSFER_BASIS_TRANSACTION:
+            return (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.transaction));
+        case TRANSFER_BASIS_LOG:
+            return (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log));
+        case TRANSFER_BASIS_EXCHANGE:
+            return (NULL == transfer->basis.exchange    ? EMPTY_HASH_INIT : ethExchangeGetIdentifier (transfer->basis.exchange));
+    }
 }
 
 static BRCryptoHash
@@ -263,6 +322,8 @@ cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer) {
             return (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash(transfer->basis.transaction));
         case TRANSFER_BASIS_LOG:
             return (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetHash(transfer->basis.log));
+        case TRANSFER_BASIS_EXCHANGE:
+            return (NULL == transfer->basis.exchange    ? EMPTY_HASH_INIT : ethExchangeGetHash (transfer->basis.exchange));
     }
 }
 
@@ -281,6 +342,14 @@ transferBasisGetHash (BREthereumTransferBasis *basis) {
 
             BREthereumHash hash = EMPTY_HASH_INIT;
             logExtractIdentifier(basis->u.log, &hash, NULL);
+            return hash;
+        }
+
+        case TRANSFER_BASIS_EXCHANGE: {
+            if (NULL == basis->u.exchange) return EMPTY_HASH_INIT;
+
+            BREthereumHash hash = EMPTY_HASH_INIT;
+            ethExchangeExtractIdentifier (basis->u.exchange, &hash, NULL);
             return hash;
         }
     }
@@ -343,6 +412,74 @@ cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     return (ETHEREUM_BOOLEAN_FALSE != ethHashEqual (h1, EMPTY_HASH_INIT) &&
             ETHEREUM_BOOLEAN_TRUE  == ethHashEqual (h1, h2));
 }
+
+#ifdef REFACTOR
+private_extern BREthereumEther
+transferGetEffectiveAmountInEther(BREthereumTransfer transfer) {
+    switch (transfer->basis.type) {
+        case TRANSFER_BASIS_EXCHANGE:
+            if (NULL == transfer->basis.u.exchange) return ethEtherCreateZero();
+            else {
+                BREthereumAddress contract = ethExchangeGetContract (transfer->basis.u.exchange);
+                return (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (EMPTY_ADDRESS_INIT, contract))
+                        ? ethEtherCreate (ethExchangeGetAssetValue (transfer->basis.u.exchange))
+                        : ethEtherCreateZero());
+            }
+        case TRANSFER_BASIS_LOG:
+            return ethEtherCreateZero();
+        case TRANSFER_BASIS_TRANSACTION:
+            return transactionGetAmount(NULL != transfer->basis.u.transaction
+                                        ? transfer->basis.u.transaction
+                                        : transfer->originatingTransaction);
+    }
+}
+
+extern BREthereumComparison
+transferCompare (BREthereumTransfer t1,
+                 BREthereumTransfer t2) {
+
+    if (  t1 == t2) return ETHEREUM_COMPARISON_EQ;
+    if (NULL == t2) return ETHEREUM_COMPARISON_LT;
+    if (NULL == t1) return ETHEREUM_COMPARISON_GT;
+
+    BREthereumTransactionStatus ts1 = transferGetStatusForBasis (t1);
+    BREthereumTransactionStatus ts2 = transferGetStatusForBasis (t2);
+
+    BREthereumComparison result = transactionStatusCompare (&ts1, &ts2);
+    if (ETHEREUM_COMPARISON_EQ != result) return result;
+
+    // The statuses of t1 and t2 are equal.  We need a tie breaker
+    BREthereumTransferBasisType tb1 = t1->basis.type;
+    BREthereumTransferBasisType tb2 = t2->basis.type;
+
+    if (tb1 == tb2) {
+        switch (tb1) {
+            case TRANSFER_BASIS_TRANSACTION:
+                return transactionCompare (t1->basis.u.transaction, t2->basis.u.transaction);
+            case TRANSFER_BASIS_LOG:
+                return logCompare (t1->basis.u.log, t2->basis.u.log);
+            case TRANSFER_BASIS_EXCHANGE:
+                return ethExchangeCompare (t1->basis.u.exchange, t2->basis.u.exchange);
+        }
+    }
+
+    else if (TRANSFER_BASIS_TRANSACTION == tb1 && TRANSFER_BASIS_EXCHANGE    == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE    == tb1 && TRANSFER_BASIS_TRANSACTION == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else if (TRANSFER_BASIS_LOG      == tb1 && TRANSFER_BASIS_EXCHANGE == tb2)
+        return ETHEREUM_COMPARISON_LT;
+    else if (TRANSFER_BASIS_EXCHANGE == tb1 && TRANSFER_BASIS_LOG      == tb2)
+        return ETHEREUM_COMPARISON_GT;
+
+    else {
+        assert (0);
+        return ETHEREUM_COMPARISON_EQ;
+    }
+}
+
+#endif
 
 BRCryptoTransferHandlers cryptoTransferHandlersETH = {
     cryptoTransferReleaseETH,

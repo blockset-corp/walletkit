@@ -1030,14 +1030,18 @@ static int _BRWalletContainsTxInput(BRWallet *wallet, const BRTransaction *tx, c
     return 0;
 }
 
-// true if all tx inputs that are contained in wallet have txs in wallet
+static void _IsResolvedWalletAssert      (int check) { assert (check); }
+static void _IsResolvedTransactionAssert (int check) { assert (check); }
+
+// true if all tx inputs that are contained in wallet have txs in wallet AND if tx itself is signed.
 int BRWalletTransactionIsResolved (BRWallet *wallet, const BRTransaction *tx) {
     int r = 1;
 
-    assert(wallet != NULL);
-    assert(tx != NULL && BRTransactionIsSigned(tx));
+    _IsResolvedWalletAssert(wallet != NULL);
+    _IsResolvedTransactionAssert (tx != NULL);
 
     pthread_mutex_lock(&wallet->lock);
+    if (!BRTransactionIsSigned(tx)) r = 0;
     for (size_t i = 0; r && i < tx->inCount; i++) {
         if (_BRWalletContainsTxInput (wallet, tx, &tx->inputs[i]) &&
             NULL == BRSetGet(wallet->allTx, &tx->inputs[i].txHash))

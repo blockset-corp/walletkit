@@ -78,7 +78,7 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
         sendButton.setTitle(transfer.source?.description ?? "<unknown>", for: .normal)
         recvButton.setTitle(transfer.target?.description ?? "<unknown>", for: .normal)
 
-        identifierLabel.text = hash.map { $0.description } ?? "<pending>"
+        identifierButton.setTitle(hash.map { $0.description } ?? "<pending>", for: .normal)
 
         confLabel.text = transfer.confirmation.map { "Yes @ \($0.blockNumber)" } ?? "No"
         confCountLabel.text = transfer.confirmations?.description ?? ""
@@ -227,7 +227,7 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
     @IBOutlet var dateLabel: UILabel!
     @IBOutlet var sendButton: UIButton!
     @IBOutlet var recvButton: UIButton!
-    @IBOutlet var identifierLabel: UILabel!
+    @IBOutlet var identifierButton: UIButton!
     @IBOutlet var confLabel: UILabel!
     @IBOutlet var confCountLabel: UILabel!
     @IBOutlet var stateLabel: UILabel!

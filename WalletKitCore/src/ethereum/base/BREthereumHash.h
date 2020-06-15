@@ -98,9 +98,9 @@ extern BRRlpItem
 ethHashEncodeList (BRArrayOf(BREthereumHash) hashes, BRRlpCoder coder);
 
 // BRSet Support
-inline static int
+inline static size_t
 ethHashSetValue (const BREthereumHash *hash) {
-    return (int) ((UInt256 *) hash->bytes)->u32[0];
+    return (size_t) ((UInt256 *) hash->bytes)->u32[0];
 }
 
 // BRSet Support

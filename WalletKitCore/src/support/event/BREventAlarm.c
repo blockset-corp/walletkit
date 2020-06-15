@@ -231,8 +231,8 @@ alarmClockDestroy (BREventAlarmClock clock) {
 static void
 alarmClockInsertAlarm (BREventAlarmClock clock,
                        BREventAlarm alarm) {
-    int count = (int) array_count (clock->alarms);
-    int index = count;
+    size_t count = array_count (clock->alarms);
+    size_t index = count;
 
     for (; index > 0; index--) {
         // If alarm.expiration is not less than 'alarm at index-1', then insert alarm at index
@@ -371,7 +371,7 @@ extern void
 alarmClockRemAlarm (BREventAlarmClock clock,
                     BREventAlarmId identifier) {
     pthread_mutex_lock(&clock->lock);
-    for (int index = 0; index < array_count (clock->alarms); index++)
+    for (size_t index = 0; index < array_count (clock->alarms); index++)
         if (identifier == clock->alarms[index].identifier) {
             array_rm(clock->alarms, index);
             break;

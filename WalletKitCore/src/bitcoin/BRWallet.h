@@ -183,7 +183,7 @@ int BRWalletTransactionIsPending(BRWallet *wallet, const BRTransaction *tx);
 // true if tx is considered 0-conf safe (valid and not pending, timestamp is greater than 0, and no unverified inputs)
 int BRWalletTransactionIsVerified(BRWallet *wallet, const BRTransaction *tx);
 
-// true if all tx inputs that are contained in wallet have txs in wallet
+// true if all tx inputs that are contained in wallet have txs in wallet AND if tx itself is signed.
 int BRWalletTransactionIsResolved (BRWallet *wallet, const BRTransaction *tx);
 
 // set the block heights and timestamps for the given transactions

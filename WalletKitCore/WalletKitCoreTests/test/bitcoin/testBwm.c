@@ -14,7 +14,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "test.h"
+
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 #include "bitcoin/BRChainParams.h"
 
 #include "support/BRArray.h"
@@ -75,11 +78,9 @@ _testWalletManagerEventCallback (BRWalletManagerClientContext context,
 
 extern int BRRunTestWalletManagerSync (const char *paperKey,
                                        const char *storagePath,
-                                       int isBTC,
+                                       BRBitcoinChain bitcoinChain,
                                        int isMainnet) {
-    const BRChainParams *params = (isBTC & isMainnet ? BRMainNetParams
-                                   : (isBTC & !isMainnet ? BRTestNetParams
-                                      : (isMainnet ? BRBCashParams : BRBCashTestNetParams)));
+    const BRChainParams *params = getChainParams(bitcoinChain, isMainnet);
 
     uint32_t epoch = 1483228800; // 1/1/17
     epoch += (365 + 365/2) * 24 * 60 * 60;
@@ -550,7 +551,7 @@ BRRunTestWalletManagerSyncBwmSetup (BRCryptoSyncMode mode,
                                     const char *storagePath,
                                     uint32_t earliestKeyTime,
                                     uint64_t blockHeight,
-                                    int isBTC,
+                                    BRBitcoinChain bitcoinChain,
                                     int isMainnet)
 {
     BRWalletManagerClient client = {
@@ -562,12 +563,7 @@ BRRunTestWalletManagerSyncBwmSetup (BRCryptoSyncMode mode,
     BRBIP39DeriveKey (seed.u8, paperKey, NULL);
     BRMasterPubKey mpk = BRBIP32MasterPubKey(&seed, sizeof (seed));
 
-    const BRChainParams *params = NULL;
-    if (isBTC) {
-        params = isMainnet ? BRMainNetParams : BRTestNetParams;
-    } else {
-        params = isMainnet ? BRBCashParams : BRBCashTestNetParams;
-    }
+    const BRChainParams *params = getChainParams(bitcoinChain, isMainnet);
     return BRWalletManagerNew (client, mpk, params, earliestKeyTime, mode, storagePath, blockHeight, 6);
 }
 
@@ -578,7 +574,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
                                    const char *storagePath,
                                    uint32_t earliestKeyTime,
                                    uint64_t blockHeight,
-                                   int isBTC,
+                                   BRBitcoinChain bitcoinChain,
                                    int isMainnet) {
     int success = 1;
 
@@ -587,7 +583,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
            cryptoSyncModeString (mode),
            earliestKeyTime,
            blockHeight,
-           isBTC ? "btc": "bch",
+           getChainName(bitcoinChain),
            isMainnet ? "mainnet" : "testnet",
            storagePath);
 
@@ -597,7 +593,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // connect, disconnect cycle
@@ -648,7 +644,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // repeated connect attempts
@@ -703,7 +699,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // repeated disconnect attempts
@@ -752,7 +748,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // connect, scan, disconnect
@@ -847,7 +843,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // scan, connect, disconnect
@@ -900,7 +896,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // scan, disconnect
@@ -951,7 +947,7 @@ BRRunTestWalletManagerSyncForMode (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetup (&state, blockHeight, 1);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (mode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         BRRunTestWalletManagerSyncThreadState threadState = {0, manager};
@@ -1015,7 +1011,7 @@ BRRunTestWalletManagerSyncAllModes (const char *testName,
                                     const char *storagePath,
                                     uint32_t earliestKeyTime,
                                     uint64_t blockHeight,
-                                    int isBTC,
+                                    BRBitcoinChain bitcoinChain,
                                     int isMainnet) {
     int success = 1;
 
@@ -1025,7 +1021,7 @@ BRRunTestWalletManagerSyncAllModes (const char *testName,
            cryptoSyncModeString (secondaryMode),
            earliestKeyTime,
            blockHeight,
-           isBTC ? "btc": "bch",
+           getChainName(bitcoinChain),
            isMainnet ? "mainnet" : "testnet",
            storagePath);
 
@@ -1035,7 +1031,7 @@ BRRunTestWalletManagerSyncAllModes (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // swap modes while disconnected
@@ -1086,7 +1082,7 @@ BRRunTestWalletManagerSyncAllModes (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetupAsDefault (&state, blockHeight);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         // swap modes while connected
@@ -1147,7 +1143,7 @@ BRRunTestWalletManagerSyncAllModes (const char *testName,
         BRRunTestWalletManagerSyncState state = {0};
         BRRunTestWalletManagerSyncTestSetup (&state, blockHeight, 1);
 
-        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, isBTC, isMainnet);
+        BRWalletManager manager = BRRunTestWalletManagerSyncBwmSetup (primaryMode, &state, paperKey, storagePath, earliestKeyTime, blockHeight, bitcoinChain, isMainnet);
         BRWalletManagerStart (manager);
 
         BRRunTestWalletManagerSyncThreadState threadState = {0, manager};
@@ -1209,7 +1205,7 @@ extern int BRRunTestWalletManagerSyncStress (const char *paperKey,
                                              const char *storagePath,
                                              uint32_t earliestKeyTime,
                                              uint64_t blockHeight,
-                                             int isBTC,
+                                             BRBitcoinChain bitcoinChain,
                                              int isMainnet) {
     int success = 1;
 
@@ -1220,7 +1216,7 @@ extern int BRRunTestWalletManagerSyncStress (const char *paperKey,
                                                     storagePath,
                                                     earliestKeyTime,
                                                     blockHeight,
-                                                    isBTC,
+                                                    bitcoinChain,
                                                     isMainnet);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: P2P sync failed\n", __func__, __LINE__);
@@ -1235,7 +1231,7 @@ extern int BRRunTestWalletManagerSyncStress (const char *paperKey,
                                                     storagePath,
                                                     earliestKeyTime,
                                                     blockHeight,
-                                                    isBTC,
+                                                    bitcoinChain,
                                                     isMainnet);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: API sync failed\n", __func__, __LINE__);
@@ -1251,7 +1247,7 @@ extern int BRRunTestWalletManagerSyncStress (const char *paperKey,
                                                      storagePath,
                                                      earliestKeyTime,
                                                      blockHeight,
-                                                     isBTC,
+                                                     bitcoinChain,
                                                      isMainnet);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: swapping modes sync failed\n", __func__, __LINE__);
@@ -1267,7 +1263,7 @@ extern int BRRunTestWalletManagerSyncStress (const char *paperKey,
                                                      storagePath,
                                                      earliestKeyTime,
                                                      blockHeight,
-                                                     isBTC,
+                                                     bitcoinChain,
                                                      isMainnet);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: swapping modes sync failed\n", __func__, __LINE__);
@@ -1501,7 +1497,7 @@ static int BRPeerEqual (const BRPeer *p1, const BRPeer *p2) {
 
 extern int BRRunTestsBWM (const char *paperKey,
                           const char *storagePath,
-                          int isBTC,
+                          BRBitcoinChain bitcoinChain,
                           int isMainnet) {
     int success = 1;
 

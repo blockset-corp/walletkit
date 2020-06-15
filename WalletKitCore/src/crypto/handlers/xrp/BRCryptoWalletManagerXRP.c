@@ -58,7 +58,7 @@ cryptoWalletManagerCreateHandlerXRP (BRCryptoListener listener,
                                                                          network,
                                                                          scheme,
                                                                          path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
+                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
     BRCryptoWalletManagerXRP manager = cryptoWalletManagerCoerce (managerBase);
 
     // XRP Stuff
@@ -201,6 +201,33 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP (BRCryptoWall
     assert (0);
 }
 
+#ifdef REFACTOR
+extern BRGenericTransferState
+genManagerRecoverTransferState (BRGenericManager gwm,
+                                uint64_t timestamp,
+                                uint64_t blockHeight,
+                                BRGenericFeeBasis feeBasis,
+                                BRCryptoBoolean error) {
+    return (blockHeight == BLOCK_HEIGHT_UNBOUND && CRYPTO_TRUE == error
+            ? genTransferStateCreateOther (GENERIC_TRANSFER_STATE_ERRORED)
+            : (blockHeight == BLOCK_HEIGHT_UNBOUND
+               ? genTransferStateCreateOther(GENERIC_TRANSFER_STATE_SUBMITTED)
+               : genTransferStateCreateIncluded (blockHeight,
+                                                 GENERIC_TRANSFER_TRANSACTION_INDEX_UNKNOWN,
+                                                 timestamp,
+                                                 feeBasis,
+                                                 error,
+                                                 NULL)));
+}
+
+BRGenericTransferState transferState = genManagerRecoverTransferState (gwm,
+                                                                       timestamp,
+                                                                       blockHeight,
+                                                                       feeBasis,
+                                                                       AS_CRYPTO_BOOLEAN (0 == error));
+genTransferSetState (transfer, transferState);
+#endif
+
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletManager cwm,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle) {
@@ -217,7 +244,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
-
+#ifdef REFACTOR
+        ||
+                 (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+                  && CRYPTO_FALSE == state.u.included.success));
+#endif
     BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
 
     rippleAddressFree (toAddress);

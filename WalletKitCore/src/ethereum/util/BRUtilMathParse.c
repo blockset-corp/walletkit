@@ -266,7 +266,7 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
     for (size_t index = 0; index < length; index += stringChunks) {
         // On the first time through, get an initial value
         if (index == 0) {
-            value = parseUInt64(string, stringChunks, base);
+            value = parseUInt64(string, (int) stringChunks, base);
             if (errno != 0) {
                 *status = CORE_PARSE_STRANGE_DIGITS;
                 return UINT256_ZERO;
@@ -277,7 +277,7 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
         else {
             // This many remain - if more than stringChunks, we'll scale by just stringChunks
             int remainingDigits = (int) (length - index);
-            int scalingDigits = remainingDigits >= stringChunks ? stringChunks : remainingDigits;
+            int scalingDigits = remainingDigits >= stringChunks ? (int) stringChunks : remainingDigits;
             
             int scaleOverflow = 0, addOverflow = 0;
             
@@ -285,7 +285,7 @@ uint256CreateParse (const char *string, int base, BRCoreParseStatus *status) {
             value = parseUInt256ScaleByPower(value, base, scalingDigits, &scaleOverflow);
             
             // Add in the next chuck.
-            value = uint256Add_Overflow(value, parseUInt64(&string[index], stringChunks, base), &addOverflow);
+            value = uint256Add_Overflow(value, parseUInt64(&string[index], (int) stringChunks, base), &addOverflow);
             if (scaleOverflow || addOverflow) {
                 *status = CORE_PARSE_OVERFLOW;
                 return UINT256_ZERO;
@@ -339,7 +339,7 @@ uint256CoerceString (UInt256 x, int base) {
             memset (r, 0, 257);
             for (int i = 0; i < 256 && !uint256EQL(x, UINT256_ZERO); i++) {
                 uint32_t rem;
-                x = uint256Div_Small(x, base, &rem);
+                x = uint256Div_Small(x, (uint32_t) base, &rem);
                 r[i] = '0' + rem;
             }
             return coerceReverseString(r);
@@ -396,7 +396,7 @@ uint256CoerceStringDecimal (UInt256 x, int decimals) {
     
     int slength = (int) strlen (string);
     if (decimals >= slength) {
-        char *result = calloc (decimals + 3, 1);  // 0.<decimals>'\0'
+        char *result = calloc ((size_t) decimals + 3, 1);  // 0.<decimals>'\0'
         
         // Fill to decimals
         char format [10];
@@ -413,7 +413,7 @@ uint256CoerceStringDecimal (UInt256 x, int decimals) {
     }
     else {
         int dindex = slength - decimals;
-        char *result = calloc (slength + 2, 1);  // <whole>.<decimals>'\0'
+        char *result = calloc ((size_t) slength + 2, 1);  // <whole>.<decimals>'\0'
         strncpy (result, string, dindex);
         result[dindex] = '.';
         strcpy (&result[dindex+1], &string[dindex]);

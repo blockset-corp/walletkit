@@ -316,6 +316,12 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
 
     BRWallet *btcWallet = cryptoWalletAsBTC(manager->wallet);
 
+    // Convert from `uint64_t` to `uint32_t` with a bit of care regarding BLOCK_HEIGHT_UNBOUND
+    // and TX_UNCONFIRMED - they are directly coercible but be explicit about it.
+    uint32_t btcBlockHeight = (BLOCK_HEIGHT_UNBOUND == bundle->blockHeight ? TX_UNCONFIRMED : (uint32_t) bundle->blockHeight);
+    uint32_t btcTimestamp   = (uint32_t) bundle->timestamp;
+
+
     //     if (needRegistration) {
     //         if (0 == pthread_mutex_lock (&manager->lock)) {
     //             // confirm completion is for in-progress sync
@@ -356,8 +362,8 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
             // If no longer 'included' this might cause dependent transactions to go to 'invalid'.
             BRWalletUpdateTransactions (btcWallet,
                                         &btcTransaction->txHash, 1,
-                                        (uint32_t) bundle->blockHeight,
-                                        bundle->timestamp);
+                                        btcBlockHeight,
+                                        btcTimestamp);
         }
     }
 
@@ -386,7 +392,8 @@ typedef struct BRCryptoClientP2PManagerRecordBTC {
 static BRCryptoClientP2PManagerBTC
 cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager managerBase) {
     assert (CRYPTO_NETWORK_TYPE_BTC == managerBase->type ||
-            CRYPTO_NETWORK_TYPE_BCH == managerBase->type);
+            CRYPTO_NETWORK_TYPE_BCH == managerBase->type ||
+            CRYPTO_NETWORK_TYPE_BSV == managerBase->type);
     return (BRCryptoClientP2PManagerBTC) managerBase;
 }
 
@@ -1114,6 +1121,24 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
 };
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
+    cryptoWalletManagerCreateBTC,
+    cryptoWalletManagerReleaseBTC,
+    cryptoWalletManagerInitializeBTC,
+    crytpWalletManagerCreateFileServiceBTC,
+    cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerSignTransactionWithSeedBTC,
+    cryptoWalletManagerSignTransactionWithKeyBTC,
+    cryptoWalletManagerEstimateLimitBTC,
+    cryptoWalletManagerEstimateFeeBasisBTC,
+    crytpWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerRegisterWalletBTC,
+    cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
+    cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    cryptoWalletManagerWalletSweeperValidateSupportedBTC,
+    cryptoWalletManagerCreateWalletSweeperBTC
+};
+
+BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerCreateBTC,
     cryptoWalletManagerReleaseBTC,
     cryptoWalletManagerInitializeBTC,
