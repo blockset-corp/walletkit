@@ -244,8 +244,14 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
     BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
     
-    // Setup the P2P and QRY Managers
+    // Setup the P2P Manager.  We have a race here... `createP2PManager` might generate callbacks
+    // as initial blocks, nodes, etc are added.  The callbacks currently are handled directly,
+    // without using the event queue - but eventually the event queue must be used.
+    //
+    // TODO: Handle Callbacks Correctly
     manager->p2pManager = manager->handlers->createP2PManager (manager);
+
+    // Setup the QRY Manager
     manager->qryManager = cryptoClientQRYManagerCreate (client,
                                                         manager,
                                                         manager->byType,
@@ -665,28 +671,9 @@ extern BRCryptoWallet
 cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
                                    BRCryptoCurrency currency) {
     BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
-    if (NULL == wallet) {
-#ifdef REFACTOR
-        switch (cwm->type) {
-            case BLOCK_CHAIN_TYPE_BTC:
-                assert (0); // Only BTC currency; has `primaryWallet
-                break;
-
-            case BLOCK_CHAIN_TYPE_ETH: {
-                const char *issuer = cryptoCurrencyGetIssuer (currency);
-                BREthereumAddress ethAddress = ethAddressCreate (issuer);
-                BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
-                assert (NULL != ethToken);
-                ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
-                break;
-            }
-            case BLOCK_CHAIN_TYPE_GEN:
-                assert (0);
-                break;
-        }
-#endif
-    }
-    return wallet;
+    return (NULL == wallet
+            ? cwm->handlers->registerWallet (cwm, currency)
+            : wallet);
 }
 
 extern BRCryptoBoolean

@@ -1308,8 +1308,8 @@ extension System {
         -> [(transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)] {
             // Only consider transfers w/ `address`
             var transfers = transaction.transfers.filter {
-                ($0.source.map { addresses.contains($0) } ?? false) ||
-                    ($0.target.map { addresses.contains($0) } ?? false)
+                ($0.source.map { addresses.caseInsensitiveContains($0) } ?? false) ||
+                    ($0.target.map { addresses.caseInsensitiveContains($0) } ?? false)
             }
 
             // Note for later: all transfers have a unique id
