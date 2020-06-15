@@ -2,7 +2,8 @@
 //  BRCryptoPaymentBTC.c
 //  BRCore
 //
-//  Created by Ehsan Rezaie on 5/26/20
+//  Created by Ehsan Rezaie on 5/26/20.
+//  Based on implementation by Michael Carrara.
 //  Copyright © 2020 breadwallet. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.

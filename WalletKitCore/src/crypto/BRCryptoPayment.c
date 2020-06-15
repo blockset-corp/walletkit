@@ -21,8 +21,6 @@
 
 #include "BRCryptoHandlersP.h"
 
-#include "handlers/btc/BRCryptoBTC.h"
-
 #include "bitcoin/BRPaymentProtocol.h"
 #include "support/BRArray.h"
 
