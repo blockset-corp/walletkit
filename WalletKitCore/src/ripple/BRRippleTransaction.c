@@ -323,11 +323,11 @@ rippleTransactionSerializeImpl (BRRippleTransaction transaction,
     BRRippleField fields[11];
 
     transaction->fee = calculateFee(transaction);
-    int num_fields = setFieldInfo(fields, transaction, signature, sig_length);
+    uint32_t num_fields = (uint32_t) setFieldInfo(fields, transaction, signature, sig_length);
 
     BRRippleSerializedTransaction signedBytes = NULL;
 
-    int size = rippleSerialize(fields, num_fields, 0, 0);
+    uint32_t size = rippleSerialize(fields, num_fields, 0, 0);
     if (size > 0) {
         // I guess we will be sending back something
         // TODO validate the serialized bytes

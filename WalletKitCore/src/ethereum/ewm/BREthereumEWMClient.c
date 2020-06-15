@@ -863,8 +863,8 @@ ewmAnnounceBlocks (BREthereumEWM ewm,
 
     // into bcs...
     BRArrayOf(uint64_t) numbers;
-    array_new (numbers, blockNumbersCount);
-    array_add_array(numbers, blockNumbers, blockNumbersCount);
+    array_new (numbers, (size_t) blockNumbersCount);
+    array_add_array(numbers, blockNumbers, (size_t) blockNumbersCount);
     bcsReportInterestingBlocks (ewm->bcs, numbers);
 
     return SUCCESS;
@@ -1003,7 +1003,7 @@ ewmAnnounceSubmitTransfer (BREthereumEWM ewm,
 //
 extern void
 ewmUpdateTokens (BREthereumEWM ewm) {
-    unsigned int rid = ++ewm->requestId;
+    int rid = ++ewm->requestId;
 
     if (ethNetworkMainnet == ewm->network)
         ewm->client.funcGetTokens
@@ -1121,7 +1121,7 @@ extern void
 ewmAnnounceTokenComplete (BREthereumEWM ewm,
                           int rid,
                           BREthereumBoolean success) {
-    ewmSignalAnnounceTokenComplete (ewm, success, rid);
+    ewmSignalAnnounceTokenComplete (ewm, rid, success);
 }
 
 // ==============================================================================================

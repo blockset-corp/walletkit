@@ -54,9 +54,9 @@ uint32_t calculate_buffer_size(BRRippleField *fields, uint32_t num_fields)
 {
     // The fieldid is stored as 2-4 bytes. Since a few extra bytes won't hurt
     // just allocate 4 bytes per field to be safe.
-    int size = num_fields * 4;
+    uint32_t size = num_fields * 4;
     // Figure out the approximate size of the buffer we need to make
-    for(int i = 0; i < num_fields; i++) {
+    for (size_t i = 0; i < num_fields; i++) {
         // Add on the potential size of the fieldid
         switch (fields[i].typeCode) {
             case 1:
@@ -124,7 +124,7 @@ int add_fieldid(int type, int code, uint8_t *buffer)
 
 int add_uint16(uint16_t i, uint8_t* buffer) {
     /* Copy the 2 bytes to the buffer */
-    buffer[0] = (char)(i >> 8);
+    buffer[0] = (uint8_t)(i >> 8);
     buffer[1] = i & 0XFF;
     return 2;
 }
@@ -261,10 +261,10 @@ extern uint32_t rippleSerialize (BRRippleField *fields, uint32_t num_fields, uin
     qsort(fields, num_fields, sizeof(BRRippleField), compare_function);
 
     // serialize all the fields adding the field IDs and content to the buffer
-    int buffer_index = 0;
-    for (int i = 0; i < num_fields; i++) {
-        buffer_index += add_fieldid(fields[i].typeCode, fields[i].fieldCode, &buffer[buffer_index]);
-        buffer_index += add_content( &fields[i], &buffer[buffer_index]);
+    uint32_t buffer_index = 0;
+    for (size_t i = 0; i < num_fields; i++) {
+        buffer_index += (uint32_t) add_fieldid(fields[i].typeCode, fields[i].fieldCode, &buffer[buffer_index]);
+        buffer_index += (uint32_t) add_content( &fields[i], &buffer[buffer_index]);
     }
 
     return buffer_index;
@@ -348,21 +348,21 @@ int get_u16(uint8_t * buffer, uint16_t * value)
 // 32-bit unsigned integer
 int get_u32(uint8_t * buffer, uint32_t * value)
 {
-    *value = (buffer[0] << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3];
+    *value = (uint32_t) ((buffer[0] << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3]);
     return 4;
 }
 
 // 64-bit unsigned integer
 int get_u64(uint8_t * buffer, uint64_t * value)
 {
-    *value = ((uint64_t)buffer[0] << 56) +
-        ((uint64_t)buffer[1] << 48) +
-        ((uint64_t)buffer[2] << 40) +
-        ((uint64_t)buffer[3] << 32) +
-        (buffer[4] << 24) +
-        (buffer[5] << 16) +
-        (buffer[6] << 8) +
-        buffer[7];
+    *value = (((uint64_t)buffer[0] << 56) +
+              ((uint64_t)buffer[1] << 48) +
+              ((uint64_t)buffer[2] << 40) +
+              ((uint64_t)buffer[3] << 32) +
+              ((uint64_t)buffer[4] << 24) +
+              ((uint64_t)buffer[5] << 16) +
+              ((uint64_t)buffer[6] <<  8) +
+              ((uint64_t)buffer[7] <<  0));
     return 8;
 }
 
