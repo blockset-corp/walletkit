@@ -249,7 +249,7 @@ ethTokenQuantityCreateString(BREthereumToken token,
         valueAsInteger = UINT256_ZERO;
     } else {
         valueAsInteger = (TOKEN_QUANTITY_TYPE_DECIMAL == unit
-                          ? uint256CreateParseDecimal(number, token->decimals, status)
+                          ? uint256CreateParseDecimal(number, (int) token->decimals, status)
                           : uint256CreateParse(number, 10, status));
     }
 
@@ -266,7 +266,7 @@ ethTokenQuantityGetValueString(const BREthereumTokenQuantity quantity,
                                BREthereumTokenQuantityUnit unit) {
     return TOKEN_QUANTITY_TYPE_INTEGER == unit
     ? uint256CoerceString(quantity.valueAsInteger, 10)
-    : uint256CoerceStringDecimal(quantity.valueAsInteger, quantity.token->decimals);
+    : uint256CoerceStringDecimal(quantity.valueAsInteger, (int) quantity.token->decimals);
 }
 
 extern BREthereumComparison

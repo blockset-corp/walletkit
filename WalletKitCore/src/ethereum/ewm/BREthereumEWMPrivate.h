@@ -36,7 +36,7 @@ typedef enum {
 (CLIENT_CHANGE_ADD == (ev) ? "Add" \
 : (CLIENT_CHANGE_REM == (ev) ? "Rem" : "Upd"))
 
-#define EWM_REQUEST_ID_UNKNOWN    (UINT_MAX)
+#define EWM_REQUEST_ID_UNKNOWN    (INT_MAX)
 
 //
 // EWM
@@ -121,7 +121,7 @@ struct BREthereumEWMRecord {
     /**
      * An identiifer for a LES/BRD Request
      */
-    unsigned int requestId;
+    int requestId;
 
     /**
      * An EventHandler for Main.  All 'announcements' (via LES (or BRD) hit here.
@@ -152,11 +152,11 @@ struct BREthereumEWMRecord {
         uint64_t begBlockNumber;
         uint64_t endBlockNumber;
 
-        unsigned int ridTransaction;
-        unsigned int ridLog;
+        int ridTransaction;
+        int ridLog;
 
-        unsigned int completedTransaction:1;
-        unsigned int completedLog:1;
+        bool  completedTransaction;
+        bool completedLog;
     } brdSync;
 };
 
@@ -326,6 +326,11 @@ extern void
 ewmHandleSaveLog (BREthereumEWM ewm,
                   BREthereumLog log,
                   BREthereumClientChangeType type);
+
+extern void
+ewmHandleSaveExchange (BREthereumEWM ewm,
+                       BREthereumExchange exchange,
+                       BREthereumClientChangeType type);
 
 extern void
 ewmHandleSaveWallet (BREthereumEWM ewm,
@@ -687,6 +692,7 @@ extern const unsigned int ewmEventTypesCount;
 
 extern const char *ewmFileServiceTypeTransactions;
 extern const char *ewmFileServiceTypeLogs;
+extern const char *ewmFileServiceTypeExchanges;
 extern const char *ewmFileServiceTypeBlocks;
 extern const char *ewmFileServiceTypeNodes;
 extern const char *ewmFileServiceTypeTokens;

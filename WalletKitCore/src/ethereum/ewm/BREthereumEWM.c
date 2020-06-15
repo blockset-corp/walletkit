@@ -72,6 +72,15 @@ initialLogsLoad (BREthereumEWM ewm) {
     return logs;
 }
 
+static BRSetOf(BREthereumExchange)
+initialExchangesLoad (BREthereumEWM ewm) {
+    BRSetOf(BREthereumExchange) exchanges = BRSetNew(ethExchangeHashValue, ethExchangeHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+    if (NULL != exchanges && 1 != fileServiceLoad (ewm->fs, exchanges, ewmFileServiceTypeExchanges, 1)) {
+        BRSetFreeAll (exchanges, (void (*) (void*)) ethExchangeRelease);
+        return NULL;
+    }
+    return exchanges;
+}
 
 static BRSetOf(BREthereumBlock)
 initialBlocksLoad (BREthereumEWM ewm) {
@@ -188,14 +197,16 @@ ewmCreateInitialSets (BREthereumEWM ewm,
                       BREthereumTimestamp accountTimestamp,
                       BRSetOf(BREthereumTransaction) *transactions,
                       BRSetOf(BREthereumLog) *logs,
+                      BRSetOf(BREthereumExchanges) *exchanges,
                       BRSetOf(BREthereumNodeConfig) *nodes,
                       BRSetOf(BREthereumBlock) *blocks,
                       BRSetOf(BREthereumToken) *tokens,
                       BRSetOf(BREthereumWalletState) *states) {
 
     *transactions = initialTransactionsLoad(ewm);
-    *logs = initialLogsLoad(ewm);
-    *nodes = initialNodesLoad(ewm);
+    *logs   = initialLogsLoad(ewm);
+    *exchanges = initialExchangesLoad(ewm);
+    *nodes  = initialNodesLoad(ewm);
     *blocks = initialBlocksLoad(ewm);
     *tokens = initialTokensLoad(ewm);
     *states = initialWalletsLoad(ewm);
@@ -213,6 +224,9 @@ ewmCreateInitialSets (BREthereumEWM ewm,
 
         if (NULL != *logs) { BRSetFreeAll (*logs, (void (*) (void*)) logRelease); }
         *logs = BRSetNew (logHashValue, logHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
+
+        if (NULL != *exchanges) { BRSetFreeAll (*exchanges, (void (*) (void*)) ethExchangeRelease); }
+        *exchanges = BRSetNew (ethExchangeHashValue, ethExchangeHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
 
         if (NULL != *blocks) { BRSetFreeAll (*blocks,  (void (*) (void*)) blockRelease); }
         *blocks = BRSetNew (blockHashValue, blockHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
@@ -300,13 +314,14 @@ ewmCreate (BREthereumNetwork network,
     // Load all the persistent entities
     BRSetOf(BREthereumTransaction) transactions;
     BRSetOf(BREthereumLog) logs;
+    BRSetOf(BREthereumExchanges) exchanges;
     BRSetOf(BREthereumNodeConfig) nodes;
     BRSetOf(BREthereumBlock) blocks;
     BRSetOf(BREthereumToken) tokens;
     BRSetOf(BREthereumWalletState) walletStates;
 
     ewmCreateInitialSets (ewm, ewm->network, ewm->accountTimestamp,
-                          &transactions, &logs, &nodes, &blocks, &tokens, &walletStates);
+                          &transactions, &logs, &exchanges, &nodes, &blocks, &tokens, &walletStates);
 
     // Save the recovered tokens
     ewm->tokens = tokens;
@@ -405,6 +420,10 @@ ewmCreate (BREthereumNetwork network,
             FOR_SET (BREthereumLog, log, logs)
                 ewmSignalLog (ewm, BCS_CALLBACK_LOG_ADDED, log);
 
+            // Announce all the provided changes
+            FOR_SET (BREthereumExchange, exchange, exchanges)
+                ewmSignalExchange (ewm, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
+
             // Previously both `ewmSignalTransaction()` and `ewmSignalLog` would iterate over
             // all the transfers to compute the wallet's balance.  (see `walletUpdateBalance()`
             // and its call sites (commented out currently)).  The balance was updated for each
@@ -459,6 +478,7 @@ ewmCreate (BREthereumNetwork network,
             // in the above `ewmSignalTransaction()` and `ewmSignalLog()` calls.
             BRSetFree (transactions);
             BRSetFree (logs);
+            BRSetFree (exchanges);
 
             // Add ewmPeriodicDispatcher to handlerForMain.  Note that a 'timeout' is handled by
             // an OOB (out-of-band) event whereby the event is pushed to the front of the queue.
@@ -488,6 +508,9 @@ ewmCreate (BREthereumNetwork network,
                                   blocks,
                                   transactions,
                                   logs);
+
+            // TODO: BCS is dead; won't ever handle 'Internal Transactions'.  Can it?
+            BRSetFree (exchanges);
             break;
         }
     }
@@ -1019,6 +1042,7 @@ ewmUpdateMode (BREthereumEWM ewm,
         BRSetOf(BREthereumBlock) blocks;
         BRSetOf(BREthereumTransaction) transactions;
         BRSetOf(BREthereumLog) logs;
+        BRSetOf(BREthereumExchanges) exchanges;
         BRSetOf(BREthereumWalletState) states;
 
         // We have BCS in all modes but in BRD_ONLY mode it is never started.
@@ -1074,7 +1098,7 @@ ewmUpdateMode (BREthereumEWM ewm,
             case CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC:
             case CRYPTO_SYNC_MODE_P2P_ONLY:
                 ewmCreateInitialSets (ewm, ewm->network, ewm->accountTimestamp,
-                                      &transactions, &logs, &nodes, &blocks, &tokens, &states);
+                                      &transactions, &logs, &exchanges, &nodes, &blocks, &tokens, &states);
 
                 ewm->bcs = bcsCreate (ewm->network,
                                       primaryAddress,
@@ -1086,6 +1110,7 @@ ewmUpdateMode (BREthereumEWM ewm,
                                       logs);
 
                 BRSetFreeAll (states, (void (*) (void*)) walletStateRelease);
+                BRSetFreeAll (exchanges, (void (*) (void*)) ethExchangeRelease);
                 break;
          }
 
@@ -2257,6 +2282,26 @@ ewmHandleSaveLog (BREthereumEWM ewm,
 }
 
 extern void
+ewmHandleSaveExchange (BREthereumEWM ewm,
+                       BREthereumExchange exchange,
+                       BREthereumClientChangeType type) {
+    BREthereumHash hash = ethExchangeGetHash(exchange);
+    BREthereumHashString filename;
+    ethHashFillString(hash, filename);
+
+    eth_log("EWM", "Exchange: Save: %s: %s",
+            CLIENT_CHANGE_TYPE_NAME (type),
+            filename);
+
+    if (CLIENT_CHANGE_REM == type || CLIENT_CHANGE_UPD == type)
+        fileServiceRemove (ewm->fs, ewmFileServiceTypeExchanges,
+                           fileServiceGetIdentifier (ewm->fs, ewmFileServiceTypeExchanges, exchange));
+
+    if (CLIENT_CHANGE_ADD == type || CLIENT_CHANGE_UPD == type)
+        fileServiceSave (ewm->fs, ewmFileServiceTypeExchanges, exchange);
+}
+
+extern void
 ewmHandleSaveWallet (BREthereumEWM ewm,
                      BREthereumWallet wallet,
                      BREthereumClientChangeType type) {
@@ -2919,7 +2964,7 @@ ewmTransferStatusGetErrorType (BREthereumEWM ewm,
     transferExtractStatusErrorType (transfer, &type);
     pthread_mutex_unlock (&ewm->lock);
 
-    return type;
+    return (int) type;
 }
 
 extern BREthereumBoolean

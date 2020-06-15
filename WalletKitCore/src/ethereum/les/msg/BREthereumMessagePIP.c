@@ -132,7 +132,7 @@ messagePIPAnnounceDecode (BRRlpItem item,
 static BRRlpItem
 loose (BRRlpCoder coder, int discriminant, BRRlpItem item) {
     return rlpEncodeList2 (coder,
-                           rlpEncodeUInt64(coder, discriminant, 1),
+                           rlpEncodeUInt64(coder, (uint64_t) discriminant, 1),
                            item);
 }
 
