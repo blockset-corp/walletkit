@@ -1184,7 +1184,8 @@ ewmHandleTransferEvent (BREthereumEWM ewm,
 
     if (ewmNeedTransferSave (ewm, event)) {
         BREthereumTransaction transaction = transferGetBasisTransaction (transfer);
-        BREthereumLog         log         = transferGetBasisLog(transfer);
+        BREthereumLog         log         = transferGetBasisLog (transfer);
+        BREthereumExchange    exchange    = transferGetBasisExchange (transfer);
 
         // If we have a hash, then we've got something to save.
         BREthereumHash hash = transferGetIdentifier(transfer);
@@ -1208,6 +1209,9 @@ ewmHandleTransferEvent (BREthereumEWM ewm,
 
             if (NULL != log)
                 ewmHandleSaveLog(ewm, log, type);
+
+            if (NULL != exchange)
+                ewmHandleSaveExchange (ewm, exchange, type);
         }
     }
 
