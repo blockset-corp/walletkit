@@ -222,8 +222,9 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
     qry->sync.endBlockNumber = MAX (cryptoClientQRYGetNetworkBlockHeight (qry),
                                     qry->sync.begBlockNumber);
 
-    // 3) we'll update transactions if there are more blocks to examine
-    if (qry->sync.begBlockNumber != qry->sync.endBlockNumber) {
+    // 3) we'll update transactions if there are more blocks to examine and if the
+    //    prior sync completed successfully or not.
+    if (qry->sync.completed && qry->sync.begBlockNumber != qry->sync.endBlockNumber) {
 
         // 3a) Save the current requestId and mark as not completed.
         qry->sync.rid = qry->requestId;
