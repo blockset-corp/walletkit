@@ -269,8 +269,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     //TODO:XRP attributes
     //TODO:XRP save to fileService
     //TODO:XRP announce
-    
-    rippleTransferFree (xrpTransfer);
 }
 
 static BRCryptoClientP2PManager
