@@ -1288,36 +1288,6 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
 
     }
 
-    BRCryptoTransferState state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
-    BREthereumTransactionStatus ethState = transactionGetStatus (transaction);
-    switch (ethState.type) {
-        case TRANSACTION_STATUS_UNKNOWN:
-            state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
-            break;
-        case TRANSACTION_STATUS_QUEUED:
-        case TRANSACTION_STATUS_PENDING:
-            state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED);
-            break;
-
-        case TRANSACTION_STATUS_INCLUDED:
-            state = cryptoTransferStateIncludedInit (ethState.u.included.blockNumber,
-                                                     ethState.u.included.transactionIndex,
-                                                     ethState.u.included.blockTimestamp,
-                                                     cryptoFeeBasisCreateAsETH (cryptoUnitTake(wallet->unitForFee),
-                                                                                ethFeeBasisCreate (ethState.u.included.gasUsed,
-                                                                                                   transactionGetGasPrice(transaction))),
-                                                     CRYPTO_TRUE,
-                                                     NULL);
-            break;
-
-        case TRANSACTION_STATUS_ERRORED:
-            state = cryptoTransferStateErroredInit((BRCryptoTransferSubmitError) {
-                CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN
-            });
-            break;
-    }
-    cryptoTransferSetState (transfer, state);
-
     // If this transfer is referenced, fill out the referencer's fee basis.
     ewmHandleLogFeeBasis      (manager, ethHash, transfer, NULL, NULL);
     ewmHandleExchangeFeeBasis (manager, ethHash, transfer, NULL, NULL);

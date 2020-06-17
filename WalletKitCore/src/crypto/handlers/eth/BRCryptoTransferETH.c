@@ -88,6 +88,32 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
 }
 #endif
 
+extern BRCryptoTransferState
+cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
+                              BRCryptoFeeBasis feeBasis) {
+    switch (status.type) {
+        case TRANSACTION_STATUS_UNKNOWN:
+            return cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
+        case TRANSACTION_STATUS_QUEUED:
+        case TRANSACTION_STATUS_PENDING:
+            return cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED);
+
+        case TRANSACTION_STATUS_INCLUDED:
+            return cryptoTransferStateIncludedInit (status.u.included.blockNumber,
+                                                    status.u.included.transactionIndex,
+                                                    status.u.included.blockTimestamp,
+                                                    cryptoFeeBasisTake (feeBasis),
+                                                    CRYPTO_TRUE,
+                                                    NULL);
+            break;
+
+        case TRANSACTION_STATUS_ERRORED:
+            return cryptoTransferStateErroredInit((BRCryptoTransferSubmitError) {
+                CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN
+            });
+    }
+}
+
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
@@ -100,15 +126,15 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            BREthereumTransferBasisType type,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
-                                                                 CRYPTO_NETWORK_TYPE_ETH,
-                                                                 unit,
-                                                                 unitForFee,
+                                                                CRYPTO_NETWORK_TYPE_ETH,
+                                                                unit,
+                                                                unitForFee,
                                                                 feeBasisEstimated,
                                                                 amount,
                                                                 direction,
                                                                 sourceAddress,
                                                                 targetAddress);
-     BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
 
     transfer->account = account;
     transfer->type = type;
@@ -130,6 +156,8 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
     BRCryptoAmount  amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethEtherGetValue (ethAmount, WEI));
 
     BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
+    BRCryptoFeeBasis confirmedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasis(ethTransaction));
+
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
     BRCryptoAddress  target = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));
 
@@ -147,7 +175,14 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
 
     transfer->basis.transaction = ethTransaction;
 
+    cryptoTransferSetState (transferBase,
+                            cryptoTransferDeriveStateETH (transactionGetStatus(ethTransaction),
+                                                          confirmedFeeBasis));
+
+
+    cryptoFeeBasisGive(confirmedFeeBasis);
     cryptoFeeBasisGive(estimatedFeeBasis);
+
     cryptoAddressGive(source);
     cryptoAddressGive(target);
 
@@ -188,12 +223,11 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
 
     transfer->basis.log = ethLog;
 
-    //        // Only at this point do we know that log->data is a number.
-    //        BRRlpItem  item  = rlpDataGetItem (coder, logGetDataShared(log));
-    //        UInt256 value = rlpDecodeUInt256(coder, item, 1);
-    //        rlpItemRelease (coder, item);
-    //
-    //        BREthereumAmount  amount = ethAmountCreateToken (ethTokenQuantityCreate(token, value));
+    cryptoTransferSetState (transferBase,
+                            cryptoTransferDeriveStateETH (logGetStatus(ethLog),
+                                                          estimatedFeeBasis));
+
+    cryptoFeeBasisGive(estimatedFeeBasis);
 
     cryptoAddressGive(source);
     cryptoAddressGive(target);
@@ -235,12 +269,11 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
 
     transfer->basis.exchange = ethExchange;
 
-    //        // Only at this point do we know that log->data is a number.
-    //        BRRlpItem  item  = rlpDataGetItem (coder, logGetDataShared(log));
-    //        UInt256 value = rlpDecodeUInt256(coder, item, 1);
-    //        rlpItemRelease (coder, item);
-    //
-    //        BREthereumAmount  amount = ethAmountCreateToken (ethTokenQuantityCreate(token, value));
+    cryptoTransferSetState (transferBase,
+                            cryptoTransferDeriveStateETH (ethExchangeGetStatus(ethExchange),
+                                                          estimatedFeeBasis));
+
+    cryptoFeeBasisGive(estimatedFeeBasis);
 
     cryptoAddressGive(source);
     cryptoAddressGive(target);
