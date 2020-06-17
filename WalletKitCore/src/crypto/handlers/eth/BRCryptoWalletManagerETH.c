@@ -500,6 +500,7 @@ cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH manager,
         assert (NULL != wallet);
 
         cryptoWalletManagerAddWallet (&manager->base, wallet);
+
         cryptoWalletManagerGenerateWalletEvent (&manager->base, wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_CREATED
         });
@@ -798,10 +799,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             bool needExchange    = false;
 
             // Use `data` to determine the need for {Transaction,Log,Exchange)
-#ifdef REFACTOR
-            // from meta-data
-#endif
-            const char *data = "0x";  //
+            const char *data = cwmLookupAttributeValueForKey ("input",
+                                                              bundle->attributesCount,
+                                                              (const char **) bundle->attributeKeys,
+                                                              (const char **) bundle->attributeVals);
+            assert (NULL != data);
 
             // A Primary Transaction of ETH.  The Transaction produces one and only one Transfer
             if (strcasecmp (data, "0x") == 0) {
