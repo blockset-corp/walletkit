@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <memory.h>
 
-static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
+char *rippleAlphabet = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 
 // A Ripple Address - 20 bytes
 #define ADDRESS_BYTES   (20)

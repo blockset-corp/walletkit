@@ -31,6 +31,10 @@ public final class CoreCoder: Coder {
         return CoreCoder (core: cryptoCoderCreate (CRYPTO_CODER_BASE58CHECK)!)
     }
 
+    public static var base58ripple: CoreCoder {
+        return CoreCoder (core: cryptoCoderCreate (CRYPTO_CODER_BASE58RIPPLE)!)
+    }
+
     // The Core representation
     internal let core: BRCryptoCoder
 

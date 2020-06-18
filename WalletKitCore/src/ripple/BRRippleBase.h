@@ -80,4 +80,7 @@ typedef uint32_t BRRippleSourceTag;
 typedef uint32_t BRRippleDestinationTag;
 
 #define RIPPLE_XRP_TO_DROPS(xrp)   (1000000 * (xrp))   // 1e6 drops/xrp
+
+extern char *rippleAlphabet;
+
 #endif
