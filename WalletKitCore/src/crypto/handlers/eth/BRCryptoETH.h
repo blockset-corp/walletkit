@@ -128,6 +128,10 @@ cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer);
 extern const BREthereumHash
 cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer);
 
+extern BRCryptoTransferState
+cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
+                              BRCryptoFeeBasis feeBasis);
+
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletETHRecord {

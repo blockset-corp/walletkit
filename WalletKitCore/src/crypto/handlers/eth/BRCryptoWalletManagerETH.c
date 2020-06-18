@@ -29,6 +29,12 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                                            BRCryptoCurrency currency,
                                            BRCryptoUnit     unitDefault);
 
+static void
+ewmReportTransferStatusAsEvent (BRCryptoWalletManager manager,
+                                BRCryptoWallet wallet,
+                                BRCryptoTransfer transfer,
+                                BRCryptoTransferState oldState);
+
 // MARK: - BCS Listener Forward Declarations
 
 static void
@@ -500,6 +506,7 @@ cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH manager,
         assert (NULL != wallet);
 
         cryptoWalletManagerAddWallet (&manager->base, wallet);
+
         cryptoWalletManagerGenerateWalletEvent (&manager->base, wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_CREATED
         });
@@ -798,10 +805,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             bool needExchange    = false;
 
             // Use `data` to determine the need for {Transaction,Log,Exchange)
-#ifdef REFACTOR
-            // from meta-data
-#endif
-            const char *data = "0x";  //
+            const char *data = cwmLookupAttributeValueForKey ("input",
+                                                              bundle->attributesCount,
+                                                              (const char **) bundle->attributeKeys,
+                                                              (const char **) bundle->attributeVals);
+            assert (NULL != data);
 
             // A Primary Transaction of ETH.  The Transaction produces one and only one Transfer
             if (strcasecmp (data, "0x") == 0) {
@@ -1143,7 +1151,8 @@ static void
 ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
                       BREthereumHash hash,
                       BRCryptoTransfer transferTransaction,
-                      BRCryptoTransfer transferLog) {
+                      BRCryptoTransfer transferLog,
+                      BRCryptoWallet walletLog) {
     BRCryptoWallet wallet = manager->base.wallet; // Wallet Holding ETH
 
     // Find the ETH transfer, if needed
@@ -1156,8 +1165,12 @@ ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
     if (NULL == transferTransaction) return;
 
     // If we have a TOK transfer, set the fee basis.
-    if (NULL != transferLog)
+    if (NULL != transferLog) {
+        BRCryptoTransferState oldState = cryptoTransferGetState (transferLog);
         cryptoTransferSetState (transferLog, cryptoTransferGetState(transferTransaction));
+        ewmReportTransferStatusAsEvent (&manager->base, walletLog, transferLog, oldState);
+        cryptoTransferStateRelease(&oldState);
+    }
 
     // but if we don't have a TOK transfer, find every transfer referencing `hash` and set the basis.
     else
@@ -1175,8 +1188,10 @@ ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
                 if (NULL != log) {
                     BREthereumHash transactionHash;
                     if (ETHEREUM_BOOLEAN_TRUE == logExtractIdentifier (log, &transactionHash, NULL) &&
-                        ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash))
-                        ewmHandleLogFeeBasis (manager, hash, transferTransaction, transferLog);
+                        ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash)) {
+                        ewmHandleLogFeeBasis (manager, hash, transferTransaction, transferLog, wallet);
+                        break;
+                    }
                 }
             }
         }
@@ -1186,44 +1201,52 @@ static void
 ewmHandleExchangeFeeBasis (BRCryptoWalletManagerETH manager,
                            BREthereumHash hash,
                            BRCryptoTransfer transferTransaction,
-                           BRCryptoTransfer transferExchange) {
+                           BRCryptoTransfer transferExchange,
+                           BRCryptoWallet walletExchange) {
     BRCryptoWallet wallet = manager->base.wallet; // Wallet Holding ETH
 
-#ifdef REFACTOR
     // Find the ETH transfer, if needed
-    if (NULL == transferTransaction)
-        transferTransaction = walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
+    if (NULL == transferTransaction) {
+        BRCryptoHash cryHash = cryptoHashCreateAsETH(hash);
+        transferTransaction = cryptoWalletGetTransferByHash (wallet, cryHash); //  walletGetTransferByIdentifier (ewmGetWallet(ewm), hash);
+        cryptoHashGive(cryHash);
+    }
+
 
     // If none exists, then the transaction hasn't been 'synced' yet.
     if (NULL == transferTransaction) return;
 
     // If we have an exchange transfer, set the fee basis.
-    if (NULL != transferExchange)
-        transferSetFeeBasis(transferExchange, transferGetFeeBasis(transferTransaction));
+    if (NULL != transferExchange) {
+        BRCryptoTransferState oldState = cryptoTransferGetState (transferExchange);
+        cryptoTransferSetState (transferExchange, cryptoTransferGetState(transferTransaction));
+        ewmReportTransferStatusAsEvent (&manager->base, walletExchange, transferExchange, oldState);
+        cryptoTransferStateRelease(&oldState);
+    }
 
     // but if we don't have an exchanage transfer, find every transfer referencing `hash` and set the basis.
     else
-        for (size_t wid = 0; wid < array_count(ewm->wallets); wid++) {
-            BREthereumWallet wallet = ewm->wallets[wid];
+        for (size_t wid = 0; wid < array_count(manager->base.wallets); wid++) {
+            BRCryptoWallet wallet = manager->base.wallets[wid];
 
             // We are only looking for TOK transfers (non-ETH).
-            if (wallet == ewm->walletHoldingEther) continue;
+            if (wallet == manager->base.wallet) continue;
 
-            size_t tidLimit = walletGetTransferCount (wallet);
-            for (size_t tid = 0; tid < tidLimit; tid++) {
-                transferExchange = walletGetTransferByIndex (wallet, tid);
+            for (size_t tid = 0; tid < array_count(wallet->transfers); tid++) {
+                transferExchange = wallet->transfers[tid];
 
                 // Look for a log that has a matching transaction hash
-                BREthereumExchange exchange = transferGetBasisExchange(transferExchange);
+                BREthereumExchange exchange = cryptoTransferCoerce(transferExchange)->basis.exchange;
                 if (NULL != exchange) {
                     BREthereumHash transactionHash;
                     if (ETHEREUM_BOOLEAN_TRUE == ethExchangeExtractIdentifier (exchange, &transactionHash, NULL) &&
-                        ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash))
-                        ewmHandleExchangeFeeBasis (ewm, hash, transferTransaction, transferExchange);
+                        ETHEREUM_BOOLEAN_TRUE == ethHashEqual (transactionHash, hash)) {
+                        ewmHandleExchangeFeeBasis (manager, hash, transferTransaction, transferExchange, wallet);
+                        break;
+                    }
                 }
             }
         }
-#endif
 }
 
 static void
@@ -1259,45 +1282,15 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = { cryptoTransferTake (transfer) }}
         });
-
-        // If this transfer is referenced by a log, fill out the log's fee basis.
-        ewmHandleLogFeeBasis      (manager, ethHash, transfer, NULL);
-        ewmHandleExchangeFeeBasis (manager, ethHash, transfer, NULL);
     }
 
     else {
 
     }
 
-    BRCryptoTransferState state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
-    BREthereumTransactionStatus ethState = transactionGetStatus (transaction);
-    switch (ethState.type) {
-        case TRANSACTION_STATUS_UNKNOWN:
-            state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
-            break;
-        case TRANSACTION_STATUS_QUEUED:
-        case TRANSACTION_STATUS_PENDING:
-            state = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED);
-            break;
-
-        case TRANSACTION_STATUS_INCLUDED:
-            state = cryptoTransferStateIncludedInit (ethState.u.included.blockNumber,
-                                                     ethState.u.included.transactionIndex,
-                                                     ethState.u.included.blockTimestamp,
-                                                     cryptoFeeBasisCreateAsETH (cryptoUnitTake(wallet->unitForFee),
-                                                                                ethFeeBasisCreate (ethState.u.included.gasUsed,
-                                                                                                   transactionGetGasPrice(transaction))),
-                                                     CRYPTO_TRUE,
-                                                     NULL);
-            break;
-
-        case TRANSACTION_STATUS_ERRORED:
-            state = cryptoTransferStateErroredInit((BRCryptoTransferSubmitError) {
-                CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN
-            });
-            break;
-    }
-    cryptoTransferSetState (transfer, state);
+    // If this transfer is referenced, fill out the referencer's fee basis.
+    ewmHandleLogFeeBasis      (manager, ethHash, transfer, NULL, NULL);
+    ewmHandleExchangeFeeBasis (manager, ethHash, transfer, NULL, NULL);
 
     if (needStatusEvent) {
         BREthereumHashString hashString;
@@ -1507,7 +1500,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         });
 
         // If this transfer references a transaction, fill out this log's fee basis
-        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transfer->base);
+        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transfer->base, &wallet->base);
 
         oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
