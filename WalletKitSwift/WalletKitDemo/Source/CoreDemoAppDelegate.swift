@@ -48,7 +48,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var btcPeer: NetworkPeer? = nil
     var btcPeerUse = false
 
-    var clearPersistentData: Bool = false
+    var clearPersistentData: Bool = true
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -119,10 +119,10 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         currencyCodesToMode = [
             "btc" : .api_only,
-            "eth" : .api_only,
-            "bch" : .p2p_only,
-            "xrp" : .api_only,
-            "hbar" : .api_only
+//            "eth" : .api_only,
+            "bch" : .api_only,
+//            "xrp" : .api_only,
+//            "hbar" : .api_only
             ]
         if mainnet {
 

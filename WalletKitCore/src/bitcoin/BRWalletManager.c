@@ -1365,6 +1365,18 @@ BRWalletManagerCreateTransaction (BRWalletManager manager,
     BRTransaction *transaction = BRWalletCreateTransactionWithFeePerKb (wallet, feePerKb, amount, addr.s);
     BRTransactionWithState txnWithState = (NULL != transaction) ? BRWalletManagerAddTransaction (manager, transaction, NULL) : NULL;
 
+    uint64_t fee = BRWalletFeeForTx(wallet, transaction);
+    printf ("TST: CreateTransfer: fee: %llu, size/vSize: %zu/%zu, feePerKB(size/vSize): %llu/%llu\n",
+            fee,
+            BRTransactionSize(transaction),
+            BRTransactionVSize(transaction),
+            (1000 * fee) / BRTransactionSize(transaction),
+            (1000 * fee) / BRTransactionVSize(transaction));
+    printf ("TST: CreateTransfer: TX: %p, inputs/outputs: %zu/%zu\n",
+            transaction,
+            transaction->inCount,
+            transaction->outCount);
+
     BRTransaction *ownedTransaction = NULL;
     if (NULL != txnWithState) {
         BRTransactionWithStateSetResolved (txnWithState);  // Always resolved if created
@@ -1551,6 +1563,8 @@ BRWalletManagerEstimateFeeForTransfer (BRWalletManager manager,
     uint64_t fee  = (0 == transferAmount ? 0 : BRWalletFeeForTxAmountWithFeePerKb (wallet, feePerKb, transferAmount));
     uint32_t sizeInByte = (uint32_t) ((1000 * fee)/ feePerKb);
     pthread_mutex_unlock (&manager->lock);
+
+    printf ("TST: EstimateFee: fee: %llu, size: %u, feePerKB: %llu, Amount: %llu\n", fee, sizeInByte, feePerKb, transferAmount);
 
     bwmSignalWalletEvent(manager,
                          wallet,

@@ -34,6 +34,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      enableAddressSanitizer = "YES"
+      enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -56,8 +58,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "era(C)"
+            argument = "ginger"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "era(C)"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "green"
@@ -73,6 +79,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "infant"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "pyramid"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

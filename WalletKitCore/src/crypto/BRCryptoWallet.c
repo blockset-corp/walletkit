@@ -676,6 +676,8 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
             uint64_t value = cryptoAmountGetIntegerRaw (amount, &overflow);
             if (CRYPTO_TRUE == overflow) { return NULL; }
 
+            printf ("TST: CreateTransfer: fee-per-KB (expected): %llu\n", cryptoFeeBasisAsBTC(estimatedFeeBasis));
+
             BRTransaction *tid = BRWalletManagerCreateTransaction (bwm, wid, value, address,
                                                                    cryptoFeeBasisAsBTC(estimatedFeeBasis));
             transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,

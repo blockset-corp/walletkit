@@ -979,7 +979,21 @@ cryptoWalletManagerSubmit (BRCryptoWalletManager cwm,
                                                 cryptoTransferAsBTC(transfer),
                                                 &seed,
                                                 sizeof (seed))) {
-                cryptoWalletManagerSubmitSigned (cwm, wallet, transfer);
+                BRTransaction *tx = cryptoTransferAsBTC(transfer);
+
+                uint64_t fee = BRWalletFeeForTx(cryptoWalletAsBTC (wallet), tx);
+                printf ("TST: Submit(Signed): fee: %llu, size/vSize: %zu/%zu, feePerKB(size/vSize): %llu/%llu\n",
+                        fee,
+                        BRTransactionSize(tx),
+                        BRTransactionVSize(tx),
+                        (1000 * fee) / BRTransactionSize(tx),
+                        (1000 * fee) / BRTransactionVSize(tx));
+                printf ("TST: Submit(Signed): TX: %p, inputs/outputs: %zu/%zu\n",
+                        tx,
+                        tx->inCount,
+                        tx->outCount);
+
+//                cryptoWalletManagerSubmitSigned (cwm, wallet, transfer);
             }
             break;
         }
@@ -1255,6 +1269,7 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
             uint64_t btcAmount       = cryptoAmountGetIntegerRaw (amount, &overflow);
             assert(CRYPTO_FALSE == overflow);
 
+            printf ("TST: EstimateFee: fee-per-KB: %llu\n", feePerKB);
             BRWalletManagerEstimateFeeForTransfer (bwm,
                                                    wid,
                                                    cookie,
