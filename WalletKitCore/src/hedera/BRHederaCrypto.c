@@ -66,6 +66,7 @@ static void _deriveKeyImpl(BRKey *key, const void *seed, size_t seedLen, int dep
         var_clean(&secret, &chainCode);
     }
 }
+#undef ED25519_SEED_KEY
 
 static void _hederaDeriveKey(BRKey *key, const void *seed, size_t seedLen, int depth, ...)
 {

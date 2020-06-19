@@ -112,6 +112,10 @@ runRippleTest (void /* ... */);
 extern void
 runHederaTest (void);
 
+// Tezos
+extern void
+runTezosTest (void);
+
 #ifdef __cplusplus
 }
 #endif

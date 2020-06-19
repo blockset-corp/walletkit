@@ -131,6 +131,20 @@ let package = Package(
                 ])
             ]
         ),
+        
+        // Custom compilation flags for blake2 - to silence warnings
+        .target(
+            name: "WalletKitBlake2",
+            dependencies: [],
+            path: "vendor/blake2",
+            exclude: [],
+            publicHeadersPath: nil,
+            cSettings: [
+                .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks"
+                ])
+            ]
+        ),
 
         // MARK: - Core Misc Targets
 
