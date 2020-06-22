@@ -39,8 +39,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerBTC() {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
@@ -108,7 +109,7 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         // Connect
         listener.transferCount = 5
         manager.connect()
-        wait (for: [self.listener.transferExpectation], timeout: 5)
+        wait (for: [self.listener.transferExpectation], timeout: 30)
 
         manager.disconnect()
         wait (for: [walletManagerDisconnectExpectation], timeout: 5)
@@ -118,10 +119,11 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
     }
 
     func testWalletManagerETH () {
-        isMainnet = false
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
         registerCurrencyCodes = ["brd"]
         currencyCodesToMode = ["eth":WalletManagerMode.api_only]
-        prepareAccount()
 
         let listener = CryptoTestSystemListener (networkCurrencyCodesToMode: currencyCodesToMode,
                                                  registerCurrencyCodes: registerCurrencyCodes,
@@ -211,8 +213,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerXRP() {
         isMainnet = true
-        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareSystem()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
@@ -295,13 +298,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerMigrateBTC () {
         isMainnet = false
+        prepareAccount()
+
         currencyCodesToMode = ["btc":WalletManagerMode.api_only]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
         prepareSystem ()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
