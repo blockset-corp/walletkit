@@ -44,6 +44,7 @@ let package = Package(
                 "WalletKitSQLite",
                 "WalletKitEd25519",
                 "WalletKitHederaProto",
+                "WalletKitBlake2"
             ],
             path: ".",
             sources: ["src/version"],               // Holds BRCryptoVersion.c only

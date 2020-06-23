@@ -57,20 +57,6 @@ extern void
 tezosAccountFree (BRTezosAccount account);
 
 /**
- * Set the tezos address for an account
- *
- * The Tezos address cannot be created offline - the process is for us to create
- * a public key, then some service with currency has to create an account by sending
- * it some HBAR.  That service will then return the account address.
- *
- * @param account
- * @param accountID - account id created from the public key
- *
- * @return account
- */
-extern void tezosAccountSetAddress (BRTezosAccount account, BRTezosAddress accountID);
-
-/**
  * Get the public key for this Tezos account
  *
  * @param account
@@ -78,9 +64,6 @@ extern void tezosAccountSetAddress (BRTezosAccount account, BRTezosAddress accou
  * @return public key
  */
 extern BRKey tezosAccountGetPublicKey (BRTezosAccount account);
-
-extern uint8_t *
-tezosAccountGetPublicKeyBytes (BRTezosAccount account, size_t *bytesCount);
 
 /**
  * Get the Tezos Address from the specified account.
@@ -92,18 +75,15 @@ tezosAccountGetPublicKeyBytes (BRTezosAccount account, size_t *bytesCount);
 extern BRTezosAddress tezosAccountGetAddress (BRTezosAccount account);
 
 /**
- * Get the primary Tezos Address from the specified account.
- *
- * @param account
- *
- * @return address
- */
-extern BRTezosAddress tezosAccountGetPrimaryAddress (BRTezosAccount account);
-
+*
+* Serialize `account`; return `bytes` and set `bytesCount`
+*
+* @param account
+*
+* @return address
+*/
 extern uint8_t * // Caller owns memory and must delete calling "free"
 tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount);
-
-extern int tezosAccountHasPrimaryAddress (BRTezosAccount account);
 
 /**
  * Check if this account has the specified address

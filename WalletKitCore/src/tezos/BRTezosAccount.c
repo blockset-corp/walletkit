@@ -10,6 +10,7 @@
 //
 
 #include "BRTezosAccount.h"
+#include "BRTezosAddress.h"
 #include "support/BRBIP32Sequence.h"
 #include "ed25519/ed25519.h"
 
@@ -25,10 +26,98 @@ struct BRTezosAccountRecord {
     uint8_t publicKey[TEZOS_PUBLIC_KEY_SIZE];
 };
 
+// MARK: Forward Declarations
+
+static BRKey
+deriveTezosPrivateKeyFromSeed (UInt512 seed, uint32_t index);
+
+static void
+tezosKeyGetPublicKey (BRKey key, uint8_t * publicKey);
+
+
+// MARK: -
+
+extern BRTezosAccount
+tezosAccountCreateWithSeed (UInt512 seed) {
+    BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
+    
+    // Private key
+    BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
+
+    tezosKeyGetPublicKey(privateKey, account->publicKey);
+
+    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+
+    return account;
+}
+
+extern BRTezosAccount
+tezosAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
+{
+    assert (bytesCount == TEZOS_PUBLIC_KEY_SIZE);
+    BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
+    
+    memcpy(account->publicKey, bytes, TEZOS_PUBLIC_KEY_SIZE);
+    
+    return account;
+}
+
+extern void
+tezosAccountFree (BRTezosAccount account)
+{
+    assert (account);
+    tezosAddressFree (account->address);
+    free (account);
+}
+
+
+// MARK: -
+
+extern BRKey
+tezosAccountGetPublicKey (BRTezosAccount account) {
+    assert(account);
+    BRKey key;
+    memset(&key, 0x00, sizeof(BRKey));
+    memcpy(key.pubKey, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    return key;
+}
+
+extern BRTezosAddress
+tezosAccountGetAddress (BRTezosAccount account)
+{
+    assert(account);
+    assert(account->address);
+    return tezosAddressClone (account->address);
+}
+
+extern uint8_t *
+tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount) {
+    assert (NULL != bytesCount);
+    assert (NULL != account);
+
+    *bytesCount = TEZOS_PUBLIC_KEY_SIZE;
+    uint8_t *bytes = calloc (1, *bytesCount);
+    
+    // Copy the public key
+    memcpy(bytes, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    
+    return bytes;
+}
+
+extern int
+tezosAccountHasAddress (BRTezosAccount account,
+                         BRTezosAddress address) {
+    assert(account);
+    assert(address);
+    assert(account->address);
+    return tezosAddressEqual (account->address, address);
+}
+
 // MARK: - Crypto
 
 // ed25519 child key derivation
-static void _CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
+static void
+_CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
 {
     uint8_t buf[sizeof(BRECPoint) + sizeof(i)];
     UInt512 I;
@@ -55,7 +144,7 @@ static void _CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
 
 // https://github.com/satoshilabs/slips/blob/master/slip-0010.md
 #define ED25519_SEED_KEY "ed25519 seed"
-void
+static void
 ed25519vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_list vlist)
 {
     UInt512 I;
@@ -82,7 +171,7 @@ ed25519vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_
 }
 #undef ED25519_SEED_KEY
 
-void
+static void
 ed25519PrivKeyPath(BRKey * key, const void * seed, size_t seedLen, int depth , ... ){
     va_list ap;
 
@@ -104,50 +193,9 @@ deriveTezosPrivateKeyFromSeed (UInt512 seed, uint32_t index) {
     return privateKey;
 }
 
-void
+static void
 tezosKeyGetPublicKey (BRKey key, uint8_t * publicKey) {
     unsigned char privateKey[64] = {0};
     ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
     memset(privateKey, 0x00, 64);
-}
-
-extern BRKey
-tezosAccountGetPublicKey (BRTezosAccount account) {
-    assert(account);
-    BRKey key;
-    memset(&key, 0x00, sizeof(BRKey));
-    memcpy(key.pubKey, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
-    return key;
-}
-
-extern uint8_t *
-tezosAccountGetPublicKeyBytes (BRTezosAccount account, size_t *bytesCount) {
-    uint8_t *bytes = malloc (TEZOS_PUBLIC_KEY_SIZE);
-    memcpy (bytes, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
-    *bytesCount = TEZOS_PUBLIC_KEY_SIZE;
-    return bytes;
-}
-
-// MARK: -
-
-extern BRTezosAccount
-tezosAccountCreateWithSeed (UInt512 seed) {
-    BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
-    
-    // Private key
-    BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
-
-    tezosKeyGetPublicKey(privateKey, account->publicKey);
-
-    //TODO:TEZOS set account->address
-
-    return account;
-}
-
-extern BRTezosAccount
-tezosAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
-{
-    // TODO:TEZOS
-    return NULL;
-}
 }

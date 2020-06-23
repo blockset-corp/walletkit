@@ -76,15 +76,10 @@ static void printByteString(const char* message, uint8_t * bytes, size_t byteSiz
 
 static void
 testCreateTezosAccountWithSeed (void) {
-    //const char * paper_key = "narrow ordinary minimum tennis casual wash soul pretty impulse provide panic donor three long inquiry";
-    //const char * passphrase = "nmkkzarm.ywzrrhcl@tezos.example.orgdM4M4eKyFv"
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     
     UInt512 seed = UINT512_ZERO;
-    //BRBIP39DeriveKey(seed.u8, paper_key, passphrase);
     BRBIP39DeriveKey(seed.u8, paper_key, NULL); // no passphrase
-    
-    const char* expected_private_key = "b1e9eaa8e418370bf9abd524761c306301d7e49e8783b2cd55060214d6ca0b9d";
     
     uint8_t expectedPubKey[32];
     hex2bin("efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", expectedPubKey);
@@ -93,9 +88,12 @@ testCreateTezosAccountWithSeed (void) {
     assert(account);
     
     BRKey pubKey = tezosAccountGetPublicKey(account);
-    assert(0 == (memcmp(expectedPubKey, pubKey.pubKey, 32)));
+    assert (0 == (memcmp(expectedPubKey, pubKey.pubKey, 32)));
     
-    //BRTezosAddress address = tezosAccountGetAddress(account);
+    BRTezosAddress address = tezosAccountGetAddress (account);
+    
+    const char * expectedAddress = "tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY";
+    assert (0 == strcmp (expectedAddress, tezosAddressAsString(address)));
 }
 
 static void tezosAccountTests() {
