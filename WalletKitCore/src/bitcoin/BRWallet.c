@@ -1065,7 +1065,7 @@ void BRWalletUpdateTransactions(BRWallet *wallet, const UInt256 txHashes[], size
     assert(wallet != NULL);
     assert(txHashes != NULL || txCount == 0);
     pthread_mutex_lock(&wallet->lock);
-    if (blockHeight > wallet->blockHeight) wallet->blockHeight = blockHeight;
+    if (blockHeight != TX_UNCONFIRMED && blockHeight > wallet->blockHeight) wallet->blockHeight = blockHeight;
     
     for (i = 0, j = 0; txHashes && i < txCount; i++) {
         tx = BRSetGet(wallet->allTx, &txHashes[i]);

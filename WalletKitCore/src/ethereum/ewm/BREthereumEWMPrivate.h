@@ -36,7 +36,7 @@ typedef enum {
 (CLIENT_CHANGE_ADD == (ev) ? "Add" \
 : (CLIENT_CHANGE_REM == (ev) ? "Rem" : "Upd"))
 
-#define EWM_REQUEST_ID_UNKNOWN    (UINT_MAX)
+#define EWM_REQUEST_ID_UNKNOWN    (INT_MAX)
 
 //
 // EWM
@@ -121,7 +121,7 @@ struct BREthereumEWMRecord {
     /**
      * An identiifer for a LES/BRD Request
      */
-    unsigned int requestId;
+    int requestId;
 
     /**
      * An EventHandler for Main.  All 'announcements' (via LES (or BRD) hit here.
@@ -152,11 +152,11 @@ struct BREthereumEWMRecord {
         uint64_t begBlockNumber;
         uint64_t endBlockNumber;
 
-        unsigned int ridTransaction;
-        unsigned int ridLog;
+        int ridTransaction;
+        int ridLog;
 
-        unsigned int completedTransaction:1;
-        unsigned int completedLog:1;
+        bool  completedTransaction;
+        bool completedLog;
     } brdSync;
 };
 
@@ -193,7 +193,8 @@ ewmSignalAccountState (BREthereumEWM ewm,
 //
 extern void
 ewmHandleBalance (BREthereumEWM ewm,
-                  BREthereumAmount balance);
+                  BREthereumAmount balance,
+                  BREthereumBoolean force);
 
 extern void
 ewmSignalBalance (BREthereumEWM ewm,
@@ -273,6 +274,22 @@ ewmSignalLog (BREthereumEWM ewm,
               OwnershipGiven BREthereumLog log);
 
 //
+// Signal/Handle Exchange (x-BCS Callback)
+//
+// See the comments for ewm{Handle,Signal}Transaction() above
+//
+extern void
+ewmHandleExchange (BREthereumEWM ewm,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
+
+extern void
+ewmSignalExchange (BREthereumEWM ewm,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
+
+
+//
 // Signal/Handle Save Blocks (BCS Callback)
 //
 extern void
@@ -309,6 +326,11 @@ extern void
 ewmHandleSaveLog (BREthereumEWM ewm,
                   BREthereumLog log,
                   BREthereumClientChangeType type);
+
+extern void
+ewmHandleSaveExchange (BREthereumEWM ewm,
+                       BREthereumExchange exchange,
+                       BREthereumClientChangeType type);
 
 extern void
 ewmHandleSaveWallet (BREthereumEWM ewm,
@@ -452,15 +474,17 @@ ewmSignalAnnounceTransaction(BREthereumEWM ewm,
 typedef struct {
     BREthereumHash hash;
     BREthereumAddress contract;
-    int topicCount;
+    size_t topicCount;
     char **arrayTopics;
-    char *data;
-    UInt256 gasPrice;
-    uint64_t gasUsed;
-    uint64_t logIndex;
+    UInt256 value;
+
+    BREthereumHash blockHash;
     uint64_t blockNumber;
     uint64_t blockTransactionIndex;
     uint64_t blockTimestamp;
+    uint64_t gasUsed;
+
+    uint64_t logIndex;
 } BREthereumEWMClientAnnounceLogBundle;
 
 static inline void
@@ -468,19 +492,50 @@ ewmClientAnnounceLogBundleRelease (BREthereumEWMClientAnnounceLogBundle *bundle)
     for (int i = 0; i < bundle->topicCount; i++)
         free (bundle->arrayTopics[i]);
     free (bundle->arrayTopics);
-    free (bundle->data);
+//    free (bundle->data);
     free (bundle);
 }
 
 extern void
 ewmSignalAnnounceLog (BREthereumEWM ewm,
-                            BREthereumEWMClientAnnounceLogBundle *bundle,
-                            int id);
+                      BREthereumEWMClientAnnounceLogBundle *bundle,
+                      int id);
 
 extern void
 ewmHandleAnnounceLog (BREthereumEWM ewm,
-                            BREthereumEWMClientAnnounceLogBundle *bundle,
-                            int id);
+                      BREthereumEWMClientAnnounceLogBundle *bundle,
+                      int id);
+
+/// MARK: - Exchanges
+
+typedef struct {
+    BREthereumHash hash;
+    BREthereumAddress from;
+    BREthereumAddress to;
+    BREthereumAddress contract;
+    UInt256  amount;
+    BREthereumHash blockHash;
+    uint64_t blockNumber;
+    uint64_t blockTransactionIndex;
+    uint64_t blockTimestamp;
+    uint64_t gasUsed;
+    uint64_t exchangeIndex;
+} BREthereumEWMClientAnnounceExchangeBundle;
+
+static inline void
+ewmClientAnnounceExchangeBundleRelease (BREthereumEWMClientAnnounceExchangeBundle *bundle) {
+    free (bundle);
+}
+
+extern void
+ewmSignalAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int id);
+
+extern void
+ewmHandleAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int id);
 
 /// MARK: - Account Complete
 
@@ -637,6 +692,7 @@ extern const unsigned int ewmEventTypesCount;
 
 extern const char *ewmFileServiceTypeTransactions;
 extern const char *ewmFileServiceTypeLogs;
+extern const char *ewmFileServiceTypeExchanges;
 extern const char *ewmFileServiceTypeBlocks;
 extern const char *ewmFileServiceTypeNodes;
 extern const char *ewmFileServiceTypeTokens;

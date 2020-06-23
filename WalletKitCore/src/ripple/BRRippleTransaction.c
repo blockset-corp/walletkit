@@ -323,11 +323,11 @@ rippleTransactionSerializeImpl (BRRippleTransaction transaction,
     BRRippleField fields[11];
 
     transaction->fee = calculateFee(transaction);
-    int num_fields = setFieldInfo(fields, transaction, signature, sig_length);
+    uint32_t num_fields = (uint32_t) setFieldInfo(fields, transaction, signature, sig_length);
 
     BRRippleSerializedTransaction signedBytes = NULL;
 
-    int size = rippleSerialize(fields, num_fields, 0, 0);
+    uint32_t size = rippleSerialize(fields, num_fields, 0, 0);
     if (size > 0) {
         // I guess we will be sending back something
         // TODO validate the serialized bytes
@@ -599,6 +599,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
                 } else if (10 == field->fieldCode) {
                     transaction->payment.deliverMin = field->data.amount;
                 }
+                break;
             case 7: // Blob data
                 if (3 == field->fieldCode) { // public key
                     transaction->publicKey = field->data.publicKey;
@@ -612,6 +613,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
                 } else if (3 == field->fieldCode) { // target address
                     transaction->payment.targetAddress = field->data.address;
                 }
+                break;
             default:
                 break;
         }
@@ -619,7 +621,7 @@ void getFieldInfo(BRArrayOf(BRRippleField) fieldArray, int fieldCount, BRRippleT
 }
 
 extern BRRippleTransaction
-rippleTransactionCreateFromBytes(uint8_t *bytes, int length)
+rippleTransactionCreateFromBytes(uint8_t *bytes, uint32_t length)
 {
     BRArrayOf(BRRippleField) fieldArray;
     array_new(fieldArray, 15);
@@ -650,6 +652,11 @@ rippleTransactionCreateFromBytes(uint8_t *bytes, int length)
     transaction->signedBytes->buffer = calloc(1, length);
     memcpy(transaction->signedBytes->buffer, bytes, length);
     transaction->signedBytes->size = length;
+    createTransactionHash(transaction->signedBytes);
+
+    // Set the feeBasis values when creating a tx from raw bytes
+    transaction->feeBasis.costFactor = 1;
+    transaction->feeBasis.pricePerCostFactor = transaction->fee;
 
     return transaction;
 }

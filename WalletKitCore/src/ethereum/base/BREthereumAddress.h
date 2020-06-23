@@ -100,9 +100,9 @@ extern BREthereumBoolean
 ethAddressEqual (BREthereumAddress address1,
                  BREthereumAddress address2);
 
-static inline int
+static inline size_t
 ethAddressHashValue (BREthereumAddress address) {
-    return (int) ((UInt160 *) &address)->u32[0];
+    return (size_t) ((UInt160 *) &address)->u32[0];
 }
 
 static inline int

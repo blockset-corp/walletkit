@@ -292,7 +292,7 @@ walletUnhandleTransfer (BREthereumWallet wallet,
                         BREthereumTransfer transfer) {
     int index = walletLookupTransferIndex (wallet, transfer);
     assert (-1 != index);
-    array_rm(wallet->transfers, index);
+    array_rm(wallet->transfers, (size_t) index);
 }
 
 private_extern int
@@ -389,18 +389,29 @@ walletUpdateBalance (BREthereumWallet wallet) {
                          ? ethAmountGetEther(amount).valueInWEI
                          : ethAmountGetTokenQuantity(amount).valueAsInteger);
 
-        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(transfer)))) {
+        // Will be ZERO if transfer is not for ETH
+        BREthereumEther fee = transferGetFee(transfer, &fee_overflow);
+
+        BREthereumBoolean isSend = ethAddressEqual(wallet->address, transferGetSourceAddress(transfer));
+        BREthereumBoolean isRecv = ethAddressEqual(wallet->address, transferGetTargetAddress(transfer));
+
+        if (ETHEREUM_BOOLEAN_IS_TRUE (isSend)) {
             sent = uint256Add_Overflow(sent, value, &overflow);
+            assert (!overflow);
 
-            BREthereumEther fee = transferGetFee(transfer, &fee_overflow);
             fees = uint256Add_Overflow(fees, fee.valueInWEI, &fee_overflow);
+            assert (!fee_overflow);
         }
-        else
-            recv = uint256Add_Overflow(recv, value, &overflow);
 
-        assert (!overflow);
+        if (ETHEREUM_BOOLEAN_IS_TRUE (isRecv)) {
+            recv = uint256Add_Overflow(recv, value, &overflow);
+            assert (!overflow);
+        }
     }
 
+    // A wallet balance can never be negative; however, as transfers arrive in a sporadic manner,
+    // the balance could be negative until all transfers arrive, eventually.  If negative, we'll
+    // set the balance to zero.
     UInt256 balance = uint256Sub_Negative(recv, sent, &negative);
 
     // If we are going to be changing the balance here then 1) shouldn't we call walletSetBalance()
@@ -409,10 +420,13 @@ walletUpdateBalance (BREthereumWallet wallet) {
 
     if (AMOUNT_ETHER == ethAmountGetType(wallet->balance)) {
         balance = uint256Sub_Negative(balance, fees, &negative);
+        if (negative) balance = UINT256_ZERO;
         wallet->balance = ethAmountCreateEther (ethEtherCreate(balance));
     }
-    else
+    else {
+        if (negative) balance = UINT256_ZERO;
         wallet->balance = ethAmountCreateToken (ethTokenQuantityCreate(ethAmountGetToken (wallet->balance), balance));
+    }
 }
 // Gas Limit
 
@@ -472,7 +486,7 @@ extern int
 transferPredicateStatus (BREthereumTransferStatus status,
                          BREthereumTransfer transfer,
                          unsigned int index) {
-    return transferHasStatus(transfer, status);
+    return ETHEREUM_BOOLEAN_IS_TRUE (transferHasStatus(transfer, status));
 }
 
 extern void
@@ -558,7 +572,7 @@ walletUpdateTransferSorted (BREthereumWallet wallet,
     // transfer might have moved - move it if needed - but for now, remove then insert.
     int index = walletLookupTransferIndex(wallet, transfer);
     assert (-1 != index);
-    array_rm(wallet->transfers, index);
+    array_rm(wallet->transfers, (size_t) index);
     walletInsertTransferSorted(wallet, transfer);
 }
 #pragma clang diagnostic pop
@@ -567,6 +581,35 @@ walletUpdateTransferSorted (BREthereumWallet wallet,
 extern unsigned long
 walletGetTransferCount (BREthereumWallet wallet) {
     return array_count(wallet->transfers);
+}
+
+extern uint64_t
+walletGetTransferCountAsSource (BREthereumWallet wallet) {
+    unsigned int count = 0;
+
+    for (int i = 0; i < array_count(wallet->transfers); i++)
+         if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i]))))
+             count += 1;
+
+    return count;
+}
+
+extern uint64_t
+walletGetTransferNonceMaximumAsSource (BREthereumWallet wallet) {
+    uint64_t nonce = TRANSACTION_NONCE_IS_NOT_ASSIGNED;
+
+#define MAX(x,y)    ((x) >= (y) ? (x) : (y))
+    for (int i = 0; i < array_count(wallet->transfers); i++)
+        if (ETHEREUM_BOOLEAN_IS_TRUE(ethAddressEqual(wallet->address, transferGetSourceAddress(wallet->transfers[i])))) {
+            uint64_t newNonce = (unsigned int) transferGetNonce(wallet->transfers[i]);
+            // wallet->transfers can have a newly created transfer that does not yet have
+            // an assigned nonce - avoid such a transfer.
+            if ( TRANSACTION_NONCE_IS_NOT_ASSIGNED != newNonce  &&
+                (TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce     || newNonce > nonce))
+                nonce = (unsigned int) newNonce;
+        }
+#undef MAX
+    return nonce;
 }
 
 //
@@ -712,7 +755,7 @@ walletStateGetHash (const BREthereumWalletState state) {
 static inline size_t
 walletStateHashValue (const void *t)
 {
-    return ethAddressHashValue(((BREthereumWalletState) t)->address);
+    return (size_t) ethAddressHashValue(((BREthereumWalletState) t)->address);
 }
 
 static inline int

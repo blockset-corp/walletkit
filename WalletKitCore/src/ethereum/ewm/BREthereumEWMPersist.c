@@ -114,6 +114,58 @@ fileServiceTypeLogV1Reader (BRFileServiceContext context,
     return log;
 }
 
+/// MARK: - Exchange Service
+
+#define fileServiceTypeExchanges "exchanges"
+
+enum {
+    EWM_EXCHANGE_VERSION_1
+};
+
+static UInt256
+fileServiceTypeExchangeV1Identifier (BRFileServiceContext context,
+                                     BRFileService fs,
+                                     const void *entity) {
+    const BREthereumExchange exchange = (BREthereumExchange) entity;
+    BREthereumHash hash = ethExchangeGetHash(exchange);
+
+    UInt256 result;
+    memcpy (result.u8, hash.bytes, ETHEREUM_HASH_BYTES);
+    return result;
+}
+
+static uint8_t *
+fileServiceTypeExchangeV1Writer (BRFileServiceContext context,
+                                 BRFileService fs,
+                                 const void* entity,
+                                 uint32_t *bytesCount) {
+    BREthereumEWM ewm = context;
+    BREthereumExchange exchange = (BREthereumExchange) entity;
+
+    BRRlpItem item = ethExchangeRlpEncode (exchange, RLP_TYPE_ARCHIVE, ewm->coder);
+    BRRlpData data = rlpItemGetData (ewm->coder, item);
+    rlpItemRelease (ewm->coder, item);
+
+    *bytesCount = (uint32_t) data.bytesCount;
+    return data.bytes;
+}
+
+static void *
+fileServiceTypeExchangeV1Reader (BRFileServiceContext context,
+                                 BRFileService fs,
+                                 uint8_t *bytes,
+                                 uint32_t bytesCount) {
+    BREthereumEWM ewm = context;
+
+    BRRlpData data = { bytesCount, bytes };
+    BRRlpItem item = rlpDataGetItem (ewm->coder, data);
+
+    BREthereumExchange exchange = ethExchangeRlpDecode (item, RLP_TYPE_ARCHIVE, ewm->coder);
+    rlpItemRelease (ewm->coder, item);
+
+    return exchange;
+}
+
 /// MARK: - Block File Service
 
 #define fileServiceTypeBlocks "blocks"
@@ -321,8 +373,6 @@ fileServiceTypeWalletV1Reader (BRFileServiceContext context,
     return state;
 }
 
-
-#define fileServiceSpecificationsCount      (6)
 static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
     {
         fileServiceTypeTransactions,
@@ -348,6 +398,20 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
                 fileServiceTypeLogV1Identifier,
                 fileServiceTypeLogV1Reader,
                 fileServiceTypeLogV1Writer
+            }
+        }
+    },
+
+    {
+        fileServiceTypeExchanges,
+        EWM_EXCHANGE_VERSION_1,
+        1,
+        {
+            {
+                EWM_EXCHANGE_VERSION_1,
+                fileServiceTypeExchangeV1Identifier,
+                fileServiceTypeExchangeV1Reader,
+                fileServiceTypeExchangeV1Writer
             }
         }
     },
@@ -411,11 +475,12 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
 
 const char *ewmFileServiceTypeTransactions = fileServiceTypeTransactions;
 const char *ewmFileServiceTypeLogs         = fileServiceTypeLogs;
+const char *ewmFileServiceTypeExchanges    = fileServiceTypeExchanges;
 const char *ewmFileServiceTypeBlocks       = fileServiceTypeBlocks;
 const char *ewmFileServiceTypeNodes        = fileServiceTypeNodes;
 const char *ewmFileServiceTypeTokens       = fileServiceTypeTokens;
 const char *ewmFileServiceTypeWallets      = fileServiceTypeWallets;
 
-size_t ewmFileServiceSpecificationsCount = fileServiceSpecificationsCount;
+size_t ewmFileServiceSpecificationsCount = (sizeof (fileServiceSpecifications) / sizeof (BRFileServiceTypeSpecification));
 BRFileServiceTypeSpecification *ewmFileServiceSpecifications = fileServiceSpecifications;
 

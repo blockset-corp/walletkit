@@ -2127,13 +2127,15 @@ bwmAnnounceTransaction (BRWalletManager manager,
                         OwnershipKept uint8_t *transaction,
                         size_t transactionLength,
                         uint64_t timestamp,
-                        uint64_t blockHeight) {
+                        uint64_t blockHeight,
+                        uint8_t  error) {
     bwmSignalAnnounceTransaction (manager,
                                   id,
                                   transaction,
                                   transactionLength,
                                   timestamp,
-                                  blockHeight);
+                                  blockHeight,
+                                  error);
     return 1;
 }
 
@@ -2186,7 +2188,8 @@ bwmHandleAnnounceTransaction (BRWalletManager manager,
                               OwnershipKept uint8_t *transaction,
                               size_t transactionLength,
                               uint64_t timestamp,
-                              uint64_t blockHeight) {
+                              uint64_t blockHeight,
+                              uint8_t  error) {
     assert (eventHandlerIsCurrentThread (manager->handler));
 
     pthread_mutex_lock (&manager->lock);
@@ -2195,7 +2198,8 @@ bwmHandleAnnounceTransaction (BRWalletManager manager,
                                               transaction,
                                               transactionLength,
                                               timestamp,
-                                              blockHeight);
+                                              blockHeight,
+                                              error);
     pthread_mutex_unlock (&manager->lock);
     return 1;
 }

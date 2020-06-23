@@ -173,7 +173,7 @@ public class CoreSystemListener implements SystemListener {
 
                                 // Sort accounts....
                                 system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
-                                        .transform((bytes) -> { serializationData.add(bytes); return null; });
+                                        .transform((bytes) -> { serializationData.add(bytes); return true; });
                             }
                             createWalletManagerIfAppropriate(serializationData, system, network, mode, addressScheme);
                         }

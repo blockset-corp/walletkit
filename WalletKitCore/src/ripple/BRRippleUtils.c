@@ -21,11 +21,11 @@ extern "C" {
 static uint8_t char2int(char input)
 {
     if(input >= '0' && input <= '9')
-        return input - '0';
+        return (uint8_t) (input - '0');
     if(input >= 'A' && input <= 'F')
-        return input - 'A' + 10;
+        return (uint8_t) (input - 'A' + 10);
     if(input >= 'a' && input <= 'f')
-        return input - 'a' + 10;
+        return (uint8_t) (input - 'a' + 10);
     return 0;
 }
     

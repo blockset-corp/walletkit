@@ -11,8 +11,10 @@
 #ifndef BR_Ethereum_Client_H
 #define BR_Ethereum_Client_H
 
+#include <stdbool.h>
 #include "BREthereumBase.h"
 #include "BRCryptoSync.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,12 +74,8 @@ extern "C" {
     (*BREthereumClientHandlerEstimateGas) (BREthereumClientContext context,
                                            BREthereumEWM ewm,
                                            BREthereumWallet wid,
+                                           BREthereumTransfer tid,
                                            BREthereumCookie cookie,
-                                           const char *from,
-                                           const char *to,
-                                           const char *amount,
-                                           const char *gasPrice,
-                                           const char *data,
                                            int rid);
 
     extern BREthereumStatus
@@ -150,7 +148,7 @@ extern "C" {
                                                uint64_t begBlockNumber,
                                                uint64_t endBlockNumber,
                                                int rid);
-    
+
     extern BREthereumStatus
     ewmAnnounceTransaction (BREthereumEWM ewm,
                             int id,
@@ -158,21 +156,18 @@ extern "C" {
                             const char *from,
                             const char *to,
                             const char *contract,
-                            const char *amount, // value
-                            const char *gasLimit,
-                            const char *gasPrice,
+                            UInt256  amount, // value
+                            uint64_t gasLimit,
+                            UInt256  gasPrice,
                             const char *data,
-                            const char *nonce,
-                            const char *gasUsed,
-                            const char *blockNumber,
                             const char *blockHash,
-                            const char *blockConfirmations,
-                            const char *blockTransactionIndex,
-                            const char *blockTimestamp,
-                            // cumulative gas used,
-                            // confirmations
-                            // txreceipt_status
-                            const char *isError);
+                            uint64_t  blockNumber,
+                            uint64_t blockConfirmations,
+                            uint64_t blockTransactionIndex,
+                            uint64_t blockTimestamp,
+                            uint64_t  gasUsed,
+                            uint64_t nonce,
+                            bool isError);
 
     extern void
     ewmAnnounceTransactionComplete (BREthereumEWM ewm,
@@ -191,25 +186,67 @@ extern "C" {
                                        uint64_t endBlockNumber,
                                        int rid);
 
-    extern BREthereumStatus
-    ewmAnnounceLog (BREthereumEWM ewm,
-                    int id,
-                    const char *strHash,
-                    const char *strContract,
-                    int topicCount,
-                    const char **arrayTopics,
-                    const char *strData,
-                    const char *strGasPrice,
-                    const char *strGasUsed,
-                    const char *strLogIndex,
-                    const char *strBlockNumber,
-                    const char *strBlockTransactionIndex,
-                    const char *strBlockTimestamp);
+extern BREthereumStatus
+ewmAnnounceLog (BREthereumEWM ewm,
+                int id,
+                const char *hash,
+                const char *contract,
+                size_t topicsCount,
+                const char **arrayTopics,
+                UInt256 amount,
+                const char *blockHash,
+                uint64_t blockNumber,
+                uint64_t blockTransactionIndex,
+                uint64_t blockTimestamp,
+                uint64_t gasUsed,
+                uint64_t logIndex);
 
     extern void
     ewmAnnounceLogComplete (BREthereumEWM ewm,
                             int id,
                             BREthereumBoolean success);
+
+    /// MARK: - Get Exchanges
+
+    extern BREthereumStatus
+    ewmAnnounceExchange (BREthereumEWM ewm,
+                         int id,
+                         const char *hash,
+                         const char *from,
+                         const char *to,
+                         const char *contract,
+                         UInt256  amount,
+                         const char *blockHash,
+                         uint64_t blockNumber,
+                         uint64_t blockTransactionIndex,
+                         uint64_t blockTimestamp,
+                         uint64_t gasUsed,
+                         uint64_t exchangeIndex);
+
+
+    /// MARK: - Get Transfers
+
+    extern BREthereumStatus
+    ewmAnnounceTransfer (BREthereumEWM ewm,
+                         int id,
+                         const char *hash,
+                         const char *from,
+                         const char *to,
+                         const char *contract,
+                         const char *amount, // value
+                         const char *fee,
+                         uint64_t gasLimit,
+                         UInt256  gasPrice,
+                         const char *data,
+                         uint64_t  nonce,
+                         const char *blockHash,
+                         uint64_t blockNumber,
+                         uint64_t blockConfirmations,
+                         uint64_t blockTransactionIndex,
+                         uint64_t blockTimestamp,
+                         uint64_t gasUsed,
+                         uint64_t logIndex,
+                         bool isError);
 
     /// MARK: - Get Tokens
 
@@ -246,7 +283,7 @@ extern "C" {
 
     extern BREthereumStatus
     ewmAnnounceBlockNumber (BREthereumEWM ewm,
-                            const char *blockNumber,
+                            uint64_t blockNumber,
                             int rid);
 
     /// MARK: - Nonce

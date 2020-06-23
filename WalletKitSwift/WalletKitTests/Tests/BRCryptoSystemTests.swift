@@ -23,8 +23,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemBTC() {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
@@ -111,8 +112,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemModes () {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
@@ -128,8 +130,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemAddressSchemes () {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)

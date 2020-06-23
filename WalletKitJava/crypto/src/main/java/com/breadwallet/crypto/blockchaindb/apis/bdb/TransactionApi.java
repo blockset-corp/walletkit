@@ -11,7 +11,9 @@ import android.support.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.apis.PagedData;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
+import com.breadwallet.crypto.blockchaindb.errors.QueryJsonParseError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
@@ -95,6 +97,23 @@ public class TransactionApi {
         jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, handler);
     }
 
+    public void estimateTransactionFee(String id,
+                                  String hashAsHex,
+                                  byte[] tx,
+                                  CompletionHandler<TransactionFee, QueryError> handler) {
+
+        Multimap<String, String> params = ImmutableListMultimap.of(
+                "estimate_fee", "true");
+
+        Map json = ImmutableMap.of(
+                "blockchain_id", id,
+                "transaction_id", hashAsHex,
+                "data", BaseEncoding.base64().encode(tx));
+
+        jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);
+    }
+
+
     private CompletionHandler<PagedData<Transaction>, QueryError> createPagedResultsHandler(GetChunkedCoordinator<String, Transaction> coordinator,
                                                                                        List<String> chunkedAddresses) {
         List<Transaction> allResults = new ArrayList<>();
@@ -106,7 +125,8 @@ public class TransactionApi {
 
                 if (nextUrl.isPresent()) {
                     submitGetNextTransactions(nextUrl.get(), this);
-
+                } else if (!transactionsAreAllValid(allResults)) {
+                    coordinator.handleError(new QueryJsonParseError());
                 } else {
                     coordinator.handleChunkData(chunkedAddresses, allResults);
                 }
@@ -127,5 +147,32 @@ public class TransactionApi {
     private void getNextTransactions(String nextUrl,
                                      CompletionHandler<PagedData<Transaction>, QueryError> handler) {
         jsonClient.sendGetForArrayWithPaging("transactions", nextUrl, Transaction.class, handler);
+    }
+
+    boolean transactionsAreAllValid (List<Transaction> transactions) {
+        for (Transaction transaction : transactions) {
+            if (!transactionIsValid(transaction))
+                return false;
+        }
+        return true;
+    }
+
+    boolean transactionIsValid (Transaction transaction) {
+        return transactionStatusIsValid(transaction);
+    }
+
+    boolean transactionStatusIsValid(Transaction transaction) {
+        switch (transaction.getStatus()) {
+            case "confirmed":
+            case "submitted":
+            case "failed":
+                return true;
+            case "reverted":
+                return jsonClient.capabilities.hasCapabilities (BdbApiClient.Capabilities.transferStatusRevert);
+            case "rejected":
+                return jsonClient.capabilities.hasCapabilities (BdbApiClient.Capabilities.transferStatusReject);
+            default:
+                return false;
+        }
     }
 }

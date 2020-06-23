@@ -51,7 +51,7 @@ rippleTransactionCreate(BRRippleAddress sourceAddress,
  * @return transaction    a ripple transaction
  */
 extern BRRippleTransaction /* caller must free - rippleTransactionFree */
-rippleTransactionCreateFromBytes(uint8_t *bytes, int length);
+rippleTransactionCreateFromBytes(uint8_t *bytes, uint32_t length);
 
 extern BRRippleTransaction
 rippleTransactionClone (BRRippleTransaction transaction);

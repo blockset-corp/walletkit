@@ -227,7 +227,7 @@ nodeStateEncode (const BREthereumNodeState *state,
             BRRlpItem reasonItem;
             switch (state->u.error.type) {
                 case NODE_ERROR_UNIX:
-                    reasonItem = rlpEncodeUInt64(coder, state->u.error.u.unx, 1);
+                    reasonItem = rlpEncodeUInt64(coder, (uint64_t) state->u.error.u.unx, 1);
                     break;
                 case NODE_ERROR_DISCONNECT:
                     reasonItem = rlpEncodeUInt64(coder, state->u.error.u.disconnect, 1);
@@ -995,7 +995,7 @@ nodeProcessRecvDIS (BREthereumNode node,
                     { .pong =
                         messageDISPongCreate (message.u.ping.to,
                                               message.u.ping.hash,
-                                              time(NULL) + 1000000) },
+                                              (uint64_t) time(NULL) + 1000000) },
                     nodeEndpointGetDISNeighbor(node->local).key }}
             };
             if (NODE_STATUS_ERROR == nodeSend (node, NODE_ROUTE_UDP, pong))
@@ -1681,7 +1681,7 @@ nodeProcess (BREthereumNode node,
                             DIS_MESSAGE_PING,
                             { .ping = messageDISPingCreate (nodeEndpointGetDISNeighbor(node->local).node, // endpointDISCreate(&node->local),
                                                             nodeEndpointGetDISNeighbor(node->remote).node, // endpointDISCreate(&node->remote),
-                                                            time(NULL) + 1000000) },
+                                                            (uint64_t) time(NULL) + 1000000) },
                             nodeEndpointGetDISNeighbor(node->local).key }}
                     };
                     if (NODE_STATUS_ERROR == nodeSend (node, NODE_ROUTE_UDP, message))
@@ -1753,7 +1753,7 @@ nodeProcess (BREthereumNode node,
                                 { .pong =
                                     messageDISPongCreate (message.u.dis.u.ping.to,
                                                           message.u.dis.u.ping.hash,
-                                                          time(NULL) + 1000000) },
+                                                          (uint64_t) time(NULL) + 1000000) },
                                 nodeEndpointGetDISNeighbor (nodeGetLocalEndpoint(node)).key }}
                         };
                         // TODO: We could block here - need another state...
@@ -2263,7 +2263,7 @@ nodeDiscover (BREthereumNode node,
             DIS_MESSAGE_FIND_NEIGHBORS,
             { .findNeighbors =
                 messageDISFindNeighborsCreate (nodeEndpointGetDISNeighbor(endpoint).key,
-                                               time(NULL) + 1000000) },
+                                               (uint64_t) time(NULL) + 1000000) },
             nodeEndpointGetDISNeighbor(nodeGetLocalEndpoint(node)).key }}
     };
 

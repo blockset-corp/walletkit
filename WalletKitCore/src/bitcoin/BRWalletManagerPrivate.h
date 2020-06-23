@@ -160,7 +160,8 @@ bwmHandleAnnounceTransaction (BRWalletManager manager,
                               OwnershipKept uint8_t *transaction,
                               size_t transactionLength,
                               uint64_t timestamp,
-                              uint64_t blockHeight);
+                              uint64_t blockHeight,
+                              uint8_t  error);
 
 extern void
 bwmSignalAnnounceTransaction (BRWalletManager manager,
@@ -168,7 +169,8 @@ bwmSignalAnnounceTransaction (BRWalletManager manager,
                               OwnershipKept uint8_t *transaction,
                               size_t transactionLength,
                               uint64_t timestamp,
-                              uint64_t blockHeight);
+                              uint64_t blockHeight,
+                              uint8_t  error);
 
 extern void
 bwmHandleAnnounceTransactionComplete (BRWalletManager manager,

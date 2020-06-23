@@ -97,6 +97,15 @@ typedef void
                              OwnershipGiven BREthereumLog log);
 
 /**
+ *
+ **/
+typedef enum {
+    BCS_CALLBACK_EXCHANGE_ADDED,
+    BCS_CALLBACK_EXCHANGE_UPDATED,
+    BCS_CALLBACK_EXCHANGE_DELETED,
+} BREthereumBCSCallbackExchangeType;
+
+/**
  * Save Blocks
  */
 typedef void

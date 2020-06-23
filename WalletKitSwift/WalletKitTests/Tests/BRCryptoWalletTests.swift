@@ -23,15 +23,10 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
     func runWalletBTCTest (mode: WalletManagerMode) {
         isMainnet = false
-        currencyCodesToMode = ["btc":mode]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
+        prepareAccount ()
 
-         prepareSystem ()
+        currencyCodesToMode = ["btc":mode]
+        prepareSystem ()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
         listener.managerHandlers += [
@@ -94,9 +89,10 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
         // Connect and wait for a number of transfers
         listener.transferCount = 10
+        listener.transferWallet = wallet
         manager.connect()
         // In P2P mode we should get 10 transfers in much less than 360 seconds.
-        wait (for: [listener.transferExpectation], timeout: (mode == .p2p_only ? 360 : 10))
+        wait (for: [listener.transferExpectation], timeout: (mode == .p2p_only ? 360 : 30))
 
         // Try again
         transfer = wallet.createTransfer (target: transferTargetAddress,
@@ -172,13 +168,9 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
     func testWalletBCH() {
         isMainnet = false
+        prepareAccount ()
+
         currencyCodesToMode = ["bch":WalletManagerMode.p2p_only]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
         prepareSystem ()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
@@ -204,16 +196,12 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         XCTAssertTrue (wallet.hasAddress(walletAddress))
     }
 
-    func testWalletETH() {
-        isMainnet = false
+    func testWalletETH() {        
+        isMainnet = true
+        prepareAccount ()
+
         registerCurrencyCodes = ["brd"]
         currencyCodesToMode = ["eth":WalletManagerMode.api_only]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
         let listener = CryptoTestSystemListener (networkCurrencyCodesToMode: currencyCodesToMode,
                                                   registerCurrencyCodes: registerCurrencyCodes,
                                                   isMainnet: isMainnet)
@@ -308,9 +296,9 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
     func testWalletXRP() {
         isMainnet = true
-        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareAccount (identifier: "loan(C)")
 
+        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareSystem()
 
         // Connect and wait for a number of transfers

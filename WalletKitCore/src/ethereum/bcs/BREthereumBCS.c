@@ -516,7 +516,7 @@ bcsUnpendTransaction (BREthereumBCS bcs,
                       OwnershipKept BREthereumTransaction transaction) {
     int index = bcsLookupPendingTransaction (bcs, transactionGetHash (transaction));
     if (-1 != index)
-        array_rm (bcs->pendingTransactions, index);
+        array_rm (bcs->pendingTransactions, (size_t) index);
 }
 
 static int
