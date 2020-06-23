@@ -284,15 +284,19 @@ class CryptoTestSystemListener: SystemListener {
     var transferHandlers: [TransferEventHandler] = []
     var transferEvents: [TransferEvent] = []
     var transferExpectation = XCTestExpectation (description: "TransferExpectation")
+    var transferWallet: Wallet? = nil
 
     func handleTransferEvent(system: System, manager: WalletManager, wallet: Wallet, transfer: Transfer, event: TransferEvent) {
+        guard transferWallet.map ({ $0 == wallet }) ?? true
+            else { return }
+
         print ("TST: Transfer Event: \(event)")
         transferEvents.append (event)
         if transferIncluded, case .included = transfer.state {
             if 1 == transferCount { transferExpectation.fulfill()}
             if 1 <= transferCount { transferCount -= 1 }
         }
-        else if case .created = transfer.state {
+        else if !transferIncluded, case .created = transfer.state {
             if 1 == transferCount { transferExpectation.fulfill()}
             if 1 <= transferCount { transferCount -= 1 }
         }
