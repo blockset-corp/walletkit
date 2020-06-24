@@ -47,10 +47,10 @@ typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
 typedef uint8_t *
-(*BRCryptoTransferSerialize) (BRCryptoTransfer transfer,
-                              BRCryptoNetwork  network,
-                              BRCryptoBoolean  requireSignature,
-                              size_t *serializationCount);
+(*BRCryptoTransferSerializeHandler) (BRCryptoTransfer transfer,
+                                     BRCryptoNetwork  network,
+                                     BRCryptoBoolean  requireSignature,
+                                     size_t *serializationCount);
 
 typedef int
 (*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
@@ -59,7 +59,7 @@ typedef int
 typedef struct {
     BRCryptoTransferReleaseHandler release;
     BRCryptoTransferGetHashHandler getHash;
-    BRCryptoTransferSerialize serialize;
+    BRCryptoTransferSerializeHandler serialize;
     BRCryptoTransferIsEqualHandler isEqual;
 } BRCryptoTransferHandlers;
 

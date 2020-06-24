@@ -48,11 +48,11 @@ typedef struct {
 /// MARK: - Network Handlers
 
 typedef BRCryptoNetwork
-(*BRCyptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
-                                const char *name,               // Bitcoin
-                                const char *network,            // testnet
-                                bool isMainnet,                 // false
-                                uint32_t confirmationPeriodInSeconds); // 10 * 60
+(*BRCryptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
+                                 const char *name,               // Bitcoin
+                                 const char *network,            // testnet
+                                 bool isMainnet,                 // false
+                                 uint32_t confirmationPeriodInSeconds); // 10 * 60
 
 typedef void
 (*BRCryptoNetworkReleaseHandler) (BRCryptoNetwork network);
@@ -82,7 +82,7 @@ typedef void
                                             size_t bytesCount);
 
 typedef struct {
-    BRCyptoNetworkCreateHandler create;
+    BRCryptoNetworkCreateHandler create;
     BRCryptoNetworkReleaseHandler release;
     BRCryptoNetworkCreateAddressHandler createAddress;
     BRCryptoNetworkGetBlockNumberAtOrBeforeTimestampHandler getBlockNumberAtOrBeforeTimestamp;

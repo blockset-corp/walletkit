@@ -73,7 +73,7 @@ typedef BRCryptoTransfer
                                                 BRCryptoUnit unitForFee);
 
 typedef OwnershipGiven BRSetOf(BRCryptoAddress)
-(*BRCryptoWalletGetAddressesForRecovery) (BRCryptoWallet wallet);
+(*BRCryptoWalletGetAddressesForRecoveryHandler) (BRCryptoWallet wallet);
 
 typedef bool
 (*BRCryptoWalletIsEqualHandler) (BRCryptoWallet wallet1, BRCryptoWallet wallet2);
@@ -87,7 +87,7 @@ typedef struct {
     BRCryptoWalletValidateTransferAttributeHandler validateTransferAttribute;
     BRCryptoWalletCreateTransferHandler createTransfer;
     BRCryptoWalletCreateTransferMultipleHandler createTransferMultiple;
-    BRCryptoWalletGetAddressesForRecovery getAddressesForRecovery;
+    BRCryptoWalletGetAddressesForRecoveryHandler getAddressesForRecovery;
     BRCryptoWalletIsEqualHandler isEqual;
 } BRCryptoWalletHandlers;
 
