@@ -94,6 +94,9 @@ testCreateTezosAccountWithSeed (void) {
     
     const char * expectedAddress = "tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY";
     assert (0 == strcmp (expectedAddress, tezosAddressAsString(address)));
+
+    BRTezosAddress addressFromString = tezosAddressCreateFromString(expectedAddress, true);
+    assert (1 == tezosAddressEqual(address, addressFromString));
 }
 
 static void tezosAccountTests() {

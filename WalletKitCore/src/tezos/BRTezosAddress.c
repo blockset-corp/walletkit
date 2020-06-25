@@ -121,11 +121,11 @@ tezosAddressCreateFromString(const char * addressString, bool strict) {
     
     if (addressString == NULL || strlen(addressString) == 0) {
         return NULL;
+    } else if (strcmp(addressString, "__fee__") == 0) {
+        return tezosAddressCreateFeeAddress ();
+    } else {
+        return tezosAddressStringToAddress (addressString);
     }
-    
-    //TODO:TEZOS unknown/fee addresses
-    
-    return tezosAddressStringToAddress (addressString);
 }
 
 extern int // 1 if equal
