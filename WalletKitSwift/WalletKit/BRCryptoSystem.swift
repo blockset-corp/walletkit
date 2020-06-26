@@ -1020,36 +1020,31 @@ internal final class SystemCallbackCoordinator {
         case walletFeeEstimate (Wallet.EstimateFeeHandler)
     }
 
-    var index: Int32 = 0;
-    var handlers: [Int32: Handler] = [:]
+    private var index: Int32 = 0;
+    private var handlers: [Int32: Handler] = [:]
 
     // The queue upon which to invoke handlers.
-    let queue: DispatchQueue
+    private let queue: DispatchQueue
 
     public typealias Cookie = UnsafeMutableRawPointer
 
-    var cookie: Cookie {
-        return System.systemQueue.sync {
-            let index = Int(self.index)
-            return UnsafeMutableRawPointer (bitPattern: index)!
-        }
-    }
-
-    func cookieToIndex (_ cookie: Cookie) -> Int32 {
+    private func cookieToIndex (_ cookie: Cookie) -> Int32 {
+        // Convert `cookie` back to an Int.  The trick is that `bitPattern` cannot be `0`.  So
+        // we use `1` when computing the 'distance' and need to add `1` to the result.
         return 1 + Int32(UnsafeMutableRawPointer(bitPattern: 1)!.distance(to: cookie))
     }
 
     public func addWalletFeeEstimateHandler(_ handler: @escaping Wallet.EstimateFeeHandler) -> Cookie {
-        return System.systemQueue.sync {
+        return System.systemQueue.sync (flags: .barrier) {
             index += 1
             handlers[index] = Handler.walletFeeEstimate(handler)
-            // Recursively on System.systemQueue.sync
-            return cookie
+            // A new cookie using `index` as a pointer.
+            return UnsafeMutableRawPointer (bitPattern: Int (index))!  // `index` is neve `1`
         }
     }
 
-    func remWalletFeeEstimateHandler (_ cookie: UnsafeMutableRawPointer) -> Wallet.EstimateFeeHandler? {
-        return System.systemQueue.sync {
+    private func remWalletFeeEstimateHandler (_ cookie: UnsafeMutableRawPointer) -> Wallet.EstimateFeeHandler? {
+        return System.systemQueue.sync (flags: .barrier) {
             return handlers.removeValue (forKey: cookieToIndex(cookie))
                 .flatMap {
                     switch $0 {
