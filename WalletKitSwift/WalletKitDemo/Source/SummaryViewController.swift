@@ -12,8 +12,50 @@
 import UIKit
 import WalletKit
 
+extension Wallet {
+    var tempAddress: String? {
+        switch name {
+        case "xrp":
+            return "r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV"
+        case "eth":
+            return "0xA6A60123Feb7F61081b1BFe063464b3219cEdCEc"
+        case "btc":
+            return "tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx"
+        case "bch":
+            return "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a"
+        default:
+            return nil
+        }
+    }
+}
+
 class SummaryViewController: UITableViewController, WalletListener {
 
+    func stressLimits() {
+        (0..<100).forEach { _ in
+            let randomOffset: DispatchTime = .now() + Double.random(in: 0.0..<5.0)
+            DispatchQueue.global(qos: .background).asyncAfter(deadline: randomOffset) {
+                switch self.wallets.count {
+                case 1:
+                    (0..<10).forEach { _ in
+                        self.estimateLimit(forWallet: self.wallets[0])
+                    }
+                default:
+                    self.wallets.forEach { wallet in
+                        self.estimateLimit(forWallet: wallet)
+                    }
+                }
+            }
+        }
+    }
+    
+    func estimateLimit(forWallet wallet: Wallet) {
+        guard let addressString = wallet.tempAddress else { return }
+        guard let address = Address.create(string: addressString, network: wallet.manager.network) else { return }
+        let fee = wallet.manager.defaultNetworkFee
+        wallet.estimateLimitMaximum(target: address, fee: fee) { _ in }
+    }
+    
     // The wallets currently displayed.
     var wallets = [Wallet]()
 
@@ -46,6 +88,10 @@ class SummaryViewController: UITableViewController, WalletListener {
         if let split = splitViewController {
             let controllers = split.viewControllers
             detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? WalletViewController
+        }
+        
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10.0) {
+            self.stressLimits()
         }
     }
 
