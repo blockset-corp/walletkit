@@ -22,11 +22,12 @@ public class BlockChainDB {
     /// Base URL (String) for BRD API Services
     let apiBaseURL: String
 
-    // The seesion to use for DataTaskFunc as in `session.dataTask (with: request, ...)`
-    let session: URLSession
+    // The session to use for DataTaskFunc as in `session.dataTask (with: request, ...)`.  This
+    //
+    var session = URLSession (configuration: .default)
 
     /// A DispatchQueue Used for certain queries that can't be accomplished in the session's data
-    /// task.  Such as when multiple request are needed in getTransactions().
+    /// task.  Such as when multiple request are needed in getTransactions().  This queue is serial.
     let queue = DispatchQueue.init(label: "BlockChainDB")
 
     /// A function type that decorates a `request`, handles 'challenges', performs decrypting and/or
@@ -157,13 +158,10 @@ public class BlockChainDB {
     ///       uncompressing response data.  This defaults to `session.dataTask (with: request, ...)`
     ///       which suffices for DEBUG builds.
     ///
-    public init (session: URLSession = URLSession (configuration: .default),
-                 bdbBaseURL: String = "https://api.blockset.com",
+    public init (bdbBaseURL: String = "https://api.blockset.com",
                  bdbDataTaskFunc: DataTaskFunc? = nil,
                  apiBaseURL: String = "https://api.breadwallet.com",
                  apiDataTaskFunc: DataTaskFunc? = nil) {
-
-        self.session = session
 
         self.bdbBaseURL = bdbBaseURL
         self.apiBaseURL = apiBaseURL
@@ -190,6 +188,15 @@ public class BlockChainDB {
         })
     }
 
+    public func pause () {
+        print ("SYS: BDB: Pause")
+        session.invalidateAndCancel()
+    }
+
+    public func resume () {
+        session = URLSession (configuration: .default)
+        print ("SYS: BSB: Resume")
+    }
     ///
     /// A QueryError subtype of Error
     ///
@@ -901,6 +908,7 @@ public class BlockChainDB {
                 semaphore.signal()
             }
 
+//            print ("SYS: BDB: Request: https://api.blockset.com/transactions?: \(addresses.count) -> \(addresses.chunked(into: BlockChainDB.ADDRESS_COUNT).count)")
             for addresses in addresses.chunked(into: BlockChainDB.ADDRESS_COUNT) {
                 if nil != error { break }
 
@@ -917,6 +925,9 @@ public class BlockChainDB {
 
                 // Wait for the first request
                 semaphore.wait()
+//                guard DispatchTimeoutResult.success == semaphore.wait(timeout: DispatchTime (uptimeNanoseconds: 5 * 1_000_000_000 + DispatchTime.now().uptimeNanoseconds))
+//                    else {
+//                        completion (Result.failure(QueryError.noData)); return }
 
                 // Loop until all 'nextURL' values are queried
                 while let url = nextURL, nil == error {
@@ -927,6 +938,9 @@ public class BlockChainDB {
 
                     // Wait for each subsequent result
                     semaphore.wait()
+//                    guard DispatchTimeoutResult.success == semaphore.wait(timeout: DispatchTime (uptimeNanoseconds: 5 * 1_000_000_000 + DispatchTime.now().uptimeNanoseconds))
+//                        else {
+//                            completion (Result.failure(QueryError.noData)); return }
                 }
             }
 
