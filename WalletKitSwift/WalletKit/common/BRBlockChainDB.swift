@@ -805,36 +805,32 @@ public class BlockChainDB {
 
                 var nextURL: URL? = nil
 
-                self.bdbMakeRequest (path: "transfers", query: zip (queryKeys, queryVals)) {
-                    (more: URL?, res: Result<[JSON], QueryError>) in
-
-                    // Append `blocks` with the resulting blocks.
-                    results += try! res
+                func handleResult (more: URL?, res: Result<[JSON], QueryError>) {
+                    // Append `transactions` with the resulting transactions.
+                    results += res
                         .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asTransfer) }
-                        .recover { error = $0; return [] }.get()
+                        .getWithRecovery { error = $0; return [] }
 
+                    // Record if more exist
                     nextURL = more
 
+                    // signal completion
                     semaphore.signal()
                 }
+
+                self.bdbMakeRequest (path: "transfers",
+                                     query: zip (queryKeys, queryVals),
+                                     completion: handleResult)
 
                 // Wait for the first request
                 semaphore.wait()
 
                 // Loop until all 'nextURL' values are queried
                 while let url = nextURL, nil == error {
-                    self.bdbMakeRequest (url: url, embedded: true, embeddedPath: "transfers") {
-                        (more: URL?, res: Result<[JSON], QueryError>) in
-
-                        // Append `transactions` with the resulting transactions.
-                        results += try! res
-                            .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asTransfer) }
-                            .recover { error = $0; return [] }.get()
-
-                        nextURL = more
-
-                        semaphore.signal()
-                    }
+                    self.bdbMakeRequest (url: url,
+                                         embedded: true,
+                                         embeddedPath: "transfers",
+                                         completion: handleResult)
 
                     semaphore.wait()
                 }
