@@ -187,14 +187,11 @@ public class BlockChainDB {
         })
     }
 
-    public func pause () {
-        print ("SYS: BDB: Pause")
+    public func cancelAll () {
+        print ("SYS: BDB: Cancel All")
         session.getAllTasks(completionHandler: { $0.forEach { $0.cancel () } })
     }
 
-    public func resume () {
-        print ("SYS: BDB: Resume")
-    }
     ///
     /// A QueryError subtype of Error
     ///

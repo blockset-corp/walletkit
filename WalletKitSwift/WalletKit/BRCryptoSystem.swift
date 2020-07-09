@@ -520,14 +520,15 @@ public final class System {
     /// Pause by disconnecting all wallet managers among other things.
     ///
     public func pause () {
+        print ("SYS: Pause")
         managers.forEach { $0.disconnect() }
-        query.pause()
+        query.cancelAll()
     }
 
     /// Resume by connecting all wallet managers among other things
     ///
     public func resume () {
-        query.resume()
+        print ("SYS: Resume")
         managers.forEach { $0.connect() }
     }
 
