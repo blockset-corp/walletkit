@@ -24,7 +24,7 @@ public class BlockChainDB {
 
     // The session to use for DataTaskFunc as in `session.dataTask (with: request, ...)`.  This
     //
-    var session = URLSession (configuration: .default)
+    let session = URLSession (configuration: .default)
 
     /// A DispatchQueue Used for certain queries that can't be accomplished in the session's data
     /// task.  Such as when multiple request are needed in getTransactions().  This queue is serial.
@@ -190,11 +190,10 @@ public class BlockChainDB {
 
     public func pause () {
         print ("SYS: BDB: Pause")
-        session.invalidateAndCancel()
+        session.getAllTasks(completionHandler: { $0.forEach { $0.cancel () } })
     }
 
     public func resume () {
-        session = URLSession (configuration: .default)
         print ("SYS: BDB: Resume")
     }
     ///
