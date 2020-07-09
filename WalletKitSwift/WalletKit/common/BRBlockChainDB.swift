@@ -22,8 +22,7 @@ public class BlockChainDB {
     /// Base URL (String) for BRD API Services
     let apiBaseURL: String
 
-    // The session to use for DataTaskFunc as in `session.dataTask (with: request, ...)`.  This
-    //
+    // The session to use for DataTaskFunc as in `session.dataTask (with: request, ...)`.
     let session = URLSession (configuration: .default)
 
     /// A DispatchQueue Used for certain queries that can't be accomplished in the session's data
@@ -866,7 +865,7 @@ public class BlockChainDB {
             if let url = more, !results.completed {
                 self.bdbMakeRequest (url: url,
                                      embedded: true,
-                                     embeddedPath: "transfers",
+                                     embeddedPath: "transactions",
                                      completion: handleResult)
             }
 
@@ -956,63 +955,53 @@ public class BlockChainDB {
                            includeTxProof: Bool = false,
                            maxPageSize: Int? = nil,
                            completion: @escaping (Result<[Model.Block], QueryError>) -> Void) {
-        self.queue.async {
-            var error: QueryError? = nil
-            var results = [Model.Block]()
 
-            var queryKeys = ["blockchain_id", "start_height", "end_height",  "include_raw",
-                             "include_tx", "include_tx_raw", "include_tx_proof"]
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asBlock,
+                                      completion: completion,
+                                      resultsExpected: 1)
 
-            var queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, includeRaw.description,
-                             includeTx.description, includeTxRaw.description, includeTxProof.description]
+        func handleResult (more: URL?, result: Result<[JSON], QueryError>) {
+            results.extend (result)
 
-            if let maxPageSize = maxPageSize {
-                queryKeys += ["max_page_size"]
-                queryVals += [String(maxPageSize)]
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "blocks",
+                                     completion: handleResult)
             }
 
-            let semaphore = DispatchSemaphore (value: 0)
-
-            var nextURL: URL? = nil
-
-            self.bdbMakeRequest (path: "blocks", query: zip (queryKeys, queryVals)) {
-                (more: URL?, res: Result<[JSON], QueryError>) in
-
-                // Append `blocks` with the resulting blocks.
-                results += try! res
-                    .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asBlock) }
-                    .recover { error = $0; return [] }.get()
-
-                nextURL = more
-
-                semaphore.signal()
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
             }
-
-            // Wait for the first request
-            semaphore.wait()
-
-            // Loop until all 'nextURL' values are queried
-            while let url = nextURL, nil == error {
-                self.bdbMakeRequest (url: url, embedded: true, embeddedPath: "blocks") {
-                    (more: URL?, res: Result<[JSON], QueryError>) in
-
-                    // Append `transactions` with the resulting transactions.
-                    results += try! res
-                        .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asBlock) }
-                        .recover { error = $0; return [] }.get()
-
-                    nextURL = more
-
-                    semaphore.signal()
-                }
-
-                semaphore.wait()
-            }
-
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
         }
+
+        var queryKeys = ["blockchain_id",
+                         "start_height",
+                         "end_height",
+                         "include_raw",
+                         "include_tx",
+                         "include_tx_raw",
+                         "include_tx_proof"]
+
+        var queryVals = [blockchainId,
+                         begBlockNumber.description,
+                         endBlockNumber.description,
+                         includeRaw.description,
+                         includeTx.description,
+                         includeTxRaw.description,
+                         includeTxProof.description]
+
+        if let maxPageSize = maxPageSize {
+            queryKeys += ["max_page_size"]
+            queryVals += [String(maxPageSize)]
+        }
+
+        self.bdbMakeRequest (path: "blocks",
+                             query: zip (queryKeys, queryVals),
+                             completion: handleResult)
     }
 
     public func getBlock (blockId: String,
