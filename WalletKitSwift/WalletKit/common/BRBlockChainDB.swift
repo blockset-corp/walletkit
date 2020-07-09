@@ -195,7 +195,7 @@ public class BlockChainDB {
 
     public func resume () {
         session = URLSession (configuration: .default)
-        print ("SYS: BSB: Resume")
+        print ("SYS: BDB: Resume")
     }
     ///
     /// A QueryError subtype of Error
@@ -789,56 +789,46 @@ public class BlockChainDB {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[Model.Transfer], QueryError>) -> Void) {
-        self.queue.async {
-            var error: QueryError? = nil
-            var results = [Model.Transfer]()
+        let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
-            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asTransfer,
+                                      completion: completion,
+                                      resultsExpected: chunkedAddresses.count)
 
-            for addresses in addresses.chunked(into: BlockChainDB.ADDRESS_COUNT) {
-                if nil != error { break }
+        func handleResult (more: URL?, result: Result<[JSON], QueryError>) {
+            results.extend (result)
 
-                let queryKeys = ["blockchain_id", "start_height", "end_height", "max_page_size"] + Array (repeating: "address", count: addresses.count)
-                let queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, maxPageSize.description] + addresses
-
-                let semaphore = DispatchSemaphore (value: 0)
-
-                var nextURL: URL? = nil
-
-                func handleResult (more: URL?, res: Result<[JSON], QueryError>) {
-                    // Append `transactions` with the resulting transactions.
-                    results += res
-                        .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asTransfer) }
-                        .getWithRecovery { error = $0; return [] }
-
-                    // Record if more exist
-                    nextURL = more
-
-                    // signal completion
-                    semaphore.signal()
-                }
-
-                self.bdbMakeRequest (path: "transfers",
-                                     query: zip (queryKeys, queryVals),
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "transfers",
                                      completion: handleResult)
-
-                // Wait for the first request
-                semaphore.wait()
-
-                // Loop until all 'nextURL' values are queried
-                while let url = nextURL, nil == error {
-                    self.bdbMakeRequest (url: url,
-                                         embedded: true,
-                                         embeddedPath: "transfers",
-                                         completion: handleResult)
-
-                    semaphore.wait()
-                }
             }
 
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
+            // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
+        let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
+        for addresses in chunkedAddresses {
+            let queryKeys = ["blockchain_id",
+                             "start_height",
+                             "end_height",
+                             "max_page_size"] + Array (repeating: "address", count: addresses.count)
+
+            let queryVals = [blockchainId,
+                             begBlockNumber.description,
+                             endBlockNumber.description,
+                             maxPageSize.description] + addresses
+
+            self.bdbMakeRequest (path: "transfers",
+                                 query: zip (queryKeys, queryVals),
+                                 completion: handleResult)
         }
     }
 
@@ -862,87 +852,63 @@ public class BlockChainDB {
                                  includeProof: Bool = false,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
-        // This query could overrun the endpoint's page size (typically 5,000).  If so, we'll need
-        // to repeat the request for the next batch.
-        self.queue.async {
-            var error: QueryError? = nil
-            var results = [Model.Transaction]()
 
-            let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+        let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
-            let queryKeysBase = [
-                "blockchain_id",
-                begBlockNumber.map { (_) in "start_height" },
-                endBlockNumber.map { (_) in "end_height" },
-                "include_proof",
-                "include_raw",
-                "max_page_size"]
-                .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asTransaction,
+                                      completion: completion,
+                                      resultsExpected: chunkedAddresses.count)
 
-            let queryValsBase: [String] = [
-                blockchainId,
-                begBlockNumber.map { $0.description },
-                endBlockNumber.map { $0.description },
-                includeProof.description,
-                includeRaw.description,
-                maxPageSize.description]
-                .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
+        func handleResult (more: URL?, result: Result<[JSON], QueryError>) {
+            results.extend (result)
 
-            let semaphore = DispatchSemaphore (value: 0)
-            var nextURL: URL? = nil
-
-            func handleResult (more: URL?, res: Result<[JSON], QueryError>) {
-                // Append `transactions` with the resulting transactions.
-                results += res
-                    .flatMap { BlockChainDB.getManyExpected(data: $0, transform: Model.asTransaction) }
-                    .getWithRecovery { error = $0; return [] }
-
-                // Record if more exist
-                nextURL = more
-
-                // signal completion
-                semaphore.signal()
-            }
-
-//            print ("SYS: BDB: Request: https://api.blockset.com/transactions?: \(addresses.count) -> \(addresses.chunked(into: BlockChainDB.ADDRESS_COUNT).count)")
-            for addresses in addresses.chunked(into: BlockChainDB.ADDRESS_COUNT) {
-                if nil != error { break }
-
-                let queryKeys = queryKeysBase + Array (repeating: "address", count: addresses.count)
-                let queryVals = queryValsBase + addresses
-
-                // Ensure a 'clean' start for this set of addresses
-                nextURL = nil
-                
-                // Make the first request.  Ideally we'll get all the transactions in one gulp
-                self.bdbMakeRequest (path: "transactions",
-                                     query: zip (queryKeys, queryVals),
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "transfers",
                                      completion: handleResult)
-
-                // Wait for the first request
-                semaphore.wait()
-//                guard DispatchTimeoutResult.success == semaphore.wait(timeout: DispatchTime (uptimeNanoseconds: 5 * 1_000_000_000 + DispatchTime.now().uptimeNanoseconds))
-//                    else {
-//                        completion (Result.failure(QueryError.noData)); return }
-
-                // Loop until all 'nextURL' values are queried
-                while let url = nextURL, nil == error {
-                    self.bdbMakeRequest (url: url,
-                                         embedded: true,
-                                         embeddedPath: "transactions",
-                                         completion: handleResult)
-
-                    // Wait for each subsequent result
-                    semaphore.wait()
-//                    guard DispatchTimeoutResult.success == semaphore.wait(timeout: DispatchTime (uptimeNanoseconds: 5 * 1_000_000_000 + DispatchTime.now().uptimeNanoseconds))
-//                        else {
-//                            completion (Result.failure(QueryError.noData)); return }
-                }
             }
 
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
+        let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+
+        let queryKeysBase = [
+            "blockchain_id",
+            begBlockNumber.map { (_) in "start_height" },
+            endBlockNumber.map { (_) in "end_height" },
+            "include_proof",
+            "include_raw",
+            "max_page_size"]
+            .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
+
+        let queryValsBase: [String] = [
+            blockchainId,
+            begBlockNumber.map { $0.description },
+            endBlockNumber.map { $0.description },
+            includeProof.description,
+            includeRaw.description,
+            maxPageSize.description]
+            .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
+
+        for addresses in chunkedAddresses {
+
+
+            //            print ("SYS: BDB: Request: https://api.blockset.com/transactions?: \(addresses.count) -> \(addresses.chunked(into: BlockChainDB.ADDRESS_COUNT).count)")
+
+            let queryKeys = queryKeysBase + Array (repeating: "address", count: addresses.count)
+            let queryVals = queryValsBase + addresses
+
+            // Make the first request.  Ideally we'll get all the transactions in one gulp
+            self.bdbMakeRequest (path: "transactions",
+                                 query: zip (queryKeys, queryVals),
+                                 completion: handleResult)
         }
     }
 
@@ -2037,5 +2003,67 @@ public class BlockChainDB {
     ///
     private static func getOneResultString (_ completion: @escaping (Result<String,QueryError>) -> Void) -> ((Result<JSON,QueryError>) -> Void) {
         return getOneResult (JSON.asString, completion)
+    }
+
+    final class ChunkedResults<T> {
+        private let queue: DispatchQueue
+        private let transform:  (BlockChainDB.JSON) -> T?
+        private let completion: (Result<[T], QueryError>) -> Void
+
+        private let resultsExpected: Int
+        private var resultsReceived: Int = 0;
+        private var results: [T] = []
+        private var error: QueryError? = nil
+
+        init (queue: DispatchQueue,
+              transform:  @escaping (BlockChainDB.JSON) -> T?,
+              completion: @escaping (Result<[T], QueryError>) -> Void,
+              resultsExpected: Int) {
+            self.queue = queue
+            self.transform  = transform
+            self.completion = completion
+            self.resultsExpected = resultsExpected
+        }
+
+        private var _completed: Bool {
+            return nil != error || resultsReceived == resultsExpected
+        }
+
+        var completed: Bool {
+            return queue.sync {
+                return _completed
+            }
+        }
+
+        func extend (_ result: Result<[JSON], QueryError>) {
+            var newError: QueryError? = nil
+
+            let newResults = result
+                .flatMap { BlockChainDB.getManyExpected(data: $0, transform: transform) }
+                .getWithRecovery { newError = $0; return [] }
+
+            queue.async {
+                if !self._completed {
+                    if nil != newError {
+                        self.error = newError
+                        self.completion (Result.failure (self.error!))
+                    }
+                    else {
+                        self.results += newResults
+                    }
+                }
+            }
+        }
+
+        func extendedOne () {
+            queue.async {
+                if !self._completed {
+                    self.resultsReceived += 1
+                    if self._completed {
+                        self.completion (Result.success(self.results))
+                    }
+                }
+            }
+        }
     }
 }
