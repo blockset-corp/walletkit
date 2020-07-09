@@ -57,6 +57,7 @@ public class BlockchainDb {
 
     private final AtomicInteger ridGenerator;
 
+    private final OkHttpClient client;
     private final BlockApi blockApi;
     private final BlockchainApi blockchainApi;
     private final CurrencyApi currencyApi;
@@ -99,6 +100,7 @@ public class BlockchainDb {
 
         this.ridGenerator = new AtomicInteger(0);
 
+        this.client = client;
         this.blockApi = new BlockApi(bdbClient, executorService);
         this.blockchainApi = new BlockchainApi(bdbClient);
         this.currencyApi = new CurrencyApi(bdbClient);
@@ -130,6 +132,16 @@ public class BlockchainDb {
             cli.newCall(decoratedRequest).enqueue(callback);
         };
         return new BlockchainDb (client, bdbBaseURL, brdDataTask, apiBaseURL, null);
+    }
+
+    /**
+     * Cancel all BlockchainDb requests that are currently enqueued or executing
+     */
+    public void cancelAll () {
+        client.dispatcher().cancelAll();
+        // In a race, any Callable on any Executor might run NOW, causing a `client` request.
+        // That is okay; we'll have some more data.  That is, it is no different from if the 
+        // request had completed just before the `cancelAll()` call.
     }
 
     // Blockchain
