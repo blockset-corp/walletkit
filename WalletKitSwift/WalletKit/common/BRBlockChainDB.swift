@@ -845,6 +845,7 @@ public class BlockChainDB {
                                  endBlockNumber: UInt64? = nil,
                                  includeRaw: Bool = false,
                                  includeProof: Bool = false,
+                                 includeTransfers: Bool = true,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
 
@@ -880,6 +881,8 @@ public class BlockChainDB {
             endBlockNumber.map { (_) in "end_height" },
             "include_proof",
             "include_raw",
+            "include_transfers",
+            "include_calls",
             "max_page_size"]
             .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
 
@@ -889,6 +892,8 @@ public class BlockChainDB {
             endBlockNumber.map { $0.description },
             includeProof.description,
             includeRaw.description,
+            includeTransfers.description,
+            "false",
             maxPageSize.description]
             .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
 

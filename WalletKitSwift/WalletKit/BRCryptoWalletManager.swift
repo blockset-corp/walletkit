@@ -451,7 +451,8 @@ public final class WalletSweeper {
                             addresses: [address],
                             begBlockNumber: 0,
                             endBlockNumber: network.height,
-                            includeRaw: true) {
+                            includeRaw: true,
+                            includeTransfers: false) {
                             (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                 res.resolve(
                                     success: {
