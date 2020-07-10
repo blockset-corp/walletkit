@@ -660,14 +660,16 @@ public class BlockChainDB {
         }
     }
 
-    public func getCurrencies (blockchainId: String? = nil, completion: @escaping (Result<[Model.Currency],QueryError>) -> Void) {
+    public func getCurrencies (blockchainId: String? = nil, mainnet: Bool = true, completion: @escaping (Result<[Model.Currency],QueryError>) -> Void) {
         let queryKeysBase = [
             blockchainId.map { (_) in "blockchain_id" },
+            "testnet",
             "verified"]
             .compactMap { $0 } // Remove `nil` from blockchainId
 
         let queryValsBase: [String] = [
             blockchainId,
+            (!mainnet).description,
             "true"]
             .compactMap { $0 }  // Remove `nil` from blockchainId
 

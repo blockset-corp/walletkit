@@ -14,7 +14,6 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.Currency;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 
 import java.util.List;
 
@@ -34,6 +33,16 @@ public class CurrencyApi {
                               CompletionHandler<List<Currency>, QueryError> handler) {
         ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
         if (id != null) paramsBuilder.put("blockchain_id", id);
+        paramsBuilder.put("verified", "true");
+        ImmutableMultimap<String, String> params = paramsBuilder.build();
+
+        jsonClient.sendGetForArray("currencies", params, Currency.class, handler);
+    }
+
+    public void getCurrencies(boolean mainnet,
+                              CompletionHandler<List<Currency>, QueryError> handler) {
+        ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
+        paramsBuilder.put("testnet", (mainnet ? "false" : "true"));
         paramsBuilder.put("verified", "true");
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
