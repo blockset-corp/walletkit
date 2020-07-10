@@ -520,16 +520,22 @@ public final class System {
     /// Pause by disconnecting all wallet managers among other things.
     ///
     public func pause () {
-        print ("SYS: Pause")
-        managers.forEach { $0.disconnect() }
-        query.cancelAll()
+        // If called when we've no networks, then we've never been configured.  Ignore pausing.
+        if !networks.isEmpty {
+            print ("SYS: Pause")
+            managers.forEach { $0.disconnect() }
+            query.cancelAll()
+        }
     }
 
     /// Resume by connecting all wallet managers among other things
     ///
     public func resume () {
-        print ("SYS: Resume")
-        managers.forEach { $0.connect() }
+        // If called when we've no networks, then we've never been configured.  Ignore resuming.
+        if !networks.isEmpty {
+            print ("SYS: Resume")
+            managers.forEach { $0.connect() }
+        }
     }
 
      ///

@@ -447,19 +447,23 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void resume () {
-        Log.log(Level.FINE, "Resume");
-        for (WalletManager manager: getWalletManagers()) {
-            manager.connect(null);
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Resume");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.connect(null);
+            }
         }
     }
 
     @Override
     public void pause () {
-        Log.log(Level.FINE, "Pause");
-        for (WalletManager manager: getWalletManagers()) {
-            manager.disconnect();
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Pause");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.disconnect();
+            }
+            query.cancelAll();
         }
-        query.cancelAll();
     }
 
     @Override
