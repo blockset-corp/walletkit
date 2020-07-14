@@ -163,6 +163,7 @@ final class WalletSweeper implements com.breadwallet.crypto.WalletSweeper {
                 network.getHeight(),
                 true,
                 false,
+                false,
                 new CompletionHandler<List<Transaction>, QueryError>() {
 
                     @Override

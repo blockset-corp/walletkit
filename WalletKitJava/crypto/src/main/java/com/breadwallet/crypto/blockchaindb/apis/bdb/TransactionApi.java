@@ -47,6 +47,7 @@ public class TransactionApi {
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
@@ -61,6 +62,8 @@ public class TransactionApi {
             paramsBuilder.put("blockchain_id", id);
             paramsBuilder.put("include_proof", String.valueOf(includeProof));
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
+            paramsBuilder.put("include_transfers", String.valueOf(includeTransfers));
+            paramsBuilder.put("include_calls", "false");
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
@@ -75,10 +78,13 @@ public class TransactionApi {
     public void getTransaction(String id,
                                boolean includeRaw,
                                boolean includeProof,
+                               boolean includeTransfers,
                                CompletionHandler<Transaction, QueryError> handler) {
         Multimap<String, String> params = ImmutableListMultimap.of(
                 "include_proof", String.valueOf(includeProof),
-                "include_raw", String.valueOf(includeRaw));
+                "include_raw", String.valueOf(includeRaw),
+                "include_transfers", String.valueOf(includeTransfers),
+                "include_calls", "false");
 
         jsonClient.sendGetWithId("transactions", id, params, Transaction.class, handler);
     }

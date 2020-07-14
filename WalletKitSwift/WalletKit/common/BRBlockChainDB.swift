@@ -661,6 +661,28 @@ public class BlockChainDB {
     }
 
     public func getCurrencies (blockchainId: String? = nil, mainnet: Bool = true, completion: @escaping (Result<[Model.Currency],QueryError>) -> Void) {
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asCurrency,
+                                      completion: completion,
+                                      resultsExpected: 1)
+
+        func handleResult (more: URL?, result: Result<[JSON], QueryError>) {
+            results.extend (result)
+
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "currencies",
+                                     completion: handleResult)
+            }
+
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
         let queryKeysBase = [
             blockchainId.map { (_) in "blockchain_id" },
             "testnet",
@@ -673,13 +695,9 @@ public class BlockChainDB {
             "true"]
             .compactMap { $0 }  // Remove `nil` from blockchainId
 
-        bdbMakeRequest (path: "currencies", query: zip (queryKeysBase, queryValsBase)) {
-            (more: URL?, res: Result<[JSON], QueryError>) in
-            precondition (nil == more)
-            completion (res.flatMap {
-                BlockChainDB.getManyExpected(data: $0, transform: Model.asCurrency)
-            })
-        }
+        bdbMakeRequest (path: "currencies",
+                        query: zip (queryKeysBase, queryValsBase),
+                        completion: handleResult)
     }
 
     public func getCurrency (currencyId: String, completion: @escaping (Result<Model.Currency,QueryError>) -> Void) {
@@ -847,6 +865,7 @@ public class BlockChainDB {
                                  endBlockNumber: UInt64? = nil,
                                  includeRaw: Bool = false,
                                  includeProof: Bool = false,
+                                 includeTransfers: Bool = true,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
 
@@ -882,6 +901,8 @@ public class BlockChainDB {
             endBlockNumber.map { (_) in "end_height" },
             "include_proof",
             "include_raw",
+            "include_transfers",
+            "include_calls",
             "max_page_size"]
             .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
 
@@ -891,6 +912,8 @@ public class BlockChainDB {
             endBlockNumber.map { $0.description },
             includeProof.description,
             includeRaw.description,
+            includeTransfers.description,
+            "false",
             maxPageSize.description]
             .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
 

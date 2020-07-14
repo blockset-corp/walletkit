@@ -1474,7 +1474,8 @@ extension System {
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: true) {
+                                               includeRaw: true,
+                                               includeTransfers: false) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
@@ -1592,7 +1593,8 @@ extension System {
                                                    addresses: addresses,
                                                    begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                    endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                                   includeRaw: false) {
+                                                   includeRaw: false,
+                                                   includeTransfers: true) {
                                                     (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                     defer { cryptoWalletManagerGive(cwm) }
                                                     res.resolve(
