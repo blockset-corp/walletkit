@@ -103,7 +103,7 @@ public class BlockchainDb {
         this.client = client;
         this.blockApi = new BlockApi(bdbClient, executorService);
         this.blockchainApi = new BlockchainApi(bdbClient);
-        this.currencyApi = new CurrencyApi(bdbClient);
+        this.currencyApi = new CurrencyApi(bdbClient, executorService);
         this.subscriptionApi = new SubscriptionApi(bdbClient);
         this.transferApi = new TransferApi(bdbClient, executorService);
         this.transactionApi = new TransactionApi(bdbClient, executorService);
