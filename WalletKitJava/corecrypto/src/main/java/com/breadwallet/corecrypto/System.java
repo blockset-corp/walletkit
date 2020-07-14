@@ -284,7 +284,7 @@ final class System implements com.breadwallet.crypto.System {
         SYSTEMS_ACTIVE.remove(sys.context);
 
         // Disconnect all wallet managers
-        sys.disconnectAll();
+        sys.pause();
 
         // Stop
         sys.stopAll();
@@ -446,16 +446,23 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
-    public void connectAll() {
-        for (WalletManager manager: getWalletManagers()) {
-            manager.connect(null);
+    public void resume () {
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Resume");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.connect(null);
+            }
         }
     }
 
     @Override
-    public void disconnectAll() {
-        for (WalletManager manager: getWalletManagers()) {
-            manager.disconnect();
+    public void pause () {
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Pause");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.disconnect();
+            }
+            query.cancelAll();
         }
     }
 

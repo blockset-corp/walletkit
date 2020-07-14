@@ -160,16 +160,15 @@ public interface System {
     void wipe(Network network);
 
     /**
-     * Connect all wallet managers.
-     *
-     * They will be connected w/o an explict NetworkPeer.
+     * Resume System.  This will connect all wallet managers.  (They will be connected w/o
+     * an explicit NetworkPeer
      */
-    void connectAll();
+    void resume ();
 
     /**
-     * Disconnect all wallet managers.
+     * Pause System.  This will disconnect all the wallet managers
      */
-    void disconnectAll();
+    void pause ();
 
     void subscribe(String subscriptionToken);
 

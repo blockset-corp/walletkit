@@ -503,20 +503,6 @@ public final class System {
     }
 
     ///
-    /// Disconnect all wallet managers
-    ///
-    public func disconnectAll () {
-        managers.forEach { $0.disconnect() }
-    }
-
-    ///
-    /// Connect all wallet managers.  They will be connected w/o an explict NetworkPeer.
-    ///
-    public func connectAll () {
-        managers.forEach { $0.connect() }
-    }
-
-    ///
     /// Set the network reachable flag for all managers. Setting or clearing this flag will
     /// NOT result in a connect/disconnect operation by a manager. Callers must use the
     /// `connect`/`disconnect` calls to change a WalletManager's connectivity state. Instead,
@@ -526,6 +512,30 @@ public final class System {
     public func setNetworkReachable (_ isNetworkReachable: Bool) {
         self.isNetworkReachable = isNetworkReachable
         managers.forEach { $0.setNetworkReachable(isNetworkReachable) }
+    }
+
+    // MARK: - Pause/Resume
+
+    ///
+    /// Pause by disconnecting all wallet managers among other things.
+    ///
+    public func pause () {
+        // If called when we've no networks, then we've never been configured.  Ignore pausing.
+        if !networks.isEmpty {
+            print ("SYS: Pause")
+            managers.forEach { $0.disconnect() }
+            query.cancelAll()
+        }
+    }
+
+    /// Resume by connecting all wallet managers among other things
+    ///
+    public func resume () {
+        // If called when we've no networks, then we've never been configured.  Ignore resuming.
+        if !networks.isEmpty {
+            print ("SYS: Resume")
+            managers.forEach { $0.connect() }
+        }
     }
 
      ///
@@ -903,7 +913,7 @@ public final class System {
         System.systemRemove (index: system.index)
 
         // Disconnect all wallet managers
-        system.disconnectAll()
+        system.pause()
 
         // Stop all the wallet managers.
         system.managers.forEach { $0.stop() }
