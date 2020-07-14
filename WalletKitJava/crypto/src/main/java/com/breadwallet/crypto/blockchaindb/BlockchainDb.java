@@ -294,6 +294,7 @@ public class BlockchainDb {
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         getTransactions(
                 id,
@@ -302,6 +303,7 @@ public class BlockchainDb {
                 endBlockNumber,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 null,
                 handler
         );
@@ -313,6 +315,7 @@ public class BlockchainDb {
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         transactionApi.getTransactions(
@@ -322,6 +325,7 @@ public class BlockchainDb {
                 endBlockNumber,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 maxPageSize,
                 handler
         );
@@ -330,11 +334,13 @@ public class BlockchainDb {
     public void getTransaction(String id,
                                boolean includeRaw,
                                boolean includeProof,
+                               boolean includeTransfers,
                                CompletionHandler<Transaction, QueryError> handler) {
         transactionApi.getTransaction(
                 id,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 handler
         );
     }
