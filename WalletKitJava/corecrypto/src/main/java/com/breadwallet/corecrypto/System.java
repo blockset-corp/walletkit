@@ -53,8 +53,9 @@ import com.breadwallet.crypto.errors.MigratePeerError;
 import com.breadwallet.crypto.errors.MigrateTransactionError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateFeesUnavailableError;
-import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
 import com.breadwallet.crypto.events.network.NetworkEvent;
+import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
+import com.breadwallet.crypto.events.network.NetworkUpdatedEvent;
 import com.breadwallet.crypto.events.network.NetworkFeesUpdatedEvent;
 import com.breadwallet.crypto.events.system.SystemCreatedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
@@ -380,6 +381,11 @@ final class System implements com.breadwallet.crypto.System {
                     announceNetworkEvent(network, new NetworkCreatedEvent());
                     announceSystemEvent(new SystemNetworkAddedEvent(network));
                 }
+            }
+
+            @Override
+            public void updated(Network network) {
+                announceNetworkEvent(network, new NetworkUpdatedEvent());
             }
 
             @Override

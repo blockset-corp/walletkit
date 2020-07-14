@@ -38,6 +38,7 @@ final class NetworkDiscovery {
     /* package */
     interface Callback {
         void discovered(Network network);
+        void updated(Network network);
         void complete(List<com.breadwallet.crypto.Network> networks);
     }
 
@@ -144,6 +145,9 @@ final class NetworkDiscovery {
 
                         // Keep a running total of discovered networks
                         networks.add(network);
+                    }
+                    else {
+                        callback.updated(network);
                     }
                 }
                 return null;

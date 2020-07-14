@@ -50,6 +50,11 @@ public final class System {
 
     internal let callbackCoordinator: SystemCallbackCoordinator
 
+    public func managerBy (network: Network) -> WalletManager? {
+        return managers
+            .first { $0.network == network }
+    }
+
     /// We define default blockchains but these are wholly insufficient given that the
     /// specfication includes `blockHeight` (which can never be correct).
 
@@ -67,7 +72,7 @@ public final class System {
         return networks.first { $0.uids == uids }
     }
 
-     internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
+    internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
         return managers
             .first { $0.core == core }
     }
@@ -662,6 +667,12 @@ public final class System {
              discoveredNetworks.append(network)
         }
 
+        func announceNetworkUpdate (_ network: Network) {
+            self.listenerQueue.async {
+                self.listener?.handleNetworkEvent (system: self, network: network, event: .updated)
+            }
+        }
+
         // Query for blockchains.
         self.query.getBlockchains (mainnet: self.onMainnet) {
             (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
@@ -699,8 +710,6 @@ public final class System {
 
                         // Configure the network using the currencyModels.  If currency models have
                         // been added, then we'll add those to `network`.
-                        //
-                        // TODO: If `existing`, announce new currencies
                         self.configure (network: network, currenciesFrom: currencyModels)
 
                         // If we have a blockChainModel, configure the network fees.
@@ -716,6 +725,11 @@ public final class System {
                         // If this is the first we've learn of this network, then announce it
                         if !existing {
                             announceNetwork(network)
+                        }
+
+                        // Otherwise, announce a network update
+                        else {
+                            announceNetworkUpdate(network)
                         }
                 }
 
