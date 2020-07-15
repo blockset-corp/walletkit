@@ -548,10 +548,12 @@ cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
 
             case BLOCK_CHAIN_TYPE_ETH: {
                 const char *issuer = cryptoCurrencyGetIssuer (currency);
-                BREthereumAddress ethAddress = ethAddressCreate (issuer);
-                BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
-                assert (NULL != ethToken);
-                ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
+                if (NULL != issuer) {
+                    BREthereumAddress ethAddress = ethAddressCreate (issuer);
+                    BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
+                    assert (NULL != ethToken);
+                    ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
+                }
                 break;
             }
             case BLOCK_CHAIN_TYPE_GEN:

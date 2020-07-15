@@ -166,7 +166,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-         system.pause()
+        system.pause()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {

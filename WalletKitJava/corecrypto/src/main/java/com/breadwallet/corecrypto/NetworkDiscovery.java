@@ -38,6 +38,7 @@ final class NetworkDiscovery {
     /* package */
     interface Callback {
         void discovered(Network network);
+        void updated(Network network);
         void complete(List<com.breadwallet.crypto.Network> networks);
     }
 
@@ -50,54 +51,60 @@ final class NetworkDiscovery {
 
         CountUpAndDownLatch latch = new CountUpAndDownLatch(() -> callback.complete(networks));
 
+        // The existing networks
+        final List<com.breadwallet.crypto.Network> existingNetworks = networks;
+
         // The 'supportedNetworks' will be builtin networks matching isMainnet.
         final List<Network> supportedNetworks = findBuiltinNetworks(isMainnet);
 
-        getBlockChains(latch, query, isMainnet, remoteModels -> {
-            // We ONLY support built-in blockchains; but the remotes have some
-            // needed values - specifically the network fees and block height.
+         getBlockChains(latch, query, isMainnet, remoteModels -> {
+             // If there are no 'remoteModels' the query might have failed.
+             //
+             // We ONLY support built-in blockchains; but the remotes have some
+             // needed values - specifically the network fees and block height.
 
-            // Process each supportedNetwork based on the remote model
-            for (Network network: supportedNetworks) {
-                String blockchainModelId = network.getUids();
+             getCurrencies(latch, query, isMainnet, appCurrencies, currencyModels -> {
+                 // If there are no 'currencyModels' the query might have failed.
+                 //
+                 // Process each supportedNetwork based on the remote model
+                 for (Network network: supportedNetworks) {
+                    boolean existing = existingNetworks.contains(network);
+                    String blockchainModelId = network.getUids();
 
-                final List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> applicationCurrencies = new ArrayList<>();
-                for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currency: appCurrencies) {
-                    if (currency.getBlockchainId().equals(blockchainModelId)) {
-                        applicationCurrencies.add(currency);
-                    }
-                }
-
-                getCurrencies(latch, query, blockchainModelId, applicationCurrencies, currencyModels -> {
                     for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
-                        Currency currency = Currency.create(
-                                currencyModel.getId(),
-                                currencyModel.getName(),
-                                currencyModel.getCode(),
-                                currencyModel.getType(),
-                                currencyModel.getAddress().orNull());
+                        if (currencyModel.getBlockchainId().equals(blockchainModelId)) {
+                            Currency currency = Currency.create(
+                                    currencyModel.getId(),
+                                    currencyModel.getName(),
+                                    currencyModel.getCode(),
+                                    currencyModel.getType(),
+                                    currencyModel.getAddress().orNull());
 
-                        Optional<CurrencyDenomination> baseDenomination = findFirstBaseDenomination(currencyModel.getDenominations());
-                        List<CurrencyDenomination> nonBaseDenominations = findAllNonBaseDenominations(currencyModel.getDenominations());
+                            Optional<CurrencyDenomination> baseDenomination = findFirstBaseDenomination(currencyModel.getDenominations());
+                            List<CurrencyDenomination> nonBaseDenominations = findAllNonBaseDenominations(currencyModel.getDenominations());
 
-                        Unit baseUnit = baseDenomination.isPresent() ? currencyDenominationToBaseUnit(currency, baseDenomination.get()) :
-                                currencyToDefaultBaseUnit(currency);
+                            Unit baseUnit = baseDenomination.isPresent()
+                                    ? currencyDenominationToBaseUnit(currency, baseDenomination.get())
+                                    : currencyToDefaultBaseUnit(currency);
 
-                        List<Unit> units = currencyDenominationToUnits(currency, nonBaseDenominations, baseUnit);
+                            List<Unit> units = currencyDenominationToUnits(currency, nonBaseDenominations, baseUnit);
 
-                        units.add(0, baseUnit);
-                        Collections.sort(units, (o1, o2) -> o2.getDecimals().compareTo(o1.getDecimals()));
-                        Unit defaultUnit = units.get(0);
+                            units.add(0, baseUnit);
+                            Collections.sort(units, (o1, o2) -> o2.getDecimals().compareTo(o1.getDecimals()));
+                            Unit defaultUnit = units.get(0);
 
-                        // The currency and unit here will not override builtins.
-                        network.addCurrency(currency, baseUnit, defaultUnit);
-                        for (Unit u: units) {
-                            network.addUnitFor(currency, u);
+                            // The currency and unit here will not override builtins.
+                            network.addCurrency(currency, baseUnit, defaultUnit);
+                            for (Unit u : units) {
+                                network.addUnitFor(currency, u);
+                            }
                         }
                     }
 
-                    Unit feeUnit = network.baseUnitFor (network.getCurrency()).orNull();
-                    if (null == feeUnit) { /* never here */ return null; }
+                    Unit feeUnit = network.baseUnitFor(network.getCurrency()).orNull();
+                    if (null == feeUnit) { /* never here */
+                        return null;
+                    }
 
                     // Find a blockchainModel for this network; there might not be one.
                     Blockchain blockchainModel = null;
@@ -112,7 +119,7 @@ final class NetworkDiscovery {
 
                         // Update the network's height
                         if (blockchainModel.getBlockHeight().isPresent())
-                            network.setHeight (blockchainModel.getBlockHeightValue());
+                            network.setHeight(blockchainModel.getBlockHeightValue());
 
                         // Extract the network fees
                         List<NetworkFee> fees = new ArrayList<>();
@@ -125,24 +132,26 @@ final class NetworkDiscovery {
 
                         if (fees.isEmpty()) {
                             Log.log(Level.FINE, String.format("Missed Fees %s", blockchainModel.getName()));
-                            return null;
+                        } else {
+                            network.setFees(fees);
                         }
-
-                        network.setFees(fees);
-                    }
-                    else {
+                    } else {
                         Log.log(Level.FINE, String.format("Missed Model for Network: %s", blockchainModelId));
                     }
 
-                    // Announce the network
-                    callback.discovered(network);
+                    if (!existing) {
+                        // Announce the network
+                        callback.discovered(network);
 
-                    // Keep a running total of discovered networks
-                    networks.add(network);
-
-                    return null;
-                });
-            }
+                        // Keep a running total of discovered networks
+                        networks.add(network);
+                    }
+                    else {
+                        callback.updated(network);
+                    }
+                }
+                return null;
+             });
             return null;
         });
     }
@@ -216,6 +225,49 @@ final class NetworkDiscovery {
                         if (currency.getBlockchainId().equals(blockchainId) && currency.getVerified()) {
                             merged.put(currency.getId(), currency);
                         }
+                    }
+
+                    func.apply(merged.values());
+                } finally {
+                    latch.countDown();
+                }
+            }
+        });
+    }
+
+    private static void getCurrencies(CountUpAndDownLatch latch,
+                                      BlockchainDb query,
+                                      boolean mainnet,
+                                      Collection<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> applicationCurrencies,
+                                      Function<Collection<com.breadwallet.crypto.blockchaindb.models.bdb.Currency>, Void> func) {
+        latch.countUp();
+        query.getCurrencies(mainnet, new CompletionHandler<List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency>, QueryError>() {
+            @Override
+            public void handleData(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> newCurrencies) {
+                try {
+                    // On success, always merge `default` INTO the result.  We merge defaultUnit
+                    // into `result` to always bias to the blockchainDB result.
+
+                    Map<String, com.breadwallet.crypto.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
+                    for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currency : newCurrencies) {
+                        merged.put(currency.getId(), currency);
+                    }
+
+                    func.apply(merged.values());
+                } finally {
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public void handleError(QueryError error) {
+                try {
+                    // On error, use `apps` merged INTO defaults.  We merge into `defaults` to ensure that we get
+                    // BTC, BCH, ETH, BRD and that they are correct (don't rely on the App).
+
+                    Map<String, com.breadwallet.crypto.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
+                    for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currency : applicationCurrencies) {
+                        merged.put(currency.getId(), currency);
                     }
 
                     func.apply(merged.values());

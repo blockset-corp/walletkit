@@ -185,6 +185,14 @@ public class BlockchainDb {
         );
     }
 
+    public void getCurrencies(boolean mainnet,
+                              CompletionHandler<List<Currency>, QueryError> handler) {
+        currencyApi.getCurrencies(
+                mainnet,
+                handler
+        );
+    }
+
     public void getCurrency(String id,
                             CompletionHandler<Currency, QueryError> handler) {
         currencyApi.getCurrency(

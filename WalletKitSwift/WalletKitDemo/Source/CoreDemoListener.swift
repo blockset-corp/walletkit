@@ -20,6 +20,7 @@ class CoreDemoListener: SystemListener {
     private var managerListeners: [WalletManagerListener] = []
     private var walletListeners: [WalletListener] = []
     private var transferListeners: [TransferListener] = []
+    private var networkListeners: [NetworkListener] = []
 
     private let networkCurrencyCodesToMode: [String:WalletManagerMode]
     private let registerCurrencyCodes: [String]
@@ -82,6 +83,22 @@ class CoreDemoListener: SystemListener {
         }
     }
     
+    func add(networkListener: NetworkListener) {
+        CoreDemoListener.eventQueue.async {
+            if !self.networkListeners.contains (where: { $0 === networkListener }) {
+                self.networkListeners.append (networkListener)
+            }
+        }
+    }
+
+    func remove(networkListener: NetworkListener) {
+        CoreDemoListener.eventQueue.async {
+            if let i = self.networkListeners.firstIndex (where: { $0 === networkListener }) {
+                self.networkListeners.remove (at: i)
+            }
+        }
+    }
+
     func handleSystemEvent(system: System, event: SystemEvent) {
         print ("APP: System: \(event)")
         switch event {
@@ -226,7 +243,28 @@ class CoreDemoListener: SystemListener {
     }
 
     func handleNetworkEvent(system: System, network: Network, event: NetworkEvent) {
-        print ("APP: Network: \(event)")
+        CoreDemoListener.eventQueue.async {
+            print ("APP: Network: \(event)")
+            switch event {
+            case .updated:
+                // On .updated, register a wallet for any new currencies.
+                network.currencies
+                    .forEach {
+                        if let manager = system.managerBy(network: network) {
+                            let _ = manager.registerWalletFor (currency: $0)
+                        }
+                }
+                break
+            default:
+                break
+            }
+            
+            self.networkListeners.forEach {
+                $0.handleNetworkEvent (system: system,
+                                       network: network,
+                                       event: event)
+            }
+        }
     }
 }
 

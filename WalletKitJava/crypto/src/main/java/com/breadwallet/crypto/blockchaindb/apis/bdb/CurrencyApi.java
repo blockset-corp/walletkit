@@ -47,6 +47,16 @@ public class CurrencyApi {
         jsonClient.sendGetForArrayWithPaging("currencies", params, Currency.class, pagedHandler);
     }
 
+    public void getCurrencies(boolean mainnet,
+                              CompletionHandler<List<Currency>, QueryError> handler) {
+        ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
+        paramsBuilder.put("testnet", (mainnet ? "false" : "true"));
+        paramsBuilder.put("verified", "true");
+        ImmutableMultimap<String, String> params = paramsBuilder.build();
+
+        jsonClient.sendGetForArray("currencies", params, Currency.class, handler);
+    }
+
     public void getCurrency(String id,
                             CompletionHandler<Currency, QueryError> handler) {
         jsonClient.sendGetWithId("currencies", id, ImmutableMultimap.of(), Currency.class, handler);
