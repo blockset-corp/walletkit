@@ -56,7 +56,7 @@ public class TransactionApi {
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transaction> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 
-        if (null == maxPageSize) maxPageSize = DEFAULT_MAX_PAGE_SIZE;
+        if (null == maxPageSize) maxPageSize = (includeTransfers ? 1 : 3) * DEFAULT_MAX_PAGE_SIZE;
 
         for (int i = 0; i < chunkedAddressesList.size(); i++) {
             List<String> chunkedAddresses = chunkedAddressesList.get(i);
