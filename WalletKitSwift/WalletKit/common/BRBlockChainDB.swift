@@ -804,6 +804,7 @@ public class BlockChainDB {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[Model.Transfer], QueryError>) -> Void) {
+        precondition(!addresses.isEmpty, "Empty `addresses`")
         let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,
@@ -868,7 +869,7 @@ public class BlockChainDB {
                                  includeTransfers: Bool = true,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
-
+        precondition(!addresses.isEmpty, "Empty `addresses`")
         let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,

@@ -50,6 +50,9 @@ public class TransactionApi {
                                 boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
+        if (addresses.isEmpty())
+            throw new IllegalArgumentException("Empty `addresses`");
+
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transaction> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 

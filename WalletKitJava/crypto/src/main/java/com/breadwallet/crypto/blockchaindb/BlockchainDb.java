@@ -255,6 +255,7 @@ public class BlockchainDb {
 
     // Transfer
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransfers(String id,
                              List<String> addresses,
                              UnsignedLong beginBlockNumber,
@@ -270,6 +271,7 @@ public class BlockchainDb {
         );
     }
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransfers(String id,
                              List<String> addresses,
                              @Nullable UnsignedLong beginBlockNumber,
@@ -296,6 +298,7 @@ public class BlockchainDb {
 
     // Transactions
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransactions(String id,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
@@ -317,6 +320,7 @@ public class BlockchainDb {
         );
     }
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransactions(String id,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
