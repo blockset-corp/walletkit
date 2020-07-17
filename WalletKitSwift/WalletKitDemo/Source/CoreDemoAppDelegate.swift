@@ -39,6 +39,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var accountSerialization: Data!
     var accountUids: String!
 
+    var blocksetAccess: BlocksetAccess!
+
     var client: SystemClient!
 
     var currencyCodesToMode: [String:WalletManagerMode]!
@@ -63,15 +65,16 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         print ("APP: Bundle Path       : \(Bundle(for: CoreDemoAppDelegate.self).bundlePath)")
 
-        let accountSpecificationsPath = Bundle(for: CoreDemoAppDelegate.self).path(forResource: "CoreTestsConfig", ofType: "json")!
-        let accountSpecifications     = AccountSpecification.loadFrom(configPath: accountSpecificationsPath)
-        let accountIdentifier         = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
+        let testConfiguration     = TestConfiguration.loadFromBundle(resource: "WalletKitTestsConfig")!
+        let accountSpecifications = testConfiguration.accountSpecifications
+        let accountIdentifier     = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
 
         guard let accountSpecification = accountSpecifications.first (where: { $0.identifier == accountIdentifier })
             ?? (accountSpecifications.count > 0 ? accountSpecifications[0] : nil)
             else { preconditionFailure ("APP: No AccountSpecification: \(accountIdentifier)"); }
 
         self.accountSpecification = accountSpecification
+        self.blocksetAccess = testConfiguration.blocksetAccess
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -146,7 +149,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
                                      isMainnet: mainnet)
 
         // Create the BlockChainDB
-        client = BlocksetSystemClient.createForTest ()
+        client = BlocksetSystemClient.createForTest (bdbBaseURL: self.blocksetAccess.baseURL,
+                                                    bdbToken:   self.blocksetAccess.token)
 
         // Create the system
         self.system = System.create (client: client,

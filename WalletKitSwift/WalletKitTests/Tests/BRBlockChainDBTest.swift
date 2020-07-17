@@ -17,7 +17,10 @@ class BRBlockChainDBTest: XCTestCase {
     var expectation: XCTestExpectation!
 
     override func setUp() {
-        client = BlocksetSystemClient.createForTest()
+        guard let testConfiguration = TestConfiguration.loadFrom (bundle: Bundle.module)
+        else { preconditionFailure("No TestConfiguration") }
+
+        client = BlocksetSystemClient.createForTest(blocksetAccess: testConfiguration.blocksetAccess)
     }
 
     override func tearDown() {

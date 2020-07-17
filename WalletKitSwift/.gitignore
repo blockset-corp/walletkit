@@ -46,5 +46,5 @@ Package.resolved
 .DS_Store
 
 *TestsConfig.*
-!InstallCoreTestsConfig.sh
+!InstallWalletKitTestsConfig.sh
 
