@@ -572,10 +572,11 @@ size_t BRTransactionSize(const BRTransaction *tx)
             size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(input->sigLen) + input->sigLen + sizeof(uint32_t);
             witSize += input->witLen;
         }
-        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH signature size
-            witSize += TX_INPUT_SIZE;
+        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH input size
+            size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t);
+            witSize += TX_INPUT_SIZE - (sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t));
         }
-        else size += TX_INPUT_SIZE; // estimated P2PKH signature size
+        else size += TX_INPUT_SIZE; // estimated P2PKH input size
     }
     
     for (size_t i = 0; tx && i < tx->outCount; i++) {
@@ -602,10 +603,11 @@ size_t BRTransactionVSize(const BRTransaction *tx)
             size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(input->sigLen) + input->sigLen + sizeof(uint32_t);
             witSize += tx->inputs[i].witLen;
         }
-        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH signature size
-            witSize += TX_INPUT_SIZE;
+        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH input size
+            size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t);
+            witSize += TX_INPUT_SIZE - (sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t));
         }
-        else size += TX_INPUT_SIZE; // estimated P2PKH signature size
+        else size += TX_INPUT_SIZE; // estimated P2PKH input size
     }
     
     for (size_t i = 0; i < tx->outCount; i++) {
