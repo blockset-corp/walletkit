@@ -422,14 +422,12 @@ public class BlockChainDB {
             let raw = json.asData (name: "raw")
 
             // Require "_embedded" : "transfers" as [JSON.Dict]
-            guard let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict]
-                else { return nil }
+            let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict] ?? []
 
             // Require asTransfer is not .none
-            guard let transfers = transfersJSON
+            let transfers = transfersJSON
                 .map ({ JSON (dict: $0) })
-                .map ({ asTransfer (json: $0) }) as? [Model.Transfer]
-                else { return nil }
+                .map ({ asTransfer (json: $0) }) as? [Model.Transfer] ?? []
 
             return (id: id, blockchainId: bid,
                      hash: hash, identifier: identifier,
@@ -804,6 +802,7 @@ public class BlockChainDB {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[Model.Transfer], QueryError>) -> Void) {
+        precondition(!addresses.isEmpty, "Empty `addresses`")
         let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,
@@ -868,7 +867,7 @@ public class BlockChainDB {
                                  includeTransfers: Bool = true,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[Model.Transaction], QueryError>) -> Void) {
-
+        precondition(!addresses.isEmpty, "Empty `addresses`")
         let chunkedAddresses = addresses.chunked(into: BlockChainDB.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,
@@ -893,7 +892,7 @@ public class BlockChainDB {
             }
         }
 
-        let maxPageSize = maxPageSize ?? BlockChainDB.DEFAULT_MAX_PAGE_SIZE
+        let maxPageSize = maxPageSize ?? ((includeTransfers ? 1 : 3) * BlockChainDB.DEFAULT_MAX_PAGE_SIZE)
 
         let queryKeysBase = [
             "blockchain_id",
@@ -918,10 +917,6 @@ public class BlockChainDB {
             .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
 
         for addresses in chunkedAddresses {
-
-
-            //            print ("SYS: BDB: Request: https://api.blockset.com/transactions?: \(addresses.count) -> \(addresses.chunked(into: BlockChainDB.ADDRESS_COUNT).count)")
-
             let queryKeys = queryKeysBase + Array (repeating: "address", count: addresses.count)
             let queryVals = queryValsBase + addresses
 
@@ -1796,6 +1791,7 @@ public class BlockChainDB {
                                   httpMethod: String = "POST",
                                   deserializer: @escaping (_ data: Data?) -> Result<T, QueryError> = deserializeAsJSON,
                                   completion: @escaping (Result<T, QueryError>) -> Void) {
+        print ("SYS: BDB: Request: \(url.absoluteString): Method: \(httpMethod): Data: []")
         var request = URLRequest (url: url)
         decorateRequest(&request, httpMethod: httpMethod)
         sendRequest (request, dataTaskFunc, responseSuccess (httpMethod), deserializer: deserializer, completion: completion)

@@ -543,7 +543,7 @@ cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
     if (NULL == wallet) {
         switch (cwm->type) {
             case BLOCK_CHAIN_TYPE_BTC:
-                assert (0); // Only BTC currency; has `primaryWallet
+                // BTC has a single primary wallet.
                 break;
 
             case BLOCK_CHAIN_TYPE_ETH: {
@@ -557,7 +557,7 @@ cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
                 break;
             }
             case BLOCK_CHAIN_TYPE_GEN:
-                assert (0);
+                // GEN has a single primary wallet.
                 break;
         }
     }

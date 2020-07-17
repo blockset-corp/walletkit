@@ -96,13 +96,14 @@ class BRBlockChainDBTest: XCTestCase {
         }
         wait (for: [expectation], timeout: 60)
 
-        //
-        //
-        //
+        let blockchainId = "bitcoin-testnet"
 
+        ///
+        /// Avoid this - `addresses` must not be empty
+        ///
+        #if false
         expectation = XCTestExpectation (description: "transfers")
 
-        let blockchainId = "bitcoin-testnet"
         db.getTransfers (blockchainId: blockchainId,
                          addresses: [],
                          begBlockNumber: 0,
@@ -116,6 +117,7 @@ class BRBlockChainDBTest: XCTestCase {
         }
 
         wait (for: [expectation], timeout: 60)
+        #endif
 
         ///
         ///
@@ -176,8 +178,9 @@ class BRBlockChainDBTest: XCTestCase {
         wait (for: [expectation], timeout: 60)
 
         ///
+        /// Avoid this - `addresses` must not be empty
         ///
-        ///
+        #if false
         expectation = XCTestExpectation (description: "transfers w/ [0,11000) w/ no address")
 
         db.getTransfers (blockchainId: blockchainId,
@@ -189,11 +192,12 @@ class BRBlockChainDBTest: XCTestCase {
                                 guard case let .success(transfers) = res
                                     else { XCTAssert(false); return }
 
-                                XCTAssert(transfers.isEmpty)
+                                XCTAssertTrue (transfers.isEmpty)
                                 self.expectation.fulfill()
         }
 
         wait (for: [expectation], timeout: 60)
+        #endif
     }
 
     func testTransactions () {
@@ -211,12 +215,14 @@ class BRBlockChainDBTest: XCTestCase {
         }
         wait (for: [expectation], timeout: 60)
 
+        let blockchainId = "bitcoin-testnet"
+
         ///
         ///
         ///
+        #if false
         expectation = XCTestExpectation (description: "transactions")
 
-        let blockchainId = "bitcoin-testnet"
         db.getTransactions (blockchainId: blockchainId,
                             addresses: [],
                             begBlockNumber: 0,
@@ -226,11 +232,12 @@ class BRBlockChainDBTest: XCTestCase {
                                 guard case let .success (transactions) = res
                                     else { XCTAssert(false); return }
 
-                                XCTAssertTrue (transactions.isEmpty)
+                                XCTAssertFalse (transactions.isEmpty)
                                 self.expectation.fulfill()
         }
 
         wait (for: [expectation], timeout: 60)
+        #endif
 
         ///
         ///
@@ -292,6 +299,7 @@ class BRBlockChainDBTest: XCTestCase {
         ///
         ///
         ///
+        #if false
         expectation = XCTestExpectation (description: "transactions w/ [0,11000) w/ no address")
 
         db.getTransactions (blockchainId: blockchainId,
@@ -304,12 +312,12 @@ class BRBlockChainDBTest: XCTestCase {
                                 guard case let .success(transactions) = res
                                     else { XCTAssert(false); return }
 
-                                XCTAssert(transactions.isEmpty)
+                                XCTAssertFalse (transactions.isEmpty)
                                 self.expectation.fulfill()
         }
 
         wait (for: [expectation], timeout: 60)
-
+        #endif
     }
 
     func testBlocks () {

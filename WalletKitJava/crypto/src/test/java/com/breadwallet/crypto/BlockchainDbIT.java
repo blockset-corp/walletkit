@@ -182,20 +182,43 @@ public class BlockchainDbIT {
     public void testGetTransfers() {
         SynchronousCompletionHandler<List<Transfer>> handler = new SynchronousCompletionHandler<>();
 
-        blockchainDb.getTransfers("bitcoin-mainnet", Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
-                UnsignedLong.ZERO, UnsignedLong.valueOf(500000), null, handler);
+        blockchainDb.getTransfers("bitcoin-mainnet",
+                Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
+                UnsignedLong.ZERO,
+                UnsignedLong.valueOf(500000),
+                null,
+                handler);
         List<Transfer> allTransfers = handler.dat().orNull();
         assertNotNull(allTransfers);
         assertNotEquals(0, allTransfers.size());
 
-        blockchainDb.getTransfers("bitcoin-mainnet", Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
-                UnsignedLong.ZERO, UnsignedLong.valueOf(500000), 1, handler);
+        blockchainDb.getTransfers("bitcoin-mainnet",
+                Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
+                UnsignedLong.ZERO,
+                UnsignedLong.valueOf(500000),
+                1,
+                handler);
         List<Transfer> pagedTransfers = handler.dat().orNull();
         assertNotNull(pagedTransfers);
         assertNotEquals(0, pagedTransfers.size());
 
         // TODO(fix): This test fails; see CORE-741 for more details
         assertEquals(allTransfers.size(), pagedTransfers.size());
+
+        boolean caughtException = false;
+        try {
+            blockchainDb.getTransfers("bitcoin-mainnet",
+                    Collections.EMPTY_LIST,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.valueOf(500000),
+                    1,
+                    handler);
+
+        }
+        catch (Exception ex) {
+            caughtException = true;
+        }
+        assertTrue (caughtException);
     }
 
     @Test
@@ -213,20 +236,51 @@ public class BlockchainDbIT {
     public void testGetTransactions() {
         SynchronousCompletionHandler<List<Transaction>> handler = new SynchronousCompletionHandler<>();
 
-        blockchainDb.getTransactions("bitcoin-mainnet", Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
-                UnsignedLong.ZERO, UnsignedLong.valueOf(500000), true, true, null, handler);
+        blockchainDb.getTransactions("bitcoin-mainnet",
+                Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
+                UnsignedLong.ZERO,
+                UnsignedLong.valueOf(500000),
+                true,
+                false,
+                false,
+                null,
+                handler);
         List<Transaction> allTransactions = handler.dat().orNull();
         assertNotNull(allTransactions);
         assertNotEquals(0, allTransactions.size());
 
-        blockchainDb.getTransactions("bitcoin-mainnet", Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
-                UnsignedLong.ZERO, UnsignedLong.valueOf(500000), true, true, 1, handler);
+        blockchainDb.getTransactions("bitcoin-mainnet",
+                Collections.singletonList("1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"),
+                UnsignedLong.ZERO,
+                UnsignedLong.valueOf(500000),
+                true,
+                true,
+                true,
+                1,
+                handler);
         List<Transaction> pagedTransactions = handler.dat().orNull();
         assertNotNull(pagedTransactions);
         assertNotEquals(0, pagedTransactions.size());
 
         // TODO(fix): This test fails; see CORE-741 for more details
         assertEquals(allTransactions.size(), pagedTransactions.size());
+
+        boolean caughtException = false;
+        try {
+            blockchainDb.getTransactions("bitcoin-mainnet",
+                    Collections.EMPTY_LIST,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.valueOf(500000),
+                    true,
+                    false,
+                    false,
+                    null,
+                    handler);
+        }
+        catch (Exception ex) {
+            caughtException = true;
+        }
+        assertTrue (caughtException);
     }
 
     @Test
@@ -235,12 +289,12 @@ public class BlockchainDbIT {
 
         String transactionId = "bitcoin-mainnet:06d7d63d6c1966a378bbbd234a27a5b583f37d3bdf9fb9ef50f4724c86b4559b";
 
-        blockchainDb.getTransaction(transactionId, true, true, handler);
+        blockchainDb.getTransaction(transactionId, true, true, false, handler);
         Transaction transaction = handler.dat().orNull();
         assertNotNull(transaction);
         assertEquals(transactionId, transaction.getId());
 
-        blockchainDb.getTransaction(transactionId, false, false, handler);
+        blockchainDb.getTransaction(transactionId, false, false, false, handler);
         transaction = handler.dat().orNull();
         assertNotNull(transaction);
         assertEquals(transactionId, transaction.getId());
