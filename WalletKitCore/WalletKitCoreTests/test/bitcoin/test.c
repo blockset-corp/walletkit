@@ -3307,8 +3307,10 @@ static void testSyncSaveBlocks (void *c, int replace, BRMerkleBlock *blocks[], s
 extern int BRRunTestsSync (const char *paperKey,
                            int isBTC,
                            int isMainnet) {
-    const BRChainParams *params = (isBTC & isMainnet ? BRMainNetParams
-                                   : (isBTC & !isMainnet ? BRTestNetParams
+    const BRChainParams *params = ((isBTC & isMainnet)
+                                   ? BRMainNetParams
+                                   : ((isBTC & !isMainnet)
+                                      ? BRTestNetParams
                                       : (isMainnet ? BRBCashParams : BRBCashTestNetParams)));
 
     uint32_t epoch;
