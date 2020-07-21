@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C13F33724C759A0008410C8 /* libresolv.tbd */; };
 		3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3C82745323ECC3770047A2D3 /* WalletKit */; };
 		3CCCFC0D24C0CDD90045FA37 /* CONTRIBUTORS in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */; };
 		3CCCFC0E24C0CDD90045FA37 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0B24C0CDD90045FA37 /* LICENSE */; };
@@ -35,6 +36,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3C13F33724C759A0008410C8 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		3C82745123ECBD9F0047A2D3 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CONTRIBUTORS; path = ../../CONTRIBUTORS; sourceTree = "<group>"; };
 		3CCCFC0B24C0CDD90045FA37 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../../LICENSE; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */,
+				3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,6 +132,7 @@
 		3CD5B26923EB7ED800CC8A56 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3C13F33724C759A0008410C8 /* libresolv.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
