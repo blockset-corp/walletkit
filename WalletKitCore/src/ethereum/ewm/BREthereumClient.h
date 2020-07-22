@@ -72,17 +72,14 @@ extern "C" {
     (*BREthereumClientHandlerEstimateGas) (BREthereumClientContext context,
                                            BREthereumEWM ewm,
                                            BREthereumWallet wid,
+                                           OwnershipGiven BREthereumTransfer transfer,
                                            BREthereumCookie cookie,
-                                           const char *from,
-                                           const char *to,
-                                           const char *amount,
-                                           const char *gasPrice,
-                                           const char *data,
                                            int rid);
 
     extern BREthereumStatus
     ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
                                    BREthereumWallet wallet,
+                                   BREthereumTransfer transfer,
                                    BREthereumCookie cookie,
                                    const char *gasEstimate,
                                    const char *gasPrice,
@@ -91,6 +88,7 @@ extern "C" {
     extern BREthereumStatus
     ewmAnnounceGasEstimateFailure (BREthereumEWM ewm,
                                    BREthereumWallet wallet,
+                                   BREthereumTransfer transfer,
                                    BREthereumCookie cookie,
                                    BREthereumStatus status,
                                    int rid);

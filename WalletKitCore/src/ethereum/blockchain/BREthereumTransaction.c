@@ -196,7 +196,7 @@ extern BREthereumFeeBasis
 transactionGetFeeBasisLimit (BREthereumTransaction transaction) {
     return (BREthereumFeeBasis) {
         FEE_BASIS_GAS,
-        { transaction-> gasLimit, transaction->gasPrice }
+        { transaction->gasLimit, transaction->gasPrice }
     };
 }
 

@@ -1308,8 +1308,6 @@ ewmWalletEstimateTransferFeeForTransfer (BREthereumEWM ewm,
                                                   (NULL == ethToken ? TRANSFER_BASIS_TRANSACTION : TRANSFER_BASIS_LOG));
 
     ewmGetGasEstimate (ewm, wallet, transfer, cookie);
-
-    transferRelease (transfer);
 }
 
 extern BREthereumBoolean
