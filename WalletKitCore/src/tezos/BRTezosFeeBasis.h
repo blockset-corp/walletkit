@@ -18,7 +18,20 @@
 extern "C" {
 #endif
 
+typedef struct
+{
+    BRTezosUnitMutez    fee;
+    int64_t             gasLimit;
+    int64_t             storageLimit; // not used for fee calculation but needed for tx serialization
+} BRTezosFeeBasis;
 
+extern BRTezosFeeBasis tezosDefaultFeeBasis();
+
+extern BRTezosUnitMutez tezosFeeBasisGetPricePerCostFactor(BRTezosFeeBasis *feeBasis);
+extern uint64_t tezosFeeBasisGetCostFactor(BRTezosFeeBasis *feeBasis);
+extern uint32_t tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
+
+extern BRTezosUnitMutez tezosFeeBasisGetFee(BRTezosFeeBasis *feeBasis);
 
 
 #ifdef __cplusplus

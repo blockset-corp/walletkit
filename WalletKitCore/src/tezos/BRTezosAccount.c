@@ -58,6 +58,7 @@ tezosAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
     
     memcpy(account->publicKey, bytes, TEZOS_PUBLIC_KEY_SIZE);
+    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
     
     return account;
 }

@@ -27,14 +27,25 @@
 #define BLAKE20_BYTES 20
 
 const uint8_t TZ1_PREFIX[3] = { 6, 161, 159 };
+const uint8_t TZ2_PREFIX[3] = { 6, 161, 161 };
+const uint8_t TZ3_PREFIX[3] = { 6, 161, 164 };
 
-uint8_t tezosFeeAddressBytes[TEZOS_ADDRESS_BYTES] = {
+static uint8_t feeAddressBytes[TEZOS_ADDRESS_BYTES] = {
     0x42, 0x52, 0x44, //BRD
     0x5F, 0x5F, // __
     'f', 'e', 'e', // fee
     0x5F, 0x5F, // __
     0x42, 0x52, 0x44, // BRD
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // padding
+};
+
+static uint8_t unknownAddressBytes[TEZOS_ADDRESS_BYTES] = {
+    0x42, 0x52, 0x44, //BRD
+    0x5F, 0x5F, // __
+    'u', 'n', 'k', 'n', 'o', 'w', 'n', // unknown
+    0x5F, 0x5F, // __
+    0x42, 0x52, 0x44, // BRD
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // padding
 };
 
 struct BRTezosAddressRecord {
@@ -47,35 +58,55 @@ tezosAddressFree (BRTezosAddress address) {
 }
 
 BRTezosAddress
-tezosAddressCreateFeeAddress()
-{
+tezosAddressCreateFeeAddress() {
     BRTezosAddress address = calloc(1, sizeof(struct BRTezosAddressRecord));
-    memcpy(address->bytes, tezosFeeAddressBytes, TEZOS_ADDRESS_BYTES);
+    memcpy(address->bytes, feeAddressBytes, TEZOS_ADDRESS_BYTES);
+    return address;
+}
+
+BRTezosAddress
+tezosAddressCreateUnknownAddress() {
+    BRTezosAddress address = calloc(1, sizeof(struct BRTezosAddressRecord));
+    memcpy(address->bytes, unknownAddressBytes, TEZOS_ADDRESS_BYTES);
     return address;
 }
 
 extern int
-tezosAddressIsFeeAddress (BRTezosAddress address)
-{
+tezosAddressIsFeeAddress (BRTezosAddress address) {
     assert(address);
-    if (memcmp(address->bytes, tezosFeeAddressBytes, sizeof(tezosFeeAddressBytes)) == 0) {
+    if (memcmp(address->bytes, feeAddressBytes, sizeof(feeAddressBytes)) == 0) {
         return 1;
     } else {
         return 0;
     }
 }
 
-// address string is Base58check(prefix + Blake2b(publicKey) (20 bytes))
-extern char *
-tezosAddressAsString (BRTezosAddress address)
+extern int
+tezosAddressIsUnknownAddress (BRTezosAddress address)
 {
     assert(address);
+    if (memcmp(address->bytes, unknownAddressBytes, sizeof(unknownAddressBytes)) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+extern char *
+tezosAddressAsString (BRTezosAddress address) {
+    assert(address);
+    char * string = NULL;
     
-    size_t addressLen = BRBase58CheckEncode(NULL, 0, address->bytes, TEZOS_ADDRESS_BYTES);
-    
-    char *string = calloc (1, addressLen);
-    BRBase58CheckEncode(string, addressLen, address->bytes, TEZOS_ADDRESS_BYTES);
-    
+    if (tezosAddressIsFeeAddress (address)) {
+        string = strdup ("__fee__");
+    } else if (tezosAddressIsUnknownAddress (address)) {
+        string = strdup ("unknown");
+    } else {
+        // address string is Base58check(prefix + Blake2b(publicKey) (20 bytes))
+        size_t addressLen = BRBase58CheckEncode(NULL, 0, address->bytes, TEZOS_ADDRESS_BYTES);
+        string = calloc (1, addressLen);
+        BRBase58CheckEncode(string, addressLen, address->bytes, TEZOS_ADDRESS_BYTES);
+    }
     return string;
 }
 
@@ -109,7 +140,9 @@ tezosAddressStringToAddress(const char *input) {
         return NULL;
     }
     
-    if (0 == memcmp(bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))) {
+    if (0 == memcmp(bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
+        || 0 == memcmp(bytes, TZ2_PREFIX, sizeof(TZ1_PREFIX))
+        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ1_PREFIX))) {
         return tezosAddressCreateFromBytes(bytes, length);
     }
     
@@ -120,7 +153,13 @@ extern BRTezosAddress
 tezosAddressCreateFromString(const char * addressString, bool strict) {
     
     if (addressString == NULL || strlen(addressString) == 0) {
-        return NULL;
+        return (strict
+                ? NULL
+                : tezosAddressCreateUnknownAddress ());
+    } else if (strict) {
+        return tezosAddressStringToAddress (addressString);
+    } else if (strcmp(addressString, "unknown") == 0) {
+        return tezosAddressCreateUnknownAddress ();
     } else if (strcmp(addressString, "__fee__") == 0) {
         return tezosAddressCreateFeeAddress ();
     } else {

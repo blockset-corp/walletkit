@@ -52,12 +52,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "loan(C)"
-            isEnabled = "NO">
+            argument = "loan"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "era(C)"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "green"
