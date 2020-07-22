@@ -165,7 +165,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 DispatchQueue.main.async {
                     self.minimum = minimum
 
-                    self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unitForFee) ?? 0.0)
+                    self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unit) ?? 0.0)
                     self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
 
                     self.amountSlider.value = max (self.amountSlider.minimumValue, self.amountSlider.value)
@@ -185,7 +185,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 DispatchQueue.main.async {
                     self.maximum = maximum
 
-                    self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unitForFee) ?? 0.0)
+                    self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unit) ?? 0.0)
                     self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
 
                     self.amountSlider.value = min (self.amountSlider.maximumValue, self.amountSlider.value)
