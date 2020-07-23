@@ -61,8 +61,10 @@ struct BRCryptoClientCallbackStateRecord {
         } ethWithWallet;
         struct {
             BREthereumWallet wid;
+            BREthereumTransfer tid;
             BREthereumCookie cookie;
-        } ethWithWalletAndCookie;
+        } ethEstimateGas;
+
         struct {
             BREthereumWallet wid;
             BREthereumTransfer tid;
@@ -82,6 +84,10 @@ struct BRCryptoClientCallbackStateRecord {
 static void
 cwmClientCallbackStateRelease (BRCryptoClientCallbackState state) {
     switch (state->type) {
+        case CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS:
+            transferRelease (state->u.ethEstimateGas.tid);
+            break;
+
         case CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION:
             genTransferRelease (state->u.genWithTransaction.tid);
             break;
@@ -1462,12 +1468,8 @@ static void
 cwmGetGasEstimateAsETH (BREthereumClientContext context,
                         BREthereumEWM ewm,
                         BREthereumWallet wid,
+                        OwnershipGiven BREthereumTransfer tid,
                         BREthereumCookie cookie,
-                        const char *from,
-                        const char *to,
-                        const char *amount,
-                        const char *price,
-                        const char *data,
                         int rid) {
     // Extract CWM, checking to make sure it still lives
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
@@ -1475,12 +1477,25 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
 
     BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
     callbackState->type = CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS;
-    callbackState->u.ethWithWalletAndCookie.wid = wid;
-    callbackState->u.ethWithWalletAndCookie.cookie = cookie;
+    callbackState->u.ethEstimateGas.wid = wid;
+    callbackState->u.ethEstimateGas.tid = tid;
+    callbackState->u.ethEstimateGas.cookie = cookie;
     callbackState->rid = rid;
 
     BREthereumNetwork network = ewmGetNetwork (ewm);
     char *networkName = ethNetworkCopyNameAsLowercase (network);
+
+    // This will be ZERO if transaction amount is in TOKEN.
+    BREthereumEther amountInEther = transferGetEffectiveAmountInEther(tid);
+    BREthereumFeeBasis feeBasis = transferGetFeeBasis (tid);
+    BREthereumGasPrice gasPrice = ethFeeBasisGetGasPrice (feeBasis);
+    BREthereumTransaction transaction = transferGetOriginatingTransaction(tid);
+
+    char *from = ethAddressGetEncodedString (transferGetEffectiveSourceAddress(tid), 0);
+    char *to   = ethAddressGetEncodedString (transferGetEffectiveTargetAddress(tid), 0);
+    char *amount = uint256CoerceStringPrefaced (amountInEther.valueInWEI, 16, "0x");
+    char *price  = uint256CoerceStringPrefaced (gasPrice.etherPerGas.valueInWEI, 16, "0x");
+    char *data = (char *) transactionGetData(transaction);
 
     cwm->client.funcEstimateGasETH (cwm->client.context,
                                     cryptoWalletManagerTake (cwm),
@@ -1493,6 +1508,11 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
                                     data);
 
     free (networkName);
+    free (from);
+    free (to);
+    free (amount);
+    free (price);
+
     cryptoWalletManagerGive (cwm);
 }
 
@@ -2425,8 +2445,9 @@ cwmAnnounceGetGasEstimateSuccess (OwnershipKept BRCryptoWalletManager cwm,
     cwm = cryptoWalletManagerTake (cwm);
 
     ewmAnnounceGasEstimateSuccess (cwm->u.eth,
-                                   callbackState->u.ethWithWalletAndCookie.wid,
-                                   callbackState->u.ethWithWalletAndCookie.cookie,
+                                   callbackState->u.ethEstimateGas.wid,
+                                   callbackState->u.ethEstimateGas.tid,
+                                   callbackState->u.ethEstimateGas.cookie,
                                    gasEstimate,
                                    gasPrice,
                                    callbackState->rid);
@@ -2442,8 +2463,9 @@ cwmAnnounceGetGasEstimateFailure (OwnershipKept BRCryptoWalletManager cwm,
     assert (cwm); assert (callbackState); assert (CWM_CALLBACK_TYPE_ETH_ESTIMATE_GAS == callbackState->type);
 
     ewmAnnounceGasEstimateFailure (cwm->u.eth,
-                                   callbackState->u.ethWithWalletAndCookie.wid,
-                                   callbackState->u.ethWithWalletAndCookie.cookie,
+                                   callbackState->u.ethEstimateGas.wid,
+                                   callbackState->u.ethEstimateGas.tid,
+                                   callbackState->u.ethEstimateGas.cookie,
                                    cryptoStatusAsETH (status),
                                    callbackState->rid);
     cwmClientCallbackStateRelease (callbackState);

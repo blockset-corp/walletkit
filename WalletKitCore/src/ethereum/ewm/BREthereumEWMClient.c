@@ -183,7 +183,7 @@ ewmAnnounceGasPrice(BREthereumEWM ewm,
 extern void
 ewmGetGasEstimate (BREthereumEWM ewm,
                    BREthereumWallet wallet,
-                   BREthereumTransfer transfer,
+                   OwnershipGiven BREthereumTransfer transfer,
                    BREthereumCookie cookie) {
     if (NULL == transfer) {
         ewmSignalGasEstimateFailure(ewm, wallet, cookie, ERROR_UNKNOWN_TRANSACTION);
@@ -197,34 +197,14 @@ ewmGetGasEstimate (BREthereumEWM ewm,
             case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
                 pthread_mutex_lock (&ewm->lock);
 
-                // This will be ZERO if transaction amount is in TOKEN.
-                BREthereumEther amountInEther = transferGetEffectiveAmountInEther(transfer);
-                BREthereumFeeBasis feeBasis = transferGetFeeBasis (transfer);
-                BREthereumGasPrice gasPrice = ethFeeBasisGetGasPrice (feeBasis);
-                BREthereumTransaction transaction = transferGetOriginatingTransaction(transfer);
-
-                char *from = ethAddressGetEncodedString (transferGetEffectiveSourceAddress(transfer), 0);
-                char *to   = ethAddressGetEncodedString (transferGetEffectiveTargetAddress(transfer), 0);
-                char *amount = uint256CoerceStringPrefaced (amountInEther.valueInWEI, 16, "0x");
-                char *price  = uint256CoerceStringPrefaced (gasPrice.etherPerGas.valueInWEI, 16, "0x");
-                char *data = (char *) transactionGetData(transaction);
-
                 ewm->client.funcEstimateGas (ewm->client.context,
                                              ewm,
                                              wallet,
+                                             transfer,
                                              cookie,
-                                             from,
-                                             to,
-                                             amount,
-                                             price,
-                                             data,
                                              ++ewm->requestId);
-                pthread_mutex_unlock (&ewm->lock);
 
-                free (from);
-                free (to);
-                free (amount);
-                free (price);
+                pthread_mutex_unlock (&ewm->lock);
                 break;
             }
 
@@ -240,6 +220,7 @@ ewmGetGasEstimate (BREthereumEWM ewm,
 extern BREthereumStatus
 ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
                                BREthereumWallet wallet,
+                               BREthereumTransfer transfer,
                                BREthereumCookie cookie,
                                const char *gasEstimate,
                                const char *gasPrice,
@@ -254,7 +235,10 @@ ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
         ewmSignalGasEstimateFailure(ewm, wallet, cookie, ERROR_NUMERIC_PARSE);
 
     } else {
-        ewmSignalGasEstimateSuccess(ewm, wallet, cookie, ethGasCreate(estimate.u64[0]), ethGasPriceCreate(ethEtherCreate(price)));
+        transferSetGasEstimate (transfer, ethGasCreate(estimate.u64[0]));
+
+        BREthereumFeeBasis feeBasis = transferGetFeeBasis(transfer);
+        ewmSignalGasEstimateSuccess(ewm, wallet, cookie, feeBasis.u.gas.limit, feeBasis.u.gas.price);
     }
 
     return SUCCESS;
@@ -263,6 +247,7 @@ ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
 extern BREthereumStatus
 ewmAnnounceGasEstimateFailure (BREthereumEWM ewm,
                                BREthereumWallet wallet,
+                               BREthereumTransfer transfer,
                                BREthereumCookie cookie,
                                BREthereumStatus status,
                                int rid) {
