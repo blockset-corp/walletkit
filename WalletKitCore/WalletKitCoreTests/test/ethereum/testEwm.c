@@ -184,14 +184,10 @@ static void
 clientEstimateGas (BREthereumClientContext context,
                    BREthereumEWM ewm,
                    BREthereumWallet wid,
+                   BREthereumTransfer tid,
                    BREthereumCookie cookie,
-                   const char *from,
-                   const char *to,
-                   const char *amount,
-                   const char *price,
-                   const char *data,
                    int rid) {
-    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, "0x77", price, rid);
+    ewmAnnounceGasEstimateSuccess(ewm, wid, tid, cookie, "0x77", "0x100000", rid);
 }
 
 static void
