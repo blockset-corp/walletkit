@@ -366,7 +366,7 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         //
         // Produce an invalid transferBlobs and  check for a failure
         //
-        let muckedTransferBlobs = [System.TransactionBlob.btc (bytes: [UInt8](arrayLiteral: 0, 1, 2), blockHeight: UInt32(0), timestamp: UInt32(0))]
+        let muckedTransferBlobs = [System.TransactionBlob.btc ((bytes: [UInt8](arrayLiteral: 0, 1, 2), blockHeight: UInt32(0), timestamp: UInt32(0)))]
         let muckedListener = MigrateSystemListener (transactionBlobs: muckedTransferBlobs)
         let muckedQuery    = system.query
         let muckedPath     = system.path + "mucked"

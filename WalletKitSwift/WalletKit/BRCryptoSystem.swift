@@ -1800,12 +1800,14 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias TransactionBlobBTCTuple = (
+        bytes: [UInt8],
+        blockHeight: UInt32,
+        timestamp: UInt32 // time interval since unix epoch (including '0'
+    )
+
     public enum TransactionBlob {
-        case btc (
-            bytes: [UInt8],
-            blockHeight: UInt32,
-            timestamp: UInt32 // time interval since unix epoch (including '0'
-        )
+        case btc (TransactionBlobBTCTuple)
     }
 
     ///
@@ -1823,20 +1825,22 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias BlockBlobBTCTuple = (
+        hash: BlockHash,
+        height: UInt32,
+        nonce: UInt32,
+        target: UInt32,
+        txCount: UInt32,
+        version: UInt32,
+        timestamp: UInt32?,
+        flags: [UInt8],
+        hashes: [BlockHash],
+        merkleRoot: BlockHash,
+        prevBlock: BlockHash
+    )
+
     public enum BlockBlob {
-        case btc (
-            hash: BlockHash,
-            height: UInt32,
-            nonce: UInt32,
-            target: UInt32,
-            txCount: UInt32,
-            version: UInt32,
-            timestamp: UInt32?,
-            flags: [UInt8],
-            hashes: [BlockHash],
-            merkleRoot: BlockHash,
-            prevBlock: BlockHash
-        )
+        case btc (BlockBlobBTCTuple)
     }
 
     ///
@@ -1844,13 +1848,15 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias PeerBlobBTCTuple = (
+        address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
+        port: UInt16,
+        services: UInt64,
+        timestamp: UInt32?
+    )
+
     public enum PeerBlob {
-        case btc (
-            address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
-            port: UInt16,
-            services: UInt64,
-            timestamp: UInt32?
-        )
+        case btc (PeerBlobBTCTuple)
     }
 
     ///
@@ -2041,9 +2047,9 @@ extension System {
                                             &blockHeight,
                                             &timestamp)
 
-            return TransactionBlob.btc (bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
-                                        blockHeight: blockHeight,
-                                        timestamp: timestamp)
+            return TransactionBlob.btc ((bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
+                                         blockHeight: blockHeight,
+                                         timestamp: timestamp))
         default:
             return nil
         }
