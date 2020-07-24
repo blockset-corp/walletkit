@@ -78,8 +78,10 @@ extern int BRRunTestWalletManagerSync (const char *paperKey,
                                        const char *storagePath,
                                        int isBTC,
                                        int isMainnet) {
-    const BRChainParams *params = (isBTC & isMainnet ? BRMainNetParams
-                                   : (isBTC & !isMainnet ? BRTestNetParams
+    const BRChainParams *params = ((isBTC & isMainnet)
+                                   ? BRMainNetParams
+                                   : ((isBTC & !isMainnet) ?
+                                      BRTestNetParams
                                       : (isMainnet ? BRBCashParams : BRBCashTestNetParams)));
 
     uint32_t epoch = 1483228800; // 1/1/17
