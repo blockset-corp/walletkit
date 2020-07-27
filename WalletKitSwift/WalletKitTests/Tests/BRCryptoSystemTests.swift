@@ -66,8 +66,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemBTC() {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         runSystemBTCTest(networkType: .btc, currencyCode: "btc")
@@ -75,8 +76,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemBCH() {
         isMainnet = false
-        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
         prepareSystem()
 
         runSystemBTCTest(networkType: .bch, currencyCode: "bch")
@@ -84,8 +86,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemBSV() {
         isMainnet = true
-        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
         prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
         prepareSystem()
 
         runSystemBTCTest(networkType: .bsv, currencyCode: "bsv")
@@ -138,8 +141,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemModes () {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
@@ -155,8 +159,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     func testSystemAddressSchemes () {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)

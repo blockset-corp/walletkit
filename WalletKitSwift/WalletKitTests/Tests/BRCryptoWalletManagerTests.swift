@@ -119,8 +119,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerBTC() {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem()
 
         runWalletManagerBTCTest(networkType: .btc, currencyCode: "btc")
@@ -128,8 +129,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerBCH() {
         isMainnet = false
-        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
         prepareAccount()
+
+        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
         prepareSystem()
 
         runWalletManagerBTCTest(networkType: .bch, currencyCode: "bch")
@@ -137,18 +139,20 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerBSV() {
         isMainnet = true
-        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
         prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
         prepareSystem()
 
         runWalletManagerBTCTest(networkType: .bsv, currencyCode: "bsv")
     }
 
     func testWalletManagerETH () {
-        isMainnet = false
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
         registerCurrencyCodes = ["brd"]
         currencyCodesToMode = ["eth":WalletManagerMode.api_only]
-        prepareAccount()
 
         let listener = CryptoTestSystemListener (networkCurrencyCodesToMode: currencyCodesToMode,
                                                  registerCurrencyCodes: registerCurrencyCodes,
@@ -238,8 +242,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerXRP() {
         isMainnet = true
-        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["xrp":WalletManagerMode.api_only]
         prepareSystem()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
@@ -322,8 +327,9 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerMigrateBTC () {
         isMainnet = false
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareAccount (identifier: "ginger")
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem ()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")

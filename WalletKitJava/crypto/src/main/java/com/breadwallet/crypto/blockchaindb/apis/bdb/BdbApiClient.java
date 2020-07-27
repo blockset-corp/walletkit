@@ -271,7 +271,7 @@ public class BdbApiClient {
 
         Request.Builder requestBuilder = new Request.Builder();
         requestBuilder.url(httpUrl);
-        requestBuilder.header("Accept", "application/json");
+        requestBuilder.header("Accept", capabilities.getVersionDescription());
         requestBuilder.method(httpMethod, null);
 
         sendRequest(requestBuilder.build(), dataTask, parser, handler);
@@ -317,7 +317,7 @@ public class BdbApiClient {
 
         Request.Builder requestBuilder = new Request.Builder();
         requestBuilder.url(httpUrl);
-        requestBuilder.header("Accept", "application/json");
+        requestBuilder.header("Accept", capabilities.getVersionDescription());
         requestBuilder.method(httpMethod, httpBody);
 
         sendRequest(requestBuilder.build(), dataTask, parser, handler);
@@ -477,4 +477,66 @@ public class BdbApiClient {
     }
 
     // JSON methods
+
+    // Capabilities
+
+    /** The BdbApiClient capabilities */
+    public Capabilities capabilities = Capabilities.current;
+
+    /** An 'OptionSet' of capabilities. */
+    public static class Capabilities {
+        int rawValue;
+
+        Capabilities(int index) {
+            this.rawValue = 1 << index;
+        }
+
+        Capabilities (Capabilities... capabilitiesArray) {
+            rawValue = 0;
+            for (Capabilities capabilities : capabilitiesArray)
+                rawValue |= capabilities.rawValue;
+        }
+
+        /**
+         * Check if `capabilities` is a subset of `this`
+         *
+         * @param capabilities the capabilities
+         * @return `true` is a subset; otherwise `false`.
+         */
+        public boolean hasCapabilities (Capabilities capabilities) {
+            return capabilities.rawValue == (capabilities.rawValue & rawValue);
+        }
+
+        /** The `Transfer` JSON includes a status of "revert" */
+        public static Capabilities transferStatusRevert = new Capabilities (0);
+        /** The `Transfer` JSON includes a status of "reject" */
+        public static Capabilities transferStatusReject = new Capabilities (1);
+        /** The 'tdb' capability */
+        public static Capabilities tbdCap               = new Capabilities (2);
+
+        /**
+         * Get a 'version string', suitable for the HTTP "Accept" Header
+         *
+         * @return The "Accept" Header string for `this`
+         */
+        String getVersionDescription () {
+            if (rawValue == v2020_03_21.rawValue) return "application/vnd.blockset.V_2020-03-21+json";
+            else return "application/json";
+        }
+
+        /** The 2020-03-21 capabilities are 'revert' and 'reject' */
+        public static Capabilities v2020_03_21 = new Capabilities(
+                transferStatusRevert,
+                transferStatusReject
+        );
+
+        /** The 2020-04-xx capabilities include the 2020-03-21 capabilities with 'tbd' */
+        public static Capabilities v2020_04_xx = new Capabilities(
+                v2020_03_21,
+                tbdCap
+        );
+
+        /** The current capabilities */
+        public static Capabilities current = v2020_03_21;
+    }
 }

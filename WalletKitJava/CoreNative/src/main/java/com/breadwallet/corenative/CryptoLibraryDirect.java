@@ -360,47 +360,22 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletSweeperRelease(Pointer sweeper);
 
     // crypto/BRCryptoWalletManagerClient.h
-    public static native void cwmAnnounceGetBlockNumberSuccessAsInteger(Pointer cwm, Pointer callbackState,long blockNumber);
-    public static native void cwmAnnounceGetBlockNumberSuccessAsString(Pointer cwm, Pointer callbackState, String blockNumber);
+    public static native void cwmAnnounceGetBlockNumberSuccess(Pointer cwm, Pointer callbackState,long blockNumber);
     public static native void cwmAnnounceGetBlockNumberFailure(Pointer cwm, Pointer callbackState);
     public static native void cwmAnnounceGetTransactionsItem(Pointer cwm, Pointer callbackState,
                                            int status,
                                            byte[] transaction, SizeT transactionLength, long timestamp, long blockHeight);
-    public static native void cwmAnnounceGetTransactionsItemETH(Pointer cwm, Pointer callbackState,
-                                           String hash, String sourceAddr, String targetAddr, String contractAddr,
-                                           String amount, String gasLimit, String gasPrice, String data, String nonce,
-                                           String gasUsed, String blockNumber, String blockHash,
-                                           String blockConfirmations, String blockTransacionIndex, String blockTimestamp,
-                                           String isError);
     public static native void cwmAnnounceGetTransactionsComplete(Pointer cwm, Pointer callbackState, int success);
-//  INDIRECT:   public static native void cwmAnnounceGetTransferItemGEN(Pointer cwm, Pointer callbackState, int status,
+//  INDIRECT:   public static native void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
 //                                                            String hash, String uids, String sourceAddr, String targetAddr,
 //                                                            String amount, String currency, String fee,
-//                                                            long timestamp, long blockHeight,
+//                                                            long timestamp, long blockHeight, ...
 //                                                            int attributesCount, Pointer arrayOfAttributeKeys, Pointer arrayOfAttributeVals);
     public static native void cwmAnnounceGetTransfersComplete(Pointer cwm, Pointer callbackState, int success);
-    public static native void cwmAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState);
-    public static native void cwmAnnounceSubmitTransferSuccessForHash(Pointer cwm, Pointer callbackState, String hash);
+    public static native void cwmAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState, String hash);
     public static native void cwmAnnounceSubmitTransferFailure(Pointer cwm, Pointer callbackState);
-    public static native void cwmAnnounceGetBalanceSuccess(Pointer cwm, Pointer callbackState, String balance);
-    public static native void cwmAnnounceGetBalanceFailure(Pointer cwm, Pointer callbackState);
-    public static native void cwmAnnounceGetBlocksSuccess(Pointer cwm, Pointer callbackState, int length,long[] blockArray);
-    public static native void cwmAnnounceGetBlocksFailure(Pointer cwm, Pointer callbackState);
-    public static native void cwmAnnounceGetGasPriceSuccess(Pointer cwm, Pointer callbackState, String gasPrice);
-    public static native void cwmAnnounceGetGasPriceFailure(Pointer cwm, Pointer callbackState);
-    public static native void cwmAnnounceGetGasEstimateSuccess(Pointer cwm, Pointer callbackState, String gasEstimate, String gasPrice);
-    public static native void cwmAnnounceGetGasEstimateFailure(Pointer cwm, Pointer callbackState, int status);
-    public static native void cwmAnnounceGetLogsItemETH(Pointer cwm, Pointer callbackState, String hash,
-                                String contract, int size, StringArray topicsArray, String data, String gasPrice,
-                                String gasUsed, String logIndex, String blockNumber, String blockTransactionIndex,
-                                String blockTimestamp);
-    public static native void cwmAnnounceGetLogsComplete(Pointer cwm, Pointer callbackState, int success);
-    public static native void cwmAnnounceGetTokensItem(Pointer cwm, Pointer callbackState, String address,
-                                  String symbol, String name, String description, int intValue, String gasLimit,
-                                  String gasPrice);
-    public static native void cwmAnnounceGetTokensComplete(Pointer cwm, Pointer callbackState, int success);
-    public static native void cwmAnnounceGetNonceSuccess(Pointer cwm, Pointer callbackState, String address,String nonce);
-    public static native void cwmAnnounceGetNonceFailure(Pointer cwm, Pointer callbackState);
+    public static native void cwmAnnounceEstimateTransactionFeeSuccess(Pointer cwm, Pointer callbackState, String hash, long costUnits);
+    public static native void cwmAnnounceEstimateTransactionFeeFailure(Pointer cwm, Pointer callbackState);
 
     //
     // Crypto Primitives

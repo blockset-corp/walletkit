@@ -586,6 +586,7 @@ genManagerRecoverTransfersFromRawTransaction (BRGenericManager gwm,
                                                                                feeBasis,
                                                                                AS_CRYPTO_BOOLEAN (0 == error));
         genTransferSetState (transfer, transferState);
+
         array_add (transfers, transfer);
     }
     pthread_mutex_unlock (&gwm->lock);

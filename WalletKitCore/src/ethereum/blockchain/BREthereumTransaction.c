@@ -368,7 +368,7 @@ transactionRlpEncode(BREthereumTransaction transaction,
     switch (type) {
         case RLP_TYPE_TRANSACTION_UNSIGNED:
             // For EIP-155, encode { v, r, s } with v as the chainId and both r and s as empty.
-            items[6] = rlpEncodeUInt64(coder, transaction->chainId, 1);
+            items[6] = rlpEncodeUInt64(coder, (uint64_t) transaction->chainId, 1);
             items[7] = rlpEncodeString(coder, "");
             items[8] = rlpEncodeString(coder, "");
             itemsCount += 3;
