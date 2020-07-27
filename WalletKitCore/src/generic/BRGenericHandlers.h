@@ -166,7 +166,7 @@ extern "C" {
         BRGenericWalletHasTransfer hasTransfer;
         BRGenericWalletAddTransfer addTransfer;
         BRGenericWalletRemTransfer remTransfer;
-        BRGenericWalletCreateTransfer createTransfer; // Unneeded.
+        BRGenericWalletCreateTransfer createTransfer;
         BRGenericWalletEstimateFeeBasis estimateFeeBasis;
         
         BRGenericWalletGetTransactionAttributeKeys getTransactionAttributeKeys;

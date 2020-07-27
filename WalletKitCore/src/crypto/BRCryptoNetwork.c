@@ -36,6 +36,7 @@ cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,
+        CRYPTO_NETWORK_CURRENCY_XTZ,
         // "Stellar"
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
@@ -671,6 +672,10 @@ cryptoNetworkCreateBuiltin (const char *symbol,
         network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_HBAR);
     else if (0 == strcmp ("hbarTestnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_HBAR);
+    else if (0 == strcmp ("xtzMainnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XTZ);
+    else if (0 == strcmp ("xtzTestnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XTZ);
 //    else if (0 == strcmp ("xlmMainnet", symbol))
 //        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_Xlm, 1, CRYPTO_NETWORK_TYPE_XLM);
     // ...

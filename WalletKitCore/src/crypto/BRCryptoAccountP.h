@@ -28,6 +28,7 @@ struct BRCryptoAccountRecord {
     BREthereumAccount eth;
     BRGenericAccount xrp;
     BRGenericAccount hbar;
+    BRGenericAccount xtz;
     // ...
 
     char *uids;
