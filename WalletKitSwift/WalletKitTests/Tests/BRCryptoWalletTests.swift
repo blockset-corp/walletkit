@@ -231,12 +231,8 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         isMainnet = false
         registerCurrencyCodes = ["brd"]
         currencyCodesToMode = ["eth":WalletManagerMode.api_only]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
+        prepareAccount (identifier: "ginger")
+
         let listener = CryptoTestSystemListener (networkCurrencyCodesToMode: currencyCodesToMode,
                                                   registerCurrencyCodes: registerCurrencyCodes,
                                                   isMainnet: isMainnet)

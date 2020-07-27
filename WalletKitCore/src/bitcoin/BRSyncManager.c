@@ -487,7 +487,7 @@ BRSyncManagerNewForMode(BRCryptoSyncMode mode,
                         uint64_t blockHeight,
                         uint64_t confirmationsUntilFinal,
                         int isNetworkReachable,
-                        OwnershipKept BRMerkleBlock *blocks[],
+                        OwnershipGiven BRMerkleBlock *blocks[],
                         size_t blocksCount,
                         OwnershipKept const BRPeer peers[],
                         size_t peersCount) {
@@ -499,6 +499,9 @@ BRSyncManagerNewForMode(BRCryptoSyncMode mode,
 
     switch (mode) {
         case CRYPTO_SYNC_MODE_API_ONLY:
+        for (size_t index = 0; index < blocksCount; index++)
+            BRMerkleBlockFree(blocks[index]);
+
         return BRClientSyncManagerAsSyncManager (BRClientSyncManagerNew (eventContext,
                                                                          eventCallback,
                                                                          clientContext,
@@ -1625,7 +1628,7 @@ BRPeerSyncManagerNew(BRSyncManagerEventContext eventContext,
                      uint64_t blockHeight,
                      uint64_t confirmationsUntilFinal,
                      int isNetworkReachable,
-                     OwnershipKept BRMerkleBlock *blocks[],
+                     OwnershipGiven BRMerkleBlock *blocks[],
                      size_t blocksCount,
                      OwnershipKept const BRPeer peers[],
                      size_t peersCount) {
