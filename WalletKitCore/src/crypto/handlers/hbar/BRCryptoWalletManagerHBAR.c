@@ -277,7 +277,7 @@ cryptoWalletManagerCreateWalletSweeperHBAR (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletHBAR (BRCryptoWalletManager managerBase,
+cryptoWalletManagerCreateWalletHBAR (BRCryptoWalletManager managerBase,
                                        BRCryptoCurrency currency) {
     return NULL;
 }
@@ -288,12 +288,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerInitializeHandlerHBAR,
     crytpWalletManagerCreateFileServiceHBAR,
     cryptoWalletManagerGetEventTypesHBAR,
+    cryptoWalletManagerCreateWalletHBAR,
     cryptoWalletManagerSignTransactionWithSeedHandlerHBAR,
     cryptoWalletManagerSignTransactionWithKeyHandlerHBAR,
     cryptoWalletManagerEstimateLimitHandlerHBAR,
     cryptoWalletManagerEstimateFeeBasisHandlerHBAR,
     crytpWalletManagerCreateP2PManagerHandlerHBAR,
-    cryptoWalletManagerRegisterWalletHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR,
     cryptoWalletManagerWalletSweeperValidateSupportedHBAR,

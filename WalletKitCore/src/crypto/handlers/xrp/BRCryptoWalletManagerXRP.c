@@ -293,7 +293,7 @@ cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletXRP (BRCryptoWalletManager managerBase,
+cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager managerBase,
                                        BRCryptoCurrency currency) {
     return NULL;
 }
@@ -304,12 +304,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerInitializeHandlerXRP,
     crytpWalletManagerCreateFileServiceXRP,
     cryptoWalletManagerGetEventTypesXRP,
+    cryptoWalletManagerCreateWalletXRP,
     cryptoWalletManagerSignTransactionWithSeedHandlerXRP,
     cryptoWalletManagerSignTransactionWithKeyHandlerXRP,
     cryptoWalletManagerEstimateLimitHandlerXRP,
     cryptoWalletManagerEstimateFeeBasisHandlerXRP,
     crytpWalletManagerCreateP2PManagerHandlerXRP,
-    cryptoWalletManagerRegisterWalletXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP,
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,

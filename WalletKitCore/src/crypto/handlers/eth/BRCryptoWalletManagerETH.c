@@ -454,7 +454,7 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletETH (BRCryptoWalletManager managerBase,
+cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager managerBase,
                                       BRCryptoCurrency currency) {
     BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
 
@@ -1006,12 +1006,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerInitializeETH,
     crytpWalletManagerCreateFileServiceETH,
     cryptoWalletManagerGetEventTypesETH,
+    cryptoWalletManagerCreateWalletETH,
     cryptoWalletManagerSignTransactionWithSeedETH,
     cryptoWalletManagerSignTransactionWithKeyETH,
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
     crytpWalletManagerCreateP2PManagerETH,
-    cryptoWalletManagerRegisterWalletETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH
 };

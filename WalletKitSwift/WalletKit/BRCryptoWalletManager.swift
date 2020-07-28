@@ -89,7 +89,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
     ///
     public func registerWalletFor (currency: Currency) -> Wallet? {
         precondition (network.hasCurrency(currency))
-        return cryptoWalletManagerRegisterWallet (core, currency.core)
+        return cryptoWalletManagerCreateWallet (core, currency.core)
             .map { Wallet (core: $0,
                            manager: self,
                            callbackCoordinator: callbackCoordinator,

@@ -300,8 +300,63 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletBTC (BRCryptoWalletManager managerBase,
-                                      BRCryptoCurrency currency) {
+cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
+                                    BRCryptoCurrency currency) {
+    // Get the btcMasterPublicKey
+    BRMasterPubKey btcMPK = cryptoAccountAsBTC(manager->account);
+
+    // Get the btcChainParams
+    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
+
+    // Load the BTC transactions from the fileService
+    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
+    if (NULL == transactions) array_new (transactions, 1);
+
+    // Create the BTC wallet
+    //
+    // Since the BRWallet callbacks are not set, none of these transactions generate callbacks.
+    // And, in fact, looking at BRWalletNew(), there is not even an attempt to generate callbacks
+    // even if they could have been specified.
+    BRWallet *btcWallet = BRWalletNew (btcChainParams->addrParams, transactions, array_count(transactions), btcMPK);
+    assert (NULL != btcWallet);
+
+    // The btcWallet now should include *all* the transactions
+    array_free (transactions);
+
+    // Set the callbacks
+    BRWalletSetCallbacks (btcWallet,
+                          cryptoWalletManagerCoerce(manager, manager->network->type),
+                          cryptoWalletManagerBTCBalanceChanged,
+                          cryptoWalletManagerBTCTxAdded,
+                          cryptoWalletManagerBTCTxUpdated,
+                          cryptoWalletManagerBTCTxDeleted);
+
+    // Create the primary BRCryptoWallet
+    BRCryptoNetwork  network       = manager->network;
+    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
+    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+
+    
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
+    array_add (manager->wallets, manager->wallet);
+
+    // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
+    size_t btcTransactionsCount = BRWalletTransactions(btcWallet, NULL, 0);
+    BRTransaction *btcTransactions[btcTransactionsCount > 0 ? btcTransactionsCount : 1]; // avoid a static analysis error
+    BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
+
+    for (size_t index = 0; index < btcTransactionsCount; index++) {
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (unitAsDefault,
+                                                               unitAsBase,
+                                                               btcWallet,
+                                                               BRTransactionCopy(btcTransactions[index]),
+                                                               manager->type);
+        cryptoWalletAddTransfer(manager->wallet, transfer);
+    }
+
+    cryptoUnitGive (unitAsDefault);
+    cryptoUnitGive (unitAsBase);
+
     return NULL;
 }
 
@@ -1108,12 +1163,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
@@ -1126,12 +1181,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
@@ -1144,12 +1199,12 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
     crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,

@@ -92,7 +92,7 @@ typedef BRCryptoClientP2PManager
 (*BRCryptoWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
 typedef BRCryptoWallet
-(*BRCryptoWalletManagerRegisterWalletHandler) (BRCryptoWalletManager cwm,
+(*BRCryptoWalletManagerCreateWalletHandler) (BRCryptoWalletManager cwm,
                                                BRCryptoCurrency currency);
 
 typedef void
@@ -119,17 +119,25 @@ typedef struct {
     BRCryptoWalletManagerInitializeHandler initialize;
     BRCryptoWalletManagerCreateFileServiceHandler createFileService;
     BRCryptoWalletManagerGetEventTypesHandler getEventTypes;
+    BRCryptoWalletManagerCreateWalletHandler createWallet;
     BRCryptoWalletManagerSignTransactionWithSeedHandler signTransactionWithSeed;
     BRCryptoWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
     BRCryptoWalletManagerEstimateLimitHandler estimateLimit;
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRCryptoWalletManagerCreateP2PManagerHandler createP2PManager;
-    BRCryptoWalletManagerRegisterWalletHandler registerWallet;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
+
+// MARK: - Wallet Manager State
+
+private_extern BRCryptoWalletManagerState
+cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
+
+private_extern BRCryptoWalletManagerState
+cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason reason);
 
 
 // MARK: - Wallet Manager
@@ -182,11 +190,9 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  const char *path,
                                  BRCryptoClientQRYByType byType);
 
-private_extern BRCryptoWalletManagerState
-cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
+private_extern BRCryptoBlockChainType
+cryptoWalletManagerGetType (BRCryptoWalletManager manager);
 
-private_extern BRCryptoWalletManagerState
-cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason reason);
 
 private_extern void
 cryptoWalletManagerSetState (BRCryptoWalletManager cwm,

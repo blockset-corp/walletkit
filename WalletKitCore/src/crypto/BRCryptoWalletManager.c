@@ -61,10 +61,9 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWalletManager, cryptoWalletManager)
 
 /// =============================================================================================
 ///
-/// MARK: - Wallet Manager
+/// MARK: - Wallet Manager State
 ///
 ///
-
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type) {
     switch (type) {
@@ -89,6 +88,12 @@ cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason r
         { .disconnected = { reason } }
     };
 }
+
+/// =============================================================================================
+///
+/// MARK: - Wallet Manager
+///
+///
 
 #pragma clang diagnostic push
 #pragma GCC diagnostic push
@@ -632,6 +637,16 @@ cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
 //}
 
 extern BRCryptoWallet
+cryptoWalletManagerCreateWallet (BRCryptoWalletManager cwm,
+                                 BRCryptoCurrency currency) {
+    BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
+    return (NULL == wallet
+            ? cwm->handlers->createWallet (cwm, currency)
+            : wallet);
+}
+
+
+extern BRCryptoWallet
 cryptoWalletManagerGetWallet (BRCryptoWalletManager cwm) {
     return cryptoWalletTake (cwm->wallet);
 }
@@ -665,15 +680,6 @@ cryptoWalletManagerGetWalletForCurrency (BRCryptoWalletManager cwm,
     }
     pthread_mutex_unlock (&cwm->lock);
     return wallet;
-}
-
-extern BRCryptoWallet
-cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
-                                   BRCryptoCurrency currency) {
-    BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
-    return (NULL == wallet
-            ? cwm->handlers->registerWallet (cwm, currency)
-            : wallet);
 }
 
 extern BRCryptoBoolean
