@@ -7,14 +7,14 @@ ext {
 
     cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/src/bcash",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/bitcoin",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/bsv",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/crypto",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/ethereum",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/generic",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/ripple",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/support",
-                                   projectDir.absolutePath + "/src/main/cpp/core/src/version",
-                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/ed25519"]
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/version"]
 
     cppCryptoMainIncDirs        = [projectDir.absolutePath + "/src/main/cpp/core/include",
                                    projectDir.absolutePath + "/src/main/cpp/core/src",
@@ -32,9 +32,6 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/support"]
 
     cppCryptoTestIncDirs        = [projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/include"]
-    // cppCryptoTestSrcDirs +
-    //                              [projectDir.absolutePath + "/src/main/cpp/core/include",
-    //                               projectDir.absolutePath + "/src/main/cpp/core/src"]
 
     cmakeCMakeListsFile         = projectDir.absolutePath + "/src/main/cpp/core/CMakeLists.txt"
 }

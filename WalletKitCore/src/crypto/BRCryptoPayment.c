@@ -143,7 +143,7 @@ cryptoPaymentProtocolRequestBitPayBuilderAddOutput(BRCryptoPaymentProtocolReques
                                                    uint64_t satoshis) {
     if (satoshis) {
         const BRChainParams * chainParams = cryptoNetworkAsBTC (builder->cryptoNetwork);
-        int isBTC = BRChainParamsIsBitcoin (chainParams);
+        int isBTC = (0 == BRChainParamsIsBitcash (chainParams));
 
         if (isBTC) {
             if (BRAddressIsValid (chainParams->addrParams, address)) {
@@ -443,7 +443,7 @@ cryptoPaymentProtocolRequestGetPrimaryTargetAddress (BRCryptoPaymentProtocolRequ
             BRPaymentProtocolRequest *request = protoReq->u.btc.request;
             if (0 != request->details->outCount) {
                 const BRChainParams * chainParams = cryptoNetworkAsBTC (protoReq->cryptoNetwork);
-                int isBTC = BRChainParamsIsBitcoin (chainParams);
+                int isBTC = (0 == BRChainParamsIsBitcash (chainParams));
 
                 BRTxOutput *output = &request->details->outputs[0];
                 size_t addressSize = BRTxOutputAddress (output, NULL, 0, chainParams->addrParams);

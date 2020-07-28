@@ -18,6 +18,7 @@
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 #include "ethereum/BREthereum.h"
 #include "generic/BRGeneric.h"
 

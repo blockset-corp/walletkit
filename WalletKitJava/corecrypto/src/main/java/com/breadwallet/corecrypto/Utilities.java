@@ -187,6 +187,7 @@ final class Utilities {
         switch (type) {
             case BTC: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BTC;
             case BCH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BCH;
+            case BSV: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BSV;
             case ETH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_ETH;
             case XRP: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_XRP;
             case HBAR:return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_HBAR;
@@ -199,6 +200,7 @@ final class Utilities {
         switch (type) {
             case CRYPTO_NETWORK_TYPE_BTC: return NetworkType.BTC;
             case CRYPTO_NETWORK_TYPE_BCH: return NetworkType.BCH;
+            case CRYPTO_NETWORK_TYPE_BSV: return NetworkType.BSV;
             case CRYPTO_NETWORK_TYPE_ETH: return NetworkType.ETH;
             case CRYPTO_NETWORK_TYPE_XRP: return NetworkType.XRP;
             case CRYPTO_NETWORK_TYPE_HBAR:return NetworkType.HBAR;

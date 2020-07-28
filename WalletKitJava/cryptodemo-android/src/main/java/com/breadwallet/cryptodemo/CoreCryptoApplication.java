@@ -140,8 +140,9 @@ public class CoreCryptoApplication extends Application {
 
             List<String> currencyCodesNeeded = Arrays.asList(
                     "btc",
-                    "eth",
                     "bch",
+                    "bsv",
+                    "eth",
                     "xrp",
                     "hbar"
             );

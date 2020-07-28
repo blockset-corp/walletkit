@@ -17,6 +17,7 @@
 
 #include "support/BRArray.h"
 #include "support/BRAddress.h"
+#include "bcash/BRBCashParams.h"
 #include "bcash/BRBCashAddr.h"
 
 #include "BRSyncManager.h"
@@ -489,7 +490,7 @@ BRSyncManagerNewForMode(BRCryptoSyncMode mode,
                         uint64_t blockHeight,
                         uint64_t confirmationsUntilFinal,
                         int isNetworkReachable,
-                        OwnershipKept BRMerkleBlock *blocks[],
+                        OwnershipGiven BRMerkleBlock *blocks[],
                         size_t blocksCount,
                         OwnershipKept const BRPeer peers[],
                         size_t peersCount) {
@@ -501,6 +502,9 @@ BRSyncManagerNewForMode(BRCryptoSyncMode mode,
 
     switch (mode) {
         case CRYPTO_SYNC_MODE_API_ONLY:
+        for (size_t index = 0; index < blocksCount; index++)
+            BRMerkleBlockFree(blocks[index]);
+
         return BRClientSyncManagerAsSyncManager (BRClientSyncManagerNew (eventContext,
                                                                          eventCallback,
                                                                          clientContext,
@@ -1254,8 +1258,8 @@ BRClientSyncManagerConvertAddressToString (BRClientSyncManager manager,
 
     BRArrayOf(char *) addressesAsString = NULL;
 
-    // For BTC, simply extract the BRAddress' string
-    if (BRChainParamsIsBitcoin (manager->chainParams)) {
+    // For BTC/BSV, simply extract the BRAddress' string
+    if (0 == BRChainParamsIsBitcash (manager->chainParams)) {
         array_new(addressesAsString, addressesCount);
         array_set_count(addressesAsString, addressesCount);
 
@@ -1644,7 +1648,7 @@ BRPeerSyncManagerNew(BRSyncManagerEventContext eventContext,
                      uint64_t blockHeight,
                      uint64_t confirmationsUntilFinal,
                      int isNetworkReachable,
-                     OwnershipKept BRMerkleBlock *blocks[],
+                     OwnershipGiven BRMerkleBlock *blocks[],
                      size_t blocksCount,
                      OwnershipKept const BRPeer peers[],
                      size_t peersCount) {

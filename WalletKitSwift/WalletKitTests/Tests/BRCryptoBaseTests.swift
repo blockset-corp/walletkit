@@ -293,12 +293,12 @@ class CryptoTestSystemListener: SystemListener {
         print ("TST: Transfer Event: \(event)")
         transferEvents.append (event)
         if transferIncluded, case .included = transfer.state {
-            if 1 == transferCount { transferExpectation.fulfill()}
             if 1 <= transferCount { transferCount -= 1 }
+            if 0 == transferCount { transferExpectation.fulfill()}
         }
         else if !transferIncluded, case .created = transfer.state {
-            if 1 == transferCount { transferExpectation.fulfill()}
             if 1 <= transferCount { transferCount -= 1 }
+            if 0 == transferCount { transferExpectation.fulfill()}
         }
         transferHandlers.forEach { $0 (system, manager, wallet, transfer, event) }
     }
