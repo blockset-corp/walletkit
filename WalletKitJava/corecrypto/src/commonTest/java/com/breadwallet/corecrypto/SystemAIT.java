@@ -275,6 +275,11 @@ public class SystemAIT {
     }
 
     @Test
+    public void testSystemBsv() {
+        testSystemForCurrency("bsv", WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+    }
+
+    @Test
     public void testSystemEth() {
         testSystemForCurrency("eth", WalletManagerMode.API_ONLY, AddressScheme.ETH_DEFAULT, 0);
     }
