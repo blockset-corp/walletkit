@@ -166,58 +166,58 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
                               BRCryptoSyncMode mode,
                               BRCryptoAddressScheme scheme,
                               const char *path) {
-    BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerETHRecord),
-                                                                         cryptoNetworkGetType(network),
-                                                                         listener,
-                                                                         client,
-                                                                         account,
-                                                                         network,
-                                                                         scheme,
-                                                                         path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerETHRecord),
+                                                                     cryptoNetworkGetType(network),
+                                                                     listener,
+                                                                     client,
+                                                                     account,
+                                                                     network,
+                                                                     scheme,
+                                                                     path,
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
-    manager->network = cryptoNetworkAsETH (network);
-    manager->account = cryptoAccountAsETH (account);
-    manager->coder   = rlpCoderCreate();
+    managerETH->network = cryptoNetworkAsETH (network);
+    managerETH->account = cryptoAccountAsETH (account);
+    managerETH->coder   = rlpCoderCreate();
 
-    return managerBase;
+    return manager;
 }
 
 static void
-cryptoWalletManagerReleaseETH (BRCryptoWalletManager managerBase) {
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+cryptoWalletManagerReleaseETH (BRCryptoWalletManager manager) {
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
-    rlpCoderRelease (manager->coder);
-    if (NULL != manager->tokens)
-        BRSetFreeAll(manager->tokens, (void (*) (void*)) ethTokenRelease);
+    rlpCoderRelease (managerETH->coder);
+    if (NULL != managerETH->tokens)
+        BRSetFreeAll(managerETH->tokens, (void (*) (void*)) ethTokenRelease);
 }
 
 
 static void
-cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+cryptoWalletManagerInitializeETH (BRCryptoWalletManager manager) {
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
-    BRCryptoNetwork  network       = managerBase->network;
+    BRCryptoNetwork  network       = manager->network;
     BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
     // Create the primary BRCryptoWallet
-    managerBase->wallet = cryptoWalletCreateAsETH (managerBase->listenerWallet,
+    manager->wallet = cryptoWalletCreateAsETH (manager->listenerWallet,
                                                    unitAsDefault,
                                                    unitAsDefault,
                                                    NULL,
-                                                   manager->account);
-    array_add (managerBase->wallets, managerBase->wallet);
+                                                   managerETH->account);
+    array_add (manager->wallets, manager->wallet);
 
     // Load the persistently stored data.
-    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (managerBase);
-    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (managerBase);
-    BRSetOf(BREthereumExchanges)   exchanges    = initialExchangesLoadETH    (managerBase);
+    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
+    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (manager);
+    BRSetOf(BREthereumExchanges)   exchanges    = initialExchangesLoadETH    (manager);
 
     // Save the recovered tokens
-    manager->tokens = initialTokensLoadETH (managerBase);
+    managerETH->tokens = initialTokensLoadETH (manager);
 
     // Ensure a token (but not a wallet) for each currency
     size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
@@ -225,7 +225,7 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
         BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
         if (c != currency) {
             BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
-            cryptoWalletManagerCreateTokenForCurrency (manager, c, unitDefault);
+            cryptoWalletManagerCreateTokenForCurrency (managerETH, c, unitDefault);
             cryptoUnitGive (unitDefault);
         }
         cryptoCurrencyGive (c);
@@ -233,17 +233,17 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
 
     // Announce all the provided transactions...
     FOR_SET (BREthereumTransaction, transaction, transactions)
-        ewmHandleTransaction (manager, BCS_CALLBACK_TRANSACTION_ADDED, transaction);
+        ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_ADDED, transaction);
     BRSetFree(transactions);
 
     // ... and all the provided logs
     FOR_SET (BREthereumLog, log, logs)
-        ewmHandleLog (manager, BCS_CALLBACK_LOG_ADDED, log);
+        ewmHandleLog (managerETH, BCS_CALLBACK_LOG_ADDED, log);
     BRSetFree (logs);
 
     // ... and all the provided exhanges
     FOR_SET (BREthereumExchange, exchange, exchanges)
-        ewmHandleExchange (manager, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
+        ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
     BRSetFree(exchanges);
 
     cryptoUnitGive (unitAsDefault);
@@ -275,18 +275,18 @@ cryptoWalletManagerGetEventTypesETH (BRCryptoWalletManager manager,
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransaction (BRCryptoWalletManager managerBase,
-                                    BRCryptoWallet walletBase,
-                                    BRCryptoTransfer transferBase,
+cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
+                                    BRCryptoWallet wallet,
+                                    BRCryptoTransfer transfer,
                                     BRKey *key) {
-    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
-    BRCryptoTransferETH      transfer = cryptoTransferCoerce      (transferBase);
+    BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerce (manager);
+    BRCryptoTransferETH      transferETH = cryptoTransferCoerce      (transfer);
 
 
-    BREthereumNetwork     ethNetwork     = manager->network;
-    BREthereumAccount     ethAccount     = manager->account;
+    BREthereumNetwork     ethNetwork     = managerETH->network;
+    BREthereumAccount     ethAccount     = managerETH->account;
     BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
-    BREthereumTransaction ethTransaction = transfer->originatingTransaction;
+    BREthereumTransaction ethTransaction = transferETH->originatingTransaction;
 
     assert (NULL != ethTransaction);
 
@@ -330,31 +330,31 @@ cryptoWalletManagerSignTransaction (BRCryptoWalletManager managerBase,
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager managerBase,
-                                                      BRCryptoWallet walletBase,
-                                                      BRCryptoTransfer transferBase,
+cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager manager,
+                                                      BRCryptoWallet wallet,
+                                                      BRCryptoTransfer transfer,
                                                       UInt512 seed) {
-    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerce (manager);
 
-    BREthereumAccount     ethAccount     = manager->account;
+    BREthereumAccount     ethAccount     = managerETH->account;
     BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
 
     BRKey key = derivePrivateKeyFromSeed (seed, ethAccountGetAddressIndex (ethAccount, ethAddress));
     
-    return cryptoWalletManagerSignTransaction (managerBase,
-                                               walletBase,
-                                               transferBase,
+    return cryptoWalletManagerSignTransaction (manager,
+                                               wallet,
+                                               transfer,
                                                &key);
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithKeyETH (BRCryptoWalletManager managerBase,
-                                              BRCryptoWallet walletBase,
-                                              BRCryptoTransfer transferBase,
+cryptoWalletManagerSignTransactionWithKeyETH (BRCryptoWalletManager manager,
+                                              BRCryptoWallet wallet,
+                                              BRCryptoTransfer transfer,
                                               BRCryptoKey key) {
-    return cryptoWalletManagerSignTransaction (managerBase,
-                                               walletBase,
-                                               transferBase,
+    return cryptoWalletManagerSignTransaction (manager,
+                                               wallet,
+                                               transfer,
                                                cryptoKeyGetCore (key));
 }
 
@@ -376,32 +376,32 @@ cryptoWalletManagerEstimateLimitETH (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoFeeBasis
-cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager managerBase,
-                                               BRCryptoWallet  walletBase,
-                                               BRCryptoCookie cookie,
-                                               BRCryptoAddress target,
-                                               BRCryptoAmount amount,
-                                               BRCryptoNetworkFee networkFee) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
+                                        BRCryptoWallet  wallet,
+                                        BRCryptoCookie cookie,
+                                        BRCryptoAddress target,
+                                        BRCryptoAmount amount,
+                                        BRCryptoNetworkFee networkFee) {
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
 
     BREthereumFeeBasis ethFeeBasis = {
         FEE_BASIS_GAS,
-        { .gas = { wallet->ethGasLimit, cryptoNetworkFeeAsETH (networkFee) }}
+        { .gas = { walletETH->ethGasLimit, cryptoNetworkFeeAsETH (networkFee) }}
     };
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
-    BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (walletBase,
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (wallet,
                                                                target,
                                                                amount,
-                                                               cryptoFeeBasisCreateAsETH (walletBase->unitForFee, ethFeeBasis),
+                                                               cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis),
                                                                0, NULL,
                                                                currency,
-                                                               walletBase->unit,
-                                                               walletBase->unitForFee);
+                                                               wallet->unit,
+                                                               wallet->unitForFee);
 
     cryptoCurrencyGive(currency);
 
-    cryptoClientQRYEstimateTransferFee (managerBase->qryManager,
+    cryptoClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
                                         networkFee);
@@ -413,7 +413,7 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager managerBase,
 }
 
 static void
-cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
+cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
                                            BRCryptoCurrency currency,
                                            BRCryptoUnit     unitDefault) {
     const char *address = cryptoCurrencyGetIssuer(currency);
@@ -432,7 +432,7 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
     BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
 
     // Check for an existing token
-    BREthereumToken token = BRSetGet (manager->tokens, &addr);
+    BREthereumToken token = BRSetGet (managerETH->tokens, &addr);
 
     if (NULL == token) {
         token = ethTokenCreate (address,
@@ -442,7 +442,7 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                              decimals,
                              defaultGasLimit,
                              defaultGasPrice);
-        BRSetAdd (manager->tokens, token);
+        BRSetAdd (managerETH->tokens, token);
     }
     else {
         ethTokenUpdate (token,
@@ -454,7 +454,7 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                      defaultGasPrice);
     }
 
-    fileServiceSave (manager->base.fileService, fileServiceTypeTokensETH, token);
+    fileServiceSave (managerETH->base.fileService, fileServiceTypeTokensETH, token);
 }
 
 static BRCryptoWallet
@@ -477,7 +477,7 @@ cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
                                                      managerETH->account);
 
     cryptoWalletManagerAddWallet (manager, wallet);
-//    cryptoWalletMangerSignalWalletCreated (managerBase, wallet);
+//    cryptoWalletMangerSignalWalletCreated (manager, wallet);
 
     cryptoUnitGive (unitForFee);
     cryptoUnitGive (unit);
@@ -486,12 +486,12 @@ cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
 }
 
 static BRCryptoWalletETH
-cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH manager,
+cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH managerETH,
                                          BREthereumToken token) {
-    if (NULL == token) return (BRCryptoWalletETH) cryptoWalletTake (manager->base.wallet);
+    if (NULL == token) return (BRCryptoWalletETH) cryptoWalletTake (managerETH->base.wallet);
 
-    for (size_t index = 0; index < array_count(manager->base.wallets); index++) {
-        BRCryptoWalletETH wallet = cryptoWalletCoerce (manager->base.wallets[index]);
+    for (size_t index = 0; index < array_count(managerETH->base.wallets); index++) {
+        BRCryptoWalletETH wallet = cryptoWalletCoerce (managerETH->base.wallets[index]);
         if (token == wallet->ethToken)
             return wallet;
     }
@@ -577,10 +577,10 @@ cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
 }
 
 static void
-cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager managerBase,
+cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
                                        OwnershipKept BRCryptoClientTransferBundle bundle) {
 
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
     UInt256 amount;
     uint64_t gasLimit;
@@ -618,13 +618,13 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager managerBase,
     // if newly submitted?
 
     // TODO: Confirm we are not repeatedly creating transactions
-    BREthereumTransaction transaction = transactionCreate (ethAddressCreate (bundle->from),
-                                                           ethAddressCreate (bundle->to),
-                                                           ethEtherCreate(amount),
-                                                           ethGasPriceCreate(ethEtherCreate(gasPrice)),
-                                                           ethGasCreate(gasLimit),
-                                                           NULL, // data
-                                                           nonce);
+    BREthereumTransaction tid = transactionCreate (ethAddressCreate (bundle->from),
+                                                   ethAddressCreate (bundle->to),
+                                                   ethEtherCreate(amount),
+                                                   ethGasPriceCreate(ethEtherCreate(gasPrice)),
+                                                   ethGasCreate(gasLimit),
+                                                   NULL, // data
+                                                   nonce);
 
     // We set the transaction's hash based on the value providedin the bundle.  However,
     // and importantly, if we attempted to compute the hash - as we normally do for a
@@ -632,24 +632,24 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager managerBase,
     // just created does not have: network nor signature.
     //
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
-    transactionSetHash (transaction, ethHashCreate (bundle->hash));
+    transactionSetHash (tid, ethHashCreate (bundle->hash));
 
     BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
                                                                           bundle->blockTimestamp,
                                                                           ethGasCreate(gasUsed));
-    transactionSetStatus (transaction, status);
+    transactionSetStatus (tid, status);
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
-    ewmHandleTransaction (manager, BCS_CALLBACK_TRANSACTION_UPDATED, transaction);
+    ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_UPDATED, tid);
 }
 
 static bool // true if error
-cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
+cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
                                const char *contract,
                                OwnershipKept BRCryptoClientTransferBundle bundle) {
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
     UInt256 amount;
     uint64_t gasLimit;
@@ -713,13 +713,13 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
     // log->data is assigned with rlpDecodeBytes(coder, items[2]); we'll need the same
     // thing, somehow
 
-    BRRlpItem  item  = rlpEncodeUInt256 (manager->coder, amount, 1);
+    BRRlpItem  item  = rlpEncodeUInt256 (managerETH->coder, amount, 1);
 
     BREthereumLog log = logCreate (ethAddressCreate (contract),
                                    topicsCount,
                                    topics,
-                                   rlpItemGetDataSharedDontRelease (manager->coder, item));
-    rlpItemRelease (manager->coder, item);
+                                   rlpItemGetDataSharedDontRelease (managerETH->coder, item));
+    rlpItemRelease (managerETH->coder, item);
 
     // Given {hash,logIndex}, initialize the log's identifier
     assert (logIndex <= (uint64_t) SIZE_MAX);
@@ -735,7 +735,7 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
 
     // If we had a `bcs` we might think about `bcsSignalLog(ewm->bcs, log);`
     //            ewmSignalLog(ewm, BCS_CALLBACK_LOG_UPDATED, log);
-    ewmHandleLog (manager, BCS_CALLBACK_LOG_UPDATED, log);
+    ewmHandleLog (managerETH, BCS_CALLBACK_LOG_UPDATED, log);
 
     // The `bundle` has `gasPrice` and `gasUsed` values.  The above `ewmSignalLog()` is
     // going to create a `transfer` and that transfer needs a correct `feeBasis`.  We will
@@ -754,17 +754,17 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager managerBase,
 }
 
 static bool // true if error
-cryptoWalletManagerRecoverExchange (BRCryptoWalletManager managerBase,
+cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                     const char *contract,
                                     OwnershipKept BRCryptoClientTransferBundle bundle) {
     return false;
 }
 
 static void
-cryptoWalletManagerRecoverTransfersFromTransactionBundleETH (BRCryptoWalletManager managerBase,
+cryptoWalletManagerRecoverTransfersFromTransactionBundleETH (BRCryptoWalletManager manager,
                                                              OwnershipKept BRCryptoClientTransactionBundle bundle) {
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
-    (void) manager;
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
+    (void) managerETH;
 assert (0);
 }
 
@@ -780,11 +780,11 @@ bool strPrefix(const char *pre, const char *str)
 }
 
 static void
-cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager managerBase,
+cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager manager,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
-    BRCryptoWalletManagerETH manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
 
-    BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (managerBase);
+    BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (manager);
 
     // We'll only have a `walletCurrency` if the bundle->currency is for ETH or fro an ERC20 token
     // that is known.  If `bundle` indicates a `transfer` that we sent and we do not know about
@@ -796,7 +796,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
                             ? cryptoWalletManagerParseIssuer (bundle->currency)
                             : cryptoCurrencyGetIssuer(walletCurrency));
 
-    switch (managerBase->syncMode) {
+    switch (manager->syncMode) {
         case CRYPTO_SYNC_MODE_API_ONLY:
         case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
             bool error = CRYPTO_TRANSFER_STATE_ERRORED == bundle->status;
@@ -838,12 +838,12 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 
             if (needLog) {
                 // This could produce an error - generally a parse error.  We'll soldier on.
-                cryptoWalletManagerRecoverLog (managerBase, contract, bundle);
+                cryptoWalletManagerRecoverLog (manager, contract, bundle);
 
             }
 
             if (needExchange) {
-                cryptoWalletManagerRecoverExchange (managerBase, contract, bundle);
+                cryptoWalletManagerRecoverExchange (manager, contract, bundle);
             }
 
             if (needTransaction) {
@@ -857,7 +857,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 #endif
                 }
                 // bundle->data?
-                cryptoWalletManagerRecoverTransaction (managerBase, bundle);
+                cryptoWalletManagerRecoverTransaction (manager, bundle);
             }
             break;
         }
@@ -887,38 +887,38 @@ typedef struct BRCryptoClientP2PManagerRecordETH {
 } *BRCryptoClientP2PManagerETH;
 
 static BRCryptoClientP2PManagerETH
-cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager managerBase) {
-    assert (CRYPTO_NETWORK_TYPE_ETH == managerBase->type);
-    return (BRCryptoClientP2PManagerETH) managerBase;
+cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager manager) {
+    assert (CRYPTO_NETWORK_TYPE_ETH == manager->type);
+    return (BRCryptoClientP2PManagerETH) manager;
 }
 
 static void
-cryptoClientP2PManagerReleaseETH (BRCryptoClientP2PManager baseManager) {
-    BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    bcsDestroy (manager->bcs);
+cryptoClientP2PManagerReleaseETH (BRCryptoClientP2PManager manager) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+    bcsDestroy (managerETH->bcs);
 }
 
 static void
-cryptoClientP2PManagerConnectETH (BRCryptoClientP2PManager baseManager,
-                                         BRCryptoPeer peer) {
-    BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    bcsStart (manager->bcs);
+cryptoClientP2PManagerConnectETH (BRCryptoClientP2PManager manager,
+                                  BRCryptoPeer peer) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+    bcsStart (managerETH->bcs);
 }
 
 static void
-cryptoClientP2PManagerDisconnectETH (BRCryptoClientP2PManager baseManager) {
-    BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    bcsStop (manager->bcs);
+cryptoClientP2PManagerDisconnectETH (BRCryptoClientP2PManager manager) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+    bcsStop (managerETH->bcs);
 }
 
 // MARK: - Sync
 
 static void
-cryptoClientP2PManagerSyncETH (BRCryptoClientP2PManager baseManager,
-                                      BRCryptoSyncDepth depth,
-                                      BRCryptoBlockNumber height) {
-    BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    bcsSync (manager->bcs, height);
+cryptoClientP2PManagerSyncETH (BRCryptoClientP2PManager manager,
+                               BRCryptoSyncDepth depth,
+                               BRCryptoBlockNumber height) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+    bcsSync (managerETH->bcs, height);
 }
 
 typedef struct {
@@ -943,18 +943,18 @@ static BRCryptoClientP2PHandlers p2pHandlersETH = {
 };
 
 static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager cwm) {
+crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
     BRCryptoClientP2PManager p2pBase = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordETH),
-                                                                     cwm->type,
+                                                                     manager->type,
                                                                      &p2pHandlersETH);
     BRCryptoClientP2PManagerETH p2p = cryptoClientP2PManagerCoerce (p2pBase);
-    p2p->manager = cryptoWalletManagerCoerce(cwm);
+    p2p->manager = cryptoWalletManagerCoerce(manager);
 
     // TODO: Handle Callbacks Correctly
-    cwm->p2pManager = p2pBase;
+    manager->p2pManager = p2pBase;
 
     BREthereumBCSListener listener = {
-        cwm,
+        manager,
         ewmHandleBlockChain,
         ewmHandleAccountState,
         ewmHandleTransaction,
@@ -968,15 +968,15 @@ crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager cwm) {
     BREthereumNetwork network = p2p->manager->network;
     BREthereumAddress address = ethAccountGetPrimaryAddress (p2p->manager->account);
 
-    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (cwm);
-    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (cwm);
+    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
+    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (manager);
     // Exchanges
-    BRSetOf(BREthereumNodeConfig)  nodes        = initialNodesLoadETH        (cwm);
-    BRSetOf(BREthereumBlock)       blocks       = initialBlocksLoadETH       (cwm);
+    BRSetOf(BREthereumNodeConfig)  nodes        = initialNodesLoadETH        (manager);
+    BRSetOf(BREthereumBlock)       blocks       = initialBlocksLoadETH       (manager);
 
     // If we have no blocks; then add a checkpoint
     if (0 == BRSetCount(blocks)) {
-        const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network, cryptoAccountGetTimestamp (cwm->account));
+        const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network, cryptoAccountGetTimestamp (manager->account));
         BREthereumBlock block = blockCreate (blockCheckpointCreatePartialBlockHeader (checkpoint));
         blockSetTotalDifficulty (block, checkpoint->u.td);
         BRSetAdd (blocks, block);
@@ -1020,7 +1020,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
 
 #if 0
 static void
-cryptoWalletManagerEstimateFeeBasisHandlerETH (BRCryptoWalletManager cwm,
+cryptoWalletManagerEstimateFeeBasisHandlerETH (BRCryptoWalletManager manager,
                                                BRCryptoWallet  wallet,
                                                BRCryptoCookie cookie,
                                                BRCryptoAddress target,

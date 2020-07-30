@@ -41,11 +41,10 @@ cryptoAddressAsXRP (BRCryptoAddress address);
 
 // MARK: - Network
 
-//TODO:XRP needed?
-//typedef struct BRCryptoNetworkXRPRecord {
-//    struct BRCryptoNetworkRecord base;
-//    // ...
-//} *BRCryptoNetworkXRP;
+typedef struct BRCryptoNetworkXRPRecord {
+    struct BRCryptoNetworkRecord base;
+    // Nothing more needed
+} *BRCryptoNetworkXRP;
 
 // MARK: - Transfer
 

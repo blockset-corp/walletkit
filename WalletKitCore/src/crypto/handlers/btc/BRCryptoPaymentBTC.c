@@ -30,8 +30,7 @@ cryptoPaymentProtocolRequestGetOutputsAsBTC (BRCryptoPaymentProtocolRequest prot
 
 static BRCryptoPaymentProtocolRequestBitPayBuilderBTC
 cryptoPaymentProtocolRequestBitPayBuilderCoerceBTC (BRCryptoPaymentProtocolRequestBitPayBuilder builder) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == builder->type ||
-            CRYPTO_NETWORK_TYPE_BCH == builder->type);
+    assert (CRYPTO_NETWORK_TYPE_BTC == builder->type);
     return (BRCryptoPaymentProtocolRequestBitPayBuilderBTC) builder;
 }
 
@@ -112,8 +111,7 @@ cryptoPaymentProtocolRequestBitPayBuilderReleaseBTC (BRCryptoPaymentProtocolRequ
 
 static BRCryptoPaymentProtocolRequestBTC
 cryptoPaymentProtocolRequestCoerceBTC (BRCryptoPaymentProtocolRequest protoReq) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType ||
-            CRYPTO_NETWORK_TYPE_BCH == protoReq->chainType);
+    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType);
     return (BRCryptoPaymentProtocolRequestBTC) protoReq;
 }
 

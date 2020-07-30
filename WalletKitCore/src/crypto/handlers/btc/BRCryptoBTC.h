@@ -98,10 +98,10 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoBlockChainType type);
 
 private_extern BRTransaction *
-cryptoTransferAsBTC (BRCryptoTransfer transferBase);
+cryptoTransferAsBTC (BRCryptoTransfer transfer);
 
 private_extern BRCryptoBoolean
-cryptoTransferHasBTC (BRCryptoTransfer transferBase,
+cryptoTransferHasBTC (BRCryptoTransfer transfer,
                       BRTransaction *btc);
 
 // MARK: - Wallet

@@ -46,51 +46,51 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
     
-    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
-                                                                CRYPTO_NETWORK_TYPE_XRP,
-                                                                listener,
-                                                                unit,
-                                                                unitForFee,
-                                                                feeBasisEstimated,
-                                                                amount,
-                                                                direction,
-                                                                sourceAddress,
-                                                                targetAddress);
-    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
+    BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
+                                                            CRYPTO_NETWORK_TYPE_XRP,
+                                                            listener,
+                                                            unit,
+                                                            unitForFee,
+                                                            feeBasisEstimated,
+                                                            amount,
+                                                            direction,
+                                                            sourceAddress,
+                                                            targetAddress);
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
     
-    transfer->xrpTransfer = xrpTransfer;
+    transferXRP->xrpTransfer = xrpTransfer;
     
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);
 
-    return (BRCryptoTransfer) transfer;
+    return transfer;
 }
 
 static void
-cryptoTransferReleaseXRP (BRCryptoTransfer transferBase) {
-    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
-    rippleTransferFree (transfer->xrpTransfer);
+cryptoTransferReleaseXRP (BRCryptoTransfer transfer) {
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
+    rippleTransferFree (transferXRP->xrpTransfer);
 }
 
 static BRCryptoHash
-cryptoTransferGetHashXRP (BRCryptoTransfer transferBase) {
-    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP(transferBase);
-    BRRippleTransactionHash hash = rippleTransferGetTransactionId (transfer->xrpTransfer);
+cryptoTransferGetHashXRP (BRCryptoTransfer transfer) {
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
+    BRRippleTransactionHash hash = rippleTransferGetTransactionId (transferXRP->xrpTransfer);
     return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XRP, sizeof (hash.bytes), hash.bytes);
 }
 
 static uint8_t *
-cryptoTransferSerializeXRP (BRCryptoTransfer transferBase,
+cryptoTransferSerializeXRP (BRCryptoTransfer transfer,
                             BRCryptoNetwork network,
                             BRCryptoBoolean  requireSignature,
                             size_t *serializationCount) {
     assert (CRYPTO_TRUE == requireSignature);
-    BRCryptoTransferXRP transfer = cryptoTransferCoerceXRP (transferBase);
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
 
     uint8_t *serialization = NULL;
     *serializationCount = 0;
-    BRRippleTransaction transaction = rippleTransferGetTransaction (transfer->xrpTransfer);
+    BRRippleTransaction transaction = rippleTransferGetTransaction (transferXRP->xrpTransfer);
     if (transaction) {
         serialization = rippleTransactionSerialize (transaction, serializationCount);
     }

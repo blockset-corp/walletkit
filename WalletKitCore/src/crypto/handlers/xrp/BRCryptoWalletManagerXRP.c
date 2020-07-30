@@ -50,21 +50,21 @@ cryptoWalletManagerCreateHandlerXRP (BRCryptoListener listener,
                                      BRCryptoSyncMode mode,
                                      BRCryptoAddressScheme scheme,
                                      const char *path) {
-    BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXRPRecord),
-                                                                         cryptoNetworkGetType(network),
-                                                                         listener,
-                                                                         client,
-                                                                         account,
-                                                                         network,
-                                                                         scheme,
-                                                                         path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
-    BRCryptoWalletManagerXRP manager = cryptoWalletManagerCoerce (managerBase);
+    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXRPRecord),
+                                                                     cryptoNetworkGetType(network),
+                                                                     listener,
+                                                                     client,
+                                                                     account,
+                                                                     network,
+                                                                     scheme,
+                                                                     path,
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
+    BRCryptoWalletManagerXRP managerXRP = cryptoWalletManagerCoerce (manager);
 
     // XRP Stuff
-    manager->ignoreTBD = 0;
+    managerXRP->ignoreTBD = 0;
 
-    return managerBase;
+    return manager;
 }
 
 static void
@@ -119,14 +119,13 @@ cryptoWalletManagerGetEventTypesXRP (BRCryptoWalletManager manager,
 
 static BRCryptoBoolean
 cryptoWalletManagerSignTransactionWithSeedHandlerXRP (BRCryptoWalletManager manager,
-                                                      BRCryptoWallet walletBase,
-                                                      BRCryptoTransfer transferBase,
+                                                      BRCryptoWallet wallet,
+                                                      BRCryptoTransfer transfer,
                                                       UInt512 seed) {
     BRRippleAccount account = cryptoAccountAsXRP (manager->account);
-    BRRippleTransfer transfer = cryptoTransferCoerceXRP(transferBase)->xrpTransfer;
-    BRRippleTransaction transaction = rippleTransferGetTransaction (transfer);
-    if (transaction) {
-        size_t tx_size = rippleAccountSignTransaction (account, transaction, seed);
+    BRRippleTransaction tid = rippleTransferGetTransaction (cryptoTransferCoerceXRP(transfer)->xrpTransfer);
+    if (tid) {
+        size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
         return AS_CRYPTO_BOOLEAN(tx_size > 0);
     } else {
         return CRYPTO_FALSE;
@@ -143,7 +142,7 @@ cryptoWalletManagerSignTransactionWithKeyHandlerXRP (BRCryptoWalletManager manag
 }
 
 static BRCryptoAmount
-cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager manager,
                                             BRCryptoWallet  wallet,
                                             BRCryptoBoolean asMaximum,
                                             BRCryptoAddress target,
@@ -185,7 +184,7 @@ cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoFeeBasis
-cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager manager,
                                                BRCryptoWallet wallet,
                                                BRCryptoCookie cookie,
                                                BRCryptoAddress target,
@@ -232,11 +231,11 @@ genTransferSetState (transfer, transferState);
 #endif
 
 static void
-cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletManager manager,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle) {
     // create BRRippleTransfer
     
-    BRRippleWallet xrpWallet = cryptoWalletAsXRP (cwm->wallet);
+    BRRippleWallet xrpWallet = cryptoWalletAsXRP (manager->wallet);
     
     BRRippleUnitDrops amountDrops, feeDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
@@ -261,7 +260,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     
     // create BRCryptoTransfer
     
-    BRCryptoWallet wallet = cryptoWalletManagerGetWallet (cwm);
+    BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
 
     BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                                wallet->unit,
@@ -276,20 +275,20 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
 }
 
 static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerHandlerXRP (BRCryptoWalletManager cwm) {
+crytpWalletManagerCreateP2PManagerHandlerXRP (BRCryptoWalletManager manager) {
     // not supported
     return NULL;
 }
 
 extern BRCryptoWalletSweeperStatus
-cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
                                                       BRCryptoKey key) {
     return CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY;
 }
 
 extern BRCryptoWalletSweeper
-cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager manager,
                                            BRCryptoWallet wallet,
                                            BRCryptoKey key) {
     // not supported
@@ -297,7 +296,7 @@ cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager managerBase,
+cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager manager,
                                        BRCryptoCurrency currency) {
     return NULL;
 }

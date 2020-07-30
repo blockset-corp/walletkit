@@ -49,27 +49,27 @@ cryptoWalletManagerCoerce (BRCryptoWalletManager manager, BRCryptoBlockChainType
 
 static BRCryptoWalletManager
 cryptoWalletManagerCreateBTC (BRCryptoListener listener,
-                                     BRCryptoClient client,
-                                     BRCryptoAccount account,
-                                     BRCryptoNetwork network,
-                                     BRCryptoSyncMode mode,
-                                     BRCryptoAddressScheme scheme,
-                                     const char *path) {
-    BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
-                                                                         cryptoNetworkGetType(network),
-                                                                         listener,
-                                                                         client,
-                                                                         account,
-                                                                         network,
-                                                                         scheme,
-                                                                         path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
-    BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase, cryptoNetworkGetType(network));
+                              BRCryptoClient client,
+                              BRCryptoAccount account,
+                              BRCryptoNetwork network,
+                              BRCryptoSyncMode mode,
+                              BRCryptoAddressScheme scheme,
+                              const char *path) {
+    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
+                                                                     cryptoNetworkGetType(network),
+                                                                     listener,
+                                                                     client,
+                                                                     account,
+                                                                     network,
+                                                                     scheme,
+                                                                     path,
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
+    BRCryptoWalletManagerBTC managerBTC = cryptoWalletManagerCoerce (manager, cryptoNetworkGetType(network));
 
     // BTC Stuff
-    manager->ignoreTBD = 0;
+    managerBTC->ignoreTBD = 0;
 
-    return managerBase;
+    return manager;
 }
 
 static void
@@ -454,11 +454,11 @@ typedef struct BRCryptoClientP2PManagerRecordBTC {
 } *BRCryptoClientP2PManagerBTC;
 
 static BRCryptoClientP2PManagerBTC
-cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager managerBase) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == managerBase->type ||
-            CRYPTO_NETWORK_TYPE_BCH == managerBase->type ||
-            CRYPTO_NETWORK_TYPE_BSV == managerBase->type);
-    return (BRCryptoClientP2PManagerBTC) managerBase;
+cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager manager) {
+    assert (CRYPTO_NETWORK_TYPE_BTC == manager->type ||
+            CRYPTO_NETWORK_TYPE_BCH == manager->type ||
+            CRYPTO_NETWORK_TYPE_BSV == manager->type);
+    return (BRCryptoClientP2PManagerBTC) manager;
 }
 
 static void
@@ -643,12 +643,12 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
     BRCryptoCurrency currency = cryptoWalletGetCurrency (wallet);
     BRCryptoUnit unit = cryptoNetworkGetUnitAsBase (cwm->network, currency);
 
-    BRCryptoWalletSweeper sweeperBase = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
+    BRCryptoWalletSweeper sweeper = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
                                                                          cwm->type,
                                                                          key,
                                                                          unit);
 
-    BRCryptoWalletSweeperBTC sweeper = (BRCryptoWalletSweeperBTC) sweeperBase;
+    BRCryptoWalletSweeperBTC sweeperBTC = (BRCryptoWalletSweeperBTC) sweeper;
 
     BRKey *keyCore = cryptoKeyGetCore (key);
     BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
@@ -658,15 +658,15 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
     BRKeyLegacyAddr (keyCore, address, addressLength, addrParams);
     address[addressLength] = '\0';
 
-    sweeper->addrParams = addrParams;
-    sweeper->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
-    sweeper->sourceAddress = address;
-    array_new (sweeper->txns, 100);
+    sweeperBTC->addrParams = addrParams;
+    sweeperBTC->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
+    sweeperBTC->sourceAddress = address;
+    array_new (sweeperBTC->txns, 100);
 
     cryptoUnitGive (unit);
     cryptoCurrencyGive (currency);
 
-    return sweeperBase;
+    return sweeper;
 }
 
 // MARK: BRWallet Callback Balance Changed

@@ -61,12 +61,6 @@ typedef enum  {
 /// A ETH Transfer
 typedef struct BRCryptoTransferETHRecord {
     struct BRCryptoTransferRecord base;
-    //    BREthereumEWM ewm;
-    //    BREthereumTransfer tid;
-    //    BREthereumAddress sourceAddress;
-    //    BREthereumAddress targetAddress;
-    //    BREthereumAmount amount;
-    //    BREthereumFeeBasis feeBasis;
 
     BREthereumAccount account;
     BREthereumGas gasEstimate;
@@ -80,11 +74,6 @@ typedef struct BRCryptoTransferETHRecord {
     } basis;
 
     BREthereumTransaction originatingTransaction;
-
-    // TODO: Remove
-    BRCryptoAmount amount;
-    BRCryptoTransferDirection direction;
-    
 } *BRCryptoTransferETH;
 
 extern BRCryptoTransferETH
@@ -140,6 +129,7 @@ cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
 
 typedef struct BRCryptoWalletETHRecord {
     struct BRCryptoWalletRecord base;
+    
     BREthereumAccount ethAccount;
     BREthereumToken   ethToken;    // NULL if `ETH`
     BREthereumGas     ethGasLimit;
@@ -156,7 +146,7 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                          BREthereumAccount ethAccount);
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,

@@ -41,11 +41,10 @@ cryptoAddressAsHBAR (BRCryptoAddress address);
 
 // MARK: - Network
 
-//TODO:HBAR needed?
-//typedef struct BRCryptoNetworkHBARRecord {
-//    struct BRCryptoNetworkRecord base;
-//    // ...
-//} *BRCryptoNetworkHBAR;
+typedef struct BRCryptoNetworkHBARRecord {
+    struct BRCryptoNetworkRecord base;
+    // Nothing more needed
+} *BRCryptoNetworkHBAR;
 
 // MARK: - Transfer
 

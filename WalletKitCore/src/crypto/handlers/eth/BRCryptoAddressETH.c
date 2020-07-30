@@ -19,19 +19,19 @@ cryptoAddressCoerce (BRCryptoAddress address) {
 
 private_extern BRCryptoAddress
 cryptoAddressCreateAsETH (BREthereumAddress eth) {
-    BRCryptoAddress addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressETHRecord),
-                                                             CRYPTO_NETWORK_TYPE_ETH,
-                                                             (size_t) ethAddressHashValue (eth));
-    BRCryptoAddressETH address     = cryptoAddressCoerce (addressBase);
-    address->eth = eth;
-
-    return addressBase;
+    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressETHRecord),
+                                                         CRYPTO_NETWORK_TYPE_ETH,
+                                                         (size_t) ethAddressHashValue (eth));
+    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
+    addressETH->eth = eth;
+    
+    return address;
 }
 
 private_extern BREthereumAddress
-cryptoAddressAsETH (BRCryptoAddress addressBase) {
-    BRCryptoAddressETH address     = cryptoAddressCoerce (addressBase);
-    return address->eth;
+cryptoAddressAsETH (BRCryptoAddress address) {
+    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
+    return addressETH->eth;
 }
 
 extern BRCryptoAddress
@@ -43,20 +43,23 @@ cryptoAddressCreateFromStringAsETH (const char *ethAddress) {
 }
 
 static void
-cryptoAddressReleaseETH (BRCryptoAddress addressBase) {
+cryptoAddressReleaseETH (BRCryptoAddress address) {
+    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
+    (void) addressETH;
+
     return;
 }
 
 static char *
-cryptoAddressAsStringETH (BRCryptoAddress addressBase) {
-    BRCryptoAddressETH address = (BRCryptoAddressETH) addressBase;
-    return ethAddressGetEncodedString(address->eth, 1);
+cryptoAddressAsStringETH (BRCryptoAddress address) {
+    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
+    return ethAddressGetEncodedString(addressETH->eth, 1);
 }
 
 static bool
-cryptoAddressIsEqualETH (BRCryptoAddress addressBase1, BRCryptoAddress addressBase2) {
-    BRCryptoAddressETH a1 = (BRCryptoAddressETH) addressBase1;
-    BRCryptoAddressETH a2 = (BRCryptoAddressETH) addressBase2;
+cryptoAddressIsEqualETH (BRCryptoAddress address1, BRCryptoAddress address2) {
+    BRCryptoAddressETH a1 = cryptoAddressCoerce (address1);
+    BRCryptoAddressETH a2 = cryptoAddressCoerce (address2);
 
     return ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (a1->eth, a2->eth));
 }

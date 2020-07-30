@@ -11,6 +11,11 @@
 #include "BRCryptoXRP.h"
 #include "crypto/BRCryptoAccountP.h"
 
+static BRCryptoNetworkXRP
+cryptoNetworkCoerce (BRCryptoNetwork network) {
+    assert (CRYPTO_NETWORK_TYPE_XRP == network->type);
+    return (BRCryptoNetworkXRP) network;
+}
 
 static BRCryptoNetwork
 cryptoNetworkCreateAsXRP (const char *uids,
@@ -18,15 +23,15 @@ cryptoNetworkCreateAsXRP (const char *uids,
                           const char *desc,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds) {
-    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
-                                                             CRYPTO_NETWORK_TYPE_XRP,
-                                                             uids,
-                                                             name,
-                                                             desc,
-                                                             isMainnet,
-                                                             confirmationPeriodInSeconds);
+    BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
+                                                         CRYPTO_NETWORK_TYPE_XRP,
+                                                         uids,
+                                                         name,
+                                                         desc,
+                                                         isMainnet,
+                                                         confirmationPeriodInSeconds);
     
-    return networkBase;
+    return network;
 }
 
 static BRCryptoNetwork
@@ -46,18 +51,26 @@ cyptoNetworkCreateXRP (const char *uids,
 
 static void
 cryptoNetworkReleaseXRP (BRCryptoNetwork network) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
 }
 
 //TODO:XRP make common? remove network param?
 static BRCryptoAddress
-cryptoNetworkCreateAddressXRP (BRCryptoNetwork networkBase,
+cryptoNetworkCreateAddressXRP (BRCryptoNetwork network,
                                const char *addressAsString) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
+
     return cryptoAddressCreateFromStringAsXRP (addressAsString);
 }
 
 static BRCryptoBlockNumber
-cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP (BRCryptoNetwork networkBase,
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
+
     //TODO:XRP
     return 0;
 }
@@ -67,6 +80,9 @@ cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP (BRCryptoNetwork networkBase,
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedXRP (BRCryptoNetwork network,
                                       BRCryptoAccount account) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
+
     BRRippleAccount xrpAccount = cryptoAccountAsXRP (account);
     assert (NULL != xrpAccount);
     return AS_CRYPTO_BOOLEAN (true);
@@ -77,6 +93,9 @@ static uint8_t *
 cryptoNetworkGetAccountInitializationDataXRP (BRCryptoNetwork network,
                                               BRCryptoAccount account,
                                               size_t *bytesCount) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
+
     BRRippleAccount xrpAccount = cryptoAccountAsXRP (account);
     assert (NULL != xrpAccount);
     if (NULL != bytesCount) *bytesCount = 0;
@@ -88,12 +107,15 @@ cryptoNetworkInitializeAccountXRP (BRCryptoNetwork network,
                                    BRCryptoAccount account,
                                    const uint8_t *bytes,
                                    size_t bytesCount) {
+    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
+    (void) networkXRP;
+
     BRRippleAccount xrpAccount = cryptoAccountAsXRP (account);
     assert (NULL != xrpAccount);
     return;
 }
 
-// MARK: -
+// MARK: - Handlers
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
     cyptoNetworkCreateXRP,

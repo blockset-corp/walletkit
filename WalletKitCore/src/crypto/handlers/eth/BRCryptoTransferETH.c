@@ -29,16 +29,16 @@ cryptoTransferCoerce (BRCryptoTransfer transfer) {
 
 #if 0
 private_extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
+cryptoTransferCreateAsETHX (BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
 //                           BREthereumEWM ewm,
 //                           BREthereumTransfer tid,
                            BRCryptoFeeBasis feeBasisEstimated) {
-    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
+    BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
                                                                 CRYPTO_NETWORK_TYPE_ETH,
                                                                 unit,
                                                                 unitForFee);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
 //    transfer->ewm = ewm;
 //    transfer->tid = tid;
@@ -84,7 +84,7 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
                                                                 ethFeeBasis.u.gas.price)
                                    : cryptoFeeBasisTake(feeBasisEstimated));
 
-    return (BRCryptoTransfer) transfer;
+    return transfer;
 }
 #endif
 
@@ -126,7 +126,7 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                            BREthereumAccount account,
                            BREthereumTransferBasisType type,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
-    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
+    BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
                                                                 CRYPTO_NETWORK_TYPE_ETH,
                                                                 listener,
                                                                 unit,
@@ -136,13 +136,13 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                                                                 direction,
                                                                 sourceAddress,
                                                                 targetAddress);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
-    transfer->account = account;
-    transfer->type = type;
-    transfer->originatingTransaction = originatingTransaction;
+    transferETH->account = account;
+    transferETH->type = type;
+    transferETH->originatingTransaction = originatingTransaction;
 
-    return transferBase;
+    return transfer;
 }
 
 extern BRCryptoTransfer
@@ -164,25 +164,24 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
     BRCryptoAddress  target = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
-                                                               unit,
-                                                               unitForFee,
-                                                               estimatedFeeBasis,
-                                                               amount,
-                                                               direction,
-                                                               source,
-                                                               target,
-                                                               account,
-                                                               TRANSFER_BASIS_TRANSACTION,
-                                                               NULL);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (listener,
+                                                           unit,
+                                                           unitForFee,
+                                                           estimatedFeeBasis,
+                                                           amount,
+                                                           direction,
+                                                           source,
+                                                           target,
+                                                           account,
+                                                           TRANSFER_BASIS_TRANSACTION,
+                                                           NULL);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
-    transfer->basis.transaction = ethTransaction;
+    transferETH->basis.transaction = ethTransaction;
 
-    cryptoTransferSetState (transferBase,
+    cryptoTransferSetState (transfer,
                             cryptoTransferDeriveStateETH (transactionGetStatus(ethTransaction),
                                                           confirmedFeeBasis));
-
 
     cryptoFeeBasisGive(confirmedFeeBasis);
     cryptoFeeBasisGive(estimatedFeeBasis);
@@ -190,7 +189,7 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
     cryptoAddressGive(source);
     cryptoAddressGive(target);
 
-    return transferBase;
+    return transfer;
 }
 
 extern BRCryptoTransfer
@@ -214,22 +213,22 @@ cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
-                                                               unit,
-                                                               unitForFee,
-                                                               estimatedFeeBasis,
-                                                               amount,
-                                                               direction,
-                                                               source,
-                                                               target,
-                                                               account,
-                                                               TRANSFER_BASIS_LOG,
-                                                               NULL);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (listener,
+                                                           unit,
+                                                           unitForFee,
+                                                           estimatedFeeBasis,
+                                                           amount,
+                                                           direction,
+                                                           source,
+                                                           target,
+                                                           account,
+                                                           TRANSFER_BASIS_LOG,
+                                                           NULL);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
-    transfer->basis.log = ethLog;
+    transferETH->basis.log = ethLog;
 
-    cryptoTransferSetState (transferBase,
+    cryptoTransferSetState (transfer,
                             cryptoTransferDeriveStateETH (logGetStatus(ethLog),
                                                           estimatedFeeBasis));
 
@@ -238,7 +237,7 @@ cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
     cryptoAddressGive(source);
     cryptoAddressGive(target);
 
-    return transferBase;
+    return transfer;
 }
 
 extern BRCryptoTransfer
@@ -262,22 +261,22 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
-                                                               unit,
-                                                               unitForFee,
-                                                               estimatedFeeBasis,
-                                                               amount,
-                                                               direction,
-                                                               source,
-                                                               target,
-                                                               account,
-                                                               TRANSFER_BASIS_EXCHANGE,
-                                                               NULL);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (listener,
+                                                           unit,
+                                                           unitForFee,
+                                                           estimatedFeeBasis,
+                                                           amount,
+                                                           direction,
+                                                           source,
+                                                           target,
+                                                           account,
+                                                           TRANSFER_BASIS_EXCHANGE,
+                                                           NULL);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
-    transfer->basis.exchange = ethExchange;
+    transferETH->basis.exchange = ethExchange;
 
-    cryptoTransferSetState (transferBase,
+    cryptoTransferSetState (transfer,
                             cryptoTransferDeriveStateETH (ethExchangeGetStatus(ethExchange),
                                                           estimatedFeeBasis));
 
@@ -286,28 +285,28 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
     cryptoAddressGive(source);
     cryptoAddressGive(target);
 
-    return transferBase;
+    return transfer;
 }
 
 static void
-cryptoTransferReleaseETH (BRCryptoTransfer transferBase) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+cryptoTransferReleaseETH (BRCryptoTransfer transfer) {
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
 
-    if (NULL != transfer->originatingTransaction)
-        transactionRelease(transfer->originatingTransaction);
+    if (NULL != transferETH->originatingTransaction)
+        transactionRelease(transferETH->originatingTransaction);
 
-    switch (transfer->type) {
+    switch (transferETH->type) {
         case TRANSFER_BASIS_TRANSACTION:
-            transactionRelease (transfer->basis.transaction);
+            transactionRelease (transferETH->basis.transaction);
             break;
 
         case TRANSFER_BASIS_LOG:
-            logRelease (transfer->basis.log);
+            logRelease (transferETH->basis.log);
             break;
 
         case TRANSFER_BASIS_EXCHANGE:
-            ethExchangeRelease (transfer->basis.exchange);
+            ethExchangeRelease (transferETH->basis.exchange);
             break;
     }
 }
@@ -331,26 +330,25 @@ cryptoTransferFindDirection (BREthereumAccount account,
 }
 
 static BREthereumHash
-cryptoTransferGetEthHash (BRCryptoTransfer transferBase) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce(transferBase);
+cryptoTransferGetEthHash (BRCryptoTransfer transfer) {
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce(transfer);
 
-    if (NULL != transfer->originatingTransaction)
-        return transactionGetHash (transfer->originatingTransaction);
+    if (NULL != transferETH->originatingTransaction)
+        return transactionGetHash (transferETH->originatingTransaction);
 
-
-    switch (transfer->type) {
+    switch (transferETH->type) {
         case TRANSFER_BASIS_TRANSACTION:
-            return (NULL == transfer->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.transaction));
+            return (NULL == transferETH->basis.transaction ? EMPTY_HASH_INIT : transactionGetHash (transferETH->basis.transaction));
         case TRANSFER_BASIS_LOG:
-            return (NULL == transfer->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.log));
+            return (NULL == transferETH->basis.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transferETH->basis.log));
         case TRANSFER_BASIS_EXCHANGE:
-            return (NULL == transfer->basis.exchange    ? EMPTY_HASH_INIT : ethExchangeGetIdentifier (transfer->basis.exchange));
+            return (NULL == transferETH->basis.exchange    ? EMPTY_HASH_INIT : ethExchangeGetIdentifier (transferETH->basis.exchange));
     }
 }
 
 static BRCryptoHash
-cryptoTransferGetHashETH (BRCryptoTransfer transferBase) {
-    BREthereumHash ethHash = cryptoTransferGetEthHash (transferBase);
+cryptoTransferGetHashETH (BRCryptoTransfer transfer) {
+    BREthereumHash ethHash = cryptoTransferGetEthHash (transfer);
     return (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (ethHash, EMPTY_HASH_INIT)
             ? NULL
             : cryptoHashCreateAsETH (ethHash));
@@ -420,20 +418,20 @@ transferGetNonce (BREthereumTransfer transfer) {
 #endif
 
 extern uint8_t *
-cryptoTransferSerializeETH (BRCryptoTransfer transferBase,
-                                         BRCryptoNetwork  network,
-                                         BRCryptoBoolean  requireSignature,
-                                         size_t *serializationCount) {
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (transferBase);
+cryptoTransferSerializeETH (BRCryptoTransfer transfer,
+                            BRCryptoNetwork  network,
+                            BRCryptoBoolean  requireSignature,
+                            size_t *serializationCount) {
+    BRCryptoTransferETH transferETH = cryptoTransferCoerce (transfer);
 
-    if (NULL == transfer->originatingTransaction ||
+    if (NULL == transferETH->originatingTransaction ||
         (CRYPTO_TRUE == requireSignature &&
-        ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transfer->originatingTransaction))) {
+         ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transferETH->originatingTransaction))) {
         *serializationCount = 0;
         return NULL;
     }
 
-    BRRlpData data = transactionGetRlpData (transfer->originatingTransaction,
+    BRRlpData data = transactionGetRlpData (transferETH->originatingTransaction,
                                             cryptoNetworkAsETH(network),
                                             (CRYPTO_TRUE == requireSignature
                                              ? RLP_TYPE_TRANSACTION_SIGNED
@@ -456,7 +454,7 @@ cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
 
 #ifdef REFACTOR
 private_extern BREthereumEther
-transferGetEffectiveAmountInEther(BREthereumTransfer transfer) {
+transferGetEffectiveAmountInEther (BREthereumTransfer transfer) {
     switch (transfer->basis.type) {
         case TRANSFER_BASIS_EXCHANGE:
             if (NULL == transfer->basis.u.exchange) return ethEtherCreateZero();

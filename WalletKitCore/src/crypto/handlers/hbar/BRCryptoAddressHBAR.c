@@ -22,14 +22,14 @@ cryptoAddressCoerce (BRCryptoAddress address) {
 
 extern BRCryptoAddress
 cryptoAddressCreateAsHBAR (BRHederaAddress addr) {
-    BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressHBARRecord),
-                                                                CRYPTO_NETWORK_TYPE_HBAR,
-                                                                0); //TODO:HBAR address hash
-    BRCryptoAddressHBAR address = cryptoAddressCoerce (addressBase);
+    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressHBARRecord),
+                                                         CRYPTO_NETWORK_TYPE_HBAR,
+                                                         0); //TODO:HBAR address hash
+    BRCryptoAddressHBAR addressHBAR = cryptoAddressCoerce (address);
 
-    address->addr = addr;
+    addressHBAR->addr = addr;
 
-    return addressBase;
+    return address;
 }
 
 extern BRCryptoAddress
@@ -43,29 +43,29 @@ cryptoAddressCreateFromStringAsHBAR (const char *string) {
 }
 
 private_extern BRHederaAddress
-cryptoAddressAsHBAR (BRCryptoAddress addressBase) {
-    BRCryptoAddressHBAR address = (BRCryptoAddressHBAR) addressBase;
-    return address->addr;
+cryptoAddressAsHBAR (BRCryptoAddress address) {
+    BRCryptoAddressHBAR addressHBAR = cryptoAddressCoerce (address);
+    return addressHBAR->addr;
 }
 
 // MARK: - Handlers
 
 static void
-cryptoAddressReleaseHBAR (BRCryptoAddress addressBase) {
-    BRCryptoAddressHBAR address = (BRCryptoAddressHBAR) addressBase;
-    hederaAddressFree (address->addr);
+cryptoAddressReleaseHBAR (BRCryptoAddress address) {
+    BRCryptoAddressHBAR addressHBAR = cryptoAddressCoerce (address);
+    hederaAddressFree (addressHBAR->addr);
 }
 
 static char *
-cryptoAddressAsStringHBAR (BRCryptoAddress addressBase) {
-    BRCryptoAddressHBAR address = (BRCryptoAddressHBAR) addressBase;
-    return hederaAddressAsString (address->addr);
+cryptoAddressAsStringHBAR (BRCryptoAddress address) {
+    BRCryptoAddressHBAR addressHBAR = cryptoAddressCoerce (address);
+    return hederaAddressAsString (addressHBAR->addr);
 }
 
 static bool
 cryptoAddressIsEqualHBAR (BRCryptoAddress address1, BRCryptoAddress address2) {
-    BRCryptoAddressHBAR a1 = (BRCryptoAddressHBAR) address1;
-    BRCryptoAddressHBAR a2 = (BRCryptoAddressHBAR) address2;
+    BRCryptoAddressHBAR a1 = cryptoAddressCoerce (address1);
+    BRCryptoAddressHBAR a2 = cryptoAddressCoerce (address1);
 
     return hederaAddressEqual (a1->addr, a2->addr);
 }
