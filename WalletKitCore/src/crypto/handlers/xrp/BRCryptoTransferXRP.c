@@ -26,7 +26,8 @@ cryptoTransferCoerceXRP (BRCryptoTransfer transfer) {
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsXRP (BRCryptoUnit unit,
+cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            OwnershipKept BRRippleWallet wallet,
                            OwnershipGiven BRRippleTransfer xrpTransfer) {
@@ -47,6 +48,7 @@ cryptoTransferCreateAsXRP (BRCryptoUnit unit,
     
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
                                                                 CRYPTO_NETWORK_TYPE_XRP,
+                                                                listener,
                                                                 unit,
                                                                 unitForFee,
                                                                 feeBasisEstimated,

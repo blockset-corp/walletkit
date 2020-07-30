@@ -114,7 +114,11 @@ cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type,
+                                               manager->listenerWallet,
+                                               unitAsDefault,
+                                               unitAsDefault,
+                                               btcWallet);
     array_add (manager->wallets, manager->wallet);
 
     // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
@@ -123,7 +127,8 @@ cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
     BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
 
     for (size_t index = 0; index < btcTransactionsCount; index++) {
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (unitAsDefault,
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (manager->wallet->listenerTransfer,
+                                                               unitAsDefault,
                                                                unitAsBase,
                                                                btcWallet,
                                                                BRTransactionCopy(btcTransactions[index]),
@@ -336,8 +341,11 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
-    
-    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
+    manager->wallet = cryptoWalletCreateAsBTC (manager->type,
+                                               manager->listenerWallet,
+                                               unitAsDefault,
+                                               unitAsDefault,
+                                               btcWallet);
     array_add (manager->wallets, manager->wallet);
 
     // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
@@ -346,7 +354,8 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
 
     for (size_t index = 0; index < btcTransactionsCount; index++) {
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (unitAsDefault,
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (manager->wallet->listenerTransfer,
+                                                               unitAsDefault,
                                                                unitAsBase,
                                                                btcWallet,
                                                                BRTransactionCopy(btcTransactions[index]),
@@ -669,6 +678,7 @@ cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
                                       bool needCreate,
                                       bool needAdded,
                                       bool needBalance) {
+#if 0
     if (needCreate)
         cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer, (BRCryptoTransferEvent) {
             CRYPTO_TRANSFER_EVENT_CREATED
@@ -676,17 +686,18 @@ cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
 
 
     if (needAdded)
-        cryptoWalletManagerGenerateWalletEvent(manager, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = { cryptoTransferTake (transfer) }}
         });
 
 
     if (needBalance)
-        cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
             { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
         });
+#endif
 }
 
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi) {
@@ -720,7 +731,8 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     if (NULL == transfer) {
         // first we've seen it, so it came from the network; add it to our list
-        transfer = cryptoTransferCreateAsBTC (wallet->unit,
+        transfer = cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                              wallet->unit,
                                               wallet->unitForFee,
                                               wid,
                                               tid,
@@ -822,15 +834,6 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
             cryptoTransferSetState (&transfer->base, newState);
             pthread_mutex_unlock (&manager->base.lock);
 
-            if (needEvents) { // } && !cryptoTransferStateIsEqual (&oldState, &newState)) {
-                cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
-                    CRYPTO_TRANSFER_EVENT_CHANGED,
-                    { .state = {
-                        cryptoTransferStateCopy (&oldState),
-                        cryptoTransferStateCopy (&newState) }}
-                });
-            }
-
             cryptoTransferStateRelease (&oldState);
             cryptoTransferStateRelease (&newState);
         }
@@ -859,12 +862,12 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
     pthread_mutex_unlock (&manager->base.lock);
     if (needEvents) {
         if (transfer->isResolved)
-            cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
+            cryptoTransferGenerateEvent (&transfer->base, (BRCryptoTransferEvent) {
                 CRYPTO_TRANSFER_EVENT_DELETED
             });
 
         if (recommendRescan)
-            cryptoWalletManagerGenerateManagerEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
                 { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
             });
@@ -1125,13 +1128,13 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
     cryptoTransferSetState (transfer, newState);
 
     pthread_mutex_unlock (&manager->lock);
-
+#if 0
     cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer,
                                               (BRCryptoTransferEvent) {
         CRYPTO_TRANSFER_EVENT_CHANGED,
         { .state = { oldState, newState }}
     });
-
+#endif
     cryptoWalletManagerGive(manager);
     cryptoTransferGive (transfer);
     free (info);

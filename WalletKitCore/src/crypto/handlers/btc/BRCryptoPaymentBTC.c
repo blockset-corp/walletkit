@@ -243,8 +243,8 @@ cryptoPaymentProtocolRequestEstimateFeBasisBTC (BRCryptoPaymentProtocolRequest p
 
 extern BRCryptoTransfer
 cryptoPaymentProtocolRequestCreateTransferBTC (BRCryptoPaymentProtocolRequest protoReq,
-                                                        BRCryptoWallet wallet,
-                                                        BRCryptoFeeBasis estimatedFeeBasis) {
+                                               BRCryptoWallet wallet,
+                                               BRCryptoFeeBasis estimatedFeeBasis) {
     BRCryptoTransfer transfer = NULL;
     
     BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
@@ -261,7 +261,12 @@ cryptoPaymentProtocolRequestCreateTransferBTC (BRCryptoPaymentProtocolRequest pr
                     if (NULL != outputs) {
                         uint64_t feePerKb = cryptoFeeBasisAsBTC (estimatedFeeBasis);
                         BRTransaction *tid = BRWalletCreateTxForOutputsWithFeePerKb (wid, feePerKb, outputs, array_count (outputs));
-                        transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
+
+                        transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                                                                   unit,
+                                                                                   unitForFee,
+                                                                                   wid,
+                                                                                   tid,
                                                                                    wallet->type);
                         array_free (outputs);
                     }

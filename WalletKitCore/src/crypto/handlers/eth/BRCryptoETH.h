@@ -91,7 +91,8 @@ extern BRCryptoTransferETH
 cryptoTransferCoerce (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
+cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoFeeBasis feeBasisEstimated,
                            BRCryptoAmount amount,
@@ -103,20 +104,23 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            OwnershipGiven BREthereumTransaction originatingTransaction);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
+                                          BRCryptoUnit unit,
                                           BRCryptoUnit unitForFee,
                                           BREthereumAccount account,
                                           OwnershipGiven BREthereumTransaction ethTransaction);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
+                                  BRCryptoUnit unit,
                                   BRCryptoUnit unitForFee,
                                   BREthereumAccount account,
                                   UInt256 ethAmount,
                                   OwnershipGiven BREthereumLog ethLog);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
+                                       BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee,
                                        BREthereumAccount account,
                                        UInt256 ethAmount,
@@ -145,7 +149,8 @@ extern BRCryptoWalletETH
 cryptoWalletCoerce (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
+cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount);

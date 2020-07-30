@@ -134,36 +134,22 @@ extern "C" {
         } u;
     } BRCryptoWalletManagerEvent;
 
-    /// MARK: Listener
+    // MARK: Wallet Manager Listener
 
-    typedef void *BRCryptoListenerContext;
-
-    /// Handler must 'give': manager, event.wallet.value
-    typedef void (*BRCryptoListenerWalletManagerEvent) (BRCryptoListenerContext context,
+    typedef void (*BRCryptoWalletManagerListenerCallback) (BRCryptoListenerContext context,
                                                            BRCryptoWalletManager manager,
                                                            BRCryptoWalletManagerEvent event);
 
-    /// Handler must 'give': manager, wallet, event.*
-    typedef void (*BRCryptoListenerWalletEvent) (BRCryptoListenerContext context,
-                                                    BRCryptoWalletManager manager,
-                                                    BRCryptoWallet wallet,
-                                                    BRCryptoWalletEvent event);
-
-    /// Handler must 'give': manager, wallet, transfer
-    typedef void (*BRCryptoListenerTransferEvent) (BRCryptoListenerContext context,
-                                                      BRCryptoWalletManager manager,
-                                                      BRCryptoWallet wallet,
-                                                      BRCryptoTransfer transfer,
-                                                      BRCryptoTransferEvent event);
+    // MARK: Crypto Listener
 
     typedef struct {
         BRCryptoListenerContext context;
-        BRCryptoListenerWalletManagerEvent walletManagerEventCallback;
-        BRCryptoListenerWalletEvent walletEventCallback;
-        BRCryptoListenerTransferEvent transferEventCallback;
+        BRCryptoWalletManagerListenerCallback managerCallback;
+        BRCryptoWalletListenerCallback        walletCallback;
+        BRCryptoTransferListenerCallback      transferCallback;
     } BRCryptoListener;
 
-    /// MARK: Wallet Manager
+/// MARK: Wallet Manager
 
     /// Can return NULL
     extern BRCryptoWalletManager

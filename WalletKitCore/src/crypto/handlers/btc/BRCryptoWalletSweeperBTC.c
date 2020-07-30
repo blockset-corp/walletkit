@@ -111,14 +111,14 @@ cryptoWalletSweeperTransactionForSweepAsBTC (BRCryptoWalletManager manager,
 
 private_extern BRCryptoTransfer
 cryptoWalletSweeperCreateTransferForWalletSweepBTC (BRCryptoWalletManager cwm,
-                                                    BRCryptoWallet walletBase,
+                                                    BRCryptoWallet wallet,
                                                     BRCryptoWalletSweeper sweeperBase,
                                                     BRCryptoFeeBasis estimatedFeeBasis) {
-    BRCryptoUnit unit       = cryptoWalletGetUnit (walletBase);
-    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(walletBase);
+    BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
+    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(wallet);
     
-    BRCryptoWalletBTC wallet = (BRCryptoWalletBTC) walletBase;
-    BRWallet *wid = wallet->wid;
+    BRCryptoWalletBTC walletBTC = (BRCryptoWalletBTC) wallet;
+    BRWallet *wid = walletBTC->wid;
     
     BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
     
@@ -126,15 +126,14 @@ cryptoWalletSweeperCreateTransferForWalletSweepBTC (BRCryptoWalletManager cwm,
                                                                       wid,
                                                                       sweeper,
                                                                       cryptoFeeBasisAsBTC(estimatedFeeBasis));
-    if (NULL == tid) {
-        return NULL;
-    } else {
-        return cryptoTransferCreateAsBTC (unit,
-                                          unitForFee,
-                                          wid,
-                                          tid,
-                                          cwm->type);
-    }
+    return (NULL != tid
+            ? cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                         unit,
+                                         unitForFee,
+                                         wid,
+                                         tid,
+                                         cwm->type)
+            : NULL);
 }
 
 private_extern BRCryptoWalletSweeperStatus

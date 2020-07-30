@@ -20,16 +20,18 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 }
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
+cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount) {
     BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
-                                                      CRYPTO_NETWORK_TYPE_ETH,
-                                                      unit,
-                                                      unitForFee,
-                                                      NULL,
-                                                      NULL);
+                                                          CRYPTO_NETWORK_TYPE_ETH,
+                                                          listener,
+                                                          unit,
+                                                          unitForFee,
+                                                          NULL,
+                                                          NULL);
     BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
 
     wallet->ethAccount  = ethAccount;
@@ -159,7 +161,7 @@ transferProvideOriginatingTransaction (BREthereumTransfer transfer) {
 }
 #endif
 extern BRCryptoTransfer
-cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
@@ -168,14 +170,14 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
-    assert (cryptoWalletGetType(walletBase) == cryptoAddressGetType(target));
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+    assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(target));
     assert (cryptoAmountHasCurrency (amount, currency));
 
-    BREthereumToken    ethToken         = wallet->ethToken;
+    BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
 
-    BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (wallet->ethAccount);
+    BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = cryptoAddressAsETH (target);
 
     BREthereumTransferBasisType type = (NULL == ethToken ? TRANSFER_BASIS_TRANSACTION : TRANSFER_BASIS_LOG);
@@ -194,19 +196,21 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
 
     free (data);
 
-    BRCryptoTransferDirection direction = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (wallet->ethAccount, ethTargetAddress)
+    BRCryptoTransferDirection direction = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (walletETH->ethAccount, ethTargetAddress)
                                            ? CRYPTO_TRANSFER_RECOVERED
                                            : CRYPTO_TRANSFER_SENT);
 
     BRCryptoAddress  source   = cryptoAddressCreateAsETH  (ethSourceAddress);
-    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (unit,
+
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (wallet->listenerTransfer,
+                                                           unit,
                                                            unitForFee,
                                                            estimatedFeeBasis,
                                                            amount,
                                                            direction,
                                                            source,
                                                            target,
-                                                           wallet->ethAccount,
+                                                           walletETH->ethAccount,
                                                            type,
                                                            ethTransaction);
 

@@ -81,6 +81,15 @@ extern "C" {
         } u;
     } BRCryptoWalletEvent;
 
+    // MARK: - Wallet Listener
+
+    typedef void (*BRCryptoWalletListenerCallback) (BRCryptoListenerContext context,
+                                                    BRCryptoWalletManager manager,
+                                                    BRCryptoWallet wallet,
+                                                    BRCryptoWalletEvent event);
+
+    // MARK: - Wallet
+
     extern BRCryptoWalletState
     cryptoWalletGetState (BRCryptoWallet wallet);
 

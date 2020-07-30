@@ -160,12 +160,12 @@ cryptoWalletManagerCoerce (BRCryptoWalletManager manager) {
 
 static BRCryptoWalletManager
 cryptoWalletManagerCreateETH (BRCryptoListener listener,
-                                     BRCryptoClient client,
-                                     BRCryptoAccount account,
-                                     BRCryptoNetwork network,
-                                     BRCryptoSyncMode mode,
-                                     BRCryptoAddressScheme scheme,
-                                     const char *path) {
+                              BRCryptoClient client,
+                              BRCryptoAccount account,
+                              BRCryptoNetwork network,
+                              BRCryptoSyncMode mode,
+                              BRCryptoAddressScheme scheme,
+                              const char *path) {
     BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerETHRecord),
                                                                          cryptoNetworkGetType(network),
                                                                          listener,
@@ -204,7 +204,11 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager managerBase) {
     BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
 
     // Create the primary BRCryptoWallet
-    managerBase->wallet = cryptoWalletCreateAsETH (unitAsDefault, unitAsDefault, NULL, manager->account);
+    managerBase->wallet = cryptoWalletCreateAsETH (managerBase->listenerWallet,
+                                                   unitAsDefault,
+                                                   unitAsDefault,
+                                                   NULL,
+                                                   manager->account);
     array_add (managerBase->wallets, managerBase->wallet);
 
     // Load the persistently stored data.
@@ -454,24 +458,25 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager managerBase,
-                                      BRCryptoCurrency currency) {
-    BRCryptoWalletManagerETH manager  = cryptoWalletManagerCoerce (managerBase);
+cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
+                                    BRCryptoCurrency currency) {
+    BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerce (manager);
 
     const char *issuer = cryptoCurrencyGetIssuer (currency);
     BREthereumAddress ethAddress = ethAddressCreate (issuer);
-    BREthereumToken ethToken = BRSetGet (manager->tokens, &ethAddress);
+    BREthereumToken ethToken = BRSetGet (managerETH->tokens, &ethAddress);
     assert (NULL != ethToken);
 
-    BRCryptoUnit     unit       = cryptoNetworkGetUnitAsBase (managerBase->network, currency);
-    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (managerBase->network, currency);
+    BRCryptoUnit     unit       = cryptoNetworkGetUnitAsBase (manager->network, currency);
+    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (manager->network, currency);
 
-    BRCryptoWallet wallet = cryptoWalletCreateAsETH (unit,
+    BRCryptoWallet wallet = cryptoWalletCreateAsETH (manager->listenerWallet,
+                                                     unit,
                                                      unitForFee,
                                                      ethToken,
-                                                     manager->account);
+                                                     managerETH->account);
 
-    cryptoWalletManagerAddWallet (managerBase, wallet);
+    cryptoWalletManagerAddWallet (manager, wallet);
 //    cryptoWalletMangerSignalWalletCreated (managerBase, wallet);
 
     cryptoUnitGive (unitForFee);
@@ -494,26 +499,22 @@ cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH manager,
 }
 
 static BRCryptoWalletETH
-cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH manager,
+cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH managerETH,
                                          BREthereumToken token) {
-    BRCryptoWallet wallet = (BRCryptoWallet) cryptoWalletManagerLookupWalletForToken (manager, token);
+    BRCryptoWallet wallet = (BRCryptoWallet) cryptoWalletManagerLookupWalletForToken (managerETH, token);
 
     if (NULL == wallet) {
-        BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer (manager->base.network, ethTokenGetAddress(token));
-        BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault     (manager->base.network, currency);
+        BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer (managerETH->base.network, ethTokenGetAddress(token));
+        BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault     (managerETH->base.network, currency);
 
-        wallet = cryptoWalletCreateAsETH (unit, unit, token, manager->account);
+        wallet = cryptoWalletCreateAsETH (managerETH->base.listenerWallet,
+                                          unit,
+                                          unit,
+                                          token,
+                                          managerETH->account);
         assert (NULL != wallet);
 
-        cryptoWalletManagerAddWallet (&manager->base, wallet);
-
-        cryptoWalletManagerGenerateWalletEvent (&manager->base, wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_CREATED
-        });
-        cryptoWalletManagerGenerateManagerEvent(&manager->base, (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
-            { .wallet = cryptoWalletTake (wallet) }
-        });
+        cryptoWalletManagerAddWallet (&managerETH->base, wallet);
 
         cryptoUnitGive (unit);
         cryptoCurrencyGive (currency);
@@ -1070,7 +1071,7 @@ ewmHandleBlockChain (BREthereumBCSCallbackContext context,
     cryptoNetworkSetHeight (p2p->manager->base.network, headBlockNumber);
 
     // TODO: Signal
-    cryptoWalletManagerGenerateManagerEvent (&p2p->manager->base,
+    cryptoWalletManagerGenerateEvent (&p2p->manager->base,
                                              (BRCryptoWalletManagerEvent) {
         CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
         { .blockHeight = { headBlockNumber }}
@@ -1265,23 +1266,13 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
     bool needStatusEvent = false;
 
     if (NULL == transfer) {
-        transfer = cryptoTransferCreateWithTransactionAsETH (wallet->unit,
+        transfer = cryptoTransferCreateWithTransactionAsETH (wallet->listenerTransfer,
+                                                             wallet->unit,
                                                              wallet->unitForFee,
                                                              manager->account,
                                                              transaction);
 
         cryptoWalletAddTransfer (wallet, transfer);
-
-        // TODO: Events CREATED
-
-        cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, transfer, (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CREATED
-        });
-
-        cryptoWalletManagerGenerateWalletEvent (&manager->base, wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
-        });
     }
 
     else {
@@ -1401,13 +1392,15 @@ ewmReportTransferStatusAsEvent (BRCryptoWalletManager manager,
                                 BRCryptoTransfer transfer,
                                 BRCryptoTransferState oldState) {
     BRCryptoTransferState newState = cryptoTransferGetState (transfer);
-
+#if 0
     if (!cryptoTransferStateIsEqual (&oldState, &newState)) {
         cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer, (BRCryptoTransferEvent) {
             CRYPTO_TRANSFER_EVENT_CHANGED,
             { .state = { oldState, newState }}
         });
     }
+#endif
+    
 #if 0
     if (ETHEREUM_BOOLEAN_IS_TRUE (transferHasStatus (transfer, TRANSFER_STATUS_SUBMITTED)))
         ewmSignalTransferEvent(ewm, wallet, transfer, (BREthereumTransferEvent) {
@@ -1456,32 +1449,33 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     // TODO: Confirm LogTopic[0] is 'transfer'
     if (3 != logGetTopicsCount(log)) { logRelease(log); return; }
 
-    BRCryptoWalletETH wallet = cryptoWalletManagerEnsureWalletForToken (manager, token);
-    assert (NULL != wallet);
+    BRCryptoWalletETH walletETH = cryptoWalletManagerEnsureWalletForToken (manager, token);
+    assert (NULL != walletETH);
 
-    BRCryptoTransferETH transfer = cryptoWalletLookupTransferByIdentifier (wallet, logHash);
-    if (NULL == transfer)
-        transfer = cryptoWalletLookupTransferByOriginatingHash (wallet, transactionHash);
+    BRCryptoTransferETH transferETH = cryptoWalletLookupTransferByIdentifier (walletETH, logHash);
+    if (NULL == transferETH)
+        transferETH = cryptoWalletLookupTransferByOriginatingHash (walletETH, transactionHash);
 
     int needStatusEvent = 0;
 
     BRCryptoTransferState oldState;
 
     // If we've no transfer, then create one and save `log` as the basis
-    if (NULL == transfer) {
+    if (NULL == transferETH) {
 
         // Do we know that log->data is a number?
         BRRlpItem  item  = rlpDataGetItem (manager->coder, logGetDataShared(log));
         UInt256 amount = rlpDecodeUInt256 (manager->coder, item, 1);
         rlpItemRelease (manager->coder, item);
 
-        transfer = (BRCryptoTransferETH) cryptoTransferCreateWithLogAsETH (wallet->base.unit,
-                                                                           wallet->base.unitForFee,
-                                                                           manager->account,
-                                                                           amount,
-                                                                           log);
+        transferETH = (BRCryptoTransferETH) cryptoTransferCreateWithLogAsETH (walletETH->base.listenerTransfer,
+                                                                              walletETH->base.unit,
+                                                                              walletETH->base.unitForFee,
+                                                                              manager->account,
+                                                                              amount,
+                                                                              log);
 
-        cryptoWalletAddTransfer (&wallet->base, &transfer->base);
+        cryptoWalletAddTransfer (&walletETH->base, &transferETH->base);
 
         // We've added a transfer and arguably we should update the wallet's balance.  But don't.
         // Ethereum is 'account based'; we'll only update the balance based on a account state
@@ -1489,18 +1483,8 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         //
         // walletUpdateBalance (wallet);
 
-        cryptoWalletManagerGenerateTransferEvent (&manager->base, &wallet->base, &transfer->base,
-                                                  (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CREATED,
-        });
-
-        cryptoWalletManagerGenerateWalletEvent (&manager->base, &wallet->base, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (&transfer->base) }}
-        });
-
         // If this transfer references a transaction, fill out this log's fee basis
-        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transfer->base, &wallet->base);
+        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transferETH->base, &walletETH->base);
 
         oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
@@ -1511,17 +1495,17 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     // to report a transfer status event.  We'll strive to only report events when the status has
     // actually changed.
     else {
-        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (&manager->base, &wallet->base, &transfer->base,
+        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (&manager->base, &walletETH->base, &transferETH->base,
                                                                   logGetStatus (log));
 
         // Log becomes the new basis for transfer
 #ifdef REFACTOR
         // release prior basis
 #else
-        assert (NULL == transfer->basis.log);
+        assert (NULL == transferETH->basis.log);
 #endif
-        transfer->type = TRANSFER_BASIS_LOG;
-        transfer->basis.log = log;               // ownership give
+        transferETH->type = TRANSFER_BASIS_LOG;
+        transferETH->basis.log = log;               // ownership give
     }
 
     if (needStatusEvent) {
@@ -1536,7 +1520,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
                  BCS_CALLBACK_TRANSACTION_TYPE_NAME(type),
                  logGetStatus(log).type);
 
-        ewmReportTransferStatusAsEvent (&manager->base, &wallet->base, &transfer->base, oldState);
+        ewmReportTransferStatusAsEvent (&manager->base, &walletETH->base, &transferETH->base, oldState);
     }
 }
 
@@ -1756,7 +1740,7 @@ ewmHandleSync (BREthereumBCSCallbackContext context,
     // We do not have blockTimestampCurrent
 
     if (blockNumberCurrent == blockNumberStart) {
-        cryptoWalletManagerGenerateManagerEvent (&manager->base,
+        cryptoWalletManagerGenerateEvent (&manager->base,
                                                  (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
         });
@@ -1764,7 +1748,7 @@ ewmHandleSync (BREthereumBCSCallbackContext context,
         // TODO: connected -> syncing
     }
     else if (blockNumberCurrent == blockNumberStop) {
-        cryptoWalletManagerGenerateManagerEvent (&manager->base,
+        cryptoWalletManagerGenerateEvent (&manager->base,
                                                  (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED
         });
@@ -1772,7 +1756,7 @@ ewmHandleSync (BREthereumBCSCallbackContext context,
         // TODO: syncing -> connected
     }
     else {
-        cryptoWalletManagerGenerateManagerEvent (&manager->base,
+        cryptoWalletManagerGenerateEvent (&manager->base,
                                                  (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
             { .syncContinues = { NO_CRYPTO_TIMESTAMP, syncCompletePercent }}

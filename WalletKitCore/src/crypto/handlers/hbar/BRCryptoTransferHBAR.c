@@ -25,7 +25,8 @@ cryptoTransferCoerceHBAR (BRCryptoTransfer transfer) {
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
+cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
+                            BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             OwnershipKept BRHederaWallet wallet,
                             OwnershipGiven BRHederaTransaction hbarTransaction) {
@@ -46,6 +47,7 @@ cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
     
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
                                                                 CRYPTO_NETWORK_TYPE_HBAR,
+                                                                listener,
                                                                 unit,
                                                                 unitForFee,
                                                                 feeBasisEstimated,

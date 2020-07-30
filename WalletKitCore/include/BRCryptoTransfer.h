@@ -135,6 +135,14 @@ extern "C" {
         } u;
     } BRCryptoTransferEvent;
 
+    /// MARK: - Transfer Listener
+
+    typedef void (*BRCryptoTransferListenerCallback) (BRCryptoListenerContext context,
+                                                      BRCryptoWalletManager manager,
+                                                      BRCryptoWallet wallet,
+                                                      BRCryptoTransfer transfer,
+                                                      BRCryptoTransferEvent event);
+
     /// MARK: - Transfer Direction
 
     typedef enum {

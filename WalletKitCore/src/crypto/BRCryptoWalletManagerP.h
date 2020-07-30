@@ -21,6 +21,8 @@
 #include "BRCryptoWalletManager.h"
 
 #include "BRCryptoClientP.h"
+#include "BRCryptoWalletP.h"
+
 #include "support/BRFileService.h"
 #include "support/event/BREvent.h"
 
@@ -139,7 +141,6 @@ cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason reason);
 
-
 // MARK: - Wallet Manager
 
 struct BRCryptoWalletManagerRecord {
@@ -149,7 +150,6 @@ struct BRCryptoWalletManagerRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
-
     BRCryptoListener listener;
     BRCryptoClient client;
     BRCryptoNetwork network;
@@ -177,6 +177,9 @@ struct BRCryptoWalletManagerRecord {
     BRArrayOf(BRCryptoWallet) wallets;
 
     BRCryptoWalletManagerState state;
+
+    BRCryptoWalletListener listenerWallet;
+    BRCryptoListener listenerTrampoline;
 };
 
 extern BRCryptoWalletManager
@@ -192,7 +195,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
 private_extern BRCryptoBlockChainType
 cryptoWalletManagerGetType (BRCryptoWalletManager manager);
-
 
 private_extern void
 cryptoWalletManagerSetState (BRCryptoWalletManager cwm,
@@ -238,20 +240,21 @@ private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
 
-private_extern void
-cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
-                                          BRCryptoWallet wallet,
-                                          BRCryptoTransfer transfer,
-                                          BRCryptoTransferEvent event);
+//private_extern void
+//cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
+//                                          BRCryptoWallet wallet,
+//                                          BRCryptoTransfer transfer,
+//                                          BRCryptoTransferEvent event);
+//
+//private_extern void
+//cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
+//                                          BRCryptoWallet wallet,
+//                                          BRCryptoWalletEvent event);
+//
 
 private_extern void
-cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
-                                          BRCryptoWallet wallet,
-                                          BRCryptoWalletEvent event);
-
-private_extern void
-cryptoWalletManagerGenerateManagerEvent (BRCryptoWalletManager cwm,
-                                         BRCryptoWalletManagerEvent event);
+cryptoWalletManagerGenerateEvent (BRCryptoWalletManager cwm,
+                                  BRCryptoWalletManagerEvent event);
 
 #ifdef __cplusplus
 }

@@ -28,7 +28,8 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 }
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsXRP (BRCryptoUnit unit,
+cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BRRippleWallet wid) {
     int hasMinBalance;
@@ -38,6 +39,7 @@ cryptoWalletCreateAsXRP (BRCryptoUnit unit,
 
     BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
                                                           CRYPTO_NETWORK_TYPE_XRP,
+                                                          listener,
                                                           unit,
                                                           unitForFee,
                                                           hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
@@ -165,7 +167,7 @@ cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
 }
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
@@ -174,12 +176,12 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    BRRippleWallet xrpWallet = wallet->wid;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+    BRRippleWallet wid = walletXRP->wid;
 
     UInt256 value = cryptoAmountGetValue (amount);
     
-    BRRippleAddress source  = rippleWalletGetSourceAddress (xrpWallet);
+    BRRippleAddress source  = rippleWalletGetSourceAddress (wid);
     BRRippleUnitDrops drops = value.u64[0];
 
     BRRippleTransfer xrpTransfer = rippleTransferCreateNew (source,
@@ -210,7 +212,11 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
 
     rippleAddressFree(source);
     
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsXRP (unit, unitForFee, xrpWallet, xrpTransfer);
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                               unit,
+                                                               unitForFee,
+                                                               wid,
+                                                               xrpTransfer);
     cryptoTransferSetAttributes (transferBase, attributes);
     
     return transferBase;

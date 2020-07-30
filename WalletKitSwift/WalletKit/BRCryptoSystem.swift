@@ -1087,7 +1087,7 @@ extension System {
         return BRCryptoListener (
             context: systemContext,
 
-            walletManagerEventCallback: { (context, cwm, event) in
+            managerCallback: { (context, cwm, event) in
                 precondition (nil != context  && nil != cwm)
                 defer { cryptoWalletManagerGive(cwm) }
 
@@ -1163,7 +1163,7 @@ extension System {
                 }
         },
 
-            walletEventCallback: { (context, cwm, wid, event) in
+            walletCallback: { (context, cwm, wid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid)
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid) }
 
@@ -1242,7 +1242,7 @@ extension System {
                 }
         },
 
-            transferEventCallback: { (context, cwm, wid, tid, event) in
+            transferCallback: { (context, cwm, wid, tid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid && nil != tid)
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid); cryptoTransferGive(tid) }
 
@@ -1551,7 +1551,6 @@ extension System {
 /// transations, blocks and peers into 'Generic Crypto' - where these entities are persistently
 /// stored in the file system (by BRFileSystem).
 ///
-#if false
 extension System {
 
     ///
@@ -1808,7 +1807,6 @@ extension System {
         }
     }
 }
-#endif
 
 extension BRCryptoTransferEventType: CustomStringConvertible {
     public var description: String {

@@ -115,7 +115,8 @@ cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
+cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoFeeBasis feeBasisEstimated,
                            BRCryptoAmount amount,
@@ -127,6 +128,7 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
                                                                 CRYPTO_NETWORK_TYPE_ETH,
+                                                                listener,
                                                                 unit,
                                                                 unitForFee,
                                                                 feeBasisEstimated,
@@ -144,7 +146,8 @@ cryptoTransferCreateAsETH (BRCryptoUnit unit,
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
+                                          BRCryptoUnit unit,
                                           BRCryptoUnit unitForFee,
                                           BREthereumAccount account,
                                           OwnershipGiven BREthereumTransaction ethTransaction) {
@@ -161,7 +164,8 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
     BRCryptoAddress  target = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
+                                                               unit,
                                                                unitForFee,
                                                                estimatedFeeBasis,
                                                                amount,
@@ -190,7 +194,8 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
+                                  BRCryptoUnit unit,
                                   BRCryptoUnit unitForFee,
                                   BREthereumAccount account,
                                   UInt256 ethAmount,
@@ -209,7 +214,8 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
+                                                               unit,
                                                                unitForFee,
                                                                estimatedFeeBasis,
                                                                amount,
@@ -236,7 +242,8 @@ cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
+                                       BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee,
                                        BREthereumAccount account,
                                        UInt256 ethAmount,
@@ -255,7 +262,8 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (unit,
+    BRCryptoTransfer transferBase = cryptoTransferCreateAsETH (listener,
+                                                               unit,
                                                                unitForFee,
                                                                estimatedFeeBasis,
                                                                amount,

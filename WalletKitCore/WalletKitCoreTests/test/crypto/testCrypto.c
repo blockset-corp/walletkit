@@ -276,7 +276,10 @@ transferTestsAddress (void) {
         tid->blockHeight = test->blockHeight;
         tid->timestamp   = test->timestamp;
         BRWalletRegisterTransaction (wid, tid); // ownership given
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (sat,
+
+        BRCryptoTransferListener listener = { NULL };
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (listener,
+                                                               sat,
                                                                sat,
                                                                wid,
                                                                tid, // ownership kept

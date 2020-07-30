@@ -90,7 +90,8 @@ extern BRCryptoTransferBTC
 cryptoTransferCoerceBTC (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsBTC (BRCryptoUnit unit,
+cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
                            BRTransaction *tid,
@@ -117,6 +118,7 @@ cryptoWalletAsBTC (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
 cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+                         BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BRWallet *wid);

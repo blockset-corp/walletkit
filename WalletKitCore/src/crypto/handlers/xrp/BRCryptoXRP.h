@@ -59,7 +59,8 @@ extern BRCryptoTransferXRP
 cryptoTransferCoerceXRP (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsXRP (BRCryptoUnit unit,
+cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRRippleWallet wallet,
                            BRRippleTransfer xrpTransfer);
@@ -77,7 +78,8 @@ private_extern BRRippleWallet
 cryptoWalletAsXRP (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsXRP (BRCryptoUnit unit,
+cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BRRippleWallet wid);
 

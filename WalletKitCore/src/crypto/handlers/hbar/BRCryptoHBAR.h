@@ -59,10 +59,11 @@ extern BRCryptoTransferHBAR
 cryptoTransferCoerceHBAR (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BRHederaWallet wallet,
-                           BRHederaTransaction hederaTx);
+cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
+                            BRCryptoUnit unit,
+                            BRCryptoUnit unitForFee,
+                            BRHederaWallet wallet,
+                            BRHederaTransaction hederaTx);
 
 // MARK: - Wallet
 
@@ -77,9 +78,10 @@ private_extern BRHederaWallet
 cryptoWalletAsHBAR (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsHBAR (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRHederaWallet wid);
+cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
+                          BRCryptoUnit unit,
+                          BRCryptoUnit unitForFee,
+                          BRHederaWallet wid);
 
 
 //TODO:HBAR needed?

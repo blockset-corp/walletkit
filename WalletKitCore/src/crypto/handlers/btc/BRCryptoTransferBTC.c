@@ -44,7 +44,8 @@ cryptoTransferHasBTC (BRCryptoTransfer transferBase,
 }
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsBTC (BRCryptoUnit unit,
+cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            OwnershipKept  BRWallet *wid,
                            OwnershipGiven BRTransaction *tid,
@@ -134,6 +135,7 @@ cryptoTransferCreateAsBTC (BRCryptoUnit unit,
     
     BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                                 type,
+                                                                listener,
                                                                 unit,
                                                                 unitForFee,
                                                                 feeBasisEstimated,
@@ -200,9 +202,8 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     // are compared, one needs to be careful about the BRTransaction's timestamp.  Two transactions
     // with an identical hash can have different timestamps depending on how the transaction
     // is identified.  Specifically P2P and API found transactions *will* have different timestamps.
-    return BRTransactionEq (t1->tid, t2->tid);
+    return t1 == t2 || (t1->tid && t2->tid && BRTransactionEq (t1->tid, t2->tid));
 }
-
 
 static BRCryptoAmount
 cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,

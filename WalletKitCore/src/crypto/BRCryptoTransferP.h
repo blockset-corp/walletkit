@@ -63,6 +63,15 @@ typedef struct {
     BRCryptoTransferIsEqualHandler isEqual;
 } BRCryptoTransferHandlers;
 
+/// MARK: - Transfer Listener
+
+typedef struct {
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoTransferListenerCallback callback;
+} BRCryptoTransferListener;
+
 /// MARK: - Transfer
 
 struct BRCryptoTransferRecord {
@@ -72,6 +81,7 @@ struct BRCryptoTransferRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
+    BRCryptoTransferListener listener;
 
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
@@ -102,6 +112,7 @@ struct BRCryptoTransferRecord {
 extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
+                            BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             BRCryptoFeeBasis feeBasisEstimated,
@@ -120,6 +131,10 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
+
+private_extern void
+cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
+                             BRCryptoTransferEvent event);
 
 #ifdef __cplusplus
 }
