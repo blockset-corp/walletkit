@@ -16,7 +16,7 @@
 #include "tezos/BRTezosTransaction.h"
 #include "tezos/BRTezosFeeBasis.h"
 #include "support/BRSet.h"
-#include "ethereum/util/BRUtilHex.h"
+#include "support/BRBase58.h"
 
 // MARK: - Generic Network
 
@@ -378,7 +378,7 @@ genericTezosWalletManagerRecoverTransfer (const char *hash,
     BRTezosAddress fromAddress = tezosAddressCreateFromString (from, false);
     // Convert the hash string to bytes
     BRTezosTransactionHash txId;
-    hexDecode(txId.bytes, sizeof(txId.bytes), hash, strlen(hash));
+    BRBase58Decode(txId.bytes, sizeof(txId.bytes), hash);
     
     BRTezosTransfer transfer = tezosTransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, timestamp, blockHeight, error);
     

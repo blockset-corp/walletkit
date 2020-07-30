@@ -37,7 +37,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 1: BTC (w/ BCH), ETH
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  3
+// Version 4: XTZ
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  4
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAccount, cryptoAccount);
 

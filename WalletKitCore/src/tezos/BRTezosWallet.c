@@ -105,12 +105,11 @@ tezosWalletGetBalance (BRTezosWallet wallet) {
 
 extern BRTezosUnitMutez
 tezosWalletGetBalanceLimit (BRTezosWallet wallet,
-                             int asMaximum,
-                             int *hasLimit) {
+                            int asMaximum,
+                            int *hasLimit) {
     assert (NULL != hasLimit);
-
-    *hasLimit = !asMaximum;
-    return (asMaximum ? 0 : 0); //TODO:TEZOS minimum balance?
+    *hasLimit = 0;
+    return 0;
 }
 
 extern void
@@ -128,7 +127,7 @@ tezosWalletGetDefaultFeeBasis (BRTezosWallet wallet)
 }
 
 static bool tezosTransferEqual(BRTezosTransfer t1, BRTezosTransfer t2) {
-    // Equal means the same transaction id, source, target
+    // Equal means the same transaction id, source, target, amount
     bool result = false;
     BRTezosTransactionHash hash1 = tezosTransferGetTransactionId(t1);
     BRTezosTransactionHash hash2 = tezosTransferGetTransactionId(t2);
@@ -141,7 +140,7 @@ static bool tezosTransferEqual(BRTezosTransfer t1, BRTezosTransfer t2) {
             BRTezosAddress target1 = tezosTransferGetTarget(t1);
             BRTezosAddress target2 = tezosTransferGetTarget(t2);
             if (1 == tezosAddressEqual(target1, target2)) {
-                result = true;
+                result = tezosTransferGetAmount(t1) == tezosTransferGetAmount(t2);
             }
             tezosAddressFree(target1);
             tezosAddressFree(target2);

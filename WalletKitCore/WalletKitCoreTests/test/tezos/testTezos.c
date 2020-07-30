@@ -20,6 +20,7 @@
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRBIP39WordsEn.h"
 #include "support/BRKey.h"
+#include "support/BRBase58.h"
 
 #include "tezos/BRTezosTransaction.h"
 #include "tezos/BRTezosAccount.h"
@@ -108,7 +109,8 @@ testCreateTezosAccountWithSeed() {
     BRTezosAddress address = tezosAccountGetAddress (account);
     
     const char * expectedAddress = testAccount1.address;
-    assert (0 == strcmp (expectedAddress, tezosAddressAsString(address)));
+    const char * accountAddress = tezosAddressAsString(address);
+    assert (0 == strcmp (expectedAddress, accountAddress));
 
     BRTezosAddress addressFromString = tezosAddressCreateFromString(expectedAddress, true);
     assert (1 == tezosAddressEqual(address, addressFromString));
@@ -259,9 +261,42 @@ static void testWalletBalance() {
     
     tezosWalletSetBalance(wallet, 0);
     
-    //TODO:TEZOS add transfers and check balance
+    BRTezosAddress sourceAddress = tezosAddressCreateFromString("tz1eEnQhbwf6trb8Q8mPb2RaPkNk2rN7BKi8", true);
+    BRTezosAddress targetAddress = tezosWalletGetTargetAddress(wallet);
+    
+    BRTezosTransactionHash hash1, hash2, hash3, hash4;
+    
+    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "oot76ue8Jwyo5L6FgdiqyAPdDWAv84hXXkCi7oroJeDFXRbc298");
+    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooSVYUdKnRA1yTwHdB7MqH5iXWBdscgtxfDdDAWxK8iR7K6rtY3");
+    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "opT4Kb1WyijRnCakEy8PHX87KYHJpP2WA3ciLfmZqmRi4CTafCb");
+    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooYSWSUBhtUZkNUzGbMHDYjiSKUDu4TUZKEW3rNHG69hMEN16Tc");
+
+    // incoming
+    BRTezosTransfer tf1 = tezosTransferCreate(sourceAddress, targetAddress, 100000000, 10000, hash1, 0, 1, 0);
+    BRTezosTransfer tf2 = tezosTransferCreate(sourceAddress, targetAddress, 200000000, 5000, hash2, 1, 1, 0);
+    BRTezosTransfer tf3 = tezosTransferCreate(sourceAddress, targetAddress, 300000000, 5000, hash3, 2, 1, 0);
+    expectedBalance = 100000000L + 200000000L + 300000000L;
+    
+    tezosWalletAddTransfer(wallet, tf1);
+    tezosWalletAddTransfer(wallet, tf2);
+    tezosWalletAddTransfer(wallet, tf3);
+    assert(expectedBalance == tezosWalletGetBalance(wallet));
+    
+    // outgoing
+    BRTezosTransfer tf4 = tezosTransferCreate(targetAddress, sourceAddress, 50000000, 5000, hash4, 3, 1, 0);
+    
+    expectedBalance -= (50000000L + 5000L);
+    
+    tezosWalletAddTransfer(wallet, tf4);
+    assert(expectedBalance == tezosWalletGetBalance(wallet));
+
+    tezosTransferFree(tf1);
+    tezosTransferFree(tf2);
+    tezosTransferFree(tf3);
+    tezosTransferFree(tf4);
     
     tezosWalletFree(wallet);
+    tezosAccountFree(account);
 }
 
 // MARK: -

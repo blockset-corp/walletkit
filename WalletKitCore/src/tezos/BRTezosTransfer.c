@@ -112,11 +112,13 @@ extern BRTezosUnitMutez tezosTransferGetAmount(BRTezosTransfer transfer)
     assert(transfer);
     return transfer->amount;
 }
+
 extern BRTezosAddress tezosTransferGetSource(BRTezosTransfer transfer)
 {
     assert(transfer);
     return tezosAddressClone (transfer->sourceAddress);
 }
+
 extern BRTezosAddress tezosTransferGetTarget(BRTezosTransfer transfer)
 {
     assert(transfer);

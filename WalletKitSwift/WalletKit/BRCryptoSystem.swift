@@ -1361,7 +1361,78 @@ extension System {
 
             default:
                 // There is more than one "__fee__" entry
-                preconditionFailure()
+                // In the case of Tezos, there are multiple operation types (denoted by the meta field `type`), and multiple operations may be batched in a single transaction.
+                // The "TRANSACTION" operation will have one fee transfer and one or more non-fee transfers.
+                // All other operation types will have one fee transfer and zero or one non-fee transfers.
+                var feeTransfers = transfers[..<partition]
+                var nonFeeTransfers = transfers[partition...]
+                let transactionFeeTransfersPartition = feeTransfers.partition { $0.metaData?["type"] == "TRANSACTION" }
+                let transactionFeeTransfers = feeTransfers[..<transactionFeeTransfersPartition]
+                let otherFeeTransfers = feeTransfers[transactionFeeTransfersPartition...]
+                
+                var mergedTransfers: [(transfer: BlockChainDB.Model.Transfer, fee: String?)] = []
+                
+                for transferWithFee in otherFeeTransfers {
+                    // Expect each non-transaction fee transfer to be associated with zero or one transfer of the same type
+                    var transferMatchingFee: BlockChainDB.Model.Transfer
+                    if let transferMatchingFeeIndex = nonFeeTransfers.firstIndex(where: {
+                        $0.transactionId == transferWithFee.transactionId &&
+                            $0.source == transferWithFee.source &&
+                            $0.metaData?["type"] == transferWithFee.metaData?["type"]
+                    }) {
+                        transferMatchingFee = nonFeeTransfers.remove(at: transferMatchingFeeIndex)
+                    } else {
+                        transferMatchingFee = (id: transferWithFee.id,
+                                               source: transferWithFee.source,
+                                               target: "unknown",
+                                               amount: (currency: transferWithFee.amount.currency,
+                                                        value: "0"),
+                                               acknowledgements: transferWithFee.acknowledgements,
+                                               index: transferWithFee.index,
+                                               transactionId: transferWithFee.transactionId,
+                                               blockchainId: transferWithFee.blockchainId,
+                                               metaData: transferWithFee.metaData)
+                    }
+                    mergedTransfers.append((transfer: transferMatchingFee,
+                                            fee: transferWithFee.amount.value))
+                }
+                
+                assert(transactionFeeTransfers.count <= 1)
+                for transferWithFee in transactionFeeTransfers {
+                    let nonFeeTransfers = nonFeeTransfers.filter { $0.metaData?["type"] == transferWithFee.metaData?["type"] }
+                    // Expect only one transaction fee transfer associated with one or more non-fee transfers
+                    
+                    // Find the first of the non-fee transfers matching `transferWithFee`
+                    let transferMatchingFee = nonFeeTransfers
+                        .first {
+                            $0.transactionId == transferWithFee.transactionId &&
+                                $0.source == transferWithFee.source
+                    }
+
+                    // We must have a transferMatchingFee; if we don't add one
+                    let transfers = nonFeeTransfers +
+                        (nil != transferMatchingFee
+                            ? []
+                            : [(id: transferWithFee.id,
+                                source: transferWithFee.source,
+                                target: "unknown",
+                                amount: (currency: transferWithFee.amount.currency,
+                                         value: "0"),
+                                acknowledgements: transferWithFee.acknowledgements,
+                                index: transferWithFee.index,
+                                transactionId: transferWithFee.transactionId,
+                                blockchainId: transferWithFee.blockchainId,
+                                metaData: transferWithFee.metaData)])
+                    
+                    // Hold the Id for the transfer that we'll add a fee to.
+                    let transferForFeeId = transferMatchingFee.map { $0.id } ?? transferWithFee.id
+                    
+                    mergedTransfers.append(contentsOf:
+                        transfers.map { (transfer: $0,
+                                         fee: ($0.id == transferForFeeId ? transferWithFee.amount.value : nil))
+                    })
+                }
+                return mergedTransfers
             }
     }
 }
