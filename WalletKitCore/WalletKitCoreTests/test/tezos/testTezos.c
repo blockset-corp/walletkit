@@ -25,6 +25,7 @@
 #include "tezos/BRTezosTransaction.h"
 #include "tezos/BRTezosAccount.h"
 #include "tezos/BRTezosWallet.h"
+#include "tezos/BRTezosEncoder.h"
 
 static int debug_log = 0;
 
@@ -299,6 +300,107 @@ static void testWalletBalance() {
     tezosAccountFree(account);
 }
 
+// MARK: - Encoder Tests
+
+static void
+testZarithNumberEncode(int64_t input, const char* expectedHex) {
+    BRCryptoData encoded = encodeZarith(input);
+    char encodedOutput[64] = {0};
+    bin2HexString(encoded.bytes, encoded.size, encodedOutput);
+//    printf("input: %" PRIx64 "\n", input);
+//    printByteString(0, encoded.bytes, encoded.size);
+    assert (0 == strcasecmp(expectedHex, encodedOutput));
+    cryptoDataFree(encoded);
+}
+
+static void
+testEncodeZarith() {
+    testZarithNumberEncode(0x04fa, "fa09");
+    testZarithNumberEncode(0x27d8, "d84f");
+    testZarithNumberEncode(0x02540be400, "80c8afa025");
+    testZarithNumberEncode(0x2710, "904e");
+    testZarithNumberEncode(0x115, "9502");
+    testZarithNumberEncode(0x3b9aca00, "8094ebdc03");
+    testZarithNumberEncode(0xadd9, "d9db02");
+    testZarithNumberEncode(0x1fffffffffffff, "ffffffffffffff0f");
+    testZarithNumberEncode(0x20000000000000, "8080808080808010");
+    testZarithNumberEncode(0x20000000000001, "8180808080808010");
+    testZarithNumberEncode(0x20000000000002, "8280808080808010");
+}
+
+// MARK: - Transaction Tests
+
+static void
+testTransactionSerialize() {
+    BRTezosAccount account = makeAccount(testAccount1);
+    BRTezosWallet wallet = tezosWalletCreate(account);
+    BRTezosAddress sourceAddress;
+    BRTezosAddress targetAddress;
+    BRTezosFeeBasis feeBasis;
+    int64_t amount;
+    int64_t counter;
+    
+    size_t serializedBytesSize;
+    uint8_t * serializedBytes;
+    char serializedHex[256] = {0};
+    
+    // transaction
+    sourceAddress = tezosAddressCreateFromString("tz1XVJ8bZUXs7r5NV8dHvuiBhzECvLRLR3jW", true);
+    targetAddress = tezosAddressCreateFromString("tz1Yju7jmmsaUiG9qQLoYv35v5pHgnWoLWbt", true);
+    feeBasis.gasLimit = 10100;
+    feeBasis.storageLimit = 257;
+    feeBasis.fee = 1272;
+    counter = 30738;
+    amount = 1;
+    
+    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, 0);
+    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
+    serializedBytesSize = 0;
+    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
+    
+    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
+    assert (0 == strcasecmp("6c0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e81020100008fb5cea62d147c696afd9a93dbce962f4c8a9c9100", serializedHex));
+    
+    tezosTransferFree(transfer);
+    
+    // reveal
+    
+    // delegation on
+    tezosAddressFree(targetAddress);
+    targetAddress = NULL;
+    targetAddress = tezosAddressCreateFromString("tz1RKLoYm4vtLzo7TAgGifMDAkiWhjfyXwP4", true);
+    transfer = tezosTransferCreateNew(sourceAddress, targetAddress, 0, feeBasis, counter, 1);
+    tx = tezosTransferGetTransaction(transfer);
+    
+    serializedBytesSize = 0;
+    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
+    
+    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
+    assert (0 == strcasecmp("6e0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e8102ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
+    
+    tezosTransferFree(transfer);
+    free (serializedBytes);
+    
+    // delegation off
+    tezosAddressFree(targetAddress);
+    targetAddress = NULL;
+    transfer = tezosTransferCreateNew(sourceAddress, targetAddress, 0, feeBasis, counter, 1);
+    tx = tezosTransferGetTransaction(transfer);
+    
+    serializedBytesSize = 0;
+    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
+    
+    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
+    assert (0 == strcasecmp("6e0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e810200", serializedHex));
+    
+    tezosTransferFree(transfer);
+    free (serializedBytes);
+    
+    tezosAddressFree(sourceAddress);
+    tezosWalletFree(wallet);
+    tezosAccountFree(account);
+}
+
 // MARK: -
 
 static void
@@ -318,12 +420,18 @@ tezosAddressTests() {
 
 static void
 tezosTransactionTests() {
+    testTransactionSerialize();
 }
 
 static void
 tezosWalletTests() {
     testCreateWallet();
     testWalletBalance();
+}
+
+static void
+tezosEncoderTests() {
+    testEncodeZarith();
 }
 
 // MARK: -
@@ -333,6 +441,7 @@ runTezosTest (void /* ... */) {
     printf("Running tezos unit tests...\n");
     tezosAccountTests();
     tezosAddressTests();
+    tezosEncoderTests();
     tezosTransactionTests();
     tezosWalletTests();
 }

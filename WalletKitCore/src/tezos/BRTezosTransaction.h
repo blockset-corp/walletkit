@@ -49,14 +49,35 @@ typedef struct {
  * @param source - account sending (or that sent) the amount
  * @param target - account receiving the amount
  * @param amount - amount that was (or will be) transferred
+ * @param feeBasis -
+ * @param counter -
  *
  * @return transaction
  */
 extern BRTezosTransaction /* caller owns memory and must call "tezosTransactionFree" function */
-tezosTransactionCreateNew(BRTezosAddress source,
-                          BRTezosAddress target,
-                          BRTezosUnitMutez amount,
-                          BRTezosFeeBasis feeBasis);
+tezosTransactionCreateTransaction (BRTezosAddress source,
+                                   BRTezosAddress target,
+                                   BRTezosUnitMutez amount,
+                                   BRTezosFeeBasis feeBasis,
+                                   int64_t counter);
+
+/**
+* Create a new Tezos delegation operation
+*
+* @param source - account that is delegating its balance
+* @param target - baker address or self
+* @param amount - amount that was (or will be) transferred
+* @param feeBasis -
+* @param counter -
+*
+* @return transaction
+*/
+extern BRTezosTransaction
+tezosTransactionCreateDelegation (BRTezosAddress source,
+                                  BRTezosAddress target,
+                                  BRTezosFeeBasis feeBasis,
+                                  int64_t counter);
+
 
 /**
 * Create a copy of a Tezos transaction. Caller must free with tezosTrasactionFree.
@@ -108,7 +129,11 @@ tezosTransactionSerialize (BRTezosTransaction transaction, size_t *size);
 
 extern BRTezosTransactionHash tezosTransactionGetHash(BRTezosTransaction transaction);
 
+extern int64_t tezosTransactionGetCounter(BRTezosTransaction transaction);
+
 extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction);
+
+extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transaction);
 
 extern BRTezosUnitMutez tezosTransactionGetAmount(BRTezosTransaction transaction);
 
@@ -117,6 +142,7 @@ extern BRTezosAddress tezosTransactionGetSource(BRTezosTransaction transaction);
 extern BRTezosAddress tezosTransactionGetTarget(BRTezosTransaction transaction);
 
 extern BRTezosOperationData tezosTransactionGetOperationData(BRTezosTransaction transaction);
+extern void tezosTransactionFreeOperationData(BRTezosOperationData opData);
 
 extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2);
 

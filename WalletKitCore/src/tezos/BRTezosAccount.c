@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define TEZOS_PUBLIC_KEY_SIZE 32
 
 struct BRTezosAccountRecord {
     BRTezosAddress address;

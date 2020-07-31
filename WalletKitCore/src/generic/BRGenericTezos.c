@@ -211,8 +211,7 @@ genericTezosWalletRemTransfer (BRGenericWalletRef wallet,
     tezosWalletRemTransfer ((BRTezosWallet) wallet, (BRTezosTransfer) transfer);
 }
 
-#define FIELD_OPTION_DESTINATION_TAG        "DestinationTag"
-#define FIELD_OPTION_INVOICE_ID             "InvoiceId"
+#define FIELD_OPTION_DELEGATION_OP         "DelegationOp"
 
 static int // 1 if equal, 0 if not.
 genericTezosCompareFieldOption (const char *t1, const char *t2) {
@@ -227,20 +226,36 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
                                   size_t attributesCount,
                                   BRGenericTransferAttribute *attributes) {
     BRTezosAddress source  = tezosWalletGetSourceAddress ((BRTezosWallet) wallet);
-    BRTezosUnitMutez mutez = amount.u64[0];
+    BRTezosUnitMutez mutez = (BRTezosUnitMutez) amount.u64[0];
+    int64_t counter = tezosWalletGetCounter ((BRTezosWallet) wallet);
     
-    BRTezosTransfer transfer = tezosTransferCreateNew (source,
-                                                       (BRTezosAddress) target,
-                                                       mutez);
+    //TODO:TEZOS BRGenericFeeBasis fields are insufficient to populate Tezos fields
+    BRTezosFeeBasis feeBasis;
+    feeBasis.gasLimit = (int64_t)estimatedFeeBasis.costFactor;
+    feeBasis.fee = (int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0];
     
-    BRTezosTransaction transaction = tezosTransferGetTransaction(transfer);
+    bool delegationOp = false;
     
     for (size_t index = 0; index < attributesCount; index++) {
         BRGenericTransferAttribute attribute = attributes[index];
         if (NULL != genTransferAttributeGetVal(attribute)) {
-            //TODO:TEZOS attributes?
+            if (genericTezosCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
+                uint op;
+                sscanf (genTransferAttributeGetVal(attribute), "%u", &op);
+                delegationOp = (op == 1);
+            }
         }
     }
+    
+    //TODO:TEZOS create delegation op
+    BRTezosTransfer transfer = tezosTransferCreateNew (source,
+                                                       (BRTezosAddress) target,
+                                                       mutez,
+                                                       feeBasis,
+                                                       counter,
+                                                       delegationOp);
+    
+    BRTezosTransaction transaction = tezosTransferGetTransaction (transfer);
     
     tezosAddressFree(source);
     
@@ -254,38 +269,8 @@ genericTezosWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                     UInt256 pricePerCostFactor) {
     return (BRGenericFeeBasis) {
         pricePerCostFactor,
-        1
+        1 //TODO:TEZOS fee basis
     };
-}
-
-static const char *knownDestinationTagRequiringAddresses[] = {
-    "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w",           // Coinbase(1)
-    "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg",           // Coinbase(2)
-    "rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh",           // Binance(1)
-    "rJb5KsHsDHF1YS5B5DU6QCkH5NsPaKQTcy",           // Binance(2)
-    "rEy8TFcrAPvhpKrwyrscNYyqBGUkE9hKaJ",           // Binance(3)
-    "rXieaAC3nevTKgVu2SYoShjTCS2Tfczqx",            // Wirex(1)
-    "r9HwsqBnAUN4nF6nDqxd4sgP8DrDnDcZP3",           // BitBay
-    "rLbKbPyuvs4wc1h13BEPHgbFGsRXMeFGL6",           // BitBank(1)
-    "rw7m3CtVHwGSdhFjV4MyJozmZJv3DYQnsA",           // BitBank(2)
-    NULL
-};
-
-static int
-genericTezosRequiresDestinationTag (BRTezosAddress address) {
-    if (NULL == address) return 0;
-    
-    char *addressAsString = tezosAddressAsString(address);
-    int isRequired = 0;
-    
-    for (size_t index = 0; NULL != knownDestinationTagRequiringAddresses[index]; index++)
-        if (0 == strcasecmp (addressAsString, knownDestinationTagRequiringAddresses[index])) {
-            isRequired = 1;
-            break;
-        }
-    
-    free (addressAsString);
-    return isRequired;
 }
 
 static const char **
@@ -294,34 +279,16 @@ genericTezosWalletGetTransactionAttributeKeys (BRGenericWalletRef wallet,
                                                int asRequired,
                                                size_t *count) {
     
-    if (genericTezosRequiresDestinationTag ((BRTezosAddress) address)) {
-        static size_t requiredCount = 1;
-        static const char *requiredNames[] = {
-            FIELD_OPTION_DESTINATION_TAG,
-        };
-        
-        static size_t optionalCount = 1;
-        static const char *optionalNames[] = {
-            FIELD_OPTION_INVOICE_ID
-        };
-        
-        if (asRequired) { *count = requiredCount; return requiredNames; }
-        else {            *count = optionalCount; return optionalNames; }
-    }
+    static size_t requiredCount = 0;
+    static const char **requiredNames = NULL;
     
-    else {
-        static size_t requiredCount = 0;
-        static const char **requiredNames = NULL;
-        
-        static size_t optionalCount = 2;
-        static const char *optionalNames[] = {
-            FIELD_OPTION_DESTINATION_TAG,
-            FIELD_OPTION_INVOICE_ID
-        };
-        
-        if (asRequired) { *count = requiredCount; return requiredNames; }
-        else {            *count = optionalCount; return optionalNames; }
-    }
+    static size_t optionalCount = 1;
+    static const char *optionalNames[] = {
+        FIELD_OPTION_DELEGATION_OP
+    };
+    
+    if (asRequired) { *count = requiredCount; return requiredNames; }
+    else {            *count = optionalCount; return optionalNames; }
 }
 
 static int
@@ -333,17 +300,12 @@ genericTezosWalletValidateTransactionAttribute (BRGenericWalletRef wallet,
     // If attribute.value is NULL, we validate unless the attribute.value is required.
     if (NULL == val) return !genTransferAttributeIsRequired(attribute);
     
-    if (genericTezosCompareFieldOption (key, FIELD_OPTION_DESTINATION_TAG)) {
+    if (genericTezosCompareFieldOption (key, FIELD_OPTION_DELEGATION_OP)) {
+        // expect 0 or 1
         char *end = NULL;
         errno = 0;
-        
         uintmax_t tag = strtoumax (val, &end, 10);
-        return (ERANGE != errno && EINVAL != errno && '\0' == end[0] && tag <= UINT32_MAX);
-    }
-    else if (genericTezosCompareFieldOption (key, FIELD_OPTION_INVOICE_ID)) {
-        BRCoreParseStatus status;
-        uint256CreateParse(val, 10, &status);
-        return CORE_PARSE_OK == status;
+        return (ERANGE != errno && EINVAL != errno && '\0' == end[0] && tag >= 0 && tag <= 1);
     }
     else return 0;
 }

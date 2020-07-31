@@ -126,6 +126,9 @@ tezosWalletSetDefaultFeeBasis (BRTezosWallet wallet, BRTezosFeeBasis feeBasis);
 extern BRTezosFeeBasis
 tezosWalletGetDefaultFeeBasis (BRTezosWallet wallet);
 
+extern int64_t
+tezosWalletGetCounter (BRTezosWallet wallet);
+
 // Wallet transfer list functions
 extern int tezosWalletHasTransfer (BRTezosWallet wallet, BRTezosTransfer transfer);
 extern void tezosWalletAddTransfer (BRTezosWallet wallet,

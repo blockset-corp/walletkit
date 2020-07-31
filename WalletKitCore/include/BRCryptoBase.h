@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
+#include <assert.h>
 
 // temporary
 
@@ -78,6 +79,50 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
     static inline void cryptoData16Clear (BRCryptoData16 *data16) {
         memset (data16, 0, sizeof (BRCryptoData16));
+    }
+
+    /// MARK: - Variable Size Data
+
+    typedef struct {
+        uint8_t * bytes;
+        size_t size;
+    } BRCryptoData;
+
+    static inline BRCryptoData cryptoDataNew (size_t size) {
+        BRCryptoData data;
+        data.size = size;
+        if (size < 1) data.size = 1;
+        data.bytes = calloc (data.size, sizeof(*(data.bytes)));
+        assert (data.bytes != NULL);
+        return data;
+    }
+
+    static inline BRCryptoData cryptoDataCopy (uint8_t * bytes, size_t size) {
+        BRCryptoData data;
+        data.bytes = malloc (size * sizeof(uint8_t));
+        memcpy (data.bytes, bytes, size);
+        data.size = size;
+        return data;
+    }
+
+    static inline BRCryptoData
+    cryptoDataConcat (BRCryptoData * fields, size_t numFields) {
+        size_t totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            totalSize += fields[i].size;
+        }
+        BRCryptoData concat = cryptoDataNew (totalSize);
+        totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            memcpy (&concat.bytes[totalSize], fields[i].bytes, fields[i].size);
+            totalSize += fields[i].size;
+        }
+        return concat;
+    }
+
+    static inline void cryptoDataFree (BRCryptoData data) {
+        if (data.bytes) free(data.bytes);
+        data.size = 0;
     }
 
     /// MARK: Network Canonical Type

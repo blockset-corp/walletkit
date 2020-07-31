@@ -21,6 +21,12 @@ extern "C" {
 // prefix (3 bytes) + pkh (20 bytes)
 #define TEZOS_ADDRESS_BYTES (23)
 
+// address prefixes
+extern const uint8_t TZ1_PREFIX[3];
+extern const uint8_t TZ2_PREFIX[3];
+extern const uint8_t TZ3_PREFIX[3];
+
+
 typedef struct BRTezosAddressRecord *BRTezosAddress;
 
 /**
@@ -85,6 +91,28 @@ tezosAddressIsFeeAddress (BRTezosAddress address);
  */
 extern BRTezosAddress
 tezosAddressClone (BRTezosAddress address);
+
+/**
+ * Get the size of the raw bytes for this address
+ *
+ * @param address   - a BRTezosAddress
+ *
+ * @return size of the raw bytes
+ */
+extern size_t
+tezosAddressGetRawSize (BRTezosAddress address);
+
+/**
+ * Get the raw bytes for this address
+ *
+ * @param address    - a BRTezosAddress
+ * @param buffer     - a buffer to hold the raw bytes
+ * @param bufferSize - size of the buffer, obtained via tezosAddressGetRawSize
+ *
+ * @return void
+ */
+extern void
+tezosAddressGetRawBytes (BRTezosAddress address, uint8_t *buffer, size_t bufferSize);
 
 /**
  * Compare 2 tezos addresses

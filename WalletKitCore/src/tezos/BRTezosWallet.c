@@ -24,6 +24,7 @@ struct BRTezosWalletRecord {
     BRTezosAccount account;
     BRTezosUnitMutez balance;
     BRTezosFeeBasis feeBasis;
+    int64_t counter;
 
     BRArrayOf(BRTezosTransfer) transfers;
 
@@ -36,6 +37,7 @@ tezosWalletCreate (BRTezosAccount account) {
     BRTezosWallet wallet = calloc (1, sizeof(struct BRTezosWalletRecord));
     wallet->account = account;
     wallet->balance = 0;
+    wallet->counter = 0;
 
     // Putting a '1' here avoids a 'false positive' in the Xcode leak instrument.
     array_new(wallet->transfers, 1);
@@ -113,17 +115,21 @@ tezosWalletGetBalanceLimit (BRTezosWallet wallet,
 }
 
 extern void
-tezosWalletSetDefaultFeeBasis (BRTezosWallet wallet, BRTezosFeeBasis feeBasis)
-{
+tezosWalletSetDefaultFeeBasis (BRTezosWallet wallet, BRTezosFeeBasis feeBasis) {
     assert(wallet);
     wallet->feeBasis = feeBasis;
 }
 
 extern BRTezosFeeBasis
-tezosWalletGetDefaultFeeBasis (BRTezosWallet wallet)
-{
+tezosWalletGetDefaultFeeBasis (BRTezosWallet wallet) {
     assert(wallet);
     return wallet->feeBasis;
+}
+
+extern int64_t
+tezosWalletGetCounter (BRTezosWallet wallet) {
+    assert(wallet);
+    return wallet->counter;
 }
 
 static bool tezosTransferEqual(BRTezosTransfer t1, BRTezosTransfer t2) {

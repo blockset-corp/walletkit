@@ -23,7 +23,12 @@ typedef struct BRTezosTransferRecord *BRTezosTransfer;
 
 // Create a new transfer (transaction operation) for submitting
 extern BRTezosTransfer /* caller must free - tezosTransferFree */
-tezosTransferCreateNew(BRTezosAddress from, BRTezosAddress to, BRTezosUnitMutez amount);
+tezosTransferCreateNew(BRTezosAddress from,
+                       BRTezosAddress to,
+                       BRTezosUnitMutez amount,
+                       BRTezosFeeBasis feeBasis,
+                       int64_t counter,
+                       bool delegationOp);
 
 extern BRTezosTransfer /* caller must free - tezosTransferFree */
 tezosTransferCreate(BRTezosAddress from, BRTezosAddress to,

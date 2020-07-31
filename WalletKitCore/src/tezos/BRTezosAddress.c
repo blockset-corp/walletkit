@@ -81,7 +81,7 @@ tezosAddressIsFeeAddress (BRTezosAddress address) {
     }
 }
 
-extern int
+static int
 tezosAddressIsUnknownAddress (BRTezosAddress address)
 {
     assert(address);
@@ -173,12 +173,29 @@ tezosAddressEqual (BRTezosAddress a1, BRTezosAddress a2) {
 }
 
 extern BRTezosAddress
-tezosAddressClone (BRTezosAddress address)
-{
+tezosAddressClone (BRTezosAddress address) {
     if (address) {
         BRTezosAddress clone = calloc(1, sizeof(struct BRTezosAddressRecord));
         *clone = *address;
         return clone;
     }
     return NULL;
+}
+
+extern size_t
+tezosAddressGetRawSize (BRTezosAddress address) {
+    return TEZOS_ADDRESS_BYTES;
+}
+
+extern void tezosAddressGetRawBytes (BRTezosAddress address, uint8_t *buffer, size_t bufferSize) {
+    assert(buffer);
+    assert(bufferSize >= TEZOS_ADDRESS_BYTES);
+    memcpy(buffer, address->bytes, TEZOS_ADDRESS_BYTES);
+}
+
+extern bool
+tezosAddressIsImplicit (BRTezosAddress address) {
+    return (0 == memcmp(address->bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
+            || 0 == memcmp(address->bytes, TZ2_PREFIX, sizeof(TZ1_PREFIX))
+            || 0 == memcmp(address->bytes, TZ3_PREFIX, sizeof(TZ1_PREFIX)));
 }

@@ -55,15 +55,21 @@ tezosTransferCreate(BRTezosAddress from,
 extern BRTezosTransfer /* caller must free - tezosTransferFree */
 tezosTransferCreateNew(BRTezosAddress from,
                        BRTezosAddress to,
-                       BRTezosUnitMutez amount)
+                       BRTezosUnitMutez amount,
+                       BRTezosFeeBasis feeBasis,
+                       int64_t counter,
+                       bool delegationOp)
 {
     BRTezosTransfer transfer = (BRTezosTransfer) calloc (1, sizeof (struct BRTezosTransferRecord));
     transfer->sourceAddress = tezosAddressClone (from);
     transfer->targetAddress = tezosAddressClone (to);
     transfer->amount = amount;
-    BRTezosFeeBasis feeBasis = tezosDefaultFeeBasis();
     transfer->fee = feeBasis.fee;
-    transfer->transaction = tezosTransactionCreateNew (from, to, amount, feeBasis);
+    if (delegationOp)
+        transfer->transaction = tezosTransactionCreateDelegation (from, to, feeBasis, counter);
+    else
+        //TODO:TEZOS if counter is not valid (first outgoing), create batch operation with REVEAL
+        transfer->transaction = tezosTransactionCreateTransaction (from, to, amount, feeBasis, counter);
     return transfer;
 }
 

@@ -21,6 +21,8 @@ extern "C" {
 #endif
 
 
+#define TEZOS_PUBLIC_KEY_SIZE 32
+
 typedef struct {
     uint8_t bytes[32];
 } BRTezosTransactionHash;

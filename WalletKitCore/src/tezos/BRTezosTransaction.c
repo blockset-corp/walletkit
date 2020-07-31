@@ -10,6 +10,7 @@
 //
 
 #include "BRTezosTransaction.h"
+#include "BRTezosEncoder.h"
 #include "ed25519/ed25519.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +33,8 @@ struct BRTezosTransactionRecord {
     
     const char * protocol; // protocol name
     const char * branch; // hash of head block
+    
+    BRTezosSerializedOperation signedBytes;
 };
 
 struct BRTezosSerializedOperationRecord {
@@ -47,10 +50,11 @@ createTransactionObject() {
 }
 
 extern BRTezosTransaction
-tezosTransactionCreateNew (BRTezosAddress source,
-                           BRTezosAddress target,
-                           BRTezosUnitMutez amount,
-                           BRTezosFeeBasis feeBasis)
+tezosTransactionCreateTransaction (BRTezosAddress source,
+                                   BRTezosAddress target,
+                                   BRTezosUnitMutez amount,
+                                   BRTezosFeeBasis feeBasis,
+                                   int64_t counter)
 {
     BRTezosTransaction transaction = createTransactionObject();
     transaction->source = tezosAddressClone (source);
@@ -59,10 +63,28 @@ tezosTransactionCreateNew (BRTezosAddress source,
     transaction->operation.u.transaction.target = tezosAddressClone (target);
     transaction->feeBasis = feeBasis;
     transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
-    
     transaction->blockHeight = 0;
+    transaction->counter = counter;
     return transaction;
 }
+
+extern BRTezosTransaction
+tezosTransactionCreateDelegation (BRTezosAddress source,
+                                  BRTezosAddress target,
+                                  BRTezosFeeBasis feeBasis,
+                                  int64_t counter)
+{
+    BRTezosTransaction transaction = createTransactionObject();
+    transaction->source = tezosAddressClone (source);
+    transaction->operation.kind = TEZOS_OP_DELEGATION;
+    transaction->operation.u.delegation.target = tezosAddressClone (target);
+    transaction->feeBasis = feeBasis;
+    transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
+    transaction->blockHeight = 0;
+    transaction->counter = counter;
+    return transaction;
+}
+
 //
 //extern BRTezosTransaction tezosTransactionCreate (BRTezosAddress source,
 //                                                    BRTezosAddress target,
@@ -103,17 +125,6 @@ tezosTransactionCreateNew (BRTezosAddress source,
 //    return transaction;
 //}
 
-static BRTezosSerializedOperation
-tezosForgeOperation (BRTezosOperationKind kind,
-                     BRTezosAddress source,
-                     BRTezosAddress target,
-                     BRTezosUnitMutez amount,
-                     BRTezosUnitMutez fee,
-                     BRTezosFeeBasis feeBasis,
-                     uint64_t counter) {
-    
-}
-
 extern BRTezosTransaction
 tezosTransactionClone (BRTezosTransaction transaction) {
     assert(transaction);
@@ -130,8 +141,21 @@ tezosTransactionClone (BRTezosTransaction transaction) {
 extern void tezosTransactionFree (BRTezosTransaction transaction)
 {
     assert (transaction);
-    if (transaction->source) tezosAddressFree (transaction->source);
-    //TODO:TEZOS free operation data
+    tezosAddressFree (transaction->source);
+    switch (transaction->operation.kind) {
+        case TEZOS_OP_REVEAL:
+            break;
+            
+        case TEZOS_OP_TRANSACTION:
+            tezosAddressFree(transaction->operation.u.transaction.target);
+            break;
+            
+        case TEZOS_OP_DELEGATION:
+            tezosAddressFree(transaction->operation.u.delegation.target);
+            break;
+        default:
+            break;
+    }
     free (transaction);
 }
 
@@ -145,16 +169,27 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
     return 0;
 }
 
-extern uint8_t * tezosTransactionSerialize (BRTezosTransaction transaction, size_t *size)
-{
-    //TODO:TEZOS
-    return 0;
+extern uint8_t *
+tezosTransactionSerialize (BRTezosTransaction transaction, size_t *bytesCount) {
+    BRCryptoData data = tezosSerializeTransaction (transaction);
+    *bytesCount = data.size;
+    return data.bytes;
 }
 
 extern BRTezosTransactionHash tezosTransactionGetHash(BRTezosTransaction transaction)
 {
     assert(transaction);
     return transaction->hash;
+}
+
+extern int64_t tezosTransactionGetCounter(BRTezosTransaction transaction) {
+    assert(transaction);
+    return transaction->counter;
+}
+
+extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transaction) {
+    assert(transaction);
+    return transaction->feeBasis;
 }
 
 extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction)
@@ -194,15 +229,32 @@ extern BRTezosOperationData tezosTransactionGetOperationData(BRTezosTransaction 
             clone.u.transaction.target = tezosAddressClone (transaction->operation.u.transaction.target);
             break;
         case TEZOS_OP_REVEAL:
-            //TODO:TEZOS
+            //TODO:TEZOS clone public key
             break;
         case TEZOS_OP_DELEGATION:
-            //TODO:TEZOS
+            clone.u.delegation.target = tezosAddressClone (transaction->operation.u.delegation.target);
             break;
-        case TEZOS_OP_ENDORESEMENT:
+        default:
             break;
     }
     return clone;
+}
+
+extern void
+tezosTransactionFreeOperationData (BRTezosOperationData opData) {
+    switch (opData.kind) {
+        case TEZOS_OP_TRANSACTION:
+            tezosAddressFree (opData.u.transaction.target);
+            break;
+        case TEZOS_OP_REVEAL:
+            if (opData.u.reveal.publicKey) free (opData.u.reveal.publicKey);
+            break;
+        case TEZOS_OP_DELEGATION:
+            tezosAddressFree (opData.u.delegation.target);
+            break;
+        default:
+            break;
+    }
 }
 
 extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2)
