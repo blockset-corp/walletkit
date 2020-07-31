@@ -35,14 +35,20 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     int hasMaxBalance;
     BRHederaUnitTinyBar minBalance = hederaWalletGetBalanceLimit (wid, 0, &hasMinBalance);
     BRHederaUnitTinyBar maxBalance = hederaWalletGetBalanceLimit (wid, 1, &hasMaxBalance);
-    
+
+    BRHederaFeeBasis feeBasisHBAR = hederaWalletGetDefaultFeeBasis (wid);
+    BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreate (cryptoAmountCreateInteger(hederaFeeBasisGetPricePerCostFactor(&feeBasisHBAR), unitForFee),
+                                                          (double) hederaFeeBasisGetCostFactor(&feeBasisHBAR));
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletHBARRecord),
                                                       CRYPTO_NETWORK_TYPE_HBAR,
                                                       listener,
                                                       unit,
                                                       unitForFee,
                                                       hasMinBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, minBalance) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, maxBalance) : NULL);
+                                                      hasMaxBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, maxBalance) : NULL,
+                                                      feeBasis);
+    cryptoFeeBasisGive(feeBasis);
     
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
     walletHBAR->wid = wid;

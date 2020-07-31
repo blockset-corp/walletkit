@@ -37,13 +37,19 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     BRRippleUnitDrops minBalanceDrops = rippleWalletGetBalanceLimit (wid, 0, &hasMinBalance);
     BRRippleUnitDrops maxBalanceDrops = rippleWalletGetBalanceLimit (wid, 1, &hasMaxBalance);
 
+    BRRippleFeeBasis feeBasisXRP = rippleWalletGetDefaultFeeBasis(wid);
+    BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreate (cryptoAmountCreateInteger ((int64_t) rippleFeeBasisGetPricePerCostFactor(&feeBasisXRP), unitForFee),
+                                                         (double) rippleFeeBasisGetCostFactor(&feeBasisXRP));
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
                                                       CRYPTO_NETWORK_TYPE_XRP,
                                                       listener,
                                                       unit,
                                                       unitForFee,
                                                       hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL);
+                                                      hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL,
+                                                      feeBasis);
+    cryptoFeeBasisGive(feeBasis);
 
     BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
     walletXRP->wid = wid;

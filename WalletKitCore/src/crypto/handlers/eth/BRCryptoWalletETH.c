@@ -11,6 +11,9 @@
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoAmountP.h"
 
+#define DEFAULT_ETHER_GAS_PRICE      2ull  // 2 GWEI
+#define DEFAULT_ETHER_GAS_PRICE_UNIT GWEI
+
 #define DEFAULT_ETHER_GAS_LIMIT    21000ull
 
 extern BRCryptoWalletETH
@@ -25,20 +28,26 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount) {
+    BREthereumFeeBasis ethDefaultFeeBasis =
+    ethFeeBasisCreate ((NULL == ethToken
+                        ? ethGasCreate (DEFAULT_ETHER_GAS_LIMIT)
+                        : ethTokenGetGasLimit (ethToken)),
+                       ethGasPriceCreate (ethEtherCreateNumber (DEFAULT_ETHER_GAS_PRICE,
+                                                                DEFAULT_ETHER_GAS_PRICE_UNIT)));
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
                                                       CRYPTO_NETWORK_TYPE_ETH,
                                                       listener,
                                                       unit,
                                                       unitForFee,
                                                       NULL,
-                                                      NULL);
+                                                      NULL,
+                                                      cryptoFeeBasisCreateAsETH(unitForFee, ethDefaultFeeBasis));
     BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
 
     walletETH->ethAccount  = ethAccount;
     walletETH->ethToken    = ethToken;
-    walletETH->ethGasLimit = (NULL == ethToken
-                              ? ethGasCreate (DEFAULT_ETHER_GAS_LIMIT)
-                              : ethTokenGetGasLimit (ethToken));
+    walletETH->ethGasLimit = ethDefaultFeeBasis.u.gas.limit ;
     
     return wallet;
 }

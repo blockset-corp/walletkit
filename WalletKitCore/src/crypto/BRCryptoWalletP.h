@@ -146,7 +146,8 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
                           BRCryptoAmount balanceMinimum,
-                          BRCryptoAmount balanceMaximum);
+                          BRCryptoAmount balanceMaximum,
+                          BRCryptoFeeBasis defaultFeeBasis);
 
 private_extern BRCryptoBlockChainType
 cryptoWalletGetType (BRCryptoWallet wallet);

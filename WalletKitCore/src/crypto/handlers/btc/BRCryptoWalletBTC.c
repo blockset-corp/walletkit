@@ -12,6 +12,8 @@
 
 #include "bitcoin/BRWallet.h"
 
+#define DEFAULT_FEE_BASIS_SIZE_IN_BYTES     200
+
 static BRCryptoWalletBTC
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type ||
@@ -26,19 +28,23 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                          BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-//                         BRWalletManager bwm,
                          BRWallet *wid) {
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsBTC (unitForFee,
+                                                           BRWalletFeePerKb(wid),
+                                                           DEFAULT_FEE_BASIS_SIZE_IN_BYTES);
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletBTCRecord),
-                                                          type,
-                                                          listener,
-                                                          unit,
-                                                          unitForFee,
-                                                          cryptoAmountCreateInteger(0, unit),
-                                                          NULL);
+                                                      type,
+                                                      listener,
+                                                      unit,
+                                                      unitForFee,
+                                                      cryptoAmountCreateInteger(0, unit),
+                                                      NULL,
+                                                      feeBasis);
+    cryptoFeeBasisGive (feeBasis);
 
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerce (wallet);
 
-//    wallet->u.btc.bwm = bwm;
     walletBTC->wid = wid;
 
     return wallet;
