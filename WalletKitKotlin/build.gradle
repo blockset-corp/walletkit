@@ -64,6 +64,18 @@ kotlin {
                 "-framework", "Security"
         ]
 
+        if (name.startsWith("ios")) {
+            // Create .frameworks for use in Obj-c/Swift projects
+            binaries.framework {
+                linkerOpts = [
+                        "-L" + coreLibPath,
+                        "-L" + sqliteLibPath,
+                        "-L" + ed25519LibPath,
+                        "-framework", "Security"
+                ]
+            }
+        }
+
         compilations.main {
             kotlinOptions {
                 freeCompilerArgs += [
@@ -148,7 +160,7 @@ kotlin {
             }
         }
 
-        iosSimMain {
+        configure([iosSimMain, iosArm64Main]) {
             dependsOn(darwinDependenciesMain)
             kotlin.srcDirs += ['src/darwinMain']
             dependencies {
@@ -166,23 +178,6 @@ kotlin {
         }
     }
 }
-
-task iosTest {
-    onlyIf { kotlin.targets.iosSim.publishable }
-    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone 11"
-    dependsOn 'linkDebugTestIosSim'
-    group = JavaBasePlugin.VERIFICATION_GROUP
-    description = "Runs tests for target 'ios' on an iOS simulator"
-
-    doLast {
-        def binary = kotlin.targets.iosSim.binaries.getTest('DEBUG').outputFile
-        exec {
-            commandLine 'xcrun', 'simctl', 'spawn', '--standalone', device, binary.absolutePath
-        }
-    }
-}
-
-allTests.dependsOn iosTest
 
 model {
     toolChains {
@@ -224,16 +219,12 @@ model {
             architecture "x86_64"
         }
         iosArm64 {
-            architecture 'arm64'
+            architecture 'x86_64'
             operatingSystem 'ios'
         }
         iosSim {
             architecture 'x86_64'
             operatingSystem 'ios'
-        }
-        linux32 { // TODO: Not configured
-            operatingSystem "linux"
-            architecture "x86"
         }
         linux64 { // TODO: Not configured
             operatingSystem "linux"
@@ -246,7 +237,6 @@ model {
     }
     components {
         ed25519(NativeLibrarySpec) {
-            targetPlatform 'linux32'
             targetPlatform 'linux64'
             targetPlatform 'windows'
             if (kotlin.targets.macos.publishable) {
@@ -264,7 +254,6 @@ model {
             }
         }
         sqlite3(NativeLibrarySpec) {
-            targetPlatform 'linux32'
             targetPlatform 'linux64'
             targetPlatform 'windows'
             if (kotlin.targets.macos.publishable) {
@@ -292,7 +281,6 @@ model {
             }
         }
         corecrypto(NativeLibrarySpec) {
-            targetPlatform 'linux32'
             targetPlatform 'linux64'
             targetPlatform 'windows'
             if (kotlin.targets.macos.publishable) {
@@ -338,7 +326,7 @@ model {
                 .findAll { it.buildable }
                 .each { spec ->
                     def targetName = spec.targetPlatform.name.capitalize()
-                    def kCompileTask = project.tasks.findByName("compileKotlin" + targetName)
+                    def kCompileTask = project.tasks.findByName("compileKotlin$targetName")
                     if (kCompileTask != null) {
                         kCompileTask.dependsOn spec.tasks.getBuild()
                     }

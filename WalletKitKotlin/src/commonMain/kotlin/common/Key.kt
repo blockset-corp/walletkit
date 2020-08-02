@@ -34,6 +34,7 @@ expect class Key : Closeable {
     internal fun privateKeyMatch(that: Key): Boolean
 
     companion object {
+        @Suppress("VARIABLE_IN_SINGLETON_WITHOUT_THREAD_LOCAL")
         public var wordList: List<String>?
 
         /**

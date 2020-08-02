@@ -23,7 +23,7 @@ import kotlin.native.concurrent.freeze
 
 actual class System(
         private val callbackCoordinator: SystemCallbackCoordinator,
-        private val listener: SystemListener,
+        val listener: SystemListener,
         actual val account: Account,
         internal actual val isMainnet: Boolean,
         actual val storagePath: String,
@@ -76,6 +76,11 @@ actual class System(
 
             announceSystemEvent(SystemEvent.DiscoveredNetworks(networks))
         }
+    }
+
+    // Creates an event loop to support coroutines when starting from swift
+    fun configureFromSwift(appCurrencies: List<BdbCurrency>) {
+        runBlocking { configure(appCurrencies) }
     }
 
     actual fun createWalletManager(
@@ -330,11 +335,11 @@ actual class System(
         }
 
         actual fun wipe(system: System) {
-            TODO("not implemented")
+            //TODO("not implemented")
         }
 
         actual fun wipeAll(storagePath: String, exemptSystems: List<System>) {
-            TODO("not implemented")
+            //TODO("not implemented")
         }
 
         private fun ensurePath(path: String): Boolean {

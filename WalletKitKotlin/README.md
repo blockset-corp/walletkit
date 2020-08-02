@@ -7,14 +7,13 @@ For native targets, WalletKitCore is used directly and JVM targets use the coren
 
 This project makes use of the following libraries across all targets:
 
-- [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for multiplatform serialization.
-- [ktor](https://github.com/ktorio/ktor/) for a multiplatform Http client.
+- [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for multiplatform JSON serialization.
+- [ktor](https://github.com/ktorio/ktor/): a multiplatform HTTP client wrapper supporting curl(macos), OkHttp(jvm), URLSession(ios), etc.
 
 ## Structure
 
 [src/commonMain/kotlin](src/commonMain/kotlin): Contains common Kotlin that does not use any platform specific APIs.
-Code with the `expect` keyword replaces code prefixed with `actual` in a platform specific source directory (`src/<platform>Main/kotlin`).
-Mutliplatform Kotlin applications can use this API to target any supported platforms.
+Code prefixed with `expect` is replaced by code prefixed with `actual` from platform specific source directories (`src/<platform>Main/kotlin`).
 
 [src/commonTest/kotlin](src/commonTest/kotlin): Contains common Kotlin test sources that run on every supported target.
 
@@ -28,22 +27,33 @@ This code can be used directly in Kotlin/Native code or Obj-C/Swift.
 
 Building any target will automatically compile WalletKitCore for the associated platform.
 
+* Build and test project: `./gradlew build`
 * Run tests
   * `./gradlew allTest`
   * `./gradlew macosTest`
   * `./gradlew jvmTest`
   * `./gradlew iosSimTest`
 * Build all outputs: `./gradlew assemble`
+* Build iOS Frameworks
+  * `./gradlew linkDebugFrameworkIosSim`
+  * `./gradlew linkReleaseFrameworkIosSim`
+  * `./gradlew linkDebugFrameworkIosArm64`
+  * `./gradlew linkReleaseFrameworkIosArm64`
 * Generate Docs: `./gradlew dokka`
 * Clean build dirs: `./gradlew clean`
 
 Running any gradle command will download all necessary tooling, the first run takes some time.
 
-## Demo
+## Demos
 
-The current demo will perform a full sync and report the balance of a wallet.
-* Run macos): `./gradlew demo:runDebugExecutableMacos`
-* Run demo (jvm): `./gradlew demo:runJar`
+The [demo](demo) module performs a full sync and reports the balance of a wallet, it currently supports JVM and Macos.
+
+* Run jvm: `./gradlew demo:runJar`
+* Run macos: `./gradlew demo:runDebugExecutableMacos`
+
+
+[SwiftDemo](SwiftDemo) is a minimal copy of the existing Swift demo using the WalletKitKotlin as a Framework.
+Open the SwiftDemo project in Xcode and click run, WalletKitKotlin will be built automatically.
 
 ## Publishing
 

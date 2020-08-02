@@ -62,6 +62,9 @@ actual class Transfer internal constructor(
             TransferHash(coreHash, false)
         }
 
+    // NOTE: Added for Swift interop to avoid `hash` naming conflict
+    val txHash: TransferHash? get() = hash
+
     actual val unit: CUnit
         get() = CUnit(checkNotNull(cryptoTransferGetUnitForAmount(core)), false)
 

@@ -2,6 +2,7 @@ package com.breadwallet.core.common
 
 import brcrypto.*
 import com.breadwallet.core.Secret
+import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import kotlinx.io.core.Closeable
 
@@ -67,7 +68,13 @@ actual class Key internal constructor(
     }
 
     actual companion object {
-        actual var wordList: List<String>? = null
+        private val atomicWordList = atomic<List<String>?>(null)
+
+        actual var wordList: List<String>?
+            get() = atomicWordList.value
+            set(value) {
+                atomicWordList.value = value
+            }
 
         actual fun isProtectedPrivateKey(privateKey: String): Boolean =
                 CRYPTO_TRUE == cryptoKeyIsProtectedPrivate(privateKey)
