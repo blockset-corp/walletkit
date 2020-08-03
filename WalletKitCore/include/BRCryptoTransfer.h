@@ -83,7 +83,7 @@ extern "C" {
                 uint64_t timestamp;
                 BRCryptoFeeBasis feeBasis;
 
-                // transfer that have failed can be included too
+                // transfer that has failed can be included too
                 BRCryptoBoolean success;
                 char error[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
             } included;
@@ -117,8 +117,18 @@ extern "C" {
     /// MARK: - Transfer Event
 
     typedef enum {
+        /// Signaled when a transfer is *allocated*; the transfer may not, in fact generally is
+        /// not, fully initialized.  Thus the transfer should only be used for 'identity' purposes.
         CRYPTO_TRANSFER_EVENT_CREATED,
+
+        /// Signaled when a transfer's state change - such as when the state transitions from
+        /// SUBMITTED to INCLUDED.
         CRYPTO_TRANSFER_EVENT_CHANGED,
+
+        /// Signaled when a transfer is deleted; the transfer must not be 'dereferenced' and thus
+        /// the pointer value can be used.  Surely the transfer's memory will be gone by the time
+        /// that thread handling the event first sees the deleted transfer.  If any dereference
+        /// occurs, the result will be an instant crash.
         CRYPTO_TRANSFER_EVENT_DELETED,
     } BRCryptoTransferEventType;
 
@@ -365,7 +375,7 @@ extern "C" {
     typedef struct {
         BRCryptoAddress target;
         BRCryptoAmount  amount;
-    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH supported
+    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH, BSV supported
     } BRCryptoTransferOutput;
 
 #ifdef __cplusplus

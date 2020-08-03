@@ -154,7 +154,9 @@ cryptoWalletManagerListenerCallbackTrampoline (BRCryptoListenerContext context,
                                                BRCryptoWalletManager manager,
                                                BRCryptoWalletManagerEvent event) {
     manager->listener.managerCallback (context,
-                                       cryptoWalletManagerTake(manager),
+                                       (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
+                                        ? cryptoWalletManagerTake(manager)
+                                        : manager),
                                        event);
 }
 
@@ -163,11 +165,13 @@ cryptoWalletListenerCallbackTrampoline (BRCryptoListenerContext context,
                                         BRCryptoWalletManager manager,
                                         BRCryptoWallet wallet,
                                         BRCryptoWalletEvent event) {
+    // TODO: CORE-974, Manager 'take' could be in is 'release'
     manager->listener.walletCallback (context,
                                       cryptoWalletManagerTake (manager),
-                                      cryptoWalletTake (wallet),
+                                      (CRYPTO_WALLET_EVENT_DELETED != event.type
+                                       ? cryptoWalletTake (wallet)
+                                       : wallet),
                                       event);
-
 }
 
 static void cryptoTransferListenerCallbackTrampoline (BRCryptoListenerContext context,
@@ -175,10 +179,13 @@ static void cryptoTransferListenerCallbackTrampoline (BRCryptoListenerContext co
                                                       BRCryptoWallet wallet,
                                                       BRCryptoTransfer transfer,
                                                       BRCryptoTransferEvent event) {
+    // TODO: CORE-974, Manager + Wallet 'take' could be in their 'release'
     manager->listener.transferCallback (context,
                                         cryptoWalletManagerTake (manager),
                                         cryptoWalletTake (wallet),
-                                        cryptoTransferTake (transfer),
+                                        (CRYPTO_TRANSFER_EVENT_DELETED != event.type
+                                         ? cryptoTransferTake (transfer)
+                                         : transfer),
                                         event);
 }
 

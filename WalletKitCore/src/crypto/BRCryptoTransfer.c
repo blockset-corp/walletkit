@@ -94,7 +94,6 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
 
     pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL);
 
-
     cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
         CRYPTO_TRANSFER_EVENT_CREATED
     });
