@@ -33,12 +33,11 @@ Building any target will automatically compile WalletKitCore for the associated 
   * `./gradlew macosTest`
   * `./gradlew jvmTest`
   * `./gradlew iosSimTest`
+  * `./gradlew testDebugUnitTest` Android Unit Tests
 * Build all outputs: `./gradlew assemble`
 * Build iOS Frameworks
-  * `./gradlew linkDebugFrameworkIosSim`
-  * `./gradlew linkReleaseFrameworkIosSim`
-  * `./gradlew linkDebugFrameworkIosArm64`
-  * `./gradlew linkReleaseFrameworkIosArm64`
+  * `./gradlew linkDebugFrameworkIosSim linkReleaseFrameworkIosSim`
+  * `./gradlew linkDebugFrameworkIosArm64 linkReleaseFrameworkIosArm64`
 * Generate Docs: `./gradlew dokka`
 * Clean build dirs: `./gradlew clean`
 
@@ -62,4 +61,3 @@ TODO: Setup and document publishing steps for various repositories.
 ## Notes
 
 - While possible, the current iteration of the common Kotlin API is not binary compatible with the existing JVM or Swift libraries.
-- Android can be added atop the JVM implementation but requires some build configuration to support development environments without the Android SDK installed.

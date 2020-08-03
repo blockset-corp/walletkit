@@ -9,7 +9,6 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 
 private const val DEFAULT_BDB_BASE_URL = "api.blockset.com"

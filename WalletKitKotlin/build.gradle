@@ -1,10 +1,12 @@
 buildscript {
     dependencies {
         classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+        classpath "com.android.tools.build:gradle:$agp_version"
     }
     repositories {
         mavenCentral()
         jcenter()
+        google()
         maven { url 'https://kotlin.bintray.com/kotlinx' }
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
@@ -30,11 +32,27 @@ allprojects {
 }
 
 project.ext.ideaActive = System.getProperty('idea.active') == 'true'
+project.ext.hasAndroid = System.getProperty("sdk.dir") != null || System.getenv("ANDROID_HOME") != null
 
 apply from: 'gradle/walletkit-core-dirs.gradle'
 apply from: 'gradle/native-utils.gradle'
 apply plugin: 'kotlinx-atomicfu'
 apply plugin: 'idea'
+
+if (hasAndroid) {
+    apply plugin: 'com.android.library'
+    android {
+        compileSdkVersion 28
+        defaultConfig {
+            minSdkVersion 23
+            targetSdkVersion 28
+        }
+        compileOptions {
+            sourceCompatibility 1.8
+            targetCompatibility 1.8
+        }
+    }
+}
 
 def publicApiHeaders = file("$corePath/include")
         .listFiles()
@@ -45,6 +63,11 @@ def privateApiHeaders = file("$corePath/src/crypto")
 
 kotlin {
     jvm()
+    if (hasAndroid) {
+        android {
+            //publishLibraryVariants("release", "debug")
+        }
+    }
     // NOTE: Only enable one darwin target in the IDE to for allow symbol resolution.
     def nativeTargets = [macosX64("macos")] // TODO: Add other native targets
     if (!project.ext.ideaActive) {
@@ -123,7 +146,8 @@ kotlin {
             }
         }
 
-        jvmMain {
+        jvmCommonMain {
+            dependsOn(commonMain)
             dependencies {
                 implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version"
@@ -133,9 +157,19 @@ kotlin {
                 implementation "io.ktor:ktor-client-json-jvm:$ktor_version"
                 implementation "io.ktor:ktor-client-serialization-jvm:$ktor_version"
 
-                implementation "com.breadwallet.core:corenative-jre:$corenative_jre_version"
+                if (ideaActive) {
+                    implementation "com.breadwallet.core:corenative-jre:$corenative_version"
+                }
+
                 // TODO(fix): Guava is missing from the published corenative-jre pom
                 implementation "com.google.guava:guava:28.1-jre"
+            }
+        }
+
+        jvmMain {
+            dependsOn(jvmCommonMain)
+            dependencies {
+                implementation "com.breadwallet.core:corenative-jre:$corenative_version"
             }
         }
 
@@ -144,6 +178,17 @@ kotlin {
                 implementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
                 implementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
             }
+        }
+
+        androidMain {
+            dependsOn(jvmCommonMain)
+            dependencies {
+                implementation "com.breadwallet.core:corenative-android:$corenative_version"
+            }
+        }
+
+        androidTest {
+            dependsOn(jvmTest)
         }
 
         // TODO: HMPP structures cannot share cinterop dependencies in common sources
@@ -163,18 +208,20 @@ kotlin {
         configure([iosSimMain, iosArm64Main]) {
             dependsOn(darwinDependenciesMain)
             kotlin.srcDirs += ['src/darwinMain']
-            dependencies {
-                implementation "io.ktor:ktor-client-ios:$ktor_version"
-            }
+            // Only required for dependents
+            //dependencies {
+            //    implementation "io.ktor:ktor-client-ios:$ktor_version"
+            //}
         }
 
         macosMain {
             dependsOn(darwinDependenciesMain)
             kotlin.srcDirs += ['src/darwinMain']
-            dependencies {
-                // Requires curl 7.63+
-                implementation "io.ktor:ktor-client-curl:$ktor_version"
-            }
+            // Only required for dependents
+            //dependencies {
+            //    // Requires curl 7.63+
+            //    implementation "io.ktor:ktor-client-curl:$ktor_version"
+            //}
         }
     }
 }

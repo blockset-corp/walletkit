@@ -1,6 +1,6 @@
 package com.breadwallet.core
 
-enum class WalletManagerMode(
+public enum class WalletManagerMode(
         internal val core: UInt
 ) {
     API_ONLY(0u),
