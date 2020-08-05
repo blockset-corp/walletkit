@@ -60,40 +60,18 @@ cryptoWalletManagerCreateHandlerHBAR (BRCryptoListener listener,
                                                                      path,
                                                                      CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
     BRCryptoWalletManagerHBAR managerHBAR = cryptoWalletManagerCoerce (manager);
-    
-    // Hedera Stuff
-    managerHBAR->ignoreTBD = 0;
-    
+    (void) managerHBAR;
+
+    // Create the primary wallet
+    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
+
+    pthread_mutex_unlock (&manager->lock);
     return manager;
 }
 
 static void
 cryptoWalletManagerReleaseHandlerHBAR (BRCryptoWalletManager manager) {
     
-}
-
-static void
-cryptoWalletManagerInitializeHandlerHBAR (BRCryptoWalletManager manager) {
-    BRHederaAccount hbarAccount = cryptoAccountAsHBAR(manager->account);
-    BRHederaWallet hbarWallet = hederaWalletCreate(hbarAccount);
-    
-    // Create the primary BRCryptoWallet
-    BRCryptoNetwork  network       = manager->network;
-    BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
-
-    manager->wallet = cryptoWalletCreateAsHBAR (manager->listenerWallet,
-                                                unitAsDefault,
-                                                unitAsDefault,
-                                                hbarWallet);
-    array_add (manager->wallets, manager->wallet);
-    
-    //TODO:HBAR load transfers from fileService
-    
-    cryptoUnitGive (unitAsDefault);
-    cryptoUnitGive (unitAsBase);
-    cryptoCurrencyGive (currency);
 }
 
 static BRFileService
@@ -259,12 +237,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR (BRCryptoWalletM
     hederaTransactionFree (hbarTransaction);
 }
 
-static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerHandlerHBAR (BRCryptoWalletManager manager) {
-    // not supported
-    return NULL;
-}
-
 extern BRCryptoWalletSweeperStatus
 cryptoWalletManagerWalletSweeperValidateSupportedHBAR (BRCryptoWalletManager manager,
                                                        BRCryptoWallet wallet,
@@ -283,13 +255,31 @@ cryptoWalletManagerCreateWalletSweeperHBAR (BRCryptoWalletManager manager,
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletHBAR (BRCryptoWalletManager manager,
                                        BRCryptoCurrency currency) {
-    return NULL;
+    BRHederaAccount hbarAccount = cryptoAccountAsHBAR(manager->account);
+    BRHederaWallet hbarWallet = hederaWalletCreate(hbarAccount);
+
+    // Create the primary BRCryptoWallet
+    BRCryptoNetwork  network       = manager->network;
+    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
+    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+
+    BRCryptoWallet wallet = cryptoWalletCreateAsHBAR (manager->listenerWallet,
+                                                unitAsDefault,
+                                                unitAsDefault,
+                                                hbarWallet);
+    cryptoWalletManagerAddWallet (manager, wallet);
+
+    //TODO:HBAR load transfers from fileService
+
+    cryptoUnitGive (unitAsDefault);
+    cryptoUnitGive (unitAsBase);
+
+    return wallet;
 }
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerCreateHandlerHBAR,
     cryptoWalletManagerReleaseHandlerHBAR,
-    cryptoWalletManagerInitializeHandlerHBAR,
     crytpWalletManagerCreateFileServiceHBAR,
     cryptoWalletManagerGetEventTypesHBAR,
     cryptoWalletManagerCreateWalletHBAR,
@@ -297,7 +287,6 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerSignTransactionWithKeyHandlerHBAR,
     cryptoWalletManagerEstimateLimitHandlerHBAR,
     cryptoWalletManagerEstimateFeeBasisHandlerHBAR,
-    crytpWalletManagerCreateP2PManagerHandlerHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHandlerHBAR,
     cryptoWalletManagerWalletSweeperValidateSupportedHBAR,

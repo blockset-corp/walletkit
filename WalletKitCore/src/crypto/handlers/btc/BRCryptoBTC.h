@@ -135,8 +135,6 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
 
 typedef struct BRCryptoWalletManagerBTCRecord {
     struct BRCryptoWalletManagerRecord base;
-
-    int ignoreTBD;
 } *BRCryptoWalletManagerBTC;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;

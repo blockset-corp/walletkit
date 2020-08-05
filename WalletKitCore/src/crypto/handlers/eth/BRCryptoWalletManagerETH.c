@@ -24,6 +24,9 @@
 
 // MARK: - Forward Declarations
 
+static BRCryptoClientP2PManager
+crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
+
 static void
 cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                                            BRCryptoCurrency currency,
@@ -59,7 +62,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
 
 static void
 ewmHandleExchange (BREthereumBCSCallbackContext context,
-                   BREthereumBCSCallbackLogType type,
+                   BREthereumBCSCallbackExchangeType type,
                    OwnershipGiven BREthereumExchange exchange);
 
 static void
@@ -83,74 +86,6 @@ ewmHandleGetBlocks (BREthereumBCSCallbackContext context,
                     BREthereumSyncInterestSet interests,
                     uint64_t blockStart,
                     uint64_t blockStop);
-
-// BRFileService
-
-/// MARK: - File Service, Initial Load
-
-static void
-cryptoWalletManagerCreateInitialSets (BRCryptoWalletManager manager,
-                                      BREthereumNetwork network,
-                                      BREthereumTimestamp accountTimestamp,
-                                      BRSetOf(BREthereumTransaction) *transactions,
-                                      BRSetOf(BREthereumLog) *logs,
-                                      BRSetOf(BREthereumExchange) *exchanges,
-                                      BRSetOf(BREthereumNodeConfig) *nodes,
-                                      BRSetOf(BREthereumBlock) *blocks,
-                                      BRSetOf(BREthereumToken) *tokens) {
-
-    *transactions = initialTransactionsLoadETH (manager);
-    *logs   = initialLogsLoadETH   (manager);
-    *exchanges = initialExchangesLoadETH (manager);
-    *nodes  = initialNodesLoadETH  (manager);
-    *blocks = initialBlocksLoadETH (manager);
-    *tokens = initialTokensLoadETH  (manager);
-#if 0
-    *states = initialWalletsLoadETH (manager);
-#endif
-
-    // If any are NULL, then we have an error and a full sync is required.  The sync will be
-    // started automatically, as part of the normal processing, of 'blocks' (we'll use a checkpoint,
-    // before the `accountTimestamp, which will be well in the past and we'll sync up to the
-    // head of the blockchain).
-    if (NULL == *transactions || NULL == *logs || NULL == *nodes || NULL == *blocks || NULL == *tokens /* || NULL == *states */) {
-        // If the set exists, clear it out completely and then create another one.  Note, since
-        // we have `BRSetFreeAll()` we'll use that even though it frees the set and then we
-        // create one again, minimally wastefully.
-        if (NULL != *transactions) { BRSetFreeAll (*transactions, (void (*) (void*)) transactionRelease); }
-        *transactions = BRSetNew (transactionHashValue, transactionHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-
-        if (NULL != *logs) { BRSetFreeAll (*logs, (void (*) (void*)) logRelease); }
-        *logs = BRSetNew (logHashValue, logHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-
-        if (NULL != *exchanges) { BRSetFreeAll (*exchanges, (void (*) (void*)) ethExchangeRelease); }
-        *exchanges = BRSetNew (ethExchangeHashValue, ethExchangeHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-
-        if (NULL != *blocks) { BRSetFreeAll (*blocks,  (void (*) (void*)) blockRelease); }
-        *blocks = BRSetNew (blockHashValue, blockHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-
-        if (NULL != *nodes) { BRSetFreeAll (*nodes, (void (*) (void*)) nodeConfigRelease); }
-        *nodes = BRSetNew (nodeConfigHashValue, nodeConfigHashEqual, EWM_INITIAL_SET_SIZE_DEFAULT);
-
-        if (NULL != *tokens) { BRSetFreeAll (*tokens, (void (*) (void*)) ethTokenRelease); }
-        *tokens = ethTokenSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
-#if 0
-        if (NULL != *states) { BRSetFreeAll (*states, (void (*) (void*)) walletStateRelease); }
-        *states = walletStateSetCreate(EWM_INITIAL_SET_SIZE_DEFAULT);
-#endif
-    }
-
-    // If we have no blocks; then add a checkpoint
-    if (0 == BRSetCount(*blocks)) {
-        const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network, accountTimestamp);
-        BREthereumBlock block = blockCreate (blockCheckpointCreatePartialBlockHeader (checkpoint));
-        blockSetTotalDifficulty (block, checkpoint->u.td);
-        BRSetAdd (*blocks, block);
-    }
-}
-
-//static BRFileServiceTypeSpecification fileServiceSpecifications[];
-//static size_t fileServiceSpecificationsCount;
 
 static BRCryptoWalletManagerETH
 cryptoWalletManagerCoerce (BRCryptoWalletManager manager) {
@@ -181,35 +116,11 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
     managerETH->account = cryptoAccountAsETH (account);
     managerETH->coder   = rlpCoderCreate();
 
-    return manager;
-}
+    // Create the primary wallet
+    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
 
-static void
-cryptoWalletManagerReleaseETH (BRCryptoWalletManager manager) {
-    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
-
-    rlpCoderRelease (managerETH->coder);
-    if (NULL != managerETH->tokens)
-        BRSetFreeAll(managerETH->tokens, (void (*) (void*)) ethTokenRelease);
-}
-
-
-static void
-cryptoWalletManagerInitializeETH (BRCryptoWalletManager manager) {
-    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
-
-    BRCryptoNetwork  network       = manager->network;
-    BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
-
-    // Create the primary BRCryptoWallet
-    manager->wallet = cryptoWalletCreateAsETH (manager->listenerWallet,
-                                                   unitAsDefault,
-                                                   unitAsDefault,
-                                                   NULL,
-                                                   managerETH->account);
-    array_add (manager->wallets, manager->wallet);
+    // Create the P2P manager
+    manager->p2pManager = crytpWalletManagerCreateP2PManagerETH (manager);
 
     // Load the persistently stored data.
     BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
@@ -223,7 +134,7 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager manager) {
     size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
     for (size_t index = 0; index < currencyCount; index++) {
         BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
-        if (c != currency) {
+        if (c != network->currency) {
             BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
             cryptoWalletManagerCreateTokenForCurrency (managerETH, c, unitDefault);
             cryptoUnitGive (unitDefault);
@@ -246,11 +157,17 @@ cryptoWalletManagerInitializeETH (BRCryptoWalletManager manager) {
         ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
     BRSetFree(exchanges);
 
-    cryptoUnitGive (unitAsDefault);
-    cryptoUnitGive (unitAsBase);
-    cryptoCurrencyGive (currency);
+    pthread_mutex_unlock (&manager->lock);
+    return manager;
+}
 
-    return;
+static void
+cryptoWalletManagerReleaseETH (BRCryptoWalletManager manager) {
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
+
+    rlpCoderRelease (managerETH->coder);
+    if (NULL != managerETH->tokens)
+        BRSetFreeAll(managerETH->tokens, (void (*) (void*)) ethTokenRelease);
 }
 
 static BRFileService
@@ -462,22 +379,24 @@ cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
                                     BRCryptoCurrency currency) {
     BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerce (manager);
 
-    const char *issuer = cryptoCurrencyGetIssuer (currency);
-    BREthereumAddress ethAddress = ethAddressCreate (issuer);
-    BREthereumToken ethToken = BRSetGet (managerETH->tokens, &ethAddress);
-    assert (NULL != ethToken);
+    BREthereumToken ethToken = NULL;
 
-    BRCryptoUnit     unit       = cryptoNetworkGetUnitAsBase (manager->network, currency);
-    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (manager->network, currency);
+    const char *issuer = cryptoCurrencyGetIssuer (currency);
+    if (NULL != issuer) {
+        BREthereumAddress ethAddress = ethAddressCreate (issuer);
+        ethToken = BRSetGet (managerETH->tokens, &ethAddress);
+        assert (NULL != ethToken);
+    }
+
+    BRCryptoUnit unit       = cryptoNetworkGetUnitAsDefault (manager->network, currency);
+    BRCryptoUnit unitForFee = cryptoNetworkGetUnitAsBase    (manager->network, currency);
 
     BRCryptoWallet wallet = cryptoWalletCreateAsETH (manager->listenerWallet,
                                                      unit,
                                                      unitForFee,
                                                      ethToken,
                                                      managerETH->account);
-
     cryptoWalletManagerAddWallet (manager, wallet);
-//    cryptoWalletMangerSignalWalletCreated (manager, wallet);
 
     cryptoUnitGive (unitForFee);
     cryptoUnitGive (unit);
@@ -783,6 +702,7 @@ static void
 cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager manager,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
+    (void) managerETH;
 
     BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (manager);
 
@@ -991,10 +911,6 @@ crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
                           transactions,
                           logs);
 
-
-//    if (NULL != blocks) array_free (blocks);
-//    if (NULL != peers ) array_free (peers);
-
     return p2pBase;
 }
 
@@ -1004,7 +920,6 @@ const unsigned int eventTypesCountETH = (sizeof (eventTypesETH) / sizeof (BREven
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerCreateETH,
     cryptoWalletManagerReleaseETH,
-    cryptoWalletManagerInitializeETH,
     crytpWalletManagerCreateFileServiceETH,
     cryptoWalletManagerGetEventTypesETH,
     cryptoWalletManagerCreateWalletETH,
@@ -1012,7 +927,6 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerSignTransactionWithKeyETH,
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
-    crytpWalletManagerCreateP2PManagerETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH
 };
@@ -1526,7 +1440,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
 
 static void
 ewmHandleExchange (BREthereumBCSCallbackContext context,
-                   BREthereumBCSCallbackLogType type,
+                   BREthereumBCSCallbackExchangeType type,
                    OwnershipGiven BREthereumExchange exchange) {
 #ifdef REFACTOR
     BREthereumHash exchangeHash = ethExchangeGetHash(exchange);

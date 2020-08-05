@@ -91,8 +91,6 @@ cryptoHashCreateAsXRP (BRRippleTransactionHash hash);
 
 typedef struct BRCryptoWalletManagerXRPRecord {
     struct BRCryptoWalletManagerRecord base;
-
-    int ignoreTBD;
 } *BRCryptoWalletManagerXRP;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;

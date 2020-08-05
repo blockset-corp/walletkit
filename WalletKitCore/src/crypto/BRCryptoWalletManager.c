@@ -202,33 +202,33 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
     assert (type == cryptoNetworkGetType(network));
 
-    BRCryptoWalletManager cwm = calloc (1, sizeInBytes);
-    if (NULL == cwm) return NULL;
+    BRCryptoWalletManager manager = calloc (1, sizeInBytes);
+    if (NULL == manager) return NULL;
 
-    cwm->type = type;
-    cwm->handlers = cryptoHandlersLookup(type)->manager;
+    manager->type = type;
+    manager->handlers = cryptoHandlersLookup(type)->manager;
     network->sizeInBytes = sizeInBytes;
-    cwm->listener = listener;
+    manager->listener = listener;
 
-    cwm->client  = client;
-    cwm->network = cryptoNetworkTake (network);
-    cwm->account = cryptoAccountTake (account);
-    cwm->state   = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CREATED);
-    cwm->addressScheme = scheme;
-    cwm->path = strdup (path);
+    manager->client  = client;
+    manager->network = cryptoNetworkTake (network);
+    manager->account = cryptoAccountTake (account);
+    manager->state   = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CREATED);
+    manager->addressScheme = scheme;
+    manager->path = strdup (path);
 
-    cwm->byType = byType;
+    manager->byType = byType;
     
     // File Service
-    const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cwm->type);
+    const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (manager->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
 
     // TODO: Replace `createFileService` with `getFileServiceSpecifications`
-    cwm->fileService = cwm->handlers->createFileService (cwm,
-                                                         cwm->path,
+    manager->fileService = manager->handlers->createFileService (manager,
+                                                         manager->path,
                                                          currencyName,
                                                          networkName,
-                                                         cwm,
+                                                         manager,
                                                          cryptoWalletManagerFileServiceErrorHandler);
 
     // Create the alarm clock, but don't start it.
@@ -241,41 +241,61 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     // Get the event handler types.
     size_t eventTypesCount;
-    const BREventType **eventTypes = cwm->handlers->getEventTypes (cwm, &eventTypesCount);
+    const BREventType **eventTypes = manager->handlers->getEventTypes (manager, &eventTypesCount);
 
     // Create the event handler
-    cwm->handler = eventHandlerCreate (handlerName,
+    manager->handler = eventHandlerCreate (handlerName,
                                        eventTypes,
                                        eventTypesCount,
-                                       &cwm->lock);
+                                       &manager->lock);
 
-    eventHandlerSetTimeoutDispatcher (cwm->handler,
+    eventHandlerSetTimeoutDispatcher (manager->handler,
                                       (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
-                                      (void*) cwm);
+                                      (void*) manager);
 
-    cwm->listenerTrampoline = (BRCryptoListener) {
+    manager->listenerTrampoline = (BRCryptoListener) {
         listener.context,
         cryptoWalletManagerListenerCallbackTrampoline,
         cryptoWalletListenerCallbackTrampoline,
         cryptoTransferListenerCallbackTrampoline
     };
 
-    cwm->listenerWallet = (BRCryptoWalletListener) {
-        cwm->listenerTrampoline.context,
-        cwm,
-        cwm->listenerTrampoline.walletCallback,
-        cwm->listenerTrampoline.transferCallback
+    manager->listenerWallet = (BRCryptoWalletListener) {
+        manager->listenerTrampoline.context,
+        manager,
+        manager->listenerTrampoline.walletCallback,
+        manager->listenerTrampoline.transferCallback
     };
 
-    cwm->wallet = NULL;
-    array_new (cwm->wallets, 1);
+    // Setup `wallet` and `wallets.
+    manager->wallet = NULL;
+    array_new (manager->wallets, 1);
 
-    cwm->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+    pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
 
-    pthread_mutex_init_brd (&cwm->lock, PTHREAD_MUTEX_RECURSIVE);
+    BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
+    BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
+    BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
 
-    return cwm;
+    // Setup the QRY Manager
+    manager->qryManager = cryptoClientQRYManagerCreate (client,
+                                                        manager,
+                                                        manager->byType,
+                                                        earliestBlockNumber,
+                                                        latestBlockNumber);
+
+    // Setup the P2P Manager.
+    manager->p2pManager = NULL; // manager->handlers->createP2PManager (manager);
+
+    // Announce the created manager; this must preceed any wallet created/added events
+    cryptoWalletManagerGenerateEvent (manager, (BRCryptoWalletManagerEvent) {
+        CRYPTO_WALLET_MANAGER_EVENT_CREATED
+    });
+
+    pthread_mutex_lock (&manager->lock);
+    return manager;
 }
 
 extern BRCryptoWalletManager
@@ -304,48 +324,10 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                                                       path);
     if (NULL == manager) return NULL;
 
-    // Initialize the manager.  This will restore persistent state - such as for transactions.
-    // It will create the primary wallet and any other associated wallets (that are knowable at
-    // this time).  No events will be announced.
-    //
-    // This will fully configure the P2P and QRY managers.
-    manager->handlers->initialize (manager);
-
-    BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
-    BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
-    BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
-    
-    // Setup the P2P Manager.  We have a race here... `createP2PManager` might generate callbacks
-    // as initial blocks, nodes, etc are added.  The callbacks currently are handled directly,
-    // without using the event queue - but eventually the event queue must be used.
-    //
-    // TODO: Handle Callbacks Correctly
-    manager->p2pManager = manager->handlers->createP2PManager (manager);
-
-    // Setup the QRY Manager
-    manager->qryManager = cryptoClientQRYManagerCreate (client,
-                                                        manager,
-                                                        manager->byType,
-                                                        earliestBlockNumber,
-                                                        latestBlockNumber);
-
-    // Announce the new wallet manager;
-    cryptoWalletManagerGenerateEvent (manager, (BRCryptoWalletManagerEvent) {
-        CRYPTO_WALLET_MANAGER_EVENT_CREATED
-    });
-
-    // ... and announce the primary wallet
-    cryptoWalletMangerSignalWalletCreated (manager, manager->wallet);
-
-    // ... and announce any other wallets
-    for (size_t index = 0; index < array_count(manager->wallets); index++)
-        if (manager->wallet != manager->wallets[index])
-            cryptoWalletMangerSignalWalletCreated (manager, manager->wallets[index]);
-
-
+    // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
 
-    // Start
+    // Start the event handler.
     cryptoWalletManagerStart (manager);
 
     return manager;

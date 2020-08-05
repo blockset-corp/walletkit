@@ -91,8 +91,6 @@ cryptoHashCreateAsHBAR (BRHederaTransactionHash hash);
 
 typedef struct BRCryptoWalletManagerHBARRecord {
     struct BRCryptoWalletManagerRecord base;
-
-    int ignoreTBD;
 } *BRCryptoWalletManagerHBAR;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR;

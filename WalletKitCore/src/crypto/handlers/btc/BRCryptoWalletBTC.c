@@ -22,7 +22,6 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletBTC) wallet;
 }
 
-
 private_extern BRCryptoWallet
 cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                          BRCryptoWalletListener listener,
