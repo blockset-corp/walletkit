@@ -804,11 +804,13 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRCryptoTransfer transfer,
                                         BRGenericTransferState newGenericState) {
     pthread_mutex_lock (&cwm->lock);
-
+    BRGenericWallet        genericWallet   = cryptoWalletAsGEN   (wallet);
     BRGenericTransfer      genericTransfer = cryptoTransferAsGEN (transfer);
     BRGenericTransferState oldGenericState = genTransferGetState (genericTransfer);
 
     if (!genTransferStateEqual (oldGenericState, newGenericState)) {
+        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
+
         BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
         BRCryptoTransferState newState = cryptoTransferStateCreateGEN (newGenericState,
                                                                        cryptoTransferGetUnitForFee(transfer));
@@ -831,34 +833,30 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 
         cryptoTransferStateRelease (&oldState);
         cryptoTransferStateRelease (&newState);
+
+        // Update wallet
+        genWalletUpdTransfer (genericWallet, genericTransfer);
+        BRCryptoAmount newBalance = cryptoWalletGetBalance (wallet);
+
+        if (CRYPTO_COMPARE_EQ != cryptoAmountCompare (oldBalance, newBalance)) {
+            cwm->listener.walletEventCallback (cwm->listener.context,
+                                                cryptoWalletManagerTake (cwm),
+                                                cryptoWalletTake (cwm->wallet),
+                                                (BRCryptoWalletEvent) {
+                                                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                                                    { .balanceUpdated = { cryptoAmountTake(newBalance) }}
+                                                });
+
+             cwm->listener.walletManagerEventCallback (cwm->listener.context,
+                                                       cryptoWalletManagerTake (cwm),
+                                                       (BRCryptoWalletManagerEvent) {
+                 CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
+                 { .wallet = cryptoWalletTake (cwm->wallet) }
+             });
+        }
+        cryptoAmountGive (newBalance);
+        cryptoAmountGive (oldBalance);
     }
-
-    //
-    // If this is an error case, then we must remove the genericTransfer from the
-    // genericWallet; otherwise the GEN balance and sequence number will be off.
-    //
-    // However, we leave the `transfer` in `wallet`.  And trouble is forecasted...
-    //
-    if (GENERIC_TRANSFER_STATE_ERRORED == newGenericState.type) {
-        genWalletRemTransfer(cryptoWalletAsGEN(wallet), genericTransfer);
-
-        BRCryptoAmount balance = cryptoWalletGetBalance(wallet);
-        cwm->listener.walletEventCallback (cwm->listener.context,
-                                           cryptoWalletManagerTake (cwm),
-                                           cryptoWalletTake (cwm->wallet),
-                                           (BRCryptoWalletEvent) {
-                                               CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                               { .balanceUpdated = { balance }}
-                                           });
-
-        cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                  cryptoWalletManagerTake (cwm),
-                                                  (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
-            { .wallet = cryptoWalletTake (cwm->wallet) }
-        });
-    }
-
     pthread_mutex_unlock (&cwm->lock);
 }
 

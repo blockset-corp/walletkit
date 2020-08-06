@@ -241,6 +241,12 @@ genericRippleWalletRemTransfer (BRGenericWalletRef wallet,
     rippleWalletRemTransfer ((BRRippleWallet) wallet, (BRRippleTransfer) transfer);
 }
 
+static void
+genericRippleWalletUpdTransfer (BRGenericWalletRef wallet,
+                                OwnershipKept BRGenericTransferRef transfer) {
+    rippleWalletUpdateTransfer ((BRRippleWallet) wallet, (BRRippleTransfer) transfer);
+}
+
 #define FIELD_OPTION_DESTINATION_TAG        "DestinationTag"
 #define FIELD_OPTION_INVOICE_ID             "InvoiceId"
 
@@ -490,6 +496,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleWalletHasTransfer,
         genericRippleWalletAddTransfer,
         genericRippleWalletRemTransfer,
+        genericRippleWalletUpdTransfer,
         genericRippleWalletCreateTransfer,
         genericRippleWalletEstimateFeeBasis,
 

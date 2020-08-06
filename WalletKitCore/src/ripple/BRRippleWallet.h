@@ -131,4 +131,6 @@ extern void rippleWalletAddTransfer (BRRippleWallet wallet,
 extern void rippleWalletRemTransfer (BRRippleWallet wallet,
                                      OwnershipKept BRRippleTransfer transfer);
 
+extern void rippleWalletUpdateTransfer (BRRippleWallet wallet,
+                                        OwnershipKept BRRippleTransfer transfer);
 #endif

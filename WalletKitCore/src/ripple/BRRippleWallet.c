@@ -116,6 +116,25 @@ rippleWalletSetBalance (BRRippleWallet wallet, BRRippleUnitDrops balance)
     wallet->balance = balance;
 }
 
+static void
+rippleWalletUpdateBalance (BRRippleWallet wallet) {
+    BRRippleUnitDrops balance = 0;
+    BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
+
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        int negative = 0;
+        BRRippleUnitDrops amountDirected = rippleTransferGetAmountDirected (wallet->transfers[index],
+                                                                            accountAddress,
+                                                                            &negative);
+
+        if (negative) balance -= amountDirected;
+        else          balance += amountDirected;
+    }
+    rippleAddressFree (accountAddress);
+
+    rippleWalletSetBalance (wallet, balance);
+}
+
 extern BRRippleUnitDrops
 rippleWalletGetBalanceLimit (BRRippleWallet wallet,
                              int asMaximum,
@@ -183,24 +202,27 @@ static void rippleWalletUpdateSequence (BRRippleWallet wallet,
                                         OwnershipKept BRRippleAddress accountAddress) {
     // Now update the account's sequence id
     BRRippleSequence sequence = 0;
-    // We need to keep track of the first block where this account shows up due to a
-    // change in how ripple assigns the sequence number to new accounts
+    // ... and the account's block-number-at-creation.
     uint64_t minBlockHeight = UINT64_MAX;
+
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         BRRippleTransfer transfer = wallet->transfers[index];
-        BRRippleAddress targetAddress = rippleTransferGetTarget(transfer);
-        if (rippleTransferHasError(transfer) == 0
-            && rippleAddressEqual(accountAddress, targetAddress)) {
-            // We trying to find the lowest block number where we were sent
-            // currency successful - basically this is the block where our account
-            // was created *** ignore failed transfers TO us since we end up seeing
-            // items before our account is actually created.
-            uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
-            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        if (!rippleTransferHasError(transfer)) {
+            // We need to keep track of the first block where this account shows up due to a
+            // change in how ripple assigns the sequence number to new accounts
+            if (rippleTransferHasTarget (transfer, accountAddress)) {
+                // We trying to find the lowest block number where we were sent
+                // currency successful - basically this is the block where our account
+                // was created *** ignore failed transfers TO us since we end up seeing
+                // items before our account is actually created.
+                uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
+                minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+            }
+
+            // The sequence number is the count of successfully sent transfers
+            if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
+                sequence += 1;
         }
-        rippleAddressFree(targetAddress);
-        if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
-            sequence += 1;
     }
 
     rippleAccountSetBlockNumberAtCreation(wallet->account, minBlockHeight);
@@ -219,29 +241,15 @@ extern void rippleWalletAddTransfer (BRRippleWallet wallet,
         array_add(wallet->transfers, transfer);
 
         // Update the balance
-        BRRippleUnitDrops amount = (rippleTransferHasError(transfer)
-                                    ? 0
-                                    : rippleTransferGetAmount(transfer));
-        BRRippleUnitDrops fee    = rippleTransferGetFee(transfer);
-
         BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
-        BRRippleAddress source = rippleTransferGetSource(transfer);
-        BRRippleAddress target = rippleTransferGetTarget(transfer);
 
-        int isSource = rippleAccountHasAddress (wallet->account, source);
-        int isTarget = rippleAccountHasAddress (wallet->account, target);
+        int negative = 0;
+        BRRippleUnitDrops amountDirected = rippleTransferGetAmountDirected (transfer,
+                                                                            accountAddress,
+                                                                            &negative);
 
-        if (isSource && isTarget)
-            wallet->balance -= fee;
-        else if (isSource)
-            wallet->balance -= (amount + fee);
-        else if (isTarget)
-            wallet->balance += amount;
-        else {
-            // something is seriously wrong
-        }
-        rippleAddressFree (source);
-        rippleAddressFree (target);
+        if (negative) wallet->balance -= amountDirected;
+        else          wallet->balance += amountDirected;
 
         rippleWalletUpdateSequence(wallet, accountAddress);
         rippleAddressFree (accountAddress);
@@ -256,43 +264,44 @@ extern void rippleWalletRemTransfer (BRRippleWallet wallet,
     assert(wallet);
     assert(transfer);
     pthread_mutex_lock (&wallet->lock);
-    if (walletHasTransfer(wallet, transfer)) {
-        for (size_t index = 0; index < array_count(wallet->transfers); index++)
-            if (rippleTransferEqual (transfer, wallet->transfers[index])) {
-                rippleTransferFree(wallet->transfers[index]);
-                array_rm (wallet->transfers, index);
-                break;
-            }
+    for (size_t index = 0; index < array_count(wallet->transfers); index++)
+        if (rippleTransferEqual (transfer, wallet->transfers[index])) {
+            // Save the transfer so we can free it, if needed.
+            BRRippleTransfer walletTransfer = wallet->transfers[index];
 
-        // Update the balance
-        BRRippleUnitDrops amount = (rippleTransferHasError(transfer)
-                                    ? 0
-                                    : rippleTransferGetAmount(transfer));
+            // Remove from the actual wallet.
+            array_rm (wallet->transfers, index);
 
-        BRRippleUnitDrops fee    = rippleTransferGetFee(transfer);
+            // When removed, iterate over the remaining transfers to update balance and sequence.
+            // This avoid issues with the removed transfer having an 'error' state and then uncertainty
+            // on how to handle the transfer's amount.
+            BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
 
-        BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
-        BRRippleAddress source = rippleTransferGetSource(transfer);
-        BRRippleAddress target = rippleTransferGetTarget(transfer);
+            rippleWalletUpdateBalance  (wallet);
+            rippleWalletUpdateSequence (wallet, accountAddress);
 
-        int isSource = rippleAccountHasAddress (wallet->account, source);
-        int isTarget = rippleAccountHasAddress (wallet->account, target);
+            rippleAddressFree (accountAddress);
 
-        if (isSource && isTarget)
-            wallet->balance += fee;
-        else if (isSource)
-            wallet->balance += (amount + fee);
-        else if (isTarget)
-            wallet->balance -= amount;
-        else {
-            // something is seriously wrong
+            if (transfer != walletTransfer)
+                rippleTransferFree(walletTransfer);
+
+            break; // for
         }
-        rippleAddressFree (source);
-        rippleAddressFree (target);
+    pthread_mutex_unlock (&wallet->lock);
+}
 
-        rippleWalletUpdateSequence(wallet, accountAddress);
+extern void rippleWalletUpdateTransfer (BRRippleWallet wallet,
+                                        OwnershipKept BRRippleTransfer transfer) {
+    assert(wallet);
+    assert(transfer);
+    pthread_mutex_lock (&wallet->lock);
+    if (walletHasTransfer (wallet, transfer)) {
+        BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
+
+        rippleWalletUpdateBalance  (wallet);
+        rippleWalletUpdateSequence (wallet, accountAddress);
+
         rippleAddressFree (accountAddress);
     }
     pthread_mutex_unlock (&wallet->lock);
-    // Now update the balance
 }
