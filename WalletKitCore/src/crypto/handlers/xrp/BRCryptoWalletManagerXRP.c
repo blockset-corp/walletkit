@@ -235,7 +235,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     rippleAddressFree (fromAddress);
     
     rippleWalletAddTransfer (xrpWallet, xrpTransfer); //TODO:XRP needed?
-    
+
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
@@ -246,7 +246,21 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
                                                                xrpWallet,
                                                                xrpTransfer);
     cryptoWalletAddTransfer (wallet, baseTransfer);
-    
+
+    BRCryptoTransferState transferState =
+    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+     ? cryptoTransferStateIncludedInit (bundle->blockNumber,
+                                        bundle->blockTransactionIndex,
+                                        bundle->blockTimestamp,
+                                        NULL,
+                                        CRYPTO_TRUE,
+                                        NULL)
+     : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
+        ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
+        : cryptoTransferStateInit (bundle->status)));
+
+    cryptoTransferSetState (baseTransfer, transferState);
+
     //TODO:XRP attributes
     //TODO:XRP save to fileService
     //TODO:XRP announce

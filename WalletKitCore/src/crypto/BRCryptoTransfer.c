@@ -68,7 +68,9 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoAmount amount,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
-                            BRCryptoAddress targetAddress) {
+                            BRCryptoAddress targetAddress,
+                            BRCryptoTransferCreateContext  createContext,
+                            BRCryptoTransferCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoTransferRecord));
     BRCryptoTransfer transfer = calloc (1, sizeInBytes);
 
@@ -94,6 +96,8 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
 
     pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL);
 
+    if (NULL != createContext) createCallback (createContext, transfer);
+    
     cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
         CRYPTO_TRANSFER_EVENT_CREATED
     });

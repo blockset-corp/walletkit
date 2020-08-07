@@ -24,6 +24,19 @@ cryptoTransferCoerceHBAR (BRCryptoTransfer transfer) {
     return (BRCryptoTransferHBAR) transfer;
 }
 
+typedef struct {
+    BRHederaTransaction hbarTransaction;
+} BRCryptoTransferCreateContextHBAR;
+
+static void
+cryptoTransferCreateCallbackHBAR (BRCryptoTransferCreateContext context,
+                                    BRCryptoTransfer transfer) {
+    BRCryptoTransferCreateContextHBAR *contextHBAR = (BRCryptoTransferCreateContextHBAR*) context;
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR (transfer);
+
+    transferHBAR->hbarTransaction = contextHBAR->hbarTransaction;
+}
+
 extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
@@ -44,21 +57,24 @@ cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetTarget (hbarTransaction));
-    
+
+    BRCryptoTransferCreateContextHBAR contextHBAR = {
+        hbarTransaction
+    };
+
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
-                                                                CRYPTO_NETWORK_TYPE_HBAR,
-                                                                listener,
-                                                                unit,
-                                                                unitForFee,
-                                                                feeBasisEstimated,
-                                                                amount,
-                                                                direction,
-                                                                sourceAddress,
-                                                                targetAddress);
-    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR (transfer);
-    
-    transferHBAR->hbarTransaction = hbarTransaction;
-    
+                                                            CRYPTO_NETWORK_TYPE_HBAR,
+                                                            listener,
+                                                            unit,
+                                                            unitForFee,
+                                                            feeBasisEstimated,
+                                                            amount,
+                                                            direction,
+                                                            sourceAddress,
+                                                            targetAddress,
+                                                            &contextHBAR,
+                                                            cryptoTransferCreateCallbackHBAR);
+
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);

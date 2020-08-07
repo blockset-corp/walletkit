@@ -197,7 +197,7 @@ cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
                                     BRCryptoTransfer transfer,
                                     BRKey *key) {
     BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerce (manager);
-    BRCryptoTransferETH      transferETH = cryptoTransferCoerce      (transfer);
+    BRCryptoTransferETH      transferETH = cryptoTransferCoerceETH      (transfer);
 
 
     BREthereumNetwork     ethNetwork     = managerETH->network;
@@ -489,11 +489,11 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     *error |= (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 }
 
-static bool
-cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
-                                  const char *address) {
-    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
-}
+//static bool
+//cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
+//                                  const char *address) {
+//    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
+//}
 
 static void
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
@@ -849,7 +849,7 @@ typedef struct {
 static void
 cryptoClientP2PManagerSendETH (BRCryptoClientP2PManager baseManager, BRCryptoTransfer baseTransfer) {
     BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    BRCryptoTransferETH transfer = cryptoTransferCoerce (baseTransfer);
+    BRCryptoTransferETH transfer = cryptoTransferCoerceETH (baseTransfer);
     
     bcsSendTransaction (manager->bcs, transfer->originatingTransaction);
 }
@@ -1099,7 +1099,7 @@ ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
                 transferLog = wallet->transfers[tid];
 
                 // Look for a log that has a matching transaction hash
-                BREthereumLog log = cryptoTransferCoerce(transferLog)->basis.log;
+                BREthereumLog log = cryptoTransferCoerceETH(transferLog)->basis.u.log;
                 if (NULL != log) {
                     BREthereumHash transactionHash;
                     if (ETHEREUM_BOOLEAN_TRUE == logExtractIdentifier (log, &transactionHash, NULL) &&
@@ -1151,7 +1151,7 @@ ewmHandleExchangeFeeBasis (BRCryptoWalletManagerETH manager,
                 transferExchange = wallet->transfers[tid];
 
                 // Look for a log that has a matching transaction hash
-                BREthereumExchange exchange = cryptoTransferCoerce(transferExchange)->basis.exchange;
+                BREthereumExchange exchange = cryptoTransferCoerceETH(transferExchange)->basis.u.exchange;
                 if (NULL != exchange) {
                     BREthereumHash transactionHash;
                     if (ETHEREUM_BOOLEAN_TRUE == ethExchangeExtractIdentifier (exchange, &transactionHash, NULL) &&
@@ -1416,10 +1416,10 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
 #ifdef REFACTOR
         // release prior basis
 #else
-        assert (NULL == transferETH->basis.log);
+        assert (NULL == transferETH->basis.u.log);
 #endif
-        transferETH->type = TRANSFER_BASIS_LOG;
-        transferETH->basis.log = log;               // ownership give
+        transferETH->basis.type = TRANSFER_BASIS_LOG;
+        transferETH->basis.u.log = log;               // ownership give
     }
 
     if (needStatusEvent) {

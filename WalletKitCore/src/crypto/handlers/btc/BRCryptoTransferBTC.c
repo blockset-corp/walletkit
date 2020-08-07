@@ -43,6 +43,35 @@ cryptoTransferHasBTC (BRCryptoTransfer transfer,
     return AS_CRYPTO_BOOLEAN (BRTransactionEq (btc, transferBTC->tid));
 }
 
+typedef struct {
+    BRTransaction *tid;
+
+    bool isDeleted;
+    bool isResolved;
+
+    uint64_t fee;
+    uint64_t send;
+    uint64_t recv;
+
+} BRCryptoTransferCreateContextBTC;
+
+static void
+cryptoTransferCreateCallbackBTC (BRCryptoTransferCreateContext context,
+                                    BRCryptoTransfer transfer) {
+    BRCryptoTransferCreateContextBTC *contextBTC = (BRCryptoTransferCreateContextBTC*) context;
+    BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC (transfer);
+
+    transferBTC->tid  = contextBTC->tid;
+
+    transferBTC->isResolved = contextBTC->isResolved;
+    transferBTC->isDeleted  = contextBTC->isDeleted;
+
+    // cache the values that require the wallet
+    transferBTC->fee  = contextBTC->fee;
+    transferBTC->recv = contextBTC->recv;
+    transferBTC->send = contextBTC->send;
+}
+
 extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
@@ -132,7 +161,16 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
     }
     
     BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsBTC (unitForFee, feePerKB, sizeInByte);
-    
+
+    BRCryptoTransferCreateContextBTC contextBTC = {
+        tid,
+        false,
+        false,
+        fee,
+        recv,
+        send
+    };
+
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                             type,
                                                             listener,
@@ -142,23 +180,15 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                             amount,
                                                             direction,
                                                             sourceAddress,
-                                                            targetAddress);
-    BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC (transfer);
+                                                            targetAddress,
+                                                            &contextBTC,
+                                                            cryptoTransferCreateCallbackBTC);
 
-    transferBTC->tid  = tid;
-    transferBTC->isResolved = false;
-    transferBTC->isDeleted  = false;
-    
-    // cache the values that require the wallet
-    transferBTC->fee  = fee;
-    transferBTC->recv = recv;
-    transferBTC->send = send;
-    
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);
 
-    return (BRCryptoTransfer) transferBTC;
+    return transfer;
 }
 
 static void
@@ -202,7 +232,7 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     // are compared, one needs to be careful about the BRTransaction's timestamp.  Two transactions
     // with an identical hash can have different timestamps depending on how the transaction
     // is identified.  Specifically P2P and API found transactions *will* have different timestamps.
-    return t1 == t2 || (t1->tid && t2->tid && BRTransactionEq (t1->tid, t2->tid));
+    return t1 == t2 || BRTransactionEq (t1->tid, t2->tid);
 }
 
 static BRCryptoAmount

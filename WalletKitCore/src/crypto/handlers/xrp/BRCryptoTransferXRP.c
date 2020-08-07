@@ -25,6 +25,19 @@ cryptoTransferCoerceXRP (BRCryptoTransfer transfer) {
     return (BRCryptoTransferXRP) transfer;
 }
 
+typedef struct {
+    BRRippleTransfer xrpTransfer;
+} BRCryptoTransferCreateContextXRP;
+
+static void
+cryptoTransferCreateCallbackXRP (BRCryptoTransferCreateContext context,
+                                    BRCryptoTransfer transfer) {
+    BRCryptoTransferCreateContextXRP *contextXRP = (BRCryptoTransferCreateContextXRP*) context;
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
+
+    transferXRP->xrpTransfer = contextXRP->xrpTransfer;
+}
+
 extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
@@ -45,7 +58,17 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
-    
+
+    BRCryptoTransferCreateContextXRP contextXRP = {
+        xrpTransfer
+    };
+
+#if EXAMPLE
+    // Set the state from `transferGeneric`.  This is where we move from 'submitted' to 'included'
+    BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
+    BRCryptoTransferState newState = cryptoTransferStateCreateGEN (genTransferGetState(transferGeneric), unitForFee);
+    cryptoTransferSetState (transfer, newState);
+#endif
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
                                                             CRYPTO_NETWORK_TYPE_XRP,
                                                             listener,
@@ -55,10 +78,9 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                             amount,
                                                             direction,
                                                             sourceAddress,
-                                                            targetAddress);
-    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
-    
-    transferXRP->xrpTransfer = xrpTransfer;
+                                                            targetAddress,
+                                                            &contextXRP,
+                                                            cryptoTransferCreateCallbackXRP);
     
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);

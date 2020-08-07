@@ -57,6 +57,14 @@ typedef enum  {
     TRANSFER_BASIS_EXCHANGE
 } BREthereumTransferBasisType;
 
+typedef struct {
+    BREthereumTransferBasisType type;
+    union {
+        BREthereumTransaction transaction;
+        BREthereumLog log;
+        BREthereumExchange exchange;
+    } u;
+} BREthereumTransferBasis;
 
 /// A ETH Transfer
 typedef struct BRCryptoTransferETHRecord {
@@ -65,19 +73,13 @@ typedef struct BRCryptoTransferETHRecord {
     BREthereumAccount account;
     BREthereumGas gasEstimate;
     BREthereumTransferStatus status;
-
-    BREthereumTransferBasisType type;
-    union {
-        BREthereumTransaction transaction;
-        BREthereumLog log;
-        BREthereumExchange exchange;
-    } basis;
+    BREthereumTransferBasis basis;
 
     BREthereumTransaction originatingTransaction;
 } *BRCryptoTransferETH;
 
 extern BRCryptoTransferETH
-cryptoTransferCoerce (BRCryptoTransfer transfer);
+cryptoTransferCoerceETH (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
@@ -88,8 +90,9 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                            BRCryptoTransferDirection direction,
                            BRCryptoAddress sourceAddress,
                            BRCryptoAddress targetAddress,
+                           BRCryptoTransferState transferState,
                            BREthereumAccount account,
-                           BREthereumTransferBasisType type,
+                           BREthereumTransferBasis basis,
                            OwnershipGiven BREthereumTransaction originatingTransaction);
 
 extern BRCryptoTransfer

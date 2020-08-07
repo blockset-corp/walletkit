@@ -109,6 +109,10 @@ struct BRCryptoTransferRecord {
     BRArrayOf(BRCryptoTransferAttribute) attributes;
 };
 
+typedef void *BRCryptoTransferCreateContext;
+typedef void (*BRCryptoTransferCreateCallback) (BRCryptoTransferCreateContext context,
+                                                BRCryptoTransfer transfer);
+
 extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
@@ -119,7 +123,9 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoAmount amount,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
-                            BRCryptoAddress targetAddress);
+                            BRCryptoAddress targetAddress,
+                            BRCryptoTransferCreateContext  createContext,
+                            BRCryptoTransferCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
