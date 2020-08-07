@@ -34,11 +34,11 @@ const unsigned int
 hbarEventTypesCount = (sizeof (hbarEventTypes) / sizeof (BREventType*));
 
 
-static BRCryptoWalletManagerHBAR
-cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
-    assert (CRYPTO_NETWORK_TYPE_HBAR == wm->type);
-    return (BRCryptoWalletManagerHBAR) wm;
-}
+//static BRCryptoWalletManagerHBAR
+//cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
+//    assert (CRYPTO_NETWORK_TYPE_HBAR == wm->type);
+//    return (BRCryptoWalletManagerHBAR) wm;
+//}
 
 // MARK: - Handlers
 

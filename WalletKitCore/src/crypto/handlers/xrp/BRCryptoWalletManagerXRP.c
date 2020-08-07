@@ -34,11 +34,11 @@ const unsigned int
 xrpEventTypesCount = (sizeof (xrpEventTypes) / sizeof (BREventType*));
 
 
-static BRCryptoWalletManagerXRP
-cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
-    assert (CRYPTO_NETWORK_TYPE_XRP == wm->type);
-    return (BRCryptoWalletManagerXRP) wm;
-}
+//static BRCryptoWalletManagerXRP
+//cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
+//    assert (CRYPTO_NETWORK_TYPE_XRP == wm->type);
+//    return (BRCryptoWalletManagerXRP) wm;
+//}
 
 // MARK: - Handlers
 

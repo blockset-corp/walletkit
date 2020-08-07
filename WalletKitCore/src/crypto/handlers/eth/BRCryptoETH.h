@@ -19,6 +19,8 @@
 #include "ethereum/blockchain/BREthereumLog.h"
 #include "ethereum/contract/BREthereumExchange.h"
 
+#include "ethereum/bcs/BREthereumBCS.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -179,6 +181,33 @@ typedef struct BRCryptoWalletManagerETHRecord {
     BRRlpCoder coder;
 
 } *BRCryptoWalletManagerETH;
+
+extern BRCryptoWalletManagerETH
+cryptoWalletManagerCoerceETH (BRCryptoWalletManager manager);
+
+private_extern BRCryptoWalletETH
+cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH managerETH,
+                                         BREthereumToken token);
+
+// MARK: - P2P
+
+extern BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
+
+private_extern void
+ewmHandleTransaction (BREthereumBCSCallbackContext context,
+                      BREthereumBCSCallbackTransactionType type,
+                      OwnershipGiven BREthereumTransaction transaction);
+
+private_extern void
+ewmHandleLog (BREthereumBCSCallbackContext context,
+              BREthereumBCSCallbackLogType type,
+              OwnershipGiven BREthereumLog log);
+
+private_extern void
+ewmHandleExchange (BREthereumBCSCallbackContext context,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
 
 // MARK: - Support
 

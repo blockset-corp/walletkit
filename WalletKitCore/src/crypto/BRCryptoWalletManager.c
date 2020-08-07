@@ -129,9 +129,9 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
-static void
-cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
-                                       BRCryptoWallet wallet) {
+//static void
+//cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
+//                                       BRCryptoWallet wallet) {
 //    cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
 //        CRYPTO_WALLET_EVENT_CREATED
 //    });
@@ -147,7 +147,7 @@ cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
 //        CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
 //        { .balanceUpdated = { balance }}
 //    });
-}
+//}
 
 static void
 cryptoWalletManagerListenerCallbackTrampoline (BRCryptoListenerContext context,
@@ -1553,16 +1553,16 @@ static void theErrorHackReset (BRCryptoWalletMigrator migrator) {
     migrator->theErrorHackHappened = 0;
 }
 
-static void
-cryptoWalletMigratorErrorHandler (BRFileServiceContext context,
-                                  BRFileService fs,
-                                  BRFileServiceError error) {
-    // TODO: Racy on 'cryptoWalletMigratorRelease'?
-    BRCryptoWalletMigrator migrator = (BRCryptoWalletMigrator) context;
-
-    migrator->theErrorHackHappened = 1;
-    migrator->theErrorHack = error;
-}
+//static void
+//cryptoWalletMigratorErrorHandler (BRFileServiceContext context,
+//                                  BRFileService fs,
+//                                  BRFileServiceError error) {
+//    // TODO: Racy on 'cryptoWalletMigratorRelease'?
+//    BRCryptoWalletMigrator migrator = (BRCryptoWalletMigrator) context;
+//
+//    migrator->theErrorHackHappened = 1;
+//    migrator->theErrorHack = error;
+//}
 
 extern BRCryptoWalletMigrator
 cryptoWalletMigratorCreate (BRCryptoNetwork network,

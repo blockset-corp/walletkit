@@ -137,7 +137,15 @@ typedef struct BRCryptoWalletManagerBTCRecord {
     struct BRCryptoWalletManagerRecord base;
 } *BRCryptoWalletManagerBTC;
 
+extern BRCryptoWalletManagerBTC
+cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type);
+
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
+
+// MAKR: - Wallet Manger P2P
+
+extern BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager manager);
 
 // MARK: - Wallet Sweeper
 
