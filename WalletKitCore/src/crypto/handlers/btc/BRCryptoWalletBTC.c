@@ -22,6 +22,20 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletBTC) wallet;
 }
 
+typedef struct {
+    BRWallet *wid;
+} BRCryptoWalletCreateContextBTC;
+
+static void
+cryptoWalletCreateCallbackBTC (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextBTC *contextBTC = (BRCryptoWalletCreateContextBTC*) context;
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce (wallet);
+
+    walletBTC->wid = contextBTC->wid;
+}
+
+
 private_extern BRCryptoWallet
 cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                          BRCryptoWalletListener listener,
@@ -32,6 +46,10 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                                                            BRWalletFeePerKb(wid),
                                                            DEFAULT_FEE_BASIS_SIZE_IN_BYTES);
 
+    BRCryptoWalletCreateContextBTC contextBTC = {
+        wid
+    };
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletBTCRecord),
                                                       type,
                                                       listener,
@@ -39,12 +57,10 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                                                       unitForFee,
                                                       cryptoAmountCreateInteger(0, unit),
                                                       NULL,
-                                                      feeBasis);
+                                                      feeBasis,
+                                                      &contextBTC,
+                                                      cryptoWalletCreateCallbackBTC);
     cryptoFeeBasisGive (feeBasis);
-
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce (wallet);
-
-    walletBTC->wid = wid;
 
     return wallet;
 }

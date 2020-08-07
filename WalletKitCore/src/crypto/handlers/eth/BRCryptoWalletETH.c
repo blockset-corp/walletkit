@@ -22,6 +22,23 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletETH) wallet;
 }
 
+typedef struct {
+    BREthereumAccount ethAccount;
+    BREthereumToken   ethToken;
+    BREthereumGas ethGasLimit;
+} BRCryptoWalletCreateContextETH;
+
+static void
+cryptoWalletCreateCallbackETH (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextETH *contextETH = (BRCryptoWalletCreateContextETH*) context;
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+
+    walletETH->ethAccount  = contextETH->ethAccount;
+    walletETH->ethToken    = contextETH->ethToken;
+    walletETH->ethGasLimit = contextETH->ethGasLimit;
+}
+
 private_extern BRCryptoWallet
 cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
@@ -35,6 +52,11 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                        ethGasPriceCreate (ethEtherCreateNumber (DEFAULT_ETHER_GAS_PRICE,
                                                                 DEFAULT_ETHER_GAS_PRICE_UNIT)));
 
+    BRCryptoWalletCreateContextETH contextETH = {
+        ethAccount,
+        ethToken,
+        ethDefaultFeeBasis.u.gas.limit
+    };
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
                                                       CRYPTO_NETWORK_TYPE_ETH,
                                                       listener,
@@ -42,13 +64,10 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                                                       unitForFee,
                                                       NULL,
                                                       NULL,
-                                                      cryptoFeeBasisCreateAsETH(unitForFee, ethDefaultFeeBasis));
-    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+                                                      cryptoFeeBasisCreateAsETH(unitForFee, ethDefaultFeeBasis),
+                                                      &contextETH,
+                                                      cryptoWalletCreateCallbackETH);
 
-    walletETH->ethAccount  = ethAccount;
-    walletETH->ethToken    = ethToken;
-    walletETH->ethGasLimit = ethDefaultFeeBasis.u.gas.limit ;
-    
     return wallet;
 }
 

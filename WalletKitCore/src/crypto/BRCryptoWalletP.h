@@ -137,7 +137,9 @@ struct BRCryptoWalletRecord {
     BRCryptoTransferListener listenerTransfer;
 };
 
-/// MARK: - Wallet
+typedef void  *BRCryptoWalletCreateContext;
+typedef void (*BRCryptoWalletCreateCallbak) (BRCryptoWalletCreateContext context,
+                                             BRCryptoWallet wallet);
 
 extern BRCryptoWallet
 cryptoWalletAllocAndInit (size_t sizeInBytes,
@@ -147,7 +149,9 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoUnit unitForFee,
                           BRCryptoAmount balanceMinimum,
                           BRCryptoAmount balanceMaximum,
-                          BRCryptoFeeBasis defaultFeeBasis);
+                          BRCryptoFeeBasis defaultFeeBasis,
+                          BRCryptoWalletCreateContext createContext,
+                          BRCryptoWalletCreateCallbak createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoWalletGetType (BRCryptoWallet wallet);

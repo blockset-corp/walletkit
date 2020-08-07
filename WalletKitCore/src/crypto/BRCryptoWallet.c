@@ -30,7 +30,9 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoUnit unitForFee,
                           BRCryptoAmount balanceMinimum,
                           BRCryptoAmount balanceMaximum,
-                          BRCryptoFeeBasis defaultFeeBasis) {
+                          BRCryptoFeeBasis defaultFeeBasis,
+                          BRCryptoWalletCreateContext createContext,
+                          BRCryptoWalletCreateCallbak createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletRecord));
 
     BRCryptoWallet wallet = calloc (1, sizeInBytes);
@@ -67,6 +69,8 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
     };
 
     pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
+
+    if (NULL != createCallback) createCallback (createContext, wallet);
 
     cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_CREATED

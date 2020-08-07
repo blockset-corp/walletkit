@@ -26,6 +26,19 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletHBAR) wallet;
 }
 
+typedef struct {
+    BRHederaWallet wid;
+} BRCryptoWalletCreateContextHBAR;
+
+static void
+cryptoWalletCreateCallbackHBAR (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextHBAR *contextHBAR = (BRCryptoWalletCreateContextHBAR*) context;
+    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
+
+    walletHBAR->wid = contextHBAR->wid;
+}
+
 private_extern BRCryptoWallet
 cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
@@ -40,6 +53,10 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreate (cryptoAmountCreateInteger(hederaFeeBasisGetPricePerCostFactor(&feeBasisHBAR), unitForFee),
                                                           (double) hederaFeeBasisGetCostFactor(&feeBasisHBAR));
 
+    BRCryptoWalletCreateContextHBAR contextHBAR = {
+        wid
+    };
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletHBARRecord),
                                                       CRYPTO_NETWORK_TYPE_HBAR,
                                                       listener,
@@ -47,11 +64,10 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                                                       unitForFee,
                                                       hasMinBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, minBalance) : NULL,
                                                       hasMaxBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, maxBalance) : NULL,
-                                                      feeBasis);
+                                                      feeBasis,
+                                                      &contextHBAR,
+                                                      cryptoWalletCreateCallbackHBAR);
     cryptoFeeBasisGive(feeBasis);
-    
-    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    walletHBAR->wid = wid;
     
     return wallet;
 }

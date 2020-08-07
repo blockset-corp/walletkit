@@ -27,6 +27,19 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletXRP) wallet;
 }
 
+typedef struct {
+    BRRippleWallet wid;
+} BRCryptoWalletCreateContextXRP;
+
+static void
+cryptoWalletCreateCallbackXRP (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextXRP *contextXRP = (BRCryptoWalletCreateContextXRP*) context;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+
+    walletXRP->wid = contextXRP->wid;
+}
+
 private_extern BRCryptoWallet
 cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
@@ -41,6 +54,10 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreate (cryptoAmountCreateInteger ((int64_t) rippleFeeBasisGetPricePerCostFactor(&feeBasisXRP), unitForFee),
                                                          (double) rippleFeeBasisGetCostFactor(&feeBasisXRP));
 
+    BRCryptoWalletCreateContextXRP contextXRP = {
+        wid
+    };
+
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
                                                       CRYPTO_NETWORK_TYPE_XRP,
                                                       listener,
@@ -48,11 +65,10 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
                                                       unitForFee,
                                                       hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
                                                       hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL,
-                                                      feeBasis);
+                                                      feeBasis,
+                                                      &contextXRP,
+                                                      cryptoWalletCreateCallbackXRP);
     cryptoFeeBasisGive(feeBasis);
-
-    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
-    walletXRP->wid = wid;
 
     return wallet;
 }
