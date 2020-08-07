@@ -41,10 +41,6 @@ static int  cryptoWalletManagerBTCNetworkIsReachable (void *info);
 static void cryptoWalletManagerBTCThreadCleanup (void *info);
 static void cryptoWalletManagerBTCTxPublished (void *info, int error);
 
-//
-static BRCryptoClientP2PManager
-cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager cwm);
-
 static BRCryptoWalletManagerBTC
 cryptoWalletManagerCoerce (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
     assert (type == manager->type);
@@ -70,12 +66,6 @@ cryptoWalletManagerCreateBTC (BRCryptoListener listener,
                                                                      CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
                                                                      NULL,
                                                                      NULL);
-
-    // Create the primary wallet
-    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
-
-    // Create the P2P Manager
-    manager->p2pManager = cryptoWalletManagerCreateP2PManagerBTC (manager);
 
     pthread_mutex_unlock (&manager->lock);
     return manager;
@@ -1110,6 +1100,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerReleaseBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
     cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
@@ -1126,6 +1117,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerReleaseBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
     cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
@@ -1142,6 +1134,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerReleaseBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
     cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,

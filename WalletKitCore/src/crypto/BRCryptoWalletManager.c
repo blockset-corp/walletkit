@@ -298,6 +298,12 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
         CRYPTO_WALLET_MANAGER_EVENT_CREATED
     });
 
+    // Create the primary wallet
+    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
+
+    // Create the P2P manager
+    manager->p2pManager = manager->handlers->createP2PManager (manager);
+
     pthread_mutex_lock (&manager->lock);
     return manager;
 }

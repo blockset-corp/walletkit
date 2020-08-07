@@ -62,9 +62,6 @@ cryptoWalletManagerCreateHandlerXRP (BRCryptoListener listener,
                                                                      NULL,
                                                                      NULL);
 
-    // Create the primary wallet
-    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
-
     pthread_mutex_unlock (&manager->lock);
     return manager;
 }
@@ -93,6 +90,12 @@ cryptoWalletManagerGetEventTypesXRP (BRCryptoWalletManager manager,
     assert (NULL != eventTypesCount);
     *eventTypesCount = xrpEventTypesCount;
     return xrpEventTypes;
+}
+
+static BRCryptoClientP2PManager
+crytpWalletManagerCreateP2PManagerHandlerXRP (BRCryptoWalletManager manager) {
+    // not supported
+    return NULL;
 }
 
 static BRCryptoBoolean
@@ -311,6 +314,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerReleaseHandlerXRP,
     crytpWalletManagerCreateFileServiceXRP,
     cryptoWalletManagerGetEventTypesXRP,
+    crytpWalletManagerCreateP2PManagerHandlerXRP,
     cryptoWalletManagerCreateWalletXRP,
     cryptoWalletManagerSignTransactionWithSeedHandlerXRP,
     cryptoWalletManagerSignTransactionWithKeyHandlerXRP,

@@ -24,9 +24,6 @@
 
 // MARK: - Forward Declarations
 
-static BRCryptoClientP2PManager
-cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
-
 static void
 cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                                            BRCryptoCurrency currency,
@@ -136,12 +133,6 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
                                                                      &contextETH,
                                                                      cryptoWaleltMangerCreateCallbackETH);
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
-
-    // Create the primary wallet
-    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
-
-    // Create the P2P manager
-    manager->p2pManager = cryptoWalletManagerCreateP2PManagerETH (manager);
 
     // Load the persistently stored data.
     BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
@@ -943,6 +934,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerReleaseETH,
     crytpWalletManagerCreateFileServiceETH,
     cryptoWalletManagerGetEventTypesETH,
+    cryptoWalletManagerCreateP2PManagerETH,
     cryptoWalletManagerCreateWalletETH,
     cryptoWalletManagerSignTransactionWithSeedETH,
     cryptoWalletManagerSignTransactionWithKeyETH,

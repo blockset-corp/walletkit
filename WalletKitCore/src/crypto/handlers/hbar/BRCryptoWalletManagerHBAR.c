@@ -62,9 +62,6 @@ cryptoWalletManagerCreateHandlerHBAR (BRCryptoListener listener,
                                                                      NULL,
                                                                      NULL);
 
-    // Create the primary wallet
-    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
-
     pthread_mutex_unlock (&manager->lock);
     return manager;
 }
@@ -93,6 +90,12 @@ cryptoWalletManagerGetEventTypesHBAR (BRCryptoWalletManager manager,
     assert (NULL != eventTypesCount);
     *eventTypesCount = hbarEventTypesCount;
     return hbarEventTypes;
+}
+
+static BRCryptoClientP2PManager
+crytpWalletManagerCreateP2PManagerHandlerHBAR (BRCryptoWalletManager manager) {
+    // not supported
+    return NULL;
 }
 
 static BRCryptoBoolean
@@ -282,6 +285,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerReleaseHandlerHBAR,
     crytpWalletManagerCreateFileServiceHBAR,
     cryptoWalletManagerGetEventTypesHBAR,
+    crytpWalletManagerCreateP2PManagerHandlerHBAR,
     cryptoWalletManagerCreateWalletHBAR,
     cryptoWalletManagerSignTransactionWithSeedHandlerHBAR,
     cryptoWalletManagerSignTransactionWithKeyHandlerHBAR,
