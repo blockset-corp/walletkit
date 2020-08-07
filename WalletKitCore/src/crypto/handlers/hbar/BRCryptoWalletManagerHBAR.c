@@ -186,7 +186,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
                                                           OwnershipKept BRCryptoClientTransferBundle bundle) {
     // create BRHederaTransaction
     
-    BRHederaWallet hbarWallet = cryptoWalletAsHBAR (manager->wallet);
+    BRHederaAccount hbarAccount = cryptoAccountAsHBAR (manager->account);
     
     BRHederaUnitTinyBar amountHbar, feeHbar = 0;
     sscanf(bundle->amount, "%" PRIi64, &amountHbar);
@@ -218,9 +218,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     
     hederaAddressFree (toAddress);
     hederaAddressFree (fromAddress);
-    
-    hederaWalletAddTransfer (hbarWallet, hbarTransaction); //TODO:HBAR needed?
-    
+
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
@@ -228,7 +226,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     BRCryptoTransfer baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
                                                                 wallet->unit,
                                                                 wallet->unitForFee,
-                                                                hbarWallet,
+                                                                hbarAccount,
                                                                 hbarTransaction);
     cryptoWalletAddTransfer (wallet, baseTransfer);
     
@@ -258,7 +256,6 @@ static BRCryptoWallet
 cryptoWalletManagerCreateWalletHBAR (BRCryptoWalletManager manager,
                                      BRCryptoCurrency currency) {
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR(manager->account);
-    BRHederaWallet hbarWallet = hederaWalletCreate(hbarAccount);
 
     // Create the primary BRCryptoWallet
     BRCryptoNetwork  network       = manager->network;
@@ -268,7 +265,7 @@ cryptoWalletManagerCreateWalletHBAR (BRCryptoWalletManager manager,
     BRCryptoWallet wallet = cryptoWalletCreateAsHBAR (manager->listenerWallet,
                                                       unitAsDefault,
                                                       unitAsDefault,
-                                                      hbarWallet);
+                                                      hbarAccount);
     cryptoWalletManagerAddWallet (manager, wallet);
 
     //TODO:HBAR load transfers from fileService

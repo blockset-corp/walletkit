@@ -60,26 +60,23 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
-                            BRHederaWallet wallet,
-                            BRHederaTransaction hederaTx);
+                            BRHederaAccount hbarAccount,
+                            BRHederaTransaction hbarTransaction);
 
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletHBARRecord {
     struct BRCryptoWalletRecord base;
-    BRHederaWallet wid;
+    BRHederaAccount hbarAccount;
 } *BRCryptoWalletHBAR;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersHBAR;
-
-private_extern BRHederaWallet
-cryptoWalletAsHBAR (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
 cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
-                          BRHederaWallet wid);
+                          BRHederaAccount hbarAccount);
 
 
 //TODO:HBAR needed?
@@ -109,8 +106,7 @@ cryptoAmountCreateAsHBAR (BRCryptoUnit unit,
                           BRHederaUnitTinyBar value);
 
 private_extern const char **
-hederaWalletGetTransactionAttributeKeys (BRHederaWallet wallet,
-                                         BRHederaAddress address,
+hederaWalletGetTransactionAttributeKeys (BRHederaAddress address,
                                          int asRequired,
                                          size_t *count);
 

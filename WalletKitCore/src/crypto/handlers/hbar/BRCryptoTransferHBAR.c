@@ -16,7 +16,7 @@
 
 static BRCryptoTransferDirection
 transferGetDirectionFromHBAR (BRHederaTransaction transaction,
-                              BRHederaWallet wallet);
+                              BRHederaAccount account);
 
 extern BRCryptoTransferHBAR
 cryptoTransferCoerceHBAR (BRCryptoTransfer transfer) {
@@ -41,10 +41,10 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
-                            OwnershipKept BRHederaWallet wallet,
+                            OwnershipKept BRHederaAccount hbarAccount,
                             OwnershipGiven BRHederaTransaction hbarTransaction) {
     
-    BRCryptoTransferDirection direction = transferGetDirectionFromHBAR (hbarTransaction, wallet);
+    BRCryptoTransferDirection direction = transferGetDirectionFromHBAR (hbarTransaction, hbarAccount);
     
     BRCryptoAmount amount = cryptoAmountCreateAsHBAR (unit,
                                                       CRYPTO_FALSE,
@@ -114,12 +114,12 @@ cryptoTransferIsEqualHBAR (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
 
 static BRCryptoTransferDirection
 transferGetDirectionFromHBAR (BRHederaTransaction transaction,
-                              BRHederaWallet wallet) {
+                              BRHederaAccount account) {
     BRHederaAddress source = hederaTransactionGetSource (transaction);
     BRHederaAddress target = hederaTransactionGetTarget (transaction);
     
-    int isSource = hederaWalletHasAddress (wallet, source);
-    int isTarget = hederaWalletHasAddress (wallet, target);
+    int isSource = hederaAccountHasAddress (account, source);
+    int isTarget = hederaAccountHasAddress (account, target);
     
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED

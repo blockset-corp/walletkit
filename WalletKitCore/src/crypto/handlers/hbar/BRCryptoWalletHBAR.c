@@ -26,7 +26,7 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 }
 
 typedef struct {
-    BRHederaWallet wid;
+    BRHederaAccount hbarAccount;
 } BRCryptoWalletCreateContextHBAR;
 
 static void
@@ -35,25 +35,25 @@ cryptoWalletCreateCallbackHBAR (BRCryptoWalletCreateContext context,
     BRCryptoWalletCreateContextHBAR *contextHBAR = (BRCryptoWalletCreateContextHBAR*) context;
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
 
-    walletHBAR->wid = contextHBAR->wid;
+    walletHBAR->hbarAccount = contextHBAR->hbarAccount;
 }
 
 private_extern BRCryptoWallet
 cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
-                          BRHederaWallet wid) {
+                          BRHederaAccount hbarAccount) {
     int hasMinBalance;
     int hasMaxBalance;
-    BRHederaUnitTinyBar minBalance = hederaWalletGetBalanceLimit (wid, 0, &hasMinBalance);
-    BRHederaUnitTinyBar maxBalance = hederaWalletGetBalanceLimit (wid, 1, &hasMaxBalance);
+    BRHederaUnitTinyBar minBalance = hederaAccountGetBalanceLimit (hbarAccount, 0, &hasMinBalance);
+    BRHederaUnitTinyBar maxBalance = hederaAccountGetBalanceLimit (hbarAccount, 1, &hasMaxBalance);
 
-    BRHederaFeeBasis feeBasisHBAR = hederaWalletGetDefaultFeeBasis (wid);
+    BRHederaFeeBasis feeBasisHBAR = hederaAccountGetDefaultFeeBasis (hbarAccount);
     BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreate (cryptoAmountCreateInteger(hederaFeeBasisGetPricePerCostFactor(&feeBasisHBAR), unitForFee),
                                                           (double) hederaFeeBasisGetCostFactor(&feeBasisHBAR));
 
     BRCryptoWalletCreateContextHBAR contextHBAR = {
-        wid
+        hbarAccount
     };
 
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletHBARRecord),
@@ -71,16 +71,16 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     return wallet;
 }
 
-private_extern BRHederaWallet
-cryptoWalletAsHBAR (BRCryptoWallet wallet) {
-    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce(wallet);
-    return walletHBAR->wid;
-}
+//private_extern BRHederaWallet
+//cryptoWalletAsHBAR (BRCryptoWallet wallet) {
+//    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce(wallet);
+//    return walletHBAR->wid;
+//}
 
 static void
 cryptoWalletReleaseHBAR (BRCryptoWallet wallet) {
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    hederaWalletFree (walletHBAR->wid);
+    hederaAccountFree(walletHBAR->hbarAccount);
 }
 
 static BRCryptoAddress
@@ -88,8 +88,7 @@ cryptoWalletGetAddressHBAR (BRCryptoWallet wallet,
                             BRCryptoAddressScheme addressScheme) {
     assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    BRHederaAddress address = hederaWalletGetSourceAddress (walletHBAR->wid);
-    return cryptoAddressCreateAsHBAR (address);
+    return cryptoAddressCreateAsHBAR (hederaAccountGetAddress (walletHBAR->hbarAccount));
 }
 
 static bool
@@ -97,22 +96,19 @@ cryptoWalletHasAddressHBAR (BRCryptoWallet wallet,
                             BRCryptoAddress address) {
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
     
-    BRHederaWallet hbarWallet = walletHBAR->wid;
     BRHederaAddress hbarAddress = cryptoAddressAsHBAR (address);
     
-    return hederaWalletHasAddress (hbarWallet, hbarAddress);
+    return hederaAccountHasAddress (walletHBAR->hbarAccount, hbarAddress);
 }
 
 extern size_t
 cryptoWalletGetTransferAttributeCountHBAR (BRCryptoWallet wallet,
                                            BRCryptoAddress target) {
-    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    BRHederaWallet hbarWallet = walletHBAR->wid;
     BRHederaAddress hbarTarget = cryptoAddressAsHBAR (target);
     
     size_t countRequired, countOptional;
-    hederaWalletGetTransactionAttributeKeys (hbarWallet, hbarTarget, 1, &countRequired);
-    hederaWalletGetTransactionAttributeKeys (hbarWallet, hbarTarget, 0, &countOptional);
+    hederaWalletGetTransactionAttributeKeys (hbarTarget, 1, &countRequired);
+    hederaWalletGetTransactionAttributeKeys (hbarTarget, 0, &countOptional);
     return countRequired + countOptional;
 }
 
@@ -120,13 +116,11 @@ extern BRCryptoTransferAttribute
 cryptoWalletGetTransferAttributeAtHBAR (BRCryptoWallet wallet,
                                         BRCryptoAddress target,
                                         size_t index) {
-    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    BRHederaWallet hbarWallet = walletHBAR->wid;
     BRHederaAddress hbarTarget = cryptoAddressAsHBAR (target);
     
     size_t countRequired, countOptional;
-    const char **keysRequired = hederaWalletGetTransactionAttributeKeys (hbarWallet, hbarTarget, 1, &countRequired);
-    const char **keysOptional = hederaWalletGetTransactionAttributeKeys (hbarWallet, hbarTarget, 0, &countOptional);
+    const char **keysRequired = hederaWalletGetTransactionAttributeKeys (hbarTarget, 1, &countRequired);
+    const char **keysOptional = hederaWalletGetTransactionAttributeKeys (hbarTarget, 0, &countOptional);
     
     assert (index < (countRequired + countOptional));
     
@@ -179,12 +173,11 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
                                 BRCryptoUnit unit,
                                 BRCryptoUnit unitForFee) {
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
-    BRHederaWallet wid = walletHBAR->wid;
-    
-    BRHederaAddress source = hederaWalletGetSourceAddress (wid);
+
+    BRHederaAddress source = hederaAccountGetAddress(walletHBAR->hbarAccount);
     UInt256 value = cryptoAmountGetValue (amount);
     BRHederaUnitTinyBar thbar = (BRHederaUnitTinyBar) value.u64[0];
-    BRHederaAddress nodeAddress = hederaWalletGetNodeAddress (wid);
+    BRHederaAddress nodeAddress = hederaAccountGetNodeAddress (walletHBAR->hbarAccount);
     BRHederaFeeBasis feeBasis;
     feeBasis.costFactor = (uint32_t) estimatedFeeBasis->costFactor;
     int overflow = 0;
@@ -219,7 +212,7 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     BRCryptoTransfer transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
                                                                 unit,
                                                                 unitForFee,
-                                                                wid,
+                                                                walletHBAR->hbarAccount,
                                                                 tid);
     cryptoTransferSetAttributes (transfer, attributes);
     
@@ -242,18 +235,18 @@ cryptoWalletGetAddressesForRecoveryHBAR (BRCryptoWallet wallet) {
     BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
     
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce(wallet);
-    BRHederaWallet hbarWallet = walletHBAR->wid;
-    
-    BRSetAdd (addresses, cryptoAddressCreateAsHBAR (hederaWalletGetSourceAddress (hbarWallet)));
+
+    BRSetAdd (addresses, cryptoAddressCreateAsHBAR (hederaAccountGetAddress(walletHBAR->hbarAccount)));
     
     return addresses;
 }
 
 static bool
 cryptoWalletIsEqualHBAR (BRCryptoWallet wb1, BRCryptoWallet wb2) {
+    if (wb1 == wb2) return true;
     BRCryptoWalletHBAR w1 = cryptoWalletCoerce(wb1);
     BRCryptoWalletHBAR w2 = cryptoWalletCoerce(wb2);
-    return w1->wid == w2->wid;
+    return w1->hbarAccount == w2->hbarAccount;
 }
 
 BRCryptoWalletHandlers cryptoWalletHandlersHBAR = {
