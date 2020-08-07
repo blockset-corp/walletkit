@@ -17,7 +17,6 @@
 #include "hedera/BRHederaAddress.h"
 #include "hedera/BRHederaTransaction.h"
 #include "hedera/BRHederaAccount.h"
-#include "hedera/BRHederaWallet.h"
 
 #ifdef __cplusplus
 extern "C" {

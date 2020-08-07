@@ -59,10 +59,9 @@ rippleRequiresDestinationTag (BRRippleAddress address) {
 }
 
 private_extern const char **
-rippleWalletGetTransactionAttributeKeys (BRRippleWallet wallet,
-                                         BRRippleAddress address,
-                                         int asRequired,
-                                         size_t *count) {
+rippleAddressGetTransactionAttributeKeys (BRRippleAddress address,
+                                          int asRequired,
+                                          size_t *count) {
     
     if (rippleRequiresDestinationTag ((BRRippleAddress) address)) {
         static size_t requiredCount = 1;

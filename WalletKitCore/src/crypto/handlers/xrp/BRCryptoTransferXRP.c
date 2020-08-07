@@ -17,7 +17,7 @@
 
 static BRCryptoTransferDirection
 transferGetDirectionFromXRP (BRRippleTransfer transfer,
-                             BRRippleWallet wallet);
+                             BRRippleAccount account);
 
 extern BRCryptoTransferXRP
 cryptoTransferCoerceXRP (BRCryptoTransfer transfer) {
@@ -42,10 +42,10 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           OwnershipKept BRRippleWallet wallet,
+                           OwnershipKept BRRippleAccount xrpAccount,
                            OwnershipGiven BRRippleTransfer xrpTransfer) {
     
-    BRCryptoTransferDirection direction = transferGetDirectionFromXRP (xrpTransfer, wallet);
+    BRCryptoTransferDirection direction = transferGetDirectionFromXRP (xrpTransfer, xrpAccount);
     
     BRCryptoAmount amount = cryptoAmountCreateAsXRP (unit,
                                                      CRYPTO_FALSE,
@@ -129,12 +129,12 @@ cryptoTransferIsEqualXRP (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
 
 static BRCryptoTransferDirection
 transferGetDirectionFromXRP (BRRippleTransfer transfer,
-                             BRRippleWallet wallet) {
+                             BRRippleAccount account) {
     BRRippleAddress source = rippleTransferGetSource (transfer);
     BRRippleAddress target = rippleTransferGetTarget (transfer);
     
-    int isSource = rippleWalletHasAddress (wallet, source);
-    int isTarget = rippleWalletHasAddress (wallet, target);
+    int isSource = rippleAccountHasAddress (account, source);
+    int isTarget = rippleAccountHasAddress (account, target);
     
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED

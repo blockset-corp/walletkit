@@ -13,7 +13,6 @@
 #include "crypto/BRCryptoWalletP.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoFeeBasisP.h"
-#include "hedera/BRHederaWallet.h"
 #include "hedera/BRHederaTransaction.h"
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilMath.h"

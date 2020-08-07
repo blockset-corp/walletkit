@@ -19,7 +19,6 @@
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoFileService.h"
 
-#include "ripple/BRRippleWallet.h"
 #include "ripple/BRRippleAccount.h"
 
 
@@ -214,8 +213,8 @@ static void
 cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager manager,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
     // create BRRippleTransfer
-    
-    BRRippleWallet xrpWallet = cryptoWalletAsXRP (manager->wallet);
+
+    BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
     
     BRRippleUnitDrops amountDrops, feeDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
@@ -235,9 +234,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
-    
-    rippleWalletAddTransfer (xrpWallet, xrpTransfer); //TODO:XRP needed?
-    
+
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
@@ -245,7 +242,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                                wallet->unit,
                                                                wallet->unitForFee,
-                                                               xrpWallet,
+                                                               xrpAccount,
                                                                xrpTransfer);
     cryptoWalletAddTransfer (wallet, baseTransfer);
     
@@ -287,8 +284,7 @@ static BRCryptoWallet
 cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager manager,
                                     BRCryptoCurrency currency) {
     BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
-    BRRippleWallet xrpWallet = rippleWalletCreate(xrpAccount);
-    
+
     // Create the primary BRCryptoWallet
     BRCryptoNetwork  network       = manager->network;
     BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
@@ -297,7 +293,7 @@ cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager manager,
     BRCryptoWallet wallet = cryptoWalletCreateAsXRP (manager->listenerWallet,
                                                      unitAsDefault,
                                                      unitAsDefault,
-                                                     xrpWallet);
+                                                     xrpAccount);
     cryptoWalletManagerAddWallet (manager, wallet);
     
     // TODO:XRP load transfers from fileService

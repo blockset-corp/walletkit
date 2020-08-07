@@ -19,7 +19,6 @@
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoFileService.h"
 
-#include "hedera/BRHederaWallet.h"
 #include "hedera/BRHederaAccount.h"
 
 
