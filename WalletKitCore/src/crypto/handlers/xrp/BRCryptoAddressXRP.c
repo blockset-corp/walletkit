@@ -20,16 +20,30 @@ cryptoAddressCoerce (BRCryptoAddress address) {
     return (BRCryptoAddressXRP) address;
 }
 
-extern BRCryptoAddress
-cryptoAddressCreateAsXRP (BRRippleAddress addr) {
-    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
-                                                         CRYPTO_NETWORK_TYPE_XRP,
-                                                         0); //TODO:XRP address hash
+typedef struct {
+    BRRippleAddress xrpAddress;
+} BRCryptoAddressCreateContextXRP;
+
+static void
+cryptoAddressCreateCallbackXRP (BRCryptoAddressCreateContext context,
+                                BRCryptoAddress address) {
+    BRCryptoAddressCreateContextXRP *contextXRP = (BRCryptoAddressCreateContextXRP*) context;
     BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
 
-    addressXRP->addr = addr;
+    addressXRP->addr = contextXRP->xrpAddress;
+}
 
-    return address;
+extern BRCryptoAddress
+cryptoAddressCreateAsXRP (BRRippleAddress addr) {
+    BRCryptoAddressCreateContextXRP contextXRP = {
+        addr
+    };
+
+    return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
+                                      CRYPTO_NETWORK_TYPE_XRP,
+                                      0, //TODO:XRP address hash
+                                      &contextXRP,
+                                      cryptoAddressCreateCallbackXRP);
 }
 
 extern BRCryptoAddress

@@ -17,15 +17,30 @@ cryptoAddressCoerce (BRCryptoAddress address) {
     return (BRCryptoAddressETH) address;
 }
 
+typedef struct {
+    BREthereumAddress eth;
+} BRCryptoAddressCreateContextETH;
+
+static void
+cryptoAddressCreateCallbackETH (BRCryptoAddressCreateContext context,
+                                BRCryptoAddress address) {
+    BRCryptoAddressCreateContextETH *contextETH = (BRCryptoAddressCreateContextETH*) context;
+    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
+
+    addressETH->eth = contextETH->eth;
+}
+
 private_extern BRCryptoAddress
 cryptoAddressCreateAsETH (BREthereumAddress eth) {
-    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressETHRecord),
-                                                         CRYPTO_NETWORK_TYPE_ETH,
-                                                         (size_t) ethAddressHashValue (eth));
-    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
-    addressETH->eth = eth;
-    
-    return address;
+    BRCryptoAddressCreateContextETH contextETH = {
+        eth
+    };
+
+    return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressETHRecord),
+                                      CRYPTO_NETWORK_TYPE_ETH,
+                                      (size_t) ethAddressHashValue (eth),
+                                      &contextETH,
+                                      cryptoAddressCreateCallbackETH);
 }
 
 private_extern BREthereumAddress

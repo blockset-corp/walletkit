@@ -20,16 +20,30 @@ cryptoAddressCoerce (BRCryptoAddress address) {
     return (BRCryptoAddressHBAR) address;
 }
 
-extern BRCryptoAddress
-cryptoAddressCreateAsHBAR (BRHederaAddress addr) {
-    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressHBARRecord),
-                                                         CRYPTO_NETWORK_TYPE_HBAR,
-                                                         0); //TODO:HBAR address hash
+typedef struct {
+    BRHederaAddress xrpAddress;
+} BRCryptoAddressCreateContextHBAR;
+
+static void
+cryptoAddressCreateCallbackHBAR (BRCryptoAddressCreateContext context,
+                                 BRCryptoAddress address) {
+    BRCryptoAddressCreateContextHBAR *contextHBAR = (BRCryptoAddressCreateContextHBAR*) context;
     BRCryptoAddressHBAR addressHBAR = cryptoAddressCoerce (address);
 
-    addressHBAR->addr = addr;
+    addressHBAR->addr = contextHBAR->xrpAddress;
+}
 
-    return address;
+extern BRCryptoAddress
+cryptoAddressCreateAsHBAR (BRHederaAddress addr) {
+    BRCryptoAddressCreateContextHBAR contextHBAR = {
+        addr
+    };
+
+    return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressHBARRecord),
+                                      CRYPTO_NETWORK_TYPE_HBAR,
+                                      0, //TODO:HBAR address hash
+                                      &contextHBAR,
+                                      cryptoAddressCreateCallbackHBAR);
 }
 
 extern BRCryptoAddress

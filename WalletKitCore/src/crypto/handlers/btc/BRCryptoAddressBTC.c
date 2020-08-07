@@ -28,18 +28,31 @@ cryptoAddressCoerceANY (BRCryptoAddress address) {
     return (BRCryptoAddressBTC) address;
 }
 
-extern BRCryptoAddress
-cryptoAddressCreateAsBTC (BRCryptoBlockChainType type, BRAddress addr) {
-    BRCryptoAddress address = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressBTCRecord),
-                                                                type,
-                                                                BRAddressHash (addr.s));
-    BRCryptoAddressBTC addressBTC = cryptoAddressCoerce (address, type);
+typedef struct {
+    BRAddress addr;
+} BRCryptoAddressCreateContextBTC;
 
-    addressBTC->addr = addr;
+static void
+cryptoAddressCreateCallbackBTC (BRCryptoAddressCreateContext context,
+                                BRCryptoAddress address) {
+    BRCryptoAddressCreateContextBTC *contextBTC = (BRCryptoAddressCreateContextBTC*) context;
+    BRCryptoAddressBTC addressBTC = cryptoAddressCoerceANY (address);
 
-    return address;
+    addressBTC->addr = contextBTC->addr;
 }
 
+extern BRCryptoAddress
+cryptoAddressCreateAsBTC (BRCryptoBlockChainType type, BRAddress addr) {
+    BRCryptoAddressCreateContextBTC contextBTC = {
+        addr
+    };
+
+    return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressBTCRecord),
+                                      type,
+                                      BRAddressHash (addr.s),
+                                      &contextBTC,
+                                      cryptoAddressCreateCallbackBTC);
+}
 
 extern BRCryptoAddress
 cryptoAddressCreateFromStringAsBTC (BRAddressParams params, const char *btcAddress) {
