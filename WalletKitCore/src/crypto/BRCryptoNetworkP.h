@@ -127,6 +127,10 @@ struct BRCryptoNetworkRecord {
     BRArrayOf(BRCryptoNetworkFee) fees;
 };
 
+typedef void *BRCryptoNetworkCreateContext;
+typedef void (*BRCryptoNetworkCreateCallback) (BRCryptoNetworkCreateContext context,
+                                               BRCryptoNetwork network);
+
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
@@ -134,7 +138,9 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *name,
                            const char *desc,        // "mainnet", "testnet", "rinkeby"
                            bool isMainnet,
-                           uint32_t confirmationPeriodInSeconds);
+                           uint32_t confirmationPeriodInSeconds,
+                           BRCryptoNetworkCreateContext createContext,
+                           BRCryptoNetworkCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetType (BRCryptoNetwork network);

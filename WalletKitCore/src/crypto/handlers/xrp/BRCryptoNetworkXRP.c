@@ -29,7 +29,9 @@ cryptoNetworkCreateAsXRP (const char *uids,
                                                          name,
                                                          desc,
                                                          isMainnet,
-                                                         confirmationPeriodInSeconds);
+                                                         confirmationPeriodInSeconds,
+                                                         NULL,
+                                                         NULL);
     
     return network;
 }

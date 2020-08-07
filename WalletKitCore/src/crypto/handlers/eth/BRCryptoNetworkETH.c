@@ -25,6 +25,19 @@ cryptoNetworkAsETH (BRCryptoNetwork network) {
     return networkETH->eth;
 }
 
+typedef struct {
+    BREthereumNetwork eth;
+} BRCryptoNetworkCreateContextETH;
+
+static void
+cryptoNetworkCreateCallbackETH (BRCryptoNetworkCreateContext context,
+                                BRCryptoNetwork network) {
+    BRCryptoNetworkCreateContextETH *contextETH = (BRCryptoNetworkCreateContextETH*) context;
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+
+    networkETH->eth = contextETH->eth;
+}
+
 static BRCryptoNetwork
 cryptoNetworkCreateAsETH (const char *uids,
                           const char *name,
@@ -32,17 +45,19 @@ cryptoNetworkCreateAsETH (const char *uids,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds,
                           BREthereumNetwork eth) {
-    BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
-                                                         CRYPTO_NETWORK_TYPE_ETH,
-                                                         uids,
-                                                         name,
-                                                         desc,
-                                                         isMainnet,
-                                                         confirmationPeriodInSeconds);
-    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce(network);
-    networkETH->eth = eth;
+    BRCryptoNetworkCreateContextETH contextETH = {
+        eth
+    };
 
-    return network;
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
+                                      CRYPTO_NETWORK_TYPE_ETH,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      &contextETH,
+                                      cryptoNetworkCreateCallbackETH);
 }
 
 static BRCryptoNetwork

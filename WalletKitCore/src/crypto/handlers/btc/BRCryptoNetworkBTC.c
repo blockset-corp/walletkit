@@ -32,6 +32,19 @@ cryptoNetworkAsBTC (BRCryptoNetwork network) {
     return cryptoNetworkCoerce(network, network->type)->params;
 }
 
+typedef struct {
+    const BRChainParams *params;
+} BRCryptoNetworkCreateContextBTC;
+
+static void
+cryptoNetworkCreateCallbackBTC (BRCryptoNetworkCreateContext context,
+                                BRCryptoNetwork network) {
+    BRCryptoNetworkCreateContextBTC *contextBTC = (BRCryptoNetworkCreateContextBTC*) context;
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+
+    networkBTC->params = contextBTC->params;
+}
+
 static BRCryptoNetwork
 cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
                           const char *uids,
@@ -40,18 +53,19 @@ cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds,
                           const BRChainParams *params) {
-    BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
-                                                             type,
-                                                             uids,
-                                                             name,
-                                                             desc,
-                                                             isMainnet,
-                                                             confirmationPeriodInSeconds);
-    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, type);
+    BRCryptoNetworkCreateContextBTC contextBTC = {
+        params
+    };
 
-    networkBTC->params = params;
-
-    return network;
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+                                      type,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      &contextBTC,
+                                      cryptoNetworkCreateCallbackBTC);
 }
 
 static BRCryptoNetwork
