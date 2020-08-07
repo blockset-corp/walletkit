@@ -58,9 +58,9 @@ cryptoWalletManagerCreateHandlerXRP (BRCryptoListener listener,
                                                                      network,
                                                                      scheme,
                                                                      path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
-    BRCryptoWalletManagerXRP managerXRP = cryptoWalletManagerCoerce (manager);
-    (void) managerXRP;
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+                                                                     NULL,
+                                                                     NULL);
 
     // Create the primary wallet
     manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);

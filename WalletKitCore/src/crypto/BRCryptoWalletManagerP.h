@@ -174,6 +174,10 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoListener listenerTrampoline;
 };
 
+typedef void *BRCryptoWalletManagerCreateContext;
+typedef void (*BRCryptoWalletManagerCreateCallback) (BRCryptoWalletManagerCreateContext context,
+                                                     BRCryptoWalletManager manager);
+
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoBlockChainType type,
@@ -183,7 +187,9 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
                                  const char *path,
-                                 BRCryptoClientQRYByType byType);
+                                 BRCryptoClientQRYByType byType,
+                                 BRCryptoWalletManagerCreateContext createContext,
+                                 BRCryptoWalletManagerCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoWalletManagerGetType (BRCryptoWalletManager manager);

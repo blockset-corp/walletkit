@@ -67,10 +67,9 @@ cryptoWalletManagerCreateBTC (BRCryptoListener listener,
                                                                      network,
                                                                      scheme,
                                                                      path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
-    if (NULL == manager) return NULL;
-    BRCryptoWalletManagerBTC managerBTC = cryptoWalletManagerCoerce (manager, cryptoNetworkGetType(network));
-    (void) managerBTC;
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
+                                                                     NULL,
+                                                                     NULL);
 
     // Create the primary wallet
     manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);

@@ -58,9 +58,9 @@ cryptoWalletManagerCreateHandlerHBAR (BRCryptoListener listener,
                                                                      network,
                                                                      scheme,
                                                                      path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
-    BRCryptoWalletManagerHBAR managerHBAR = cryptoWalletManagerCoerce (manager);
-    (void) managerHBAR;
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+                                                                     NULL,
+                                                                     NULL);
 
     // Create the primary wallet
     manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);

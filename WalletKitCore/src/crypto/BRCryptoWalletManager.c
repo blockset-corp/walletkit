@@ -198,7 +198,9 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
                                  const char *path,
-                                 BRCryptoClientQRYByType byType) {
+                                 BRCryptoClientQRYByType byType,
+                                 BRCryptoWalletManagerCreateContext createContext,
+                                 BRCryptoWalletManagerCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
     assert (type == cryptoNetworkGetType(network));
 
@@ -289,6 +291,8 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     // Setup the P2P Manager.
     manager->p2pManager = NULL; // manager->handlers->createP2PManager (manager);
 
+    if (createCallback) createCallback (createContext, manager);
+    
     // Announce the created manager; this must preceed any wallet created/added events
     cryptoWalletManagerGenerateEvent (manager, (BRCryptoWalletManagerEvent) {
         CRYPTO_WALLET_MANAGER_EVENT_CREATED

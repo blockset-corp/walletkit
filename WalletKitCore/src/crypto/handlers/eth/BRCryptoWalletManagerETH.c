@@ -25,7 +25,7 @@
 // MARK: - Forward Declarations
 
 static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
 
 static void
 cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
@@ -93,6 +93,23 @@ cryptoWalletManagerCoerce (BRCryptoWalletManager manager) {
     return (BRCryptoWalletManagerETH) manager;
 }
 
+typedef struct {
+    BREthereumNetwork network;
+    BREthereumAccount account;
+    BRRlpCoder coder;
+} BRCryptoWalletManagerCreateContextETH;
+
+static void
+cryptoWaleltMangerCreateCallbackETH (BRCryptoWalletManagerCreateContext context,
+                                     BRCryptoWalletManager manager) {
+    BRCryptoWalletManagerCreateContextETH *contextETH = (BRCryptoWalletManagerCreateContextETH*) context;
+    BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
+
+    managerETH->network = contextETH->network;
+    managerETH->account = contextETH->account;
+    managerETH->coder   = contextETH->coder;
+}
+
 static BRCryptoWalletManager
 cryptoWalletManagerCreateETH (BRCryptoListener listener,
                               BRCryptoClient client,
@@ -101,6 +118,12 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
                               BRCryptoSyncMode mode,
                               BRCryptoAddressScheme scheme,
                               const char *path) {
+    BRCryptoWalletManagerCreateContextETH contextETH = {
+        cryptoNetworkAsETH (network),
+        cryptoAccountAsETH (account),
+        rlpCoderCreate()
+    };
+
     BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerETHRecord),
                                                                      cryptoNetworkGetType(network),
                                                                      listener,
@@ -109,18 +132,16 @@ cryptoWalletManagerCreateETH (BRCryptoListener listener,
                                                                      network,
                                                                      scheme,
                                                                      path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+                                                                     &contextETH,
+                                                                     cryptoWaleltMangerCreateCallbackETH);
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerce (manager);
-
-    managerETH->network = cryptoNetworkAsETH (network);
-    managerETH->account = cryptoAccountAsETH (account);
-    managerETH->coder   = rlpCoderCreate();
 
     // Create the primary wallet
     manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
 
     // Create the P2P manager
-    manager->p2pManager = crytpWalletManagerCreateP2PManagerETH (manager);
+    manager->p2pManager = cryptoWalletManagerCreateP2PManagerETH (manager);
 
     // Load the persistently stored data.
     BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
@@ -863,7 +884,7 @@ static BRCryptoClientP2PHandlers p2pHandlersETH = {
 };
 
 static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
     BRCryptoClientP2PManager p2pBase = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordETH),
                                                                      manager->type,
                                                                      &p2pHandlersETH);
