@@ -15,7 +15,6 @@ let package = Package(
             targets: ["WalletKitCoreExplore"]
         ),
 
-
         .executable(
             name: "WalletKitCorePerf",
             targets: ["WalletKitCorePerf"]
