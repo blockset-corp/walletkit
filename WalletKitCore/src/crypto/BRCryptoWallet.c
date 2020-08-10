@@ -154,9 +154,8 @@ cryptoWalletGetBalance (BRCryptoWallet wallet) {
         case BLOCK_CHAIN_TYPE_BTC: {
             BRWallet *wid = wallet->u.btc.wid;
 
-            UInt256 value = uint256Create (BRWalletBalance (wid));
-            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-            return amount;
+            UInt256 balance = uint256Create (BRWalletBalance (wid));
+            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, balance);
         }
         case BLOCK_CHAIN_TYPE_ETH: {
             BREthereumEWM ewm = wallet->u.eth.ewm;
@@ -164,13 +163,13 @@ cryptoWalletGetBalance (BRCryptoWallet wallet) {
 
             BREthereumAmount balance = ewmWalletGetBalance (ewm, wid);
             UInt256 value = balance.type == AMOUNT_ETHER ? balance.u.ether.valueInWEI : balance.u.tokenQuantity.valueAsInteger;
-            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-            return amount;
+            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
         }
         case BLOCK_CHAIN_TYPE_GEN: {
-            return cryptoAmountCreate (wallet->unit,
-                                       CRYPTO_FALSE,
-                                       genWalletGetBalance (cryptoWalletAsGEN(wallet)));
+            BRCryptoBoolean negative;
+            UInt256 balance = genWalletGetBalance (cryptoWalletAsGEN(wallet), &negative);
+
+            return cryptoAmountCreate (wallet->unit, negative, balance);
         }
     }
 }

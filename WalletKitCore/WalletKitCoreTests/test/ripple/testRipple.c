@@ -604,10 +604,10 @@ static void testWalletValues()
     BRRippleWallet wallet = rippleWalletCreate(account);
     assert(wallet);
 
-    uint64_t balance = rippleWalletGetBalance(wallet);
+    BRRippleBalance balance = rippleWalletGetBalance(wallet);
     assert(balance == 0);
 
-    uint64_t expected_balance = 25000000;
+    BRRippleBalance expected_balance = 25000000;
     rippleWalletSetBalance(wallet, expected_balance);
     balance = rippleWalletGetBalance(wallet);
     assert(balance == expected_balance);

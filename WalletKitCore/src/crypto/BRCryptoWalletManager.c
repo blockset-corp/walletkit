@@ -1193,7 +1193,10 @@ cryptoWalletManagerEstimateLimit (BRCryptoWalletManager cwm,
                 int negative = 0, overflow = 0;
 
                 // Get the balance
-                UInt256 balance = genWalletGetBalance (wallet->u.gen);
+                BRCryptoBoolean balanceIsNegative;
+                UInt256 balance = genWalletGetBalance (wallet->u.gen, &balanceIsNegative);
+                if (CRYPTO_TRUE == balanceIsNegative)
+                    balance = UINT256_ZERO;
 
                 // We are looking for the maximum amount; check if the wallet has a minimum
                 // balance.  If so, reduce the above balance.
