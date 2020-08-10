@@ -208,7 +208,7 @@ class CoreDemoListener: SystemListener {
 
     func handleManagerEvent(system: System, manager: WalletManager, event: WalletManagerEvent) {
         CoreDemoListener.eventQueue.async {
-            print ("APP: Manager (\(manager.name)): \(event)")
+ //           print ("APP: Manager (\(manager.name)): \(event)")
             self.managerListeners.forEach {
                 $0.handleManagerEvent(system: system,
                                       manager: manager,
@@ -219,7 +219,7 @@ class CoreDemoListener: SystemListener {
 
     func handleWalletEvent(system: System, manager: WalletManager, wallet: Wallet, event: WalletEvent) {
         CoreDemoListener.eventQueue.async {
-            print ("APP: Wallet (\(manager.name):\(wallet.name)): \(event)")
+//            print ("APP: Wallet (\(manager.name):\(wallet.name)): \(event)")
             self.walletListeners.forEach {
                 $0.handleWalletEvent (system: system,
                                       manager: manager,
@@ -231,7 +231,7 @@ class CoreDemoListener: SystemListener {
 
     func handleTransferEvent(system: System, manager: WalletManager, wallet: Wallet, transfer: Transfer, event: TransferEvent) {
         CoreDemoListener.eventQueue.async {
-            print ("APP: Transfer (\(manager.name):\(wallet.name)): \(event)")
+//            print ("APP: Transfer (\(manager.name):\(wallet.name)): \(event)")
             self.transferListeners.forEach {
                 $0.handleTransferEvent (system: system,
                                         manager: manager,
