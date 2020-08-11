@@ -156,6 +156,7 @@ struct BRCryptoWalletManagerRecord {
     BRFileService fileService;
 
     BREventHandler handler;
+    BREventHandler listenerHandler;
 
     BRCryptoClientP2PManager p2pManager;   // Null unless BTC, BCH, ETH, ...
     BRCryptoClientQRYManager qryManager;

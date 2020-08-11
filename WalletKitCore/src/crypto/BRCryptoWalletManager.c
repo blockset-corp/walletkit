@@ -149,45 +149,134 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 //    });
 //}
 
+// MARK: - Listener Manager Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWalletManagerEvent event;
+} BRCryptoWalletManagerSignalListenerManagerEventEvent;
+
+static void
+cryptoManagerSignalListenerManagerEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerManagerEventEvent *event) {
+    event->manager->listener.managerCallback (event->context, event->manager, event->event);
+}
+
+static BREventType handleSignalListenerManagerEventType = {
+    "CWM: Handle Signal Listener Manager EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerManagerEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerManagerEventDispatcher
+};
+
 static void
 cryptoWalletManagerListenerCallbackTrampoline (BRCryptoListenerContext context,
                                                BRCryptoWalletManager manager,
                                                BRCryptoWalletManagerEvent event) {
-    manager->listener.managerCallback (context,
-                                       (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
-                                        ? cryptoWalletManagerTake(manager)
-                                        : manager),
-                                       event);
+    BRCryptoWalletManagerSignalListenerManagerEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerManagerEventType}, context,
+        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
+         ? cryptoWalletManagerTake(manager)
+         : manager),
+        event };
+
+    eventHandlerSignalEvent (manager->listenerHandler, (BREvent *) &listenerEvent);
 }
+
+// MARK: - Listener Wallet Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoWalletEvent event;
+} BRCryptoWalletManagerSignalListenerWalletEventEvent;
+
+static void
+cryptoManagerSignalListenerWalletEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerWalletEventEvent *event) {
+    event->manager->listener.walletCallback (event->context, event->manager, event->wallet, event->event);
+}
+
+static BREventType handleSignalListenerWalletEventType = {
+    "CWM: Handle Signal Listener Wallet EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerWalletEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerWalletEventDispatcher
+};
 
 static void
 cryptoWalletListenerCallbackTrampoline (BRCryptoListenerContext context,
                                         BRCryptoWalletManager manager,
                                         BRCryptoWallet wallet,
                                         BRCryptoWalletEvent event) {
-    // TODO: CORE-974, Manager 'take' could be in is 'release'
-    manager->listener.walletCallback (context,
-                                      cryptoWalletManagerTake (manager),
-                                      (CRYPTO_WALLET_EVENT_DELETED != event.type
-                                       ? cryptoWalletTake (wallet)
-                                       : wallet),
-                                      event);
+    BRCryptoWalletManagerSignalListenerWalletEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerWalletEventType}, context,
+        cryptoWalletManagerTake (manager),
+        (CRYPTO_WALLET_EVENT_DELETED != event.type
+         ? cryptoWalletTake(wallet)
+         : wallet),
+        event };
+
+    eventHandlerSignalEvent(manager->listenerHandler, (BREvent *) &listenerEvent);
 }
 
-static void cryptoTransferListenerCallbackTrampoline (BRCryptoListenerContext context,
-                                                      BRCryptoWalletManager manager,
-                                                      BRCryptoWallet wallet,
-                                                      BRCryptoTransfer transfer,
-                                                      BRCryptoTransferEvent event) {
-    // TODO: CORE-974, Manager + Wallet 'take' could be in their 'release'
-    manager->listener.transferCallback (context,
-                                        cryptoWalletManagerTake (manager),
-                                        cryptoWalletTake (wallet),
-                                        (CRYPTO_TRANSFER_EVENT_DELETED != event.type
-                                         ? cryptoTransferTake (transfer)
-                                         : transfer),
-                                        event);
+// MARK: - Listener Transfer Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoTransfer transfer;
+    BRCryptoTransferEvent event;
+} BRCryptoWalletManagerSignalListenerTransferEventEvent;
+
+static void
+cryptoManagerSignalListenerTransferEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerTransferEventEvent *event) {
+    event->manager->listener.transferCallback (event->context,
+                                               event->manager,
+                                               event->wallet,
+                                               event->transfer,
+                                               event->event);
 }
+
+static BREventType handleSignalListenerTransferEventType = {
+    "CWM: Handle Signal Listener Transfer EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerTransferEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerTransferEventDispatcher
+};
+
+static void
+cryptoTransferListenerCallbackTrampoline (BRCryptoListenerContext context,
+                                          BRCryptoWalletManager manager,
+                                          BRCryptoWallet wallet,
+                                          BRCryptoTransfer transfer,
+                                          BRCryptoTransferEvent event) {
+    BRCryptoWalletManagerSignalListenerTransferEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerTransferEventType}, context,
+        cryptoWalletManagerTake (manager),
+        cryptoWalletTake(wallet),
+        (CRYPTO_TRANSFER_EVENT_DELETED != event.type
+         ? cryptoTransferTake(transfer)
+         : transfer),
+        event };
+
+    eventHandlerSignalEvent(manager->listenerHandler, (BREvent *) &listenerEvent);
+}
+
+static const BREventType *
+cryptoListenerEventTypes[] = {
+    &handleSignalListenerManagerEventType,
+    &handleSignalListenerWalletEventType,
+    &handleSignalListenerTransferEventType
+};
+
+static const unsigned int
+cryptoListenerEventTypesCount = (sizeof (cryptoListenerEventTypes) / sizeof(BREventType*)); //  11
+
 
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
@@ -247,14 +336,22 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     // Create the event handler
     manager->handler = eventHandlerCreate (handlerName,
-                                       eventTypes,
-                                       eventTypesCount,
-                                       &manager->lock);
+                                           eventTypes,
+                                           eventTypesCount,
+                                           &manager->lock);
 
     eventHandlerSetTimeoutDispatcher (manager->handler,
                                       (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
                                       (void*) manager);
+
+    char listenerHandlerName[100];
+    sprintf (listenerHandlerName, "%s Listener", handlerName);
+
+    manager->listenerHandler = eventHandlerCreate (listenerHandlerName,
+                                                   cryptoListenerEventTypes,
+                                                   cryptoListenerEventTypesCount,
+                                                   &manager->lock);
 
     manager->listenerTrampoline = (BRCryptoListener) {
         listener.context,
@@ -560,6 +657,7 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
 
     // ... then the eventHandler
     eventHandlerDestroy (cwm->handler);
+    eventHandlerDestroy (cwm->listenerHandler);
 
     // ... and finally individual memory allocations
     free (cwm->path);
@@ -802,6 +900,7 @@ extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
     eventHandlerStart (cwm->handler);
+    eventHandlerStart (cwm->listenerHandler);
 
     // P2P Manager
     // QRY Manager
@@ -811,6 +910,7 @@ cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
 extern void
 cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
     // Stop the CWM 'Event Handler'
+    eventHandlerStop (cwm->listenerHandler);
     eventHandlerStop (cwm->handler);
 
     // P2P Manager
