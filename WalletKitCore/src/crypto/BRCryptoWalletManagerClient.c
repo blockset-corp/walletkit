@@ -2236,7 +2236,7 @@ cwmAnnounceGetTransferItemGEN (BRCryptoWalletManager cwm,
         // similar events.
         //
         // genManagerAnnounceTransfer (cwm->u.gen, callbackState->rid, transfer);
-        cryptoWalletManagerHandleTransferGEN (cwm, genTransfer);
+        cryptoWalletManagerHandleTransferGENFilter (cwm, genTransfer, CRYPTO_FALSE);
     }
 
     if (NULL != wallet) cryptoWalletGive (wallet);
@@ -2261,8 +2261,6 @@ cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
     } else {
         assert (0);
     }
-
-    // TODO: This even occurs even when the balance doesn't change (no new transfers).
 
     // Synchronizing of transfers is complete - calculate the new balance
     BRCryptoAmount balance = cryptoWalletGetBalance(cwm->wallet);
