@@ -388,8 +388,12 @@ genWalletRelease (BRGenericWallet wallet) {
 }
 
 extern UInt256
-genWalletGetBalance (BRGenericWallet wallet) {
-    return wallet->handlers.balance (wallet->ref);
+genWalletGetBalance (BRGenericWallet wallet, BRCryptoBoolean *negative) {
+    int balanceIsNegative;
+    UInt256 balance = wallet->handlers.balance (wallet->ref, &balanceIsNegative);
+
+    *negative = AS_CRYPTO_BOOLEAN(balanceIsNegative);
+    return balance;
 }
 
 extern UInt256

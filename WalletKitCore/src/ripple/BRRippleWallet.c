@@ -24,7 +24,7 @@
 //
 struct BRRippleWalletRecord
 {
-    BRRippleUnitDrops balance; // XRP balance
+    BRRippleBalance  balance;  // XRP balance
     BRRippleFeeBasis feeBasis; // Base fee for transactions
 
     // Ripple account
@@ -102,7 +102,7 @@ rippleWalletHasAddress (BRRippleWallet wallet,
     return rippleAccountHasAddress (wallet->account, address);
 }
 
-extern BRRippleUnitDrops
+extern BRRippleBalance
 rippleWalletGetBalance (BRRippleWallet wallet)
 {
     assert(wallet);
@@ -110,7 +110,7 @@ rippleWalletGetBalance (BRRippleWallet wallet)
 }
 
 extern void
-rippleWalletSetBalance (BRRippleWallet wallet, BRRippleUnitDrops balance)
+rippleWalletSetBalance (BRRippleWallet wallet, BRRippleBalance balance)
 {
     assert(wallet);
     wallet->balance = balance;

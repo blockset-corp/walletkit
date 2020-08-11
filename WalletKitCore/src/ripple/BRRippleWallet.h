@@ -72,21 +72,21 @@ rippleWalletHasAddress (BRRippleWallet wallet,
  *
  * @param wallet the specified ripple wallet
  *
- * @return balance  ripple balance in drops
+ * @return balance  ripple balance in drops; might be negative
  */
-extern BRRippleUnitDrops
+extern BRRippleBalance
 rippleWalletGetBalance (BRRippleWallet wallet);
 
 /**
  * Set the ripple balance in this wallet
  *
  * @param wallet     the specified wallet
- * @param balance   the ripple balance in drops
+ * @param balance   the ripple balance in drops; might be negative
  *
  * @return void
  */
 extern void
-rippleWalletSetBalance (BRRippleWallet wallet, BRRippleUnitDrops balance);
+rippleWalletSetBalance (BRRippleWallet wallet, BRRippleBalance balance);
 
 /**
  * Return the ripple balance limit for this wallet

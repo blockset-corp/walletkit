@@ -112,7 +112,8 @@ extern "C" {
 
     typedef BRGenericWalletRef (*BRGenericWalletCreate) (BRGenericAccountRef account);
     typedef void (*BRGenericWalletFree) (BRGenericWalletRef wallet);
-    typedef UInt256 (*BRGenericWalletGetBalance) (BRGenericWalletRef wallet);
+    typedef UInt256 (*BRGenericWalletGetBalance) (BRGenericWalletRef wallet,
+                                                  int *negative);
     typedef UInt256 (*BRGenericWalletGetBalanceLimit) (BRGenericWalletRef wallet,
                                                        int asMaximum,
                                                        int *hasLimit);
