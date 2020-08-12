@@ -180,6 +180,45 @@ cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
     eventHandlerSignalEvent (listener->listener->handler, (BREvent *) &listenerEvent);
 }
 
+
+// MARK: - Generate System Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListener listener;
+    BRCryptoSystem system;
+    BRCryptoSystemEvent event;
+} BRListenerSignalSystemEvent;
+
+static void
+cryptoListenerSignalSystemEventDispatcher (BREventHandler ignore,
+                                           BRListenerSignalSystemEvent *event) {
+    event->listener->systemCallback (event->listener->context,
+                                     event->system,
+                                     event->event);
+}
+
+static BREventType handleListenerSignalSystemEventType = {
+    "CWM: Handle Listener System Event",
+    sizeof (BRListenerSignalSystemEvent),
+    (BREventDispatcher) cryptoListenerSignalSystemEventDispatcher
+};
+
+extern void
+cryptoListenerGenerateSystemEvent (BRCryptoListener listener,
+                                   BRCryptoSystem system,
+                                   BRCryptoSystemEvent event) {
+    BRListenerSignalSystemEvent listenerEvent =
+    { { NULL, &handleListenerSignalSystemEventType},
+        listener,
+        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
+         ? cryptoSystemTake(system)
+         : system),
+        event };
+
+    eventHandlerSignalEvent (listener->handler, (BREvent *) &listenerEvent);
+}
+
 // MARK: - Event Type
 
 static const BREventType *
@@ -188,6 +227,7 @@ cryptoListenerEventTypes[] = {
     &handleListenerSignalTransferEventType,
     &handleListenerSignalWalletEventType,
     &handleListenerSignalManagerEventType,
+    &handleListenerSignalSystemEventType
 };
 
 static const unsigned int
@@ -198,6 +238,7 @@ cryptoListenerEventTypesCount = (sizeof (cryptoListenerEventTypes) / sizeof(BREv
 
 extern BRCryptoListener
 cryptoListenerCreate (BRCryptoListenerContext context,
+                      BRCryptoListenerSystemCallback systemCallback,
                       BRCryptoListenerNetworkCallback networkCallback,
                       BRCryptoListenerWalletManagerCallback managerCallback,
                       BRCryptoListenerWalletCallback walletCallback,
@@ -208,6 +249,7 @@ cryptoListenerCreate (BRCryptoListenerContext context,
     listener->ref = CRYPTO_REF_ASSIGN (cryptoListenerRelease);
     pthread_mutex_init_brd (&listener->lock, PTHREAD_MUTEX_NORMAL);
 
+    listener->systemCallback   = systemCallback;
     listener->networkCallback  = networkCallback;
     listener->managerCallback  = managerCallback;
     listener->walletCallback   = walletCallback;

@@ -240,51 +240,49 @@ public final class WalletManager: Equatable, CustomStringConvertible {
         self.system = system
         self.callbackCoordinator = callbackCoordinator
 
-        let network = Network (core: cryptoWalletManagerGetNetwork (core), take: false)
-
         self.account = Account (core: cryptoWalletManagerGetAccount(core), take: false)
-        self.network = network
-        self.unit    = network.defaultUnitFor (currency: network.currency)!
+        self.network = Network (core: cryptoWalletManagerGetNetwork (core), take: false)
+        self.unit    = self.network.defaultUnitFor (currency: self.network.currency)!
         self.path    = asUTF8String (cryptoWalletManagerGetPath(core))
         self.query   = system.query
 
-        self.defaultNetworkFee = network.minimumFee
+        self.defaultNetworkFee = self.network.minimumFee
         self.addressScheme     = AddressScheme (core: cryptoWalletManagerGetAddressScheme (core))
     }
 
 
-    internal convenience init? (system: System,
-                                callbackCoordinator: SystemCallbackCoordinator,
-                                account: Account,
-                                network: Network,
-                                mode: WalletManagerMode,
-                                addressScheme: AddressScheme,
-                                currencies: Set<Currency>,
-                                storagePath: String,
-                                listener: BRCryptoListener,
-                                client: BRCryptoClient) {
-        guard let core = cryptoWalletManagerCreate (listener,
-                                                    client,
-                                                    account.core,
-                                                    network.core,
-                                                    mode.core,
-                                                    addressScheme.core,
-                                                    storagePath)
-            else { return nil }
-
-        self.init (core: core,
-                   system: system,
-                   callbackCoordinator: callbackCoordinator,
-                   take: false)
-
-        // Register a wallet for each currency.
-        currencies
-            .forEach {
-                if network.hasCurrency ($0) {
-                    let _ = registerWalletFor(currency: $0)
-                }
-        }
-    }
+//    internal convenience init? (system: System,
+//                                callbackCoordinator: SystemCallbackCoordinator,
+//                                account: Account,
+//                                network: Network,
+//                                mode: WalletManagerMode,
+//                                addressScheme: AddressScheme,
+//                                currencies: Set<Currency>,
+//                                storagePath: String,
+//                                listener: BRCryptoListener,
+//                                client: BRCryptoClient) {
+//        guard let core = cryptoWalletManagerCreate (listener,
+//                                                    client,
+//                                                    account.core,
+//                                                    network.core,
+//                                                    mode.core,
+//                                                    addressScheme.core,
+//                                                    storagePath)
+//            else { return nil }
+//
+//        self.init (core: core,
+//                   system: system,
+//                   callbackCoordinator: callbackCoordinator,
+//                   take: false)
+//
+//        // Register a wallet for each currency.
+//        currencies
+//            .forEach {
+//                if network.hasCurrency ($0) {
+//                    let _ = registerWalletFor(currency: $0)
+//                }
+//        }
+//    }
 
     deinit {
         cryptoWalletManagerGive (core)

@@ -149,9 +149,10 @@ public final class Wallet: Equatable {
         let transfersPtr = cryptoWalletGetTransfers(core, &transfersCount);
         defer { if let ptr = transfersPtr { cryptoMemoryFree (ptr) } }
         
-        let transfers: [BRCryptoTransfer] = transfersPtr?.withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
-            Array(UnsafeBufferPointer (start: $0, count: transfersCount))
-        } ?? []
+        let transfers: [BRCryptoTransfer] = transfersPtr?
+            .withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
+                Array(UnsafeBufferPointer (start: $0, count: transfersCount))
+            } ?? []
         
         return transfers
             .map { Transfer (core: $0,

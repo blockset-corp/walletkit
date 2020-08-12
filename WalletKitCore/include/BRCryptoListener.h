@@ -16,6 +16,7 @@
 #include "event/BRCryptoWallet.h"
 #include "event/BRCryptoWalletManager.h"
 #include "event/BRCryptoNetwork.h"
+#include "event/BRCryptoSystem.h"
 
 
 #ifdef __cplusplus
@@ -24,6 +25,9 @@ extern "C" {
 
 // MARK: - Listener
 
+typedef void (*BRCryptoListenerSystemCallback) (BRCryptoListenerContext context,
+                                                BRCryptoSystem system,
+                                                BRCryptoSystemEvent event);
 
 typedef void (*BRCryptoListenerNetworkCallback) (BRCryptoListenerContext context,
                                                  BRCryptoNetwork network,
@@ -47,6 +51,7 @@ typedef void (*BRCryptoListenerTransferCallback) (BRCryptoListenerContext contex
 
 extern BRCryptoListener
 cryptoListenerCreate (BRCryptoListenerContext context,
+                      BRCryptoListenerSystemCallback systemCallback,
                       BRCryptoListenerNetworkCallback networkCallback,
                       BRCryptoListenerWalletManagerCallback managerCallback,
                       BRCryptoListenerWalletCallback walletCallback,
@@ -59,6 +64,7 @@ DECLARE_CRYPTO_GIVE_TAKE (BRCryptoListener, cryptoListener);
 
 typedef struct {
     BRCryptoListener listener;
+    BRCryptoSystem system;
 } BRCryptoNetworkListener;
 
 extern void
@@ -70,6 +76,7 @@ cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
 
 typedef struct {
     BRCryptoListener listener;
+    BRCryptoSystem system;
     BRCryptoWalletManager manager;
     BRCryptoWallet wallet;
 } BRCryptoTransferListener;
@@ -83,6 +90,7 @@ cryptoListenerGenerateTransferEvent (const BRCryptoTransferListener *listener,
 
 typedef struct {
     BRCryptoListener listener;
+    BRCryptoSystem system;
     BRCryptoWalletManager manager;
 } BRCryptoWalletListener;
 
@@ -91,6 +99,7 @@ cryptoListenerCreateTransferListener (const BRCryptoWalletListener *listener,
                                       BRCryptoWallet wallet) {
     return (BRCryptoTransferListener) {
         listener->listener,
+        listener->system,
         listener->manager,
         wallet
     };
@@ -105,6 +114,7 @@ cryptoListenerGenerateWalletEvent (const BRCryptoWalletListener *listener,
 
 typedef struct {
     BRCryptoListener listener;
+    BRCryptoSystem system;
 } BRCryptoWalletManagerListener;
 
 static inline BRCryptoWalletListener
@@ -112,6 +122,7 @@ cryptoListenerCreateWalletListener (const BRCryptoWalletManagerListener *listene
                                     BRCryptoWalletManager manager) {
     return (BRCryptoWalletListener) {
         listener->listener,
+        listener->system,
         manager,
     };
 }
@@ -121,6 +132,30 @@ cryptoListenerGenerateManagerEvent (const BRCryptoWalletManagerListener *listene
                                     BRCryptoWalletManager manager,
                                     BRCryptoWalletManagerEvent event);
 
+// MARK: - System Listener
+
+static inline BRCryptoNetworkListener
+cryptoListenerCreateNetworkListener (BRCryptoListener listener,
+                                     BRCryptoSystem system) {
+    return (BRCryptoNetworkListener) {
+        listener,
+        system
+    };
+}
+
+static inline BRCryptoWalletManagerListener
+cryptoListenerCreateWalletManagerListener (BRCryptoListener listener,
+                                           BRCryptoSystem system) {
+    return (BRCryptoWalletManagerListener) {
+        listener,
+        system
+    };
+}
+
+extern void
+cryptoListenerGenerateSystemEvent (BRCryptoListener listener,
+                                   BRCryptoSystem system,
+                                   BRCryptoSystemEvent event);
 
 #ifdef __cplusplus
 }

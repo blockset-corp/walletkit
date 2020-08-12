@@ -440,6 +440,9 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
     for (size_t idx = 0; idx < count; idx++) {
         array_add (network->fees, cryptoNetworkFeeTake (fees[idx]));
     }
+    cryptoListenerGenerateNetworkEvent (&network->listener, network, (BRCryptoNetworkEvent) {
+        CRYPTO_NETWORK_EVENT_FEES_UPDATED
+    });
     pthread_mutex_unlock (&network->lock);
 }
 

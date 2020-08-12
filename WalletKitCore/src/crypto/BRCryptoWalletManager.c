@@ -524,9 +524,21 @@ cryptoWalletManagerGetNetwork (BRCryptoWalletManager cwm) {
     return cryptoNetworkTake (cwm->network);
 }
 
+extern BRCryptoBoolean
+cryptoWalletManagerHasNetwork (BRCryptoWalletManager cwm,
+                               BRCryptoNetwork network) {
+    return AS_CRYPTO_BOOLEAN (cwm->network == network);
+}
+
 extern BRCryptoAccount
 cryptoWalletManagerGetAccount (BRCryptoWalletManager cwm) {
     return cryptoAccountTake (cwm->account);
+}
+
+extern BRCryptoBoolean
+cryptoWalletManagerHasAccount (BRCryptoWalletManager cwm,
+                               BRCryptoAccount account) {
+    return AS_CRYPTO_BOOLEAN (cwm->account == account);
 }
 
 extern void

@@ -29,6 +29,7 @@ struct BRCryptoListenerRecord {
 
     BRCryptoListenerContext context;
 
+    BRCryptoListenerSystemCallback        systemCallback;
     BRCryptoListenerNetworkCallback       networkCallback;
     BRCryptoListenerWalletManagerCallback managerCallback;
     BRCryptoListenerWalletCallback        walletCallback;

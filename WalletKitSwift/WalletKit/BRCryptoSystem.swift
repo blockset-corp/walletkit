@@ -16,6 +16,9 @@ import WalletKitCore
 ///
 public final class System {
 
+    /// The Core representation
+    internal private(set) var core: BRCryptoSystem! = nil
+
     /// The listener.  Gets all events for {Network, WalletManger, Wallet, Transfer}
     public private(set) weak var listener: SystemListener?
 
@@ -38,50 +41,65 @@ public final class System {
     /// gather all of the `query` results as Networks are created and added.
     internal let queue = DispatchQueue (label: "Crypto System")
 
-    /// the networks, unsorted.
-    public internal(set) var networks: [Network] = []
-
-    /// Flag indicating if the network is reachable; defaults to true
-    internal var isNetworkReachable = true
-
-    /// The wallet managers, unsorted.  A WalletManager will hold an 'unowned'
-    /// reference back to `System`
-    public internal(set) var managers: [WalletManager] = [];
-
     internal let callbackCoordinator: SystemCallbackCoordinator
 
-    /// We define default blockchains but these are wholly insufficient given that the
-    /// specfication includes `blockHeight` (which can never be correct).
+    /// Flag indicating if the network is reachable; defaults to true
+     internal var isNetworkReachable = true
 
-    ///
-    /// Add `network` to `networks`
-    ///
-    /// - Parameter network: the network to add
-    ///
-    internal func add (network: Network) {
-        networks.append (network)
-        announceEvent (SystemEvent.networkAdded(network: network))
+    /// the networks, unsorted.
+    public var networks: [Network] {
+        var count: BRCryptoCount = 0;
+        let pointers = cryptoSystemGetNetworks (core, &count);
+        defer { if let ptr = pointers { cryptoMemoryFree (ptr) }}
+
+        let networks: [BRCryptoNetwork] = pointers?
+            .withMemoryRebound (to: BRCryptoNetwork.self, capacity: count) {
+                Array (UnsafeBufferPointer (start: $0, count: count))
+        } ?? []
+
+        return networks.map { Network (core: $0, take: false) }
     }
 
-    internal func networkBy (uids: String) -> Network? {
-        return networks.first { $0.uids == uids }
+     internal func networkBy (uids: String) -> Network? {
+        return cryptoSystemGetNetworkForUids (core, uids)
+            .map { Network (core: $0, take: false) }
+      }
+
+    internal func networkBy (core: BRCryptoNetwork) -> Network? {
+        return networks.first { $0.core == core }
+     }
+
+     /// The wallet managers, unsorted.  A WalletManager will hold an 'unowned'
+    /// reference back to `System`
+    public var managers: [WalletManager] {
+        var count: BRCryptoCount = 0;
+        var pointers = cryptoSystemGetWalletManagers (core, &count);
+        defer { if let ptr = pointers { cryptoMemoryFree (ptr) }}
+
+        let managers: [BRCryptoWalletManager] = pointers?
+            .withMemoryRebound (to: BRCryptoWalletManager.self, capacity: count) {
+                Array (UnsafeBufferPointer (start: $0, count: count))
+        } ?? []
+
+        return managers.map {
+            WalletManager (core: $0,
+                           system: self,
+                           callbackCoordinator: callbackCoordinator,
+                           take: false) }
     }
 
      internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
-        return managers
-            .first { $0.core == core }
+        return (CRYPTO_TRUE == cryptoSystemHasWalletManager (self.core, core)
+            ? WalletManager (core: core, system: self, callbackCoordinator: callbackCoordinator, take: true)
+            : nil)
     }
 
-    ///
-    /// Add `manager` to `managers`.  Will signal WalletManagerEvent.created and then
-    /// SystemEvent.managerAdded is `manager` is added.
-    ///
-    /// - Parameter manager: the manager to add.
-    ///
-    internal func add (manager: WalletManager) {
-        if !managers.contains(where: { $0 === manager }) {
-            managers.append (manager)
-            announceEvent (SystemEvent.managerAdded(manager: manager))
+    internal func managerBy (network: BRCryptoNetwork) -> WalletManager? {
+        return cryptoSystemGetWalletManagerByNetwork (core, network)
+            .map { WalletManager (core: $0,
+                                  system: self,
+                                  callbackCoordinator: callbackCoordinator,
+                                  take: false)
         }
     }
 
@@ -116,22 +134,31 @@ public final class System {
         precondition (network.supportsMode(mode))
         precondition (network.supportsAddressScheme(addressScheme))
 
-        guard accountIsInitialized (account, onNetwork: network),
-            let manager = WalletManager (system: self,
-                                         callbackCoordinator: callbackCoordinator,
-                                         account: account,
-                                         network: network,
-                                         mode: mode,
-                                         addressScheme: addressScheme,
-                                         currencies: currencies,
-                                         storagePath: path,
-                                         listener: cryptoListener,
-                                         client: cryptoClient)
-            else { return false }
-        
-        manager.setNetworkReachable(isNetworkReachable)
-        self.add (manager: manager)
-        return true
+        var coreCurrences: [BRCryptoCurrency?] = currencies.map { $0.core }
+
+        return nil != cryptoSystemCreateWalletManager (core,
+                                                       network.core,
+                                                       mode.core,
+                                                       addressScheme.core,
+                                                       &coreCurrences,
+                                                       coreCurrences.count)
+
+//        guard accountIsInitialized (account, onNetwork: network),
+//            let manager = WalletManager (system: self,
+//                                         callbackCoordinator: callbackCoordinator,
+//                                         account: account,
+//                                         network: network,
+//                                         mode: mode,
+//                                         addressScheme: addressScheme,
+//                                         currencies: currencies,
+//                                         storagePath: path,
+//                                         listener: cryptoListener,
+//                                         client: cryptoClient)
+//            else { return false }
+//        
+//        manager.setNetworkReachable(isNetworkReachable)
+//        self.add (manager: manager)
+//        return true
     }
 
     ///
@@ -491,9 +518,6 @@ public final class System {
 
                 // The fees are unlikely to change; but we'll announce .feesUpdated anyways.
                 network.fees = fees
-                self.listenerQueue.async {
-                    self.listener?.handleNetworkEvent (system: self, network: network, event: .feesUpdated)
-                }
 
                 return network
             }

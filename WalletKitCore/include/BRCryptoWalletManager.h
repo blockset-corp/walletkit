@@ -42,8 +42,16 @@ extern "C" {
     extern BRCryptoNetwork
     cryptoWalletManagerGetNetwork (BRCryptoWalletManager cwm);
 
+    extern BRCryptoBoolean
+    cryptoWalletManagerHasNetwork (BRCryptoWalletManager cwm,
+                                   BRCryptoNetwork network);
+
     extern BRCryptoAccount
     cryptoWalletManagerGetAccount (BRCryptoWalletManager cwm);
+
+    extern BRCryptoBoolean
+    cryptoWalletManagerHasAccount (BRCryptoWalletManager cwm,
+                                   BRCryptoAccount account);
 
     extern BRCryptoSyncMode
     cryptoWalletManagerGetMode (BRCryptoWalletManager cwm);
