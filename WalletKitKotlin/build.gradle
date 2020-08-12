@@ -205,23 +205,26 @@ kotlin {
             }
         }
 
-        configure([iosSimMain, iosArm64Main]) {
-            dependsOn(darwinDependenciesMain)
-            kotlin.srcDirs += ['src/darwinMain']
-            // Only required for dependents
-            //dependencies {
-            //    implementation "io.ktor:ktor-client-ios:$ktor_version"
-            //}
+        if (!project.ext.ideaActive) {
+            configure([iosSimMain, iosArm64Main]) {
+                dependsOn(darwinDependenciesMain)
+                kotlin.srcDirs += ['src/darwinMain']
+                // Only required for dependents
+                //dependencies {
+                //    implementation "io.ktor:ktor-client-ios:$ktor_version"
+                //}
+            }
+            // NOTE: Required for SwiftShims, likely to be removed in the future.
+            iosSimMain {
+                dependencies {
+                    implementation "io.ktor:ktor-client-ios:$ktor_version"
+                }
+            }
         }
 
         macosMain {
             dependsOn(darwinDependenciesMain)
             kotlin.srcDirs += ['src/darwinMain']
-            // Only required for dependents
-            //dependencies {
-            //    // Requires curl 7.63+
-            //    implementation "io.ktor:ktor-client-curl:$ktor_version"
-            //}
         }
     }
 }

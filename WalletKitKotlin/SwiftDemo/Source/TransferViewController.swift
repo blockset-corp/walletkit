@@ -55,15 +55,15 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
         switch state {
         case is TransferState.CREATED: return UIColor.gray
         case is TransferState.SUBMITTED: return UIColor.yellow
-        case is TransferState.INCLUDED:
-            //let confirmation = (state as! TransferState.INCLUDED).confirmation
+        case _ as TransferState.INCLUDED:
+            //let confirmation = includedState.confirmation
             return UIColor.green// TODO: Add success to transferstate transfer!.confirmation!.success ? UIColor.green : UIColor.red
         case is TransferState.DELETED: return UIColor.black
 
         case is TransferState.SIGNED: return UIColor.yellow
         case is TransferState.PENDING: return UIColor.yellow
         case is TransferState.FAILED /*(let reason )*/: return UIColor.red
-        default: assert(false)
+        default: return UIColor.red
         }
     }
 
@@ -92,8 +92,8 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
 
 
         switch transfer.state {
-        case is TransferState.FAILED:
-            let reason = (transfer.state as! TransferState.FAILED).error.description()
+        case let failedState as TransferState.FAILED:
+            let reason = failedState.error.description()
             stateLabel.text = "\(transfer.state.description): \(reason)"
         default:
             stateLabel.text = transfer.state.description

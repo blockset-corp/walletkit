@@ -144,33 +144,28 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
         guard manager == self.manager else { return }
         DispatchQueue.main.async {
             switch event {
-            case is WalletManagerEvent.Changed:
-                let newState = (event as! WalletManagerEvent.Changed).oldState
-                self.connectStateLabel.text = newState.description
+            case let changeEvent as WalletManagerEvent.Changed:
+                self.connectStateLabel.text = changeEvent.newState.description
                 for index in 0..<3 {
-                    self.connectStateSegmentedControl.setEnabled(self.connectStateIsEnabled(index, newState), forSegmentAt: index)
-                    if self.connectStateIsSelected(index, newState) {
+                    self.connectStateSegmentedControl.setEnabled(self.connectStateIsEnabled(index, changeEvent.newState), forSegmentAt: index)
+                    if self.connectStateIsSelected(index, changeEvent.newState) {
                         self.connectStateSegmentedControl.selectedSegmentIndex = index
                     }
                 }
-            case is WalletManagerEvent.SyncProgress:
-                let percentComplete = (event as! WalletManagerEvent.SyncProgress).percentComplete
-                self.syncProgressLabel.text = percentComplete.description
+            case let syncProgress as WalletManagerEvent.SyncProgress:
+                self.syncProgressLabel.text = syncProgress.percentComplete.description
             case is WalletManagerEvent.SyncStopped:
                 let reason = (event as! WalletManagerEvent.SyncStopped).reason
                 switch reason {
                 case is SyncStoppedReason.COMPLETE: self.syncProgressLabel.text = "COMPLETE"
                 case is SyncStoppedReason.REQUESTED: self.syncProgressLabel.text = ""
                 case is SyncStoppedReason.UNKNOWN: self.syncProgressLabel.text = "<UNKNOWN>"
-                case is SyncStoppedReason.POSIX:
-                    let errnum = (reason as! SyncStoppedReason.POSIX).errNum
-                    let message = (reason as! SyncStoppedReason.POSIX).errMessage
-                    self.syncProgressLabel.text = "\(errnum): \(message ?? "")"
+                case let posixErr as SyncStoppedReason.POSIX:
+                    self.syncProgressLabel.text = "\(posixErr.errNum): \(posixErr.errMessage ?? "")"
                 default: assert(false)
                 }
-            case is WalletManagerEvent.BlockUpdated:
-                let height = (event as! WalletManagerEvent.BlockUpdated).height
-                self.blockHeightLabel.text = height.description
+            case let updateEvent as WalletManagerEvent.BlockUpdated:
+                self.blockHeightLabel.text = updateEvent.height.description
             default:
                 break
             }

@@ -88,8 +88,8 @@ class CoreDemoListener: SystemListener {
         case is SystemEvent.Created:
             break
 
-        case is SystemEvent.NetworkAdded:
-            let network = (event as! SystemEvent.NetworkAdded).network
+        case let networkAdded as SystemEvent.NetworkAdded:
+            let network = networkAdded.network
             // A network was created; create the corresponding wallet manager.  Note: an actual
             // App might not be interested in having a wallet manager for every network -
             // specifically, test networks are announced and having a wallet manager for a
@@ -118,15 +118,15 @@ class CoreDemoListener: SystemListener {
                 }
             }
 
-        case is SystemEvent.ManagerAdded:
-            let manager = (event as! SystemEvent.ManagerAdded).manager
+        case let managerAdded as SystemEvent.ManagerAdded:
+            let manager = managerAdded.manager
             //TODO: Don't connect here. connect on touch...
             DispatchQueue.main.async {
                 manager.connect(peer: UIApplication.peer (network: manager.network))
             }
 
-        case is SystemEvent.DiscoveredNetworks:
-            let networks = (event as! SystemEvent.DiscoveredNetworks).networks
+        case let discoveredNetworks as SystemEvent.DiscoveredNetworks:
+            let networks = discoveredNetworks.networks
             let allCurrencies = networks.flatMap { $0.currencies }
             print ("APP: System: Currencies (Added): ")
             allCurrencies.forEach { print ("APP: System:    \($0.code)") }
