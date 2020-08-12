@@ -61,12 +61,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
     wallet->ref = CRYPTO_REF_ASSIGN (cryptoWalletRelease);
 
-    wallet->listenerTransfer = (BRCryptoTransferListener) {
-        listener.context,
-        listener.manager,
-        wallet,
-        listener.transferCallback
-    };
+    wallet->listenerTransfer = cryptoListenerCreateTransferListener (&wallet->listener, wallet);
 
     pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
@@ -454,15 +449,6 @@ cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
     cryptoCurrencyGive (feeCurrency);
 
     return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
-}
-
-extern void
-cryptoWalletGenerateEvent (BRCryptoWallet wallet,
-                           BRCryptoWalletEvent event) {
-    wallet->listener.walletCallback (wallet->listener.context,
-                                     wallet->listener.manager,
-                                     wallet,
-                                     event);
 }
 
 extern BRCryptoBoolean

@@ -47,7 +47,7 @@ cryptoWaleltMangerCreateCallbackETH (BRCryptoWalletManagerCreateContext context,
 }
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateETH (BRCryptoListener listener,
+cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
                               BRCryptoClient client,
                               BRCryptoAccount account,
                               BRCryptoNetwork network,

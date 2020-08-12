@@ -12,11 +12,7 @@
 #define BRCryptoClient_h
 
 #include "BRCryptoBase.h"
-#include "BRCryptoNetwork.h"
-#include "BRCryptoAccount.h"
-#include "BRCryptoStatus.h"
 #include "BRCryptoTransfer.h"
-#include "BRCryptoWallet.h"
 
 #ifdef __cplusplus
 extern "C" {

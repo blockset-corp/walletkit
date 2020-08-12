@@ -35,7 +35,7 @@ cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainT
 }
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateBTC (BRCryptoListener listener,
+cryptoWalletManagerCreateBTC (BRCryptoWalletManagerListener listener,
                               BRCryptoClient client,
                               BRCryptoAccount account,
                               BRCryptoNetwork network,

@@ -48,7 +48,8 @@ typedef struct {
 /// MARK: - Network Handlers
 
 typedef BRCryptoNetwork
-(*BRCryptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
+(*BRCryptoNetworkCreateHandler) (BRCryptoNetworkListener listener,
+                                 const char *uids,               // bitcoin-testnet
                                  const char *name,               // Bitcoin
                                  const char *network,            // testnet
                                  bool isMainnet,                 // false
@@ -100,6 +101,8 @@ struct BRCryptoNetworkRecord {
     size_t sizeInBytes;
     
     pthread_mutex_t lock;
+
+    BRCryptoNetworkListener listener;
     
     char *uids;
     char *name;
@@ -134,6 +137,7 @@ typedef void (*BRCryptoNetworkCreateCallback) (BRCryptoNetworkCreateContext cont
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
+                           BRCryptoNetworkListener listener,
                            const char *uids,
                            const char *name,
                            const char *desc,        // "mainnet", "testnet", "rinkeby"
@@ -192,6 +196,12 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
 private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
                                                 BRCryptoTimestamp timestamp);
+
+static inline void
+cryptoNetworkGenerateEvent (BRCryptoNetwork network,
+                            BRCryptoNetworkEvent event) {
+    cryptoListenerGenerateNetworkEvent (&network->listener, network, event);
+}
 
 #ifdef __cplusplus
 }

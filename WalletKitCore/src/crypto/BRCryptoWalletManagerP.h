@@ -33,7 +33,7 @@ extern "C" {
 // MARK: - WalletManager Handlers
 
 typedef BRCryptoWalletManager
-(*BRCryptoWalletManagerCreateHandler) (BRCryptoListener listener,
+(*BRCryptoWalletManagerCreateHandler) (BRCryptoWalletManagerListener listener,
                                        BRCryptoClient client,
                                        BRCryptoAccount account,
                                        BRCryptoNetwork network,
@@ -146,7 +146,6 @@ struct BRCryptoWalletManagerRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
-    BRCryptoListener listener;
     BRCryptoClient client;
     BRCryptoNetwork network;
     BRCryptoAccount account;
@@ -175,8 +174,9 @@ struct BRCryptoWalletManagerRecord {
 
     BRCryptoWalletManagerState state;
 
+    BRCryptoWalletManagerListener listener;
     BRCryptoWalletListener listenerWallet;
-    BRCryptoListener listenerTrampoline;
+//    BRCryptoListener listenerTrampoline;
 };
 
 typedef void *BRCryptoWalletManagerCreateContext;
@@ -186,7 +186,7 @@ typedef void (*BRCryptoWalletManagerCreateCallback) (BRCryptoWalletManagerCreate
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoBlockChainType type,
-                                 BRCryptoListener listener,
+                                 BRCryptoWalletManagerListener listener,
                                  BRCryptoClient client,
                                  BRCryptoAccount account,
                                  BRCryptoNetwork network,
@@ -255,9 +255,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 //                                          BRCryptoWalletEvent event);
 //
 
-private_extern void
-cryptoWalletManagerGenerateEvent (BRCryptoWalletManager cwm,
-                                  BRCryptoWalletManagerEvent event);
+static inline void
+cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,
+                                  BRCryptoWalletManagerEvent event) {
+    cryptoListenerGenerateManagerEvent (&manager->listener, manager, event);
+}
 
 #ifdef __cplusplus
 }

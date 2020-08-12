@@ -15,10 +15,28 @@
 #include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoSync.h"
+#include "BRCryptoListener.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    /**
+      * A Crypto Network represents a Blockchain.  The blockchains are determined from the
+      * BlockChainDB '/blockchains' query; however, networks for testnets are also defined.
+      * Thus, the available networks are {btc,bch,eth,...} X {mainnet,testnet}
+      *
+      * A Crypto Network has a currency which represents the asset used to pay for network fees.
+      * For Bitcoin the currency is 'bitcoin'; for Ethereum the currency is 'Ethereum'.
+      *
+      * A Crypto Network may support more than one currency.  For Ethereum additional currencies
+      * include the ERC20 Smart Contracts of interest - for example, BRD.
+      *
+      * Every Crypto Network's currency has a defined base Unit, default Unit and an arbitrary
+      * set of other units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...]
+      * respectively.
+      */
+     typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
     /// MARK: - (Network) Address Scheme
 
@@ -61,24 +79,8 @@ extern "C" {
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoNetworkFee, cryptoNetworkFee);
 
-    /**
-     * A Crypto Network represents a Blockchain.  The blockchains are determined from the
-     * BlockChainDB '/blockchains' query; however, networks for testnets are also defined.
-     * Thus, the available networks are {btc,bch,eth,...} X {mainnet,testnet}
-     *
-     * A Crypto Network has a currency which represents the asset used to pay for network fees.
-     * For Bitcoin the currency is 'bitcoin'; for Ethereum the currency is 'Ethereum'.
-     *
-     * A Crypto Network may support more than one currency.  For Ethereum additional currencies
-     * include the ERC20 Smart Contracts of interest - for example, BRD.
-     *
-     * Every Crypto Network's currency has a defined base Unit, default Unit and an arbitrary
-     * set of other units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...]
-     * respectively.
-     */
-    typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
-    typedef void *BRCryptoNetworkListener;
+    // MARK: - Network
 
     extern const char *
     cryptoNetworkGetUids (BRCryptoNetwork network);

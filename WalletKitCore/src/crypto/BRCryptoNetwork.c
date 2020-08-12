@@ -99,6 +99,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork)
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
+                           BRCryptoNetworkListener listener,
                            const char *uids,
                            const char *name,
                            const char *desc,
@@ -133,6 +134,10 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE);
 
     if (NULL != createCallback) createCallback (createContext, network);
+
+    cryptoNetworkGenerateEvent (network, (BRCryptoNetworkEvent) {
+        CRYPTO_NETWORK_EVENT_CREATED
+    });
 
     return network;
 }
@@ -692,7 +697,10 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
         // for debugging purposes - as a way to avoid unimplemented currencies.
         if (NULL == handlers->network) break;
 
-        BRCryptoNetwork network = handlers->network->create (networkSpec->networkId,
+        BRCryptoNetworkListener listener = { NULL };
+
+        BRCryptoNetwork network = handlers->network->create (listener,
+                                                             networkSpec->networkId,
                                                              networkSpec->name,
                                                              networkSpec->network,
                                                              networkSpec->isMainnet,

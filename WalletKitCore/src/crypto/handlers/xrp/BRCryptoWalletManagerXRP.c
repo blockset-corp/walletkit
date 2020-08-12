@@ -42,7 +42,7 @@ xrpEventTypesCount = (sizeof (xrpEventTypes) / sizeof (BREventType*));
 // MARK: - Handlers
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateXRP (BRCryptoListener listener,
+cryptoWalletManagerCreateXRP (BRCryptoWalletManagerListener listener,
                               BRCryptoClient client,
                               BRCryptoAccount account,
                               BRCryptoNetwork network,
