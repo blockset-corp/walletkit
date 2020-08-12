@@ -348,6 +348,23 @@ public enum NetworkType: CustomStringConvertible {
 public enum NetworkEvent {
     case created
     case feesUpdated
+    case deleted
+
+    init (core: BRCryptoNetworkEvent) {
+        switch core.type {
+        case CRYPTO_NETWORK_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
+            self = .feesUpdated
+
+        case CRYPTO_NETWORK_EVENT_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///

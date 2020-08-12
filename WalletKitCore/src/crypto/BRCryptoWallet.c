@@ -221,7 +221,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
         array_add (wallet->transfers, cryptoTransferTake(transfer));
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
+            { .transfer = cryptoTransferTake (transfer) }
         });
         cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirected(transfer));
      }
@@ -238,7 +238,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
             array_rm (wallet->transfers, index);
             cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
                 CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
-                { .transfer = { cryptoTransferTake (transfer) }}
+                { .transfer = cryptoTransferTake (transfer) }
             });
             cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirected(transfer));
             break;

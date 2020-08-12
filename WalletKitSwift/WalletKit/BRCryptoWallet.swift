@@ -680,12 +680,58 @@ public enum WalletEvent {
 
     case transferAdded     (transfer: Transfer)
     case transferChanged   (transfer: Transfer)
-    case transferDeleted   (transfer: Transfer)
     case transferSubmitted (transfer: Transfer, success: Bool)
+    case transferDeleted   (transfer: Transfer)
 
     case balanceUpdated    (amount: Amount)
     case feeBasisUpdated   (feeBasis: TransferFeeBasis)
     case feeBasisEstimated (feeBasis: TransferFeeBasis)
+
+    init (wallet: Wallet, core: BRCryptoWalletEvent) {
+        switch core.type {
+        case CRYPTO_WALLET_EVENT_CREATED:
+            self = .created
+            
+        case CRYPTO_WALLET_EVENT_CHANGED:
+            self = .changed (oldState: WalletState (core: core.u.state.old),
+                             newState: WalletState (core: core.u.state.new))
+            
+        case CRYPTO_WALLET_EVENT_DELETED:
+            self = .deleted
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
+            self = .transferDeleted (transfer: Transfer (core: core.u.transfer,
+                                                         wallet: wallet,
+                                                         take: false))
+            
+        case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
+            self = .balanceUpdated (amount: Amount (core: core.u.balanceUpdated.amount, take: false))
+            
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
+            self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: core.u.feeBasisUpdated.basis, take: false))
+            
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
+            self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: core.u.feeBasisEstimated.basis, take: false))
+            
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 extension WalletEvent: CustomStringConvertible {

@@ -727,7 +727,7 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
         array_add (cwm->wallets, cryptoWalletTake (wallet));
         cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
-            { .wallet = { cryptoWalletTake (wallet) }}
+            { .wallet = cryptoWalletTake (wallet) }
         });
     }
     pthread_mutex_unlock (&cwm->lock);
@@ -745,7 +745,7 @@ cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
             array_rm (cwm->wallets, index);
             cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED,
-                { .wallet = { cryptoWalletTake (wallet) }}
+                { .wallet = cryptoWalletTake (wallet) }
             });
             break;
         }
@@ -1033,7 +1033,7 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,
-        { .transfer = { cryptoTransferTake (transfer) }}
+        { .transfer = cryptoTransferTake (transfer) }
     });
 }
 

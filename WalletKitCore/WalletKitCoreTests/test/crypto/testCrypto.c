@@ -501,7 +501,7 @@ CWMEventForWalletManagerWalletType(BRCryptoWalletManagerEventType type,
                 (BRCryptoWalletManagerEvent) {
                     type,
                     {
-                        .wallet = { wallet }
+                        .wallet = wallet
                     }
                 }
             }
@@ -543,13 +543,13 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                 switch (e1->u.m.event.type) {
                     case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
                         // Do we want to check iff the disconnect reason matched?
-                        success = (e1->u.m.event.u.state.oldValue.type == e2->u.m.event.u.state.oldValue.type &&
-                                   e1->u.m.event.u.state.newValue.type == e2->u.m.event.u.state.newValue.type);
+                        success = (e1->u.m.event.u.state.old.type == e2->u.m.event.u.state.old.type &&
+                                   e1->u.m.event.u.state.new.type == e2->u.m.event.u.state.new.type);
                         break;
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
-                        success = CRYPTO_TRUE == cryptoWalletEqual (e1->u.m.event.u.wallet.value, e2->u.m.event.u.wallet.value);
+                        success = CRYPTO_TRUE == cryptoWalletEqual (e1->u.m.event.u.wallet, e2->u.m.event.u.wallet);
                         break;
                     case CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES:
                     case CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED:
@@ -579,7 +579,7 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                     case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-                        success = CRYPTO_TRUE == cryptoTransferEqual (e1->u.w.event.u.transfer.value, e2->u.w.event.u.transfer.value);
+                        success = CRYPTO_TRUE == cryptoTransferEqual (e1->u.w.event.u.transfer, e2->u.w.event.u.transfer);
                         break;
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
                         success = (e1->u.w.event.u.feeBasisEstimated.cookie == e2->u.w.event.u.feeBasisEstimated.cookie &&
@@ -742,7 +742,7 @@ CWMEventRecordingGetNextWalletManagerEventIndexForWallet(CWMEventRecordingState 
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
-                    if (state->events[index]->u.m.event.u.wallet.value == wallet) {
+                    if (state->events[index]->u.m.event.u.wallet == wallet) {
                         return index;
                     }
                 default:

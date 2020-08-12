@@ -70,15 +70,12 @@ extern "C" {
         BRCryptoWalletEventType type;
         union {
             struct {
-                BRCryptoWalletState oldState;
-                BRCryptoWalletState newState;
+                BRCryptoWalletState old;
+                BRCryptoWalletState new;
             } state;
             
-            struct {
-                /// Handler must 'give'
-                BRCryptoTransfer value;
-            } transfer;
-            
+            BRCryptoTransfer transfer;
+
             struct {
                 /// Handler must 'give'
                 BRCryptoAmount amount;

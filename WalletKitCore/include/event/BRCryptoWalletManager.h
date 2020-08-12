@@ -98,14 +98,11 @@ extern "C" {
         BRCryptoWalletManagerEventType type;
         union {
             struct {
-                BRCryptoWalletManagerState oldValue;
-                BRCryptoWalletManagerState newValue;
+                BRCryptoWalletManagerState old;
+                BRCryptoWalletManagerState new;
             } state;
 
-            struct {
-                /// Handler must 'give'
-                BRCryptoWallet value;
-            } wallet;
+            BRCryptoWallet wallet;
 
             struct {
                 BRCryptoTimestamp timestamp;
@@ -120,9 +117,7 @@ extern "C" {
                 BRCryptoSyncDepth depth;
             } syncRecommended;
 
-            struct {
-                uint64_t value;
-            } blockHeight;
+            BRCryptoBlockNumber blockHeight;
         } u;
     } BRCryptoWalletManagerEvent;
 

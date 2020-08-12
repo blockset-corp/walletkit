@@ -681,7 +681,7 @@ public enum WalletManagerEvent {
     case changed (oldState: WalletManagerState, newState: WalletManagerState)
     case deleted
 
-    case walletAdded (wallet: Wallet)
+    case walletAdded   (wallet: Wallet)
     case walletChanged (wallet: Wallet)
     case walletDeleted (wallet: Wallet)
 
@@ -696,6 +696,65 @@ public enum WalletManagerEvent {
     /// block height. Displays or caches of that confirmation count should be updated when this
     /// event occurs.
     case blockUpdated (height: UInt64)
+
+    init (manager: WalletManager, core: BRCryptoWalletManagerEvent) {
+        switch core.type {
+        case CRYPTO_WALLET_MANAGER_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
+            self = .changed(oldState: WalletManagerState(core: core.u.state.old),
+                            newState: WalletManagerState(core: core.u.state.new))
+
+        case CRYPTO_WALLET_MANAGER_EVENT_DELETED:
+            self = .deleted
+
+        case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
+            self = .walletAdded (wallet: Wallet (core: core.u.wallet,
+                                                manager: manager,
+                                                callbackCoordinator: manager.callbackCoordinator,
+                                                take: false))
+
+        case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
+            self = .walletChanged (wallet: Wallet (core: core.u.wallet,
+                                                   manager: manager,
+                                                   callbackCoordinator: manager.callbackCoordinator,
+                                                   take: false))
+
+        case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
+            self = .walletDeleted (wallet: Wallet (core: core.u.wallet,
+                                                   manager: manager,
+                                                   callbackCoordinator: manager.callbackCoordinator,
+                                                   take: false))
+
+        // wallet: added: ...
+        case CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED:
+            self = .syncStarted
+            
+        case CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES:
+            let timestamp: Date? = (0 == core.u.syncContinues.timestamp // NO_CRYPTO_TIMESTAMP
+                ? nil
+                : Date (timeIntervalSince1970: TimeInterval(core.u.syncContinues.timestamp)))
+
+            self = .syncProgress (timestamp: timestamp,
+                                  percentComplete: core.u.syncContinues.percentComplete)
+
+        case CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED:
+            let reason = WalletManagerSyncStoppedReason(core: core.u.syncStopped.reason)
+            self = .syncEnded(reason: reason)
+
+        case CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED:
+            let depth = WalletManagerSyncDepth(core: core.u.syncRecommended.depth)
+            self = .syncRecommended(depth: depth)
+
+        case CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED:
+            self = .blockUpdated(height: core.u.blockHeight)
+
+        default:
+            preconditionFailure()
+
+        }
+    }
 }
 
 ///

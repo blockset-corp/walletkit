@@ -11,13 +11,13 @@
 #include "BRCryptoListenerP.h"
 #include "support/BROSCompat.h"
 
-IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoListener, cryptoListener)
+#include "BRCryptoNetwork.h"
+#include "BRCryptoTransfer.h"
+#include "BRCryptoWallet.h"
+#include "BRCryptoWalletManager.h"
+#include "BRCryptoSystem.h"
 
-#define cryptoWalletManagerTake(x)   (x)
-#define cryptoWalletTake(x)    (x)
-#define cryptoTransferTake(x)  (x)
-#define cryptoNetworkTake(x)   (x)
-#define cryptoSystemTake(x)    (x)
+IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoListener, cryptoListener)
 
 // MARK: - Generate Transfer Event
 
@@ -53,11 +53,9 @@ cryptoListenerGenerateTransferEvent (const BRCryptoTransferListener *listener,
     BRListenerSignalTransferEvent listenerEvent =
     { { NULL, &handleListenerSignalTransferEventType},
         listener->listener,
-        cryptoWalletManagerTake (listener->manager),
-        cryptoWalletTake(listener->wallet),
-        (CRYPTO_TRANSFER_EVENT_DELETED != event.type
-         ? cryptoTransferTake(transfer)
-         : transfer),
+        cryptoWalletManagerTakeWeak (listener->manager),
+        cryptoWalletTakeWeak (listener->wallet),
+        cryptoTransferTakeWeak (transfer),
         event };
 
     eventHandlerSignalEvent(listener->listener->handler, (BREvent *) &listenerEvent);
@@ -95,10 +93,8 @@ cryptoListenerGenerateWalletEvent (const BRCryptoWalletListener *listener,
     BRListenerSignalWalletEvent listenerEvent =
     { { NULL, &handleListenerSignalWalletEventType},
         listener->listener,
-        cryptoWalletManagerTake (listener->manager),
-        (CRYPTO_WALLET_EVENT_DELETED != event.type
-         ? cryptoWalletTake(wallet)
-         : wallet),
+        cryptoWalletManagerTakeWeak (listener->manager),
+        cryptoWalletTakeWeak (wallet),
         event };
 
     eventHandlerSignalEvent(listener->listener->handler, (BREvent *) &listenerEvent);
@@ -134,9 +130,7 @@ cryptoListenerGenerateManagerEvent (const BRCryptoWalletManagerListener *listene
     BRListenerSignalManagerEvent listenerEvent =
     { { NULL, &handleListenerSignalManagerEventType},
         listener->listener,
-        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
-         ? cryptoWalletManagerTake(manager)
-         : manager),
+        cryptoWalletManagerTakeWeak (manager),
         event };
 
     eventHandlerSignalEvent (listener->listener->handler, (BREvent *) &listenerEvent);
@@ -172,9 +166,7 @@ cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
     BRListenerSignalNetworkEvent listenerEvent =
     { { NULL, &handleListenerSignalNetworkEventType},
         listener->listener,
-        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
-         ? cryptoNetworkTake(network)
-         : network),
+        cryptoNetworkTakeWeak (network),
         event };
 
     eventHandlerSignalEvent (listener->listener->handler, (BREvent *) &listenerEvent);
@@ -211,9 +203,7 @@ cryptoListenerGenerateSystemEvent (BRCryptoListener listener,
     BRListenerSignalSystemEvent listenerEvent =
     { { NULL, &handleListenerSignalSystemEventType},
         listener,
-        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
-         ? cryptoSystemTake(system)
-         : system),
+        cryptoSystemTakeWeak (system),
         event };
 
     eventHandlerSignalEvent (listener->handler, (BREvent *) &listenerEvent);
@@ -232,9 +222,6 @@ cryptoListenerEventTypes[] = {
 
 static const unsigned int
 cryptoListenerEventTypesCount = (sizeof (cryptoListenerEventTypes) / sizeof(BREventType*)); //  11
-
-
-
 
 extern BRCryptoListener
 cryptoListenerCreate (BRCryptoListenerContext context,
@@ -283,9 +270,3 @@ extern void
 cryptoListenerStop (BRCryptoListener listener) {
     eventHandlerStop (listener->handler);
 }
-
-#undef cryptoSystemTake
-#undef cryptoNetworkTake
-#undef cryptoTransferTake
-#undef cryptoWalletTake
-#undef cryptoWalletManagerTake

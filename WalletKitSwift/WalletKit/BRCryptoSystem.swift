@@ -990,13 +990,32 @@ public final class System {
     }
 }
 
-public enum SystemEvent {
-    /// The system has been created.
+public enum SystemState {
     case created
+    case deleted
+
+    init (core: BRCryptoSystemState) {
+        switch core {
+        case CRYPTO_SYSTEM_STATE_CREATED:
+            self = .created
+
+        case CRYPTO_SYSTEM_STATE_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
+}
+
+public enum SystemEvent {
+    case created
+    case changed (old: SystemState, new: SystemState)
+    case deleted
 
     /// A network has been added to the system.  This event is generated during `configure` as
     /// each BlockChainDB blockchain is discovered.
-    case networkAdded (network: Network)
+    case networkAdded   (network: Network)
 
     /// During `configure` once all networks have been discovered, this event is generated to
     /// mark the completion of network discovery.  The provided networks are the newly added ones;
@@ -1006,6 +1025,42 @@ public enum SystemEvent {
     /// A wallet manager has been added to the system.  WalletMangers are added by the APP
     /// generally as a subset of the Networks and through a call to System.craeteWalletManager.
     case managerAdded (manager: WalletManager)
+
+    init (system: System, core: BRCryptoSystemEvent) {
+        switch core.type {
+        case CRYPTO_SYSTEM_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_SYSTEM_EVENT_CHANGED:
+            self = .changed(old: SystemState (core: core.u.state.old),
+                            new: SystemState (core: core.u.state.new))
+
+        case CRYPTO_SYSTEM_EVENT_DELETED:
+            self = .deleted
+
+        case CRYPTO_SYSTEM_EVENT_NETWORK_ADDED:
+            self = .networkAdded (network: Network (core: core.u.network, take: false))
+
+        case CRYPTO_SYSTEM_EVENT_NETWORK_CHANGED:
+            preconditionFailure()
+        case CRYPTO_SYSTEM_EVENT_NETWORK_DELETED:
+            preconditionFailure()
+
+        case CRYPTO_SYSTEM_EVENT_MANAGER_ADDED:
+            self = .managerAdded (manager: WalletManager (core: core.u.manager,
+                                                          system: system,
+                                                          callbackCoordinator: system.callbackCoordinator,
+                                                          take: false))
+
+        case CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED:
+            preconditionFailure()
+        case CRYPTO_SYSTEM_EVENT_MANAGER_DELETED:
+            preconditionFailure()
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///
