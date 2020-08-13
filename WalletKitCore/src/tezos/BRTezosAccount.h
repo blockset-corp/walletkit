@@ -57,6 +57,20 @@ extern void
 tezosAccountFree (BRTezosAccount account);
 
 /**
+ * Signs a message using the account private key.
+ *
+ * @param account
+ * @param data - the message to sign
+ * @param seed - account seed
+ *
+ * @return signature
+*/
+extern BRCryptoData
+tezosAccountSignData (BRTezosAccount account,
+                      BRCryptoData data,
+                      UInt512 seed);
+
+/**
  * Get the public key for this Tezos account
  *
  * @param account

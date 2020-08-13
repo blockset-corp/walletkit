@@ -71,6 +71,7 @@ genericRippleAccountGetSerialization (BRGenericAccountRef account,
 
 static void
 genericRippleAccountSignTransferWithSeed (BRGenericAccountRef account,
+                                          BRGenericWalletRef wallet,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {

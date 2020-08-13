@@ -24,6 +24,7 @@ extern "C" {
 
 typedef struct BRTezosTransactionRecord *BRTezosTransaction;
 typedef struct BRTezosSerializedOperationRecord *BRTezosSerializedOperation;
+typedef struct BRTezosSignatureRecord *BRTezosSignature;
 
 typedef struct {
     BRTezosOperationKind kind;
@@ -78,6 +79,11 @@ tezosTransactionCreateDelegation (BRTezosAddress source,
                                   BRTezosFeeBasis feeBasis,
                                   int64_t counter);
 
+extern BRTezosTransaction
+tezosTransactionCreateReveal (BRTezosAddress source,
+                              uint8_t * pubKey,
+                              BRTezosFeeBasis feeBasis,
+                              int64_t counter);
 
 /**
 * Create a copy of a Tezos transaction. Caller must free with tezosTrasactionFree.
@@ -100,21 +106,22 @@ extern void
 tezosTransactionFree (BRTezosTransaction transaction);
 
 /**
- * Sign a Tezos transaction
+ * Serializes (forges) and signs a Tezos operation and stores the signed bytes in the transaction.
+ * If a reveal operation is required it will be prepended to the serialized operation list.
  *
  * @param transaction
- * @param public key      - of the source account
- * @param timeStamp       - used to create the transaction id - just use current
- *                          time
- * @param fee             - max number of tinybars the caller is willing to pay
+ * @param account         - the source account
  * @param seed            - seed for this account, used to create private key
+ * @param lastBlockHash   - hash of the network's most recent block, needed for serialization payload
  *
  * @return size           - number of bytes in the signed transaction
  */
 extern size_t
 tezosTransactionSignTransaction (BRTezosTransaction transaction,
-                                 BRKey publicKey,
-                                 UInt512 seed);
+                                 BRTezosAccount account,
+                                 UInt512 seed,
+                                 BRTezosBlockHash lastBlockHash,
+                                 bool needsReveal);
 
 /**
  * Get serialiezd bytes for the specified transaction
@@ -125,26 +132,40 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
  * @return bytes       - pointer to serialized bytes
  */
 extern uint8_t * /* caller owns and must free using normal "free" function */
-tezosTransactionSerialize (BRTezosTransaction transaction, size_t *size);
+tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size);
 
-extern BRTezosTransactionHash tezosTransactionGetHash(BRTezosTransaction transaction);
+extern BRTezosTransactionHash
+tezosTransactionGetHash(BRTezosTransaction transaction);
 
-extern int64_t tezosTransactionGetCounter(BRTezosTransaction transaction);
+extern int64_t
+tezosTransactionGetCounter(BRTezosTransaction transaction);
 
-extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction);
+extern BRTezosUnitMutez
+tezosTransactionGetFee(BRTezosTransaction transaction);
 
-extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transaction);
+extern BRTezosFeeBasis
+tezosTransactionGetFeeBasis(BRTezosTransaction transaction);
 
-extern BRTezosUnitMutez tezosTransactionGetAmount(BRTezosTransaction transaction);
+extern BRTezosUnitMutez
+tezosTransactionGetAmount(BRTezosTransaction transaction);
 
-extern BRTezosAddress tezosTransactionGetSource(BRTezosTransaction transaction);
+extern BRTezosAddress
+tezosTransactionGetSource(BRTezosTransaction transaction);
 
-extern BRTezosAddress tezosTransactionGetTarget(BRTezosTransaction transaction);
+extern BRTezosAddress
+tezosTransactionGetTarget(BRTezosTransaction transaction);
 
-extern BRTezosOperationData tezosTransactionGetOperationData(BRTezosTransaction transaction);
-extern void tezosTransactionFreeOperationData(BRTezosOperationData opData);
+extern BRTezosOperationKind
+tezosTransactionGetOperationKind(BRTezosTransaction transaction);
 
-extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2);
+extern BRTezosOperationData
+tezosTransactionGetOperationData(BRTezosTransaction transaction);
+
+extern void
+tezosTransactionFreeOperationData(BRTezosOperationData opData);
+
+extern bool
+tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2);
 
 #ifdef __cplusplus
 }

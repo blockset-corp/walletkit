@@ -27,6 +27,10 @@ typedef struct {
     uint8_t bytes[32];
 } BRTezosTransactionHash;
 
+typedef struct {
+    uint8_t bytes[34];
+} BRTezosBlockHash;
+
 typedef int64_t BRTezosUnitMutez;
 
 #define TEZOS_TEZ_SCALE_FACTOR       (1000000)  // 1 TEZ = 1e6 MUTEZ

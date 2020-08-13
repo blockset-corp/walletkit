@@ -473,7 +473,7 @@ genManagerSignTransfer (BRGenericManager gwm,
                         BRGenericWallet wid,
                         BRGenericTransfer transfer,
                         UInt512 seed) {
-    genAccountSignTransferWithSeed (gwm->account, transfer, seed);
+    genAccountSignTransferWithSeed (gwm->account, wid, transfer, seed);
     return 1;
 }
 

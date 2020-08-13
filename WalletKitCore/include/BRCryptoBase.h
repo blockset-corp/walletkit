@@ -92,7 +92,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         BRCryptoData data;
         data.size = size;
         if (size < 1) data.size = 1;
-        data.bytes = calloc (data.size, sizeof(*(data.bytes)));
+        data.bytes = calloc (data.size, sizeof(uint8_t));
         assert (data.bytes != NULL);
         return data;
     }
@@ -122,6 +122,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
     static inline void cryptoDataFree (BRCryptoData data) {
         if (data.bytes) free(data.bytes);
+        data.bytes = NULL;
         data.size = 0;
     }
 

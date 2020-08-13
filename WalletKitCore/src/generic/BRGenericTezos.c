@@ -66,13 +66,16 @@ genericTezosAccountGetSerialization (BRGenericAccountRef account,
 
 static void
 genericTezosAccountSignTransferWithSeed (BRGenericAccountRef account,
+                                         BRGenericWalletRef wallet,
                                          BRGenericTransferRef transfer,
                                          UInt512 seed)
 {
-    BRKey publicKey = tezosAccountGetPublicKey ((BRTezosAccount)account);
+    BRTezosBlockHash lastBlockHash = tezosWalletGetLastBlockHash ((BRTezosWallet) wallet);
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
+    assert(transaction);
     if (transaction) {
-        tezosTransactionSignTransaction (transaction, publicKey, seed);
+        bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal(wallet);
+        tezosTransactionSignTransaction (transaction, account, seed, lastBlockHash, needsReveal);
     }
 }
 
@@ -150,7 +153,7 @@ genericTezosTransferGetSerialization (BRGenericTransferRef transfer, size_t *byt
     *bytesCount = 0;
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
     if (transaction) {
-        result = tezosTransactionSerialize(transaction, bytesCount);
+        result = tezosTransactionGetSignedBytes (transaction, bytesCount);
     }
     return result;
 }
@@ -247,16 +250,12 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
         }
     }
     
-    //TODO:TEZOS create delegation op
     BRTezosTransfer transfer = tezosTransferCreateNew (source,
                                                        (BRTezosAddress) target,
                                                        mutez,
                                                        feeBasis,
                                                        counter,
                                                        delegationOp);
-    
-    BRTezosTransaction transaction = tezosTransferGetTransaction (transfer);
-    
     tezosAddressFree(source);
     
     return (BRGenericTransferRef) transfer;

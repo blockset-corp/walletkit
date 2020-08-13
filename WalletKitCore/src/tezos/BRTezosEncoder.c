@@ -156,3 +156,33 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     
     return serialized;
 }
+
+extern BRCryptoData
+tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosBlockHash blockHash) {
+    
+    BRCryptoData fields[txCount + 1];
+    size_t numFields = 0;
+    
+    // operation list = branch + [reveal op bytes] + transaction/delegation op bytes
+    // branch = <2-byte protocol version prefix> + latest block hash (omit first 2-bytes)
+    uint8_t protocolVersionPrefix[] = {1, 52}; // Babylon
+    size_t prefixSize = sizeof(protocolVersionPrefix);
+    
+    BRCryptoData branchData = cryptoDataNew(sizeof(blockHash.bytes));
+    memcpy(branchData.bytes, protocolVersionPrefix, prefixSize);
+    memcpy(&branchData.bytes[prefixSize], &blockHash.bytes[prefixSize], sizeof(blockHash.bytes) - prefixSize);
+    
+    fields[numFields++] = branchData;
+    
+    for (int i=0; i < txCount; i++) {
+        fields[numFields++] = tezosSerializeTransaction(tx[i]);
+    }
+    
+    BRCryptoData serialized = cryptoDataConcat(fields, numFields);
+    
+    for (int i=0; i < numFields; i++) {
+        cryptoDataFree(fields[i]);
+    }
+    
+    return serialized;
+}

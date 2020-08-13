@@ -34,7 +34,7 @@ tezosFeeBasisGetPricePerCostFactor (BRTezosFeeBasis *feeBasis)
 extern uint64_t
 tezosFeeBasisGetCostFactor (BRTezosFeeBasis *feeBasis)
 {
-    return feeBasis ? feeBasis->gasLimit : 1; //TODO:TEZOS
+    return feeBasis ? (uint64_t)(feeBasis->gasLimit) : 1; //TODO:TEZOS
 }
 
 extern BRTezosUnitMutez

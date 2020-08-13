@@ -26,6 +26,9 @@ encodeZarith (int64_t value);
 extern BRCryptoData
 tezosSerializeTransaction (BRTezosTransaction tx);
 
+extern BRCryptoData
+tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosBlockHash blockHash);
+
 
 #ifdef __cplusplus
 }

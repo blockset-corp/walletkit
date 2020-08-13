@@ -33,8 +33,11 @@ deriveTezosPrivateKeyFromSeed (UInt512 seed, uint32_t index);
 static void
 tezosKeyGetPublicKey (BRKey key, uint8_t * publicKey);
 
+static void
+tezosKeyGetPrivateKey (BRKey key, uint8_t * privateKey);
 
-// MARK: -
+
+// MARK: - Init/Free
 
 extern BRTezosAccount
 tezosAccountCreateWithSeed (UInt512 seed) {
@@ -70,8 +73,51 @@ tezosAccountFree (BRTezosAccount account)
     free (account);
 }
 
+// MARK: - Signing
 
-// MARK: -
+extern BRCryptoData
+tezosAccountSignData (BRTezosAccount account,
+                      BRCryptoData data,
+                      UInt512 seed) {
+    /*
+     Data watermarkedData = Data();
+     watermarkedData.push_back(0x03);
+     append(watermarkedData, data);
+
+     Data hash = Hash::blake2b(watermarkedData, 32);
+     Data signature = privateKey.sign(hash, TWCurve::TWCurveED25519);
+
+     Data signedData = Data();
+     append(signedData, data);
+     append(signedData, signature);
+     return signedData;
+     */
+    BRKey publicKey = tezosAccountGetPublicKey ((BRTezosAccount)account);
+    BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
+    uint8_t privateKeyBytes[64];
+    tezosKeyGetPrivateKey(privateKey, privateKeyBytes);
+    
+    BRCryptoData watermarkedData = cryptoDataNew(data.size + 1);
+    
+    uint8_t watermark[] = { 0x03 };
+    size_t watermarkSize = sizeof(watermark);
+    
+    memcpy(watermarkedData.bytes, watermark, watermarkSize);
+    memcpy(&watermarkedData.bytes[watermarkSize], data.bytes, data.size);
+    
+    uint8_t hash[32];
+    blake2b(hash, sizeof(hash), NULL, 0, publicKey.pubKey, TEZOS_PUBLIC_KEY_SIZE);
+    
+    BRCryptoData signature = cryptoDataNew(64);
+    ed25519_sign(signature.bytes, hash, sizeof(hash), publicKey.pubKey, privateKeyBytes);
+    
+    mem_clean(privateKeyBytes, 64);
+    cryptoDataFree(watermarkedData);
+    
+    return signature;
+}
+
+// MARK: - Accessors
 
 extern BRKey
 tezosAccountGetPublicKey (BRTezosAccount account) {
@@ -198,4 +244,10 @@ tezosKeyGetPublicKey (BRKey key, uint8_t * publicKey) {
     unsigned char privateKey[64] = {0};
     ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
     memset(privateKey, 0x00, 64);
+}
+
+static void
+tezosKeyGetPrivateKey (BRKey key, uint8_t * privateKey) {
+    unsigned char publicKey[32] = {0};
+    ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
 }

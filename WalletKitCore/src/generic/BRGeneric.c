@@ -118,9 +118,10 @@ genAccountGetSerialization (BRGenericAccount account, size_t *bytesCount) {
 
 extern void
 genAccountSignTransferWithSeed (BRGenericAccount account,
+                                BRGenericWallet wallet,
                                 BRGenericTransfer transfer,
                                 UInt512 seed) {
-    account->handlers.signTransferWithSeed (account->ref, transfer->ref, seed);
+    account->handlers.signTransferWithSeed (account->ref, wallet->ref, transfer->ref, seed);
 }
 
 extern void

@@ -25,6 +25,7 @@ struct BRTezosWalletRecord {
     BRTezosUnitMutez balance;
     BRTezosFeeBasis feeBasis;
     int64_t counter;
+    BRTezosBlockHash lastBlockHash;
 
     BRArrayOf(BRTezosTransfer) transfers;
 
@@ -130,6 +131,25 @@ extern int64_t
 tezosWalletGetCounter (BRTezosWallet wallet) {
     assert(wallet);
     return wallet->counter;
+}
+
+extern BRTezosBlockHash
+tezosWalletGetLastBlockHash (BRTezosWallet wallet) {
+    assert(wallet);
+    return wallet->lastBlockHash;
+}
+
+extern bool
+tezosWalletNeedsReveal (BRTezosWallet wallet) {
+    assert(wallet);
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        // reveal is needed before the first outgoing transfer
+        BRTezosAddress source = tezosTransferGetSource(wallet->transfers[index]);
+        bool isOutgoing = tezosWalletHasAddress(wallet, source);
+        tezosAddressFree(source);
+        if (isOutgoing) return false;
+    }
+    return true;
 }
 
 static bool tezosTransferEqual(BRTezosTransfer t1, BRTezosTransfer t2) {
