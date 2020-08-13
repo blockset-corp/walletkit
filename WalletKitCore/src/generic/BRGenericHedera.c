@@ -400,6 +400,7 @@ genericHederaWalletManagerRecoverTransfer (const char *hash,
                                            const char *amount,
                                            const char *currency,
                                            const char *fee,
+                                           const char *bytes,
                                            uint64_t timestamp,
                                            uint64_t blockHeight,
                                            int error) {

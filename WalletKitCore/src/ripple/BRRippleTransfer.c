@@ -24,6 +24,7 @@ rippleTransferCreate(BRRippleAddress from, BRRippleAddress to,
                      BRRippleUnitDrops amount, // For now assume XRP drops.
                      BRRippleUnitDrops fee,
                      BRRippleTransactionHash hash,
+                     BRRippleTransaction transaction, // nullable
                      uint64_t timestamp, uint64_t blockHeight,
                      int error)
 {
@@ -36,7 +37,7 @@ rippleTransferCreate(BRRippleAddress from, BRRippleAddress to,
     transfer->timestamp = timestamp;
     transfer->blockHeight = blockHeight;
     transfer->error = error;
-    transfer->transaction = NULL;
+    transfer->transaction = transaction;
     return transfer;
 }
 
@@ -155,4 +156,11 @@ rippleTransferHasError(BRRippleTransfer transfer) {
 extern uint64_t rippleTransferGetBlockHeight (BRRippleTransfer transfer) {
     assert(transfer);
     return transfer->blockHeight;
+}
+
+extern BRRippleSequence rippleTransferGetSequence (BRRippleTransfer transfer) {
+    assert (transfer);
+    return (NULL == transfer->transaction
+            ? RIPPLE_SEQUENCE_UNKNOWN
+            : rippleTransactionGetSequence(transfer->transaction));
 }
