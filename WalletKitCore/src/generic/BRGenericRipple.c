@@ -408,6 +408,7 @@ genericRippleWalletManagerRecoverTransfer (const char *hash,
                                            const char *amount,
                                            const char *currency,
                                            const char *fee,
+                                           const char *bytes,
                                            uint64_t timestamp,
                                            uint64_t blockHeight,
                                            int error) {
@@ -416,11 +417,26 @@ genericRippleWalletManagerRecoverTransfer (const char *hash,
     if (NULL != fee) sscanf(fee, "%" PRIu64, &feeDrops);
     BRRippleAddress toAddress   = rippleAddressCreateFromString (to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (from, false);
+
     // Convert the hash string to bytes
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), hash, strlen(hash));
 
-    BRRippleTransfer transfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, timestamp, blockHeight, error);
+    // Convert the bytes string to a transaction
+    BRRippleTransaction tx = NULL;
+
+    if (NULL != bytes) {
+        size_t   transanctionBytesCount = 0;
+        uint8_t *transactionBytes = hexDecodeCreate (&transanctionBytesCount, bytes, strlen(bytes));
+
+
+        tx = rippleTransactionCreateFromBytes (transactionBytes, (uint32_t) transanctionBytesCount);
+        free (transactionBytes);
+    }
+
+    BRRippleTransfer transfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops,
+                                                     txId, tx,
+                                                     timestamp, blockHeight, error);
 
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
