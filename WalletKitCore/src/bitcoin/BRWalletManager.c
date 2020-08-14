@@ -101,35 +101,38 @@ struct BRWalletSweeperStruct {
     BRArrayOf(BRTransaction *) txns;
 };
 
-extern BRWalletSweeperStatus
-BRWalletSweeperValidateSupported (BRKey *key,
-                                  BRAddressParams addrParams,
-                                  BRWallet *wallet) {
+static char *
+BRWalletSweeperExtractAddress (BRKey *key,
+                               BRAddressParams addrParams) {
     // encode using legacy format (only supported method for BTC)
     size_t addrLength = BRKeyLegacyAddr (key, NULL, 0, addrParams);
     char  *addr = malloc (addrLength + 1);
     BRKeyLegacyAddr (key, addr, addrLength, addrParams);
     addr[addrLength] = '\0';
 
+    return addr;
+}
+
+extern BRWalletSweeperStatus
+BRWalletSweeperValidateSupported (BRKey *key,
+                                  BRAddressParams addrParams,
+                                  BRWallet *wallet) {
+    char *addr = BRWalletSweeperExtractAddress (key, addrParams);
+
     // check if we are trying to sweep ourselves
     int containsAddr = BRWalletContainsAddress (wallet, addr);
     free (addr);
 
-    if (containsAddr) {
-        return WALLET_SWEEPER_INVALID_SOURCE_WALLET;
-    }
-
-    return WALLET_SWEEPER_SUCCESS;
+    return (containsAddr
+            ? WALLET_SWEEPER_INVALID_SOURCE_WALLET
+            : WALLET_SWEEPER_SUCCESS);
 }
 
 extern BRWalletSweeper // NULL on error
 BRWalletSweeperNew (BRKey *key,
                     BRAddressParams addrParams,
                     uint8_t isSegwit) {
-    size_t addressLength = BRKeyLegacyAddr (key, NULL, 0, addrParams);
-    char  *address = malloc (addressLength + 1);
-    BRKeyLegacyAddr (key, address, addressLength, addrParams);
-    address[addressLength] = '\0';
+    char *address = BRWalletSweeperExtractAddress (key, addrParams);
 
     BRWalletSweeper sweeper = calloc (1, sizeof(struct BRWalletSweeperStruct));
     sweeper->addrParams = addrParams;
