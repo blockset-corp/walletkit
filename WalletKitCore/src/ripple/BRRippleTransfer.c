@@ -147,6 +147,39 @@ extern int rippleTransferHasSource (BRRippleTransfer transfer,
     return rippleAddressEqual (transfer->sourceAddress, source);
 }
 
+extern int rippleTransferHasTarget (BRRippleTransfer transfer,
+                                    BRRippleAddress target) {
+    return rippleAddressEqual (transfer->targetAddress, target);
+}
+
+extern BRRippleUnitDrops rippleTransferGetAmountDirected (BRRippleTransfer transfer,
+                                                          BRRippleAddress address,
+                                                          int *negative) {
+    BRRippleUnitDrops fee    = rippleTransferGetFee(transfer);
+    BRRippleUnitDrops amount = (rippleTransferHasError(transfer)
+                                ? 0
+                                : rippleTransferGetAmount(transfer));
+
+    int isSource = rippleTransferHasSource (transfer, address);
+    int isTarget = rippleTransferHasTarget (transfer, address);
+
+    if (isSource && isTarget) {
+        *negative = 1;
+        return fee;
+    }
+    else if (isSource) {
+        *negative = 1;
+        return amount + fee;
+    }
+    else if (isTarget) {
+        *negative = 0;
+        return amount;
+    }
+    else {
+        assert (0);
+    }
+}
+
 extern int
 rippleTransferHasError(BRRippleTransfer transfer) {
     return transfer->error;

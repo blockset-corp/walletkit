@@ -449,6 +449,12 @@ genWalletRemTransfer (BRGenericWallet wallet,
     wallet->handlers.remTransfer (wallet->ref, transfer->ref);
 }
 
+extern void
+genWalletUpdTransfer (BRGenericWallet wallet,
+                      OwnershipKept BRGenericTransfer transfer) {
+    wallet->handlers.updTransfer (wallet->ref, transfer->ref);
+}
+
 extern BRGenericTransfer
 genWalletCreateTransfer (BRGenericWallet wallet,
                          BRGenericAddress target, // TODO: BRGenericAddress - ownership given

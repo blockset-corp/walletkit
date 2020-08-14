@@ -251,6 +251,12 @@ genericHederaWalletRemTransfer (BRGenericWalletRef wallet,
     hederaWalletRemTransfer ((BRHederaWallet) wallet, (BRHederaTransaction) transfer);
 }
 
+static void
+genericHederaWalletUpdTransfer (BRGenericWalletRef wallet,
+                                OwnershipKept BRGenericTransferRef transfer) {
+    hederaWalletUpdateTransfer ((BRHederaWallet) wallet, (BRHederaTransaction) transfer);
+}
+
 #define TRANSFER_ATTRIBUTE_MEMO_TAG         "Memo"
 
 static int // 1 if equal, 0 if not.
@@ -487,6 +493,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletHasTransfer,
         genericHederaWalletAddTransfer,
         genericHederaWalletRemTransfer,
+        genericHederaWalletUpdTransfer,
         genericHederaWalletCreateTransfer,
         genericHederaWalletEstimateFeeBasis,
 
