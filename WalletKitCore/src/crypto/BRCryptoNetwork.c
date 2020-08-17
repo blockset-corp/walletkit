@@ -286,13 +286,18 @@ cryptoNetworkIsMainnet (BRCryptoNetwork network) {
 
 extern BRCryptoBlockChainHeight
 cryptoNetworkGetHeight (BRCryptoNetwork network) {
-    return network->height;
+    pthread_mutex_lock (&network->lock);
+    BRCryptoBlockChainHeight height = network->height;
+    pthread_mutex_unlock (&network->lock);
+    return height;
 }
 
 extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
                         BRCryptoBlockChainHeight height) {
+    pthread_mutex_lock (&network->lock);
     network->height = height;
+    pthread_mutex_unlock (&network->lock);
 }
 
 extern uint32_t

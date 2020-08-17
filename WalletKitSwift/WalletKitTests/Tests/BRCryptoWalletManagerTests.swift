@@ -37,13 +37,7 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         }
     }
 
-    func testWalletManagerBTC() {
-        isMainnet = false
-        prepareAccount()
-
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
-        prepareSystem()
-
+    func runWalletManagerBTCTest (networkType: NetworkType, currencyCode: String) {
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
         listener.managerHandlers += [
             { (system: System, manager:WalletManager, event: WalletManagerEvent) in
@@ -52,7 +46,11 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { "btc" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first {
+            networkType == $0.type
+                && currencyCode == $0.currency.code
+                && isMainnet == $0.isMainnet
+        }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -73,9 +71,10 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         XCTAssertTrue  (network.supportedModes.contains(manager.mode))
         XCTAssertEqual (network.defaultAddressScheme, manager.addressScheme)
 
-        let otherAddressScheme = network.supportedAddressSchemes.first { $0 != manager.addressScheme }!
-        manager.addressScheme = otherAddressScheme
-        XCTAssertEqual (otherAddressScheme, manager.addressScheme)
+        if let otherAddressScheme = network.supportedAddressSchemes.first (where: { $0 != manager.addressScheme }) {
+            manager.addressScheme = otherAddressScheme
+            XCTAssertEqual (otherAddressScheme, manager.addressScheme)
+        }
         manager.addressScheme = network.defaultAddressScheme
         XCTAssertEqual (network.defaultAddressScheme, manager.addressScheme)
 
@@ -84,7 +83,7 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         XCTAssertFalse (manager.isActive)
         XCTAssertEqual (manager, manager)
         
-        XCTAssertEqual("btc", manager.description)
+        XCTAssertEqual(currencyCode, manager.description)
 
         XCTAssertFalse (system.wallets.isEmpty)
 
@@ -107,15 +106,45 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
             strict: true))
 
         // Connect
-        listener.transferCount = 5
+        listener.transferCount = (.bsv == networkType ? 2 : 5)
         manager.connect()
-        wait (for: [self.listener.transferExpectation], timeout: 30)
+        wait (for: [self.listener.transferExpectation], timeout: 15)
 
         manager.disconnect()
         wait (for: [walletManagerDisconnectExpectation], timeout: 5)
 
         XCTAssertTrue (listener.checkManagerEventsCommonlyWith (mode: manager.mode,
                                                                wallet: wallet))
+    }
+
+    func testWalletManagerBTC() {
+        isMainnet = false
+        prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runWalletManagerBTCTest(networkType: .btc, currencyCode: "btc")
+    }
+
+    func testWalletManagerBCH() {
+        isMainnet = false
+        prepareAccount()
+
+        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runWalletManagerBTCTest(networkType: .bch, currencyCode: "bch")
+    }
+
+    func testWalletManagerBSV() {
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runWalletManagerBTCTest(networkType: .bsv, currencyCode: "bsv")
     }
 
     func testWalletManagerETH () {
@@ -298,7 +327,7 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
     func testWalletManagerMigrateBTC () {
         isMainnet = false
-        prepareAccount()
+        prepareAccount (identifier: "ginger")
 
         currencyCodesToMode = ["btc":WalletManagerMode.api_only]
         prepareSystem ()
@@ -385,6 +414,8 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
     static var allTests = [
         ("testWalletManagerMode",       testWalletManagerMode),
         ("testWalletManagerBTC",        testWalletManagerBTC),
+        ("testWalletManagerBCH",        testWalletManagerBCH),
+        ("testWalletManagerBSV",        testWalletManagerBSV),
         ("testWalletManagerETH",        testWalletManagerETH),
         ("testWalletManagerMigrateBTC", testWalletManagerMigrateBTC),
     ]

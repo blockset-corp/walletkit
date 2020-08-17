@@ -134,6 +134,16 @@ class BRCryptoAccountTests: XCTestCase {
         //        XCTAssertNil (network.addressFor("bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v"))
     }
 
+    func testAddressBSV () {
+        let network = Network.findBuiltin(uids: "bitcoinsv-mainnet")!
+
+        XCTAssertEqual(Address.create (string: "18qbsWhP6tU9c3CTujpuYywegG2UpxgqdU", network: network)?.description,
+                       "18qbsWhP6tU9c3CTujpuYywegG2UpxgqdU")
+
+        XCTAssertNil (Address.create (string: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", network: network))
+        XCTAssertNil (Address.create (string: "bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v", network: network))
+    }
+
     func testAddressXRP () {
         let network = Network.findBuiltin (uids: "ripple-mainnet")!
 
@@ -178,6 +188,7 @@ class BRCryptoAccountTests: XCTestCase {
         ("testAddressBTC",        testAddressBTC),
         ("testAddressBCH",        testAddressBCH),
         ("testAddressBCHTestnet", testAddressBCHTestnet),
+        ("testAddressBSV",        testAddressBSV),
         ("testAddressScheme",     testAddressScheme),
     ]
 

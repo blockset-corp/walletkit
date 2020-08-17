@@ -21,22 +21,20 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
     override func tearDown() {
     }
 
-    func testSystemBTC() {
-        isMainnet = false
-        prepareAccount()
-
-        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
-        prepareSystem()
-
+    func runSystemBTCTest (networkType: NetworkType, currencyCode: String) {
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { "btc" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first {
+            networkType == $0.type
+                && currencyCode == $0.currency.code
+                && isMainnet == $0.isMainnet
+        }
         XCTAssertNotNil (network)
 
         XCTAssertEqual (1, system.managers.count)
         let manager = system.managers[0]
 
         XCTAssertTrue (system     === manager.system)
-//      XCTAssertTrue (account === manager.account)
+        //      XCTAssertTrue (account === manager.account)
         XCTAssertTrue (network  == manager.network)
         XCTAssertTrue (query   === manager.query)
 
@@ -56,7 +54,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
         XCTAssertTrue (listener.checkSystemEvents(
             [EventMatcher (event: SystemEvent.managerAdded(manager: manager), strict: true, scan: true)
-            ]))
+        ]))
 
         XCTAssertTrue (listener.checkManagerEvents(
             [WalletManagerEvent.created,
@@ -65,6 +63,37 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         XCTAssertTrue (listener.checkWalletEvents(
             [WalletEvent.created], strict: true))
     }
+
+    func testSystemBTC() {
+        isMainnet = false
+        prepareAccount()
+
+        currencyCodesToMode = ["btc":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runSystemBTCTest(networkType: .btc, currencyCode: "btc")
+     }
+
+    func testSystemBCH() {
+        isMainnet = false
+        prepareAccount()
+
+        currencyCodesToMode = ["bch":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runSystemBTCTest(networkType: .bch, currencyCode: "bch")
+     }
+
+    func testSystemBSV() {
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bsv":WalletManagerMode.api_only]
+        prepareSystem()
+
+        runSystemBTCTest(networkType: .bsv, currencyCode: "bsv")
+     }
+
 
     // This test is ignored; we can't get `currencyModels` to take effect unless BlockSet fails
     func ignoreTestSystemAppCurrencies() {
@@ -148,6 +177,8 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
     static var allTests = [
         ("testSystemBTC",            testSystemBTC),
+        ("testSystemBCH",            testSystemBCH),
+        ("testSystemBSV",            testSystemBSV),
         ("testSystemModes",          testSystemModes),
         ("testSystemAddressSchemes", testSystemAddressSchemes),
     ]

@@ -613,7 +613,7 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
 
                 BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
                 BRAddress address = cryptoAddressAsBTC (output->target, &isBitcoinAddr);
-                assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
+                assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (0 == BRWalletManagerHandlesBCH(bwm)));
 
                 BRCryptoBoolean overflow = CRYPTO_FALSE;
                 uint64_t value = cryptoAmountGetIntegerRaw (output->amount, &overflow);
@@ -670,7 +670,7 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
 
             BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
             BRAddress address = cryptoAddressAsBTC (target, &isBitcoinAddr);
-            assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
+            assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (0 == BRWalletManagerHandlesBCH(bwm)));
 
             BRCryptoBoolean overflow = CRYPTO_FALSE;
             uint64_t value = cryptoAmountGetIntegerRaw (amount, &overflow);
