@@ -49,6 +49,7 @@ public class BlockchainDb {
 
     private final AtomicInteger ridGenerator;
 
+    private final OkHttpClient client;
     private final BlockApi blockApi;
     private final BlockchainApi blockchainApi;
     private final CurrencyApi currencyApi;
@@ -85,9 +86,10 @@ public class BlockchainDb {
 
         this.ridGenerator = new AtomicInteger(0);
 
+        this.client = client;
         this.blockApi = new BlockApi(bdbClient, executorService);
         this.blockchainApi = new BlockchainApi(bdbClient);
-        this.currencyApi = new CurrencyApi(bdbClient);
+        this.currencyApi = new CurrencyApi(bdbClient, executorService);
         this.subscriptionApi = new SubscriptionApi(bdbClient);
         this.transferApi = new TransferApi(bdbClient, executorService);
         this.transactionApi = new TransactionApi(bdbClient, executorService);
@@ -110,6 +112,16 @@ public class BlockchainDb {
             cli.newCall(decoratedRequest).enqueue(callback);
         };
         return new BlockchainDb (client, bdbBaseURL, brdDataTask, apiBaseURL, null);
+    }
+
+    /**
+     * Cancel all BlockchainDb requests that are currently enqueued or executing
+     */
+    public void cancelAll () {
+        client.dispatcher().cancelAll();
+        // In a race, any Callable on any Executor might run NOW, causing a `client` request.
+        // That is okay; we'll have some more data.  That is, it is no different from if the 
+        // request had completed just before the `cancelAll()` call.
     }
 
     // Blockchain
@@ -149,6 +161,14 @@ public class BlockchainDb {
                               CompletionHandler<List<Currency>, QueryError> handler) {
         currencyApi.getCurrencies(
                 id,
+                handler
+        );
+    }
+
+    public void getCurrencies(boolean mainnet,
+                              CompletionHandler<List<Currency>, QueryError> handler) {
+        currencyApi.getCurrencies(
+                mainnet,
                 handler
         );
     }
@@ -215,6 +235,7 @@ public class BlockchainDb {
 
     // Transfer
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransfers(String id,
                              List<String> addresses,
                              UnsignedLong beginBlockNumber,
@@ -230,6 +251,7 @@ public class BlockchainDb {
         );
     }
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransfers(String id,
                              List<String> addresses,
                              @Nullable UnsignedLong beginBlockNumber,
@@ -256,12 +278,14 @@ public class BlockchainDb {
 
     // Transactions
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransactions(String id,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         getTransactions(
                 id,
@@ -270,17 +294,20 @@ public class BlockchainDb {
                 endBlockNumber,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 null,
                 handler
         );
     }
 
+    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
     public void getTransactions(String id,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         transactionApi.getTransactions(
@@ -290,6 +317,7 @@ public class BlockchainDb {
                 endBlockNumber,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 maxPageSize,
                 handler
         );
@@ -298,11 +326,13 @@ public class BlockchainDb {
     public void getTransaction(String id,
                                boolean includeRaw,
                                boolean includeProof,
+                               boolean includeTransfers,
                                CompletionHandler<Transaction, QueryError> handler) {
         transactionApi.getTransaction(
                 id,
                 includeRaw,
                 includeProof,
+                includeTransfers,
                 handler
         );
     }

@@ -17,6 +17,11 @@ public abstract class DefaultNetworkEventVisitor<T> implements NetworkEventVisit
     }
 
     @Nullable
+    public T visit(NetworkUpdatedEvent event) {
+        return null;
+    }
+
+    @Nullable
     public T visit(NetworkFeesUpdatedEvent event) {
         return null;
     }

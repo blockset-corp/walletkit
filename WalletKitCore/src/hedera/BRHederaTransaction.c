@@ -283,6 +283,34 @@ extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transa
     return transaction->amount;
 }
 
+extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransaction transfer,
+                                                               BRHederaAddress address,
+                                                               int *negative) {
+    BRHederaUnitTinyBar fee    = hederaTransactionGetFee(transfer);
+    BRHederaUnitTinyBar amount = (hederaTransactionHasError(transfer)
+                                  ? 0
+                                  : hederaTransactionGetAmount(transfer));
+    
+    int isSource = hederaTransactionHasSource (transfer, address);
+    int isTarget = hederaTransactionHasTarget (transfer, address);
+    
+    if (isSource && isTarget) {
+        *negative = 1;
+        return fee;
+    }
+    else if (isSource) {
+        *negative = 1;
+        return amount + fee;
+    }
+    else if (isTarget) {
+        *negative = 0;
+        return amount;
+    }
+    else {
+        assert (0);
+    }
+}
+
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction)
 {
     assert(transaction);
@@ -293,6 +321,14 @@ extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transactio
 {
     assert(transaction);
     return hederaAddressClone (transaction->target);
+}
+
+extern int hederaTransactionHasSource (BRHederaTransaction tranaction, BRHederaAddress address) {
+    return hederaAddressEqual (tranaction->source, address);
+}
+
+extern int hederaTransactionHasTarget (BRHederaTransaction tranaction, BRHederaAddress address) {
+    return hederaAddressEqual (tranaction->target, address);
 }
 
 extern int hederaTransactionHasError (BRHederaTransaction transaction) {

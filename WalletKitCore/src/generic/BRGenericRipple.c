@@ -198,8 +198,13 @@ genericRippleWalletFree (BRGenericWalletRef wallet) {
 }
 
 static UInt256
-genericRippleWalletGetBalance (BRGenericWalletRef wallet) {
-    return uint256Create (rippleWalletGetBalance ((BRRippleWallet) wallet));
+genericRippleWalletGetBalance (BRGenericWalletRef wallet, int *negative) {
+    BRRippleBalance balance = rippleWalletGetBalance ((BRRippleWallet) wallet);
+
+    *negative = balance < 0;
+    if (*negative) balance = -balance;
+
+    return uint256Create ((uint64_t) balance);
 }
 
 static UInt256
@@ -239,6 +244,12 @@ static void
 genericRippleWalletRemTransfer (BRGenericWalletRef wallet,
                                 OwnershipKept BRGenericTransferRef transfer) {
     rippleWalletRemTransfer ((BRRippleWallet) wallet, (BRRippleTransfer) transfer);
+}
+
+static void
+genericRippleWalletUpdTransfer (BRGenericWalletRef wallet,
+                                OwnershipKept BRGenericTransferRef transfer) {
+    rippleWalletUpdateTransfer ((BRRippleWallet) wallet, (BRRippleTransfer) transfer);
 }
 
 #define FIELD_OPTION_DESTINATION_TAG        "DestinationTag"
@@ -490,6 +501,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleWalletHasTransfer,
         genericRippleWalletAddTransfer,
         genericRippleWalletRemTransfer,
+        genericRippleWalletUpdTransfer,
         genericRippleWalletCreateTransfer,
         genericRippleWalletEstimateFeeBasis,
 

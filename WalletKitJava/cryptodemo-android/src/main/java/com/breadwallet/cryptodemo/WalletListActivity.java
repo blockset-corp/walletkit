@@ -229,11 +229,11 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     }
 
     private void connect() {
-        ApplicationExecutors.runOnBlockingExecutor(() -> CoreCryptoApplication.getSystem().connectAll());
+        ApplicationExecutors.runOnBlockingExecutor(() -> CoreCryptoApplication.getSystem().resume());
     }
 
     private void disconnect() {
-        ApplicationExecutors.runOnBlockingExecutor(() -> CoreCryptoApplication.getSystem().disconnectAll());
+        ApplicationExecutors.runOnBlockingExecutor(() -> CoreCryptoApplication.getSystem().pause());
     }
 
     private void sync() {

@@ -1005,7 +1005,7 @@ BRWalletManagerNew (BRWalletManagerClient client,
                     const char *baseStoragePath,
                     uint64_t blockHeight,
                     uint64_t confirmationsUntilFinal) {
-    assert (mode == CRYPTO_SYNC_MODE_API_ONLY || CRYPTO_SYNC_MODE_P2P_ONLY);
+    assert (mode == CRYPTO_SYNC_MODE_API_ONLY || mode == CRYPTO_SYNC_MODE_P2P_ONLY);
 
     BRWalletManager bwm = calloc (1, sizeof (struct BRWalletManagerStruct));
     if (NULL == bwm) {

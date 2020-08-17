@@ -14,7 +14,8 @@ public interface Coder {
     enum Algorithm {
         HEX,
         BASE58,
-        BASE58CHECK
+        BASE58CHECK,
+        BASE58RIPPLE
     }
 
     static Coder createForAlgorithm(Algorithm algorithm) {

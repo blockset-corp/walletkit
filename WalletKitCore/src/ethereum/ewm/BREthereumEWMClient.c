@@ -184,7 +184,7 @@ ewmAnnounceGasPrice(BREthereumEWM ewm,
 extern void
 ewmGetGasEstimate (BREthereumEWM ewm,
                    BREthereumWallet wallet,
-                   BREthereumTransfer transfer,
+                   OwnershipGiven BREthereumTransfer transfer,
                    BREthereumCookie cookie) {
     if (NULL == transfer) {
         ewmSignalGasEstimateFailure(ewm, wallet, cookie, ERROR_UNKNOWN_TRANSACTION);
@@ -204,8 +204,8 @@ ewmGetGasEstimate (BREthereumEWM ewm,
                                              transfer,
                                              cookie,
                                              ++ewm->requestId);
-                pthread_mutex_unlock (&ewm->lock);
 
+                pthread_mutex_unlock (&ewm->lock);
                 break;
             }
 
@@ -221,6 +221,7 @@ ewmGetGasEstimate (BREthereumEWM ewm,
 extern BREthereumStatus
 ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
                                BREthereumWallet wallet,
+                               BREthereumTransfer transfer,
                                BREthereumCookie cookie,
                                const char *gasEstimate,
                                const char *gasPrice,
@@ -235,7 +236,10 @@ ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
         ewmSignalGasEstimateFailure(ewm, wallet, cookie, ERROR_NUMERIC_PARSE);
 
     } else {
-        ewmSignalGasEstimateSuccess(ewm, wallet, cookie, ethGasCreate(estimate.u64[0]), ethGasPriceCreate(ethEtherCreate(price)));
+        transferSetGasEstimate (transfer, ethGasCreate(estimate.u64[0]));
+
+        BREthereumFeeBasis feeBasis = transferGetFeeBasis(transfer);
+        ewmSignalGasEstimateSuccess(ewm, wallet, cookie, feeBasis.u.gas.limit, feeBasis.u.gas.price);
     }
 
     return SUCCESS;
@@ -244,6 +248,7 @@ ewmAnnounceGasEstimateSuccess (BREthereumEWM ewm,
 extern BREthereumStatus
 ewmAnnounceGasEstimateFailure (BREthereumEWM ewm,
                                BREthereumWallet wallet,
+                               BREthereumTransfer transfer,
                                BREthereumCookie cookie,
                                BREthereumStatus status,
                                int rid) {
@@ -987,10 +992,22 @@ ewmAnnounceSubmitTransfer (BREthereumEWM ewm,
 
     if (NULL != strHash) {
         BREthereumHash hash = ethHashCreate(strHash);
-        // We announce a submitted transfer => there is an originating transaction.
+
+        // If we announce a submitted transfer => there is an originating transaction.  So we can
+        // get the originating transaction's hash and expect it to match `strHash`
         if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))
-            || ETHEREUM_BOOLEAN_IS_FALSE (ethHashEqual (hash, ewmTransferGetOriginatingTransactionHash (ewm, transfer))))
-            return ERROR_TRANSACTION_HASH_MISMATCH;
+            || ETHEREUM_BOOLEAN_IS_FALSE (ethHashEqual (hash, ewmTransferGetOriginatingTransactionHash (ewm, transfer)))) {
+
+            // GETH code provides a "result" or an "error", it seems.  If "error" is provided we
+            // don't make it into this function; if "result" is provided, we'll be here on a
+            // hash mismatch.  The GETH code returns `Common.Hash{}` (and empty hash) in some cases.
+            //
+            // If there is no errorCode, then set one as 'unknown'.
+            if (-1 == errorCode) {
+                errorCode = 0;
+                errorMessage = "unknown";
+            }
+        }
     }
 
     ewmSignalAnnounceSubmitTransfer (ewm, wallet, transfer, errorCode, errorMessage, id);

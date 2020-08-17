@@ -50,6 +50,11 @@ public final class System {
 
     internal let callbackCoordinator: SystemCallbackCoordinator
 
+    public func managerBy (network: Network) -> WalletManager? {
+        return managers
+            .first { $0.network == network }
+    }
+
     /// We define default blockchains but these are wholly insufficient given that the
     /// specfication includes `blockHeight` (which can never be correct).
 
@@ -67,7 +72,7 @@ public final class System {
         return networks.first { $0.uids == uids }
     }
 
-     internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
+    internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
         return managers
             .first { $0.core == core }
     }
@@ -503,20 +508,6 @@ public final class System {
     }
 
     ///
-    /// Disconnect all wallet managers
-    ///
-    public func disconnectAll () {
-        managers.forEach { $0.disconnect() }
-    }
-
-    ///
-    /// Connect all wallet managers.  They will be connected w/o an explict NetworkPeer.
-    ///
-    public func connectAll () {
-        managers.forEach { $0.connect() }
-    }
-
-    ///
     /// Set the network reachable flag for all managers. Setting or clearing this flag will
     /// NOT result in a connect/disconnect operation by a manager. Callers must use the
     /// `connect`/`disconnect` calls to change a WalletManager's connectivity state. Instead,
@@ -528,17 +519,34 @@ public final class System {
         managers.forEach { $0.setNetworkReachable(isNetworkReachable) }
     }
 
-     ///
-    /// Configure the system.  This will query various BRD services, notably the BlockChainDB, to
-    /// establish the available networks (aka blockchains) and their currencies.  For each
-    /// `Network` there will be `SystemEvent` which can be used by the App to create a
-    /// `WalletManager`
+    // MARK: - Pause/Resume
+
     ///
-    /// - Parameter applicationCurrencies: If the BlockChainDB does not return any currencies, then
-    ///     use `applicationCurrencies` merged into the deafults.  Appropriate currencies can be
-    ///     created from `System::asBlockChainDBModelCurrency` (see below)
+    /// Pause by disconnecting all wallet managers among other things.
     ///
-    public func configure (withCurrencyModels applicationCurrencies: [BlockChainDB.Model.Currency]) {
+    public func pause () {
+        // If called when we've no networks, then we've never been configured.  Ignore pausing.
+        if !networks.isEmpty {
+            print ("SYS: Pause")
+            managers.forEach { $0.disconnect() }
+            query.cancelAll()
+        }
+    }
+
+    /// Resume by connecting all wallet managers among other things
+    ///
+    public func resume () {
+        // If called when we've no networks, then we've never been configured.  Ignore resuming.
+        if !networks.isEmpty {
+            print ("SYS: Resume")
+            configure(withCurrencyModels: [])
+            managers.forEach { $0.connect() }
+        }
+    }
+
+    // MARK: - Configure
+
+    func configure (network: Network, currenciesFrom currencyModels: [BlockChainDB.Model.Currency]) {
         func currencyDenominationToBaseUnit (currency: Currency, model: BlockChainDB.Model.CurrencyDenomination) -> Unit {
             return Unit (currency: currency,
                          code:   model.code,
@@ -562,179 +570,175 @@ public final class System {
                          decimals: model.decimals)
         }
 
-        // Query for blockchains on the system.queue - thus system.configure() returns instantly
-        // and only System (and other types of) Events allow access to networds, wallets, etc.
-        self.queue.async {
-            // This semaphore is used only to block this async block until at least one group
-            // is entered.  Then this async block will wait until all groups have been left.
-            let blockchainsSemaphore = DispatchSemaphore (value: 0)
+        currencyModels
+            .filter { $0.blockchainID == network.uids }
+            .forEach { (currencyModel: BlockChainDB.Model.Currency) in
+                // Create the currency
+                let currency = Currency (uids: currencyModel.id,
+                                         name: currencyModel.name,
+                                         code: currencyModel.code,
+                                         type: currencyModel.type,
+                                         issuer: currencyModel.address)
 
-            // This group will be entered and left multiple times as blockchain models and their
-            // currencies are processed
-            let blockchainsGroup = DispatchGroup ()
+                // Create the base unit
+                let baseUnit: Unit = currencyModel.demoninations.first { 0 == $0.decimals }
+                    .map { currencyDenominationToBaseUnit(currency: currency, model: $0) }
+                    ?? currencyToDefaultBaseUnit (currency: currency)
 
-            // The 'discovered networks' will all be announced at once.
-            var discoveredNetworks:[Network] = []
+                // Create the other units
+                var units: [Unit] = [baseUnit]
+                units += currencyModel.demoninations.filter { 0 != $0.decimals }
+                    .map { currencyDenominationToUnit (currency: currency, model: $0, base: baseUnit) }
 
-            func announceNetwork (_ network: Network) {
-                // Save the network
-                 self.networks.append (network)
+                // Find the default unit
+                let maximumDecimals = units.reduce (0) { max ($0, $1.decimals) }
+                let defaultUnit = units.first { $0.decimals == maximumDecimals }!
 
-                 self.listenerQueue.async {
-                     // Announce NetworkEvent.created...
-                     self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
+                // Add the currency - this will not replace an existing currency
+                // Note, a builtin network *always* has a native currency at
+                // least which is set as the network's currency.
+                network.addCurrency (currency, baseUnit: baseUnit, defaultUnit: defaultUnit)
 
-                     // Announce SystemEvent.networkAdded - this will likely be handled with
-                     // system.createWalletManager(network:...) which will then announce
-                     // numerous events as wallets are created.
-                     self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
-                 }
+                // Add the units - this will not replace an existing unti
+                units.forEach { network.addUnitFor (currency: currency, unit: $0) }
+        }
+    }
 
-                 // Keep a running total of discovered networks
-                 discoveredNetworks.append(network)
+    func configure (network: Network, feesFrom blockchainModel: BlockChainDB.Model.Blockchain) {
+        // The feeUnit is always the network currency's base unit
+        guard let feeUnit = network.baseUnitFor (currency: network.currency)
+            else { return }
+
+        // Extract the network fees from the blockchainModel
+        let fees = blockchainModel.feeEstimates
+            // Well, quietly ignore a fee if we can't parse the amount.
+            .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
+                let timeInterval  = fee.confirmationTimeInMilliseconds
+                return Amount.create (string: fee.amount, unit: feeUnit)
+                    .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
+                                       pricePerCostFactor: $0) }
+        }
+
+        // We require fees
+        guard !fees.isEmpty
+            else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
+
+        // Update the network's fees.
+        network.fees = fees
+    }
+
+     ///
+    /// Configure the system.  This will query various BRD services, notably the BlockChainDB, to
+    /// establish the available networks (aka blockchains) and their currencies.  For each
+    /// `Network` there will be `SystemEvent` which can be used by the App to create a
+    /// `WalletManager`
+    ///
+    /// - Parameter applicationCurrencies: If the BlockChainDB does not return any currencies, then
+    ///     use `applicationCurrencies` merged into the deafults.  Appropriate currencies can be
+    ///     created from `System::asBlockChainDBModelCurrency` (see below)
+    ///
+    public func configure (withCurrencyModels applicationCurrencies: [BlockChainDB.Model.Currency]) {
+        // The networks we've already processed
+        let existingNetworks   = networks
+
+        // The 'discovered networks' will all be announced at once.
+        var discoveredNetworks = [Network]()
+
+        // The 'supported networks' will be the built-in networks matching 'onMainnet'.  There is
+        // no harm in calling this multiple times.
+        let supportedNetworks = Network.installBuiltins()
+            .filter { self.onMainnet == $0.isMainnet}
+
+        func announceNetwork (_ network: Network) {
+            // Save the network
+             self.networks.append (network)
+
+             self.listenerQueue.async {
+                 // Announce NetworkEvent.created...
+                 self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
+
+                 // Announce SystemEvent.networkAdded - this will likely be handled with
+                 // system.createWalletManager(network:...) which will then announce
+                 // numerous events as wallets are created.
+                 self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
+             }
+
+             // Keep a running total of discovered networks
+             discoveredNetworks.append(network)
+        }
+
+        func announceNetworkUpdate (_ network: Network) {
+            self.listenerQueue.async {
+                self.listener?.handleNetworkEvent (system: self, network: network, event: .updated)
+            }
+        }
+
+        // Query for blockchains.
+        self.query.getBlockchains (mainnet: self.onMainnet) {
+            (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+
+            // If the query failed, soldier on without any models
+            let blockchainModels = blockchainResult
+                .getWithRecovery {
+                    print ("SYS: CONFIGURE: Missed Blockchains Query: \($0)")
+                    return []
             }
 
-            // The 'supported networks' will be the built-in networks matching 'onMainnet'
-            let supportedNetworks = Network.installBuiltins()
-                .filter { self.onMainnet == $0.isMainnet}
+            // Make a map from the supported models
+            let blockchainModelsMap = Dictionary (uniqueKeysWithValues:
+                blockchainModels.map { ($0.id, $0) })
 
-            // Query for blockchains.
-            self.query.getBlockchains (mainnet: self.onMainnet) {
-                (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+            // Query currencies for all blockchains on mainnet/testnet
+            self.query.getCurrencies (mainnet: self.onMainnet) {
+                (currencyResult: Result<[BlockChainDB.Model.Currency],BlockChainDB.QueryError>) in
 
-                // If there was a QueryError then we are done
-                if case let .failure (error) = blockchainResult {
-                    // TODO: Handle a Query Error appropriately.  Must recover/retry
-                    print ("SYS: CONFIGURE: Missed Blockchains Query: \(error)")
-                    supportedNetworks.forEach { announceNetwork($0) }
-                    return // from getBlockchains
+                // If the query failed, soldier on with the `applicationCurrencies`.  We may have
+                // a mixture of 'mainnet' and 'testnet' in this result.
+                let currencyModels = currencyResult
+                    .getWithRecovery {
+                        print ("SYS: CONFIGURE: Missed Currencies Query: \($0)")
+                        return applicationCurrencies
+                            .filter { $0.verified == true }
                 }
-
-                // Make a map from of the supported models
-                let blockchainModelsMap = Dictionary (uniqueKeysWithValues:
-                    blockchainResult.getWithRecovery { (ignore) in return [] }
-                        .map { ($0.id, $0) })
-
-                // Enter the group once for each model; we'll leave as each currency is processed.
-                // When all have left, self.queue will unblock (see blockchainsGroup.wait() below).
-                supportedNetworks.forEach { (ignore) in blockchainsGroup.enter() }
-
-                // Signal the dispatch semaphore, the self.queue will now start blocking
-                // on the dispatch group.
-                blockchainsSemaphore.signal()
 
                 // Handle each network
                 supportedNetworks
                     .forEach { (network: Network) in
 
-                        // query currencies based on the (Network <==> BlockchainMode) id
-                        self.query.getCurrencies (blockchainId: network.uids) {
-                            (currencyResult: Result<[BlockChainDB.Model.Currency],BlockChainDB.QueryError>) in
+                        // Record if we already know about `network`
+                        let existing = existingNetworks.contains(network)
 
-                            // We get one `currencyResult` per blockchain.  If we leave the group
-                            // upon completion of this block, we'll match the `enter` calls.
-                            defer {
-                                blockchainsGroup.leave()
+                        // Configure the network using the currencyModels.  If currency models have
+                        // been added, then we'll add those to `network`.
+                        self.configure (network: network, currenciesFrom: currencyModels)
+
+                        // If we have a blockChainModel, configure the network fees.
+                        if let blockchainModel = blockchainModelsMap[network.uids] {
+                            if let blockHeight = blockchainModel.blockHeight {
+                                cryptoNetworkSetHeight (network.core, blockHeight)
                             }
 
-                            // Don't process a network that we've added already.
-                            guard nil == self.networkBy (uids: network.uids)
-                                else { print ("SYS: CONFIGURE: Skipped Duplicate Network: \(network.name)"); return }
+                            self.configure (network: network, feesFrom: blockchainModel)
+                        }
+                        else { print ("SYS: CONFIGURE: Missed model for network: \(network.uids)") }
 
-                            // Get the built-in network
-//                            guard let network = supportedNetworks.first (where: { network.uids == $0.uids })
-//                                else { print ("SYS: CONFIGURE: Missed network for model: \(network.uids)"); return }
-
-                            // If there was a QueryError, then we are done
-                            if case let .failure(error) = currencyResult {
-                                print ("SYS: CONFIGURE: Missed Currencies Query (\(network.uids)): \(error)")
-                                // Continue on to use the applicationCurrencies
-                             }
-
-                            currencyResult.getWithRecovery { (ignore) in
-                                return applicationCurrencies
-                                    .filter { $0.blockchainID == network.uids }
-                            }
-                                // TODO: Only needed if getCurrencies returns the wrong stuff.
-                                .filter { $0.blockchainID == network.uids }
-                                .filter { $0.verified }
-                                .forEach { (currencyModel: BlockChainDB.Model.Currency) in
-
-                                    // Create the currency
-                                    let currency = Currency (uids: currencyModel.id,
-                                                             name: currencyModel.name,
-                                                             code: currencyModel.code,
-                                                             type: currencyModel.type,
-                                                             issuer: currencyModel.address)
-
-                                    // Create the base unit
-                                    let baseUnit: Unit = currencyModel.demoninations.first { 0 == $0.decimals }
-                                        .map { currencyDenominationToBaseUnit(currency: currency, model: $0) }
-                                        ?? currencyToDefaultBaseUnit (currency: currency)
-
-                                    // Create the other units
-                                    var units: [Unit] = [baseUnit]
-                                    units += currencyModel.demoninations.filter { 0 != $0.decimals }
-                                        .map { currencyDenominationToUnit (currency: currency, model: $0, base: baseUnit) }
-
-                                    // Find the default unit
-                                    let maximumDecimals = units.reduce (0) { max ($0, $1.decimals) }
-                                    let defaultUnit = units.first { $0.decimals == maximumDecimals }!
-
-                                    // Add the currency - this will not replace an existing currency
-                                    // Note, a builtin network *always* has a native currency at
-                                    // least which is set as the network's currency.
-                                    network.addCurrency (currency, baseUnit: baseUnit, defaultUnit: defaultUnit)
-
-                                    // Add the units - this will not replace an existing unti
-                                    units.forEach { network.addUnitFor (currency: currency, unit: $0) }
-                            }
-
-                            // The feeUnit is always the network currency's base unit
-                            guard let feeUnit = network.baseUnitFor (currency: network.currency)
-                                else { return }
-
-                            // If we have a blockchain model for this network, process it.
-                            if let blockchainModel = blockchainModelsMap[network.uids] {
-
-                                if let blockHeight = blockchainModel.blockHeight {
-                                    cryptoNetworkSetHeight (network.core, blockHeight)
-                                }
-
-                                // Extract the network fees from the blockchainModel
-                                let fees = blockchainModel.feeEstimates
-                                    // Well, quietly ignore a fee if we can't parse the amount.
-                                    .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
-                                        let timeInterval  = fee.confirmationTimeInMilliseconds
-                                        return Amount.create (string: fee.amount, unit: feeUnit)
-                                            .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
-                                                               pricePerCostFactor: $0) }
-                                }
-
-                                // We require fees
-                                guard !fees.isEmpty
-                                    else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
-
-                                // Update the network's fees.
-                                network.fees = fees
-                            }
-                            else { print ("SYS: CONFIGURE: Missed model for network: \(network.uids)") }
-
-                            // Finally, announce the network
+                        // If this is the first we've learn of this network, then announce it
+                        if !existing {
                             announceNetwork(network)
                         }
+
+                        // Otherwise, announce a network update
+                        else {
+                            announceNetworkUpdate(network)
+                        }
                 }
-            }
-            
-            // Wait on the semaphore - indicates that the DispatchGroup is 'active'
-            blockchainsSemaphore.wait()
 
-            // Wait on the group - indicates that all models+currencies have entered and left.
-            blockchainsGroup.wait()
-
-            // Always announce the discoveredNetworks on competion of `getBlockchains`
-            self.listenerQueue.async {
-                self.listener?.handleSystemEvent(system: self, event: SystemEvent.discoveredNetworks (networks: discoveredNetworks))
+                // Announce the newly discoveredNetworks on completion
+                if existingNetworks.isEmpty || !discoveredNetworks.isEmpty {
+                    self.listenerQueue.async {
+                        self.listener?.handleSystemEvent(system: self, event: SystemEvent.discoveredNetworks (networks: discoveredNetworks))
+                    }
+                }
             }
         }
     }
@@ -903,7 +907,7 @@ public final class System {
         System.systemRemove (index: system.index)
 
         // Disconnect all wallet managers
-        system.disconnectAll()
+        system.pause()
 
         // Stop all the wallet managers.
         system.managers.forEach { $0.stop() }
@@ -1406,7 +1410,8 @@ extension System {
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: true) {
+                                               includeRaw: true,
+                                               includeTransfers: false) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
@@ -1553,12 +1558,14 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias TransactionBlobBTCTuple = (
+        bytes: [UInt8],
+        blockHeight: UInt32,
+        timestamp: UInt32 // time interval since unix epoch (including '0'
+    )
+
     public enum TransactionBlob {
-        case btc (
-            bytes: [UInt8],
-            blockHeight: UInt32,
-            timestamp: UInt32 // time interval since unix epoch (including '0'
-        )
+        case btc (TransactionBlobBTCTuple)
     }
 
     ///
@@ -1576,20 +1583,22 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias BlockBlobBTCTuple = (
+        hash: BlockHash,
+        height: UInt32,
+        nonce: UInt32,
+        target: UInt32,
+        txCount: UInt32,
+        version: UInt32,
+        timestamp: UInt32?,
+        flags: [UInt8],
+        hashes: [BlockHash],
+        merkleRoot: BlockHash,
+        prevBlock: BlockHash
+    )
+
     public enum BlockBlob {
-        case btc (
-            hash: BlockHash,
-            height: UInt32,
-            nonce: UInt32,
-            target: UInt32,
-            txCount: UInt32,
-            version: UInt32,
-            timestamp: UInt32?,
-            flags: [UInt8],
-            hashes: [BlockHash],
-            merkleRoot: BlockHash,
-            prevBlock: BlockHash
-        )
+        case btc (BlockBlobBTCTuple)
     }
 
     ///
@@ -1597,13 +1606,15 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias PeerBlobBTCTuple = (
+        address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
+        port: UInt16,
+        services: UInt64,
+        timestamp: UInt32?
+    )
+
     public enum PeerBlob {
-        case btc (
-            address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
-            port: UInt16,
-            services: UInt64,
-            timestamp: UInt32?
-        )
+        case btc (PeerBlobBTCTuple)
     }
 
     ///
@@ -1794,9 +1805,9 @@ extension System {
                                             &blockHeight,
                                             &timestamp)
 
-            return TransactionBlob.btc (bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
-                                        blockHeight: blockHeight,
-                                        timestamp: timestamp)
+            return TransactionBlob.btc ((bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
+                                         blockHeight: blockHeight,
+                                         timestamp: timestamp))
         default:
             return nil
         }

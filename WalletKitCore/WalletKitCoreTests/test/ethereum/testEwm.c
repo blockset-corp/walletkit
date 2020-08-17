@@ -192,7 +192,7 @@ clientEstimateGas (BREthereumClientContext context,
     char *gasPriceStr = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
     char *gasLimitStr = "0x77";
 
-    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, gasLimitStr, gasPriceStr, rid);
+    ewmAnnounceGasEstimateSuccess(ewm, wid, tid, cookie, gasLimitStr, gasPriceStr, rid);
     free (gasPriceStr);
 }
 
