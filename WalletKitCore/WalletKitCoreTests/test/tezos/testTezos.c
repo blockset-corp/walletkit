@@ -340,30 +340,38 @@ testTransactionSerialize() {
     int64_t amount;
     int64_t counter;
     
-    size_t serializedBytesSize;
-    uint8_t * serializedBytes;
     char serializedHex[256] = {0};
     
     // transaction
-    sourceAddress = tezosAddressCreateFromString("tz1XVJ8bZUXs7r5NV8dHvuiBhzECvLRLR3jW", true);
-    targetAddress = tezosAddressCreateFromString("tz1Yju7jmmsaUiG9qQLoYv35v5pHgnWoLWbt", true);
-    feeBasis.gasLimit = 10100;
-    feeBasis.storageLimit = 257;
-    feeBasis.fee = 1272;
-    counter = 30738;
-    amount = 1;
+    sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
+    targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
+    feeBasis.gasLimit = 10200;
+    feeBasis.storageLimit = 0;
+    feeBasis.fee = 50000;
+    counter = 3;
+    amount = 100000000;
     
-    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, 0);
+    BRTezosBlockHash lastBlockHash;
+    BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
+    
+    
+    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
     BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
-    serializedBytesSize = 0;
-    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
     
-    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
-    assert (0 == strcasecmp("6c0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e81020100008fb5cea62d147c696afd9a93dbce962f4c8a9c9100", serializedHex));
+    BRTezosTransaction opList[1];
+    size_t opCount = 1;
+    opList[0] = tx;
+    
+    BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
+    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
     
     tezosTransferFree(transfer);
+    cryptoDataFree(unsignedBytes);
     
     // reveal
+    //TODO:TEZOS
     
     // delegation on
     tezosAddressFree(targetAddress);
@@ -372,14 +380,16 @@ testTransactionSerialize() {
     transfer = tezosTransferCreateNew(sourceAddress, targetAddress, 0, feeBasis, counter, 1);
     tx = tezosTransferGetTransaction(transfer);
     
-    serializedBytesSize = 0;
-    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
+    opList[0] = tx;
     
-    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
-    assert (0 == strcasecmp("6e0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e8102ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
+    unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
+    
+    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f00ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
     
     tezosTransferFree(transfer);
-    free (serializedBytes);
+    cryptoDataFree(unsignedBytes);
     
     // delegation off
     tezosAddressFree(targetAddress);
@@ -387,14 +397,17 @@ testTransactionSerialize() {
     transfer = tezosTransferCreateNew(sourceAddress, targetAddress, 0, feeBasis, counter, 1);
     tx = tezosTransferGetTransaction(transfer);
     
-    serializedBytesSize = 0;
-    serializedBytes = tezosTransactionSerialize(tx, &serializedBytesSize);
+    opList[0] = tx;
     
-    bin2HexString(serializedBytes, serializedBytesSize, serializedHex);
-    assert (0 == strcasecmp("6e0081faa75f741ef614b0e35fcc8c90dfa3b0b95721f80992f001f44e810200", serializedHex));
+    unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
+    
+    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f0000", serializedHex));
     
     tezosTransferFree(transfer);
-    free (serializedBytes);
+    cryptoDataFree(unsignedBytes);
+
     
     tezosAddressFree(sourceAddress);
     tezosWalletFree(wallet);

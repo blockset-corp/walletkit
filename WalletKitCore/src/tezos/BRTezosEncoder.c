@@ -107,6 +107,18 @@ encodeOperationKind (BRTezosOperationKind kind) {
     return cryptoDataCopy (bytes, 1);
 }
 
+static BRCryptoData
+encodeBranch (BRTezosBlockHash blockHash) {
+    // omit prefix (B)
+    size_t numPrefixBytes = 2;
+    size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
+    
+    BRCryptoData branchData = cryptoDataNew(branchSize);
+    memcpy(branchData.bytes, &blockHash.bytes[numPrefixBytes], branchSize);
+    
+    return branchData;
+}
+
 extern BRCryptoData
 tezosSerializeTransaction (BRTezosTransaction tx) {
     assert (tx);
@@ -164,15 +176,8 @@ tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosBlo
     size_t numFields = 0;
     
     // operation list = branch + [reveal op bytes] + transaction/delegation op bytes
-    // branch = <2-byte protocol version prefix> + latest block hash (omit first 2-bytes)
-    uint8_t protocolVersionPrefix[] = {1, 52}; // Babylon
-    size_t prefixSize = sizeof(protocolVersionPrefix);
     
-    BRCryptoData branchData = cryptoDataNew(sizeof(blockHash.bytes));
-    memcpy(branchData.bytes, protocolVersionPrefix, prefixSize);
-    memcpy(&branchData.bytes[prefixSize], &blockHash.bytes[prefixSize], sizeof(blockHash.bytes) - prefixSize);
-    
-    fields[numFields++] = branchData;
+    fields[numFields++] = encodeBranch(blockHash);
     
     for (int i=0; i < txCount; i++) {
         fields[numFields++] = tezosSerializeTransaction(tx[i]);
