@@ -34,6 +34,7 @@ struct BRTezosTransactionRecord {
     const char * protocol; // protocol name
     const char * branch; // hash of head block
     
+    BRCryptoData unsignedBytes;
     BRCryptoData signature;
     BRCryptoData signedBytes;
 };
@@ -157,6 +158,9 @@ extern void tezosTransactionFree (BRTezosTransaction transaction)
 {
     assert (transaction);
     tezosAddressFree (transaction->source);
+    cryptoDataFree(transaction->unsignedBytes);
+    cryptoDataFree(transaction->signature);
+    cryptoDataFree(transaction->signedBytes);
     switch (transaction->operation.kind) {
         case TEZOS_OP_REVEAL:
             break;
@@ -189,6 +193,7 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
     BRTezosTransaction opList[2];
     size_t opCount = 0;
     
+    // add a reveal operation to the operation list if needed
     if (needsReveal) {
         BRKey publicKey = tezosAccountGetPublicKey(account);
         BRTezosTransaction reveal = tezosTransactionCreateReveal(transaction->source,
@@ -205,9 +210,9 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
     BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
     BRCryptoData signature = tezosAccountSignData(account, unsignedBytes, seed);
     
-    assert(64 == transaction->signature.size);
+    assert(64 == signature.size);
     
-    BRCryptoData signedBytes = cryptoDataNew(unsignedBytes.size + transaction->signature.size);
+    BRCryptoData signedBytes = cryptoDataNew(unsignedBytes.size + signature.size);
     memcpy(signedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
     memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     

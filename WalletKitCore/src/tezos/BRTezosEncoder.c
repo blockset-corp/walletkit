@@ -109,7 +109,7 @@ encodeOperationKind (BRTezosOperationKind kind) {
 
 static BRCryptoData
 encodeBranch (BRTezosBlockHash blockHash) {
-    // omit prefix (B)
+    // omit prefix
     size_t numPrefixBytes = 2;
     size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
     

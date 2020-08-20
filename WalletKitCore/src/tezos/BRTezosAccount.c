@@ -97,16 +97,16 @@ tezosAccountSignData (BRTezosAccount account,
     uint8_t privateKeyBytes[64];
     tezosKeyGetPrivateKey(privateKey, privateKeyBytes);
     
-    BRCryptoData watermarkedData = cryptoDataNew(data.size + 1);
-    
     uint8_t watermark[] = { 0x03 };
     size_t watermarkSize = sizeof(watermark);
+    
+    BRCryptoData watermarkedData = cryptoDataNew(data.size + watermarkSize);
     
     memcpy(watermarkedData.bytes, watermark, watermarkSize);
     memcpy(&watermarkedData.bytes[watermarkSize], data.bytes, data.size);
     
     uint8_t hash[32];
-    blake2b(hash, sizeof(hash), NULL, 0, publicKey.pubKey, TEZOS_PUBLIC_KEY_SIZE);
+    blake2b(hash, sizeof(hash), NULL, 0, watermarkedData.bytes, watermarkedData.size);
     
     BRCryptoData signature = cryptoDataNew(64);
     ed25519_sign(signature.bytes, hash, sizeof(hash), publicKey.pubKey, privateKeyBytes);

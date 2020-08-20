@@ -97,6 +97,13 @@ makeAccount(TestAccount accountInfo) {
     return account;
 }
 
+static UInt512
+getSeed(TestAccount account) {
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, account.paperKey, NULL);
+    return seed;
+}
+
 static void
 testCreateTezosAccountWithSeed() {
     BRTezosAccount account = makeAccount(testAccount1);
@@ -354,7 +361,6 @@ testTransactionSerialize() {
     BRTezosBlockHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
     
-    
     BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
     BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
     
@@ -414,6 +420,55 @@ testTransactionSerialize() {
     tezosAccountFree(account);
 }
 
+static void
+testTransactionSign() {
+    BRTezosAccount account = makeAccount(testAccount1);
+    UInt512 seed = getSeed(testAccount1);
+    BRTezosWallet wallet = tezosWalletCreate(account);
+    BRTezosAddress sourceAddress;
+    BRTezosAddress targetAddress;
+    BRTezosFeeBasis feeBasis;
+    int64_t amount;
+    int64_t counter;
+    
+    char serializedHex[512] = {0};
+    
+    // transaction
+    sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
+    targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
+    feeBasis.gasLimit = 10200;
+    feeBasis.storageLimit = 0;
+    feeBasis.fee = 50000;
+    counter = 3;
+    amount = 100000000;
+    
+    BRTezosBlockHash lastBlockHash;
+    BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
+    
+    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
+    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
+
+    size_t signedSize = tezosTransactionSignTransaction(tx, account, seed, lastBlockHash, 0);
+    assert(signedSize > 0);
+
+    size_t signedSize2 = 0;
+    uint8_t *signedBytes = tezosTransactionGetSignedBytes(tx, &signedSize2);
+    assert(signedSize == signedSize2);
+    
+    //printByteString(0, signedBytes, signedSize);
+
+    bin2HexString(signedBytes, signedSize, serializedHex);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc8700073e2fa7352b0e0ee564ccc479d25283154cca085efc347b8cbbf025ecaa534c65ed3b87175f54377b2697712a2f91af8cfe52b4649c0c2712298d2625ce5130e", serializedHex));
+    
+    //TODO:TEZOS check hash
+    
+    tezosAddressFree(targetAddress);
+    tezosAddressFree(sourceAddress);
+    tezosTransferFree(transfer);
+    tezosWalletFree(wallet);
+    tezosAccountFree(account);
+}
+
 // MARK: -
 
 static void
@@ -434,6 +489,7 @@ tezosAddressTests() {
 static void
 tezosTransactionTests() {
     testTransactionSerialize();
+    testTransactionSign();
 }
 
 static void
