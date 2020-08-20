@@ -172,7 +172,6 @@ cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
     eventHandlerSignalEvent (listener->listener->handler, (BREvent *) &listenerEvent);
 }
 
-
 // MARK: - Generate System Event
 
 typedef struct {
@@ -236,13 +235,14 @@ cryptoListenerCreate (BRCryptoListenerContext context,
     listener->ref = CRYPTO_REF_ASSIGN (cryptoListenerRelease);
     pthread_mutex_init_brd (&listener->lock, PTHREAD_MUTEX_NORMAL);
 
+    listener->context          = context;
     listener->systemCallback   = systemCallback;
     listener->networkCallback  = networkCallback;
     listener->managerCallback  = managerCallback;
     listener->walletCallback   = walletCallback;
     listener->transferCallback = transferCallback;
 
-    listener->handler = eventHandlerCreate ("SYS Listener",
+    listener->handler = eventHandlerCreate ("Core SYS Listener",
                                             cryptoListenerEventTypes,
                                             cryptoListenerEventTypesCount,
                                             &listener->lock);

@@ -61,6 +61,9 @@ extern BRCryptoNetwork
 cryptoSystemGetNetworkForUids (BRCryptoSystem system,
                                const char *uids);
 
+extern size_t
+cryptoSystemGetNetworksCount (BRCryptoSystem system);
+
 // MARK: - System Wallet Managers
 
 extern BRCryptoBoolean
@@ -79,6 +82,9 @@ extern BRCryptoWalletManager
 cryptoSystemGetWalletManagerByNetwork (BRCryptoSystem system,
                                        BRCryptoNetwork network);
 
+extern size_t
+cryptoSystemGetWalletManagersCount (BRCryptoSystem system);
+
 extern BRCryptoWalletManager
 cryptoSystemCreateWalletManager (BRCryptoSystem system,
                                  BRCryptoNetwork network,
@@ -86,6 +92,12 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
                                  BRCryptoAddressScheme scheme,
                                  BRCryptoCurrency *currencies,
                                  size_t currenciesCount);
+
+extern void
+cryptoSystemStart (BRCryptoSystem system);
+
+extern void
+cryptoSystemStop (BRCryptoSystem system);
 
 extern void
 cryptoSystemConnect (BRCryptoSystem system);

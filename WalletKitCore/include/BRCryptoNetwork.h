@@ -322,10 +322,13 @@ extern "C" {
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork);
 
     extern BRCryptoNetwork *
-    cryptoNetworkInstallBuiltins (size_t *networksCount);
+    cryptoNetworkInstallBuiltins (size_t *networksCount,
+                                  BRCryptoNetworkListener listener,
+                                  bool isMainnet);
 
     extern BRCryptoNetwork
-    cryptoNetworkFindBuiltin (const char *uids);
+    cryptoNetworkFindBuiltin (const char *uids,
+                              bool isMainnet);
 
 #ifdef __cplusplus
 }

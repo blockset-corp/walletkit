@@ -10,9 +10,77 @@
 
 #include "BRCryptoSystemP.h"
 #include "support/BROSCompat.h"
+#include "crypto/BRCryptoListenerP.h"
 
 #include <stdio.h>                  // sprintf
 
+// MARK: - All Systems
+
+#if defined (NOT_WORKABLE_NEEDS_RO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
+static pthread_once_t  _cryptoAllSystemsOnce   = PTHREAD_ONCE_INIT;
+static pthread_mutex_t _cryptoAllSystemsMutex;
+
+// TODO: If this had a `void*` field to the Swift/Java reference... it might then work.
+typedef struct {
+    char *uids;
+    BRCryptoSystem system;
+    int foo;
+    int bar;
+} BRCryptoSystemEntry;
+
+static BRArrayOf(BRCryptoSystemEntry) systems = NULL;
+
+#define NUMBER_OF_SYSTEMS_DEFAULT       (3)
+
+static void
+_cryptoAllSystemsInitOnce  (void) {
+    array_new (systems, NUMBER_OF_SYSTEMS_DEFAULT);
+    pthread_mutex_init(&_cryptoAllSystemsMutex, NULL);
+    // ...
+}
+
+static void
+cryptoAllSystemsInit (void) {
+    pthread_once (&_cryptoAllSystemsOnce, _cryptoAllSystemsInitOnce);
+}
+
+static BRCryptoSystemEntry *
+_cryptoAllSystemsFind (BRCryptoSystem system) {
+    cryptoAllSystemsInit();
+    pthread_mutex_lock (&_cryptoAllSystemsMutex);
+    BRCryptoSystemEntry *entry = NULL;
+    pthread_mutex_unlock (&_cryptoAllSystemsMutex);
+
+    return entry;
+}
+
+static BRCryptoSystemEntry *
+_cryptoAllSystemsFindByUIDS (const char *uids) {
+    cryptoAllSystemsInit();
+    pthread_mutex_lock (&_cryptoAllSystemsMutex);
+    BRCryptoSystemEntry *entry = NULL;
+    pthread_mutex_unlock (&_cryptoAllSystemsMutex);
+
+    return entry;
+}
+
+static void
+cryptoAllSystemsAdd (BRCryptoSystem system) { // , void* context)
+    cryptoAllSystemsInit();
+
+    BRCryptoSystemEntry entry = {
+        strdup (cryptoSystemGetResolvedPath(system)),
+        cryptoSystemTake(system),
+        0,
+        0
+    };
+    pthread_mutex_lock (&_cryptoAllSystemsMutex);
+    array_add (systems, entry);
+    pthread_mutex_unlock (&_cryptoAllSystemsMutex);
+}
+#endif
+
+// MARK: - System
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
 
 extern BRCryptoSystem
@@ -27,7 +95,8 @@ cryptoSystemCreate (BRCryptoClient client,
     system->onMainnet   = onMainnet;
     system->isReachable = CRYPTO_TRUE;
     system->client      = client;
-    system->listener    = cryptoListenerTake(listener);
+    system->listener    = cryptoListenerTake (listener);
+    system->account     = cryptoAccountTake  (account);
 
     // Build a `path` specific to `account`
     char *accountFileSystemIdentifier = cryptoAccountGetFileSystemIdentifier(account);
@@ -35,8 +104,16 @@ cryptoSystemCreate (BRCryptoClient client,
     sprintf (system->path, "%s/%s", basePath, accountFileSystemIdentifier);
     free (accountFileSystemIdentifier);
 
-    array_new (system->managers, 10);
-    array_new (system->networks, 10);
+    // Fill in the builtin networks
+    size_t networksCount = 0;
+    BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount,
+                                                              cryptoListenerCreateNetworkListener(listener, system),
+                                                              CRYPTO_TRUE == onMainnet);
+    array_new (system->networks, networksCount);
+    array_add_array (system->networks, networks, networksCount);
+
+    // Start w/ no `managers`; never more than `networksCount`
+    array_new (system->managers, networksCount);
 
     system->ref = CRYPTO_REF_ASSIGN (cryptoSystemRelease);
 
@@ -45,6 +122,10 @@ cryptoSystemCreate (BRCryptoClient client,
     cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
         CRYPTO_SYSTEM_EVENT_CREATED
     });
+
+#if defined (NOT_WORKABLE_NEEDS_RO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
+    cryptoAllSystemsAdd (system);
+#endif
 
     return system;
 }
@@ -171,6 +252,11 @@ cryptoSystemGetNetworkForUids (BRCryptoSystem system,
     return NULL;
 }
 
+extern size_t
+cryptoSystemGetNetworksCount (BRCryptoSystem system) {
+    return array_count(system->networks);
+}
+
 private_extern void
 cryptoSystemAddNetwork (BRCryptoSystem system,
                         BRCryptoNetwork network) {
@@ -247,6 +333,11 @@ cryptoSystemGetWalletManagerByNetwork (BRCryptoSystem system,
     return NULL;
 }
 
+extern size_t
+cryptoSystemGetWalletManagersCount (BRCryptoSystem system) {
+    return array_count(system->managers);
+}
+
 private_extern void
 cryptoSystemAddWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager) {
@@ -301,6 +392,20 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
             cryptoWalletManagerCreateWallet (manager, currencies[index]);
 
     return manager;
+}
+
+extern void
+cryptoSystemStart (BRCryptoSystem system) {
+    cryptoListenerStart(system->listener);
+    // client
+    // query
+}
+
+extern void
+cryptoSystemStop (BRCryptoSystem system) {
+    // query
+    // client
+    cryptoListenerStop(system->listener);
 }
 
 extern void

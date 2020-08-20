@@ -421,8 +421,8 @@ class BRCryptoSystemBaseTests: BRCryptoBaseTests {
         self.listener = listener ?? createDefaultListener()
         self.client   = client   ?? createDefaultClient()
 
-        system = System (listener:  self.listener,
-                         client:    self.client,
+        system = System (client:    self.client,
+                         listener:  self.listener,
                          account:   self.account,
                          onMainnet: self.isMainnet,
                          path:      self.coreDataDir)

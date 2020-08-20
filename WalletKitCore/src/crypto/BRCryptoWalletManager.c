@@ -507,7 +507,7 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
 
     // ... then the eventHandler
     eventHandlerDestroy (cwm->handler);
-    eventHandlerDestroy (cwm->listenerHandler);
+//    eventHandlerDestroy (cwm->listenerHandler);
 
     // ... and finally individual memory allocations
     free (cwm->path);
@@ -762,7 +762,7 @@ extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
     eventHandlerStart (cwm->handler);
-    eventHandlerStart (cwm->listenerHandler);
+//    eventHandlerStart (cwm->listenerHandler);
 
     // P2P Manager
     // QRY Manager
@@ -772,7 +772,7 @@ cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
 extern void
 cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
     // Stop the CWM 'Event Handler'
-    eventHandlerStop (cwm->listenerHandler);
+//    eventHandlerStop (cwm->listenerHandler);
     eventHandlerStop (cwm->handler);
 
     // P2P Manager

@@ -21,6 +21,7 @@
 #include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoTransferP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
+#include "crypto/BRCryptoSystemP.h"
 
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
@@ -663,6 +664,20 @@ CWMEventRecordingStateFree (CWMEventRecordingState *state) {
 // TODO(fix): The below callbacks leak managers/wallets/transfers, as well as any ref counted event fields
 
 static void
+_CWMEventRecordingSystemCallback (BRCryptoListenerContext context,
+                                  BRCryptoSystem system,
+                                  BRCryptoSystemEvent event) {
+
+}
+
+static void
+_CWMEventRecordingNetworkCallback (BRCryptoListenerContext context,
+                                   BRCryptoNetwork network,
+                                   BRCryptoNetworkEvent event) {
+
+}
+
+static void
 _CWMEventRecordingManagerCallback (BRCryptoListenerContext context,
                                    BRCryptoWalletManager manager,
                                    BRCryptoWalletManagerEvent event) {
@@ -871,12 +886,12 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
                                             BRCryptoAddressScheme scheme,
                                             const char *storagePath)
 {
-    BRCryptoListener listener = (BRCryptoListener) {
-        state,
-        _CWMEventRecordingManagerCallback,
-        _CWMEventRecordingWalletCallback,
-        _CWMEventRecordingTransferCallback,
-    };
+    BRCryptoListener listener = cryptoListenerCreate (state,
+                                                     _CWMEventRecordingSystemCallback,
+                                                     _CWMEventRecordingNetworkCallback,
+                                                     _CWMEventRecordingManagerCallback,
+                                                     _CWMEventRecordingWalletCallback,
+                                                     _CWMEventRecordingTransferCallback);
 
     BRCryptoClient client = (BRCryptoClient) {
         state,
@@ -887,7 +902,15 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
         _CWMNopEstimateTransactionFeeCallback
     };
 
-    return cryptoWalletManagerCreate (listener, client, account, network, mode, scheme, storagePath);
+    BRCryptoSystem system = cryptoSystemCreate (client, listener, account, storagePath, cryptoNetworkIsMainnet(network));
+
+    return cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (listener, system),
+                                      client,
+                                      account,
+                                      network,
+                                      mode,
+                                      scheme,
+                                      storagePath);
 }
 
 static int

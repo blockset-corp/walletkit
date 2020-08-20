@@ -316,7 +316,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin", "bitcoin", "btc", "native", nil)
@@ -349,7 +349,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createBitcoinCashNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoincash-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin-cash", "bitcoin cash", "bch", "native", nil)
@@ -382,7 +382,7 @@ final class WalletKitCoreTests: XCTestCase {
     
     private func createBitcoinSVNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoinsv-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin-sv", "bitcoin sv", "bsv", "native", nil)
@@ -415,7 +415,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createEthereumNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "ethereum-" + (isMainnet ? "mainnet" : "ropsten")
-        let network = cryptoNetworkFindBuiltin (uids)
+        let network = cryptoNetworkFindBuiltin (uids, isMainnet)
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("ethereum", "ethereum", "eth", "native", nil)

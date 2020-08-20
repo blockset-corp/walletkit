@@ -85,7 +85,9 @@ class CoreDemoListener: SystemListener {
     func handleSystemEvent(system: System, event: SystemEvent) {
         print ("APP: System: \(event)")
         switch event {
-        case .created:
+        case .created,
+             .changed,
+             .deleted:
             break
 
         case .networkAdded(let network):

@@ -114,6 +114,8 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     network->handlers = cryptoHandlersLookup(type)->network;
     network->sizeInBytes = sizeInBytes;
 
+    network->listener = listener;
+
     network->uids = strdup (uids);
     network->name = strdup (name);
     network->desc = strdup (desc);
@@ -593,7 +595,9 @@ cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
 // MARK: - Network Defaults
 
 extern BRCryptoNetwork *
-cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
+cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
+                              BRCryptoNetworkListener listener,
+                              bool isMainnet) {
     // Network Specification
     struct NetworkSpecification {
         BRCryptoBlockChainType type;
@@ -694,13 +698,12 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 
     for (size_t networkIndex = 0; networkIndex < NUMBER_OF_NETWORKS; networkIndex++) {
         struct NetworkSpecification *networkSpec = &networkSpecifications[networkIndex];
+        if (isMainnet != networkSpec->isMainnet) continue;
 
         const BRCryptoHandlers *handlers = cryptoHandlersLookup(networkSpec->type);
         // If the network handlers are NULL, then we'll skip that network.  This is only
         // for debugging purposes - as a way to avoid unimplemented currencies.
         if (NULL == handlers->network) break;
-
-        BRCryptoNetworkListener listener = { NULL };
 
         BRCryptoNetwork network = handlers->network->create (listener,
                                                              networkSpec->networkId,
@@ -848,9 +851,12 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 }
 
 extern BRCryptoNetwork
-cryptoNetworkFindBuiltin (const char *uids) {
+cryptoNetworkFindBuiltin (const char *uids,
+                          bool isMainnet) {
     size_t networksCount = 0;
-    BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount);
+    BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount,
+                                                              cryptoListenerCreateNetworkListener (NULL, NULL),
+                                                              isMainnet);
     BRCryptoNetwork network = NULL;
 
     for (size_t index = 0; index < networksCount; index++) {
