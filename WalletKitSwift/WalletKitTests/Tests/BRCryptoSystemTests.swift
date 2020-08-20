@@ -34,10 +34,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         XCTAssertEqual (1, system.managers.count)
         let manager = system.managers[0]
 
-        XCTAssertTrue (system     === manager.system)
+        XCTAssertTrue (system   === manager.system)
 //      XCTAssertTrue (account === manager.account)
-        XCTAssertTrue (network  == manager.network)
-        XCTAssertTrue (query   === manager.query)
+        XCTAssertTrue (network  ==  manager.network)
 
         XCTAssertTrue (manager === system.managerBy(core: manager.core))
 
@@ -72,7 +71,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
         // We need the UIDS to contain a valid ETH address BUT not be a default.  Since we are
         // using `isMainnet = false` use a mainnet address.
-        currencyModels = [System.asBlockChainDBModelCurrency (uids: "ethereum-ropsten" + ":" + BlockChainDB.Model.addressBRDMainnet,
+        currencyModels = [System.asBlockChainDBModelCurrency (uids: "ethereum-ropsten" + ":" + BlocksetSystemClient.Model.addressBRDMainnet,
                                                               name: "FOO Token",
                                                               code: "foo",
                                                               type: "ERC20",
@@ -81,7 +80,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareAccount()
 
         // Create a query that fails (no authentication)
-        prepareSystem (query: BlockChainDB())
+        prepareSystem (client: BlocksetSystemClient())
 
         XCTAssertTrue (system.networks.count >= 1)
         let network: Network! = system.networks.first { NetworkType.eth == $0.type && isMainnet == $0.isMainnet }

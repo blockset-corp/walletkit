@@ -34,8 +34,8 @@ public final class System {
     /// If on mainnet
     public let onMainnet: Bool
 
-    /// The 'blockchain DB' to use for BRD Server Assisted queries
-    public let query: BlockChainDB
+    /// The client to use for queries
+    public let client: SystemClient
 
     /// The queue for asynchronous functionality.  Notably this is used in `configure()` to
     /// gather all of the `query` results as Networks are created and added.
@@ -206,7 +206,7 @@ public final class System {
         /// b) and error during a BRD create that 'missed' a creation and now multiple exist.
         /// Chose the preferred account from among the array - like the one with the largest
         /// balance and then call `accountInitialize(...hedera)`
-        case multipleHederaAccounts ([BlockChainDB.Model.HederaAccount])
+        case multipleHederaAccounts ([SystemClient.HederaAccount])
     }
 
     ///
@@ -256,8 +256,8 @@ public final class System {
             print ("SYS: Account: Hedera: publicKey: \(publicKey)")
 
             // Find a pre-existing account or create one if necessary.
-            query.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
-                (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
+            client.getHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
+                (res: Result<[SystemClient.HederaAccount], SystemClientError>) in
                 self.accountInitializeHandleHederaResult (create: create,
                                                           network: network,
                                                           publicKey: publicKey,
@@ -304,7 +304,7 @@ public final class System {
     ///
     public func accountInitialize (_ account: Account,
                                    onNetwork network: Network,
-                                   hedera: BlockChainDB.Model.HederaAccount) -> Data? {
+                                   hedera: SystemClient.HederaAccount) -> Data? {
         return hedera.id.data(using: .utf8)
             .flatMap { accountInitialize (account, onNetwork: network, using: $0) }
     }
@@ -312,16 +312,16 @@ public final class System {
     private func accountInitializeHandleHederaResult (create: Bool,
                                                       network: Network,
                                                       publicKey: String,
-                                                      res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>,
+                                                      res: Result<[SystemClient.HederaAccount], SystemClientError>,
                                                       completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
         res.resolve (
-            success: { (accounts: [BlockChainDB.Model.HederaAccount]) in
+            success: { (accounts: [SystemClient.HederaAccount]) in
                 switch accounts.count {
                 case 0:
                     if !create { accountInitializeReportResult (Result.failure(.cantCreate), completion) }
                     else {
-                        query.createHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
-                            (res: Result<[BlockChainDB.Model.HederaAccount], BlockChainDB.QueryError>) in
+                        client.createHederaAccount (blockchainId: network.uids, publicKey: publicKey) {
+                            (res: Result<[SystemClient.HederaAccount], SystemClientError>) in
                             self.accountInitializeHandleHederaResult (create: false,
                                                                       network: network,
                                                                       publicKey: publicKey,
@@ -342,7 +342,7 @@ public final class System {
                     accountInitializeReportResult (Result.failure (.multipleHederaAccounts (accounts)), completion)
                 }},
 
-            failure: { (error: BlockChainDB.QueryError) in
+            failure: { (error: SystemClientError) in
                 accountInitializeReportResult (Result.failure (.queryFailure (error.localizedDescription)), completion)
         })
     }
@@ -380,6 +380,23 @@ public final class System {
         return FileManager.default.isWritableFile (atPath: path)
     }
 
+    #if false
+    internal init (core: BRCryptoSystem, take: Bool) {
+        self.core = take ? cryptoSystemTake (core) : core
+
+    }
+
+    internal init (listener: SystemListener,
+                   account: Account,
+                   onMainnet: Bool,
+                   path: String) {
+//        cryptoSystemCreate(BRCryptoClient,
+//                           <#T##listener: BRCryptoListener!##BRCryptoListener!#>,
+//                           <#T##account: BRCryptoAccount!##BRCryptoAccount!#>,
+//                           <#T##path: UnsafePointer<Int8>!##UnsafePointer<Int8>!#>,
+//                           <#T##onMainnet: BRCryptoBoolean##BRCryptoBoolean#>)
+    }
+    #endif
     ///
     /// Initialize System
     ///
@@ -400,19 +417,19 @@ public final class System {
     ///       queue is not specficied (default to `nil`), then one will be provided.
     ///
     internal init (listener: SystemListener,
+                   client: SystemClient,
                   account: Account,
                   onMainnet: Bool,
                   path: String,
-                  query: BlockChainDB,
                   listenerQueue: DispatchQueue? = nil) {
         let accounctSpecificPath = path + (path.last == "/" ? "" : "/") + account.fileSystemIdentifier
         precondition (System.ensurePath(accounctSpecificPath))
 
         self.listener  = listener
+        self.client    = client
         self.account   = account
         self.onMainnet = onMainnet
         self.path  = accounctSpecificPath
-        self.query = query
         self.listenerQueue = listenerQueue ?? DispatchQueue (label: "Crypto System Listener")
         self.callbackCoordinator = SystemCallbackCoordinator (queue: self.listenerQueue)
 
@@ -438,8 +455,8 @@ public final class System {
     ///
     /// - Parameter subscription: the subscription to enable or to disable notifications
     ///
-    public func subscribe (using subscription: BlockChainDB.Subscription) {
-        self.query.subscribe (walletId: account.uids,
+    public func subscribe (using subscription: SystemClient.Subscription) {
+        self.client.subscribe (walletId: account.uids,
                               subscription: subscription)
     }
 
@@ -460,7 +477,7 @@ public final class System {
         let currencyKeyValues = wallets.map { ($0.currency.code, [$0.source.description]) }
         let wallet = (id: account.uids,
                       currencies: Dictionary (uniqueKeysWithValues: currencyKeyValues))
-        self.query.updateWallet (wallet) { (res: Result<BlockChainDB.Model.Wallet, BlockChainDB.QueryError>) in
+        self.client.updateWallet (wallet) { (res: Result<SystemClient.Wallet, SystemClientError>) in
             print ("SYS: SubscribedWallets: \(res)")
         }
     }
@@ -490,8 +507,8 @@ public final class System {
     /// - Parameter completion: An optional completion handler
     ///
     public func updateNetworkFees (_ completion: ((Result<[Network],NetworkFeeUpdateError>) -> Void)? = nil) {
-        self.query.getBlockchains (mainnet: self.onMainnet) {
-            (blockChainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+        self.client.getBlockchains (mainnet: self.onMainnet) {
+            (blockChainResult: Result<[SystemClient.Blockchain],SystemClientError>) in
 
             // On an error, just skip out; we'll query again later, presumably
             guard case let .success (blockChainModels) = blockChainResult
@@ -500,7 +517,7 @@ public final class System {
                     return
             }
 
-            let networks = blockChainModels.compactMap { (blockChainModel: BlockChainDB.Model.Blockchain) -> Network? in
+            let networks = blockChainModels.compactMap { (blockChainModel: SystemClient.Blockchain) -> Network? in
                 guard let network = self.networkBy (uids: blockChainModel.id)
                     else { return nil }
 
@@ -510,7 +527,7 @@ public final class System {
                 // Get the fees
                 let fees = blockChainModel.feeEstimates
                     // Well, quietly ignore a fee if we can't parse the amount.
-                    .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
+                    .compactMap { (fee: SystemClient.BlockchainFee) -> NetworkFee? in
                         return Amount.create (string: fee.amount, unit: feeUnit)
                             .map { NetworkFee (timeIntervalInMilliseconds: fee.confirmationTimeInMilliseconds,
                                                pricePerCostFactor: $0) }
@@ -562,8 +579,8 @@ public final class System {
     ///     use `applicationCurrencies` merged into the deafults.  Appropriate currencies can be
     ///     created from `System::asBlockChainDBModelCurrency` (see below)
     ///
-    public func configure (withCurrencyModels applicationCurrencies: [BlockChainDB.Model.Currency]) {
-        func currencyDenominationToBaseUnit (currency: Currency, model: BlockChainDB.Model.CurrencyDenomination) -> Unit {
+    public func configure (withCurrencyModels applicationCurrencies: [SystemClient.Currency]) {
+        func currencyDenominationToBaseUnit (currency: Currency, model: SystemClient.CurrencyDenomination) -> Unit {
             return Unit (currency: currency,
                          code:   model.code,
                          name:   model.name,
@@ -577,7 +594,7 @@ public final class System {
                          symbol: "\(currency.code.uppercased())I")
         }
 
-        func currencyDenominationToUnit (currency: Currency, model: BlockChainDB.Model.CurrencyDenomination, base: Unit) -> Unit {
+        func currencyDenominationToUnit (currency: Currency, model: SystemClient.CurrencyDenomination, base: Unit) -> Unit {
             return Unit (currency: currency,
                          code:   model.code,
                          name:   model.name,
@@ -623,8 +640,8 @@ public final class System {
                 .filter { self.onMainnet == $0.isMainnet}
 
             // Query for blockchains.
-            self.query.getBlockchains (mainnet: self.onMainnet) {
-                (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+            self.client.getBlockchains (mainnet: self.onMainnet) {
+                (blockchainResult: Result<[SystemClient.Blockchain],SystemClientError>) in
 
                 // If there was a QueryError then we are done
                 if case let .failure (error) = blockchainResult {
@@ -652,8 +669,8 @@ public final class System {
                     .forEach { (network: Network) in
 
                         // query currencies based on the (Network <==> BlockchainMode) id
-                        self.query.getCurrencies (blockchainId: network.uids) {
-                            (currencyResult: Result<[BlockChainDB.Model.Currency],BlockChainDB.QueryError>) in
+                        self.client.getCurrencies (blockchainId: network.uids) {
+                            (currencyResult: Result<[SystemClient.Currency],SystemClientError>) in
 
                             // We get one `currencyResult` per blockchain.  If we leave the group
                             // upon completion of this block, we'll match the `enter` calls.
@@ -682,7 +699,7 @@ public final class System {
                                 // TODO: Only needed if getCurrencies returns the wrong stuff.
                                 .filter { $0.blockchainID == network.uids }
                                 .filter { $0.verified }
-                                .forEach { (currencyModel: BlockChainDB.Model.Currency) in
+                                .forEach { (currencyModel: SystemClient.Currency) in
 
                                     // Create the currency
                                     let currency = Currency (uids: currencyModel.id,
@@ -728,7 +745,7 @@ public final class System {
                                 // Extract the network fees from the blockchainModel
                                 let fees = blockchainModel.feeEstimates
                                     // Well, quietly ignore a fee if we can't parse the amount.
-                                    .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
+                                    .compactMap { (fee: SystemClient.BlockchainFee) -> NetworkFee? in
                                         let timeInterval  = fee.confirmationTimeInMilliseconds
                                         return Amount.create (string: fee.amount, unit: feeUnit)
                                             .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
@@ -763,7 +780,7 @@ public final class System {
         }
     }
 
-    private static func makeCurrencyDemominationsERC20 (_ code: String, decimals: UInt8) -> [BlockChainDB.Model.CurrencyDenomination] {
+    private static func makeCurrencyDemominationsERC20 (_ code: String, decimals: UInt8) -> [SystemClient.CurrencyDenomination] {
         let name = code.uppercased()
         let code = code.lowercased()
 
@@ -774,10 +791,10 @@ public final class System {
     }
 
     ///
-    /// Create a BlockChainDB.Model.Currency to be used in the event that the BlockChainDB does
+    /// Create a SystemClient.Currency to be used in the event that the BlockChainDB does
     /// not provide its own currency model.
     ///
-    public static func asBlockChainDBModelCurrency (uids: String, name: String, code: String, type: String, decimals: UInt8) -> BlockChainDB.Model.Currency? {
+    public static func asBlockChainDBModelCurrency (uids: String, name: String, code: String, type: String, decimals: UInt8) -> SystemClient.Currency? {
         // convert to lowercase to match up with built-in blockchains
         let type = type.lowercased()
         guard "erc20" == type || "native" == type else { return nil }
@@ -909,16 +926,16 @@ public final class System {
     }
 
     public static func create (listener: SystemListener,
+                               client: SystemClient,
                                account: Account,
                                onMainnet: Bool,
                                path: String,
-                               query: BlockChainDB,
                                listenerQueue: DispatchQueue? = nil) -> System {
         return System (listener: listener,
+                       client: client,
                        account: account,
                        onMainnet: onMainnet,
                        path: path,
-                       query: query,
                        listenerQueue: listenerQueue)
     }
 
@@ -1385,8 +1402,8 @@ extension System {
 }
 
 extension System {
-    private static func mergeTransfers (_ transaction: BlockChainDB.Model.Transaction, with addresses: [String])
-        -> [(transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)] {
+    private static func mergeTransfers (_ transaction: SystemClient.Transaction, with addresses: [String])
+        -> [(transfer: SystemClient.Transfer, fee: SystemClient.Amount?)] {
             // Only consider transfers w/ `address`
             var transfers = transaction.transfers.filter {
                 ($0.source.map { addresses.caseInsensitiveContains($0) } ?? false) ||
@@ -1460,7 +1477,7 @@ extension System {
         return addresses
     }
 
-    internal static func makeTransactionBundle (_ model: BlockChainDB.Model.Transaction) -> BRCryptoClientTransactionBundle {
+    internal static func makeTransactionBundle (_ model: SystemClient.Transaction) -> BRCryptoClientTransactionBundle {
         let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
         let height    = model.blockHeight ?? 0
         let status    = System.getTransferStatus (model.status)
@@ -1473,7 +1490,7 @@ extension System {
         }
     }
 
-    internal static func makeTransferBundles (_ transaction: BlockChainDB.Model.Transaction, addresses:[String]) -> [BRCryptoClientTransferBundle] {
+    internal static func makeTransferBundles (_ transaction: SystemClient.Transaction, addresses:[String]) -> [BRCryptoClientTransferBundle] {
         let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
         let blockHeight    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
         let blockConfirmations = transaction.confirmations ?? 0
@@ -1482,7 +1499,7 @@ extension System {
         let status    = System.getTransferStatus (transaction.status)
 
         return System.mergeTransfers (transaction, with: addresses)
-            .map { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
+            .map { (arg: (transfer: SystemClient.Transfer, fee: SystemClient.Amount?)) in
                 let (transfer, fee) = arg
 
                 let metaData = (transaction.metaData ?? [:]).merging (transfer.metaData ?? [:]) { (cur, new) in new }
@@ -1525,8 +1542,8 @@ extension System {
                     else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: GetBlockNumber")
 
-                manager.query.getBlockchain (blockchainId: manager.network.uids) {
-                    (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
+                manager.client.getBlockchain (blockchainId: manager.network.uids) {
+                    (res: Result<SystemClient.Blockchain, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
                         success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0) },
@@ -1542,12 +1559,12 @@ extension System {
 
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
-                manager.query.getTransactions (blockchainId: manager.network.uids,
+                manager.client.getTransactions (blockchainId: manager.network.uids,
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
                                                includeRaw: true) {
-                                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+                                                (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
                                                     success: {
@@ -1567,12 +1584,12 @@ extension System {
 
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
-                manager.query.getTransactions (blockchainId: manager.network.uids,
+                manager.client.getTransactions (blockchainId: manager.network.uids,
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
                                                includeRaw: false) {
-                                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+                                                (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                                 defer { cryptoWalletManagerGive(cwm) }
                                                 res.resolve(
                                                     success: {
@@ -1592,8 +1609,8 @@ extension System {
                 let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.query.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
-                    (res: Result<Void, BlockChainDB.QueryError>) in
+                manager.client.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                    (res: Result<Void, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (_) in
@@ -1613,8 +1630,8 @@ extension System {
                 let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.query.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
-                    (res: Result<BlockChainDB.Model.TransactionFee, BlockChainDB.QueryError>) in
+                manager.client.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                    (res: Result<SystemClient.TransactionFee, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_TRUE, hash, $0.costUnits) },
@@ -1906,3 +1923,4 @@ extension BRCryptoWalletManagerEventType: CustomStringConvertible {
         return asUTF8String (cryptoWalletManagerEventTypeString (self))
     }
 }
+

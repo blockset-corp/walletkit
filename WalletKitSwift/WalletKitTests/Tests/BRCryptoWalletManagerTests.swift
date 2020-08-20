@@ -59,7 +59,6 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
         XCTAssertNotNil (manager)
         XCTAssertTrue  (system  === manager.system)
-        XCTAssertTrue  (self.query === manager.query)
         XCTAssertEqual (network, manager.network)
 
         XCTAssertEqual (WalletManagerState.created, manager.state)
@@ -239,7 +238,6 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
 
         XCTAssertNotNil (manager)
         XCTAssertTrue  (system  === manager.system)
-        XCTAssertTrue  (self.query === manager.query)
         XCTAssertEqual (network, manager.network)
 
         XCTAssertEqual (WalletManagerState.created, manager.state)
@@ -340,14 +338,14 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         // Create a new system with MigrateSystemListener (see below).  This listener will
         // create a BTC wallet manager with transfers migrated from `TransferBlobs`
         let migrateListener = MigrateSystemListener (transactionBlobs: transferBlobs)
-        let migrateQuery    = system.query
+        let migrateClient   = system.client
         let migratePath     = system.path + "Migrate"
 
         let migrateSystem = System (listener: migrateListener,
+                                    client: migrateClient,
                                     account: system.account,
                                     onMainnet: system.onMainnet,
-                                    path: migratePath,
-                                    query: migrateQuery)
+                                    path: migratePath)
 
         // transfers announced on `configure`
         migrateListener.transferCount = transferBlobs.count
@@ -368,14 +366,14 @@ class BRCryptoWalletManagerTests: BRCryptoSystemBaseTests {
         //
         let muckedTransferBlobs = [System.TransactionBlob.btc (bytes: [UInt8](arrayLiteral: 0, 1, 2), blockHeight: UInt32(0), timestamp: UInt32(0))]
         let muckedListener = MigrateSystemListener (transactionBlobs: muckedTransferBlobs)
-        let muckedQuery    = system.query
+        let muckedClient   = system.client
         let muckedPath     = system.path + "mucked"
 
         let muckedSystem = System (listener: muckedListener,
+                                   client: muckedClient,
                                     account: system.account,
                                     onMainnet: system.onMainnet,
-                                    path: muckedPath,
-                                    query: muckedQuery)
+                                    path: muckedPath)
 
         // transfers annonced on `configure`
         muckedSystem.configure(withCurrencyModels: [])
@@ -406,7 +404,9 @@ class MigrateSystemListener: SystemListener {
 
     func handleSystemEvent(system: System, event: SystemEvent) {
         switch event {
-        case .created:
+        case .created,
+             .changed,
+             .deleted:
             break
 
         case .networkAdded(let network):

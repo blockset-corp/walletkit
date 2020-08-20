@@ -36,8 +36,8 @@ public final class WalletManager: Equatable, CustomStringConvertible {
     /// The network
     public let network: Network
 
-    /// The BlockChainDB for BRD Server Assisted queries.
-    internal let query: BlockChainDB
+    /// The client
+    internal let client: SystemClient
 
     /// The default unit - as the networks default unit
     internal let unit: Unit
@@ -97,14 +97,14 @@ public final class WalletManager: Equatable, CustomStringConvertible {
         }
     }
 
-//    public func unregisterWalletFor (currency: Currency) {
-//        wallets
-//            .first { $0.currency == currency }
-//            .map { unregisterWallet($0) }
-//    }
-//
-//    public func unregisterWallet (_ wallet: Wallet) {
-//    }
+    //    public func unregisterWalletFor (currency: Currency) {
+    //        wallets
+    //            .first { $0.currency == currency }
+    //            .map { unregisterWallet($0) }
+    //    }
+    //
+    //    public func unregisterWallet (_ wallet: Wallet) {
+    //    }
 
     /// The managed wallets - often will just be [primaryWallet]
     public var wallets: [Wallet] {
@@ -141,7 +141,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
     }
 
     internal func walletByCoreOrCreate (_ core: BRCryptoWallet,
-                                          create: Bool = false) -> Wallet? {
+                                        create: Bool = false) -> Wallet? {
         return walletBy (core: core) ??
             (!create
                 ? nil
@@ -228,7 +228,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
     public func createSweeper (wallet: Wallet,
                                key: Key,
                                completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
-        WalletSweeper.create(wallet: wallet, key: key, bdb: query, completion: completion)
+        WalletSweeper.create(wallet: wallet, key: key, client: client, completion: completion)
     }
 
     internal init (core: BRCryptoWalletManager,
@@ -244,7 +244,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
         self.network = Network (core: cryptoWalletManagerGetNetwork (core), take: false)
         self.unit    = self.network.defaultUnitFor (currency: self.network.currency)!
         self.path    = asUTF8String (cryptoWalletManagerGetPath(core))
-        self.query   = system.query
+        self.client  = system.client
 
         self.defaultNetworkFee = self.network.minimumFee
         self.addressScheme     = AddressScheme (core: cryptoWalletManagerGetAddressScheme (core))
@@ -350,7 +350,7 @@ public enum WalletSweeperError: Error {
     case unableToSweep
     case noTransfersFound
     case unexpectedError
-    case queryError(BlockChainDB.QueryError)
+    case clientError(SystemClientError)
 
     internal init? (_ core: BRCryptoWalletSweeperStatus) {
         switch core {
@@ -373,7 +373,7 @@ public final class WalletSweeper {
 
     internal static func create(wallet: Wallet,
                                 key: Key,
-                                bdb: BlockChainDB,
+                                client: SystemClient,
                                 completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         // check that requested combination of manager, wallet, key can be used for sweeping
         if let e = WalletSweeperError(cryptoWalletManagerWalletSweeperValidateSupported(wallet.manager.core,
@@ -389,7 +389,7 @@ public final class WalletSweeper {
             // using the BlockchainDB
             createAsBtc(wallet: wallet,
                         key: key)
-                .initAsBTC(bdb: bdb,
+                .initAsBTC(client: client,
                            completion: completion)
         default:
             preconditionFailure()
@@ -437,17 +437,17 @@ public final class WalletSweeper {
         return transfer
     }
 
-    private func initAsBTC(bdb: BlockChainDB,
+    private func initAsBTC(client: SystemClient,
                            completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         let network = manager.network
         let address = Address (core: cryptoWalletSweeperGetAddress(core)!).description
 
-        bdb.getTransactions(blockchainId: network.uids,
-                            addresses: [address],
-                            begBlockNumber: 0,
-                            endBlockNumber: network.height,
-                            includeRaw: true) {
-                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+        client.getTransactions(blockchainId: network.uids,
+                               addresses: [address],
+                               begBlockNumber: 0,
+                               endBlockNumber: network.height,
+                               includeRaw: true) {
+                                (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                 res.resolve(
                                     success: {
                                         let bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
@@ -467,7 +467,7 @@ public final class WalletSweeper {
                                         
                                         // return the sweeper for use in estimation/submission
                                         completion(Result.success(self))},
-                                    failure: { completion(Result.failure(.queryError($0))) })
+                                    failure: { completion(Result.failure(.clientError($0))) })
         }
     }
 
@@ -711,9 +711,9 @@ public enum WalletManagerEvent {
 
         case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
             self = .walletAdded (wallet: Wallet (core: core.u.wallet,
-                                                manager: manager,
-                                                callbackCoordinator: manager.callbackCoordinator,
-                                                take: false))
+                                                 manager: manager,
+                                                 callbackCoordinator: manager.callbackCoordinator,
+                                                 take: false))
 
         case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
             self = .walletChanged (wallet: Wallet (core: core.u.wallet,
