@@ -142,7 +142,7 @@ ewmHandleBlockChain (BREthereumBCSCallbackContext context,
     cryptoWalletManagerGenerateEvent (&p2p->manager->base,
                                              (BRCryptoWalletManagerEvent) {
         CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
-        { .blockHeight = { headBlockNumber }}
+        { .blockHeight = headBlockNumber }
     });
 
 #if defined (NEVER_DEFINED)

@@ -35,8 +35,12 @@ extern "C" {
     extern const char* cryptoVersion;
 
     // Forward Declarations - Required for BRCryptoListener
+    typedef struct BRCryptoTransferRecord      *BRCryptoTransfer;
     typedef struct BRCryptoWalletRecord        *BRCryptoWallet;        // BRCrypto{Transfer,Payment}
     typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager; // BRCrypto{Wallet,Transfer,Payment}
+    typedef struct BRCryptoNetworkRecord       *BRCryptoNetwork;
+    typedef struct BRCryptoSystemRecord        *BRCryptoSystem;        // BRCrypto{Manager,Wallet,Transfer,Payment}
+    typedef struct BRCryptoListenerRecord      *BRCryptoListener;
     typedef void  *BRCryptoListenerContext;
 
     // Cookies are used as markers to match up an asynchronous operation

@@ -39,7 +39,8 @@ cryptoNetworkCreateCallbackETH (BRCryptoNetworkCreateContext context,
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsETH (const char *uids,
+cryptoNetworkCreateAsETH (BRCryptoNetworkListener listener,
+                          const char *uids,
                           const char *name,
                           const char *desc,
                           bool isMainnet,
@@ -51,6 +52,7 @@ cryptoNetworkCreateAsETH (const char *uids,
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
                                       CRYPTO_NETWORK_TYPE_ETH,
+                                      listener,
                                       uids,
                                       name,
                                       desc,
@@ -61,17 +63,18 @@ cryptoNetworkCreateAsETH (const char *uids,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateETH (const char *uids,
+cyptoNetworkCreateETH (BRCryptoNetworkListener listener,
+                       const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
                        uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsETH (uids, name, desc, true, confirmationPeriodInSeconds, ethNetworkMainnet);
+        return cryptoNetworkCreateAsETH (listener, uids, name, desc, true, confirmationPeriodInSeconds, ethNetworkMainnet);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsETH (uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkTestnet);
+        return cryptoNetworkCreateAsETH (listener, uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkTestnet);
     else if (0 == strcmp ("rinkeby", desc))
-        return cryptoNetworkCreateAsETH (uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkRinkeby);
+        return cryptoNetworkCreateAsETH (listener, uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkRinkeby);
     else {
         assert (false); return NULL;
     }

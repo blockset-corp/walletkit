@@ -57,6 +57,7 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
         ethToken,
         ethDefaultFeeBasis.u.gas.limit
     };
+    
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
                                                       CRYPTO_NETWORK_TYPE_ETH,
                                                       listener,

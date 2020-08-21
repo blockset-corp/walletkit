@@ -558,7 +558,7 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
 
         cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
-            { .blockHeight = { blockNumber } }
+            { .blockHeight = blockNumber }
         });
     }
 

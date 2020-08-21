@@ -42,7 +42,7 @@ hbarEventTypesCount = (sizeof (hbarEventTypes) / sizeof (BREventType*));
 // MARK: - Handlers
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateHBAR (BRCryptoListener listener,
+cryptoWalletManagerCreateHBAR (BRCryptoWalletManagerListener listener,
                                BRCryptoClient client,
                                BRCryptoAccount account,
                                BRCryptoNetwork network,

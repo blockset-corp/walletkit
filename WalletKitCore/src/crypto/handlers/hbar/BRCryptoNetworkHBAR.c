@@ -18,13 +18,15 @@ cryptoNetworkCoerce (BRCryptoNetwork network) {
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsHBAR (const char *uids,
+cryptoNetworkCreateAsHBAR (BRCryptoNetworkListener listener,
+                           const char *uids,
                            const char *name,
                            const char *desc,
                            bool isMainnet,
                            uint32_t confirmationPeriodInSeconds) {
     BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
                                                          CRYPTO_NETWORK_TYPE_HBAR,
+                                                         listener,
                                                          uids,
                                                          name,
                                                          desc,
@@ -37,15 +39,16 @@ cryptoNetworkCreateAsHBAR (const char *uids,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateHBAR (const char *uids,
+cyptoNetworkCreateHBAR (BRCryptoNetworkListener listener,
+                        const char *uids,
                         const char *name,
                         const char *desc,
                         bool isMainnet,
                         uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsHBAR (uids, name, desc, true, confirmationPeriodInSeconds);
+        return cryptoNetworkCreateAsHBAR (listener, uids, name, desc, true, confirmationPeriodInSeconds);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsHBAR (uids, name, desc, false, confirmationPeriodInSeconds);
+        return cryptoNetworkCreateAsHBAR (listener, uids, name, desc, false, confirmationPeriodInSeconds);
     else {
         assert (false); return NULL;
     }

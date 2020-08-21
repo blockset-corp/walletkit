@@ -18,13 +18,15 @@ cryptoNetworkCoerce (BRCryptoNetwork network) {
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsXRP (const char *uids,
+cryptoNetworkCreateAsXRP (BRCryptoNetworkListener listener,
+                          const char *uids,
                           const char *name,
                           const char *desc,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds) {
     BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
                                                          CRYPTO_NETWORK_TYPE_XRP,
+                                                         listener,
                                                          uids,
                                                          name,
                                                          desc,
@@ -37,15 +39,16 @@ cryptoNetworkCreateAsXRP (const char *uids,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateXRP (const char *uids,
+cyptoNetworkCreateXRP (BRCryptoNetworkListener listener,
+                       const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
                        uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsXRP (uids, name, desc, true, confirmationPeriodInSeconds);
+        return cryptoNetworkCreateAsXRP (listener, uids, name, desc, true, confirmationPeriodInSeconds);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsXRP (uids, name, desc, false, confirmationPeriodInSeconds);
+        return cryptoNetworkCreateAsXRP (listener, uids, name, desc, false, confirmationPeriodInSeconds);
     else {
         assert (false); return NULL;
     }
