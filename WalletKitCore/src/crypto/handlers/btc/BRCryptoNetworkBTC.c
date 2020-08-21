@@ -19,9 +19,30 @@ cryptoNetworkCoerce (BRCryptoNetwork network, BRCryptoBlockChainType type) {
     return (BRCryptoNetworkBTC) network;
 }
 
+static BRCryptoNetworkBTC
+cryptoNetworkCoerceANY (BRCryptoNetwork network) {
+    assert (CRYPTO_NETWORK_TYPE_BTC == network->type ||
+            CRYPTO_NETWORK_TYPE_BCH == network->type ||
+            CRYPTO_NETWORK_TYPE_BSV == network->type);
+    return (BRCryptoNetworkBTC) network;
+}
+
 extern const BRChainParams *
 cryptoNetworkAsBTC (BRCryptoNetwork network) {
     return cryptoNetworkCoerce(network, network->type)->params;
+}
+
+typedef struct {
+    const BRChainParams *params;
+} BRCryptoNetworkCreateContextBTC;
+
+static void
+cryptoNetworkCreateCallbackBTC (BRCryptoNetworkCreateContext context,
+                                BRCryptoNetwork network) {
+    BRCryptoNetworkCreateContextBTC *contextBTC = (BRCryptoNetworkCreateContextBTC*) context;
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+
+    networkBTC->params = contextBTC->params;
 }
 
 static BRCryptoNetwork
@@ -32,18 +53,19 @@ cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds,
                           const BRChainParams *params) {
-    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
-                                                             type,
-                                                             uids,
-                                                             name,
-                                                             desc,
-                                                             isMainnet,
-                                                             confirmationPeriodInSeconds);
-    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, type);
+    BRCryptoNetworkCreateContextBTC contextBTC = {
+        params
+    };
 
-    network->params = params;
-
-    return networkBase;
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+                                      type,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      &contextBTC,
+                                      cryptoNetworkCreateCallbackBTC);
 }
 
 static BRCryptoNetwork
@@ -94,44 +116,49 @@ cyptoNetworkCreateBSV (const char *uids,
 
 static void
 cryptoNetworkReleaseBTC (BRCryptoNetwork network) {
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+    (void) networkBTC;
 }
 
 
 static BRCryptoAddress
-cryptoNetworkCreateAddressBTC (BRCryptoNetwork networkBase,
+cryptoNetworkCreateAddressBTC (BRCryptoNetwork network,
                                 const char *addressAsString) {
-    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, CRYPTO_NETWORK_TYPE_BTC);
-    assert (BRChainParamsIsBitcoin (network->params));
-    return cryptoAddressCreateFromStringAsBTC (network->params->addrParams, addressAsString);
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BTC);
+    assert (BRChainParamsIsBitcoin (networkBTC->params));
+    return cryptoAddressCreateFromStringAsBTC (networkBTC->params->addrParams, addressAsString);
 }
 
 static BRCryptoAddress
-cryptoNetworkCreateAddressBCH (BRCryptoNetwork networkBase,
+cryptoNetworkCreateAddressBCH (BRCryptoNetwork network,
                                 const char *addressAsString) {
-    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, CRYPTO_NETWORK_TYPE_BCH);
-    assert (!BRChainParamsIsBitcoin (network->params));
-    return cryptoAddressCreateFromStringAsBCH (network->params->addrParams, addressAsString);
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BCH);
+    assert (!BRChainParamsIsBitcoin (networkBTC->params));
+    return cryptoAddressCreateFromStringAsBCH (networkBTC->params->addrParams, addressAsString);
 }
 
 static BRCryptoAddress
-cryptoNetworkCreateAddressBSV (BRCryptoNetwork networkBase,
+cryptoNetworkCreateAddressBSV (BRCryptoNetwork network,
                                 const char *addressAsString) {
-    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, CRYPTO_NETWORK_TYPE_BSV);
-    assert (BRChainParamsIsBSV (network->params));
-    return cryptoAddressCreateFromStringAsBSV (network->params->addrParams, addressAsString);
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BSV);
+    assert (BRChainParamsIsBSV (networkBTC->params));
+    return cryptoAddressCreateFromStringAsBSV (networkBTC->params->addrParams, addressAsString);
 }
 
 static BRCryptoBlockNumber
-cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork networkBase,
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkBTC network = cryptoNetworkCoerce (networkBase, networkBase->type);
-    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (network->params, timestamp);
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, network->type);
+    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (networkBTC->params, timestamp);
     return (NULL == checkpoint ? 0 : checkpoint->height);
 }
 
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedBTC (BRCryptoNetwork network,
                                       BRCryptoAccount account) {
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+    (void) networkBTC;
+
     return CRYPTO_TRUE;
 }
 
@@ -140,6 +167,9 @@ static uint8_t *
 cryptoNetworkGetAccountInitializationDataBTC (BRCryptoNetwork network,
                                               BRCryptoAccount account,
                                               size_t *bytesCount) {
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+    (void) networkBTC;
+
     return NULL;
 }
 
@@ -148,7 +178,10 @@ cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
                                    BRCryptoAccount account,
                                    const uint8_t *bytes,
                                    size_t bytesCount) {
-    return;
+    BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
+    (void) networkBTC;
+
+return;
 }
 
 // MARK: - Network Fee

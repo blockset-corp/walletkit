@@ -20,16 +20,30 @@ cryptoAddressCoerce (BRCryptoAddress address) {
     return (BRCryptoAddressXRP) address;
 }
 
+typedef struct {
+    BRRippleAddress xrpAddress;
+} BRCryptoAddressCreateContextXRP;
+
+static void
+cryptoAddressCreateCallbackXRP (BRCryptoAddressCreateContext context,
+                                BRCryptoAddress address) {
+    BRCryptoAddressCreateContextXRP *contextXRP = (BRCryptoAddressCreateContextXRP*) context;
+    BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
+
+    addressXRP->addr = contextXRP->xrpAddress;
+}
+
 extern BRCryptoAddress
 cryptoAddressCreateAsXRP (BRRippleAddress addr) {
-    BRCryptoAddress    addressBase = cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
-                                                                CRYPTO_NETWORK_TYPE_XRP,
-                                                                0); //TODO:XRP address hash
-    BRCryptoAddressXRP address     = cryptoAddressCoerce (addressBase);
+    BRCryptoAddressCreateContextXRP contextXRP = {
+        addr
+    };
 
-    address->addr = addr;
-
-    return addressBase;
+    return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
+                                      CRYPTO_NETWORK_TYPE_XRP,
+                                      0, //TODO:XRP address hash
+                                      &contextXRP,
+                                      cryptoAddressCreateCallbackXRP);
 }
 
 extern BRCryptoAddress
@@ -43,29 +57,29 @@ cryptoAddressCreateFromStringAsXRP (const char *string) {
 }
 
 private_extern BRRippleAddress
-cryptoAddressAsXRP (BRCryptoAddress addressBase) {
-    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
-    return address->addr;
+cryptoAddressAsXRP (BRCryptoAddress address) {
+    BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
+    return addressXRP->addr;
 }
 
 // MARK: - Handlers
 
 static void
-cryptoAddressReleaseXRP (BRCryptoAddress addressBase) {
-    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
-    rippleAddressFree (address->addr);
+cryptoAddressReleaseXRP (BRCryptoAddress address) {
+    BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
+    rippleAddressFree (addressXRP->addr);
 }
 
 static char *
-cryptoAddressAsStringXRP (BRCryptoAddress addressBase) {
-    BRCryptoAddressXRP address = (BRCryptoAddressXRP) addressBase;
-    return rippleAddressAsString (address->addr);
+cryptoAddressAsStringXRP (BRCryptoAddress address) {
+    BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
+    return rippleAddressAsString (addressXRP->addr);
 }
 
 static bool
 cryptoAddressIsEqualXRP (BRCryptoAddress address1, BRCryptoAddress address2) {
-    BRCryptoAddressXRP a1 = (BRCryptoAddressXRP) address1;
-    BRCryptoAddressXRP a2 = (BRCryptoAddressXRP) address2;
+    BRCryptoAddressXRP a1 = cryptoAddressCoerce (address1);
+    BRCryptoAddressXRP a2 = cryptoAddressCoerce (address2);
 
     return rippleAddressEqual (a1->addr, a2->addr);
 }

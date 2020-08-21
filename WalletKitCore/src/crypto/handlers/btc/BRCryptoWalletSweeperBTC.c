@@ -35,33 +35,34 @@ BRWalletSweeperGetBalance (BRCryptoWalletSweeperBTC sweeper);
 static BRCryptoWalletSweeperBTC
 cryptoWalletSweeperCoerce (BRCryptoWalletSweeper sweeper) {
     assert (CRYPTO_NETWORK_TYPE_BTC == sweeper->type ||
-            CRYPTO_NETWORK_TYPE_BCH == sweeper->type);
+            CRYPTO_NETWORK_TYPE_BCH == sweeper->type ||
+            CRYPTO_NETWORK_TYPE_BSV == sweeper->type);
     return (BRCryptoWalletSweeperBTC) sweeper;
 }
 
 private_extern BRCryptoAddress
-cryptoWalletSweeperGetAddressBTC (BRCryptoWalletSweeper sweeperBase) {
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
-    return cryptoAddressCreateFromStringAsBTC (sweeper->addrParams, sweeper->sourceAddress);
+cryptoWalletSweeperGetAddressBTC (BRCryptoWalletSweeper sweeper) {
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
+    return cryptoAddressCreateFromStringAsBTC (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
     //return BRWalletSweeperGetLegacyAddress (sweeper);
 }
 
 private_extern BRCryptoAmount
-cryptoWalletSweeperGetBalanceBTC (BRCryptoWalletSweeper sweeperBase) {
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
-    UInt256 value = uint256Create (BRWalletSweeperGetBalance (sweeper));
-    return cryptoAmountCreateInternal(sweeperBase->unit, CRYPTO_FALSE, value, 0);
+cryptoWalletSweeperGetBalanceBTC (BRCryptoWalletSweeper sweeper) {
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
+    UInt256 value = uint256Create (BRWalletSweeperGetBalance (sweeperBTC));
+    return cryptoAmountCreateInternal(sweeper->unit, CRYPTO_FALSE, value, 0);
 }
 
 private_extern BRCryptoWalletSweeperStatus
-cryptoWalletSweeperAddTransactionFromBundleBTC (BRCryptoWalletSweeper sweeperBase,
+cryptoWalletSweeperAddTransactionFromBundleBTC (BRCryptoWalletSweeper sweeper,
                                                 OwnershipKept BRCryptoClientTransactionBundle bundle) {
     BRCryptoWalletSweeperStatus status = CRYPTO_WALLET_SWEEPER_SUCCESS;
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
 
     BRTransaction * txn = BRTransactionParse (bundle->serialization, bundle->serializationCount);
     if (NULL != txn) {
-        array_add (sweeper->txns, txn);
+        array_add (sweeperBTC->txns, txn);
     } else {
         status = CRYPTO_WALLET_SWEEPER_INVALID_TRANSACTION;
     }
@@ -71,13 +72,13 @@ cryptoWalletSweeperAddTransactionFromBundleBTC (BRCryptoWalletSweeper sweeperBas
 
 private_extern BRCryptoFeeBasis
 cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
-                                                      BRCryptoWallet walletBase,
+                                                      BRCryptoWallet wallet,
                                                       BRCryptoCookie cookie,
-                                                      BRCryptoWalletSweeper sweeperBase,
+                                                      BRCryptoWalletSweeper sweeper,
                                                       BRCryptoNetworkFee networkFee) {
-    BRWallet *wid = cryptoWalletAsBTC (walletBase);
+    BRWallet *wid = cryptoWalletAsBTC (wallet);
     
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
     
     uint64_t feePerKb = 1000 * cryptoNetworkFeeAsBTC (networkFee);
     
@@ -85,10 +86,10 @@ cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
     //            a model where they return a status code. We are currently providing no
     //            context to the caller.
     uint64_t fee = 0;
-    BRWalletSweeperEstimateFee (sweeper, wid, feePerKb, &fee);
+    BRWalletSweeperEstimateFee (sweeperBTC, wid, feePerKb, &fee);
     uint32_t sizeInByte = (uint32_t) ((1000 * fee)/ feePerKb);
     
-    return cryptoFeeBasisCreateAsBTC (walletBase->unitForFee, (uint32_t) feePerKb, sizeInByte);
+    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, (uint32_t) feePerKb, sizeInByte);
 }
 
 static BRTransaction *
@@ -111,41 +112,40 @@ cryptoWalletSweeperTransactionForSweepAsBTC (BRCryptoWalletManager manager,
 
 private_extern BRCryptoTransfer
 cryptoWalletSweeperCreateTransferForWalletSweepBTC (BRCryptoWalletManager cwm,
-                                                    BRCryptoWallet walletBase,
-                                                    BRCryptoWalletSweeper sweeperBase,
+                                                    BRCryptoWallet wallet,
+                                                    BRCryptoWalletSweeper sweeper,
                                                     BRCryptoFeeBasis estimatedFeeBasis) {
-    BRCryptoUnit unit       = cryptoWalletGetUnit (walletBase);
-    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(walletBase);
+    BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
+    BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee(wallet);
     
-    BRCryptoWalletBTC wallet = (BRCryptoWalletBTC) walletBase;
-    BRWallet *wid = wallet->wid;
+    BRCryptoWalletBTC walletBTC = (BRCryptoWalletBTC) wallet;
+    BRWallet *wid = walletBTC->wid;
     
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
     
     BRTransaction *tid = cryptoWalletSweeperTransactionForSweepAsBTC (cwm,
                                                                       wid,
-                                                                      sweeper,
+                                                                      sweeperBTC,
                                                                       cryptoFeeBasisAsBTC(estimatedFeeBasis));
-    if (NULL == tid) {
-        return NULL;
-    } else {
-        return cryptoTransferCreateAsBTC (unit,
-                                          unitForFee,
-                                          wid,
-                                          tid,
-                                          cwm->type);
-    }
+    return (NULL != tid
+            ? cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                         unit,
+                                         unitForFee,
+                                         wid,
+                                         tid,
+                                         cwm->type)
+            : NULL);
 }
 
 private_extern BRCryptoWalletSweeperStatus
-cryptoWalletSweeperValidateBTC (BRCryptoWalletSweeper sweeperBase) {
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+cryptoWalletSweeperValidateBTC (BRCryptoWalletSweeper sweeper) {
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
     
-    if (0 == array_count (sweeper->txns)) {
+    if (0 == array_count (sweeperBTC->txns)) {
         return CRYPTO_WALLET_SWEEPER_NO_TRANSFERS_FOUND;
     }
 
-    if (0 == BRWalletSweeperGetBalance (sweeper)) {
+    if (0 == BRWalletSweeperGetBalance (sweeperBTC)) {
         return CRYPTO_WALLET_SWEEPER_INSUFFICIENT_FUNDS;
     }
 
@@ -153,14 +153,14 @@ cryptoWalletSweeperValidateBTC (BRCryptoWalletSweeper sweeperBase) {
 }
 
 private_extern void
-cryptoWalletSweeperReleaseBTC (BRCryptoWalletSweeper sweeperBase) {
-    BRCryptoWalletSweeperBTC sweeper = cryptoWalletSweeperCoerce (sweeperBase);
+cryptoWalletSweeperReleaseBTC (BRCryptoWalletSweeper sweeper) {
+    BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
     
-    free (sweeper->sourceAddress);
-    for (size_t index = 0; index < array_count(sweeper->txns); index++) {
-        BRTransactionFree (sweeper->txns[index]);
+    free (sweeperBTC->sourceAddress);
+    for (size_t index = 0; index < array_count(sweeperBTC->txns); index++) {
+        BRTransactionFree (sweeperBTC->txns[index]);
     }
-    array_free (sweeper->txns);
+    array_free (sweeperBTC->txns);
 }
 
 // MARK: - Support

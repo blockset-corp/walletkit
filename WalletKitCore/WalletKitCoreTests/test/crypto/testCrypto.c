@@ -276,7 +276,10 @@ transferTestsAddress (void) {
         tid->blockHeight = test->blockHeight;
         tid->timestamp   = test->timestamp;
         BRWalletRegisterTransaction (wid, tid); // ownership given
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (sat,
+
+        BRCryptoTransferListener listener = { NULL };
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (listener,
+                                                               sat,
                                                                sat,
                                                                wid,
                                                                tid, // ownership kept
@@ -1510,7 +1513,6 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
 /// Mark: Entrypoints
 ///
 
-#if REFACTOR
 extern BRCryptoBoolean
 runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
                                      BRCryptoNetwork network,
@@ -1519,14 +1521,12 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     BRCryptoBlockChainType chainType = cryptoNetworkGetType (network);
 
-    BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_GEN == chainType);
+ //   BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_GEN == chainType);
     BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_ETH == chainType);
-    BRCryptoBoolean isBtc = (AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRMainNetParams || cryptoNetworkAsBTC (network) == BRTestNetParams));
-    BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRBCashParams || cryptoNetworkAsBTC (network) == BRBCashTestNetParams));
-    BRCryptoBoolean isBsv = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRBSVParams || cryptoNetworkAsBTC (network) == BRBSVTestNetParams));
+    BRCryptoBoolean isBtc = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType);
+    BRCryptoBoolean isBch = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType);
+    BRCryptoBoolean isBsv = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BSV == chainType);
+    BRCryptoBoolean isGen = (!isEth && !isBch && !isBch && !isBsv);
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
                                     CRYPTO_ADDRESS_SCHEME_BTC_LEGACY :
@@ -1620,7 +1620,6 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     return success;
 }
-#endif
 
 extern void
 runCryptoTests (void) {

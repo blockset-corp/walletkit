@@ -13,11 +13,7 @@
 
 #include "../BRCryptoHandlersExport.h"
 
-#include "ripple/BRRippleBase.h"
-#include "ripple/BRRippleAddress.h"
-#include "ripple/BRRippleTransfer.h"
-#include "ripple/BRRippleAccount.h"
-#include "ripple/BRRippleWallet.h"
+#include "ripple/BRRipple.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,11 +37,10 @@ cryptoAddressAsXRP (BRCryptoAddress address);
 
 // MARK: - Network
 
-//TODO:XRP needed?
-//typedef struct BRCryptoNetworkXRPRecord {
-//    struct BRCryptoNetworkRecord base;
-//    // ...
-//} *BRCryptoNetworkXRP;
+typedef struct BRCryptoNetworkXRPRecord {
+    struct BRCryptoNetworkRecord base;
+    // Nothing more needed
+} *BRCryptoNetworkXRP;
 
 // MARK: - Transfer
 
@@ -59,27 +54,26 @@ extern BRCryptoTransferXRP
 cryptoTransferCoerceXRP (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsXRP (BRCryptoUnit unit,
+cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           BRRippleWallet wallet,
+                           BRRippleAccount xrpAccount,
                            BRRippleTransfer xrpTransfer);
 
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletXRPRecord {
     struct BRCryptoWalletRecord base;
-    BRRippleWallet wid;
+    BRRippleAccount xrpAccount;
 } *BRCryptoWalletXRP;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersXRP;
 
-private_extern BRRippleWallet
-cryptoWalletAsXRP (BRCryptoWallet wallet);
-
 private_extern BRCryptoWallet
-cryptoWalletCreateAsXRP (BRCryptoUnit unit,
+cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-                         BRRippleWallet wid);
+                         BRRippleAccount xrpAccount);
 
 
 //TODO:XRP needed?
@@ -90,8 +84,6 @@ cryptoHashCreateAsXRP (BRRippleTransactionHash hash);
 
 typedef struct BRCryptoWalletManagerXRPRecord {
     struct BRCryptoWalletManagerRecord base;
-
-    int ignoreTBD;
 } *BRCryptoWalletManagerXRP;
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;
@@ -113,11 +105,9 @@ cryptoAmountCreateAsXRP (BRCryptoUnit unit,
                          BRRippleUnitDrops value);
 
 private_extern const char **
-rippleWalletGetTransactionAttributeKeys (BRRippleWallet wallet,
-                                         BRRippleAddress address,
-                                         int asRequired,
-                                         size_t *count);
-
+rippleAddressGetTransactionAttributeKeys (BRRippleAddress address,
+                                          int asRequired,
+                                          size_t *count);
 
 #ifdef __cplusplus
 }

@@ -20,9 +20,22 @@ cryptoNetworkCoerce (BRCryptoNetwork network) {
 }
 
 private_extern BREthereumNetwork
-cryptoNetworkAsETH (BRCryptoNetwork networkBase) {
-    BRCryptoNetworkETH network = cryptoNetworkCoerce(networkBase);
-    return network->eth;
+cryptoNetworkAsETH (BRCryptoNetwork network) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce(network);
+    return networkETH->eth;
+}
+
+typedef struct {
+    BREthereumNetwork eth;
+} BRCryptoNetworkCreateContextETH;
+
+static void
+cryptoNetworkCreateCallbackETH (BRCryptoNetworkCreateContext context,
+                                BRCryptoNetwork network) {
+    BRCryptoNetworkCreateContextETH *contextETH = (BRCryptoNetworkCreateContextETH*) context;
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+
+    networkETH->eth = contextETH->eth;
 }
 
 static BRCryptoNetwork
@@ -32,17 +45,19 @@ cryptoNetworkCreateAsETH (const char *uids,
                           bool isMainnet,
                           uint32_t confirmationPeriodInSeconds,
                           BREthereumNetwork eth) {
-    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
-                                                             CRYPTO_NETWORK_TYPE_ETH,
-                                                             uids,
-                                                             name,
-                                                             desc,
-                                                             isMainnet,
-                                                             confirmationPeriodInSeconds);
-    BRCryptoNetworkETH network = cryptoNetworkCoerce(networkBase);
-    network->eth = eth;
+    BRCryptoNetworkCreateContextETH contextETH = {
+        eth
+    };
 
-    return networkBase;
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
+                                      CRYPTO_NETWORK_TYPE_ETH,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      &contextETH,
+                                      cryptoNetworkCreateCallbackETH);
 }
 
 static BRCryptoNetwork
@@ -64,45 +79,59 @@ cyptoNetworkCreateETH (const char *uids,
 
 static void
 cryptoNetworkReleaseETH (BRCryptoNetwork network) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    (void) networkETH;
 }
 
 extern BRCryptoAddress
 cryptoAddressCreateFromStringAsETH (const char *address);
 
 static BRCryptoAddress
-cryptoNetworkCreateAddressETH (BRCryptoNetwork networkBase,
-                                const char *addressAsString) {
+cryptoNetworkCreateAddressETH (BRCryptoNetwork network,
+                               const char *addressAsString) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    (void) networkETH;
+
     return cryptoAddressCreateFromStringAsETH (addressAsString);
 }
 
 static BRCryptoBlockNumber
-cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH (BRCryptoNetwork networkBase,
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkETH network = cryptoNetworkCoerce (networkBase);
-    const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (network->eth, timestamp);
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (networkETH->eth, timestamp);
     return (NULL == checkpoint ? 0 : checkpoint->number);
 }
 
 
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedETH (BRCryptoNetwork network,
-                                   BRCryptoAccount account) {
+                                      BRCryptoAccount account) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    (void) networkETH;
+
     return CRYPTO_TRUE;
 }
 
 
 static uint8_t *
 cryptoNetworkGetAccountInitializationDataETH (BRCryptoNetwork network,
-                                           BRCryptoAccount account,
-                                           size_t *bytesCount) {
+                                              BRCryptoAccount account,
+                                              size_t *bytesCount) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    (void) networkETH;
+
     return NULL;
 }
 
 static void
 cryptoNetworkInitializeAccountETH (BRCryptoNetwork network,
-                                BRCryptoAccount account,
-                                const uint8_t *bytes,
-                                size_t bytesCount) {
+                                   BRCryptoAccount account,
+                                   const uint8_t *bytes,
+                                   size_t bytesCount) {
+    BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
+    (void) networkETH;
+
     return;
 }
 

@@ -556,7 +556,7 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
     if (oldBlockNumber != blockNumber) {
         cryptoNetworkSetHeight (cwm->network, blockNumber);
 
-        cryptoWalletManagerGenerateManagerEvent (cwm, (BRCryptoWalletManagerEvent) {
+        cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
             { .blockHeight = { blockNumber } }
         });
@@ -795,7 +795,7 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     double costFactor = (double) costUnits;
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 
-    cryptoWalletManagerGenerateWalletEvent (cwm, cwm->wallet, (BRCryptoWalletEvent) {
+    cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
         { .feeBasisEstimated = { status, cookie, feeBasis }}
     });

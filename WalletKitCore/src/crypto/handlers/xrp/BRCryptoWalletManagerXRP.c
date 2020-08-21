@@ -19,7 +19,6 @@
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoFileService.h"
 
-#include "ripple/BRRippleWallet.h"
 #include "ripple/BRRippleAccount.h"
 
 
@@ -34,63 +33,40 @@ const unsigned int
 xrpEventTypesCount = (sizeof (xrpEventTypes) / sizeof (BREventType*));
 
 
-static BRCryptoWalletManagerXRP
-cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
-    assert (CRYPTO_NETWORK_TYPE_XRP == wm->type);
-    return (BRCryptoWalletManagerXRP) wm;
-}
+//static BRCryptoWalletManagerXRP
+//cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
+//    assert (CRYPTO_NETWORK_TYPE_XRP == wm->type);
+//    return (BRCryptoWalletManagerXRP) wm;
+//}
 
 // MARK: - Handlers
 
 static BRCryptoWalletManager
-cryptoWalletManagerCreateHandlerXRP (BRCryptoListener listener,
-                                     BRCryptoClient client,
-                                     BRCryptoAccount account,
-                                     BRCryptoNetwork network,
-                                     BRCryptoSyncMode mode,
-                                     BRCryptoAddressScheme scheme,
-                                     const char *path) {
-    BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXRPRecord),
-                                                                         cryptoNetworkGetType(network),
-                                                                         listener,
-                                                                         client,
-                                                                         account,
-                                                                         network,
-                                                                         scheme,
-                                                                         path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSFERS);
-    BRCryptoWalletManagerXRP manager = cryptoWalletManagerCoerce (managerBase);
+cryptoWalletManagerCreateXRP (BRCryptoListener listener,
+                              BRCryptoClient client,
+                              BRCryptoAccount account,
+                              BRCryptoNetwork network,
+                              BRCryptoSyncMode mode,
+                              BRCryptoAddressScheme scheme,
+                              const char *path) {
+    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXRPRecord),
+                                                                     cryptoNetworkGetType(network),
+                                                                     listener,
+                                                                     client,
+                                                                     account,
+                                                                     network,
+                                                                     scheme,
+                                                                     path,
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+                                                                     NULL,
+                                                                     NULL);
 
-    // XRP Stuff
-    manager->ignoreTBD = 0;
-
-    return managerBase;
+    pthread_mutex_unlock (&manager->lock);
+    return manager;
 }
 
 static void
-cryptoWalletManagerReleaseHandlerXRP (BRCryptoWalletManager manager) {
-
-}
-
-static void
-cryptoWalletManagerInitializeHandlerXRP (BRCryptoWalletManager manager) {
-    BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
-    BRRippleWallet xrpWallet = rippleWalletCreate(xrpAccount);
-    
-    // Create the primary BRCryptoWallet
-    BRCryptoNetwork  network       = manager->network;
-    BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
-    
-    manager->wallet = cryptoWalletCreateAsXRP (unitAsDefault, unitAsDefault, xrpWallet);
-    array_add (manager->wallets, manager->wallet);
-    
-    //TODO:XRP load transfers from fileService
-    
-    cryptoUnitGive (unitAsDefault);
-    cryptoUnitGive (unitAsBase);
-    cryptoCurrencyGive (currency);
+cryptoWalletManagerReleaseXRP (BRCryptoWalletManager manager) {
 }
 
 static BRFileService
@@ -114,16 +90,21 @@ cryptoWalletManagerGetEventTypesXRP (BRCryptoWalletManager manager,
     return xrpEventTypes;
 }
 
+static BRCryptoClientP2PManager
+crytpWalletManagerCreateP2PManagerXRP (BRCryptoWalletManager manager) {
+    // not supported
+    return NULL;
+}
+
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithSeedHandlerXRP (BRCryptoWalletManager manager,
-                                                      BRCryptoWallet walletBase,
-                                                      BRCryptoTransfer transferBase,
-                                                      UInt512 seed) {
+cryptoWalletManagerSignTransactionWithSeedXRP (BRCryptoWalletManager manager,
+                                               BRCryptoWallet wallet,
+                                               BRCryptoTransfer transfer,
+                                               UInt512 seed) {
     BRRippleAccount account = cryptoAccountAsXRP (manager->account);
-    BRRippleTransfer transfer = cryptoTransferCoerceXRP(transferBase)->xrpTransfer;
-    BRRippleTransaction transaction = rippleTransferGetTransaction (transfer);
-    if (transaction) {
-        size_t tx_size = rippleAccountSignTransaction (account, transaction, seed);
+    BRRippleTransaction tid = rippleTransferGetTransaction (cryptoTransferCoerceXRP(transfer)->xrpTransfer);
+    if (tid) {
+        size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
         return AS_CRYPTO_BOOLEAN(tx_size > 0);
     } else {
         return CRYPTO_FALSE;
@@ -131,23 +112,23 @@ cryptoWalletManagerSignTransactionWithSeedHandlerXRP (BRCryptoWalletManager mana
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransactionWithKeyHandlerXRP (BRCryptoWalletManager manager,
-                                                     BRCryptoWallet wallet,
-                                                     BRCryptoTransfer transfer,
-                                                     BRCryptoKey key) {
+cryptoWalletManagerSignTransactionWithKeyXRP (BRCryptoWalletManager manager,
+                                              BRCryptoWallet wallet,
+                                              BRCryptoTransfer transfer,
+                                              BRCryptoKey key) {
     assert(0);
     return CRYPTO_FALSE;
 }
 
 static BRCryptoAmount
-cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
-                                            BRCryptoWallet  wallet,
-                                            BRCryptoBoolean asMaximum,
-                                            BRCryptoAddress target,
-                                            BRCryptoNetworkFee networkFee,
-                                            BRCryptoBoolean *needEstimate,
-                                            BRCryptoBoolean *isZeroIfInsuffientFunds,
-                                            BRCryptoUnit unit) {
+cryptoWalletManagerEstimateLimitXRP (BRCryptoWalletManager manager,
+                                     BRCryptoWallet  wallet,
+                                     BRCryptoBoolean asMaximum,
+                                     BRCryptoAddress target,
+                                     BRCryptoNetworkFee networkFee,
+                                     BRCryptoBoolean *needEstimate,
+                                     BRCryptoBoolean *isZeroIfInsuffientFunds,
+                                     BRCryptoUnit unit) {
     UInt256 amount = UINT256_ZERO;
     
     *needEstimate = CRYPTO_FALSE;
@@ -169,7 +150,7 @@ cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
         } else {
             amount = cryptoAmountGetValue(newBalance);
         }
-
+        
         cryptoAmountGive (balance);
         cryptoAmountGive (fee);
         cryptoAmountGive (newBalance);
@@ -182,21 +163,21 @@ cryptoWalletManagerEstimateLimitHandlerXRP (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoFeeBasis
-cryptoWalletManagerEstimateFeeBasisHandlerXRP (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet wallet,
-                                               BRCryptoCookie cookie,
-                                               BRCryptoAddress target,
-                                               BRCryptoAmount amount,
-                                               BRCryptoNetworkFee networkFee) {
+cryptoWalletManagerEstimateFeeBasisXRP (BRCryptoWalletManager manager,
+                                        BRCryptoWallet wallet,
+                                        BRCryptoCookie cookie,
+                                        BRCryptoAddress target,
+                                        BRCryptoAmount amount,
+                                        BRCryptoNetworkFee networkFee) {
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = 1.0;  // 'cost factor' is 'transaction'
-
+    
     return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 }
 
 static void
-cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP (BRCryptoWalletManager manager,
-                                                                    OwnershipKept BRCryptoClientTransactionBundle bundle) {
+cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP (BRCryptoWalletManager manager,
+                                                             OwnershipKept BRCryptoClientTransactionBundle bundle) {
     // Not XRP functionality
     assert (0);
 }
@@ -229,11 +210,11 @@ genTransferSetState (transfer, transferState);
 #endif
 
 static void
-cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletManager cwm,
-                                                                OwnershipKept BRCryptoClientTransferBundle bundle) {
+cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager manager,
+                                                         OwnershipKept BRCryptoClientTransferBundle bundle) {
     // create BRRippleTransfer
-    
-    BRRippleWallet xrpWallet = cryptoWalletAsXRP (cwm->wallet);
+
+    BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
     
     BRRippleUnitDrops amountDrops, feeDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
@@ -245,47 +226,54 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP (BRCryptoWalletMa
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 #ifdef REFACTOR
-        ||
-                 (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
-                  && CRYPTO_FALSE == state.u.included.success));
+    ||
+    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+     && CRYPTO_FALSE == state.u.included.success));
 #endif
     BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
-
+    
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
-    
-    rippleWalletAddTransfer (xrpWallet, xrpTransfer); //TODO:XRP needed?
-    
+
     // create BRCryptoTransfer
     
-    BRCryptoWallet wallet = cryptoWalletManagerGetWallet (cwm);
+    BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
     
-    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->unit,
+    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                               wallet->unit,
                                                                wallet->unitForFee,
-                                                               xrpWallet,
+                                                               xrpAccount,
                                                                xrpTransfer);
     cryptoWalletAddTransfer (wallet, baseTransfer);
+    
+    BRCryptoTransferState transferState =
+    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+     ? cryptoTransferStateIncludedInit (bundle->blockNumber,
+                                        bundle->blockTransactionIndex,
+                                        bundle->blockTimestamp,
+                                        NULL,
+                                        CRYPTO_TRUE,
+                                        NULL)
+     : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
+        ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
+        : cryptoTransferStateInit (bundle->status)));
+    
+    cryptoTransferSetState (baseTransfer, transferState);
     
     //TODO:XRP attributes
     //TODO:XRP save to fileService
     //TODO:XRP announce
 }
 
-static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerHandlerXRP (BRCryptoWalletManager cwm) {
-    // not supported
-    return NULL;
-}
-
 extern BRCryptoWalletSweeperStatus
-cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
                                                       BRCryptoKey key) {
     return CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY;
 }
 
 extern BRCryptoWalletSweeper
-cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
+cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager manager,
                                            BRCryptoWallet wallet,
                                            BRCryptoKey key) {
     // not supported
@@ -293,25 +281,42 @@ cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletXRP (BRCryptoWalletManager managerBase,
-                                       BRCryptoCurrency currency) {
-    return NULL;
+cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager manager,
+                                    BRCryptoCurrency currency) {
+    BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
+
+    // Create the primary BRCryptoWallet
+    BRCryptoNetwork  network       = manager->network;
+    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
+    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+    
+    BRCryptoWallet wallet = cryptoWalletCreateAsXRP (manager->listenerWallet,
+                                                     unitAsDefault,
+                                                     unitAsDefault,
+                                                     xrpAccount);
+    cryptoWalletManagerAddWallet (manager, wallet);
+    
+    // TODO:XRP load transfers from fileService
+    
+    cryptoUnitGive (unitAsDefault);
+    cryptoUnitGive (unitAsBase);
+    
+    return wallet;
 }
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
-    cryptoWalletManagerCreateHandlerXRP,
-    cryptoWalletManagerReleaseHandlerXRP,
-    cryptoWalletManagerInitializeHandlerXRP,
+    cryptoWalletManagerCreateXRP,
+    cryptoWalletManagerReleaseXRP,
     crytpWalletManagerCreateFileServiceXRP,
     cryptoWalletManagerGetEventTypesXRP,
-    cryptoWalletManagerSignTransactionWithSeedHandlerXRP,
-    cryptoWalletManagerSignTransactionWithKeyHandlerXRP,
-    cryptoWalletManagerEstimateLimitHandlerXRP,
-    cryptoWalletManagerEstimateFeeBasisHandlerXRP,
-    crytpWalletManagerCreateP2PManagerHandlerXRP,
-    cryptoWalletManagerRegisterWalletXRP,
-    cryptoWalletManagerRecoverTransfersFromTransactionBundleHandlerXRP,
-    cryptoWalletManagerRecoverTransferFromTransferBundleHandlerXRP,
+    crytpWalletManagerCreateP2PManagerXRP,
+    cryptoWalletManagerCreateWalletXRP,
+    cryptoWalletManagerSignTransactionWithSeedXRP,
+    cryptoWalletManagerSignTransactionWithKeyXRP,
+    cryptoWalletManagerEstimateLimitXRP,
+    cryptoWalletManagerEstimateFeeBasisXRP,
+    cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
+    cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,
     cryptoWalletManagerCreateWalletSweeperXRP
 };

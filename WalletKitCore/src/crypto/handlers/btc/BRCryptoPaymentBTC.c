@@ -30,8 +30,7 @@ cryptoPaymentProtocolRequestGetOutputsAsBTC (BRCryptoPaymentProtocolRequest prot
 
 static BRCryptoPaymentProtocolRequestBitPayBuilderBTC
 cryptoPaymentProtocolRequestBitPayBuilderCoerceBTC (BRCryptoPaymentProtocolRequestBitPayBuilder builder) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == builder->type ||
-            CRYPTO_NETWORK_TYPE_BCH == builder->type);
+    assert (CRYPTO_NETWORK_TYPE_BTC == builder->type);
     return (BRCryptoPaymentProtocolRequestBitPayBuilderBTC) builder;
 }
 
@@ -112,8 +111,7 @@ cryptoPaymentProtocolRequestBitPayBuilderReleaseBTC (BRCryptoPaymentProtocolRequ
 
 static BRCryptoPaymentProtocolRequestBTC
 cryptoPaymentProtocolRequestCoerceBTC (BRCryptoPaymentProtocolRequest protoReq) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType ||
-            CRYPTO_NETWORK_TYPE_BCH == protoReq->chainType);
+    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType);
     return (BRCryptoPaymentProtocolRequestBTC) protoReq;
 }
 
@@ -243,8 +241,8 @@ cryptoPaymentProtocolRequestEstimateFeBasisBTC (BRCryptoPaymentProtocolRequest p
 
 extern BRCryptoTransfer
 cryptoPaymentProtocolRequestCreateTransferBTC (BRCryptoPaymentProtocolRequest protoReq,
-                                                        BRCryptoWallet wallet,
-                                                        BRCryptoFeeBasis estimatedFeeBasis) {
+                                               BRCryptoWallet wallet,
+                                               BRCryptoFeeBasis estimatedFeeBasis) {
     BRCryptoTransfer transfer = NULL;
     
     BRCryptoUnit unit       = cryptoWalletGetUnit (wallet);
@@ -261,7 +259,12 @@ cryptoPaymentProtocolRequestCreateTransferBTC (BRCryptoPaymentProtocolRequest pr
                     if (NULL != outputs) {
                         uint64_t feePerKb = cryptoFeeBasisAsBTC (estimatedFeeBasis);
                         BRTransaction *tid = BRWalletCreateTxForOutputsWithFeePerKb (wid, feePerKb, outputs, array_count (outputs));
-                        transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
+
+                        transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                                                                   unit,
+                                                                                   unitForFee,
+                                                                                   wid,
+                                                                                   tid,
                                                                                    wallet->type);
                         array_free (outputs);
                     }

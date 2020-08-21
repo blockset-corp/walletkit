@@ -103,7 +103,9 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *name,
                            const char *desc,
                            bool isMainnet,
-                           uint32_t confirmationPeriodInSeconds) {
+                           uint32_t confirmationPeriodInSeconds,
+                           BRCryptoNetworkCreateContext createContext,
+                           BRCryptoNetworkCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoNetworkRecord));
     BRCryptoNetwork network = calloc (1, sizeInBytes);
 
@@ -129,6 +131,8 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     network->ref = CRYPTO_REF_ASSIGN(cryptoNetworkRelease);
 
     pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE);
+
+    if (NULL != createCallback) createCallback (createContext, network);
 
     return network;
 }

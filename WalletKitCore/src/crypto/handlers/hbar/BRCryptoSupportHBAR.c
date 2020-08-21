@@ -56,8 +56,7 @@ hederaRequiresMemo (BRHederaAddress address) {
 }
 
 private_extern const char **
-hederaWalletGetTransactionAttributeKeys (BRHederaWallet wallet,
-                                         BRHederaAddress address,
+hederaWalletGetTransactionAttributeKeys (BRHederaAddress address,
                                          int asRequired,
                                          size_t *count) {
     

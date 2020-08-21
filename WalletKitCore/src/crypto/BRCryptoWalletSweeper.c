@@ -65,7 +65,7 @@ cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletSweeper sweeper
                                                                      fee);
     
     if (NULL != feeBasis)
-        cryptoWalletManagerGenerateWalletEvent (cwm, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
             { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
         });
@@ -78,8 +78,7 @@ cryptoWalletSweeperCreateTransferForWalletSweep (BRCryptoWalletSweeper sweeper,
                                                  BRCryptoFeeBasis estimatedFeeBasis) {
     BRCryptoTransfer transfer = sweeper->handlers->createTransfer (cwm, wallet, sweeper, estimatedFeeBasis);
     
-    cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
+    cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
         CRYPTO_TRANSFER_EVENT_CREATED
     });
     

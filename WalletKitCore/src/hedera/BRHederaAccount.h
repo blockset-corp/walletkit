@@ -16,11 +16,14 @@
 #include "support/BRInt.h"
 #include "BRHederaBase.h"
 #include "BRHederaAddress.h"
+#include "BRHederaFeeBasis.h"
+
+#define HEDERA_NODE_COUNT 10
+#define HEDERA_NODE_START 3
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 typedef struct BRHederaAccountRecord *BRHederaAccount;
 
@@ -113,6 +116,17 @@ extern int hederaAccountHasPrimaryAddress (BRHederaAccount account);
  * @return 1 if true, 0 if false
 */
 extern int hederaAccountHasAddress (BRHederaAccount account, BRHederaAddress address);
+
+extern BRHederaUnitTinyBar
+hederaAccountGetBalanceLimit (BRHederaAccount account,
+                              int asMaximum,
+                              int *hasLimit);
+
+extern BRHederaFeeBasis
+hederaAccountGetDefaultFeeBasis (BRHederaAccount account);
+
+extern BRHederaAddress
+hederaAccountGetNodeAddress(BRHederaAccount account);
 
 #ifdef __cplusplus
 }

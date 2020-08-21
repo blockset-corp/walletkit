@@ -12,8 +12,7 @@
 #include "BRCryptoBase.h"
 #include "crypto/BRCryptoWalletP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ripple/BRRippleWallet.h"
-#include "ripple/BRRippleTransaction.h"
+#include "ripple/BRRipple.h"
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtilMath.h"
 
@@ -27,84 +26,101 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletXRP) wallet;
 }
 
-private_extern BRCryptoWallet
-cryptoWalletCreateAsXRP (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRRippleWallet wid) {
-    int hasMinBalance;
-    int hasMaxBalance;
-    BRRippleUnitDrops minBalanceDrops = rippleWalletGetBalanceLimit (wid, 0, &hasMinBalance);
-    BRRippleUnitDrops maxBalanceDrops = rippleWalletGetBalanceLimit (wid, 1, &hasMaxBalance);
-
-    BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
-                                                          CRYPTO_NETWORK_TYPE_XRP,
-                                                          unit,
-                                                          unitForFee,
-                                                          hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
-                                                          hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL);
-
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    wallet->wid = wid;
-
-    return walletBase;
-}
-
-private_extern BRRippleWallet
-cryptoWalletAsXRP (BRCryptoWallet walletBase) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce(walletBase);
-    return wallet->wid;
-}
+typedef struct {
+    BRRippleAccount xrpAccount;
+} BRCryptoWalletCreateContextXRP;
 
 static void
-cryptoWalletReleaseXRP (BRCryptoWallet walletBase) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    rippleWalletFree (wallet->wid);
+cryptoWalletCreateCallbackXRP (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextXRP *contextXRP = (BRCryptoWalletCreateContextXRP*) context;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+
+    walletXRP->xrpAccount = contextXRP->xrpAccount;
+}
+
+private_extern BRCryptoWallet
+cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
+                         BRCryptoUnit unitForFee,
+                         BRRippleAccount xrpAccount) {
+    int hasMinBalance;
+    int hasMaxBalance;
+    BRRippleUnitDrops minBalanceDrops = rippleAccountGetBalanceLimit (xrpAccount, 0, &hasMinBalance);
+    BRRippleUnitDrops maxBalanceDrops = rippleAccountGetBalanceLimit (xrpAccount, 1, &hasMaxBalance);
+
+    BRRippleFeeBasis feeBasisXRP = rippleAccountGetDefaultFeeBasis (xrpAccount);
+    BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreate (cryptoAmountCreateInteger ((int64_t) rippleFeeBasisGetPricePerCostFactor(&feeBasisXRP), unitForFee),
+                                                         (double) rippleFeeBasisGetCostFactor(&feeBasisXRP));
+
+    BRCryptoWalletCreateContextXRP contextXRP = {
+        xrpAccount
+    };
+
+    BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXRPRecord),
+                                                      CRYPTO_NETWORK_TYPE_XRP,
+                                                      listener,
+                                                      unit,
+                                                      unitForFee,
+                                                      hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
+                                                      hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL,
+                                                      feeBasis,
+                                                      &contextXRP,
+                                                      cryptoWalletCreateCallbackXRP);
+    cryptoFeeBasisGive(feeBasis);
+
+    return wallet;
+}
+
+//private_extern BRRippleWallet
+//cryptoWalletAsXRP (BRCryptoWallet wallet) {
+//    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce(wallet);
+//    return walletXRP->wid;
+//}
+
+static void
+cryptoWalletReleaseXRP (BRCryptoWallet wallet) {
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+    rippleAccountFree(walletXRP->xrpAccount);
 }
 
 static BRCryptoAddress
-cryptoWalletGetAddressXRP (BRCryptoWallet walletBase,
+cryptoWalletGetAddressXRP (BRCryptoWallet wallet,
                            BRCryptoAddressScheme addressScheme) {
     assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    BRRippleAddress address = rippleWalletGetSourceAddress (wallet->wid);
-    return cryptoAddressCreateAsXRP (address);
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+    return cryptoAddressCreateAsXRP (rippleAccountGetAddress(walletXRP->xrpAccount));
 }
 
 static bool
-cryptoWalletHasAddressXRP (BRCryptoWallet walletBase,
+cryptoWalletHasAddressXRP (BRCryptoWallet wallet,
                            BRCryptoAddress address) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    
-    BRRippleWallet xrpWallet = wallet->wid;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
     BRRippleAddress xrpAddress = cryptoAddressAsXRP (address);
     
-    return rippleWalletHasAddress (xrpWallet, xrpAddress);
+    return rippleAccountHasAddress (walletXRP->xrpAccount, xrpAddress);
 }
 
 extern size_t
-cryptoWalletGetTransferAttributeCountXRP (BRCryptoWallet walletBase,
+cryptoWalletGetTransferAttributeCountXRP (BRCryptoWallet wallet,
                                           BRCryptoAddress target) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    BRRippleWallet xrpWallet = wallet->wid;
     BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
     
     size_t countRequired, countOptional;
-    rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 1, &countRequired);
-    rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 0, &countOptional);
+    rippleAddressGetTransactionAttributeKeys (xrpTarget, 1, &countRequired);
+    rippleAddressGetTransactionAttributeKeys (xrpTarget, 0, &countOptional);
     return countRequired + countOptional;
 }
 
 extern BRCryptoTransferAttribute
-cryptoWalletGetTransferAttributeAtXRP (BRCryptoWallet walletBase,
+cryptoWalletGetTransferAttributeAtXRP (BRCryptoWallet wallet,
                                        BRCryptoAddress target,
                                        size_t index) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    BRRippleWallet xrpWallet = wallet->wid;
     BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
     
     size_t countRequired, countOptional;
-    const char **keysRequired = rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 1, &countRequired);
-    const char **keysOptional = rippleWalletGetTransactionAttributeKeys (xrpWallet, xrpTarget, 0, &countOptional);
+    const char **keysRequired = rippleAddressGetTransactionAttributeKeys (xrpTarget, 1, &countRequired);
+    const char **keysOptional = rippleAddressGetTransactionAttributeKeys (xrpTarget, 0, &countOptional);
 
     assert (index < (countRequired + countOptional));
 
@@ -116,7 +132,7 @@ cryptoWalletGetTransferAttributeAtXRP (BRCryptoWallet walletBase,
 }
 
 extern BRCryptoTransferAttributeValidationError
-cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
+cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet wallet,
                                           OwnershipKept BRCryptoTransferAttribute attribute,
                                           BRCryptoBoolean *validates) {
     const char *key = cryptoTransferAttributeGetKey (attribute);
@@ -165,7 +181,7 @@ cryptoWalletValidateTransferAttributeXRP (BRCryptoWallet walletBase,
 }
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
@@ -174,12 +190,11 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee) {
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce (walletBase);
-    BRRippleWallet xrpWallet = wallet->wid;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
 
     UInt256 value = cryptoAmountGetValue (amount);
     
-    BRRippleAddress source  = rippleWalletGetSourceAddress (xrpWallet);
+    BRRippleAddress source  = rippleAccountGetAddress(walletXRP->xrpAccount);
     BRRippleUnitDrops drops = value.u64[0];
 
     BRRippleTransfer xrpTransfer = rippleTransferCreateNew (source,
@@ -210,14 +225,18 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  walletBase,
 
     rippleAddressFree(source);
     
-    BRCryptoTransfer transferBase = cryptoTransferCreateAsXRP (unit, unitForFee, xrpWallet, xrpTransfer);
-    cryptoTransferSetAttributes (transferBase, attributes);
+    BRCryptoTransfer transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                           unit,
+                                                           unitForFee,
+                                                           walletXRP->xrpAccount,
+                                                           xrpTransfer);
+    cryptoTransferSetAttributes (transfer, attributes);
     
-    return transferBase;
+    return transfer;
 }
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet walletBase,
+cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet wallet,
                                        size_t outputsCount,
                                        BRCryptoTransferOutput *outputs,
                                        BRCryptoFeeBasis estimatedFeeBasis,
@@ -229,22 +248,23 @@ cryptoWalletCreateTransferMultipleXRP (BRCryptoWallet walletBase,
 }
 
 static OwnershipGiven BRSetOf(BRCryptoAddress)
-cryptoWalletGetAddressesForRecoveryXRP (BRCryptoWallet walletBase) {
+cryptoWalletGetAddressesForRecoveryXRP (BRCryptoWallet wallet) {
     BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
 
-    BRCryptoWalletXRP wallet = cryptoWalletCoerce(walletBase);
-    BRRippleWallet xrpWallet = wallet->wid;
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce(wallet);
 
-    BRSetAdd (addresses, cryptoAddressCreateAsXRP (rippleWalletGetSourceAddress (xrpWallet)));
+    BRSetAdd (addresses, cryptoAddressCreateAsXRP (rippleAccountGetAddress (walletXRP->xrpAccount)));
 
     return addresses;
 }
 
 static bool
 cryptoWalletIsEqualXRP (BRCryptoWallet wb1, BRCryptoWallet wb2) {
+    if (wb1 == wb2) return true;
+
     BRCryptoWalletXRP w1 = cryptoWalletCoerce(wb1);
     BRCryptoWalletXRP w2 = cryptoWalletCoerce(wb2);
-    return w1->wid == w2->wid;
+    return w1->xrpAccount == w2->xrpAccount;
 }
 
 BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
@@ -259,3 +279,124 @@ BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
     cryptoWalletGetAddressesForRecoveryXRP,
     cryptoWalletIsEqualXRP
 };
+
+
+#if 0
+static void rippleWalletUpdateSequence (BRRippleWallet wallet,
+                                        OwnershipKept BRRippleAddress accountAddress) {
+    // Now update the account's sequence id
+    BRRippleSequence sequence = 0;
+    // We need to keep track of the first block where this account shows up due to a
+    // change in how ripple assigns the sequence number to new accounts
+    uint64_t minBlockHeight = UINT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRRippleTransfer transfer = wallet->transfers[index];
+        BRRippleAddress targetAddress = rippleTransferGetTarget(transfer);
+        if (rippleTransferHasError(transfer) == 0
+            && rippleAddressEqual(accountAddress, targetAddress)) {
+            // We trying to find the lowest block number where we were sent
+            // currency successful - basically this is the block where our account
+            // was created *** ignore failed transfers TO us since we end up seeing
+            // items before our account is actually created.
+            uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        }
+        rippleAddressFree(targetAddress);
+        if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
+            sequence += 1;
+    }
+
+    rippleAccountSetBlockNumberAtCreation(wallet->account, minBlockHeight);
+    rippleAccountSetSequence (wallet->account, sequence);
+}
+
+extern void rippleWalletAddTransfer (BRRippleWallet wallet,
+                                     OwnershipKept BRRippleTransfer transfer)
+{
+    assert(wallet);
+    assert(transfer);
+    pthread_mutex_lock (&wallet->lock);
+    if (!walletHasTransfer(wallet, transfer)) {
+        // We'll add `transfer` to `wallet->transfers`; since we don't own `transfer` we must copy.
+        transfer = rippleTransferClone(transfer);
+        array_add(wallet->transfers, transfer);
+
+        // Update the balance
+        BRRippleUnitDrops amount = (rippleTransferHasError(transfer)
+                                    ? 0
+                                    : rippleTransferGetAmount(transfer));
+        BRRippleUnitDrops fee    = rippleTransferGetFee(transfer);
+
+        BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
+        BRRippleAddress source = rippleTransferGetSource(transfer);
+        BRRippleAddress target = rippleTransferGetTarget(transfer);
+
+        int isSource = rippleAccountHasAddress (wallet->account, source);
+        int isTarget = rippleAccountHasAddress (wallet->account, target);
+
+        if (isSource && isTarget)
+            wallet->balance -= fee;
+        else if (isSource)
+            wallet->balance -= (amount + fee);
+        else if (isTarget)
+            wallet->balance += amount;
+        else {
+            // something is seriously wrong
+        }
+        rippleAddressFree (source);
+        rippleAddressFree (target);
+
+        rippleWalletUpdateSequence(wallet, accountAddress);
+        rippleAddressFree (accountAddress);
+    }
+    pthread_mutex_unlock (&wallet->lock);
+    // Now update the balance
+}
+
+extern void rippleWalletRemTransfer (BRRippleWallet wallet,
+                                     OwnershipKept BRRippleTransfer transfer)
+{
+    assert(wallet);
+    assert(transfer);
+    pthread_mutex_lock (&wallet->lock);
+    if (walletHasTransfer(wallet, transfer)) {
+        for (size_t index = 0; index < array_count(wallet->transfers); index++)
+            if (rippleTransferEqual (transfer, wallet->transfers[index])) {
+                rippleTransferFree(wallet->transfers[index]);
+                array_rm (wallet->transfers, index);
+                break;
+            }
+
+        // Update the balance
+        BRRippleUnitDrops amount = (rippleTransferHasError(transfer)
+                                    ? 0
+                                    : rippleTransferGetAmount(transfer));
+
+        BRRippleUnitDrops fee    = rippleTransferGetFee(transfer);
+
+        BRRippleAddress accountAddress = rippleAccountGetAddress(wallet->account);
+        BRRippleAddress source = rippleTransferGetSource(transfer);
+        BRRippleAddress target = rippleTransferGetTarget(transfer);
+
+        int isSource = rippleAccountHasAddress (wallet->account, source);
+        int isTarget = rippleAccountHasAddress (wallet->account, target);
+
+        if (isSource && isTarget)
+            wallet->balance += fee;
+        else if (isSource)
+            wallet->balance += (amount + fee);
+        else if (isTarget)
+            wallet->balance -= amount;
+        else {
+            // something is seriously wrong
+        }
+        rippleAddressFree (source);
+        rippleAddressFree (target);
+
+        rippleWalletUpdateSequence(wallet, accountAddress);
+        rippleAddressFree (accountAddress);
+    }
+    pthread_mutex_unlock (&wallet->lock);
+    // Now update the balance
+}
+#endif

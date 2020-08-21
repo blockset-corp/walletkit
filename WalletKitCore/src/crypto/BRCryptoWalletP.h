@@ -20,6 +20,7 @@
 #include "BRCryptoWallet.h"
 #include "BRCryptoBaseP.h"
 #include "BRCryptoClient.h"
+#include "BRCryptoTransferP.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +74,7 @@ typedef BRCryptoTransfer
                                                 BRCryptoUnit unitForFee);
 
 typedef OwnershipGiven BRSetOf(BRCryptoAddress)
-(*BRCryptoWalletGetAddressesForRecovery) (BRCryptoWallet wallet);
+(*BRCryptoWalletGetAddressesForRecoveryHandler) (BRCryptoWallet wallet);
 
 typedef bool
 (*BRCryptoWalletIsEqualHandler) (BRCryptoWallet wallet1, BRCryptoWallet wallet2);
@@ -87,9 +88,18 @@ typedef struct {
     BRCryptoWalletValidateTransferAttributeHandler validateTransferAttribute;
     BRCryptoWalletCreateTransferHandler createTransfer;
     BRCryptoWalletCreateTransferMultipleHandler createTransferMultiple;
-    BRCryptoWalletGetAddressesForRecovery getAddressesForRecovery;
+    BRCryptoWalletGetAddressesForRecoveryHandler getAddressesForRecovery;
     BRCryptoWalletIsEqualHandler isEqual;
 } BRCryptoWalletHandlers;
+
+// MARK: - Wallet Listener
+
+typedef struct {
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWalletListenerCallback walletCallback;
+    BRCryptoTransferListenerCallback transferCallback;
+} BRCryptoWalletListener;
 
 // MARK: - Wallet
 
@@ -100,6 +110,7 @@ struct BRCryptoWalletRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
+    BRCryptoWalletListener listener;
 
     BRCryptoWalletState state;
 
@@ -122,17 +133,25 @@ struct BRCryptoWalletRecord {
     BRCryptoAmount balanceMaximum;
 
     BRCryptoFeeBasis defaultFeeBasis;
+
+    BRCryptoTransferListener listenerTransfer;
 };
 
-/// MARK: - Wallet
+typedef void  *BRCryptoWalletCreateContext;
+typedef void (*BRCryptoWalletCreateCallbak) (BRCryptoWalletCreateContext context,
+                                             BRCryptoWallet wallet);
 
 extern BRCryptoWallet
 cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoBlockChainType type,
+                          BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
                           BRCryptoAmount balanceMinimum,
-                          BRCryptoAmount balanceMaximum);
+                          BRCryptoAmount balanceMaximum,
+                          BRCryptoFeeBasis defaultFeeBasis,
+                          BRCryptoWalletCreateContext createContext,
+                          BRCryptoWalletCreateCallbak createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoWalletGetType (BRCryptoWallet wallet);
@@ -153,6 +172,9 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
+private_extern void
+cryptoWalletGenerateEvent (BRCryptoWallet wallet,
+                           BRCryptoWalletEvent event);
 
 #ifdef __cplusplus
 }

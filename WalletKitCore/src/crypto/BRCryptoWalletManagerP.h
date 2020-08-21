@@ -21,6 +21,8 @@
 #include "BRCryptoWalletManager.h"
 
 #include "BRCryptoClientP.h"
+#include "BRCryptoWalletP.h"
+
 #include "support/BRFileService.h"
 #include "support/event/BREvent.h"
 
@@ -31,69 +33,66 @@ extern "C" {
 // MARK: - WalletManager Handlers
 
 typedef BRCryptoWalletManager
-(*BERWalletManagerCreateHandler) (BRCryptoListener listener,
-                                  BRCryptoClient client,
-                                  BRCryptoAccount account,
-                                  BRCryptoNetwork network,
-                                  BRCryptoSyncMode mode,
-                                  BRCryptoAddressScheme scheme,
-                                  const char *path);
+(*BRCryptoWalletManagerCreateHandler) (BRCryptoListener listener,
+                                       BRCryptoClient client,
+                                       BRCryptoAccount account,
+                                       BRCryptoNetwork network,
+                                       BRCryptoSyncMode mode,
+                                       BRCryptoAddressScheme scheme,
+                                       const char *path);
 
 typedef void
-(*BRWalletManagerReleaseHandler) (BRCryptoWalletManager manager);
-
-typedef void
-(*BRWalletManagerInitializeHandler) (BRCryptoWalletManager manager);
+(*BRCryptoWalletManagerReleaseHandler) (BRCryptoWalletManager manager);
 
 typedef BRFileService
-(*BRWalletManagerCreateFileService) (BRCryptoWalletManager manager,
-                                     const char *basePath,
-                                     const char *currency,
-                                     const char *network,
-                                     BRFileServiceContext context,
-                                     BRFileServiceErrorHandler handler);
+(*BRCryptoWalletManagerCreateFileServiceHandler) (BRCryptoWalletManager manager,
+                                                  const char *basePath,
+                                                  const char *currency,
+                                                  const char *network,
+                                                  BRFileServiceContext context,
+                                                  BRFileServiceErrorHandler handler);
 
 typedef const BREventType **
-(*BRWalletManagerGetEventTypesHandler) (BRCryptoWalletManager manager,
-                                        size_t *eventTypesCount);
+(*BRCryptoWalletManagerGetEventTypesHandler) (BRCryptoWalletManager manager,
+                                              size_t *eventTypesCount);
 
 typedef BRCryptoBoolean
-(*BRWalletManagerSignTransactionWithSeedHandler) (BRCryptoWalletManager manager,
-                                                  BRCryptoWallet wallet,
-                                                  BRCryptoTransfer transfer,
-                                                  UInt512 seed);
+(*BRCryptoWalletManagerSignTransactionWithSeedHandler) (BRCryptoWalletManager manager,
+                                                        BRCryptoWallet wallet,
+                                                        BRCryptoTransfer transfer,
+                                                        UInt512 seed);
 
 typedef BRCryptoBoolean
-(*BRWalletManagerSignTransactionWithKeyHandler) (BRCryptoWalletManager manager,
-                                                 BRCryptoWallet wallet,
-                                                 BRCryptoTransfer transfer,
-                                                 BRCryptoKey key);
+(*BRCryptoWalletManagerSignTransactionWithKeyHandler) (BRCryptoWalletManager manager,
+                                                       BRCryptoWallet wallet,
+                                                       BRCryptoTransfer transfer,
+                                                       BRCryptoKey key);
 
 typedef BRCryptoAmount
-(*BRWalletManagerEstimateLimitHandler) (BRCryptoWalletManager cwm,
-                                        BRCryptoWallet  wallet,
-                                        BRCryptoBoolean asMaximum,
-                                        BRCryptoAddress target,
-                                        BRCryptoNetworkFee fee,
-                                        BRCryptoBoolean *needEstimate,
-                                        BRCryptoBoolean *isZeroIfInsuffientFunds,
-                                        BRCryptoUnit unit);
+(*BRCryptoWalletManagerEstimateLimitHandler) (BRCryptoWalletManager cwm,
+                                              BRCryptoWallet  wallet,
+                                              BRCryptoBoolean asMaximum,
+                                              BRCryptoAddress target,
+                                              BRCryptoNetworkFee fee,
+                                              BRCryptoBoolean *needEstimate,
+                                              BRCryptoBoolean *isZeroIfInsuffientFunds,
+                                              BRCryptoUnit unit);
 
 
 typedef BRCryptoFeeBasis // If NULL, don't generate WalletEvent; expect QRY callback invoked.
-(*BRWalletManagerEstimateFeeBasisHandler) (BRCryptoWalletManager cwm,
-                                           BRCryptoWallet  wallet,
-                                           BRCryptoCookie cookie,
-                                           BRCryptoAddress target,
-                                           BRCryptoAmount amount,
-                                           BRCryptoNetworkFee fee);
+(*BRCryptoWalletManagerEstimateFeeBasisHandler) (BRCryptoWalletManager cwm,
+                                                 BRCryptoWallet  wallet,
+                                                 BRCryptoCookie cookie,
+                                                 BRCryptoAddress target,
+                                                 BRCryptoAmount amount,
+                                                 BRCryptoNetworkFee fee);
 
 typedef BRCryptoClientP2PManager
-(*BRWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
+(*BRCryptoWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
 
 typedef BRCryptoWallet
-(*BRCryptoWalletManagerRegisterWallet) (BRCryptoWalletManager cwm,
-                                        BRCryptoCurrency currency);
+(*BRCryptoWalletManagerCreateWalletHandler) (BRCryptoWalletManager cwm,
+                                               BRCryptoCurrency currency);
 
 typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
@@ -114,23 +113,29 @@ typedef BRCryptoWalletSweeper
                                                     BRCryptoKey key);
 
 typedef struct {
-    BERWalletManagerCreateHandler create;
-    BRWalletManagerReleaseHandler release;
-    BRWalletManagerInitializeHandler initialize;
-    BRWalletManagerCreateFileService createFileService;
-    BRWalletManagerGetEventTypesHandler getEventTypes;
-    BRWalletManagerSignTransactionWithSeedHandler signTransactionWithSeed;
-    BRWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
-    BRWalletManagerEstimateLimitHandler estimateLimit;
-    BRWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
-    BRWalletManagerCreateP2PManagerHandler createP2PManager;
-    BRCryptoWalletManagerRegisterWallet registerWallet;
+    BRCryptoWalletManagerCreateHandler create;
+    BRCryptoWalletManagerReleaseHandler release;
+    BRCryptoWalletManagerCreateFileServiceHandler createFileService;
+    BRCryptoWalletManagerGetEventTypesHandler getEventTypes;
+    BRCryptoWalletManagerCreateP2PManagerHandler createP2PManager;
+    BRCryptoWalletManagerCreateWalletHandler createWallet;
+    BRCryptoWalletManagerSignTransactionWithSeedHandler signTransactionWithSeed;
+    BRCryptoWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
+    BRCryptoWalletManagerEstimateLimitHandler estimateLimit;
+    BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
 
+// MARK: - Wallet Manager State
+
+private_extern BRCryptoWalletManagerState
+cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
+
+private_extern BRCryptoWalletManagerState
+cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason reason);
 
 // MARK: - Wallet Manager
 
@@ -141,7 +146,6 @@ struct BRCryptoWalletManagerRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
-
     BRCryptoListener listener;
     BRCryptoClient client;
     BRCryptoNetwork network;
@@ -152,6 +156,7 @@ struct BRCryptoWalletManagerRecord {
     BRFileService fileService;
 
     BREventHandler handler;
+    BREventHandler listenerHandler;
 
     BRCryptoClientP2PManager p2pManager;   // Null unless BTC, BCH, ETH, ...
     BRCryptoClientQRYManager qryManager;
@@ -169,7 +174,14 @@ struct BRCryptoWalletManagerRecord {
     BRArrayOf(BRCryptoWallet) wallets;
 
     BRCryptoWalletManagerState state;
+
+    BRCryptoWalletListener listenerWallet;
+    BRCryptoListener listenerTrampoline;
 };
+
+typedef void *BRCryptoWalletManagerCreateContext;
+typedef void (*BRCryptoWalletManagerCreateCallback) (BRCryptoWalletManagerCreateContext context,
+                                                     BRCryptoWalletManager manager);
 
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
@@ -180,13 +192,12 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
                                  const char *path,
-                                 BRCryptoClientQRYByType byType);
+                                 BRCryptoClientQRYByType byType,
+                                 BRCryptoWalletManagerCreateContext createContext,
+                                 BRCryptoWalletManagerCreateCallback createCallback);
 
-private_extern BRCryptoWalletManagerState
-cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type);
-
-private_extern BRCryptoWalletManagerState
-cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason reason);
+private_extern BRCryptoBlockChainType
+cryptoWalletManagerGetType (BRCryptoWalletManager manager);
 
 private_extern void
 cryptoWalletManagerSetState (BRCryptoWalletManager cwm,
@@ -232,20 +243,21 @@ private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
 
-private_extern void
-cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
-                                          BRCryptoWallet wallet,
-                                          BRCryptoTransfer transfer,
-                                          BRCryptoTransferEvent event);
+//private_extern void
+//cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
+//                                          BRCryptoWallet wallet,
+//                                          BRCryptoTransfer transfer,
+//                                          BRCryptoTransferEvent event);
+//
+//private_extern void
+//cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
+//                                          BRCryptoWallet wallet,
+//                                          BRCryptoWalletEvent event);
+//
 
 private_extern void
-cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
-                                          BRCryptoWallet wallet,
-                                          BRCryptoWalletEvent event);
-
-private_extern void
-cryptoWalletManagerGenerateManagerEvent (BRCryptoWalletManager cwm,
-                                         BRCryptoWalletManagerEvent event);
+cryptoWalletManagerGenerateEvent (BRCryptoWalletManager cwm,
+                                  BRCryptoWalletManagerEvent event);
 
 #ifdef __cplusplus
 }

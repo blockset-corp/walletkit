@@ -30,6 +30,8 @@
 
 #include "BRCryptoHandlersP.h"
 
+#include "bitcoin/BRMerkleBlock.h"
+#include "bitcoin/BRPeer.h"
 #include "support/BRFileService.h"
 #include "support/event/BREventAlarm.h"
 
@@ -57,14 +59,23 @@ cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
                                     uint64_t endBlockHeight,
                                     uint64_t fullSyncIncrement);
 #endif
+
+
+private_extern void
+cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,
+                                  BRCryptoWalletManagerEvent event) {
+    manager->listenerTrampoline.managerCallback (manager->listenerTrampoline.context,
+                                                 manager,
+                                                 event);
+}
+
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWalletManager, cryptoWalletManager)
 
 /// =============================================================================================
 ///
-/// MARK: - Wallet Manager
+/// MARK: - Wallet Manager State
 ///
 ///
-
 private_extern BRCryptoWalletManagerState
 cryptoWalletManagerStateInit(BRCryptoWalletManagerStateType type) {
     switch (type) {
@@ -90,6 +101,12 @@ cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason r
     };
 }
 
+/// =============================================================================================
+///
+/// MARK: - Wallet Manager
+///
+///
+
 #pragma clang diagnostic push
 #pragma GCC diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
@@ -112,25 +129,154 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
+//static void
+//cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
+//                                       BRCryptoWallet wallet) {
+//    cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+//        CRYPTO_WALLET_EVENT_CREATED
+//    });
+//
+//    cryptoWalletManagerGenerateManagerEvent(manager, (BRCryptoWalletManagerEvent) {
+//        CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
+//        { .wallet = { cryptoWalletTake (wallet) }}
+//    });
+//
+//    BRCryptoAmount balance = cryptoWalletGetBalance (wallet);
+//
+//    cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+//        CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+//        { .balanceUpdated = { balance }}
+//    });
+//}
+
+// MARK: - Listener Manager Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWalletManagerEvent event;
+} BRCryptoWalletManagerSignalListenerManagerEventEvent;
+
 static void
-cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
-                                       BRCryptoWallet wallet) {
-    cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_CREATED
-    });
-
-    cryptoWalletManagerGenerateManagerEvent(manager, (BRCryptoWalletManagerEvent) {
-        CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
-        { .wallet = { cryptoWalletTake (wallet) }}
-    });
-
-    BRCryptoAmount balance = cryptoWalletGetBalance (wallet);
-
-    cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-        { .balanceUpdated = { balance }}
-    });
+cryptoManagerSignalListenerManagerEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerManagerEventEvent *event) {
+    event->manager->listener.managerCallback (event->context, event->manager, event->event);
 }
+
+static BREventType handleSignalListenerManagerEventType = {
+    "CWM: Handle Signal Listener Manager EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerManagerEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerManagerEventDispatcher
+};
+
+static void
+cryptoWalletManagerListenerCallbackTrampoline (BRCryptoListenerContext context,
+                                               BRCryptoWalletManager manager,
+                                               BRCryptoWalletManagerEvent event) {
+    BRCryptoWalletManagerSignalListenerManagerEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerManagerEventType}, context,
+        (CRYPTO_WALLET_MANAGER_EVENT_DELETED != event.type
+         ? cryptoWalletManagerTake(manager)
+         : manager),
+        event };
+
+    eventHandlerSignalEvent (manager->listenerHandler, (BREvent *) &listenerEvent);
+}
+
+// MARK: - Listener Wallet Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoWalletEvent event;
+} BRCryptoWalletManagerSignalListenerWalletEventEvent;
+
+static void
+cryptoManagerSignalListenerWalletEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerWalletEventEvent *event) {
+    event->manager->listener.walletCallback (event->context, event->manager, event->wallet, event->event);
+}
+
+static BREventType handleSignalListenerWalletEventType = {
+    "CWM: Handle Signal Listener Wallet EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerWalletEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerWalletEventDispatcher
+};
+
+static void
+cryptoWalletListenerCallbackTrampoline (BRCryptoListenerContext context,
+                                        BRCryptoWalletManager manager,
+                                        BRCryptoWallet wallet,
+                                        BRCryptoWalletEvent event) {
+    BRCryptoWalletManagerSignalListenerWalletEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerWalletEventType}, context,
+        cryptoWalletManagerTake (manager),
+        (CRYPTO_WALLET_EVENT_DELETED != event.type
+         ? cryptoWalletTake(wallet)
+         : wallet),
+        event };
+
+    eventHandlerSignalEvent(manager->listenerHandler, (BREvent *) &listenerEvent);
+}
+
+// MARK: - Listener Transfer Event
+
+typedef struct {
+    BREvent base;
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoTransfer transfer;
+    BRCryptoTransferEvent event;
+} BRCryptoWalletManagerSignalListenerTransferEventEvent;
+
+static void
+cryptoManagerSignalListenerTransferEventDispatcher (BREventHandler ignore,
+                                                   BRCryptoWalletManagerSignalListenerTransferEventEvent *event) {
+    event->manager->listener.transferCallback (event->context,
+                                               event->manager,
+                                               event->wallet,
+                                               event->transfer,
+                                               event->event);
+}
+
+static BREventType handleSignalListenerTransferEventType = {
+    "CWM: Handle Signal Listener Transfer EVent",
+    sizeof (BRCryptoWalletManagerSignalListenerTransferEventEvent),
+    (BREventDispatcher) cryptoManagerSignalListenerTransferEventDispatcher
+};
+
+static void
+cryptoTransferListenerCallbackTrampoline (BRCryptoListenerContext context,
+                                          BRCryptoWalletManager manager,
+                                          BRCryptoWallet wallet,
+                                          BRCryptoTransfer transfer,
+                                          BRCryptoTransferEvent event) {
+    BRCryptoWalletManagerSignalListenerTransferEventEvent listenerEvent =
+    { { NULL, &handleSignalListenerTransferEventType}, context,
+        cryptoWalletManagerTake (manager),
+        cryptoWalletTake(wallet),
+        (CRYPTO_TRANSFER_EVENT_DELETED != event.type
+         ? cryptoTransferTake(transfer)
+         : transfer),
+        event };
+
+    eventHandlerSignalEvent(manager->listenerHandler, (BREvent *) &listenerEvent);
+}
+
+static const BREventType *
+cryptoListenerEventTypes[] = {
+    &handleSignalListenerManagerEventType,
+    &handleSignalListenerWalletEventType,
+    &handleSignalListenerTransferEventType
+};
+
+static const unsigned int
+cryptoListenerEventTypesCount = (sizeof (cryptoListenerEventTypes) / sizeof(BREventType*)); //  11
+
 
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
@@ -141,37 +287,39 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoNetwork network,
                                  BRCryptoAddressScheme scheme,
                                  const char *path,
-                                 BRCryptoClientQRYByType byType) {
+                                 BRCryptoClientQRYByType byType,
+                                 BRCryptoWalletManagerCreateContext createContext,
+                                 BRCryptoWalletManagerCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletManagerRecord));
     assert (type == cryptoNetworkGetType(network));
 
-    BRCryptoWalletManager cwm = calloc (1, sizeInBytes);
-    if (NULL == cwm) return NULL;
+    BRCryptoWalletManager manager = calloc (1, sizeInBytes);
+    if (NULL == manager) return NULL;
 
-    cwm->type = type;
-    cwm->handlers = cryptoHandlersLookup(type)->manager;
+    manager->type = type;
+    manager->handlers = cryptoHandlersLookup(type)->manager;
     network->sizeInBytes = sizeInBytes;
+    manager->listener = listener;
 
-    cwm->listener = listener;
-    cwm->client  = client;
-    cwm->network = cryptoNetworkTake (network);
-    cwm->account = cryptoAccountTake (account);
-    cwm->state   = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CREATED);
-    cwm->addressScheme = scheme;
-    cwm->path = strdup (path);
+    manager->client  = client;
+    manager->network = cryptoNetworkTake (network);
+    manager->account = cryptoAccountTake (account);
+    manager->state   = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CREATED);
+    manager->addressScheme = scheme;
+    manager->path = strdup (path);
 
-    cwm->byType = byType;
+    manager->byType = byType;
     
     // File Service
-    const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (cwm->type);
+    const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (manager->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
 
     // TODO: Replace `createFileService` with `getFileServiceSpecifications`
-    cwm->fileService = cwm->handlers->createFileService (cwm,
-                                                         cwm->path,
+    manager->fileService = manager->handlers->createFileService (manager,
+                                                         manager->path,
                                                          currencyName,
                                                          networkName,
-                                                         cwm,
+                                                         manager,
                                                          cryptoWalletManagerFileServiceErrorHandler);
 
     // Create the alarm clock, but don't start it.
@@ -184,27 +332,77 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     // Get the event handler types.
     size_t eventTypesCount;
-    const BREventType **eventTypes = cwm->handlers->getEventTypes (cwm, &eventTypesCount);
+    const BREventType **eventTypes = manager->handlers->getEventTypes (manager, &eventTypesCount);
 
     // Create the event handler
-    cwm->handler = eventHandlerCreate (handlerName,
-                                       eventTypes,
-                                       eventTypesCount,
-                                       &cwm->lock);
+    manager->handler = eventHandlerCreate (handlerName,
+                                           eventTypes,
+                                           eventTypesCount,
+                                           &manager->lock);
 
-    eventHandlerSetTimeoutDispatcher (cwm->handler,
+    eventHandlerSetTimeoutDispatcher (manager->handler,
                                       (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
-                                      (void*) cwm);
+                                      (void*) manager);
 
-    cwm->wallet = NULL;
-    array_new (cwm->wallets, 1);
+    char listenerHandlerName[100];
+    sprintf (listenerHandlerName, "%s Listener", handlerName);
 
-    cwm->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+    manager->listenerHandler = eventHandlerCreate (listenerHandlerName,
+                                                   cryptoListenerEventTypes,
+                                                   cryptoListenerEventTypesCount,
+                                                   &manager->lock);
 
-    pthread_mutex_init_brd (&cwm->lock, PTHREAD_MUTEX_RECURSIVE);
+    manager->listenerTrampoline = (BRCryptoListener) {
+        listener.context,
+        cryptoWalletManagerListenerCallbackTrampoline,
+        cryptoWalletListenerCallbackTrampoline,
+        cryptoTransferListenerCallbackTrampoline
+    };
 
-    return cwm;
+    manager->listenerWallet = (BRCryptoWalletListener) {
+        manager->listenerTrampoline.context,
+        manager,
+        manager->listenerTrampoline.walletCallback,
+        manager->listenerTrampoline.transferCallback
+    };
+
+    // Setup `wallet` and `wallets.
+    manager->wallet = NULL;
+    array_new (manager->wallets, 1);
+
+    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+    pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
+
+    BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
+    BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
+    BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
+
+    // Setup the QRY Manager
+    manager->qryManager = cryptoClientQRYManagerCreate (client,
+                                                        manager,
+                                                        manager->byType,
+                                                        earliestBlockNumber,
+                                                        latestBlockNumber);
+
+    // Setup the P2P Manager.
+    manager->p2pManager = NULL; // manager->handlers->createP2PManager (manager);
+
+    if (createCallback) createCallback (createContext, manager);
+    
+    // Announce the created manager; this must preceed any wallet created/added events
+    cryptoWalletManagerGenerateEvent (manager, (BRCryptoWalletManagerEvent) {
+        CRYPTO_WALLET_MANAGER_EVENT_CREATED
+    });
+
+    // Create the primary wallet
+    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
+
+    // Create the P2P manager
+    manager->p2pManager = manager->handlers->createP2PManager (manager);
+
+    pthread_mutex_lock (&manager->lock);
+    return manager;
 }
 
 extern BRCryptoWalletManager
@@ -216,7 +414,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
     // Only create a wallet manager for accounts that are initializedon network.
-    if (CRYPTO_FALSE == cryptoNetworkIsAccountInitialized(network, account))
+    if (CRYPTO_FALSE == cryptoNetworkIsAccountInitialized (network, account))
         return NULL;
 
     // Lookup the handler for the network's type.
@@ -233,48 +431,10 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
                                                       path);
     if (NULL == manager) return NULL;
 
-    // Initialize the manager.  This will restore persistent state - such as for transactions.
-    // It will create the primary wallet and any other associated wallets (that are knowable at
-    // this time).  No events will be announced.
-    //
-    // This will fully configure the P2P and QRY managers.
-    manager->handlers->initialize (manager);
-
-    BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
-    BRCryptoBlockNumber earliestBlockNumber = cryptoNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);
-    BRCryptoBlockNumber latestBlockNumber   = cryptoNetworkGetHeight (network);
-    
-    // Setup the P2P Manager.  We have a race here... `createP2PManager` might generate callbacks
-    // as initial blocks, nodes, etc are added.  The callbacks currently are handled directly,
-    // without using the event queue - but eventually the event queue must be used.
-    //
-    // TODO: Handle Callbacks Correctly
-    manager->p2pManager = manager->handlers->createP2PManager (manager);
-
-    // Setup the QRY Manager
-    manager->qryManager = cryptoClientQRYManagerCreate (client,
-                                                        manager,
-                                                        manager->byType,
-                                                        earliestBlockNumber,
-                                                        latestBlockNumber);
-
-    // Announce the new wallet manager;
-    cryptoWalletManagerGenerateManagerEvent (manager, (BRCryptoWalletManagerEvent) {
-        CRYPTO_WALLET_MANAGER_EVENT_CREATED
-    });
-
-    // ... and announce the primary wallet
-    cryptoWalletMangerSignalWalletCreated (manager, manager->wallet);
-
-    // ... and announce any other wallets
-    for (size_t index = 0; index < array_count(manager->wallets); index++)
-        if (manager->wallet != manager->wallets[index])
-            cryptoWalletMangerSignalWalletCreated (manager, manager->wallets[index]);
-
-
+    // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
 
-    // Start
+    // Start the event handler.
     cryptoWalletManagerStart (manager);
 
     return manager;
@@ -433,7 +593,7 @@ cryptoWalletManagerCreate (BRCryptoListener listener,
     #endif
 }
 
-#define _peer_log printf
+#define _peer_log_x printf
 static void
 cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
                                             BRFileService fs,
@@ -441,31 +601,31 @@ cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
     switch (error.type) {
         case FILE_SERVICE_IMPL:
             // This actually a FATAL - an unresolvable coding error.
-            _peer_log ("CRY: FileService Error: IMPL: %s\n", error.u.impl.reason);
+            _peer_log_x ("CRY: FileService Error: IMPL: %s\n", error.u.impl.reason);
             break;
         case FILE_SERVICE_UNIX:
-            _peer_log ("CRY: FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
+            _peer_log_x ("CRY: FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
             break;
         case FILE_SERVICE_ENTITY:
             // This is likely a coding error too.
-            _peer_log ("CRY: FileService Error: ENTITY (%s): %s\n",
+            _peer_log_x ("CRY: FileService Error: ENTITY (%s): %s\n",
                      error.u.entity.type,
                      error.u.entity.reason);
             break;
         case FILE_SERVICE_SDB:
-            _peer_log ("CRY: FileService Error: SDB: (%d): %s\n",
+            _peer_log_x ("CRY: FileService Error: SDB: (%d): %s\n",
                        error.u.sdb.code,
                        error.u.sdb.reason);
             break;
     }
-    _peer_log ("CRY: FileService Error: FORCED SYNC%s\n", "");
+    _peer_log_x ("CRY: FileService Error: FORCED SYNC%s\n", "");
 
     // BRWalletManager bwm = (BRWalletManager) context;
     // TODO(fix): What do we actually want to happen here?
     // if (NULL != bwm->peerManager)
     //     BRPeerManagerRescan (bwm->peerManager);
 }
-#undef _peer_log
+#undef _peer_log_x
 
 
 static void
@@ -497,6 +657,7 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
 
     // ... then the eventHandler
     eventHandlerDestroy (cwm->handler);
+    eventHandlerDestroy (cwm->listenerHandler);
 
     // ... and finally individual memory allocations
     free (cwm->path);
@@ -577,10 +738,17 @@ cryptoWalletManagerGetState (BRCryptoWalletManager cwm) {
 
 private_extern void
 cryptoWalletManagerSetState (BRCryptoWalletManager cwm,
-                             BRCryptoWalletManagerState state) {
+                             BRCryptoWalletManagerState newState) {
     pthread_mutex_lock (&cwm->lock);
-    cwm->state = state;
+    BRCryptoWalletManagerState oldState = cwm->state;
+    cwm->state = newState;
     pthread_mutex_unlock (&cwm->lock);
+
+    if (oldState.type != newState.type)
+        cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
+            { .state = { oldState, newState }}
+        });
 }
 
 extern BRCryptoAddressScheme
@@ -632,6 +800,16 @@ cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
 //}
 
 extern BRCryptoWallet
+cryptoWalletManagerCreateWallet (BRCryptoWalletManager cwm,
+                                 BRCryptoCurrency currency) {
+    BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
+    return (NULL == wallet
+            ? cwm->handlers->createWallet (cwm, currency)
+            : wallet);
+}
+
+
+extern BRCryptoWallet
 cryptoWalletManagerGetWallet (BRCryptoWalletManager cwm) {
     return cryptoWalletTake (cwm->wallet);
 }
@@ -667,15 +845,6 @@ cryptoWalletManagerGetWalletForCurrency (BRCryptoWalletManager cwm,
     return wallet;
 }
 
-extern BRCryptoWallet
-cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
-                                   BRCryptoCurrency currency) {
-    BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
-    return (NULL == wallet
-            ? cwm->handlers->registerWallet (cwm, currency)
-            : wallet);
-}
-
 extern BRCryptoBoolean
 cryptoWalletManagerHasWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet) {
@@ -694,6 +863,10 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
     pthread_mutex_lock (&cwm->lock);
     if (CRYPTO_FALSE == cryptoWalletManagerHasWallet (cwm, wallet)) {
         array_add (cwm->wallets, cryptoWalletTake (wallet));
+        cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
+            { .wallet = { cryptoWalletTake (wallet) }}
+        });
     }
     pthread_mutex_unlock (&cwm->lock);
 }
@@ -708,6 +881,10 @@ cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
         if (CRYPTO_TRUE == cryptoWalletEqual(cwm->wallets[index], wallet)) {
             managerWallet = cwm->wallets[index];
             array_rm (cwm->wallets, index);
+            cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
+                CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED,
+                { .wallet = { cryptoWalletTake (wallet) }}
+            });
             break;
         }
     }
@@ -723,6 +900,7 @@ extern void
 cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
     // Start the CWM 'Event Handler'
     eventHandlerStart (cwm->handler);
+    eventHandlerStart (cwm->listenerHandler);
 
     // P2P Manager
     // QRY Manager
@@ -732,6 +910,7 @@ cryptoWalletManagerStart (BRCryptoWalletManager cwm) {
 extern void
 cryptoWalletManagerStop (BRCryptoWalletManager cwm) {
     // Stop the CWM 'Event Handler'
+    eventHandlerStop (cwm->listenerHandler);
     eventHandlerStop (cwm->handler);
 
     // P2P Manager
@@ -756,7 +935,7 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
 
             cryptoWalletManagerSetState (cwm, newState);
 
-            cryptoWalletManagerGenerateManagerEvent(cwm, (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = { oldState, newState }}
             });
@@ -785,7 +964,7 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
 
             cryptoWalletManagerSetState (cwm, newState);
 
-            cryptoWalletManagerGenerateManagerEvent(cwm, (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
                 { .state = { oldState, newState }}
             });
@@ -866,19 +1045,7 @@ cryptoWalletManagerSetTransferState (BRCryptoWalletManager cwm,
 
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
 
-    if (cryptoTransferStateIsEqual (&oldState, &newState)) {
-        pthread_mutex_unlock (&cwm->lock);
-        cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                             (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CHANGED,
-            { .state = {
-                cryptoTransferStateCopy (&oldState),
-                cryptoTransferStateCopy (&newState) }}
-        });
-        pthread_mutex_lock (&cwm->lock);
-
-        cryptoTransferSetState (transfer, newState);
-    }
+    cryptoTransferSetState (transfer, newState);
 
     cryptoTransferStateRelease (&oldState);
     cryptoTransferStateRelease (&newState);
@@ -926,12 +1093,14 @@ cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                                             estimatedFeeBasis,
                                                             attributesCount,
                                                             attributes);
+
+#if 0
     if (NULL != transfer)
         cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
                                                   (BRCryptoTransferEvent) {
             CRYPTO_TRANSFER_EVENT_CREATED
         });
-
+#endif
     return transfer;
 }
 
@@ -943,11 +1112,12 @@ cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
                                            BRCryptoFeeBasis estimatedFeeBasis) {
     BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
 
+#if 0
     cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
                                               (BRCryptoTransferEvent) {
         CRYPTO_TRANSFER_EVENT_CREATED
     });
-
+#endif
     return transfer;
 }
 
@@ -997,16 +1167,9 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoWalletAddTransfer (wallet, transfer);
 
-    cryptoWalletManagerGenerateWalletEvent (cwm, wallet,
-                                            (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-        { .transfer = { cryptoTransferTake (transfer) }}
-    });
-
     cryptoClientSend (cwm->canSend, transfer);
 
-    cryptoWalletManagerGenerateWalletEvent (cwm, wallet,
-                                            (BRCryptoWalletEvent) {
+    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,
         { .transfer = { cryptoTransferTake (transfer) }}
     });
@@ -1183,7 +1346,7 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                                                      amount,
                                                                      fee);
     if (NULL != feeBasis)
-        cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
             { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
         });
@@ -1231,7 +1394,7 @@ cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletMana
                                                                    cookie,
                                                                    fee);
     if (NULL != feeBasis)
-        cryptoWalletManagerGenerateWalletEvent (cwm, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
             { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
         });
@@ -1387,20 +1550,18 @@ cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
                                                                         ? CRYPTO_WALLET_MANAGER_STATE_SYNCING
                                                                         : CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
+    pthread_mutex_unlock (&cwm->lock);
+
     // Callback a Wallet Manager Event, but only on state changes.  We won't announce incremental
     // progress (with a blockHeight and timestamp.
     if (newState.type != oldState.type) {
 
-        // Update the CWM state before any event callbacks.
-        cryptoWalletManagerSetState (cwm, newState);
-
-        pthread_mutex_unlock (&cwm->lock);
-
         if (fullSync) {
+            // Update the CWM state before SYNC_STARTED.
+            cryptoWalletManagerSetState (cwm, newState);
+
             // Generate a SYNC_STARTED...
-            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                      cryptoWalletManagerTake (cwm),
-                                                      (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerListenerInvokeCallback (cwm->listener, cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
             });
 
@@ -1422,22 +1583,15 @@ cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
             //            });
 
             // ... and then a CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED
-            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                      cryptoWalletManagerTake (cwm),
-                                                      (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerListenerInvokeCallback (cwm->listener, cwm, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
                 { .syncStopped = { CRYPTO_SYNC_STOPPED_REASON_COMPLETE }}
             });
-        }
 
-        cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                  cryptoWalletManagerTake (cwm),
-                                                  (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-            { .state = { oldState, newState }}
-        });
+            // Update the CWM state after SYNC_STOPPED.
+             cryptoWalletManagerSetState (cwm, newState);
+        }
     }
-    else pthread_mutex_unlock (&cwm->lock);
 
     cryptoWalletManagerGive (cwm);
 }
@@ -1484,7 +1638,7 @@ cryptoWalletManagerEventTypeString (BRCryptoWalletManagerEventType t) {
 
 /// MARK: Wallet Migrator
 
-#ifdef REFACTOR
+#if 1 // def REFACTOR
 struct BRCryptoWalletMigratorRecord {
     BRFileService fileService;
     const char *fileServiceTransactionType;
@@ -1499,22 +1653,23 @@ static void theErrorHackReset (BRCryptoWalletMigrator migrator) {
     migrator->theErrorHackHappened = 0;
 }
 
-static void
-cryptoWalletMigratorErrorHandler (BRFileServiceContext context,
-                                  BRFileService fs,
-                                  BRFileServiceError error) {
-    // TODO: Racy on 'cryptoWalletMigratorRelease'?
-    BRCryptoWalletMigrator migrator = (BRCryptoWalletMigrator) context;
-
-    migrator->theErrorHackHappened = 1;
-    migrator->theErrorHack = error;
-}
+//static void
+//cryptoWalletMigratorErrorHandler (BRFileServiceContext context,
+//                                  BRFileService fs,
+//                                  BRFileServiceError error) {
+//    // TODO: Racy on 'cryptoWalletMigratorRelease'?
+//    BRCryptoWalletMigrator migrator = (BRCryptoWalletMigrator) context;
+//
+//    migrator->theErrorHackHappened = 1;
+//    migrator->theErrorHack = error;
+//}
 
 extern BRCryptoWalletMigrator
 cryptoWalletMigratorCreate (BRCryptoNetwork network,
                             const char *storagePath) {
     BRCryptoWalletMigrator migrator = calloc (1, sizeof (struct BRCryptoWalletMigratorRecord));
 
+#ifdef REFACTOR
     migrator->fileService = BRWalletManagerCreateFileService (cryptoNetworkAsBTC(network),
                                                               storagePath,
                                                               migrator,
@@ -1528,7 +1683,7 @@ cryptoWalletMigratorCreate (BRCryptoNetwork network,
                                             &migrator->fileServiceTransactionType,
                                             &migrator->fileServiceBlockType,
                                             &migrator->fileServicePeerType);
-
+#endif
     return migrator;
 }
 
@@ -1798,37 +1953,4 @@ private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle) {
     cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
-}
-
-// MARK: - Generate Events
-
-private_extern void
-cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager manager,
-                                          BRCryptoWallet wallet,
-                                          BRCryptoTransfer transfer,
-                                          BRCryptoTransferEvent event) {
-    manager->listener.transferEventCallback (manager->listener.context,
-                                             cryptoWalletManagerTake (manager),
-                                             cryptoWalletTake (wallet),
-                                             cryptoTransferTake (transfer),
-                                             event);
-}
-
-private_extern void
-cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager manager,
-                                        BRCryptoWallet wallet,
-                                        BRCryptoWalletEvent event) {
-    manager->listener.walletEventCallback (manager->listener.context,
-                                           cryptoWalletManagerTake(manager),
-                                           cryptoWalletTake (wallet),
-                                           event);
-}
-
-private_extern void
-cryptoWalletManagerGenerateManagerEvent (BRCryptoWalletManager manager,
-                                         BRCryptoWalletManagerEvent event) {
-
-    manager->listener.walletManagerEventCallback (manager->listener.context,
-                                                  cryptoWalletManagerTake(manager),
-                                                  event);
 }

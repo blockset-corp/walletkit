@@ -588,60 +588,41 @@ const char * tx_one = "120000228007000024002BD71F201B02CF99B861D5838D7EA4C680000
 
 const char * tx_two = "1200002200000000240000003E6140000002540BE40068400000000000000A7321034AADB09CFF4A4804073701EC53C3510CDC95917C2BB0150FB742D0C66E6CEE9E74473045022022EB32AECEF7C644C891C19F87966DF9C62B1F34BABA6BE774325E4BB8E2DD62022100A51437898C28C2B297112DF8131F2BB39EA5FE613487DDD611525F17962646398114550FC62003E785DC231A1058A05E56E3F09CF4E68314D4CC8AB5B21D86A82C3E9E8D0ECF2404B77FECBA";
 
-static void createAndDeleteWallet()
+static void createAndDeleteAccount()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
-    rippleWalletFree(wallet);
+    rippleAccountFree(account);
 }
 
 static void testWalletValues()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
 
-    uint64_t balance = rippleWalletGetBalance(wallet);
-    assert(balance == 0);
-
-    uint64_t expected_balance = 25000000;
-    rippleWalletSetBalance(wallet, expected_balance);
-    balance = rippleWalletGetBalance(wallet);
-    assert(balance == expected_balance);
-
-    // Set the wallet's feeBasis and then confirm.
-    rippleWalletSetDefaultFeeBasis(wallet, (BRRippleFeeBasis) { 10, 1});
-    BRRippleFeeBasis newFeeBasis = rippleWalletGetDefaultFeeBasis(wallet);
+    BRRippleFeeBasis newFeeBasis = rippleAccountGetDefaultFeeBasis(account);
     assert(10 == newFeeBasis.pricePerCostFactor);
     assert( 1 == newFeeBasis.costFactor);
-
-    rippleWalletFree(wallet);
 }
 
-static void testWalletAddress()
+static void testAccountAddress()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
 
     uint8_t accountBytes[] = { 0xEF, 0xFC, 0x27, 0x52, 0xB5, 0xC9, 0xDA, 0x22, 0x88, 0xC5,
         0xD0, 0x1F, 0x30, 0x4E, 0xC8, 0x29, 0x51, 0xE3, 0x7C, 0xA2 };
 
-    BRRippleAddress sourceAddress = rippleWalletGetSourceAddress(wallet);
+    BRRippleAddress sourceAddress = rippleAccountGetAddress(account);
     BRRippleAddress accountAddress = rippleAddressCreateFromBytes(accountBytes, 20);
     assert(1 == rippleAddressEqual(sourceAddress, accountAddress));
 
-    BRRippleAddress targetAddress = rippleWalletGetTargetAddress(wallet);
+    BRRippleAddress targetAddress = rippleAccountGetAddress(account);
     assert(1 == rippleAddressEqual(targetAddress, accountAddress));
 
     rippleAddressFree(sourceAddress);
     rippleAddressFree(accountAddress);
     rippleAddressFree(targetAddress);
-    rippleWalletFree(wallet);
 }
 
 static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
@@ -803,6 +784,7 @@ void rippleAccountTests()
     testCreateRippleAccountWithSeed();
     testCreateRippleAccountWithKey();
     testCreateRippleAccountWithSerializedAccount();
+    createAndDeleteAccount();
     testRippleEncode();
     testRippleAddressCreate();
     testRippleAddressEqual();
@@ -827,12 +809,6 @@ void rippleTransactionTests()
     testTransactionDeserialize1(tx_two);
 }
 
-static void runWalletTests()
-{
-    createAndDeleteWallet();
-    testWalletValues();
-    testWalletAddress();
-}
 
 static void comparebuffers(const char *input, uint8_t * output, size_t outputSize)
 {
@@ -1024,8 +1000,6 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
     BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
 
     const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
     BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
@@ -1043,17 +1017,17 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     // NOTE: this transfer MUST use the start_block unaltered as the height
     hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
     BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
-    rippleWalletAddTransfer(wallet, transfer);
+//    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
     // Add 2 more receives
     hash.bytes[0] = 1; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
-    rippleWalletAddTransfer(wallet, transfer);
+//    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
     hash.bytes[0] = 2; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
-    rippleWalletAddTransfer(wallet, transfer);
+//    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
     // Create a signed transaction for this account
@@ -1074,7 +1048,6 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     rippleAccountFree(account);
     rippleAddressFree(targetAddress);
     rippleAccountFree(targetAccount);
-    rippleWalletFree(wallet);
 }
 
 static void testStartingSequence()
@@ -1104,9 +1077,6 @@ runRippleTest (void /* ... */) {
 
     // Transaction tests
     rippleTransactionTests();
-
-    // Wallet tests
-    runWalletTests();
 
     // getAccountInfo is just a utility to print out info if needed
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";

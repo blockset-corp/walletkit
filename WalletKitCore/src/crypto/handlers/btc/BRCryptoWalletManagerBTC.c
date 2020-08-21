@@ -17,9 +17,6 @@
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoWalletSweeperP.h"
 
-#include "bitcoin/BRWallet.h"
-#include "bitcoin/BRPeerManager.h"
-
 // BRWallet Callbacks
 
 // On: BRWalletRegisterTransaction, BRWalletRemoveTransaction
@@ -31,111 +28,39 @@ static void cryptoWalletManagerBTCTxUpdated (void *info, const UInt256 *hashes, 
 // On: BRWalletRemoveTransaction
 static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notifyUser, int recommendRescan);
 
-// BRPeerManager Callbacks
-static void cryptoWalletManagerBTCSyncStarted (void *info);
-static void cryptoWalletManagerBTCSyncStopped (void *info, int reason);
-static void cryptoWalletManagerBTCTxStatusUpdate (void *info);
-static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleBlock **blocks, size_t count);
-static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRPeer *peers, size_t count);
-static int  cryptoWalletManagerBTCNetworkIsReachable (void *info);
-static void cryptoWalletManagerBTCThreadCleanup (void *info);
-static void cryptoWalletManagerBTCTxPublished (void *info, int error);
-
-static BRCryptoWalletManagerBTC
-cryptoWalletManagerCoerce (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
+extern BRCryptoWalletManagerBTC
+cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
     assert (type == manager->type);
     return (BRCryptoWalletManagerBTC) manager;
 }
 
 static BRCryptoWalletManager
 cryptoWalletManagerCreateBTC (BRCryptoListener listener,
-                                     BRCryptoClient client,
-                                     BRCryptoAccount account,
-                                     BRCryptoNetwork network,
-                                     BRCryptoSyncMode mode,
-                                     BRCryptoAddressScheme scheme,
-                                     const char *path) {
-    BRCryptoWalletManager managerBase = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
-                                                                         cryptoNetworkGetType(network),
-                                                                         listener,
-                                                                         client,
-                                                                         account,
-                                                                         network,
-                                                                         scheme,
-                                                                         path,
-                                                                         CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS);
-    BRCryptoWalletManagerBTC manager = cryptoWalletManagerCoerce (managerBase, cryptoNetworkGetType(network));
+                              BRCryptoClient client,
+                              BRCryptoAccount account,
+                              BRCryptoNetwork network,
+                              BRCryptoSyncMode mode,
+                              BRCryptoAddressScheme scheme,
+                              const char *path) {
+    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
+                                                                     cryptoNetworkGetType(network),
+                                                                     listener,
+                                                                     client,
+                                                                     account,
+                                                                     network,
+                                                                     scheme,
+                                                                     path,
+                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
+                                                                     NULL,
+                                                                     NULL);
 
-    // BTC Stuff
-    manager->ignoreTBD = 0;
-
-    return managerBase;
+    pthread_mutex_unlock (&manager->lock);
+    return manager;
 }
 
 static void
 cryptoWalletManagerReleaseBTC (BRCryptoWalletManager manager) {
 
-}
-
-static void
-cryptoWalletManagerInitializeBTC (BRCryptoWalletManager manager) {
-    // Get the btcMasterPublicKey
-    BRMasterPubKey btcMPK = cryptoAccountAsBTC(manager->account);
-
-    // Get the btcChainParams
-    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
-
-    // Load the BTC transactions from the fileService
-    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
-    if (NULL == transactions) array_new (transactions, 1);
-
-    // Create the BTC wallet
-    //
-    // Since the BRWallet callbacks are not set, none of these transactions generate callbacks.
-    // And, in fact, looking at BRWalletNew(), there is not even an attempt to generate callbacks
-    // even if they could have been specified.
-    BRWallet *btcWallet = BRWalletNew (btcChainParams->addrParams, transactions, array_count(transactions), btcMPK);
-    assert (NULL != btcWallet);
-
-    // The btcWallet now should include *all* the transactions
-    array_free (transactions);
-
-    // Set the callbacks
-    BRWalletSetCallbacks (btcWallet,
-                          cryptoWalletManagerCoerce(manager, manager->network->type),
-                          cryptoWalletManagerBTCBalanceChanged,
-                          cryptoWalletManagerBTCTxAdded,
-                          cryptoWalletManagerBTCTxUpdated,
-                          cryptoWalletManagerBTCTxDeleted);
-
-    // Create the primary BRCryptoWallet
-    BRCryptoNetwork  network       = manager->network;
-    BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
-
-    manager->wallet = cryptoWalletCreateAsBTC (manager->type, unitAsDefault, unitAsDefault, btcWallet);
-    array_add (manager->wallets, manager->wallet);
-
-    // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
-    size_t btcTransactionsCount = BRWalletTransactions(btcWallet, NULL, 0);
-    BRTransaction *btcTransactions[btcTransactionsCount > 0 ? btcTransactionsCount : 1]; // avoid a static analysis error
-    BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
-
-    for (size_t index = 0; index < btcTransactionsCount; index++) {
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (unitAsDefault,
-                                                               unitAsBase,
-                                                               btcWallet,
-                                                               BRTransactionCopy(btcTransactions[index]),
-                                                               manager->type);
-        cryptoWalletAddTransfer(manager->wallet, transfer);
-    }
-
-    cryptoUnitGive (unitAsDefault);
-    cryptoUnitGive (unitAsBase);
-    cryptoCurrencyGive (currency);
-
-    return;
 }
 
 static BRFileService
@@ -300,9 +225,70 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
 }
 
 static BRCryptoWallet
-cryptoWalletManagerRegisterWalletBTC (BRCryptoWalletManager managerBase,
-                                      BRCryptoCurrency currency) {
-    return NULL;
+cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
+                                    BRCryptoCurrency currency) {
+    assert (NULL == manager->wallet);
+    
+    // Get the btcMasterPublicKey
+    BRMasterPubKey btcMPK = cryptoAccountAsBTC(manager->account);
+
+    // Get the btcChainParams
+    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
+
+    // Load the BTC transactions from the fileService
+    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
+    if (NULL == transactions) array_new (transactions, 1);
+
+    // Create the BTC wallet
+    //
+    // Since the BRWallet callbacks are not set, none of these transactions generate callbacks.
+    // And, in fact, looking at BRWalletNew(), there is not even an attempt to generate callbacks
+    // even if they could have been specified.
+    BRWallet *btcWallet = BRWalletNew (btcChainParams->addrParams, transactions, array_count(transactions), btcMPK);
+    assert (NULL != btcWallet);
+
+    // The btcWallet now should include *all* the transactions
+    array_free (transactions);
+
+    // Set the callbacks
+    BRWalletSetCallbacks (btcWallet,
+                          cryptoWalletManagerCoerceBTC(manager, manager->network->type),
+                          cryptoWalletManagerBTCBalanceChanged,
+                          cryptoWalletManagerBTCTxAdded,
+                          cryptoWalletManagerBTCTxUpdated,
+                          cryptoWalletManagerBTCTxDeleted);
+
+    // Create the primary BRCryptoWallet
+    BRCryptoNetwork  network       = manager->network;
+    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
+    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+
+    BRCryptoWallet wallet = cryptoWalletCreateAsBTC (manager->type,
+                                                     manager->listenerWallet,
+                                                     unitAsDefault,
+                                                     unitAsDefault,
+                                                     btcWallet);
+    cryptoWalletManagerAddWallet (manager, wallet);
+
+    // Process existing btcTransactions in the btcWallet into BRCryptoTransfers
+    size_t btcTransactionsCount = BRWalletTransactions(btcWallet, NULL, 0);
+    BRTransaction *btcTransactions[btcTransactionsCount > 0 ? btcTransactionsCount : 1]; // avoid a static analysis error
+    BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
+
+    for (size_t index = 0; index < btcTransactionsCount; index++) {
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                                               unitAsDefault,
+                                                               unitAsBase,
+                                                               btcWallet,
+                                                               BRTransactionCopy(btcTransactions[index]),
+                                                               manager->type);
+        cryptoWalletAddTransfer (wallet, transfer);
+    }
+
+    cryptoUnitGive (unitAsDefault);
+    cryptoUnitGive (unitAsBase);
+
+    return wallet;
 }
 
 static void
@@ -380,171 +366,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleBTC (BRCryptoWalletManager c
     assert (0);
 }
 
-
-// MARK: - Client P2P
-
-typedef struct BRCryptoClientP2PManagerRecordBTC {
-    struct BRCryptoClientP2PManagerRecord base;
-    BRCryptoWalletManagerBTC manager;
-    BRPeerManager *btcPeerManager;
-} *BRCryptoClientP2PManagerBTC;
-
-static BRCryptoClientP2PManagerBTC
-cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager managerBase) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == managerBase->type ||
-            CRYPTO_NETWORK_TYPE_BCH == managerBase->type ||
-            CRYPTO_NETWORK_TYPE_BSV == managerBase->type);
-    return (BRCryptoClientP2PManagerBTC) managerBase;
-}
-
-static void
-cryptoClientP2PManagerReleaseBTC (BRCryptoClientP2PManager baseManager) {
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-    BRPeerManagerFree (manager->btcPeerManager);
-}
-
-static void
-cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
-                                         BRCryptoPeer peer) {
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-
-    // Assume `peer` is NULL; UINT128_ZERO will restore BRPeerManager peer discovery
-    UInt128  address = UINT128_ZERO;
-    uint16_t port    = 0;
-
-    if (NULL != peer) {
-        BRCryptoData16 addrAsInt = cryptoPeerGetAddrAsInt(peer);
-        memcpy (address.u8, addrAsInt.data, sizeof (addrAsInt.data));
-        port = cryptoPeerGetPort (peer);
-    }
-
-    // Calling `SetFixedPeer` will 100% disconnect.  We could avoid calling SetFixedPeer
-    // if we kept a reference to `peer` and checked if it differs.
-    BRPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
-    BRPeerManagerConnect(manager->btcPeerManager);
-}
-
-static void
-cryptoClientP2PManagerDisconnectBTC (BRCryptoClientP2PManager baseManager) {
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-
-    BRPeerManagerDisconnect (manager->btcPeerManager);
-}
-
-// MARK: - Sync
-
-static uint32_t
-cryptoClientP2PManagerCalculateSyncDepthHeight(BRCryptoSyncDepth depth,
-                                               const BRChainParams *chainParams,
-                                               uint64_t networkBlockHeight,
-                                               OwnershipKept BRTransaction *lastConfirmedSendTx) {
-    switch (depth) {
-        case CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND:
-            return NULL == lastConfirmedSendTx ? 0 : lastConfirmedSendTx->blockHeight;
-
-        case CRYPTO_SYNC_DEPTH_FROM_LAST_TRUSTED_BLOCK: {
-            const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBeforeBlockNumber (chainParams,
-                                                                                          (uint32_t) MIN (networkBlockHeight, UINT32_MAX));
-            return NULL == checkpoint ? 0 : checkpoint->height;
-        }
-
-        case CRYPTO_SYNC_DEPTH_FROM_CREATION: {
-            return 0;
-        }
-    }
-}
-
-static void
-cryptoClientP2PManagerSyncBTC (BRCryptoClientP2PManager baseManager,
-                                      BRCryptoSyncDepth depth,
-                                      BRCryptoBlockNumber height) {
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-
-    uint32_t calcHeight = cryptoClientP2PManagerCalculateSyncDepthHeight (depth,
-                                                                          BRPeerManagerChainParams(manager->btcPeerManager),
-                                                                          height,
-                                                                          NULL /* lastConfirmedSendTx */);
-    uint32_t lastHeight = BRPeerManagerLastBlockHeight (manager->btcPeerManager);
-    uint32_t scanHeight = MIN (calcHeight, lastHeight);
-
-    if (0 != scanHeight) {
-        BRPeerManagerRescanFromBlockNumber (manager->btcPeerManager, scanHeight);
-    } else {
-        BRPeerManagerRescan (manager->btcPeerManager);
-    }
-}
-
-typedef struct {
-    BRCryptoWalletManager manager;
-    BRCryptoTransfer transfer;
-} BRCryptoClientP2PManagerPublishInfo;
-
-static void
-cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager, BRCryptoTransfer transfer) {
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-
-    BRTransaction *btcTransaction = cryptoTransferAsBTC (transfer);
-
-    BRCryptoClientP2PManagerPublishInfo *btcInfo = calloc (1, sizeof (BRCryptoClientP2PManagerPublishInfo));
-    btcInfo->manager  = cryptoWalletManagerTake(&manager->manager->base);
-    btcInfo->transfer = cryptoTransferTake (transfer);
-
-    BRPeerManagerPublishTx (manager->btcPeerManager,
-                            btcTransaction,
-                            btcInfo,
-                            cryptoWalletManagerBTCTxPublished);
-}
-
-static BRCryptoClientP2PHandlers p2pHandlersBTC = {
-    cryptoClientP2PManagerReleaseBTC,
-    cryptoClientP2PManagerConnectBTC,
-    cryptoClientP2PManagerDisconnectBTC,
-    cryptoClientP2PManagerSyncBTC,
-    cryptoClientP2PManagerSendBTC
-};
-
-static BRCryptoClientP2PManager
-crytpWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager cwm) {
-    // load blocks, load peers
-
-    BRCryptoClientP2PManager baseManager = cryptoClientP2PManagerCreate (sizeof (struct BRCryptoClientP2PManagerRecordBTC),
-                                                                         cwm->type,
-                                                                         &p2pHandlersBTC);
-    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-    manager->manager = cryptoWalletManagerCoerce(cwm, baseManager->type);
-
-    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(cwm->network);
-    BRWallet *btcWallet = cryptoWalletAsBTC(cwm->wallet);
-    uint32_t btcEarliestKeyTime = (uint32_t) cryptoAccountGetTimestamp(cwm->account);
-
-    BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoadBTC (cwm);
-    BRArrayOf(BRPeer)         peers  = initialPeersLoadBTC  (cwm);
-
-    manager->btcPeerManager = BRPeerManagerNew (btcChainParams,
-                                                btcWallet,
-                                                btcEarliestKeyTime,
-                                                blocks, (NULL == blocks ? 0 : array_count (blocks)),
-                                                peers,  (NULL == peers  ? 0 : array_count (peers)));
-
-
-    assert (NULL != manager->btcPeerManager);
-
-    BRPeerManagerSetCallbacks (manager->btcPeerManager,
-                               cryptoWalletManagerCoerce(cwm, baseManager->type),
-                               cryptoWalletManagerBTCSyncStarted,
-                               cryptoWalletManagerBTCSyncStopped,
-                               cryptoWalletManagerBTCTxStatusUpdate,
-                               cryptoWalletManagerBTCSaveBlocks,
-                               cryptoWalletManagerBTCSavePeers,
-                               cryptoWalletManagerBTCNetworkIsReachable,
-                               cryptoWalletManagerBTCThreadCleanup);
-
-    if (NULL != blocks) array_free (blocks);
-    if (NULL != peers ) array_free (peers);
-
-    return baseManager;
-}
-
 /// MARK: - Wallet Sweeper
 
 extern BRCryptoWalletSweeperStatus
@@ -579,12 +400,12 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
     BRCryptoCurrency currency = cryptoWalletGetCurrency (wallet);
     BRCryptoUnit unit = cryptoNetworkGetUnitAsBase (cwm->network, currency);
 
-    BRCryptoWalletSweeper sweeperBase = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
+    BRCryptoWalletSweeper sweeper = cryptoWalletSweeperAllocAndInit (sizeof (struct BRCryptoWalletSweeperBTCRecord),
                                                                          cwm->type,
                                                                          key,
                                                                          unit);
 
-    BRCryptoWalletSweeperBTC sweeper = (BRCryptoWalletSweeperBTC) sweeperBase;
+    BRCryptoWalletSweeperBTC sweeperBTC = (BRCryptoWalletSweeperBTC) sweeper;
 
     BRKey *keyCore = cryptoKeyGetCore (key);
     BRAddressParams addrParams = cryptoNetworkAsBTC (cwm->network)->addrParams;
@@ -594,15 +415,15 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
     BRKeyLegacyAddr (keyCore, address, addressLength, addrParams);
     address[addressLength] = '\0';
 
-    sweeper->addrParams = addrParams;
-    sweeper->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
-    sweeper->sourceAddress = address;
-    array_new (sweeper->txns, 100);
+    sweeperBTC->addrParams = addrParams;
+    sweeperBTC->isSegwit = CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == cwm->addressScheme;
+    sweeperBTC->sourceAddress = address;
+    array_new (sweeperBTC->txns, 100);
 
     cryptoUnitGive (unit);
     cryptoCurrencyGive (currency);
 
-    return sweeperBase;
+    return sweeper;
 }
 
 // MARK: BRWallet Callback Balance Changed
@@ -614,6 +435,7 @@ cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
                                       bool needCreate,
                                       bool needAdded,
                                       bool needBalance) {
+#if 0
     if (needCreate)
         cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer, (BRCryptoTransferEvent) {
             CRYPTO_TRANSFER_EVENT_CREATED
@@ -621,17 +443,18 @@ cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
 
 
     if (needAdded)
-        cryptoWalletManagerGenerateWalletEvent(manager, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = { cryptoTransferTake (transfer) }}
         });
 
 
     if (needBalance)
-        cryptoWalletManagerGenerateWalletEvent (manager, wallet, (BRCryptoWalletEvent) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
             { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
         });
+#endif
 }
 
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi) {
@@ -665,7 +488,8 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     if (NULL == transfer) {
         // first we've seen it, so it came from the network; add it to our list
-        transfer = cryptoTransferCreateAsBTC (wallet->unit,
+        transfer = cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                              wallet->unit,
                                               wallet->unitForFee,
                                               wid,
                                               tid,
@@ -767,15 +591,6 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
             cryptoTransferSetState (&transfer->base, newState);
             pthread_mutex_unlock (&manager->base.lock);
 
-            if (needEvents) { // } && !cryptoTransferStateIsEqual (&oldState, &newState)) {
-                cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
-                    CRYPTO_TRANSFER_EVENT_CHANGED,
-                    { .state = {
-                        cryptoTransferStateCopy (&oldState),
-                        cryptoTransferStateCopy (&newState) }}
-                });
-            }
-
             cryptoTransferStateRelease (&oldState);
             cryptoTransferStateRelease (&newState);
         }
@@ -804,282 +619,16 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
     pthread_mutex_unlock (&manager->base.lock);
     if (needEvents) {
         if (transfer->isResolved)
-            cryptoWalletManagerGenerateTransferEvent (&manager->base, wallet, &transfer->base, (BRCryptoTransferEvent) {
+            cryptoTransferGenerateEvent (&transfer->base, (BRCryptoTransferEvent) {
                 CRYPTO_TRANSFER_EVENT_DELETED
             });
 
         if (recommendRescan)
-            cryptoWalletManagerGenerateManagerEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
                 CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
                 { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
             });
     }
-}
-
-// MARK: BRPeerManager Callbacks
-
-static void cryptoWalletManagerBTCSyncStarted (void *info) {
-    BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
-
-    // This callback occurs when a sync has started. The behaviour of this function is
-    // defined as:
-    //   - If we are not in a connected state, signal that we are now connected.
-    //   - If we were already in a (full scan) syncing state, signal the termination of that
-    //     sync
-    //   - Always signal the start of a sync
-
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint32_t startBlockHeight = BRPeerManagerLastBlockHeight (manager->peerManager);
-
-        uint8_t needConnectionEvent = !manager->isConnected;
-        uint8_t needSyncStartedEvent = 1; // syncStarted callback always indicates a full scan
-        uint8_t needSyncStoppedEvent = manager->isFullScan;
-
-        manager->isConnected = needConnectionEvent ? 1 : manager->isConnected;
-        manager->isFullScan = needSyncStartedEvent ? 1 : manager->isFullScan;
-        manager->successfulScanBlockHeight = MIN (startBlockHeight, manager->successfulScanBlockHeight);
-
-        _peer_log ("BSM: syncStarted needConnect:%"PRIu8", needStart:%"PRIu8", needStop:%"PRIu8"\n",
-                   needConnectionEvent, needSyncStartedEvent, needSyncStoppedEvent);
-
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
-
-        if (needSyncStoppedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STOPPED,
-                { .syncStopped = { cryptoSyncStoppedReasonRequested() } }
-            });
-        }
-
-        if (needConnectionEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_CONNECTED,
-            });
-        }
-
-        if (needSyncStartedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STARTED,
-            });
-        }
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
-    }
-#endif
-}
-
-static void cryptoWalletManagerBTCSyncStopped (void *info, int reason) {
-    BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
-
-    // This callback occurs when a sync has stopped. This MAY mean we have disconnected or it
-    // may mean that we have "caught up" to the blockchain. So, we need to first get the connectivity
-    // state of the `BRPeerManager`. The behaviour of this function is defined as:
-    //   - If we were in a (full scan) syncing state, signal the termination of that
-    //     sync
-    //   - If we were connected and are now disconnected, signal that we are now disconnected.
-
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint8_t isConnected = BRPeerStatusDisconnected != BRPeerManagerConnectStatus (manager->peerManager);
-
-        uint8_t needSyncStoppedEvent = manager->isFullScan;
-        uint8_t needDisconnectionEvent = !isConnected && manager->isConnected;
-        uint8_t needSuccessfulScanBlockHeightUpdate = manager->isFullScan && isConnected && !reason;
-
-        manager->isConnected = needDisconnectionEvent ? 0 : isConnected;
-        manager->isFullScan = needSyncStoppedEvent ? 0 : manager->isFullScan;
-        manager->successfulScanBlockHeight =  needSuccessfulScanBlockHeightUpdate ? BRPeerManagerLastBlockHeight (manager->peerManager) : manager->successfulScanBlockHeight;
-
-        _peer_log ("BSM: syncStopped needStop:%"PRIu8", needDisconnect:%"PRIu8"\n",
-                   needSyncStoppedEvent, needDisconnectionEvent);
-
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
-
-        if (needSyncStoppedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STOPPED,
-                { .syncStopped = {
-                    (reason ?
-                     cryptoSyncStoppedReasonPosix(reason) :
-                     (isConnected ?
-                      cryptoSyncStoppedReasonComplete() :
-                      cryptoSyncStoppedReasonRequested()))
-                }
-                }
-            });
-        }
-
-        if (needDisconnectionEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_DISCONNECTED,
-                { .disconnected = {
-                    (reason ?
-                     cryptoWalletManagerDisconnectReasonPosix(reason) :
-                     cryptoWalletManagerDisconnectReasonRequested())
-                }
-                }
-            });
-        }
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
-    }
-#endif
-}
-
-static void cryptoWalletManagerBTCTxStatusUpdate (void *info) {
-    BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
-
-    // This callback occurs under a number of scenarios.
-    //
-    // One of those scenario is when a block has been relayed by the P2P network. Thus, it provides an
-    // opportunity to get the current block height and update accordingly.
-    //
-    // The behaviour of this function is defined as:
-    //   - If the block height has changed, signal the new value
-
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint64_t blockHeight = BRPeerManagerLastBlockHeight (manager->peerManager);
-
-        uint8_t needBlockHeightEvent = blockHeight > manager->networkBlockHeight;
-
-        // Never move the block height "backwards"; always maintain our knowledge
-        // of the maximum height observed
-        manager->networkBlockHeight = MAX (blockHeight, manager->networkBlockHeight);
-
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
-
-        if (needBlockHeightEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_BLOCK_HEIGHT_UPDATED,
-                { .blockHeightUpdated = { blockHeight }}
-            });
-        }
-
-        manager->eventCallback (manager->eventContext,
-                                BRPeerSyncManagerAsSyncManager (manager),
-                                (BRSyncManagerEvent) {
-            SYNC_MANAGER_TXNS_UPDATED
-        });
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
-    }
-#endif
-}
-
-static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleBlock **blocks, size_t count) {
-    BRCryptoWalletManagerBTC manager = info;
-
-    if (replace) {
-        fileServiceReplace (manager->base.fileService, fileServiceTypeBlocksBTC, (const void **) blocks, count);
-    }
-    else {
-        for (size_t index = 0; index < count; index++)
-            fileServiceSave (manager->base.fileService, fileServiceTypeBlocksBTC, blocks[index]);
-    }
-}
-
-static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRPeer *peers, size_t count) {
-    BRCryptoWalletManagerBTC manager = info;
-
-    // filesystem changes are NOT queued; they are acted upon immediately
-
-    if (!replace) {
-        // save each peer, one-by-one
-        for (size_t index = 0; index < count; index++)
-            fileServiceSave (manager->base.fileService, fileServiceTypePeersBTC, &peers[index]);
-    }
-
-    else if (0 == count) {
-        // no peers to set, just do a clear
-        fileServiceClear (manager->base.fileService, fileServiceTypePeersBTC);
-    }
-
-    else {
-        // fileServiceReplace expects an array of pointers to entities, instead of an array of
-        // structures so let's do the conversion here
-        const BRPeer **peerRefs = calloc (count, sizeof(BRPeer *));
-
-        for (size_t i = 0; i < count; i++) {
-            peerRefs[i] = &peers[i];
-        }
-
-        fileServiceReplace (manager->base.fileService, fileServiceTypePeersBTC, (const void **) peerRefs, count);
-        free (peerRefs);
-    }
-}
-
-static int  cryptoWalletManagerBTCNetworkIsReachable (void *info) {
-    BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-    return 1;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
-    return BRPeerSyncManagerGetNetworkReachable (manager);
-#endif
-}
-
-static void cryptoWalletManagerBTCThreadCleanup (void *info) {
-    BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-#endif
-}
-
-static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
-    BRCryptoClientP2PManagerPublishInfo *btcInfo = info;
-    BRCryptoWalletManager manager = btcInfo->manager;
-    BRCryptoTransfer     transfer = btcInfo->transfer;
-
-    pthread_mutex_lock (&manager->lock);
-
-    BRCryptoWallet wallet = manager->wallet;
-    assert (cryptoWalletHasTransfer (wallet, transfer));
-
-    BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-    assert (CRYPTO_TRANSFER_STATE_SUBMITTED != oldState.type);
-
-    BRCryptoTransferState newState = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED);
-    cryptoTransferSetState (transfer, newState);
-
-    pthread_mutex_unlock (&manager->lock);
-
-    cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_CHANGED,
-        { .state = { oldState, newState }}
-    });
-
-    cryptoWalletManagerGive(manager);
-    cryptoTransferGive (transfer);
-    free (info);
 }
 
 const BREventType *eventTypesBTC[] = {
@@ -1105,15 +654,14 @@ eventTypesCountBTC = (sizeof (eventTypesBTC) / sizeof (BREventType*));
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerCreateBTC,
     cryptoWalletManagerReleaseBTC,
-    cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
-    crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
@@ -1123,15 +671,14 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerCreateBTC,
     cryptoWalletManagerReleaseBTC,
-    cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
-    crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
@@ -1141,15 +688,14 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerCreateBTC,
     cryptoWalletManagerReleaseBTC,
-    cryptoWalletManagerInitializeBTC,
     crytpWalletManagerCreateFileServiceBTC,
     cryptoWalletManagerGetEventTypesBTC,
+    cryptoWalletManagerCreateP2PManagerBTC,
+    cryptoWalletManagerCreateWalletBTC,
     cryptoWalletManagerSignTransactionWithSeedBTC,
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
-    crytpWalletManagerCreateP2PManagerBTC,
-    cryptoWalletManagerRegisterWalletBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
