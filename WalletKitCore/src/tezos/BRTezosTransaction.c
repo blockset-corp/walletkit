@@ -12,6 +12,7 @@
 #include "BRTezosTransaction.h"
 #include "BRTezosEncoder.h"
 #include "ed25519/ed25519.h"
+#include "blake2/blake2b.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -178,6 +179,18 @@ extern void tezosTransactionFree (BRTezosTransaction transaction)
     free (transaction);
 }
 
+static void
+createTransactionHash(BRTezosTransaction tx) {
+    assert(tx->signedBytes.size);
+    
+    uint8_t hash[32];
+    blake2b(hash, sizeof(hash), NULL, 0, tx->signedBytes.bytes, tx->signedBytes.size);
+    
+    uint8_t prefix[] = { 5, 116 }; // operation prefix
+    memcpy(tx->hash.bytes, prefix, sizeof(prefix));
+    memcpy(&(tx->hash.bytes[sizeof(prefix)]), hash, sizeof(hash));
+}
+
 extern size_t
 tezosTransactionSignTransaction (BRTezosTransaction transaction,
                                  BRTezosAccount account,
@@ -218,10 +231,12 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
     
     cryptoDataFree(unsignedBytes);
     
-    //TODO:TEZOS calculate and store hash
-    
     transaction->signedBytes = signedBytes;
-    transaction->signature = signature;
+    transaction->signature = signature; //TODO:TEZOS does signature need to be stored?
+    
+    if (transaction->signedBytes.size > 0) {
+        createTransactionHash(transaction);
+    }
     
     return transaction->signedBytes.size;
 }

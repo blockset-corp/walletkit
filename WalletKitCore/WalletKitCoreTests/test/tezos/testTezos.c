@@ -460,7 +460,10 @@ testTransactionSign() {
     bin2HexString(signedBytes, signedSize, serializedHex);
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc8700073e2fa7352b0e0ee564ccc479d25283154cca085efc347b8cbbf025ecaa534c65ed3b87175f54377b2697712a2f91af8cfe52b4649c0c2712298d2625ce5130e", serializedHex));
     
-    //TODO:TEZOS check hash
+    BRTezosTransactionHash hash = tezosTransactionGetHash(tx);
+    char hashString[64] = {0};
+    BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
+    assert (0 == strcmp ("op65fEeTdd5uSyUSXm5ouRsJFjF1PYAEmfJDZTsa1f77YHynB6m", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);

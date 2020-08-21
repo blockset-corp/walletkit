@@ -24,7 +24,7 @@ extern "C" {
 #define TEZOS_PUBLIC_KEY_SIZE 32
 
 typedef struct {
-    uint8_t bytes[32];
+    uint8_t bytes[34];
 } BRTezosTransactionHash;
 
 typedef struct {
