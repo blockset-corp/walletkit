@@ -339,8 +339,11 @@ cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
         assert (NULL != ethToken);
     }
 
-    BRCryptoUnit unit       = cryptoNetworkGetUnitAsDefault (manager->network, currency);
-    BRCryptoUnit unitForFee = cryptoNetworkGetUnitAsBase    (manager->network, currency);
+    // The `currency` unit: e.g. ETH, BRD, DNT, etc for ETH or the ERC20 token
+    BRCryptoUnit unit = cryptoNetworkGetUnitAsDefault (manager->network, currency);
+
+    // The `unitForFee` is always the default/base unit for the network.
+    BRCryptoUnit unitForFee = cryptoNetworkGetUnitAsDefault (manager->network, NULL);
 
     BRCryptoWallet wallet = cryptoWalletCreateAsETH (manager->listenerWallet,
                                                      unit,
@@ -374,18 +377,20 @@ cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH managerETH,
     BRCryptoWallet wallet = (BRCryptoWallet) cryptoWalletManagerLookupWalletForToken (managerETH, token);
 
     if (NULL == wallet) {
-        BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer (managerETH->base.network, ethTokenGetAddress(token));
-        BRCryptoUnit     unit     = cryptoNetworkGetUnitAsDefault     (managerETH->base.network, currency);
+        BRCryptoCurrency currency   = cryptoNetworkGetCurrencyForIssuer (managerETH->base.network, ethTokenGetAddress(token));
+        BRCryptoUnit     unit       = cryptoNetworkGetUnitAsDefault     (managerETH->base.network, currency);
+        BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsDefault     (managerETH->base.network, NULL);
 
         wallet = cryptoWalletCreateAsETH (managerETH->base.listenerWallet,
                                           unit,
-                                          unit,
+                                          unitForFee,
                                           token,
                                           managerETH->account);
         assert (NULL != wallet);
 
         cryptoWalletManagerAddWallet (&managerETH->base, wallet);
 
+        cryptoUnitGive (unitForFee);
         cryptoUnitGive (unit);
         cryptoCurrencyGive (currency);
     }

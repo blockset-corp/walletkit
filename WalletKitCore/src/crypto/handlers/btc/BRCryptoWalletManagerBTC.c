@@ -130,17 +130,15 @@ cryptoWalletManagerCreateWalletsBTC (BRCryptoWalletManager manager,
                           cryptoWalletManagerBTCTxUpdated,
                           cryptoWalletManagerBTCTxDeleted);
 
-    BRCryptoCurrency currency      = cryptoNetworkGetCurrency (network);
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, currency);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, NULL);
+    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, NULL);
 
     *primaryWallet = cryptoWalletCreateAsBTC (unitAsDefault, unitAsBase, btcWallet);
     array_add (wallets, *primaryWallet);
 
     cryptoUnitGive (unitAsDefault);
     cryptoUnitGive (unitAsBase);
-    cryptoCurrencyGive (currency);
-    cryptoNetworkGive  (network);
+    cryptoNetworkGive (network);
 
     return wallets;
 }

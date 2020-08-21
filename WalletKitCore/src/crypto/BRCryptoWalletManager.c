@@ -698,7 +698,7 @@ cryptoWalletManagerGetWalletForCurrency (BRCryptoWalletManager cwm,
     BRCryptoWallet wallet = NULL;
     pthread_mutex_lock (&cwm->lock);
     for (size_t index = 0; index < array_count(cwm->wallets); index++) {
-        if (currency == cryptoWalletGetCurrency (cwm->wallets[index])) {
+        if (CRYPTO_TRUE == cryptoWalletHasCurrency (cwm->wallets[index], currency)) {
             wallet = cryptoWalletTake (cwm->wallets[index]);
             break;
         }

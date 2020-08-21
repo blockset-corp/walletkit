@@ -39,6 +39,9 @@ extern "C" {
     extern BRCryptoCurrency
     cryptoWalletGetCurrency (BRCryptoWallet wallet);
 
+    extern BRCryptoBoolean
+    cryptoWalletHasCurrency (BRCryptoWallet wallet,
+                             BRCryptoCurrency currency);
     /**
      * Returns the wallet's (default) unit.  Used for *display* of the wallet's balance.
      *
@@ -51,6 +54,10 @@ extern "C" {
 
     extern BRCryptoCurrency
     cryptoWalletGetCurrencyForFee (BRCryptoWallet wallet);
+
+    extern BRCryptoBoolean
+    cryptoWalletHasCurrencyForFee (BRCryptoWallet wallet,
+                                   BRCryptoCurrency currency);
 
     /**
      * Returns the wallet's fee unit.

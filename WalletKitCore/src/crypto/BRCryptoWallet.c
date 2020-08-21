@@ -120,6 +120,12 @@ cryptoWalletGetUnit (BRCryptoWallet wallet) {
     return cryptoUnitTake (wallet->unit);
 }
 
+extern BRCryptoBoolean
+cryptoWalletHasCurrency (BRCryptoWallet wallet,
+                         BRCryptoCurrency currency) {
+    return cryptoUnitHasCurrency (wallet->unit, currency);
+}
+
 extern BRCryptoWalletState
 cryptoWalletGetState (BRCryptoWallet wallet) {
     return wallet->state;
@@ -148,6 +154,12 @@ cryptoWalletGetCurrencyForFee (BRCryptoWallet wallet) {
 extern BRCryptoUnit
 cryptoWalletGetUnitForFee (BRCryptoWallet wallet) {
     return cryptoUnitTake (wallet->unitForFee);
+}
+
+extern BRCryptoBoolean
+cryptoWalletHasCurrencyForFee (BRCryptoWallet wallet,
+                               BRCryptoCurrency currency) {
+    return cryptoUnitHasCurrency (wallet->unitForFee, currency);
 }
 
 extern BRCryptoAmount

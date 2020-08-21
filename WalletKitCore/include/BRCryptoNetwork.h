@@ -122,7 +122,7 @@ extern "C" {
      * Returns the currency's default unit or NULL
      *
      * @param network the network
-     * @param currency the currency desired for the default unit
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the currency's default unit or NULL w/ an incremented reference count (aka 'taken')
      */
@@ -134,7 +134,7 @@ extern "C" {
      * Returns the currency's base unit or NULL
      *
      * @param network the network
-     * @param currency the currency desired for the base unit
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the currency's base unit or NULL w/ an incremented reference count (aka 'taken')
      */
@@ -219,7 +219,7 @@ extern "C" {
      * be used in `cryptoNetworkGetUnitAt()`.
      *
      * @param network the network
-     * @param currency the currency
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the number of units for `currency`
      */
@@ -232,7 +232,7 @@ extern "C" {
      * assertion is signaled.
      *
      * @param network the network
-     * @param currency the currency
+     * @param currency the currency or NULL for the network's currency.
      * @param index the desired unit's index
      *
      * @return the currency unit w/ an incremented reference count (aka 'taken')

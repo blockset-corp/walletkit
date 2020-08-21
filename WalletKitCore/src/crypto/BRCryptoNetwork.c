@@ -354,6 +354,7 @@ extern BRCryptoUnit
 cryptoNetworkGetUnitAsBase (BRCryptoNetwork network,
                             BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->baseUnit);
     pthread_mutex_unlock (&network->lock);
@@ -364,6 +365,7 @@ extern BRCryptoUnit
 cryptoNetworkGetUnitAsDefault (BRCryptoNetwork network,
                                BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->defaultUnit);
     pthread_mutex_unlock (&network->lock);
@@ -374,6 +376,7 @@ extern size_t
 cryptoNetworkGetUnitCount (BRCryptoNetwork network,
                            BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     size_t count = ((NULL == association || NULL == association->units)
                     ? 0
@@ -387,6 +390,7 @@ cryptoNetworkGetUnitAt (BRCryptoNetwork network,
                         BRCryptoCurrency currency,
                         size_t index) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = ((NULL == association || NULL == association->units || index >= array_count(association->units))
                          ? NULL
