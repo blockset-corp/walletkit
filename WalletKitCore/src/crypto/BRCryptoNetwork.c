@@ -869,3 +869,31 @@ cryptoNetworkFindBuiltin (const char *uids,
     return network;
 }
 
+extern BRCryptoBlockChainType
+cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet) {
+    struct NetworkSpecification {
+        BRCryptoBlockChainType type;
+        char *networkId;
+        char *name;
+        char *network;
+        bool isMainnet;
+        uint64_t height;
+        uint32_t confirmations;
+        uint32_t confirmationPeriodInSeconds;
+    } networkSpecifications[] = {
+#define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds) \
+{ type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds },
+#include "BRCryptoConfig.h"
+        //        { NULL }
+    };
+    size_t NUMBER_OF_NETWORKS = sizeof (networkSpecifications) / sizeof (struct NetworkSpecification);
+
+    for (size_t index = 0; index < NUMBER_OF_NETWORKS; index++) {
+        if (0 == strcasecmp (name, networkSpecifications[index].networkId)) {
+            if (NULL != isMainnet) *isMainnet = AS_CRYPTO_BOOLEAN(networkSpecifications[index].isMainnet);
+            return networkSpecifications[index].type;
+        }
+    }
+    return (BRCryptoBlockChainType) CRYPTO_NETWORK_TYPE_UNKNOWN;
+}
+
