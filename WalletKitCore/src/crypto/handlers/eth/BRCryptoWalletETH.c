@@ -11,6 +11,9 @@
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoAmountP.h"
 
+#define DEFAULT_ETHER_GAS_PRICE      2ull  // 2 GWEI
+#define DEFAULT_ETHER_GAS_PRICE_UNIT GWEI
+
 #define DEFAULT_ETHER_GAS_LIMIT    21000ull
 
 extern BRCryptoWalletETH
@@ -19,26 +22,53 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
     return (BRCryptoWalletETH) wallet;
 }
 
+typedef struct {
+    BREthereumAccount ethAccount;
+    BREthereumToken   ethToken;
+    BREthereumGas ethGasLimit;
+} BRCryptoWalletCreateContextETH;
+
+static void
+cryptoWalletCreateCallbackETH (BRCryptoWalletCreateContext context,
+                               BRCryptoWallet wallet) {
+    BRCryptoWalletCreateContextETH *contextETH = (BRCryptoWalletCreateContextETH*) context;
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+
+    walletETH->ethAccount  = contextETH->ethAccount;
+    walletETH->ethToken    = contextETH->ethToken;
+    walletETH->ethGasLimit = contextETH->ethGasLimit;
+}
+
 private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
+cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount) {
-    BRCryptoWallet walletBase = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
+    BREthereumFeeBasis ethDefaultFeeBasis =
+    ethFeeBasisCreate ((NULL == ethToken
+                        ? ethGasCreate (DEFAULT_ETHER_GAS_LIMIT)
+                        : ethTokenGetGasLimit (ethToken)),
+                       ethGasPriceCreate (ethEtherCreateNumber (DEFAULT_ETHER_GAS_PRICE,
+                                                                DEFAULT_ETHER_GAS_PRICE_UNIT)));
+
+    BRCryptoWalletCreateContextETH contextETH = {
+        ethAccount,
+        ethToken,
+        ethDefaultFeeBasis.u.gas.limit
+    };
+    BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletETHRecord),
                                                       CRYPTO_NETWORK_TYPE_ETH,
+                                                      listener,
                                                       unit,
                                                       unitForFee,
                                                       NULL,
-                                                      NULL);
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+                                                      NULL,
+                                                      cryptoFeeBasisCreateAsETH(unitForFee, ethDefaultFeeBasis),
+                                                      &contextETH,
+                                                      cryptoWalletCreateCallbackETH);
 
-    wallet->ethAccount  = ethAccount;
-    wallet->ethToken    = ethToken;
-    wallet->ethGasLimit = (NULL == ethToken
-                           ? ethGasCreate (DEFAULT_ETHER_GAS_LIMIT)
-                           : ethTokenGetGasLimit (ethToken));
-    
-    return walletBase;
+    return wallet;
 }
 
 static void
@@ -47,20 +77,20 @@ cryptoWalletReleaseETH (BRCryptoWallet wallet) {
 
 
 static BRCryptoAddress
-cryptoWalletGetAddressETH (BRCryptoWallet walletBase,
+cryptoWalletGetAddressETH (BRCryptoWallet wallet,
                            BRCryptoAddressScheme addressScheme) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce(walletBase);
-    BREthereumAddress ethAddress = ethAccountGetPrimaryAddress (wallet->ethAccount);
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce(wallet);
+    BREthereumAddress ethAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
 
     return cryptoAddressCreateAsETH (ethAddress);
 }
 
 static bool
-cryptoWalletHasAddressETH (BRCryptoWallet walletBase,
+cryptoWalletHasAddressETH (BRCryptoWallet wallet,
                            BRCryptoAddress address) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
     return (ETHEREUM_BOOLEAN_TRUE == ethAddressEqual (cryptoAddressAsETH (address),
-                                                      ethAccountGetPrimaryAddress (wallet->ethAccount)));
+                                                      ethAccountGetPrimaryAddress (walletETH->ethAccount)));
 }
 
 extern size_t
@@ -159,7 +189,7 @@ transferProvideOriginatingTransaction (BREthereumTransfer transfer) {
 }
 #endif
 extern BRCryptoTransfer
-cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
@@ -168,14 +198,14 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
-    assert (cryptoWalletGetType(walletBase) == cryptoAddressGetType(target));
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+    assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(target));
     assert (cryptoAmountHasCurrency (amount, currency));
 
-    BREthereumToken    ethToken         = wallet->ethToken;
+    BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
 
-    BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (wallet->ethAccount);
+    BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = cryptoAddressAsETH (target);
 
     BREthereumTransferBasisType type = (NULL == ethToken ? TRANSFER_BASIS_TRANSACTION : TRANSFER_BASIS_LOG);
@@ -194,26 +224,35 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
 
     free (data);
 
-    BRCryptoTransferDirection direction = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (wallet->ethAccount, ethTargetAddress)
+    BRCryptoTransferDirection direction = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (walletETH->ethAccount, ethTargetAddress)
                                            ? CRYPTO_TRANSFER_RECOVERED
                                            : CRYPTO_TRANSFER_SENT);
 
     BRCryptoAddress  source   = cryptoAddressCreateAsETH  (ethSourceAddress);
-    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (unit,
+
+    BRCryptoTransferState transferState = { CRYPTO_TRANSFER_STATE_CREATED };
+    BREthereumTransferBasis basis = (NULL == ethToken
+                                     ? ((BREthereumTransferBasis) { TRANSFER_BASIS_TRANSACTION })
+                                     : ((BREthereumTransferBasis) { TRANSFER_BASIS_LOG }));
+
+    BRCryptoTransfer transfer = cryptoTransferCreateAsETH (wallet->listenerTransfer,
+                                                           unit,
                                                            unitForFee,
                                                            estimatedFeeBasis,
                                                            amount,
                                                            direction,
                                                            source,
                                                            target,
-                                                           wallet->ethAccount,
-                                                           type,
+                                                           transferState,
+                                                           walletETH->ethAccount,
+                                                           basis,
                                                            ethTransaction);
-
+#if 0
     transfer->sourceAddress = cryptoAddressCreateAsETH (ethSourceAddress);
     transfer->targetAddress = cryptoAddressCreateAsETH (ethTargetAddress);
     transfer->feeBasisEstimated = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
-
+#endif
+    
     if (NULL != transfer && attributesCount > 0) {
         BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
         array_new (transferAttributes, attributesCount);
@@ -228,15 +267,15 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
 }
 
 static BRCryptoTransfer
-cryptoWalletCreateTransferMultipleETH (BRCryptoWallet walletBase,
+cryptoWalletCreateTransferMultipleETH (BRCryptoWallet wallet,
                                        size_t outputsCount,
                                        BRCryptoTransferOutput *outputs,
                                        BRCryptoFeeBasis estimatedFeeBasis,
                                        BRCryptoCurrency currency,
                                        BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee) {
-    BRCryptoWalletETH wallet = cryptoWalletCoerce (walletBase);
-    (void) wallet;
+    BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
+    (void) walletETH;
 
     if (0 == outputsCount) return NULL;
 
@@ -244,36 +283,36 @@ cryptoWalletCreateTransferMultipleETH (BRCryptoWallet walletBase,
 }
 
 static OwnershipGiven BRSetOf(BRCryptoAddress)
-cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet walletBase) {
+cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet wallet) {
     BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
-    BRSetAdd (addresses, cryptoWalletGetAddressETH (walletBase, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT));
+    BRSetAdd (addresses, cryptoWalletGetAddressETH (wallet, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT));
     return addresses;
 }
 
 extern BRCryptoTransferETH
-cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH wallet,
+cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH walletETH,
                                         BREthereumHash hash) {
     if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
 
-    for (int i = 0; i < array_count(wallet->base.transfers); i++) {
-        BRCryptoTransferETH transfer = cryptoTransferCoerce (wallet->base.transfers[i]);
-        BREthereumHash identifier = cryptoTransferGetIdentifierETH(transfer);
+    for (int i = 0; i < array_count(walletETH->base.transfers); i++) {
+        BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (walletETH->base.transfers[i]);
+        BREthereumHash identifier = cryptoTransferGetIdentifierETH(transferETH);
         if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, identifier)))
-            return transfer;
+            return transferETH;
     }
     return NULL;
 }
 
 extern BRCryptoTransferETH
-cryptoWalletLookupTransferByOriginatingHash (BRCryptoWalletETH wallet,
+cryptoWalletLookupTransferByOriginatingHash (BRCryptoWalletETH walletETH,
                                              BREthereumHash hash) {
     if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
 
-    for (int i = 0; i < array_count(wallet->base.transfers); i++) {
-        BRCryptoTransferETH transfer = cryptoTransferCoerce (wallet->base.transfers[i]);
-        BREthereumTransaction transaction = transfer->originatingTransaction;
+    for (int i = 0; i < array_count(walletETH->base.transfers); i++) {
+        BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (walletETH->base.transfers[i]);
+        BREthereumTransaction transaction = transferETH->originatingTransaction;
         if (NULL != transaction && ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, transactionGetHash (transaction))))
-            return transfer;
+            return transferETH;
     }
     return NULL;
 }

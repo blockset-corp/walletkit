@@ -34,6 +34,8 @@
 
 #define RIPPLE_SEQUENCE_PROTOCOL_CHANGE_BLOCK 55313921
 
+#define RIPPLE_ACCOUNT_MINIMUM_IN_XRP            (20)
+
 struct BRRippleAccountRecord {
     BRRippleAddress address; // The 20 byte account id
 
@@ -250,4 +252,22 @@ extern void rippleAccountSetBlockNumberAtCreation (BRRippleAccount account, uint
     // Block heights from Blockset are unsigned 64-bits, but the Ripple block (ledger index) is
     // only an unsigned 32-bit value
     account->blockNumberAtCreation = (uint32_t)blockHeight;
+}
+
+extern BRRippleUnitDrops
+rippleAccountGetBalanceLimit (BRRippleAccount account,
+                             int asMaximum,
+                             int *hasLimit) {
+    assert (NULL != hasLimit);
+
+    *hasLimit = !asMaximum;
+    return (asMaximum ? 0 : RIPPLE_XRP_TO_DROPS (RIPPLE_ACCOUNT_MINIMUM_IN_XRP));
+}
+
+
+extern BRRippleFeeBasis
+rippleAccountGetDefaultFeeBasis (BRRippleAccount account) {
+    return (BRRippleFeeBasis) {
+        10, 1
+    };
 }

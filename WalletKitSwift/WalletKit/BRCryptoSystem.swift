@@ -1087,15 +1087,16 @@ extension System {
         return BRCryptoListener (
             context: systemContext,
 
-            walletManagerEventCallback: { (context, cwm, event) in
+            managerCallback: { (context, cwm, event) in
                 precondition (nil != context  && nil != cwm)
                 defer { cryptoWalletManagerGive(cwm) }
 
                 guard let (system, manager) = System.systemExtract (context, cwm)
                     else { print ("SYS: Event: \(event.type): Missed {cwm}"); return }
 
-                print ("SYS: Event: Manager (\(manager.name)): \(event.type)")
-
+                if event.type != CRYPTO_WALLET_MANAGER_EVENT_CHANGED {
+                    print ("SYS: Event: Manager (\(manager.name)): \(event.type)")
+                }
                 var walletManagerEvent: WalletManagerEvent? = nil
 
                 switch event.type {
@@ -1155,22 +1156,22 @@ extension System {
                 }
 
                 walletManagerEvent.map { (event) in
-                    system.listenerQueue.async {
-                        system.listener?.handleManagerEvent (system: system,
-                                                             manager: manager,
-                                                             event: event)
-                    }
+                    system.listener?.handleManagerEvent (system: system,
+                                                         manager: manager,
+                                                         event: event)
                 }
         },
 
-            walletEventCallback: { (context, cwm, wid, event) in
+            walletCallback: { (context, cwm, wid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid)
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid) }
 
                 guard let (system, manager, wallet) = System.systemExtract (context, cwm, wid)
                     else { print ("SYS: Event: \(event.type): Missed {cwm, wid}"); return }
 
-                print ("SYS: Event: Wallet (\(wallet.name)): \(event.type)")
+                if event.type != CRYPTO_WALLET_EVENT_CHANGED {
+                    print ("SYS: Event: Wallet (\(wallet.name)): \(event.type)")
+                }
 
                 var walletEvent: WalletEvent? = nil
 
@@ -1179,6 +1180,7 @@ extension System {
                     walletEvent = WalletEvent.created
 
                 case CRYPTO_WALLET_EVENT_CHANGED:
+                    print ("SYS: Event: Wallet (\(manager.name)): \(event.type): {\(WalletState (core: event.u.state.oldState)) -> \(WalletState (core: event.u.state.newState))}")
                     walletEvent = WalletEvent.changed (oldState: WalletState (core: event.u.state.oldState),
                                                        newState: WalletState (core: event.u.state.newState))
 
@@ -1233,23 +1235,23 @@ extension System {
                 }
 
                 walletEvent.map { (event) in
-                    system.listenerQueue.async {
-                        system.listener?.handleWalletEvent (system: manager.system,
-                                                            manager: manager,
-                                                            wallet: wallet,
-                                                            event: event)
-                    }
+                    system.listener?.handleWalletEvent (system: manager.system,
+                                                        manager: manager,
+                                                        wallet: wallet,
+                                                        event: event)
                 }
         },
 
-            transferEventCallback: { (context, cwm, wid, tid, event) in
+            transferCallback: { (context, cwm, wid, tid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid && nil != tid)
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid); cryptoTransferGive(tid) }
 
                 guard let (system, manager, wallet, transfer) = System.systemExtract (context, cwm, wid, tid)
                     else { print ("SYS: Event: \(event.type): Missed {cwm, wid, tid}"); return }
 
-                print ("SYS: Event: Transfer (\(wallet.name) @ \(transfer.hash?.description ?? "pending")): \(event.type)")
+                if event.type != CRYPTO_TRANSFER_EVENT_CHANGED {
+                    print ("SYS: Event: Transfer (\(wallet.name) @ \(transfer.hash?.description ?? "pending")): \(event.type)")
+                }
 
                 var transferEvent: TransferEvent? = nil
 
@@ -1258,6 +1260,8 @@ extension System {
                     transferEvent = TransferEvent.created
 
                 case CRYPTO_TRANSFER_EVENT_CHANGED:
+                    print ("SYS: Event: Transfer (\(wallet.name)): \(event.type): {\(TransferState (core: event.u.state.old)) -> \(TransferState (core: event.u.state.new))}")
+
                     // The event.u.state.{old,new} references to BRCryptoTransferState are 'passed'
                     // to the TransferState initializer.
                     transferEvent = TransferEvent.changed (old: TransferState.init (core: event.u.state.old),
@@ -1270,13 +1274,11 @@ extension System {
                 }
 
                 transferEvent.map { (event) in
-                    system.listenerQueue.async {
-                        system.listener?.handleTransferEvent (system: system,
-                                                              manager: manager,
-                                                              wallet: wallet,
-                                                              transfer: transfer,
-                                                              event: event)
-                    }
+                    system.listener?.handleTransferEvent (system: system,
+                                                          manager: manager,
+                                                          wallet: wallet,
+                                                          transfer: transfer,
+                                                          event: event)
                 }
         })
     }
@@ -1551,7 +1553,6 @@ extension System {
 /// transations, blocks and peers into 'Generic Crypto' - where these entities are persistently
 /// stored in the file system (by BRFileSystem).
 ///
-#if false
 extension System {
 
     ///
@@ -1808,7 +1809,6 @@ extension System {
         }
     }
 }
-#endif
 
 extension BRCryptoTransferEventType: CustomStringConvertible {
     public var description: String {

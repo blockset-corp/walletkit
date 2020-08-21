@@ -18,7 +18,9 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAddress, cryptoAddress);
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
-                           size_t hashValue) {
+                           size_t hashValue,
+                           BRCryptoAddressCreateContext  createContext,
+                           BRCryptoAddressCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoAddressRecord));
 
     BRCryptoAddress address = calloc (1, sizeInBytes);
@@ -29,6 +31,8 @@ cryptoAddressAllocAndInit (size_t sizeInBytes,
     address->sizeInBytes = sizeInBytes;
 
     address->hashValue = hashValue;
+
+    if (NULL != createCallback) createCallback (createContext, address);
 
     return address;
 }

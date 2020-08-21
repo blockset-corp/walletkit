@@ -25,10 +25,14 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet)
 extern BRCryptoWallet
 cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoBlockChainType type,
+                          BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
                           BRCryptoAmount balanceMinimum,
-                          BRCryptoAmount balanceMaximum) {
+                          BRCryptoAmount balanceMaximum,
+                          BRCryptoFeeBasis defaultFeeBasis,
+                          BRCryptoWalletCreateContext createContext,
+                          BRCryptoWalletCreateCallbak createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletRecord));
 
     BRCryptoWallet wallet = calloc (1, sizeInBytes);
@@ -36,9 +40,10 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
     wallet->sizeInBytes = sizeInBytes;
     wallet->type  = type;
     wallet->handlers = cryptoHandlersLookup(type)->wallet;
-    wallet->state = CRYPTO_WALLET_STATE_CREATED;
-    
-    wallet->unit  = cryptoUnitTake (unit);
+
+    wallet->listener   = listener;
+    wallet->state      = CRYPTO_WALLET_STATE_CREATED;
+    wallet->unit       = cryptoUnitTake (unit);
     wallet->unitForFee = cryptoUnitTake (unitForFee);
 
     BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);
@@ -50,11 +55,26 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
     wallet->balanceMaximum = cryptoAmountTake (balanceMaximum);
     wallet->balance = cryptoAmountCreateInteger(0, unit);
 
+    wallet->defaultFeeBasis = cryptoFeeBasisTake (defaultFeeBasis);
+
     array_new (wallet->transfers, 5);
 
     wallet->ref = CRYPTO_REF_ASSIGN (cryptoWalletRelease);
 
+    wallet->listenerTransfer = (BRCryptoTransferListener) {
+        listener.context,
+        listener.manager,
+        wallet,
+        listener.transferCallback
+    };
+
     pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
+
+    if (NULL != createCallback) createCallback (createContext, wallet);
+
+    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_CREATED
+    });
 
     return wallet;
 }
@@ -62,6 +82,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 static void
 cryptoWalletRelease (BRCryptoWallet wallet) {
     pthread_mutex_lock (&wallet->lock);
+    cryptoWalletSetState (wallet, CRYPTO_WALLET_STATE_DELETED);
 
     cryptoUnitGive (wallet->unit);
     cryptoUnitGive (wallet->unitForFee);
@@ -69,6 +90,8 @@ cryptoWalletRelease (BRCryptoWallet wallet) {
     cryptoAmountGive (wallet->balanceMinimum);
     cryptoAmountGive (wallet->balanceMaximum);
     cryptoAmountGive (wallet->balance);
+
+    cryptoFeeBasisGive (wallet->defaultFeeBasis);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++)
         cryptoTransferGive (wallet->transfers[index]);
@@ -78,6 +101,10 @@ cryptoWalletRelease (BRCryptoWallet wallet) {
 
     pthread_mutex_unlock  (&wallet->lock);
     pthread_mutex_destroy (&wallet->lock);
+
+    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_DELETED
+    });
 
     memset (wallet, 0, sizeof(*wallet));
     free (wallet);
@@ -106,7 +133,16 @@ cryptoWalletGetState (BRCryptoWallet wallet) {
 private_extern void
 cryptoWalletSetState (BRCryptoWallet wallet,
                       BRCryptoWalletState state) {
+    BRCryptoWalletState newState = state;
+    BRCryptoWalletState oldState = wallet->state;
+
     wallet->state = state;
+
+    if (oldState != newState)
+         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+             CRYPTO_WALLET_EVENT_CHANGED,
+             { .state = { oldState, newState }}
+         });
 }
 
 extern BRCryptoCurrency
@@ -122,6 +158,35 @@ cryptoWalletGetUnitForFee (BRCryptoWallet wallet) {
 extern BRCryptoAmount
 cryptoWalletGetBalance (BRCryptoWallet wallet) {
     return cryptoAmountTake (wallet->balance);
+}
+
+static void
+cryptoWalletSetBalance (BRCryptoWallet wallet,
+                        BRCryptoAmount newBalance) {
+    BRCryptoAmount oldBalance = wallet->balance;
+
+    wallet->balance = newBalance;
+
+    if (CRYPTO_COMPARE_EQ != cryptoAmountCompare (oldBalance, newBalance)) {
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+            { .balanceUpdated = { cryptoAmountTake (newBalance) }}
+        });
+    }
+
+    cryptoAmountGive(oldBalance);
+}
+
+static void
+cryptoWalletIncBalance (BRCryptoWallet wallet,
+                        BRCryptoAmount amount) {
+    cryptoWalletSetBalance (wallet, cryptoAmountAdd (wallet->balance, amount));
+}
+
+static void
+cryptoWalletDecBalance (BRCryptoWallet wallet,
+                        BRCryptoAmount amount) {
+    cryptoWalletSetBalance (wallet, cryptoAmountSub (wallet->balance, amount));
 }
 
 extern BRCryptoAmount /* nullable */
@@ -159,12 +224,12 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
     pthread_mutex_lock (&wallet->lock);
     if (CRYPTO_FALSE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
         array_add (wallet->transfers, cryptoTransferTake(transfer));
-
-        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
-        BRCryptoAmount newBalance = cryptoAmountAdd (oldBalance, cryptoTransferGetAmountDirected(transfer));
-        cryptoAmountGive(oldBalance);
-        wallet->balance = newBalance;
-    }
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
+            { .transfer = { cryptoTransferTake (transfer) }}
+        });
+        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirected(transfer));
+     }
     pthread_mutex_unlock (&wallet->lock);
 }
 
@@ -176,11 +241,11 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
         if (CRYPTO_TRUE == cryptoTransferEqual (wallet->transfers[index], transfer)) {
             walletTransfer = wallet->transfers[index];
             array_rm (wallet->transfers, index);
-
-            BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
-            BRCryptoAmount newBalance = cryptoAmountSub (oldBalance, cryptoTransferGetAmountDirected(transfer));
-            cryptoAmountGive(oldBalance);
-            wallet->balance = newBalance;
+            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+                CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
+                { .transfer = { cryptoTransferTake (transfer) }}
+            });
+            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirected(transfer));
             break;
         }
     }
@@ -243,41 +308,7 @@ cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet) {
 
 extern BRCryptoFeeBasis
 cryptoWalletGetDefaultFeeBasis (BRCryptoWallet wallet) {
-    return wallet->defaultFeeBasis;
-//    BRCryptoFeeBasis feeBasis;
-//
-//    BRCryptoUnit feeUnit = cryptoWalletGetUnitForFee (wallet);
-//
-//    switch (wallet->type) {
-//        case BLOCK_CHAIN_TYPE_BTC: {
-//            BRWallet *wid = wallet->u.btc.wid;
-//
-//            assert (0); // TODO: Generic Size not 1000
-//            feeBasis = cryptoFeeBasisCreateAsBTC (feeUnit, (uint32_t) BRWalletFeePerKb (wid), 1000);
-//            break;
-//        }
-//        case BLOCK_CHAIN_TYPE_ETH: {
-//            BREthereumEWM ewm = wallet->u.eth.ewm;
-//            BREthereumWallet wid =wallet->u.eth.wid;
-//
-//            BREthereumGas gas = ewmWalletGetDefaultGasLimit (ewm, wid);
-//            BREthereumGasPrice gasPrice = ewmWalletGetDefaultGasPrice (ewm, wid);
-//
-//            feeBasis =  cryptoFeeBasisCreateAsETH (feeUnit, gas, gasPrice);
-//            break;
-//        }
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            BRGenericWallet wid = wallet->u.gen;
-//
-//            BRGenericFeeBasis bid = genWalletGetDefaultFeeBasis (wid);
-//            feeBasis =  cryptoFeeBasisCreateAsGEN (feeUnit, bid);
-//            break;
-//        }
-//    }
-//
-//    cryptoUnitGive (feeUnit);
-//
-//    return feeBasis;
+    return cryptoFeeBasisTake (wallet->defaultFeeBasis);
 }
 
 extern void
@@ -285,36 +316,10 @@ cryptoWalletSetDefaultFeeBasis (BRCryptoWallet wallet,
                                 BRCryptoFeeBasis feeBasis) {
     if (NULL != wallet->defaultFeeBasis) cryptoFeeBasisGive (wallet->defaultFeeBasis);
     wallet->defaultFeeBasis = cryptoFeeBasisTake(feeBasis);
-
-//    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType (feeBasis));
-//
-//    switch (wallet->type) {
-//        case BLOCK_CHAIN_TYPE_BTC:
-//            // This will generate a BTC BITCOIN_WALLET_PER_PER_KB_UPDATED event.
-//             BRWalletManagerUpdateFeePerKB (wallet->u.btc.bwm,
-//                                            wallet->u.btc.wid,
-//                                            cryptoFeeBasisAsBTC(feeBasis));
-//            break;
-//
-//        case BLOCK_CHAIN_TYPE_ETH: {
-//            BREthereumEWM ewm = wallet->u.eth.ewm;
-//            BREthereumWallet wid =wallet->u.eth.wid;
-//            BREthereumFeeBasis ethFeeBasis = cryptoFeeBasisAsETH (feeBasis);
-//
-//            // These will generate EWM WALLET_EVENT_DEFAULT_GAS_{LIMIT,PRICE}_UPDATED events
-//            ewmWalletSetDefaultGasLimit (ewm, wid, ethFeeBasis.u.gas.limit);
-//            ewmWalletSetDefaultGasPrice (ewm, wid, ethFeeBasis.u.gas.price);
-//            break;
-//        }
-//
-//        case BLOCK_CHAIN_TYPE_GEN: {
-//            BRGenericWallet wid = wallet->u.gen;
-//
-//            // This will not generate any GEN events (GEN events don't exist);
-//            genWalletSetDefaultFeeBasis (wid, cryptoFeeBasisAsGEN(feeBasis));
-//            break;
-//        }
-//    }
+    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED,
+        { .feeBasisUpdated = { cryptoFeeBasisTake (wallet->defaultFeeBasis) }}
+    });
 }
 
 extern size_t
@@ -448,40 +453,16 @@ cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
     }
     cryptoCurrencyGive (feeCurrency);
 
-    return cryptoFeeBasisCreate(pricePerCostFactor, costFactor);
-    
-#ifdef REFACTOR
-    UInt256 value = cryptoAmountGetValue (pricePerCostFactor);
+    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+}
 
-    switch (wallet->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            uint32_t feePerKB = value.u32[0];
-
-            // Expect all other fields in `value` to be zero
-            value.u32[0] = 0;
-            if (!uint256EQL (value, UINT256_ZERO)) return NULL;
-
-            uint32_t sizeInBytes = (uint32_t) (1000 * costFactor);
-
-            return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, feePerKB, sizeInBytes);
-        }
-
-        case BLOCK_CHAIN_TYPE_ETH: {
-            BREthereumGas gas = ethGasCreate((uint64_t) costFactor);
-            BREthereumGasPrice gasPrice = ethGasPriceCreate (ethEtherCreate(value));
-
-            return cryptoFeeBasisCreateAsETH (wallet->unitForFee, gas, gasPrice);
-        }
-
-        case BLOCK_CHAIN_TYPE_GEN: {
-            return cryptoFeeBasisCreateAsGEN (wallet->unitForFee,
-                                              (BRGenericFeeBasis) {
-                value,
-                costFactor
-            });
-        }
-    }
-#endif
+extern void
+cryptoWalletGenerateEvent (BRCryptoWallet wallet,
+                           BRCryptoWalletEvent event) {
+    wallet->listener.walletCallback (wallet->listener.context,
+                                     wallet->listener.manager,
+                                     wallet,
+                                     event);
 }
 
 extern BRCryptoBoolean

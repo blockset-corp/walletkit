@@ -156,4 +156,4 @@ typedef struct {
 }
 #endif
 
-#endif /* BRCryptoWalletManagerClient_h */
+#endif /* BRCryptoClient_h */

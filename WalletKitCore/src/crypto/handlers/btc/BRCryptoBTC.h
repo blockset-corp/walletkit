@@ -90,17 +90,18 @@ extern BRCryptoTransferBTC
 cryptoTransferCoerceBTC (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsBTC (BRCryptoUnit unit,
+cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
                            BRTransaction *tid,
                            BRCryptoBlockChainType type);
 
 private_extern BRTransaction *
-cryptoTransferAsBTC (BRCryptoTransfer transferBase);
+cryptoTransferAsBTC (BRCryptoTransfer transfer);
 
 private_extern BRCryptoBoolean
-cryptoTransferHasBTC (BRCryptoTransfer transferBase,
+cryptoTransferHasBTC (BRCryptoTransfer transfer,
                       BRTransaction *btc);
 
 // MARK: - Wallet
@@ -117,6 +118,7 @@ cryptoWalletAsBTC (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
 cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+                         BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BRWallet *wid);
@@ -133,11 +135,17 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
 
 typedef struct BRCryptoWalletManagerBTCRecord {
     struct BRCryptoWalletManagerRecord base;
-
-    int ignoreTBD;
 } *BRCryptoWalletManagerBTC;
 
+extern BRCryptoWalletManagerBTC
+cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type);
+
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
+
+// MAKR: - Wallet Manger P2P
+
+extern BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager manager);
 
 // MARK: - Wallet Sweeper
 

@@ -48,11 +48,11 @@ typedef struct {
 /// MARK: - Network Handlers
 
 typedef BRCryptoNetwork
-(*BRCyptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
-                                const char *name,               // Bitcoin
-                                const char *network,            // testnet
-                                bool isMainnet,                 // false
-                                uint32_t confirmationPeriodInSeconds); // 10 * 60
+(*BRCryptoNetworkCreateHandler) (const char *uids,               // bitcoin-testnet
+                                 const char *name,               // Bitcoin
+                                 const char *network,            // testnet
+                                 bool isMainnet,                 // false
+                                 uint32_t confirmationPeriodInSeconds); // 10 * 60
 
 typedef void
 (*BRCryptoNetworkReleaseHandler) (BRCryptoNetwork network);
@@ -82,7 +82,7 @@ typedef void
                                             size_t bytesCount);
 
 typedef struct {
-    BRCyptoNetworkCreateHandler create;
+    BRCryptoNetworkCreateHandler create;
     BRCryptoNetworkReleaseHandler release;
     BRCryptoNetworkCreateAddressHandler createAddress;
     BRCryptoNetworkGetBlockNumberAtOrBeforeTimestampHandler getBlockNumberAtOrBeforeTimestamp;
@@ -127,6 +127,10 @@ struct BRCryptoNetworkRecord {
     BRArrayOf(BRCryptoNetworkFee) fees;
 };
 
+typedef void *BRCryptoNetworkCreateContext;
+typedef void (*BRCryptoNetworkCreateCallback) (BRCryptoNetworkCreateContext context,
+                                               BRCryptoNetwork network);
+
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
@@ -134,7 +138,9 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *name,
                            const char *desc,        // "mainnet", "testnet", "rinkeby"
                            bool isMainnet,
-                           uint32_t confirmationPeriodInSeconds);
+                           uint32_t confirmationPeriodInSeconds,
+                           BRCryptoNetworkCreateContext createContext,
+                           BRCryptoNetworkCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetType (BRCryptoNetwork network);

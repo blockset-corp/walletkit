@@ -11,6 +11,11 @@
 #include "BRCryptoHBAR.h"
 #include "crypto/BRCryptoAccountP.h"
 
+static BRCryptoNetworkHBAR
+cryptoNetworkCoerce (BRCryptoNetwork network) {
+    assert (CRYPTO_NETWORK_TYPE_HBAR == network->type);
+    return (BRCryptoNetworkHBAR) network;
+}
 
 static BRCryptoNetwork
 cryptoNetworkCreateAsHBAR (const char *uids,
@@ -18,15 +23,17 @@ cryptoNetworkCreateAsHBAR (const char *uids,
                            const char *desc,
                            bool isMainnet,
                            uint32_t confirmationPeriodInSeconds) {
-    BRCryptoNetwork networkBase = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
-                                                             CRYPTO_NETWORK_TYPE_HBAR,
-                                                             uids,
-                                                             name,
-                                                             desc,
-                                                             isMainnet,
-                                                             confirmationPeriodInSeconds);
+    BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
+                                                         CRYPTO_NETWORK_TYPE_HBAR,
+                                                         uids,
+                                                         name,
+                                                         desc,
+                                                         isMainnet,
+                                                         confirmationPeriodInSeconds,
+                                                         NULL,
+                                                         NULL);
     
-    return networkBase;
+    return network;
 }
 
 static BRCryptoNetwork
@@ -46,18 +53,26 @@ cyptoNetworkCreateHBAR (const char *uids,
 
 static void
 cryptoNetworkReleaseHBAR (BRCryptoNetwork network) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
 }
 
 //TODO:HBAR make common? remove network param?
 static BRCryptoAddress
-cryptoNetworkCreateAddressHBAR (BRCryptoNetwork networkBase,
+cryptoNetworkCreateAddressHBAR (BRCryptoNetwork network,
                                 const char *addressAsString) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
+
     return cryptoAddressCreateFromStringAsHBAR (addressAsString);
 }
 
 static BRCryptoBlockNumber
-cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR (BRCryptoNetwork networkBase,
+cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR (BRCryptoNetwork network,
                                                     BRCryptoTimestamp timestamp) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
+
     //TODO:HBAR
     return 0;
 }
@@ -67,6 +82,9 @@ cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR (BRCryptoNetwork networkBase,
 static BRCryptoBoolean
 cryptoNetworkIsAccountInitializedHBAR (BRCryptoNetwork network,
                                        BRCryptoAccount account) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
+
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
     return AS_CRYPTO_BOOLEAN (true);
@@ -77,6 +95,9 @@ static uint8_t *
 cryptoNetworkGetAccountInitializationDataHBAR (BRCryptoNetwork network,
                                                BRCryptoAccount account,
                                                size_t *bytesCount) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
+
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
     if (NULL != bytesCount) *bytesCount = 0;
@@ -88,6 +109,9 @@ cryptoNetworkInitializeAccountHBAR (BRCryptoNetwork network,
                                     BRCryptoAccount account,
                                     const uint8_t *bytes,
                                     size_t bytesCount) {
+    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
+    (void) networkHBAR;
+
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
     return;

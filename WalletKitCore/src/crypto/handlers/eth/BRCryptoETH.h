@@ -19,6 +19,8 @@
 #include "ethereum/blockchain/BREthereumLog.h"
 #include "ethereum/contract/BREthereumExchange.h"
 
+#include "ethereum/bcs/BREthereumBCS.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,66 +59,62 @@ typedef enum  {
     TRANSFER_BASIS_EXCHANGE
 } BREthereumTransferBasisType;
 
-
-/// A ETH Transfer
-typedef struct BRCryptoTransferETHRecord {
-    struct BRCryptoTransferRecord base;
-    //    BREthereumEWM ewm;
-    //    BREthereumTransfer tid;
-    //    BREthereumAddress sourceAddress;
-    //    BREthereumAddress targetAddress;
-    //    BREthereumAmount amount;
-    //    BREthereumFeeBasis feeBasis;
-
-    BREthereumAccount account;
-    BREthereumGas gasEstimate;
-    BREthereumTransferStatus status;
-
+typedef struct {
     BREthereumTransferBasisType type;
     union {
         BREthereumTransaction transaction;
         BREthereumLog log;
         BREthereumExchange exchange;
-    } basis;
+    } u;
+} BREthereumTransferBasis;
+
+/// A ETH Transfer
+typedef struct BRCryptoTransferETHRecord {
+    struct BRCryptoTransferRecord base;
+
+    BREthereumAccount account;
+    BREthereumGas gasEstimate;
+    BREthereumTransferStatus status;
+    BREthereumTransferBasis basis;
 
     BREthereumTransaction originatingTransaction;
-
-    // TODO: Remove
-    BRCryptoAmount amount;
-    BRCryptoTransferDirection direction;
-    
 } *BRCryptoTransferETH;
 
 extern BRCryptoTransferETH
-cryptoTransferCoerce (BRCryptoTransfer transfer);
+cryptoTransferCoerceETH (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
+cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
+                           BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoFeeBasis feeBasisEstimated,
                            BRCryptoAmount amount,
                            BRCryptoTransferDirection direction,
                            BRCryptoAddress sourceAddress,
                            BRCryptoAddress targetAddress,
+                           BRCryptoTransferState transferState,
                            BREthereumAccount account,
-                           BREthereumTransferBasisType type,
+                           BREthereumTransferBasis basis,
                            OwnershipGiven BREthereumTransaction originatingTransaction);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithTransactionAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
+                                          BRCryptoUnit unit,
                                           BRCryptoUnit unitForFee,
                                           BREthereumAccount account,
                                           OwnershipGiven BREthereumTransaction ethTransaction);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithLogAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
+                                  BRCryptoUnit unit,
                                   BRCryptoUnit unitForFee,
                                   BREthereumAccount account,
                                   UInt256 ethAmount,
                                   OwnershipGiven BREthereumLog ethLog);
 
 extern BRCryptoTransfer
-cryptoTransferCreateWithExchangeAsETH (BRCryptoUnit unit,
+cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
+                                       BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee,
                                        BREthereumAccount account,
                                        UInt256 ethAmount,
@@ -136,6 +134,7 @@ cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
 
 typedef struct BRCryptoWalletETHRecord {
     struct BRCryptoWalletRecord base;
+    
     BREthereumAccount ethAccount;
     BREthereumToken   ethToken;    // NULL if `ETH`
     BREthereumGas     ethGasLimit;
@@ -145,13 +144,14 @@ extern BRCryptoWalletETH
 cryptoWalletCoerce (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
+cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
+                         BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BREthereumToken   ethToken,
                          BREthereumAccount ethAccount);
 
 extern BRCryptoTransfer
-cryptoWalletCreateTransferETH (BRCryptoWallet  walletBase,
+cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
                                BRCryptoAmount  amount,
                                BRCryptoFeeBasis estimatedFeeBasis,
@@ -181,6 +181,33 @@ typedef struct BRCryptoWalletManagerETHRecord {
     BRRlpCoder coder;
 
 } *BRCryptoWalletManagerETH;
+
+extern BRCryptoWalletManagerETH
+cryptoWalletManagerCoerceETH (BRCryptoWalletManager manager);
+
+private_extern BRCryptoWalletETH
+cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH managerETH,
+                                         BREthereumToken token);
+
+// MARK: - P2P
+
+extern BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager);
+
+private_extern void
+ewmHandleTransaction (BREthereumBCSCallbackContext context,
+                      BREthereumBCSCallbackTransactionType type,
+                      OwnershipGiven BREthereumTransaction transaction);
+
+private_extern void
+ewmHandleLog (BREthereumBCSCallbackContext context,
+              BREthereumBCSCallbackLogType type,
+              OwnershipGiven BREthereumLog log);
+
+private_extern void
+ewmHandleExchange (BREthereumBCSCallbackContext context,
+                   BREthereumBCSCallbackExchangeType type,
+                   OwnershipGiven BREthereumExchange exchange);
 
 // MARK: - Support
 

@@ -47,10 +47,10 @@ typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
 typedef uint8_t *
-(*BRCryptoTransferSerialize) (BRCryptoTransfer transfer,
-                              BRCryptoNetwork  network,
-                              BRCryptoBoolean  requireSignature,
-                              size_t *serializationCount);
+(*BRCryptoTransferSerializeHandler) (BRCryptoTransfer transfer,
+                                     BRCryptoNetwork  network,
+                                     BRCryptoBoolean  requireSignature,
+                                     size_t *serializationCount);
 
 typedef int
 (*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
@@ -59,9 +59,18 @@ typedef int
 typedef struct {
     BRCryptoTransferReleaseHandler release;
     BRCryptoTransferGetHashHandler getHash;
-    BRCryptoTransferSerialize serialize;
+    BRCryptoTransferSerializeHandler serialize;
     BRCryptoTransferIsEqualHandler isEqual;
 } BRCryptoTransferHandlers;
+
+/// MARK: - Transfer Listener
+
+typedef struct {
+    BRCryptoListenerContext context;
+    BRCryptoWalletManager manager;
+    BRCryptoWallet wallet;
+    BRCryptoTransferListenerCallback callback;
+} BRCryptoTransferListener;
 
 /// MARK: - Transfer
 
@@ -72,6 +81,7 @@ struct BRCryptoTransferRecord {
     size_t sizeInBytes;
 
     pthread_mutex_t lock;
+    BRCryptoTransferListener listener;
 
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
@@ -99,16 +109,23 @@ struct BRCryptoTransferRecord {
     BRArrayOf(BRCryptoTransferAttribute) attributes;
 };
 
+typedef void *BRCryptoTransferCreateContext;
+typedef void (*BRCryptoTransferCreateCallback) (BRCryptoTransferCreateContext context,
+                                                BRCryptoTransfer transfer);
+
 extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
+                            BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             BRCryptoFeeBasis feeBasisEstimated,
                             BRCryptoAmount amount,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
-                            BRCryptoAddress targetAddress);
+                            BRCryptoAddress targetAddress,
+                            BRCryptoTransferCreateContext  createContext,
+                            BRCryptoTransferCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
@@ -120,6 +137,10 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
+
+private_extern void
+cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
+                             BRCryptoTransferEvent event);
 
 #ifdef __cplusplus
 }

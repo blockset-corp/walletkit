@@ -23,7 +23,6 @@
 
 #include "hedera/BRHederaTransaction.h"
 #include "hedera/BRHederaAccount.h"
-#include "hedera/BRHederaWallet.h"
 
 static int debug_log = 0;
 
@@ -462,54 +461,20 @@ static void createAndDeleteWallet()
 {
     BRHederaAccount account = getDefaultAccount();
 
-    BRHederaWallet wallet = hederaWalletCreate(account);
-
     // Source and target addresses should be the same for Hedera
     struct account_info defaultAccountInfo = find_account("default_account");
     BRHederaAddress expectedAddress = hederaAddressCreateFromString(defaultAccountInfo.account_string, true);
 
-    BRHederaAddress sourceAddress = hederaWalletGetSourceAddress(wallet);
+    BRHederaAddress sourceAddress = hederaAccountGetAddress(account);
     assert(hederaAddressEqual(sourceAddress, expectedAddress) == 1);
 
-    BRHederaAddress targetAddress = hederaWalletGetTargetAddress(wallet);
+    BRHederaAddress targetAddress = hederaAccountGetAddress(account);
     assert(hederaAddressEqual(targetAddress, expectedAddress) == 1);
 
     hederaAccountFree(account);
-    hederaWalletFree(wallet);
     hederaAddressFree (expectedAddress);
     hederaAddressFree (sourceAddress);
     hederaAddressFree (targetAddress);
-}
-
-static void walletBalanceTests()
-{
-    BRHederaAccount account = getAccount ("patient"); // Our wallet account
-    BRHederaWallet wallet = hederaWalletCreate (account);
-    BRHederaUnitTinyBar expectedBalance = 0;
-
-    // Now add a few transfers for this wallet (3 TO and 1 FROM)
-    BRHederaTransaction tx1 = createSignedTransaction("choose", "patient", "node3", 2000000000, 1, 0, 500000, NULL);
-    BRHederaTransaction tx2 = createSignedTransaction("choose", "patient", "node3", 1500000000, 2, 0, 500000, NULL);
-    BRHederaTransaction tx3 = createSignedTransaction("choose", "patient", "node3", 1400000000, 3, 0, 500000, NULL);
-    BRHederaTransaction tx4 = createSignedTransaction("patient", "choose", "node3", 1400000000, 4, 0, 500000, NULL);
-    expectedBalance = 2000000000L + 1500000000L + 1400000000L;
-    hederaWalletAddTransfer(wallet, tx1);
-    hederaWalletAddTransfer(wallet, tx2);
-    hederaWalletAddTransfer(wallet, tx3);
-    BRHederaUnitTinyBar balance = hederaWalletGetBalance (wallet);
-    assert(balance == expectedBalance);
-
-    hederaWalletAddTransfer(wallet, tx4);
-    balance = hederaWalletGetBalance (wallet);
-    expectedBalance -= (1400000000L + 500000L);
-    assert(balance == expectedBalance);
-
-    hederaAccountFree (account);
-    hederaWalletFree (wallet);
-    hederaTransactionFree(tx1);
-    hederaTransactionFree(tx2);
-    hederaTransactionFree(tx3);
-    hederaTransactionFree(tx4);
 }
 
 static void create_real_transactions() {
@@ -561,17 +526,16 @@ static void nodeAddressTest()
 {
     // Create a wallet
     BRHederaAccount account = getAccount ("patient"); // Our wallet account
-    BRHederaWallet wallet = hederaWalletCreate (account);
     for ( int i = HEDERA_NODE_START; i <= HEDERA_NODE_COUNT + HEDERA_NODE_START - 1; i++ ) {
         // Get the first 10 nodes
-        BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
+        BRHederaAddress address = hederaAccountGetNodeAddress(account);
         assert(hederaAddressGetAccount(address) == i);
         assert(hederaAddressGetShard(address) == 0);
         assert(hederaAddressGetRealm(address) == 0);
         hederaAddressFree(address);
     }
     // Now get another one and see if we go back to the beginning
-    BRHederaAddress address = hederaWalletGetNodeAddress(wallet);
+    BRHederaAddress address = hederaAccountGetNodeAddress(account);
     assert(hederaAddressGetAccount(address) == HEDERA_NODE_START);
     hederaAddressFree(address);
 }
@@ -579,7 +543,6 @@ static void nodeAddressTest()
 static void wallet_tests()
 {
     createAndDeleteWallet();
-    walletBalanceTests();
     nodeAddressTest();
 }
 

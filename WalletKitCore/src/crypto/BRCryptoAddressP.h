@@ -47,10 +47,16 @@ struct BRCryptoAddressRecord {
     size_t hashValue;
 };
 
+typedef void *BRCryptoAddressCreateContext;
+typedef void (*BRCryptoAddressCreateCallback) (BRCryptoAddressCreateContext context,
+                                               BRCryptoAddress address);
+
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
-                           size_t hashValue);
+                           size_t hashValue,
+                           BRCryptoAddressCreateContext  createContext,
+                           BRCryptoAddressCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoAddressGetType (BRCryptoAddress address);

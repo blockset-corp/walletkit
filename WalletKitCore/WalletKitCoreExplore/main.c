@@ -25,9 +25,9 @@
 #include "support/rlp/BRRlp.h"
 #include "ethereum/util/BRUtil.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
-#include "ethereum/ewm/BREthereumAccount.h"
-#include "ethereum/ewm/BREthereumTransfer.h"
-#include "ethereum/BREthereum.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
+//#include "ethereum/ewm/BREthereumTransfer.h"
+//#include "ethereum/BREthereum.h"
 
 #define TEST_TRANS_ETH      "0xf86a75843b9aca00825208943d7eefb552b7d633e7f9eb48cd82cd098ecd5b4687038d7ea4c68000802aa045827725970e3c9729c9450b3ff04f98f10e231ebdeec5d522585a9a57bab1b4a025547970f9bedbef17d4aadd38f4263955633507689a9d7598c9e9bc38438d03"
 #define TEST_TRANS_BRD      "0xf8a976841dcd65008301676094722dd3f80bac40c951b51bdd28dd19d43576218080b844a9059cbb0000000000000000000000003d7eefb552b7d633e7f9eb48cd82cd098ecd5b46000000000000000000000000000000000000000000000000000000e8d4a5100029a02604f887d60d438d29c73b69ade7208ced970d5c74b1bf5b2f156e56c785f15da03b56daa107f678fee099347af966093081e3ef87dc6040a1ce0113452e37f664"
@@ -231,6 +231,7 @@ void *assertThread (void *ignore) {
 //
 // Transaction Decode
 //
+#if defined (NO_ETH_TRANSFER)
 #define ETH_TRANS1_ADDR "0xf89862b47e26d7ceb8f91216bba42013567521f9"
 #define ETH_TRANS1 "f8a92e84ee6b280083029040940abdace70d3790235af448c88547603b945604ea80b844a9059cbb00000000000000000000000043a0fe792d38745575f624728070b20072208d2d00000000000000000000000000000000000000000000000029a2241af62c000026a06774cdf4cbd9b4cc0003d030d8ef8916017a6ccec4a6856cc18aaf8bb623c91ca034aceeb4d46af817138480ce34d63be8ef8ad37a5aa10afc851dd6f5293999d1"
 
@@ -271,7 +272,7 @@ handleEthTransactionDecode (BRRlpCoder coder) {
     BREthereumAddress addr2 = handleEthTransactionDecode1 (coder, ETH_TRANS2);
     assert (ETHEREUM_BOOLEAN_TRUE == ethAddressEqual (addr1, addr2));
 }
-
+#endif
 //
 // BRWalletUnusedAddr - do multiple calls produce multiple multiple addres
 //

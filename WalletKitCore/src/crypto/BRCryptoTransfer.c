@@ -61,13 +61,16 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoTransfer, cryptoTransfer)
 extern BRCryptoTransfer
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
+                            BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             BRCryptoFeeBasis feeBasisEstimated,
                             BRCryptoAmount amount,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
-                            BRCryptoAddress targetAddress) {
+                            BRCryptoAddress targetAddress,
+                            BRCryptoTransferCreateContext  createContext,
+                            BRCryptoTransferCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoTransferRecord));
     BRCryptoTransfer transfer = calloc (1, sizeInBytes);
 
@@ -75,7 +78,8 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->handlers = cryptoHandlersLookup(type)->transfer;
     transfer->sizeInBytes = sizeInBytes;
 
-    transfer->state = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
+    transfer->listener   = listener;
+    transfer->state      = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = cryptoFeeBasisTake (feeBasisEstimated);
@@ -91,6 +95,12 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->ref = CRYPTO_REF_ASSIGN (cryptoTransferRelease);
 
     pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL);
+
+    if (NULL != createContext) createCallback (createContext, transfer);
+    
+    cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+        CRYPTO_TRANSFER_EVENT_CREATED
+    });
 
     return transfer;
 }
@@ -113,6 +123,10 @@ cryptoTransferRelease (BRCryptoTransfer transfer) {
 
     pthread_mutex_unlock  (&transfer->lock);
     pthread_mutex_destroy (&transfer->lock);
+
+    cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+        CRYPTO_TRANSFER_EVENT_DELETED
+    });
 
     memset (transfer, 0, sizeof(*transfer));
     free (transfer);
@@ -271,6 +285,14 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
     transfer->state = newState;
     pthread_mutex_unlock (&transfer->lock);
 
+    if (!cryptoTransferStateIsEqual (&oldState, &newState))
+        cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+            CRYPTO_TRANSFER_EVENT_CHANGED,
+            { .state = {
+                cryptoTransferStateCopy (&oldState),
+                cryptoTransferStateCopy (&newState) }}
+        });
+
     cryptoTransferStateRelease (&oldState);
 }
 
@@ -315,6 +337,16 @@ cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
                                          size_t *serializationCount) {
     assert (NULL != serializationCount);
     return transfer->handlers->serialize (transfer, network, CRYPTO_FALSE, serializationCount);
+}
+
+private_extern void
+cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
+                             BRCryptoTransferEvent event) {
+    transfer->listener.callback (transfer->listener.context,
+                                 transfer->listener.manager,
+                                 transfer->listener.wallet,
+                                 transfer,
+                                 event);
 }
 
 extern BRCryptoBoolean
@@ -399,13 +431,13 @@ cryptoTransferCompare (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2) {
     return compareValue;
 }
 
-#ifdef REFACTOR
 extern void
 cryptoTransferExtractBlobAsBTC (BRCryptoTransfer transfer,
                                 uint8_t **bytes,
                                 size_t   *bytesCount,
                                 uint32_t *blockHeight,
                                 uint32_t *timestamp) {
+    #ifdef REFACTOR
     assert (NULL != bytes && NULL != bytesCount);
 
     BRTransaction *tx = cryptoTransferAsBTC (transfer);
@@ -416,8 +448,8 @@ cryptoTransferExtractBlobAsBTC (BRCryptoTransfer transfer,
 
     if (NULL != blockHeight) *blockHeight = tx->blockHeight;
     if (NULL != timestamp)   *timestamp   = tx->timestamp;
+    #endif
 }
-#endif
 
 extern BRCryptoTransferState
 cryptoTransferStateInit (BRCryptoTransferStateType type) {

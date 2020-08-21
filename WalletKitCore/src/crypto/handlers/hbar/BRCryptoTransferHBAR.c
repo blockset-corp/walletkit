@@ -16,7 +16,7 @@
 
 static BRCryptoTransferDirection
 transferGetDirectionFromHBAR (BRHederaTransaction transaction,
-                              BRHederaWallet wallet);
+                              BRHederaAccount account);
 
 extern BRCryptoTransferHBAR
 cryptoTransferCoerceHBAR (BRCryptoTransfer transfer) {
@@ -24,13 +24,27 @@ cryptoTransferCoerceHBAR (BRCryptoTransfer transfer) {
     return (BRCryptoTransferHBAR) transfer;
 }
 
+typedef struct {
+    BRHederaTransaction hbarTransaction;
+} BRCryptoTransferCreateContextHBAR;
+
+static void
+cryptoTransferCreateCallbackHBAR (BRCryptoTransferCreateContext context,
+                                    BRCryptoTransfer transfer) {
+    BRCryptoTransferCreateContextHBAR *contextHBAR = (BRCryptoTransferCreateContextHBAR*) context;
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR (transfer);
+
+    transferHBAR->hbarTransaction = contextHBAR->hbarTransaction;
+}
+
 extern BRCryptoTransfer
-cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
+cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
+                            BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
-                            OwnershipKept BRHederaWallet wallet,
+                            OwnershipKept BRHederaAccount hbarAccount,
                             OwnershipGiven BRHederaTransaction hbarTransaction) {
     
-    BRCryptoTransferDirection direction = transferGetDirectionFromHBAR (hbarTransaction, wallet);
+    BRCryptoTransferDirection direction = transferGetDirectionFromHBAR (hbarTransaction, hbarAccount);
     
     BRCryptoAmount amount = cryptoAmountCreateAsHBAR (unit,
                                                       CRYPTO_FALSE,
@@ -43,48 +57,52 @@ cryptoTransferCreateAsHBAR (BRCryptoUnit unit,
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetTarget (hbarTransaction));
-    
-    BRCryptoTransfer transferBase = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
-                                                                CRYPTO_NETWORK_TYPE_HBAR,
-                                                                unit,
-                                                                unitForFee,
-                                                                feeBasisEstimated,
-                                                                amount,
-                                                                direction,
-                                                                sourceAddress,
-                                                                targetAddress);
-    BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
-    
-    transfer->hbarTransaction = hbarTransaction;
-    
+
+    BRCryptoTransferCreateContextHBAR contextHBAR = {
+        hbarTransaction
+    };
+
+    BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferHBARRecord),
+                                                            CRYPTO_NETWORK_TYPE_HBAR,
+                                                            listener,
+                                                            unit,
+                                                            unitForFee,
+                                                            feeBasisEstimated,
+                                                            amount,
+                                                            direction,
+                                                            sourceAddress,
+                                                            targetAddress,
+                                                            &contextHBAR,
+                                                            cryptoTransferCreateCallbackHBAR);
+
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);
     
-    return (BRCryptoTransfer) transfer;
+    return transfer;
 }
 
 static void
-cryptoTransferReleaseHBAR (BRCryptoTransfer transferBase) {
-    BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR(transferBase);
-    hederaTransactionFree (transfer->hbarTransaction);
+cryptoTransferReleaseHBAR (BRCryptoTransfer transfer) {
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
+    hederaTransactionFree (transferHBAR->hbarTransaction);
 }
 
 static BRCryptoHash
-cryptoTransferGetHashHBAR (BRCryptoTransfer transferBase) {
-    BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR(transferBase);
-    BRHederaTransactionHash hash = hederaTransactionGetHash (transfer->hbarTransaction);
+cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
+    BRHederaTransactionHash hash = hederaTransactionGetHash (transferHBAR->hbarTransaction);
     return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_HBAR, sizeof (hash.bytes), hash.bytes);
 }
 
 static uint8_t *
-cryptoTransferSerializeHBAR (BRCryptoTransfer transferBase,
+cryptoTransferSerializeHBAR (BRCryptoTransfer transfer,
                              BRCryptoNetwork network,
                              BRCryptoBoolean  requireSignature,
                              size_t *serializationCount) {
     assert (CRYPTO_TRUE == requireSignature);
-    BRCryptoTransferHBAR transfer = cryptoTransferCoerceHBAR (transferBase);
-    return hederaTransactionSerialize (transfer->hbarTransaction, serializationCount);
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR (transfer);
+    return hederaTransactionSerialize (transferHBAR->hbarTransaction, serializationCount);
 }
 
 static int
@@ -96,12 +114,12 @@ cryptoTransferIsEqualHBAR (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
 
 static BRCryptoTransferDirection
 transferGetDirectionFromHBAR (BRHederaTransaction transaction,
-                              BRHederaWallet wallet) {
+                              BRHederaAccount account) {
     BRHederaAddress source = hederaTransactionGetSource (transaction);
     BRHederaAddress target = hederaTransactionGetTarget (transaction);
     
-    int isSource = hederaWalletHasAddress (wallet, source);
-    int isTarget = hederaWalletHasAddress (wallet, target);
+    int isSource = hederaAccountHasAddress (account, source);
+    int isTarget = hederaAccountHasAddress (account, target);
     
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED
