@@ -1754,6 +1754,7 @@ final class System implements com.breadwallet.crypto.System {
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 false,
                                 false,
+                                true,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
