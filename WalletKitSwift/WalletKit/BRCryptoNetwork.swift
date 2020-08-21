@@ -346,7 +346,13 @@ public enum NetworkType: CustomStringConvertible {
 }
 
 public enum NetworkEvent {
+    /// The network was created.
     case created
+
+    /// The network had its currencies, fees and/or blockHeight updated.
+    case updated
+
+    // The netwok had its fees updated.
     case feesUpdated
     case deleted
 

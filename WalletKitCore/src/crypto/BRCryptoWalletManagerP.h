@@ -228,6 +228,11 @@ extern void
 cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
                                       OwnershipGiven BRGenericTransfer transferGeneric);
 
+extern void
+cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
+                                            OwnershipGiven BRGenericTransfer transferGeneric,
+                                            BRCryptoBoolean needBalanceEvent);
+
 private_extern void
 cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRCryptoWallet wallet,

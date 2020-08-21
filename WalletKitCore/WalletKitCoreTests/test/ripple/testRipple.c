@@ -625,8 +625,6 @@ static void testAccountAddress()
     rippleAddressFree(targetAddress);
 }
 
-static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
-
 static void checkRippleEncodeAddress (const char *addr) {
     size_t   bytesCount = BRBase58DecodeEx(NULL, 0, addr, rippleAlphabet);
     uint8_t *bytes      = malloc(bytesCount);

@@ -15,77 +15,76 @@ import XCTest
 class BRBlockChainDBTest: XCTestCase {
     var client: SystemClient! = nil
     var expectation: XCTestExpectation!
-    
+
     override func setUp() {
         client = BlocksetSystemClient.createForTest()
     }
-    
+
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
-    
+
     func testBlockchains() {
         expectation = XCTestExpectation (description: "blockchain")
-        
+
         let blockchainId = "bitcoin-testnet"
         client.getBlockchain (blockchainId: blockchainId) { (res: Result<SystemClient.Blockchain, SystemClientError>) in
             guard case let .success (blockchain) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertEqual (blockchainId, blockchain.id)
             XCTAssertEqual (6, blockchain.confirmationsUntilFinal)
-            
+
             self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
-        
+
+
         expectation = XCTestExpectation (description: "blockchains")
-        
+
         client.getBlockchains (mainnet: false) { (res: Result<[SystemClient.Blockchain], SystemClientError>) in
             guard case let .success (blockchains) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertFalse (blockchains.isEmpty)
-            
+
             self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
     }
-    
+
     func testCurrencies() {
         expectation = XCTestExpectation (description: "currency")
-        
+
         let currencyId = "bitcoin-testnet:__native__"
         client.getCurrency (currencyId: currencyId) { (res: Result<SystemClient.Currency, SystemClientError>) in
             guard case let .success (currency) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertEqual (currencyId, currency.id)
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 60)
-        
-        
+
         expectation = XCTestExpectation (description: "currencies")
-        
+
         client.getCurrencies { (res: Result<[SystemClient.Currency], SystemClientError>) in
             guard case let .success (currencies) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertFalse (currencies.isEmpty)
-            
+
             self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
     }
-    
+
     func testTransfers() {
         expectation = XCTestExpectation (description: "transfer")
-        
+
         let transferId = "bitcoin-testnet:ea4ed7efc701b5fdcfc38d4901f75f90c1a5de3e13fa38590289b2244f8887cb:0"
         client.getTransfer (transferId: transferId) { (res: Result<SystemClient.Transfer, SystemClientError>) in
             guard case let .success (transfer) = res
@@ -95,13 +94,13 @@ class BRBlockChainDBTest: XCTestCase {
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 60)
-        
+
         //
         //
         //
-        
+
         expectation = XCTestExpectation (description: "transfers")
-        
+
         let blockchainId = "bitcoin-testnet"
         client.getTransfers (blockchainId: blockchainId,
                              addresses: [],
@@ -115,14 +114,14 @@ class BRBlockChainDBTest: XCTestCase {
                                 XCTAssertTrue (transfers.isEmpty)
                                 self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transfers /w addresses nonsense")
-        
+
         client.getTransfers (blockchainId: blockchainId,
                              addresses: ["abc", "def"],
                              begBlockNumber: 0,
@@ -135,14 +134,14 @@ class BRBlockChainDBTest: XCTestCase {
                                 XCTAssertTrue (transfers.isEmpty)
                                 self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transfers /w addresses")
-        
+
         client.getTransfers (blockchainId: blockchainId,
                              addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                              begBlockNumber: 1446080,
@@ -155,14 +154,14 @@ class BRBlockChainDBTest: XCTestCase {
                                 XCTAssertEqual (2, transfers.count)
                                 self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transfers w/ addresses w/ one-per-page")
-        
+
         client.getTransfers (blockchainId: blockchainId,
                              addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                              begBlockNumber: 1446080,
@@ -175,14 +174,15 @@ class BRBlockChainDBTest: XCTestCase {
                                 XCTAssertEqual (2, transfers.count)
                                 self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
+        /// Avoid this - `addresses` must not be empty
         ///
-        ///
+        #if false
         expectation = XCTestExpectation (description: "transfers w/ [0,11000) w/ no address")
-        
+
         client.getTransfers (blockchainId: blockchainId,
                              addresses: [],
                              begBlockNumber: 1446080,
@@ -196,13 +196,14 @@ class BRBlockChainDBTest: XCTestCase {
                                 XCTAssert(transfers.isEmpty)
                                 self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
+        #endif
     }
-    
+
     func testTransactions () {
         expectation = XCTestExpectation (description: "transactions")
-        
+
         let transactionId = "bitcoin-testnet:d9bdd96426747b769aab74e33e109e73f793a1e309c00bed7732824a2ac85438"
         client.getTransaction (transactionId: transactionId,
                                includeRaw: true,
@@ -210,17 +211,17 @@ class BRBlockChainDBTest: XCTestCase {
                                 (res: Result<SystemClient.Transaction, SystemClientError>) in
                                 guard case let .success (transaction) = res
                                     else { XCTAssert(false); return }
-                                
+
                                 XCTAssertEqual (transactionId, transaction.id)
                                 self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transactions")
-        
+
         let blockchainId = "bitcoin-testnet"
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: [],
@@ -230,18 +231,18 @@ class BRBlockChainDBTest: XCTestCase {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
-                                    
+
                                     XCTAssertTrue (transactions.isEmpty)
                                     self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transactions /w addresses nonsense")
-        
+
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                                 begBlockNumber: nil,
@@ -250,18 +251,18 @@ class BRBlockChainDBTest: XCTestCase {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
-                                    
+
                                     XCTAssertEqual (2, transactions.count)
                                     self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transactions /w addresses")
-        
+
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                                 begBlockNumber: 1446080,
@@ -270,18 +271,18 @@ class BRBlockChainDBTest: XCTestCase {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
-                                    
+
                                     XCTAssertEqual (2, transactions.count)
                                     self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "transactions w/ addresses w/ one-per-page")
-        
+
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                                 begBlockNumber: 1446080,
@@ -292,18 +293,19 @@ class BRBlockChainDBTest: XCTestCase {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
-                                    
+
                                     XCTAssertEqual (2, transactions.count)
                                     self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
+        #if false
         expectation = XCTestExpectation (description: "transactions w/ [0,11000) w/ no address")
-        
+
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: [],
                                 begBlockNumber: 1446080,
@@ -313,34 +315,34 @@ class BRBlockChainDBTest: XCTestCase {
                                     // A 'status' 400
                                     guard case let .success(transactions) = res
                                         else { XCTAssert(false); return }
-                                    
+
                                     XCTAssert(transactions.isEmpty)
                                     self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
     }
-    
+
     func testBlocks () {
         expectation = XCTestExpectation (description: "block")
-        
+
         //        let blockId = "bitcoin-mainnet:0000000000000000001ed7770597decf0f98fe4f099111c6a0073ceabbd1e812"
         let blockId = "bitcoin-testnet:000000000000004deedbdb977277330aa156385bbc60ddc3e49938556b436330"
         client.getBlock (blockId: blockId, includeRaw: true) { (res: Result<SystemClient.Block, SystemClientError>) in
             guard case let .success (block) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertEqual (blockId, block.id)
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
         expectation = XCTestExpectation (description: "blocks")
-        
+
         let blockchainId = "bitcoin-testnet"
         client.getBlocks (blockchainId: blockchainId,
                           begBlockNumber: 1446080,
@@ -348,13 +350,13 @@ class BRBlockChainDBTest: XCTestCase {
                           includeRaw: true) { (res: Result<[SystemClient.Block], SystemClientError>) in
                             guard case let .success (blocks) = res
                                 else { XCTAssert(false); return }
-                            
+
                             XCTAssertEqual ((1446090 - 1446080),  blocks.count)
                             self.expectation.fulfill()
         }
-        
+
         wait (for: [expectation], timeout: 60)
-        
+
         ///
         ///
         ///
@@ -366,30 +368,30 @@ class BRBlockChainDBTest: XCTestCase {
                           includeTx: false,
                           includeTxRaw: false,
                           includeTxProof: false,
-                          
+
                           maxPageSize: 1) { (res: Result<[SystemClient.Block], SystemClientError>) in
                             guard case let .success (blocks) = res
                                 else { XCTAssert(false); return }
-                            
+
                             XCTAssertEqual ((1446090 - 1446080),  blocks.count)
                             self.expectation.fulfill()
         }
     }
-    
+
     func testSubscription () {
         #if os(Linux) || os(macOS)
         let deviceId = "some-random-device-id"
         #else
         let deviceId = UIDevice.current.identifierForVendor!.uuidString
         #endif
-        
+
         /// environment : { unknown, production, development }
         /// kind        : { unknown, apns, fcm, ... }
         /// value       : For apns/fcm this will be the registration token, apns should be hex-encoded
         let endpoint =  (environment: "development",
                          kind: "apns",
                          value: "apns registration token")
-        
+
         let currencies: [SystemClient.SubscriptionCurrency] = [
             (addresses: [
                 "2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT",
@@ -400,58 +402,58 @@ class BRBlockChainDBTest: XCTestCase {
                 (name: "confirmed", confirmations: [1])
             ])
         ]
-        
+
         var subscription: SystemClient.Subscription =
             (id: "ignore",
              device: deviceId,
              endpoint: endpoint,
              currencies: currencies)
-        
+
         var subscriptionCountObserved: Int  = 0;
         expectation = XCTestExpectation (description: "subscription get all")
         client.getSubscriptions { (res: Result<[SystemClient.Subscription], SystemClientError>) in
             guard case let .success (subs) = res
                 else { XCTAssert (false); return }
-            
+
             // Depending on the 'Bearer Authorization Token' we might have subscriptions.  So
             // don't be so picky on how many 'subs' we have.
             subscriptionCountObserved = subs.count;
             self.expectation.fulfill();
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription create")
         client.createSubscription(subscription) { (res: Result<SystemClient.Subscription, SystemClientError>) in
             guard case let .success (sub) = res
                 else { XCTAssert (false); return }
-            
+
             self.expectation.fulfill()
             subscription = sub
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription get")
         client.getSubscription(id: subscription.id) { (res: Result<SystemClient.Subscription, SystemClientError>) in
             guard case let .success (sub) = res
                 else { XCTAssert(false); return }
-            
+
             XCTAssertEqual(sub.id,  subscription.id)
             XCTAssertEqual(sub.device, subscription.device)
             // ...
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription get all too")
         client.getSubscriptions { (res: Result<[SystemClient.Subscription], SystemClientError>) in
             guard case let .success (subs) = res
                 else { XCTAssert (false); return }
-            
+
             XCTAssertEqual(subs.count, 1 + subscriptionCountObserved)
             self.expectation.fulfill();
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription update")
         subscription.currencies = [
             (addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
@@ -465,7 +467,7 @@ class BRBlockChainDBTest: XCTestCase {
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription delete")
         client.deleteSubscription(id: subscription.id) { (res: Result<Void, SystemClientError>) in
             guard case .success = res
@@ -473,18 +475,18 @@ class BRBlockChainDBTest: XCTestCase {
             self.expectation.fulfill()
         }
         wait (for: [expectation], timeout: 10)
-        
+
         expectation = XCTestExpectation (description: "subscription get all tre")
         client.getSubscriptions { (res: Result<[SystemClient.Subscription], SystemClientError>) in
             guard case let .success (subs) = res
                 else { XCTAssert (false); return }
-            
+
             XCTAssertEqual(subs.count, subscriptionCountObserved)
             self.expectation.fulfill();
         }
         wait (for: [expectation], timeout: 10)
     }
-    
+
     static var allTests = [
         ("testBlockchains",  testBlockchains),
         ("testCurrencies",   testCurrencies),

@@ -652,7 +652,7 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
         BREthereumHashString transactionHashString;
         ethHashFillString(transactionHash, transactionHashString);
 
-        eth_log ("EWM", "Exchnage: %s { %8s @ %zu }, Change: %s, Status: %d",
+        eth_log ("EWM", "Exchange: %s { %8s @ %zu }, Change: %s, Status: %d",
                  exchnageHashString, transactionHashString, exchangeIndex,
                  BCS_CALLBACK_TRANSACTION_TYPE_NAME(type),
                  ethExchangeGetStatus (exchange).type);

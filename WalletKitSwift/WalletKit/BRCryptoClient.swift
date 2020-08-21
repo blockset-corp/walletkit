@@ -32,6 +32,10 @@ public enum SystemClientError: Error {
 }
 
 public protocol SystemClient {
+
+    // pause, resume, cancel, ...
+    func cancelAll ()
+
     
     // Blockchain
     
@@ -65,8 +69,9 @@ public protocol SystemClient {
         address: String?,
         verified: Bool,
         demoninations: [CurrencyDenomination])
-    
+
     func getCurrencies (blockchainId: String?,
+                        mainnet: Bool,
                         completion: @escaping (Result<[Currency],SystemClientError>) -> Void)
     
     func getCurrency (currencyId: String,
@@ -130,6 +135,7 @@ public protocol SystemClient {
                           endBlockNumber: UInt64?,
                           includeRaw: Bool,
                           includeProof: Bool,
+                          includeTransfers: Bool,
                           maxPageSize: Int?,
                           completion: @escaping (Result<[Transaction], SystemClientError>) -> Void)
     
@@ -260,8 +266,8 @@ public protocol SystemClient {
 }
 
 extension SystemClient {
-    public func getCurrencies (completion: @escaping (Result<[Currency],SystemClientError>) -> Void) {
-        getCurrencies(blockchainId: nil, completion: completion)
+    public func getCurrencies (mainnet: Bool, completion: @escaping (Result<[Currency],SystemClientError>) -> Void) {
+        getCurrencies(blockchainId: nil, mainnet: mainnet, completion: completion)
     }
     
     public func getTransactions (blockchainId: String,
@@ -269,6 +275,7 @@ extension SystemClient {
                                  begBlockNumber: UInt64?,
                                  endBlockNumber: UInt64?,
                                  includeRaw: Bool,
+                                 includeTransfers: Bool,
                                  completion: @escaping (Result<[Transaction], SystemClientError>) -> Void) {
         
         getTransactions(blockchainId: blockchainId,
@@ -277,6 +284,7 @@ extension SystemClient {
                         endBlockNumber: endBlockNumber,
                         includeRaw: includeRaw,
                         includeProof: false,
+                        includeTransfers: includeTransfers,
                         maxPageSize: nil,
                         completion: completion)
     }

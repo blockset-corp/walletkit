@@ -79,7 +79,7 @@ public final class WalletManager: Equatable, CustomStringConvertible {
     ///
     /// Ensure that a wallet for currency exists.  If the wallet already exists, it is returned.
     /// If the wallet needs to be created then `nil` is returned and a series of events will
-    //// occur - notably WalletEvent.created and WalletManagerEvent.walletAdded if the wallet is
+    /// occur - notably WalletEvent.created and WalletManagerEvent.walletAdded if the wallet is
     /// created
     ///
     /// - Note: There is a precondition on `currency` being one in the managers' network
@@ -446,7 +446,8 @@ public final class WalletSweeper {
                                addresses: [address],
                                begBlockNumber: 0,
                                endBlockNumber: network.height,
-                               includeRaw: true) {
+                               includeRaw: true,
+                               includeTransfers: false) {
                                 (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                 res.resolve(
                                     success: {

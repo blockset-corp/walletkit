@@ -62,8 +62,8 @@ public class BlocksetSystemClient: SystemClient {
     /// Base URL (String) for BRD API Services
     let apiBaseURL: String
 
-    // The seesion to use for DataTaskFunc as in `session.dataTask (with: request, ...)`
-    let session: URLSession
+    // The session to use for DataTaskFunc as in `session.dataTask (with: request, ...)`.
+    let session = URLSession (configuration: .default)
 
     /// A DispatchQueue Used for certain queries that can't be accomplished in the session's data
     /// task.  Such as when multiple request are needed in getTransactions().
@@ -197,13 +197,10 @@ public class BlocksetSystemClient: SystemClient {
     ///       uncompressing response data.  This defaults to `session.dataTask (with: request, ...)`
     ///       which suffices for DEBUG builds.
     ///
-    public init (session: URLSession = URLSession (configuration: .default),
-                 bdbBaseURL: String = "https://api.blockset.com",
+    public init (bdbBaseURL: String = "https://api.blockset.com",
                  bdbDataTaskFunc: DataTaskFunc? = nil,
                  apiBaseURL: String = "https://api.breadwallet.com",
                  apiDataTaskFunc: DataTaskFunc? = nil) {
-
-        self.session = session
 
         self.bdbBaseURL = bdbBaseURL
         self.apiBaseURL = apiBaseURL
@@ -231,6 +228,11 @@ public class BlocksetSystemClient: SystemClient {
                                 decoratedReq.setValue ("Bearer \(bdbToken)", forHTTPHeaderField: "Authorization")
                                 return session.dataTask (with: decoratedReq, completionHandler: completion)
         })
+    }
+
+    public func cancelAll () {
+        print ("SYS: BDB: Cancel All")
+        session.getAllTasks(completionHandler: { $0.forEach { $0.cancel () } })
     }
 
     ///
@@ -397,8 +399,7 @@ public class BlocksetSystemClient: SystemClient {
             let raw = json.asData (name: "raw")
 
             // Require "_embedded" : "transfers" as [JSON.Dict]
-            guard let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict]
-                else { return nil }
+            let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict] ?? []
 
             // Require asTransfer is not .none
             guard let transfers = transfersJSON
@@ -636,24 +637,44 @@ public class BlocksetSystemClient: SystemClient {
         }
     }
 
-    public func getCurrencies (blockchainId: String? = nil, completion: @escaping (Result<[SystemClient.Currency],SystemClientError>) -> Void) {
+    public func getCurrencies (blockchainId: String? = nil, mainnet: Bool = true, completion: @escaping (Result<[SystemClient.Currency],SystemClientError>) -> Void) {
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asCurrency,
+                                      completion: completion,
+                                      resultsExpected: 1)
+
+        func handleResult (more: URL?, result: Result<[JSON], SystemClientError>) {
+            results.extend (result)
+
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "currencies",
+                                     completion: handleResult)
+            }
+
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
         let queryKeysBase = [
             blockchainId.map { (_) in "blockchain_id" },
+            "testnet",
             "verified"]
             .compactMap { $0 } // Remove `nil` from blockchainId
 
         let queryValsBase: [String] = [
             blockchainId,
+            (!mainnet).description,
             "true"]
             .compactMap { $0 }  // Remove `nil` from blockchainId
 
-        bdbMakeRequest (path: "currencies", query: zip (queryKeysBase, queryValsBase)) {
-            (more: URL?, res: Result<[JSON], SystemClientError>) in
-            precondition (nil == more)
-            completion (res.flatMap {
-                BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asCurrency)
-            })
-        }
+        bdbMakeRequest (path: "currencies",
+                        query: zip (queryKeysBase, queryValsBase),
+                        completion: handleResult)
     }
 
     public func getCurrency (currencyId: String, completion: @escaping (Result<SystemClient.Currency,SystemClientError>) -> Void) {
@@ -760,64 +781,47 @@ public class BlocksetSystemClient: SystemClient {
                               endBlockNumber: UInt64,
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[SystemClient.Transfer], SystemClientError>) -> Void) {
-        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
-            ? addresses.map { $0.lowercased() }
-            : addresses)
+        precondition(!addresses.isEmpty, "Empty `addresses`")
+        let chunkedAddresses = addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
 
-        self.queue.async {
-            var error: SystemClientError? = nil
-            var results = [SystemClient.Transfer]()
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asTransfer,
+                                      completion: completion,
+                                      resultsExpected: chunkedAddresses.count)
 
-            let maxPageSize = maxPageSize ?? BlocksetSystemClient.DEFAULT_MAX_PAGE_SIZE
+        func handleResult (more: URL?, result: Result<[JSON], SystemClientError>) {
+            results.extend (result)
 
-            for addresses in addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT) {
-                if nil != error { break }
-
-                let queryKeys = ["blockchain_id", "start_height", "end_height", "max_page_size"] + Array (repeating: "address", count: addresses.count)
-                let queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, maxPageSize.description] + addresses
-
-                let semaphore = DispatchSemaphore (value: 0)
-
-                var nextURL: URL? = nil
-
-                self.bdbMakeRequest (path: "transfers", query: zip (queryKeys, queryVals)) {
-                    (more: URL?, res: Result<[JSON], SystemClientError>) in
-
-                    // Append `blocks` with the resulting blocks.
-                    results += try! res
-                        .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asTransfer) }
-                        .recover { error = $0; return [] }.get()
-
-                    nextURL = more
-
-                    semaphore.signal()
-                }
-
-                // Wait for the first request
-                semaphore.wait()
-
-                // Loop until all 'nextURL' values are queried
-                while let url = nextURL, nil == error {
-                    self.bdbMakeRequest (url: url, embedded: true, embeddedPath: "transfers") {
-                        (more: URL?, res: Result<[JSON], SystemClientError>) in
-
-                        // Append `transactions` with the resulting transactions.
-                        results += try! res
-                            .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asTransfer) }
-                            .recover { error = $0; return [] }.get()
-
-                        nextURL = more
-
-                        semaphore.signal()
-                    }
-
-                    semaphore.wait()
-                }
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "transfers",
+                                     completion: handleResult)
             }
 
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
+            // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
+        let maxPageSize = maxPageSize ?? BlocksetSystemClient.ADDRESS_COUNT
+
+        for addresses in chunkedAddresses {
+            let queryKeys = ["blockchain_id",
+                             "start_height",
+                             "end_height",
+                             "max_page_size"] + Array (repeating: "address", count: addresses.count)
+
+            let queryVals = [blockchainId,
+                             begBlockNumber.description,
+                             endBlockNumber.description,
+                             maxPageSize.description] + addresses
+
+            self.bdbMakeRequest (path: "transfers",
+                                 query: zip (queryKeys, queryVals),
+                                 completion: handleResult)
         }
     }
 
@@ -839,87 +843,66 @@ public class BlocksetSystemClient: SystemClient {
                                  endBlockNumber: UInt64? = nil,
                                  includeRaw: Bool = false,
                                  includeProof: Bool = false,
+                                 includeTransfers: Bool = true,
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[SystemClient.Transaction], SystemClientError>) -> Void) {
-        // Ethereum addresses must be lowercased as the query is case-sensitive.
-        let addresses = (blockchainId.lowercased().starts(with: "ethereum")
-            ? addresses.map { $0.lowercased() }
-            : addresses)
+        precondition(!addresses.isEmpty, "Empty `addresses`")
+        let chunkedAddresses = addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
 
-        // This query could overrun the endpoint's page size (typically 5,000).  If so, we'll need
-        // to repeat the request for the next batch.
-        self.queue.async {
-            var error: SystemClientError? = nil
-            var results = [SystemClient.Transaction]()
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asTransaction,
+                                      completion: completion,
+                                      resultsExpected: chunkedAddresses.count)
 
-            let maxPageSize = maxPageSize ?? BlocksetSystemClient.DEFAULT_MAX_PAGE_SIZE
+        func handleResult (more: URL?, result: Result<[JSON], SystemClientError>) {
+            results.extend (result)
 
-            let queryKeysBase = [
-                "blockchain_id",
-                begBlockNumber.map { (_) in "start_height" },
-                endBlockNumber.map { (_) in "end_height" },
-                "include_proof",
-                "include_raw",
-                "max_page_size"]
-                .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
-
-            let queryValsBase: [String] = [
-                blockchainId,
-                begBlockNumber.map { $0.description },
-                endBlockNumber.map { $0.description },
-                includeProof.description,
-                includeRaw.description,
-                maxPageSize.description]
-                .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
-
-            let semaphore = DispatchSemaphore (value: 0)
-            var nextURL: URL? = nil
-
-            func handleResult (more: URL?, res: Result<[JSON], SystemClientError>) {
-                // Append `transactions` with the resulting transactions.
-                results += res
-                    .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asTransaction) }
-                    .getWithRecovery { error = $0; return [] }
-
-                // Record if more exist
-                nextURL = more
-
-                // signal completion
-                semaphore.signal()
-            }
-
-            for addresses in addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT) {
-                if nil != error { break }
-
-                let queryKeys = queryKeysBase + Array (repeating: "address", count: addresses.count)
-                let queryVals = queryValsBase + addresses
-
-                // Ensure a 'clean' start for this set of addresses
-                nextURL = nil
-                
-                // Make the first request.  Ideally we'll get all the transactions in one gulp
-                self.bdbMakeRequest (path: "transactions",
-                                     query: zip (queryKeys, queryVals),
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "transactions",
                                      completion: handleResult)
-
-                // Wait for the first request
-                semaphore.wait()
-
-                // Loop until all 'nextURL' values are queried
-                while let url = nextURL, nil == error {
-                    self.bdbMakeRequest (url: url,
-                                         embedded: true,
-                                         embeddedPath: "transactions",
-                                         completion: handleResult)
-
-                    // Wait for each subsequent result
-                    semaphore.wait()
-                }
             }
 
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
+            }
+        }
+
+        let maxPageSize = maxPageSize ?? ((includeTransfers ? 1 : 3) * BlocksetSystemClient.ADDRESS_COUNT)
+
+        let queryKeysBase = [
+            "blockchain_id",
+            begBlockNumber.map { (_) in "start_height" },
+            endBlockNumber.map { (_) in "end_height" },
+            "include_proof",
+            "include_raw",
+            "include_transfers",
+            "include_calls",
+            "max_page_size"]
+            .compactMap { $0 } // Remove `nil` from {beg,end}BlockNumber
+
+        let queryValsBase: [String] = [
+            blockchainId,
+            begBlockNumber.map { $0.description },
+            endBlockNumber.map { $0.description },
+            includeProof.description,
+            includeRaw.description,
+            includeTransfers.description,
+            "false",
+            maxPageSize.description]
+            .compactMap { $0 }  // Remove `nil` from {beg,end}BlockNumber
+
+        for addresses in chunkedAddresses {
+            let queryKeys = queryKeysBase + Array (repeating: "address", count: addresses.count)
+            let queryVals = queryValsBase + addresses
+
+            // Make the first request.  Ideally we'll get all the transactions in one gulp
+            self.bdbMakeRequest (path: "transactions",
+                                 query: zip (queryKeys, queryVals),
+                                 completion: handleResult)
         }
     }
 
@@ -995,63 +978,53 @@ public class BlocksetSystemClient: SystemClient {
                            includeTxProof: Bool = false,
                            maxPageSize: Int? = nil,
                            completion: @escaping (Result<[SystemClient.Block], SystemClientError>) -> Void) {
-        self.queue.async {
-            var error: SystemClientError? = nil
-            var results = [SystemClient.Block]()
 
-            var queryKeys = ["blockchain_id", "start_height", "end_height",  "include_raw",
-                             "include_tx", "include_tx_raw", "include_tx_proof"]
+        let results = ChunkedResults (queue: self.queue,
+                                      transform: Model.asBlock,
+                                      completion: completion,
+                                      resultsExpected: 1)
 
-            var queryVals = [blockchainId, begBlockNumber.description, endBlockNumber.description, includeRaw.description,
-                             includeTx.description, includeTxRaw.description, includeTxProof.description]
+        func handleResult (more: URL?, result: Result<[JSON], SystemClientError>) {
+            results.extend (result)
 
-            if let maxPageSize = maxPageSize {
-                queryKeys += ["max_page_size"]
-                queryVals += [String(maxPageSize)]
+            // If `more` and no `error`, make a followup request
+            if let url = more, !results.completed {
+                self.bdbMakeRequest (url: url,
+                                     embedded: true,
+                                     embeddedPath: "blocks",
+                                     completion: handleResult)
             }
 
-            let semaphore = DispatchSemaphore (value: 0)
-
-            var nextURL: URL? = nil
-
-            self.bdbMakeRequest (path: "blocks", query: zip (queryKeys, queryVals)) {
-                (more: URL?, res: Result<[JSON], SystemClientError>) in
-
-                // Append `blocks` with the resulting blocks.
-                results += try! res
-                    .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asBlock) }
-                    .recover { error = $0; return [] }.get()
-
-                nextURL = more
-
-                semaphore.signal()
+                // Otherwise, we completed one.
+            else {
+                results.extendedOne()
             }
-
-            // Wait for the first request
-            semaphore.wait()
-
-            // Loop until all 'nextURL' values are queried
-            while let url = nextURL, nil == error {
-                self.bdbMakeRequest (url: url, embedded: true, embeddedPath: "blocks") {
-                    (more: URL?, res: Result<[JSON], SystemClientError>) in
-
-                    // Append `transactions` with the resulting transactions.
-                    results += try! res
-                        .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asBlock) }
-                        .recover { error = $0; return [] }.get()
-
-                    nextURL = more
-
-                    semaphore.signal()
-                }
-
-                semaphore.wait()
-            }
-
-            completion (nil == error
-                ? Result.success (results)
-                : Result.failure (error!))
         }
+
+        var queryKeys = ["blockchain_id",
+                         "start_height",
+                         "end_height",
+                         "include_raw",
+                         "include_tx",
+                         "include_tx_raw",
+                         "include_tx_proof"]
+
+        var queryVals = [blockchainId,
+                         begBlockNumber.description,
+                         endBlockNumber.description,
+                         includeRaw.description,
+                         includeTx.description,
+                         includeTxRaw.description,
+                         includeTxProof.description]
+
+        if let maxPageSize = maxPageSize {
+            queryKeys += ["max_page_size"]
+            queryVals += [String(maxPageSize)]
+        }
+
+        self.bdbMakeRequest (path: "blocks",
+                             query: zip (queryKeys, queryVals),
+                             completion: handleResult)
     }
 
     public func getBlock (blockId: String,
@@ -1435,6 +1408,7 @@ public class BlocksetSystemClient: SystemClient {
                                   httpMethod: String = "POST",
                                   deserializer: @escaping (_ data: Data?) -> Result<T, SystemClientError> = deserializeAsJSON,
                                   completion: @escaping (Result<T, SystemClientError>) -> Void) {
+        print ("SYS: BDB: Request: \(url.absoluteString): Method: \(httpMethod): Data: []")
         var request = URLRequest (url: url)
         decorateRequest(&request, httpMethod: httpMethod)
         sendRequest (request, dataTaskFunc, responseSuccess (httpMethod), deserializer: deserializer, completion: completion)
@@ -1610,5 +1584,67 @@ public class BlocksetSystemClient: SystemClient {
     ///
     private static func getOneResultString (_ completion: @escaping (Result<String,SystemClientError>) -> Void) -> ((Result<JSON,SystemClientError>) -> Void) {
         return getOneResult (JSON.asString, completion)
+    }
+
+    final class ChunkedResults<T> {
+        private let queue: DispatchQueue
+        private let transform:  (JSON) -> T?
+        private let completion: (Result<[T], SystemClientError>) -> Void
+
+        private let resultsExpected: Int
+        private var resultsReceived: Int = 0;
+        private var results: [T] = []
+        private var error: SystemClientError? = nil
+
+        init (queue: DispatchQueue,
+              transform:  @escaping (JSON) -> T?,
+              completion: @escaping (Result<[T], SystemClientError>) -> Void,
+              resultsExpected: Int) {
+            self.queue = queue
+            self.transform  = transform
+            self.completion = completion
+            self.resultsExpected = resultsExpected
+        }
+
+        private var _completed: Bool {
+            return nil != error || resultsReceived == resultsExpected
+        }
+
+        var completed: Bool {
+            return queue.sync {
+                return _completed
+            }
+        }
+
+        func extend (_ result: Result<[JSON], SystemClientError>) {
+            var newError: SystemClientError? = nil
+
+            let newResults = result
+                .flatMap { BlocksetSystemClient.getManyExpected(data: $0, transform: transform) }
+                .getWithRecovery { newError = $0; return [] }
+
+            queue.async {
+                if !self._completed {
+                    if nil != newError {
+                        self.error = newError
+                        self.completion (Result.failure (self.error!))
+                    }
+                    else {
+                        self.results += newResults
+                    }
+                }
+            }
+        }
+
+        func extendedOne () {
+            queue.async {
+                if !self._completed {
+                    self.resultsReceived += 1
+                    if self._completed {
+                        self.completion (Result.success(self.results))
+                    }
+                }
+            }
+        }
     }
 }

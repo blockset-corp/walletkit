@@ -199,15 +199,6 @@ cryptoNetworkGetDesc (BRCryptoNetwork network) {
 extern BRCryptoBoolean
 cryptoNetworkIsMainnet (BRCryptoNetwork network) {
     return network->isMainnet;
-//    switch (network->type) {
-//        case BLOCK_CHAIN_TYPE_BTC:
-//            return AS_CRYPTO_BOOLEAN (network->u.btc == BRMainNetParams ||
-//                                      network->u.btc == BRBCashParams);
-//        case BLOCK_CHAIN_TYPE_ETH:
-//            return AS_CRYPTO_BOOLEAN (network->u.eth == ethNetworkMainnet);
-//        case BLOCK_CHAIN_TYPE_GEN:
-//            return AS_CRYPTO_BOOLEAN (genNetworkIsMainnet (network->u.gen));
-//    }
 }
 
 private_extern uint32_t
@@ -217,13 +208,18 @@ cryptoNetworkGetConfirmationPeriodInSeconds (BRCryptoNetwork network) {
 
 extern BRCryptoBlockNumber
 cryptoNetworkGetHeight (BRCryptoNetwork network) {
-    return network->height;
+    pthread_mutex_lock (&network->lock);
+    BRCryptoBlockNumber height = network->height;
+    pthread_mutex_unlock (&network->lock);
+    return height;
 }
 
 extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
                         BRCryptoBlockNumber height) {
+    pthread_mutex_lock (&network->lock);
     network->height = height;
+    pthread_mutex_unlock (&network->lock);
 }
 
 extern uint32_t

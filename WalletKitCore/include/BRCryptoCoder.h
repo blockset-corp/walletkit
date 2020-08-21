@@ -20,7 +20,8 @@ extern "C" {
     typedef enum {
         CRYPTO_CODER_HEX,
         CRYPTO_CODER_BASE58,
-        CRYPTO_CODER_BASE58CHECK
+        CRYPTO_CODER_BASE58CHECK,
+        CRYPTO_CODER_BASE58RIPPLE
     } BRCryptoCoderType;
 
     typedef struct BRCryptoCoderRecord *BRCryptoCoder;

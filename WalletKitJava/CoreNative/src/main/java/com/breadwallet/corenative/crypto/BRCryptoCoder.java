@@ -22,9 +22,10 @@ import static com.google.common.base.Preconditions.checkState;
 public class BRCryptoCoder extends PointerType {
 
     // these must mirror BRCryptoCoderType's enum values
-    private static final int CRYPTO_CODER_HEX         = 0;
-    private static final int CRYPTO_CODER_BASE58      = 1;
-    private static final int CRYPTO_CODER_BASE58CHECK = 2;
+    private static final int CRYPTO_CODER_HEX          = 0;
+    private static final int CRYPTO_CODER_BASE58       = 1;
+    private static final int CRYPTO_CODER_BASE58CHECK  = 2;
+    private static final int CRYPTO_CODER_BASE58RIPPLE = 3;
 
     public static Optional<BRCryptoCoder> createHex() {
         return create(CRYPTO_CODER_HEX);
@@ -36,6 +37,10 @@ public class BRCryptoCoder extends PointerType {
 
     public static Optional<BRCryptoCoder> createBase58Check() {
         return create(CRYPTO_CODER_BASE58CHECK);
+    }
+
+    public static Optional<BRCryptoCoder> createBase58Ripple() {
+        return create(CRYPTO_CODER_BASE58RIPPLE);
     }
 
     private static Optional<BRCryptoCoder> create(int alg) {

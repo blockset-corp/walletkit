@@ -53,8 +53,9 @@ import com.breadwallet.crypto.errors.MigratePeerError;
 import com.breadwallet.crypto.errors.MigrateTransactionError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateFeesUnavailableError;
-import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
 import com.breadwallet.crypto.events.network.NetworkEvent;
+import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
+import com.breadwallet.crypto.events.network.NetworkUpdatedEvent;
 import com.breadwallet.crypto.events.network.NetworkFeesUpdatedEvent;
 import com.breadwallet.crypto.events.system.SystemCreatedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
@@ -278,7 +279,7 @@ final class System implements com.breadwallet.crypto.System {
         SYSTEMS_ACTIVE.remove(sys.context);
 
         // Disconnect all wallet managers
-        sys.disconnectAll();
+        sys.pause();
 
         // Stop
         sys.stopAll();
@@ -377,6 +378,11 @@ final class System implements com.breadwallet.crypto.System {
             }
 
             @Override
+            public void updated(Network network) {
+                announceNetworkEvent(network, new NetworkUpdatedEvent());
+            }
+
+            @Override
             public void complete(List<com.breadwallet.crypto.Network> networks) {
                 announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
             }
@@ -440,16 +446,23 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
-    public void connectAll() {
-        for (WalletManager manager: getWalletManagers()) {
-            manager.connect(null);
+    public void resume () {
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Resume");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.connect(null);
+            }
         }
     }
 
     @Override
-    public void disconnectAll() {
-        for (WalletManager manager: getWalletManagers()) {
-            manager.disconnect();
+    public void pause () {
+        if (!networks.isEmpty()) {
+            Log.log(Level.FINE, "Pause");
+            for (WalletManager manager : getWalletManagers()) {
+                manager.disconnect();
+            }
+            query.cancelAll();
         }
     }
 
@@ -1687,6 +1700,7 @@ final class System implements com.breadwallet.crypto.System {
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 true,
                                 false,
+                                false,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
@@ -1750,6 +1764,7 @@ final class System implements com.breadwallet.crypto.System {
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 false,
                                 false,
+                                true,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
