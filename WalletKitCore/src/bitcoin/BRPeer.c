@@ -994,8 +994,8 @@ static void *_peerThreadRoutine(void *arg)
 
     pthread_cleanup_push(ctx->threadCleanup, ctx->info);
 
-    char name[8 + 1 + INET6_ADDRSTRLEN + 1];
-    sprintf (name, "Core BTX %s", ctx->host);
+    char name[9 + 1 + INET6_ADDRSTRLEN + 1];
+    sprintf (name, "Core BTX, %s", ctx->host);
     pthread_setname_brd (pthread_self(), name);
 
     if (_BRPeerOpenSocket(peer, PF_INET6, CONNECT_TIMEOUT, &error)) {

@@ -244,7 +244,7 @@ alarmClockInsertAlarm (BREventAlarmClock clock,
 
 static void *
 alarmClockThread (BREventAlarmClock clock) {
-    pthread_setname_brd (clock->thread, "Core Clock");
+    pthread_setname_brd (clock->thread, "Core SYS, Clock");
 
     pthread_mutex_lock(&clock->lock);
 

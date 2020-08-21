@@ -242,7 +242,7 @@ cryptoListenerCreate (BRCryptoListenerContext context,
     listener->walletCallback   = walletCallback;
     listener->transferCallback = transferCallback;
 
-    listener->handler = eventHandlerCreate ("Core SYS Listener",
+    listener->handler = eventHandlerCreate ("Core SYS, Listener",
                                             cryptoListenerEventTypes,
                                             cryptoListenerEventTypesCount,
                                             &listener->lock);
