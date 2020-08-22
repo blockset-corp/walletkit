@@ -500,7 +500,7 @@ private_extern void
 ewmHandleLog (BREthereumBCSCallbackContext context,
               BREthereumBCSCallbackLogType type,
               OwnershipGiven BREthereumLog log) {
-    BRCryptoWalletManagerETH manager = context;
+    BRCryptoWalletManagerETH managerETH = context;
 
     BREthereumHash logHash = logGetHash(log);
 
@@ -512,13 +512,13 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     assert (ETHEREUM_BOOLEAN_IS_TRUE (extractedIdentifier));
 
     BREthereumAddress logAddress = logGetAddress(log);
-    BREthereumToken   token      = BRSetGet (manager->tokens, &logAddress);
+    BREthereumToken   token      = BRSetGet (managerETH->tokens, &logAddress);
     if (NULL == token) { logRelease(log); return;}
 
     // TODO: Confirm LogTopic[0] is 'transfer'
     if (3 != logGetTopicsCount(log)) { logRelease(log); return; }
 
-    BRCryptoWalletETH walletETH = cryptoWalletManagerEnsureWalletForToken (manager, token);
+    BRCryptoWalletETH walletETH = cryptoWalletManagerEnsureWalletForToken (managerETH, token);
     assert (NULL != walletETH);
 
     BRCryptoTransferETH transferETH = cryptoWalletLookupTransferByIdentifier (walletETH, logHash);
@@ -533,14 +533,14 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     if (NULL == transferETH) {
 
         // Do we know that log->data is a number?
-        BRRlpItem  item  = rlpDataGetItem (manager->coder, logGetDataShared(log));
-        UInt256 amount = rlpDecodeUInt256 (manager->coder, item, 1);
-        rlpItemRelease (manager->coder, item);
+        BRRlpItem  item  = rlpDataGetItem (managerETH->coder, logGetDataShared(log));
+        UInt256 amount = rlpDecodeUInt256 (managerETH->coder, item, 1);
+        rlpItemRelease (managerETH->coder, item);
 
         transferETH = (BRCryptoTransferETH) cryptoTransferCreateWithLogAsETH (walletETH->base.listenerTransfer,
                                                                               walletETH->base.unit,
                                                                               walletETH->base.unitForFee,
-                                                                              manager->account,
+                                                                              managerETH->account,
                                                                               amount,
                                                                               log);
 
@@ -553,7 +553,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         // walletUpdateBalance (wallet);
 
         // If this transfer references a transaction, fill out this log's fee basis
-        ewmHandleLogFeeBasis (manager, transactionHash, NULL, &transferETH->base, &walletETH->base);
+        ewmHandleLogFeeBasis (managerETH, transactionHash, NULL, &transferETH->base, &walletETH->base);
 
         oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
@@ -564,7 +564,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
     // to report a transfer status event.  We'll strive to only report events when the status has
     // actually changed.
     else {
-        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (&manager->base, &walletETH->base, &transferETH->base,
+        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (&managerETH->base, &walletETH->base, &transferETH->base,
                                                                   logGetStatus (log));
 
         // Log becomes the new basis for transfer
@@ -589,7 +589,7 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
                  BCS_CALLBACK_TRANSACTION_TYPE_NAME(type),
                  logGetStatus(log).type);
 
-        ewmReportTransferStatusAsEvent (&manager->base, &walletETH->base, &transferETH->base, oldState);
+        ewmReportTransferStatusAsEvent (&managerETH->base, &walletETH->base, &transferETH->base, oldState);
     }
 }
 
@@ -597,7 +597,8 @@ private_extern void
 ewmHandleExchange (BREthereumBCSCallbackContext context,
                    BREthereumBCSCallbackExchangeType type,
                    OwnershipGiven BREthereumExchange exchange) {
-#ifdef REFACTOR
+    BRCryptoWalletManagerETH managerETH = context;
+
     BREthereumHash exchangeHash = ethExchangeGetHash(exchange);
 
     BREthereumHash transactionHash;
@@ -608,41 +609,49 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
     assert (ETHEREUM_BOOLEAN_IS_TRUE (extractedIdentifier));
 
     BREthereumAddress contract = ethExchangeGetContract(exchange);
-    BREthereumToken   token    = ewmLookupToken (ewm, contract);
-    BREthereumWallet  wallet = (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (contract, EMPTY_ADDRESS_INIT))
-                                ? ewmGetWallet (ewm)
-                                : (NULL == token ? NULL : ewmGetWalletHoldingToken (ewm, token)));
+    BREthereumToken   token    = BRSetGet (managerETH->tokens, &contract);
+    BREthereumBoolean contractIsEmpty = ethAddressEqual (contract, EMPTY_ADDRESS_INIT);
 
-    // TODO: Nothing to do?
-    if (NULL == wallet) { ethExchangeRelease(exchange); return; }
+    // If `token` is NULL, then we don't know about this currency.  If `contract` is not NULL,
+    // then this is an exchange that we are NOT interested in.
+    if (NULL == token && ETHEREUM_BOOLEAN_FALSE == contractIsEmpty) {
+        ethExchangeRelease (exchange);
+        return;
+    }
 
-    BREthereumTransfer transfer = walletGetTransferByIdentifier (wallet, exchangeHash);
-    // We never have an originating transfers as we can't create internal transactions
+    BRCryptoWalletETH walletETH = cryptoWalletManagerEnsureWalletForToken (managerETH, token);
+    assert (NULL != walletETH);
+
+    BRCryptoTransferETH transferETH = cryptoWalletLookupTransferByIdentifier (walletETH, exchangeHash);
+    if (NULL == transferETH)
+        transferETH = cryptoWalletLookupTransferByOriginatingHash (walletETH, transactionHash);
 
     bool needStatusEvent = false;
 
-    if (NULL == transfer) {
-        transfer = transferCreateWithExchange(exchange, ewm->tokens);
+    BRCryptoTransferState oldState;
 
-        walletHandleTransfer (wallet, transfer);
+    if (NULL == transferETH) {
+        transferETH = (BRCryptoTransferETH) cryptoTransferCreateWithExchangeAsETH (walletETH->base.listenerTransfer,
+                                                                                   walletETH->base.unit,
+                                                                                   walletETH->base.unitForFee,
+                                                                                   managerETH->account,
+                                                                                   ethExchangeGetAssetValue (exchange),
+                                                                                   exchange);
 
-        ewmSignalTransferEvent (ewm, wallet, transfer, (BREthereumTransferEvent) {
-            TRANSFER_EVENT_CREATED,
-            SUCCESS
-        });
+        cryptoWalletAddTransfer (&walletETH->base, &transferETH->base);
 
-        // If this transfer references a transaction, fill out this exchanges's fee basis
-        if (wallet != ewmGetWallet(ewm))
-            ewmHandleExchangeFeeBasis (ewm, transactionHash, NULL, transfer);
+        ewmHandleExchangeFeeBasis (managerETH, transactionHash, NULL, &transferETH->base, &walletETH->base);
+
+        oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
 
         needStatusEvent = true;
     }
     else {
-        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (ewm, wallet, transfer,
+        needStatusEvent = ewmReportTransferStatusAsEventIsNeeded (&managerETH->base, &walletETH->base, &transferETH->base,
                                                                   ethExchangeGetStatus(exchange));
 
-        // Exchange becomes the new basis for transfer
-        transferSetBasisForExchange (transfer, exchange);
+        transferETH->basis.type = TRANSFER_BASIS_EXCHANGE;
+        transferETH->basis.u.exchange = exchange;
     }
 
     if (needStatusEvent) {
@@ -657,9 +666,9 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
                  BCS_CALLBACK_TRANSACTION_TYPE_NAME(type),
                  ethExchangeGetStatus (exchange).type);
 
-        ewmReportTransferStatusAsEvent (ewm, wallet, transfer);
+        ewmReportTransferStatusAsEvent (&managerETH->base, &walletETH->base, &transferETH->base, oldState);
     }
-
+#if REFACTOR
     // We've added a transfer and should update the wallet's balance.  Ethereum is 'account based';
     // but in API modes we don't have the account information - so we'll update the balance
     // explicitly.  In P2P mode, we get the 'account'.

@@ -374,6 +374,8 @@ cryptoWalletManagerLookupWalletForToken (BRCryptoWalletManagerETH managerETH,
 private_extern BRCryptoWalletETH
 cryptoWalletManagerEnsureWalletForToken (BRCryptoWalletManagerETH managerETH,
                                          BREthereumToken token) {
+    if (NULL == token) return (BRCryptoWalletETH) managerETH->base.wallet;
+
     BRCryptoWallet wallet = (BRCryptoWallet) cryptoWalletManagerLookupWalletForToken (managerETH, token);
 
     if (NULL == wallet) {
