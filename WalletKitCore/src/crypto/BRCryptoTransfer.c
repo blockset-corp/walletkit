@@ -124,9 +124,9 @@ cryptoTransferRelease (BRCryptoTransfer transfer) {
     pthread_mutex_unlock  (&transfer->lock);
     pthread_mutex_destroy (&transfer->lock);
 
-    cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_DELETED
-    });
+//    cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+//        CRYPTO_TRANSFER_EVENT_DELETED
+//    });
 
     memset (transfer, 0, sizeof(*transfer));
     free (transfer);
