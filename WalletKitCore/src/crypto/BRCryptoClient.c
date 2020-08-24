@@ -801,7 +801,6 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     });
 
     cryptoAmountGive (pricePerCostFactor);
-    cryptoFeeBasisGive (feeBasis);
     cryptoClientCallbackStateRelease (callbackState);
 }
 
