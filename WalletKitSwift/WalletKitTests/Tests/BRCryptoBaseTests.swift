@@ -398,13 +398,13 @@ class CryptoTestSystemListener: SystemListener {
 class BRCryptoSystemBaseTests: BRCryptoBaseTests {
 
     var listener: CryptoTestSystemListener!
-    var query: BlockChainDB!
+    var client: SystemClient!
     var system: System!
 
     var registerCurrencyCodes = [String]()
     var currencyCodesToMode = ["btc":WalletManagerMode.api_only]
 
-    var currencyModels: [BlockChainDB.Model.Currency] = []
+    var currencyModels: [SystemClient.Currency] = []
 
     func createDefaultListener() -> CryptoTestSystemListener {
         return CryptoTestSystemListener (networkCurrencyCodesToMode: currencyCodesToMode,
@@ -412,23 +412,22 @@ class BRCryptoSystemBaseTests: BRCryptoBaseTests {
                                          isMainnet: isMainnet)
     }
 
-    func createDefaultQuery () -> BlockChainDB {
-        return BlockChainDB.createForTest()
+    func createDefaultClient () -> SystemClient {
+        return BlocksetSystemClient.createForTest()
     }
 
-    func prepareSystem (listener: CryptoTestSystemListener? = nil, query: BlockChainDB? = nil) {
+    func prepareSystem (listener: CryptoTestSystemListener? = nil, client: SystemClient? = nil) {
 
         self.listener = listener ?? createDefaultListener()
-        self.query    = query    ?? createDefaultQuery()
+        self.client   = client   ?? createDefaultClient()
 
-        system = System (listener:  self.listener,
+        system = System (client:    self.client,
+                         listener:  self.listener,
                          account:   self.account,
                          onMainnet: self.isMainnet,
-                         path:      self.coreDataDir,
-                         query:     self.query)
+                         path:      self.coreDataDir)
 
         XCTAssertEqual (coreDataDir + "/" + self.account.fileSystemIdentifier, system.path)
-        XCTAssertTrue  (self.query === system.query)
         XCTAssertEqual (account.uids, system.account.uids)
 
         system.configure(withCurrencyModels: currencyModels) // Don't connect

@@ -61,12 +61,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
     wallet->ref = CRYPTO_REF_ASSIGN (cryptoWalletRelease);
 
-    wallet->listenerTransfer = (BRCryptoTransferListener) {
-        listener.context,
-        listener.manager,
-        wallet,
-        listener.transferCallback
-    };
+    wallet->listenerTransfer = cryptoListenerCreateTransferListener (&wallet->listener, wallet);
 
     pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
@@ -125,6 +120,12 @@ cryptoWalletGetUnit (BRCryptoWallet wallet) {
     return cryptoUnitTake (wallet->unit);
 }
 
+extern BRCryptoBoolean
+cryptoWalletHasCurrency (BRCryptoWallet wallet,
+                         BRCryptoCurrency currency) {
+    return cryptoUnitHasCurrency (wallet->unit, currency);
+}
+
 extern BRCryptoWalletState
 cryptoWalletGetState (BRCryptoWallet wallet) {
     return wallet->state;
@@ -153,6 +154,12 @@ cryptoWalletGetCurrencyForFee (BRCryptoWallet wallet) {
 extern BRCryptoUnit
 cryptoWalletGetUnitForFee (BRCryptoWallet wallet) {
     return cryptoUnitTake (wallet->unitForFee);
+}
+
+extern BRCryptoBoolean
+cryptoWalletHasCurrencyForFee (BRCryptoWallet wallet,
+                               BRCryptoCurrency currency) {
+    return cryptoUnitHasCurrency (wallet->unitForFee, currency);
 }
 
 extern BRCryptoAmount
@@ -226,7 +233,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
         array_add (wallet->transfers, cryptoTransferTake(transfer));
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
+            { .transfer = cryptoTransferTake (transfer) }
         });
         cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirected(transfer));
      }
@@ -243,7 +250,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
             array_rm (wallet->transfers, index);
             cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
                 CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
-                { .transfer = { cryptoTransferTake (transfer) }}
+                { .transfer = cryptoTransferTake (transfer) }
             });
             cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirected(transfer));
             break;
@@ -454,15 +461,6 @@ cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
     cryptoCurrencyGive (feeCurrency);
 
     return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
-}
-
-extern void
-cryptoWalletGenerateEvent (BRCryptoWallet wallet,
-                           BRCryptoWalletEvent event) {
-    wallet->listener.walletCallback (wallet->listener.context,
-                                     wallet->listener.manager,
-                                     wallet,
-                                     event);
 }
 
 extern BRCryptoBoolean

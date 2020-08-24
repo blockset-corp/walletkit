@@ -81,7 +81,7 @@ static inline int maximum (int a, int b) { return a > b ? a : b; }
 static inline int minimum (int a, int b) { return a < b ? a : b; }
 #pragma clang diagnostic pop
 
-#define LES_THREAD_NAME    "Core Ethereum LES"
+#define LES_THREAD_NAME    "Core ETH, LES"
 #define LES_PTHREAD_STACK_SIZE (512 * 1024)
 #define LES_PTHREAD_NULL   PTHREAD_NULL
 

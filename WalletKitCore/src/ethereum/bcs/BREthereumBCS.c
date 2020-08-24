@@ -229,7 +229,7 @@ bcsCreate (BREthereumNetwork network,
 
     // Create but don't start the event handler.  Ensure that a fast-acting lesCreate()
     // can signal events (by queuing; they won't be handled until the event queue is started).
-    bcs->handler = eventHandlerCreate ("Core Ethereum BCS",
+    bcs->handler = eventHandlerCreate ("Core ETH, BCS",
                                        bcsEventTypes,
                                        bcsEventTypesCount,
                                        NULL);

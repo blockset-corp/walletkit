@@ -92,14 +92,6 @@ typedef struct {
     BRCryptoWalletIsEqualHandler isEqual;
 } BRCryptoWalletHandlers;
 
-// MARK: - Wallet Listener
-
-typedef struct {
-    BRCryptoListenerContext context;
-    BRCryptoWalletManager manager;
-    BRCryptoWalletListenerCallback walletCallback;
-    BRCryptoTransferListenerCallback transferCallback;
-} BRCryptoWalletListener;
 
 // MARK: - Wallet
 
@@ -172,9 +164,11 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
-private_extern void
+static inline void
 cryptoWalletGenerateEvent (BRCryptoWallet wallet,
-                           BRCryptoWalletEvent event);
+                           BRCryptoWalletEvent event) {
+    cryptoListenerGenerateWalletEvent (&wallet->listener, wallet, event);
+}
 
 #ifdef __cplusplus
 }

@@ -242,21 +242,21 @@ public final class Network: CustomStringConvertible {
     }
 
     internal static func findBuiltin (uids: String) -> Network? {
-        return cryptoNetworkFindBuiltin(uids)
+        return cryptoNetworkFindBuiltin(uids, uids.hasSuffix("mainnet"))
             .map { Network (core: $0, take: false) }
     }
 
-    internal static func installBuiltins () -> [Network] {
-        var builtinCoresCount: Int = 0
-        let builtinCores = cryptoNetworkInstallBuiltins (&builtinCoresCount)!
-        defer { cryptoMemoryFree (builtinCores) }
-
-        return builtinCores
-            .withMemoryRebound (to: BRCryptoNetwork.self, capacity: builtinCoresCount) {
-                Array (UnsafeBufferPointer (start: $0, count: builtinCoresCount))
-        }
-        .map { Network (core: $0, take: false) }
-    }
+//    internal static func installBuiltins (isMainnet: Bool = true) -> [Network] {
+//        var builtinCoresCount: Int = 0
+//        let builtinCores = cryptoNetworkInstallBuiltins (&builtinCoresCount, isMainnet)!
+//        defer { cryptoMemoryFree (builtinCores) }
+//
+//        return builtinCores
+//            .withMemoryRebound (to: BRCryptoNetwork.self, capacity: builtinCoresCount) {
+//                Array (UnsafeBufferPointer (start: $0, count: builtinCoresCount))
+//        }
+//        .map { Network (core: $0, take: false) }
+//    }
 
     public var description: String {
         return name
@@ -348,6 +348,23 @@ public enum NetworkType: CustomStringConvertible {
 public enum NetworkEvent {
     case created
     case feesUpdated
+    case deleted
+
+    init (core: BRCryptoNetworkEvent) {
+        switch core.type {
+        case CRYPTO_NETWORK_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
+            self = .feesUpdated
+
+        case CRYPTO_NETWORK_EVENT_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///

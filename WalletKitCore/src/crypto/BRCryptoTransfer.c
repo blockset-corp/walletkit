@@ -339,16 +339,6 @@ cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
     return transfer->handlers->serialize (transfer, network, CRYPTO_FALSE, serializationCount);
 }
 
-private_extern void
-cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
-                             BRCryptoTransferEvent event) {
-    transfer->listener.callback (transfer->listener.context,
-                                 transfer->listener.manager,
-                                 transfer->listener.wallet,
-                                 transfer,
-                                 event);
-}
-
 extern BRCryptoBoolean
 cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
     return AS_CRYPTO_BOOLEAN (t1 == t2 ||

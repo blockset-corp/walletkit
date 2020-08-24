@@ -99,6 +99,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork)
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoBlockChainType type,
+                           BRCryptoNetworkListener listener,
                            const char *uids,
                            const char *name,
                            const char *desc,
@@ -112,6 +113,8 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     network->type = type;
     network->handlers = cryptoHandlersLookup(type)->network;
     network->sizeInBytes = sizeInBytes;
+
+    network->listener = listener;
 
     network->uids = strdup (uids);
     network->name = strdup (name);
@@ -133,6 +136,10 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE);
 
     if (NULL != createCallback) createCallback (createContext, network);
+
+    cryptoNetworkGenerateEvent (network, (BRCryptoNetworkEvent) {
+        CRYPTO_NETWORK_EVENT_CREATED
+    });
 
     return network;
 }
@@ -347,6 +354,7 @@ extern BRCryptoUnit
 cryptoNetworkGetUnitAsBase (BRCryptoNetwork network,
                             BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->baseUnit);
     pthread_mutex_unlock (&network->lock);
@@ -357,6 +365,7 @@ extern BRCryptoUnit
 cryptoNetworkGetUnitAsDefault (BRCryptoNetwork network,
                                BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->defaultUnit);
     pthread_mutex_unlock (&network->lock);
@@ -367,6 +376,7 @@ extern size_t
 cryptoNetworkGetUnitCount (BRCryptoNetwork network,
                            BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     size_t count = ((NULL == association || NULL == association->units)
                     ? 0
@@ -380,6 +390,7 @@ cryptoNetworkGetUnitAt (BRCryptoNetwork network,
                         BRCryptoCurrency currency,
                         size_t index) {
     pthread_mutex_lock (&network->lock);
+    currency = (NULL == currency ? network->currency : currency);
     BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
     BRCryptoUnit unit = ((NULL == association || NULL == association->units || index >= array_count(association->units))
                          ? NULL
@@ -435,6 +446,9 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
     for (size_t idx = 0; idx < count; idx++) {
         array_add (network->fees, cryptoNetworkFeeTake (fees[idx]));
     }
+    cryptoListenerGenerateNetworkEvent (&network->listener, network, (BRCryptoNetworkEvent) {
+        CRYPTO_NETWORK_EVENT_FEES_UPDATED
+    });
     pthread_mutex_unlock (&network->lock);
 }
 
@@ -585,7 +599,9 @@ cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
 // MARK: - Network Defaults
 
 extern BRCryptoNetwork *
-cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
+cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
+                              BRCryptoNetworkListener listener,
+                              bool isMainnet) {
     // Network Specification
     struct NetworkSpecification {
         BRCryptoBlockChainType type;
@@ -686,13 +702,15 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 
     for (size_t networkIndex = 0; networkIndex < NUMBER_OF_NETWORKS; networkIndex++) {
         struct NetworkSpecification *networkSpec = &networkSpecifications[networkIndex];
+        if (isMainnet != networkSpec->isMainnet) continue;
 
         const BRCryptoHandlers *handlers = cryptoHandlersLookup(networkSpec->type);
         // If the network handlers are NULL, then we'll skip that network.  This is only
         // for debugging purposes - as a way to avoid unimplemented currencies.
         if (NULL == handlers->network) break;
 
-        BRCryptoNetwork network = handlers->network->create (networkSpec->networkId,
+        BRCryptoNetwork network = handlers->network->create (listener,
+                                                             networkSpec->networkId,
                                                              networkSpec->name,
                                                              networkSpec->network,
                                                              networkSpec->isMainnet,
@@ -837,9 +855,12 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount) {
 }
 
 extern BRCryptoNetwork
-cryptoNetworkFindBuiltin (const char *uids) {
+cryptoNetworkFindBuiltin (const char *uids,
+                          bool isMainnet) {
     size_t networksCount = 0;
-    BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount);
+    BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount,
+                                                              cryptoListenerCreateNetworkListener (NULL, NULL),
+                                                              isMainnet);
     BRCryptoNetwork network = NULL;
 
     for (size_t index = 0; index < networksCount; index++) {

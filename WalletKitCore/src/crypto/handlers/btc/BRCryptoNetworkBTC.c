@@ -47,6 +47,7 @@ cryptoNetworkCreateCallbackBTC (BRCryptoNetworkCreateContext context,
 
 static BRCryptoNetwork
 cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
+                          BRCryptoNetworkListener listener,
                           const char *uids,
                           const char *name,
                           const char *desc,
@@ -59,6 +60,7 @@ cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
                                       type,
+                                      listener,
                                       uids,
                                       name,
                                       desc,
@@ -69,45 +71,48 @@ cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBTC (const char *uids,
+cyptoNetworkCreateBTC (BRCryptoNetworkListener listener,
+                       const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
                        uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, uids, name, desc, true, confirmationPeriodInSeconds, BRMainNetParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, listener, uids, name, desc, true, confirmationPeriodInSeconds, BRMainNetParams);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, uids, name, desc, false, confirmationPeriodInSeconds, BRTestNetParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, listener,uids, name, desc, false, confirmationPeriodInSeconds, BRTestNetParams);
     else {
         assert (false); return NULL;
     }
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBCH (const char *uids,
+cyptoNetworkCreateBCH (BRCryptoNetworkListener listener,
+                       const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
                        uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, uids, name, desc, true, confirmationPeriodInSeconds,  BRBCashParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, listener, uids, name, desc, true, confirmationPeriodInSeconds,  BRBCashParams);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, uids, name, desc, false, confirmationPeriodInSeconds, BRBCashTestNetParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, listener, uids, name, desc, false, confirmationPeriodInSeconds, BRBCashTestNetParams);
     else {
         assert (false); return NULL;
     }
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBSV (const char *uids,
+cyptoNetworkCreateBSV (BRCryptoNetworkListener listener,
+const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
                        uint32_t confirmationPeriodInSeconds) {
     if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, uids, name, desc, true, confirmationPeriodInSeconds,  BRBSVParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, listener, uids, name, desc, true, confirmationPeriodInSeconds,  BRBSVParams);
     else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, uids, name, desc, false, confirmationPeriodInSeconds, BRBSVTestNetParams);
+        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, listener, uids, name, desc, false, confirmationPeriodInSeconds, BRBSVTestNetParams);
     else {
         assert (false); return NULL;
     }
