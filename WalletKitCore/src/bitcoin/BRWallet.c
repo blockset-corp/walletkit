@@ -26,6 +26,7 @@
 #include "support/BRSet.h"
 #include "support/BRAddress.h"
 #include "support/BRArray.h"
+#include "support/BROSCompat.h"
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -69,6 +70,7 @@ inline static size_t _txChainIndex(const BRTransaction *tx, const UInt160 *chain
 struct BRWalletStruct {
     uint64_t balance, totalSent, totalReceived, feePerKb, *balanceHist;
     uint32_t blockHeight;
+    BRUTXOSelection utxoOrdering;
     BRUTXO *utxos;
     BRTransaction **transactions;
     BRMasterPubKey masterPubKey;
@@ -161,6 +163,38 @@ static int _BRWalletContainsTx(BRWallet *wallet, const BRTransaction *tx)
     return r;
 }
 
+static void _BRWalletInsertUTXO (BRWallet *wallet, const BRUTXO utxo) {
+    size_t utxoCount = array_count(wallet->utxos);
+
+    switch (wallet->utxoOrdering) {
+        case UTXO_SELECTION_FIFO:
+            array_add(wallet->utxos, utxo);
+            break;
+
+        case UTXO_SELECTION_MINIMIZE_EARLY_FEES: {
+            int utxoAdded = 0;
+            for (size_t index = 0; index < utxoCount; index++)
+                if (utxo.amount >= wallet->utxos[index].amount) {
+                    array_insert (wallet->utxos, index, utxo);
+                    utxoAdded = 1;
+                    break; // for
+                }
+            if (!utxoAdded)
+                array_add (wallet->utxos, utxo);
+            break;
+        }
+
+        case UTXO_SELECTION_RANDOM: {
+            uint32_t utxoIndex = arc4random_uniform_brd (1 + (uint32_t) utxoCount);
+            if (utxoIndex == utxoCount)
+                array_add (wallet->utxos, utxo);
+            else
+                array_insert (wallet->utxos, utxoIndex, utxo);
+            break;
+        }
+    }
+}
+
 static void _BRWalletUpdateBalance(BRWallet *wallet)
 {
     int isInvalid, isPending;
@@ -234,7 +268,7 @@ static void _BRWalletUpdateBalance(BRWallet *wallet)
 
             if (pkh && BRSetContains(wallet->allPKH, pkh)) {
                 BRSetAdd(wallet->usedPKH, (void *)pkh);
-                array_add(wallet->utxos, ((const BRUTXO) { tx->txHash, (uint32_t)j }));
+                _BRWalletInsertUTXO (wallet, ((const BRUTXO) { tx->txHash, (uint32_t)j, tx->outputs[j].amount }));
                 balance += tx->outputs[j].amount;
             }
         }
@@ -267,6 +301,7 @@ BRWallet *BRWalletNew(BRAddressParams addrParams, BRTransaction *transactions[],
     assert(transactions != NULL || txCount == 0);
     wallet = calloc(1, sizeof(*wallet));
     assert(wallet != NULL);
+    wallet->utxoOrdering = DEFAULT_UTXO_SELECTION;
     array_new(wallet->utxos, 100);
     array_new(wallet->transactions, txCount + 100);
     wallet->feePerKb = DEFAULT_FEE_PER_KB;
@@ -281,6 +316,7 @@ BRWallet *BRWalletNew(BRAddressParams addrParams, BRTransaction *transactions[],
     wallet->spentOutputs = BRSetNew(BRUTXOHash, BRUTXOEq, txCount + 100);
     wallet->usedPKH = BRSetNew(_pkhHash, _pkhEq, txCount + 100);
     wallet->allPKH = BRSetNew(_pkhHash, _pkhEq, txCount + 100);
+
     pthread_mutex_init(&wallet->lock, NULL);
 
     for (size_t i = 0; transactions && i < txCount; i++) {
