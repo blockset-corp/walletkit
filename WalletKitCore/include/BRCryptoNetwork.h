@@ -94,6 +94,17 @@ extern "C" {
     extern BRCryptoBlockChainType
     cryptoNetworkGetType (BRCryptoNetwork network);
 
+
+    /**
+     * Return the Blockchain type the network with `name` or CRYPTO_NETWORK_TYPE_UNKNOWN if
+     * there is no network with `name`.
+     *
+     * @param name the name
+     * @param isMainnet filled with true if `name` is for mainnet; false otherwise.
+     */
+    extern BRCryptoBlockChainType
+    cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet);
+
     /**
      * Returns the network's currency.  This is typically (always?) the currency used to pay
      * for network fees.

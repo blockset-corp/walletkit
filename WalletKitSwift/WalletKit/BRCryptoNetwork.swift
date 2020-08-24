@@ -262,6 +262,14 @@ public final class Network: CustomStringConvertible {
         return name
     }
 
+    public static func getTypeFromName (name: String) -> NetworkType? {
+        var isMainnet: BRCryptoBoolean = CRYPTO_FALSE
+        let core = cryptoNetworkGetTypeFromName (name, &isMainnet)
+        return (core == BRCryptoBlockChainType (CRYPTO_NETWORK_TYPE_UNKNOWN)
+            ? nil
+            : NetworkType (core: core))
+    }
+
     deinit {
         cryptoNetworkGive (core)
     }
@@ -296,6 +304,19 @@ extension Network {
 }
 #endif
 
+//extension BRCryptoBlockChainType: BinaryInteger {
+//    public typealias Words = <#type#>
+//
+//    public typealias Magnitude = <#type#>
+//
+//    public static func + (lhs: BRCryptoBlockChainType, rhs: BRCryptoBlockChainType) -> BRCryptoBlockChainType {
+//        <#code#>
+//    }
+//
+//    public typealias IntegerLiteralType = <#type#>
+//
+//
+//}
 ///
 /// Try as we might, certain functionality outside of WalletKit will require knowing the
 /// canonical network type as: BTC, BCH, ETH, etc.  The NetworkType provides this information.

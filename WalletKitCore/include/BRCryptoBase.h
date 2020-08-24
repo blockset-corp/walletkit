@@ -121,8 +121,8 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         // CRYPTO_NETWORK_TYPE_XLM,
     } BRCryptoBlockChainType;
 
-#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
-
+#    define NUMBER_OF_NETWORK_TYPES     (1 + CRYPTO_NETWORK_TYPE_HBAR)
+#    define CRYPTO_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
     //
     // Crypto Network Base Currency
     //

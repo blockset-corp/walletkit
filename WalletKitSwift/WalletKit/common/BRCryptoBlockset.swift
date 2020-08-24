@@ -775,6 +775,18 @@ public class BlocksetSystemClient: SystemClient {
     static let ADDRESS_COUNT = 50
     static let DEFAULT_MAX_PAGE_SIZE = 20
 
+    private func canonicalAddresses (_ addresses: [String], _ blockchainId: String) -> [String] {
+        guard let type = Network.getTypeFromName (name: blockchainId)
+            else { return addresses }
+
+        switch type {
+        case .eth:
+            return addresses.map { $0.lowercased() }
+        default:
+            return addresses
+        }
+    }
+
     public func getTransfers (blockchainId: String,
                               addresses: [String],
                               begBlockNumber: UInt64,
@@ -782,7 +794,8 @@ public class BlocksetSystemClient: SystemClient {
                               maxPageSize: Int? = nil,
                               completion: @escaping (Result<[SystemClient.Transfer], SystemClientError>) -> Void) {
         precondition(!addresses.isEmpty, "Empty `addresses`")
-        let chunkedAddresses = addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
+        let chunkedAddresses = canonicalAddresses(addresses, blockchainId)
+            .chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,
                                       transform: Model.asTransfer,
@@ -847,7 +860,8 @@ public class BlocksetSystemClient: SystemClient {
                                  maxPageSize: Int? = nil,
                                  completion: @escaping (Result<[SystemClient.Transaction], SystemClientError>) -> Void) {
         precondition(!addresses.isEmpty, "Empty `addresses`")
-        let chunkedAddresses = addresses.chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
+        let chunkedAddresses = canonicalAddresses(addresses, blockchainId)
+            .chunked(into: BlocksetSystemClient.ADDRESS_COUNT)
 
         let results = ChunkedResults (queue: self.queue,
                                       transform: Model.asTransaction,
