@@ -584,7 +584,7 @@ public final class System {
     ///
     public func resume () {
         // If called when we've no networks, then we've never been configured.  Ignore resuming.
-        if !networks.isEmpty {
+        if 0 != managersCount {
             print ("SYS: Resume")
             configure(withCurrencyModels: [])
             managers.forEach { $0.connect() }
@@ -762,7 +762,7 @@ public final class System {
                     .forEach { (network: Network) in
 
                         // Record if we already know about `network`
-                        let existing = existingNetworks.contains(network)
+                        let existing = false // existingNetworks.contains(network)
 
                         // Configure the network using the currencyModels.  If currency models have
                         // been added, then we'll add those to `network`.
