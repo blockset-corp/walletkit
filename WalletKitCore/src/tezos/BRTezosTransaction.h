@@ -39,7 +39,7 @@ typedef struct {
         } delegation;
         
         struct {
-            uint8_t * publicKey;
+            uint8_t publicKey[TEZOS_PUBLIC_KEY_SIZE];
         } reveal;
     } u;
 } BRTezosOperationData;

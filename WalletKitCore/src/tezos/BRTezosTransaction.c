@@ -93,7 +93,7 @@ tezosTransactionCreateReveal (BRTezosAddress source,
     BRTezosTransaction transaction = createTransactionObject();
     transaction->source = tezosAddressClone (source);
     transaction->operation.kind = TEZOS_OP_REVEAL;
-    transaction->operation.u.reveal.publicKey = pubKey;
+    memcpy(transaction->operation.u.reveal.publicKey, pubKey, TEZOS_PUBLIC_KEY_SIZE);
     transaction->feeBasis = feeBasis;
     transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
     transaction->blockHeight = 0;
@@ -305,7 +305,7 @@ extern BRTezosOperationData tezosTransactionGetOperationData(BRTezosTransaction 
             clone.u.transaction.target = tezosAddressClone (transaction->operation.u.transaction.target);
             break;
         case TEZOS_OP_REVEAL:
-            //TODO:TEZOS clone public key
+            memcpy(clone.u.reveal.publicKey, transaction->operation.u.reveal.publicKey, TEZOS_PUBLIC_KEY_SIZE);
             break;
         case TEZOS_OP_DELEGATION:
             clone.u.delegation.target = tezosAddressClone (transaction->operation.u.delegation.target);
@@ -323,7 +323,6 @@ tezosTransactionFreeOperationData (BRTezosOperationData opData) {
             tezosAddressFree (opData.u.transaction.target);
             break;
         case TEZOS_OP_REVEAL:
-            if (opData.u.reveal.publicKey) free (opData.u.reveal.publicKey);
             break;
         case TEZOS_OP_DELEGATION:
             tezosAddressFree (opData.u.delegation.target);

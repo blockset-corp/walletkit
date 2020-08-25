@@ -53,7 +53,7 @@ encodeSource (BRTezosAddress address) {
     // same as address encoding with a 0x0 byte prepended
     BRCryptoData encodedAddress = encodeAddress (address);
     
-    uint8_t prefix = 0x00;
+    uint8_t prefix = 0x0;
     
     uint8_t encoded[encodedAddress.size + 1];
     memcpy(&encoded[0], &prefix, 1);
@@ -65,17 +65,11 @@ encodeSource (BRTezosAddress address) {
 
 static BRCryptoData
 encodePublicKey (uint8_t * pubKey) {
-    /*
-     std::array<uint8_t, 4> prefix = {13, 15, 37, 217};
-     auto data = Data(prefix.begin(), prefix.end());
-     auto bytes = Data(publicKey.bytes.begin(), publicKey.bytes.end());
-     append(data, bytes);
-
-     auto pk = Base58::bitcoin.encodeCheck(data);
-     auto decoded = "00" + base58ToHex(pk, 4, prefix.data());
-     return parse_hex(decoded);
-     */
-    //TODO:TEZOS
+    uint8_t prefix = 0x0; // ed25519
+    BRCryptoData encoded = cryptoDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
+    memcpy(encoded.bytes, &prefix, 1);
+    memcpy(&encoded.bytes[1], pubKey, TEZOS_PUBLIC_KEY_SIZE);
+    return encoded;
 }
 
 extern BRCryptoData
