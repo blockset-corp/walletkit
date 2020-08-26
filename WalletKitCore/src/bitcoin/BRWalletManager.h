@@ -66,7 +66,8 @@ bwmAnnounceTransaction (BRWalletManager manager,
                         OwnershipKept uint8_t *transaction,
                         size_t transactionLength,
                         uint64_t timestamp,
-                        uint64_t blockHeight);
+                        uint64_t blockHeight,
+                        uint8_t  error);
 
 extern void
 bwmAnnounceTransactionComplete (BRWalletManager manager,
@@ -322,6 +323,13 @@ BRWalletManagerGetWallet (BRWalletManager manager);
  */
 extern int
 BRWalletManagerHandlesBTC (BRWalletManager manager);
+
+/**
+ * Return `1` if `manager` handles BCH; otherwise `0` if BTC/BSV.  Note: the `BRChainParams` determine
+ * BTC vs BCH vs BSV.
+ */
+extern int
+BRWalletManagerHandlesBCH (BRWalletManager manager);
 
 /**
  * Creates an unsigned transaction that sends the specified amount from the wallet to the given

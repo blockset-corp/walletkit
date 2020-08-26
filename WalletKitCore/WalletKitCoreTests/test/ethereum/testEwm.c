@@ -184,14 +184,16 @@ static void
 clientEstimateGas (BREthereumClientContext context,
                    BREthereumEWM ewm,
                    BREthereumWallet wid,
+                   BREthereumTransfer tid,
                    BREthereumCookie cookie,
-                   const char *from,
-                   const char *to,
-                   const char *amount,
-                   const char *price,
-                   const char *data,
                    int rid) {
-    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, "0x77", price, rid);
+    BREthereumGasPrice gasPrice =  ewmTransferGetGasPrice (ewm, tid, WEI);
+
+    char *gasPriceStr = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
+    char *gasLimitStr = "0x77";
+
+    ewmAnnounceGasEstimateSuccess(ewm, wid, tid, cookie, gasLimitStr, gasPriceStr, rid);
+    free (gasPriceStr);
 }
 
 static void
@@ -214,6 +216,7 @@ clientGetTransactions (BREthereumClientContext context,
                        uint64_t begBlockNumber,
                        uint64_t endBlockNumber,
                        int rid) {
+    BRCoreParseStatus ignore;
     // Get all the transaction, then one by one call 'announce'
     char *address = ewmGetAccountPrimaryAddress(ewm);
     // Two transactions with an identical 'nonce' and the first one with a
@@ -224,17 +227,17 @@ clientGetTransactions (BREthereumClientContext context,
                                "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
                                address,   // required
                                "",
-                               "11113000000000",
-                               "21000",
-                               "21000000000",
+                               uint256CreateParse ("11113000000000", 10, &ignore),
+                               21000,
+                               uint256CreateParse ("21000000000", 10, &ignore),
                                "",
-                               "118",
-                               "21000",
-                               "1627184",
                                "0x0ef0110d68ee3af220e0d7c10d644fea98252180dbfc8a94cab9f0ea8b1036af",
+                               1627184,
                                "339050",
                                "3",
                                "1516477482",
+                               21000,
+                               118,
                                "0");
 
         ewmAnnounceTransaction(ewm, rid,
@@ -242,17 +245,17 @@ clientGetTransactions (BREthereumClientContext context,
                                address,   // required
                                "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
                                "",
-                               "11113000000000",
-                               "21000",
-                               "21000000000",
+                               uint256CreateParse ("11113000000000", 10, &ignore),
+                               21000,
+                               uint256CreateParse ("21000000000", 10, &ignore),
                                "",
-                               "118",
-                               "21000",
-                               "1627184",
                                "0x0ef0110d68ee3af220e0d7c10d644fea98252180dbfc8a94cab9f0ea8b1036af",
+                               1627184,
                                "339050",
                                "3",
                                "1516477482",
+                               21000,
+                               118,
                                "0");
     }
     ewmAnnounceTransactionComplete(ewm, rid, ETHEREUM_BOOLEAN_TRUE);
@@ -268,6 +271,8 @@ clientGetLogs (BREthereumClientContext context,
                uint64_t begBlockNumber,
                uint64_t endBlockNumber,
                int rid) {
+    BRCoreParseStatus ignore;
+    
     char *address = ewmGetAccountPrimaryAddress(ewm);
     const char *topics[] = {
         "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -281,13 +286,13 @@ clientGetLogs (BREthereumClientContext context,
                         getTokenBRDAddress(ewm->network),
                         3,
                         topics,
-                        "0x0000000000000000000000000000000000000000000000000000000000002328",
-                        "0xba43b7400",
-                        "0xc64e",
-                        "0x",
-                        "0x1e487e",
-                        "0x",
-                        "0x59fa1ac9");
+                        uint256CreateParse ("0x2328", 16, &ignore),
+                        "0xbc07f9de46ff70e74d024dc1b8a3730ca54829741418eb50e0511845a02ead9d",
+                        0x1e487e,
+                        0x0,
+                        0x59fa1ac9,
+                        0xc64e,
+                        0x0);
     ewmAnnounceLogComplete(ewm, rid, ETHEREUM_BOOLEAN_TRUE);
 
     free (address);
@@ -404,7 +409,7 @@ static void
 clientGetBlockNumber (BREthereumClientContext context,
                       BREthereumEWM ewm,
                       int rid) {
-    ewmAnnounceBlockNumber(ewm, "0x2e487e", rid);
+    ewmAnnounceBlockNumber(ewm, 0x2e487e, rid);
 }
 
 static void
@@ -693,7 +698,7 @@ void prepareTransaction (const char *paperKey,
     ewmWalletSignTransferWithPaperKey (ewm, wallet, tx1, paperKey);
     
     const char *rawTransactionHexEncoded =
-    ewmTransferGetRawDataHexEncoded(ewm, wallet, tx1, "0x");
+    ewmTransferGetRawDataHexEncoded(ewm, wallet, tx1, ETHEREUM_BOOLEAN_TRUE, "0x");
     
     printf ("        Raw Transaction: %s\n", rawTransactionHexEncoded);
     
@@ -821,13 +826,13 @@ runEWM_TOKEN_test (const char *paperKey,
                              TEST_TRANS3_TARGET_ADDRESS,
                              amount);
     
-    const char *rawTxUnsigned = ewmTransferGetRawDataHexEncoded(ewm, wid, tid, "0x");
+    const char *rawTxUnsigned = ewmTransferGetRawDataHexEncoded(ewm, wid, tid, ETHEREUM_BOOLEAN_TRUE, "0x");
     printf ("        RawTx Unsigned: %s\n", rawTxUnsigned);
     // No match: nonce, gasLimit, gasPrice differ
     // assert (0 == strcasecmp(&rawTxUnsigned[2], TEST_TRANS3_UNSIGNED_TX));
     
     ewmWalletSignTransferWithPaperKey(ewm, wid, tid, paperKey);
-    const char *rawTxSigned = ewmTransferGetRawDataHexEncoded(ewm, wid, tid, "0x");
+    const char *rawTxSigned = ewmTransferGetRawDataHexEncoded(ewm, wid, tid, ETHEREUM_BOOLEAN_TRUE, "0x");
     printf ("        RawTx  Signed: %s\n", rawTxSigned);
     
     ewmTransferDelete(ewm, tid);

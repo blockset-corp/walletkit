@@ -50,6 +50,11 @@ public final class System {
 
     internal let callbackCoordinator: SystemCallbackCoordinator
 
+    public func managerBy (network: Network) -> WalletManager? {
+        return managers
+            .first { $0.network == network }
+    }
+
     /// We define default blockchains but these are wholly insufficient given that the
     /// specfication includes `blockHeight` (which can never be correct).
 
@@ -67,7 +72,7 @@ public final class System {
         return networks.first { $0.uids == uids }
     }
 
-     internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
+    internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
         return managers
             .first { $0.core == core }
     }
@@ -503,20 +508,6 @@ public final class System {
     }
 
     ///
-    /// Disconnect all wallet managers
-    ///
-    public func disconnectAll () {
-        managers.forEach { $0.disconnect() }
-    }
-
-    ///
-    /// Connect all wallet managers.  They will be connected w/o an explict NetworkPeer.
-    ///
-    public func connectAll () {
-        managers.forEach { $0.connect() }
-    }
-
-    ///
     /// Set the network reachable flag for all managers. Setting or clearing this flag will
     /// NOT result in a connect/disconnect operation by a manager. Callers must use the
     /// `connect`/`disconnect` calls to change a WalletManager's connectivity state. Instead,
@@ -528,17 +519,34 @@ public final class System {
         managers.forEach { $0.setNetworkReachable(isNetworkReachable) }
     }
 
-     ///
-    /// Configure the system.  This will query various BRD services, notably the BlockChainDB, to
-    /// establish the available networks (aka blockchains) and their currencies.  For each
-    /// `Network` there will be `SystemEvent` which can be used by the App to create a
-    /// `WalletManager`
+    // MARK: - Pause/Resume
+
     ///
-    /// - Parameter applicationCurrencies: If the BlockChainDB does not return any currencies, then
-    ///     use `applicationCurrencies` merged into the deafults.  Appropriate currencies can be
-    ///     created from `System::asBlockChainDBModelCurrency` (see below)
+    /// Pause by disconnecting all wallet managers among other things.
     ///
-    public func configure (withCurrencyModels applicationCurrencies: [BlockChainDB.Model.Currency]) {
+    public func pause () {
+        // If called when we've no networks, then we've never been configured.  Ignore pausing.
+        if !networks.isEmpty {
+            print ("SYS: Pause")
+            managers.forEach { $0.disconnect() }
+            query.cancelAll()
+        }
+    }
+
+    /// Resume by connecting all wallet managers among other things
+    ///
+    public func resume () {
+        // If called when we've no networks, then we've never been configured.  Ignore resuming.
+        if !networks.isEmpty {
+            print ("SYS: Resume")
+            configure(withCurrencyModels: [])
+            managers.forEach { $0.connect() }
+        }
+    }
+
+    // MARK: - Configure
+
+    func configure (network: Network, currenciesFrom currencyModels: [BlockChainDB.Model.Currency]) {
         func currencyDenominationToBaseUnit (currency: Currency, model: BlockChainDB.Model.CurrencyDenomination) -> Unit {
             return Unit (currency: currency,
                          code:   model.code,
@@ -562,179 +570,175 @@ public final class System {
                          decimals: model.decimals)
         }
 
-        // Query for blockchains on the system.queue - thus system.configure() returns instantly
-        // and only System (and other types of) Events allow access to networds, wallets, etc.
-        self.queue.async {
-            // This semaphore is used only to block this async block until at least one group
-            // is entered.  Then this async block will wait until all groups have been left.
-            let blockchainsSemaphore = DispatchSemaphore (value: 0)
+        currencyModels
+            .filter { $0.blockchainID == network.uids }
+            .forEach { (currencyModel: BlockChainDB.Model.Currency) in
+                // Create the currency
+                let currency = Currency (uids: currencyModel.id,
+                                         name: currencyModel.name,
+                                         code: currencyModel.code,
+                                         type: currencyModel.type,
+                                         issuer: currencyModel.address)
 
-            // This group will be entered and left multiple times as blockchain models and their
-            // currencies are processed
-            let blockchainsGroup = DispatchGroup ()
+                // Create the base unit
+                let baseUnit: Unit = currencyModel.demoninations.first { 0 == $0.decimals }
+                    .map { currencyDenominationToBaseUnit(currency: currency, model: $0) }
+                    ?? currencyToDefaultBaseUnit (currency: currency)
 
-            // The 'discovered networks' will all be announced at once.
-            var discoveredNetworks:[Network] = []
+                // Create the other units
+                var units: [Unit] = [baseUnit]
+                units += currencyModel.demoninations.filter { 0 != $0.decimals }
+                    .map { currencyDenominationToUnit (currency: currency, model: $0, base: baseUnit) }
 
-            func announceNetwork (_ network: Network) {
-                // Save the network
-                 self.networks.append (network)
+                // Find the default unit
+                let maximumDecimals = units.reduce (0) { max ($0, $1.decimals) }
+                let defaultUnit = units.first { $0.decimals == maximumDecimals }!
 
-                 self.listenerQueue.async {
-                     // Announce NetworkEvent.created...
-                     self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
+                // Add the currency - this will not replace an existing currency
+                // Note, a builtin network *always* has a native currency at
+                // least which is set as the network's currency.
+                network.addCurrency (currency, baseUnit: baseUnit, defaultUnit: defaultUnit)
 
-                     // Announce SystemEvent.networkAdded - this will likely be handled with
-                     // system.createWalletManager(network:...) which will then announce
-                     // numerous events as wallets are created.
-                     self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
-                 }
+                // Add the units - this will not replace an existing unti
+                units.forEach { network.addUnitFor (currency: currency, unit: $0) }
+        }
+    }
 
-                 // Keep a running total of discovered networks
-                 discoveredNetworks.append(network)
+    func configure (network: Network, feesFrom blockchainModel: BlockChainDB.Model.Blockchain) {
+        // The feeUnit is always the network currency's base unit
+        guard let feeUnit = network.baseUnitFor (currency: network.currency)
+            else { return }
+
+        // Extract the network fees from the blockchainModel
+        let fees = blockchainModel.feeEstimates
+            // Well, quietly ignore a fee if we can't parse the amount.
+            .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
+                let timeInterval  = fee.confirmationTimeInMilliseconds
+                return Amount.create (string: fee.amount, unit: feeUnit)
+                    .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
+                                       pricePerCostFactor: $0) }
+        }
+
+        // We require fees
+        guard !fees.isEmpty
+            else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
+
+        // Update the network's fees.
+        network.fees = fees
+    }
+
+     ///
+    /// Configure the system.  This will query various BRD services, notably the BlockChainDB, to
+    /// establish the available networks (aka blockchains) and their currencies.  For each
+    /// `Network` there will be `SystemEvent` which can be used by the App to create a
+    /// `WalletManager`
+    ///
+    /// - Parameter applicationCurrencies: If the BlockChainDB does not return any currencies, then
+    ///     use `applicationCurrencies` merged into the deafults.  Appropriate currencies can be
+    ///     created from `System::asBlockChainDBModelCurrency` (see below)
+    ///
+    public func configure (withCurrencyModels applicationCurrencies: [BlockChainDB.Model.Currency]) {
+        // The networks we've already processed
+        let existingNetworks   = networks
+
+        // The 'discovered networks' will all be announced at once.
+        var discoveredNetworks = [Network]()
+
+        // The 'supported networks' will be the built-in networks matching 'onMainnet'.  There is
+        // no harm in calling this multiple times.
+        let supportedNetworks = Network.installBuiltins()
+            .filter { self.onMainnet == $0.isMainnet}
+
+        func announceNetwork (_ network: Network) {
+            // Save the network
+             self.networks.append (network)
+
+             self.listenerQueue.async {
+                 // Announce NetworkEvent.created...
+                 self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
+
+                 // Announce SystemEvent.networkAdded - this will likely be handled with
+                 // system.createWalletManager(network:...) which will then announce
+                 // numerous events as wallets are created.
+                 self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
+             }
+
+             // Keep a running total of discovered networks
+             discoveredNetworks.append(network)
+        }
+
+        func announceNetworkUpdate (_ network: Network) {
+            self.listenerQueue.async {
+                self.listener?.handleNetworkEvent (system: self, network: network, event: .updated)
+            }
+        }
+
+        // Query for blockchains.
+        self.query.getBlockchains (mainnet: self.onMainnet) {
+            (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+
+            // If the query failed, soldier on without any models
+            let blockchainModels = blockchainResult
+                .getWithRecovery {
+                    print ("SYS: CONFIGURE: Missed Blockchains Query: \($0)")
+                    return []
             }
 
-            // The 'supported networks' will be the built-in networks matching 'onMainnet'
-            let supportedNetworks = Network.installBuiltins()
-                .filter { self.onMainnet == $0.isMainnet}
+            // Make a map from the supported models
+            let blockchainModelsMap = Dictionary (uniqueKeysWithValues:
+                blockchainModels.map { ($0.id, $0) })
 
-            // Query for blockchains.
-            self.query.getBlockchains (mainnet: self.onMainnet) {
-                (blockchainResult: Result<[BlockChainDB.Model.Blockchain],BlockChainDB.QueryError>) in
+            // Query currencies for all blockchains on mainnet/testnet
+            self.query.getCurrencies (mainnet: self.onMainnet) {
+                (currencyResult: Result<[BlockChainDB.Model.Currency],BlockChainDB.QueryError>) in
 
-                // If there was a QueryError then we are done
-                if case let .failure (error) = blockchainResult {
-                    // TODO: Handle a Query Error appropriately.  Must recover/retry
-                    print ("SYS: CONFIGURE: Missed Blockchains Query: \(error)")
-                    supportedNetworks.forEach { announceNetwork($0) }
-                    return // from getBlockchains
+                // If the query failed, soldier on with the `applicationCurrencies`.  We may have
+                // a mixture of 'mainnet' and 'testnet' in this result.
+                let currencyModels = currencyResult
+                    .getWithRecovery {
+                        print ("SYS: CONFIGURE: Missed Currencies Query: \($0)")
+                        return applicationCurrencies
+                            .filter { $0.verified == true }
                 }
-
-                // Make a map from of the supported models
-                let blockchainModelsMap = Dictionary (uniqueKeysWithValues:
-                    blockchainResult.getWithRecovery { (ignore) in return [] }
-                        .map { ($0.id, $0) })
-
-                // Enter the group once for each model; we'll leave as each currency is processed.
-                // When all have left, self.queue will unblock (see blockchainsGroup.wait() below).
-                supportedNetworks.forEach { (ignore) in blockchainsGroup.enter() }
-
-                // Signal the dispatch semaphore, the self.queue will now start blocking
-                // on the dispatch group.
-                blockchainsSemaphore.signal()
 
                 // Handle each network
                 supportedNetworks
                     .forEach { (network: Network) in
 
-                        // query currencies based on the (Network <==> BlockchainMode) id
-                        self.query.getCurrencies (blockchainId: network.uids) {
-                            (currencyResult: Result<[BlockChainDB.Model.Currency],BlockChainDB.QueryError>) in
+                        // Record if we already know about `network`
+                        let existing = existingNetworks.contains(network)
 
-                            // We get one `currencyResult` per blockchain.  If we leave the group
-                            // upon completion of this block, we'll match the `enter` calls.
-                            defer {
-                                blockchainsGroup.leave()
+                        // Configure the network using the currencyModels.  If currency models have
+                        // been added, then we'll add those to `network`.
+                        self.configure (network: network, currenciesFrom: currencyModels)
+
+                        // If we have a blockChainModel, configure the network fees.
+                        if let blockchainModel = blockchainModelsMap[network.uids] {
+                            if let blockHeight = blockchainModel.blockHeight {
+                                cryptoNetworkSetHeight (network.core, blockHeight)
                             }
 
-                            // Don't process a network that we've added already.
-                            guard nil == self.networkBy (uids: network.uids)
-                                else { print ("SYS: CONFIGURE: Skipped Duplicate Network: \(network.name)"); return }
+                            self.configure (network: network, feesFrom: blockchainModel)
+                        }
+                        else { print ("SYS: CONFIGURE: Missed model for network: \(network.uids)") }
 
-                            // Get the built-in network
-//                            guard let network = supportedNetworks.first (where: { network.uids == $0.uids })
-//                                else { print ("SYS: CONFIGURE: Missed network for model: \(network.uids)"); return }
-
-                            // If there was a QueryError, then we are done
-                            if case let .failure(error) = currencyResult {
-                                print ("SYS: CONFIGURE: Missed Currencies Query (\(network.uids)): \(error)")
-                                // Continue on to use the applicationCurrencies
-                             }
-
-                            currencyResult.getWithRecovery { (ignore) in
-                                return applicationCurrencies
-                                    .filter { $0.blockchainID == network.uids }
-                            }
-                                // TODO: Only needed if getCurrencies returns the wrong stuff.
-                                .filter { $0.blockchainID == network.uids }
-                                .filter { $0.verified }
-                                .forEach { (currencyModel: BlockChainDB.Model.Currency) in
-
-                                    // Create the currency
-                                    let currency = Currency (uids: currencyModel.id,
-                                                             name: currencyModel.name,
-                                                             code: currencyModel.code,
-                                                             type: currencyModel.type,
-                                                             issuer: currencyModel.address)
-
-                                    // Create the base unit
-                                    let baseUnit: Unit = currencyModel.demoninations.first { 0 == $0.decimals }
-                                        .map { currencyDenominationToBaseUnit(currency: currency, model: $0) }
-                                        ?? currencyToDefaultBaseUnit (currency: currency)
-
-                                    // Create the other units
-                                    var units: [Unit] = [baseUnit]
-                                    units += currencyModel.demoninations.filter { 0 != $0.decimals }
-                                        .map { currencyDenominationToUnit (currency: currency, model: $0, base: baseUnit) }
-
-                                    // Find the default unit
-                                    let maximumDecimals = units.reduce (0) { max ($0, $1.decimals) }
-                                    let defaultUnit = units.first { $0.decimals == maximumDecimals }!
-
-                                    // Add the currency - this will not replace an existing currency
-                                    // Note, a builtin network *always* has a native currency at
-                                    // least which is set as the network's currency.
-                                    network.addCurrency (currency, baseUnit: baseUnit, defaultUnit: defaultUnit)
-
-                                    // Add the units - this will not replace an existing unti
-                                    units.forEach { network.addUnitFor (currency: currency, unit: $0) }
-                            }
-
-                            // The feeUnit is always the network currency's base unit
-                            guard let feeUnit = network.baseUnitFor (currency: network.currency)
-                                else { return }
-
-                            // If we have a blockchain model for this network, process it.
-                            if let blockchainModel = blockchainModelsMap[network.uids] {
-
-                                if let blockHeight = blockchainModel.blockHeight {
-                                    cryptoNetworkSetHeight (network.core, blockHeight)
-                                }
-
-                                // Extract the network fees from the blockchainModel
-                                let fees = blockchainModel.feeEstimates
-                                    // Well, quietly ignore a fee if we can't parse the amount.
-                                    .compactMap { (fee: BlockChainDB.Model.BlockchainFee) -> NetworkFee? in
-                                        let timeInterval  = fee.confirmationTimeInMilliseconds
-                                        return Amount.create (string: fee.amount, unit: feeUnit)
-                                            .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
-                                                               pricePerCostFactor: $0) }
-                                }
-
-                                // We require fees
-                                guard !fees.isEmpty
-                                    else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
-
-                                // Update the network's fees.
-                                network.fees = fees
-                            }
-                            else { print ("SYS: CONFIGURE: Missed model for network: \(network.uids)") }
-
-                            // Finally, announce the network
+                        // If this is the first we've learn of this network, then announce it
+                        if !existing {
                             announceNetwork(network)
                         }
+
+                        // Otherwise, announce a network update
+                        else {
+                            announceNetworkUpdate(network)
+                        }
                 }
-            }
-            
-            // Wait on the semaphore - indicates that the DispatchGroup is 'active'
-            blockchainsSemaphore.wait()
 
-            // Wait on the group - indicates that all models+currencies have entered and left.
-            blockchainsGroup.wait()
-
-            // Always announce the discoveredNetworks on competion of `getBlockchains`
-            self.listenerQueue.async {
-                self.listener?.handleSystemEvent(system: self, event: SystemEvent.discoveredNetworks (networks: discoveredNetworks))
+                // Announce the newly discoveredNetworks on completion
+                if existingNetworks.isEmpty || !discoveredNetworks.isEmpty {
+                    self.listenerQueue.async {
+                        self.listener?.handleSystemEvent(system: self, event: SystemEvent.discoveredNetworks (networks: discoveredNetworks))
+                    }
+                }
             }
         }
     }
@@ -903,7 +907,7 @@ public final class System {
         System.systemRemove (index: system.index)
 
         // Disconnect all wallet managers
-        system.disconnectAll()
+        system.pause()
 
         // Stop all the wallet managers.
         system.managers.forEach { $0.stop() }
@@ -1020,36 +1024,31 @@ internal final class SystemCallbackCoordinator {
         case walletFeeEstimate (Wallet.EstimateFeeHandler)
     }
 
-    var index: Int32 = 0;
-    var handlers: [Int32: Handler] = [:]
+    private var index: Int32 = 0;
+    private var handlers: [Int32: Handler] = [:]
 
     // The queue upon which to invoke handlers.
-    let queue: DispatchQueue
+    private let queue: DispatchQueue
 
     public typealias Cookie = UnsafeMutableRawPointer
 
-    var cookie: Cookie {
-        return System.systemQueue.sync {
-            let index = Int(self.index)
-            return UnsafeMutableRawPointer (bitPattern: index)!
-        }
-    }
-
-    func cookieToIndex (_ cookie: Cookie) -> Int32 {
+    private func cookieToIndex (_ cookie: Cookie) -> Int32 {
+        // Convert `cookie` back to an Int.  The trick is that `bitPattern` cannot be `0`.  So
+        // we use `1` when computing the 'distance' and need to add `1` to the result.
         return 1 + Int32(UnsafeMutableRawPointer(bitPattern: 1)!.distance(to: cookie))
     }
 
     public func addWalletFeeEstimateHandler(_ handler: @escaping Wallet.EstimateFeeHandler) -> Cookie {
-        return System.systemQueue.sync {
+        return System.systemQueue.sync (flags: .barrier) {
             index += 1
             handlers[index] = Handler.walletFeeEstimate(handler)
-            // Recursively on System.systemQueue.sync
-            return cookie
+            // A new cookie using `index` as a pointer.
+            return UnsafeMutableRawPointer (bitPattern: Int (index))!  // `index` is neve `1`
         }
     }
 
-    func remWalletFeeEstimateHandler (_ cookie: UnsafeMutableRawPointer) -> Wallet.EstimateFeeHandler? {
-        return System.systemQueue.sync {
+    private func remWalletFeeEstimateHandler (_ cookie: UnsafeMutableRawPointer) -> Wallet.EstimateFeeHandler? {
+        return System.systemQueue.sync (flags: .barrier) {
             return handlers.removeValue (forKey: cookieToIndex(cookie))
                 .flatMap {
                     switch $0 {
@@ -1296,18 +1295,18 @@ extension System {
     private static func getTransferStatus (_ modelStatus: String) -> BRCryptoTransferStateType {
         switch modelStatus {
         case "confirmed": return CRYPTO_TRANSFER_STATE_INCLUDED
-        case "submitted": return CRYPTO_TRANSFER_STATE_SUBMITTED
-        case "failed":    return CRYPTO_TRANSFER_STATE_ERRORED
+        case "submitted", "reverted": return CRYPTO_TRANSFER_STATE_SUBMITTED
+        case "failed", "rejected":    return CRYPTO_TRANSFER_STATE_ERRORED
         default: preconditionFailure()
         }
     }
 }
 
 extension System {
-    private static func mergeTransfers (_ transfers: [BlockChainDB.Model.Transfer], with addresses: [String])
-        -> [(transfer: BlockChainDB.Model.Transfer, fee: String?)] {
+    private static func mergeTransfers (_ transaction: BlockChainDB.Model.Transaction, with addresses: [String])
+        -> [(transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)] {
             // Only consider transfers w/ `address`
-            var transfers = transfers.filter {
+            var transfers = transaction.transfers.filter {
                 ($0.source.map { addresses.contains($0) } ?? false) ||
                     ($0.target.map { addresses.contains($0) } ?? false)
             }
@@ -1328,11 +1327,12 @@ extension System {
                 // We may or may not have a non-fee transfer matching `transferWithFee`.  We
                 // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-                // Find the first of the non-fee transfers matching `transferWithFee`
+                // Find the first of the non-fee transfers matching `transferWithFee`.
                 let transferMatchingFee = transfers[partition...]
                     .first {
                         $0.transactionId == transferWithFee.transactionId &&
-                            $0.source == transferWithFee.source
+                            $0.source == transferWithFee.source &&
+                            $0.amount.currency == transferWithFee.amount.currency
                 }
 
                 // We must have a transferMatchingFee; if we don't add one
@@ -1356,7 +1356,7 @@ extension System {
                 // Map transfers adding the fee to the `transferforFeeId`
                 return transfers
                     .map { (transfer: $0,
-                            fee: ($0.id == transferForFeeId ? transferWithFee.amount.value : nil))
+                            fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
                 }
 
             default:
@@ -1370,7 +1370,7 @@ extension System {
                 let transactionFeeTransfers = feeTransfers[..<transactionFeeTransfersPartition]
                 let otherFeeTransfers = feeTransfers[transactionFeeTransfersPartition...]
                 
-                var mergedTransfers: [(transfer: BlockChainDB.Model.Transfer, fee: String?)] = []
+                var mergedTransfers: [(transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)] = []
                 
                 for transferWithFee in otherFeeTransfers {
                     // Expect each non-transaction fee transfer to be associated with zero or one transfer of the same type
@@ -1394,7 +1394,7 @@ extension System {
                                                metaData: transferWithFee.metaData)
                     }
                     mergedTransfers.append((transfer: transferMatchingFee,
-                                            fee: transferWithFee.amount.value))
+                                            fee: transferWithFee.amount))
                 }
                 
                 assert(transactionFeeTransfers.count <= 1)
@@ -1429,7 +1429,7 @@ extension System {
                     
                     mergedTransfers.append(contentsOf:
                         transfers.map { (transfer: $0,
-                                         fee: ($0.id == transferForFeeId ? transferWithFee.amount.value : nil))
+                                         fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
                     })
                 }
                 return mergedTransfers
@@ -1453,48 +1453,6 @@ extension System {
         return BRCryptoClient (
             context: systemContext,
 
-            funcGetBalance: { (context, cwm, sid, addresses, addressesCount, issuer) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup ("SYS: GetBalance: Missed {cwm}", cwm: cwm); return }
-
-                let issuer = issuer.map (asUTF8String)
-                print ("SYS: BTC: GetBalance: Issuer: \(issuer ?? "")")
-
-                let addresses = System.makeAddresses (addresses, addressesCount)
-
-                switch manager.network.type {
-                // Handle ETH explicitly - using an ETH query
-                case .eth:
-                    guard let network = manager.network.ethNetworkName.map ({ $0.lowercased() })
-                        else { System.cleanup  ("SYS: GetBalance: Missed {network}", cwm: cwm); return }
-
-                    precondition (1 == addressesCount)
-
-                    switch issuer {
-                    case .none:
-                        manager.query.getBalanceAsETH (network: network, address: addresses[0]) {
-                            (res: Result<String, BlockChainDB.QueryError>) in
-                            defer { cryptoWalletManagerGive (cwm!) }
-                            res.resolve (
-                                success: { cwmAnnounceGetBalanceSuccess (cwm, sid, $0) },
-                                failure: { (_) in cwmAnnounceGetBalanceFailure (cwm, sid) })
-                        }
-                    case .some (let contract):
-                        manager.query.getBalanceAsTOK (network: network, address: addresses[0], contract: contract) {
-                            (res: Result<String, BlockChainDB.QueryError>) in
-                            defer { cryptoWalletManagerGive (cwm!) }
-                            res.resolve (
-                                success: { cwmAnnounceGetBalanceSuccess (cwm, sid, $0) },
-                                failure: { (_) in cwmAnnounceGetBalanceFailure (cwm, sid) })
-                        }
-                    }
-
-                default:
-                    cwmAnnounceGetBalanceFailure (cwm, sid)
-                }},
-
             funcGetBlockNumber: { (context, cwm, sid) in
                 precondition (nil != context  && nil != cwm)
 
@@ -1502,35 +1460,12 @@ extension System {
                     else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: GetBlockNumber")
 
-                switch manager.network.type {
-                // Handle ETH explicitly - using an ETH query
-                case .eth:
-                    guard let network = manager.network.ethNetworkName.map ({ $0.lowercased() })
-                        else { System.cleanup  ("SYS: GetBlockNumber: Missed {network}", cwm: cwm); return }
-
-                    manager.query.getBlockNumberAsETH (network: network) {
-                        (res: Result<String, BlockChainDB.QueryError>) in
-                        defer { cryptoWalletManagerGive (cwm!) }
-                        // If we get a successful response, but the provided blocknumber is "0" then
-                        // that indicates that the JSON-RPC node is syncing.  Thus, if "0" transform
-                        // to a .failure
-                        res.flatMap {
-                            return ($0 != "0" && $0 != "0x0"
-                                ? Result.success ($0)
-                                : Result.failure (BlockChainDB.QueryError.noData))
-                        }.resolve (
-                            success: { cwmAnnounceGetBlockNumberSuccessAsString (cwm, sid, $0) },
-                            failure: { (_) in cwmAnnounceGetBlockNumberFailure (cwm, sid) })
-                    }
-
-                default:
-                    manager.query.getBlockchain (blockchainId: manager.network.uids) {
-                        (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
-                        defer { cryptoWalletManagerGive (cwm!) }
-                        res.resolve (
-                            success: { cwmAnnounceGetBlockNumberSuccessAsInteger (manager.core, sid, $0.blockHeight!) },
-                            failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
-                    }
+                manager.query.getBlockchain (blockchainId: manager.network.uids) {
+                    (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve (
+                        success: { cwmAnnounceGetBlockNumberSuccess (manager.core, sid, $0.blockHeight!) },
+                        failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
@@ -1546,7 +1481,8 @@ extension System {
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: true) {
+                                               includeRaw: true,
+                                               includeTransfers: false) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive (cwm!) }
                                                 res.resolve(
@@ -1570,7 +1506,6 @@ extension System {
                                                         }
                                                         cwmAnnounceGetTransactionsComplete (cwm, sid, CRYPTO_TRUE) },
                                                     failure: { (_) in cwmAnnounceGetTransactionsComplete (cwm, sid, CRYPTO_FALSE) })
-
                 }},
 
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, currency, begBlockNumber, endBlockNumber) in
@@ -1580,134 +1515,62 @@ extension System {
                     else { print ("SYS: GetTransfers: Missed {cwm}"); return }
                 print ("SYS: GetTransfers: Blocks: {\(begBlockNumber), \(endBlockNumber)}")
 
-                let currency  = currency.map(asUTF8String)
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
-                switch manager.network.type {
-                case .eth:
-                    guard let network = manager.network.ethNetworkName.map ({ $0.lowercased() })
-                        else { System.cleanup  ("SYS: GetTransfers: Missed {network}", cwm: cwm); return }
+                manager.query.getTransactions (blockchainId: manager.network.uids,
+                                               addresses: addresses,
+                                               begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
+                                               endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
+                                               includeRaw: false) {
+                                                (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
+                                                defer { cryptoWalletManagerGive(cwm) }
+                                                res.resolve(
+                                                    success: {
+                                                        $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
+                                                            let blockTimestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
+                                                            let blockHeight    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
+                                                            let blockConfirmations = transaction.confirmations ?? 0
+                                                            let blockTransactionIndex = transaction.index ?? 0
+                                                            let blockHash             = transaction.blockHash
+                                                            let status    = System.getTransferStatus (transaction.status)
 
-                    precondition(1 == addresses.count)
+                                                            System.mergeTransfers (transaction, with: addresses)
+                                                                .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
+                                                                    let (transfer, fee) = arg
+                                                                    precondition (fee.map { $0.currency == transfer.amount.currency } ?? true)
 
-                    if nil == currency || currency! != "__native__" {
-                        // The 'address' here must be 32-bytes/64-chars, 0x-prefixed.  We are passed
-                        // in 20-bytes/40-char
-                        let address = "0x000000000000000000000000" + addresses[0].dropFirst(2)
+                                                                    let metaData = (transaction.metaData ?? [:]).merging (transfer.metaData ?? [:]) { (cur, new) in new }
 
-                        manager.query.getLogsAsETH (network: network,
-                                                    contract: currency,
-                                                    address:  address,
-                                                    event:    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", // ERC20 Log Event Transfer
-                            begBlockNumber: begBlockNumber,
-                            endBlockNumber: endBlockNumber) {
-                                (res: Result<[BlockChainDB.ETH.Log], BlockChainDB.QueryError>) in
-                                defer { cryptoWalletManagerGive (cwm!) }
-                                res.resolve(
-                                    success: { (lgs: [BlockChainDB.ETH.Log]) in
-                                        lgs.forEach { (log: BlockChainDB.ETH.Log) in
-                                            let topicsCount = Int32 (log.topics.count)
-                                            var topics = log.topics.filter { !$0.isEmpty }.map { UnsafePointer<Int8>(strdup($0)) }
-                                            defer { topics.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                                                                    var metaKeysPtr = Array(metaData.keys)
+                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
+                                                                    defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
-                                            cwmAnnounceGetLogsItemETH (cwm, sid,
-                                                                       log.hash,
-                                                                       log.contract,
-                                                                       topicsCount,
-                                                                       &topics,
-                                                                       log.data,
-                                                                       log.gasPrice,
-                                                                       log.gasUsed,
-                                                                       log.logIndex,
-                                                                       log.blockNumber,
-                                                                       log.blockTransactionIndex,
-                                                                       log.blockTimestamp) }
-                                        cwmAnnounceGetLogsComplete(cwm, sid, CRYPTO_TRUE) },
-                                    failure: { (_) in cwmAnnounceGetLogsComplete (cwm, sid, CRYPTO_FALSE) })
-                        }
-                    }
-                    else {
-                        manager.query.getTransactionsAsETH (network: network,
-                                                            address: addresses[0],
-                                                            begBlockNumber: begBlockNumber,
-                                                            endBlockNumber: endBlockNumber) {
-                                                                (res: Result<[BlockChainDB.ETH.Transaction], BlockChainDB.QueryError>) in
-                                                                defer { cryptoWalletManagerGive (cwm!) }
-                                                                res.resolve(
-                                                                    success: { (txs: [BlockChainDB.ETH.Transaction]) in
-                                                                        txs.forEach { (tx: BlockChainDB.ETH.Transaction) in
-                                                                            cwmAnnounceGetTransactionsItemETH (cwm, sid,
-                                                                                                               tx.hash,
-                                                                                                               tx.sourceAddr,
-                                                                                                               tx.targetAddr,
-                                                                                                               tx.contractAddr,
-                                                                                                               tx.amount,
-                                                                                                               tx.gasLimit,
-                                                                                                               tx.gasPrice,
-                                                                                                               tx.data,
-                                                                                                               tx.nonce,
-                                                                                                               tx.gasUsed,
-                                                                                                               tx.blockNumber,
-                                                                                                               tx.blockHash,
-                                                                                                               tx.blockConfirmations,
-                                                                                                               tx.blockTransactionIndex,
-                                                                                                               tx.blockTimestamp,
-                                                                                                               tx.isError)
-                                                                        }
-                                                                        cwmAnnounceGetTransactionsComplete(cwm, sid, CRYPTO_TRUE) },
-                                                                    failure: { (_) in cwmAnnounceGetTransactionsComplete (cwm, sid, CRYPTO_FALSE) })
-                        }
-                    }
+                                                                    var metaValsPtr = Array(metaData.values)
+                                                                        .map { UnsafePointer<Int8>(strdup($0)) }
+                                                                    defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
-                default:
-                    manager.query.getTransactions (blockchainId: manager.network.uids,
-                                                   addresses: addresses,
-                                                   begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
-                                                   endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                                   includeRaw: false) {
-                                                    (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
-                                                    defer { cryptoWalletManagerGive(cwm) }
-                                                    res.resolve(
-                                                        success: {
-                                                            $0.forEach { (transaction: BlockChainDB.Model.Transaction) in
-                                                                let timestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
-                                                                let height    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
-                                                                let status    = System.getTransferStatus (transaction.status)
-                                                                let blockHash = transaction.blockHash ?? ""
-
-                                                                System.mergeTransfers (transaction.transfers, with: addresses)
-                                                                    .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: String?)) in
-                                                                        let (transfer, fee) = arg
-
-                                                                        var metaKeysPtr = (transfer.metaData.map { Array($0.keys)   } ?? [])
-                                                                            .map { UnsafePointer<Int8>(strdup($0)) }
-                                                                        defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
-
-                                                                        var metaValsPtr = (transfer.metaData.map { Array($0.values) } ?? [])
-                                                                            .map { UnsafePointer<Int8>(strdup($0)) }
-                                                                        defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
-
-                                                                        // Use MetaData to extract TransferAttribute
-                                                                        cwmAnnounceGetTransferItemGEN (cwm, sid, status,
-                                                                                                       transaction.hash,
-                                                                                                       transfer.id,
-                                                                                                       transfer.source,
-                                                                                                       transfer.target,
-                                                                                                       transfer.amount.value,
-                                                                                                       transfer.amount.currency,
-                                                                                                       fee,
-                                                                                                       timestamp,
-                                                                                                       height,
-                                                                                                       blockHash,
-                                                                                                       metaKeysPtr.count,
-                                                                                                       &metaKeysPtr,
-                                                                                                       &metaValsPtr)
-                                                                }
+                                                                    cwmAnnounceGetTransferItem (cwm, sid, status,
+                                                                                                   transaction.hash,
+                                                                                                   transfer.id,
+                                                                                                   transfer.source,
+                                                                                                   transfer.target,
+                                                                                                   transfer.amount.value,
+                                                                                                   transfer.amount.currency,
+                                                                                                   fee.map { $0.value },
+                                                                                                   blockTimestamp,
+                                                                                                   blockHeight,
+                                                                                                   blockConfirmations,
+                                                                                                   blockTransactionIndex,
+                                                                                                   blockHash,
+                                                                                                   metaKeysPtr.count,
+                                                                                                   &metaKeysPtr,
+                                                                                                   &metaValsPtr)
                                                             }
-                                                            cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_TRUE) },
-                                                        failure: { (_) in cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_FALSE) })
-                    }
-                }},
+                                                        }
+                                                        cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_TRUE) },
+                                                    failure: { (_) in cwmAnnounceGetTransfersComplete (cwm, sid, CRYPTO_FALSE) })
+                }
+        },
 
             funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)
@@ -1719,143 +1582,37 @@ extension System {
                 let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                switch manager.network.type {
-                // Handle ETH explicitly - using an ETH query
-                case .eth:
-                    guard let network = manager.network.ethNetworkName.map ({ $0.lowercased() })
-                        else { System.cleanup  ("SYS: SubmitTransaction: Missed {network}", cwm: cwm); return }
-
-                    manager.query.submitTransactionAsETH (network: network,
-                                                          transaction: "0x" + CoreCoder.hex.encode (data: data)!) {
-                                                            (res: Result<String, BlockChainDB.QueryError>) in
-                                                            defer { cryptoWalletManagerGive (cwm!) }
-                                                            res.resolve (
-                                                                success: { cwmAnnounceSubmitTransferSuccessForHash (cwm, sid, $0) },
-                                                                failure: { (_) in cwmAnnounceSubmitTransferFailure (cwm, sid) })
-                    }
-
-                default:
-                    manager.query.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
-                        (res: Result<Void, BlockChainDB.QueryError>) in
-                        defer { cryptoWalletManagerGive (cwm!) }
-                        res.resolve(
-                            success: { (_) in cwmAnnounceSubmitTransferSuccess (cwm, sid) },
-                            failure: { (e) in
-                                print ("SYS: SubmitTransaction: Error: \(e)")
-                                cwmAnnounceSubmitTransferFailure (cwm, sid) })
-                    }
-
-                }},
-
-            funcGetGasPriceETH: { (context, cwm, sid, network) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {cwm}", cwm: cwm); return }
-
-                guard let network = network.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetGasPrice: Missed {network}", cwm: cwm); return }
-
-                manager.query.getGasPriceAsETH (network: network) {
-                    (res: Result<String, BlockChainDB.QueryError>) in
-                    defer { cryptoWalletManagerGive (cwm!) }
-                    res.resolve (
-                        success: { cwmAnnounceGetGasPriceSuccess (cwm, sid, $0) },
-                        failure: { (_) in cwmAnnounceGetGasPriceFailure (cwm, sid) })
-                }},
-
-            funcEstimateGasETH: { (context, cwm, sid, network, from, to, amount, price, data) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: EstimateGas: Missed {cwm}", cwm: cwm); return }
-
-                guard let price = price.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: EstimateGas: Missed {price}", cwm: cwm); return }
-
-                guard let network = network.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: EstimateGas: Missed {network}", cwm: cwm); return }
-
-                manager.query.getGasEstimateAsETH (network: network,
-                                                   from:   asUTF8String(from!),
-                                                   to:     asUTF8String(to!),
-                                                   amount: asUTF8String(amount!),
-                                                   data:   asUTF8String(data!)) {
-                                                    (res: Result<String, BlockChainDB.QueryError>) in
-                                                    defer { cryptoWalletManagerGive (cwm!) }
-                                                    res.resolve (
-                                                        success: { cwmAnnounceGetGasEstimateSuccess (cwm, sid, $0, price) },
-                                                        failure: { (_) in cwmAnnounceGetGasEstimateFailure (cwm, sid, CRYPTO_ERROR_FAILED) })
-                }},
-
-            funcGetBlocksETH: { (context, cwm, sid, network, address, interests, begBlockNumber, endBlockNumber) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {cwm}", cwm: cwm); return }
-
-                guard let network = network.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetBlocks: Missed {network}", cwm: cwm); return }
-
-                manager.query.getBlocksAsETH (network: network,
-                                              address: asUTF8String(address!),
-                                              interests: interests,
-                                              blockStart: begBlockNumber,
-                                              blockStop:  endBlockNumber) {
-                                                (res: Result<[UInt64], BlockChainDB.QueryError>) in
-                                                defer { cryptoWalletManagerGive (cwm!) }
-                                                res.resolve (
-                                                    success: {
-                                                        let numbersCount = Int32 ($0.count)
-                                                        var numbers = $0
-                                                        numbers.withUnsafeMutableBytes {
-                                                            let bytesAsUInt8 = $0.baseAddress?.assumingMemoryBound(to: UInt64.self)
-                                                            cwmAnnounceGetBlocksSuccess (cwm, sid, numbersCount, bytesAsUInt8)
-                                                        }},
-                                                    failure: { (_) in cwmAnnounceGetBlocksFailure (cwm, sid) })
-                }},
-
-            funcGetTokensETH: { (context, cwm, sid) in
-                precondition (nil != context  && nil != cwm)
-
-                guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetTokens: Missed {cwm}", cwm: cwm); return }
-
-                manager.query.getTokensAsETH () {
-                    (res: Result<[BlockChainDB.ETH.Token],BlockChainDB.QueryError>) in
+                manager.query.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                    (res: Result<Void, BlockChainDB.QueryError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { (tokens: [BlockChainDB.ETH.Token]) in
-                            tokens.forEach { (token: BlockChainDB.ETH.Token) in
-                                cwmAnnounceGetTokensItem (cwm, sid,
-                                                          token.address,
-                                                          token.symbol,
-                                                          token.name,
-                                                          token.description,
-                                                          token.decimals,
-                                                          token.defaultGasLimit,
-                                                          token.defaultGasPrice) }
-                            cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_TRUE) },
-                        failure: { (_) in cwmAnnounceGetTokensComplete (cwm, sid, CRYPTO_FALSE) })
+                        success: { (_) in cwmAnnounceSubmitTransferSuccess (cwm, sid, hash) },
+                        failure: { (e) in
+                            print ("SYS: SubmitTransaction: Error: \(e)")
+                            cwmAnnounceSubmitTransferFailure (cwm, sid) })
                 }},
 
-            funcGetNonceETH: { (context, cwm, sid, network, address) in
+            funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {cwm}", cwm: cwm); return }
+                    else { System.cleanup  ("SYS: EstimateTransactionFee: Missed {cwm}", cwm: cwm); return }
+                print ("SYS: EstimateTransactionFee")
 
-                guard let network = network.map (asUTF8String),
-                    let address = address.map (asUTF8String)
-                    else { System.cleanup  ("SYS: ETH: GetNonce: Missed {network, address}", cwm: cwm); return }
+                let hash = asUTF8String (hashAsHex!)
+                let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.query.getNonceAsETH (network: network, address: address) {
-                    (res: Result<String, BlockChainDB.QueryError>) in
+                manager.query.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                    (res: Result<BlockChainDB.Model.TransactionFee, BlockChainDB.QueryError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
-                    res.resolve (
-                        success: { cwmAnnounceGetNonceSuccess (cwm, sid, address, $0) },
-                        failure: { (_) in cwmAnnounceGetNonceFailure (cwm, sid) })
-                }})
+                    res.resolve(
+                        success: { (fee: BlockChainDB.Model.TransactionFee) in
+                            cwmAnnounceEstimateTransactionFeeSuccess(cwm, sid, hash, fee.costUnits) },
+                        failure: { (e) in
+                            print ("SYS: EstimateTransactionFee: Error: \(e)")
+                            cwmAnnounceEstimateTransactionFeeFailure (cwm, sid, hash) })
+                }}
+        )
     }
 }
 
@@ -1872,12 +1629,14 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias TransactionBlobBTCTuple = (
+        bytes: [UInt8],
+        blockHeight: UInt32,
+        timestamp: UInt32 // time interval since unix epoch (including '0'
+    )
+
     public enum TransactionBlob {
-        case btc (
-            bytes: [UInt8],
-            blockHeight: UInt32,
-            timestamp: UInt32 // time interval since unix epoch (including '0'
-        )
+        case btc (TransactionBlobBTCTuple)
     }
 
     ///
@@ -1895,20 +1654,22 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias BlockBlobBTCTuple = (
+        hash: BlockHash,
+        height: UInt32,
+        nonce: UInt32,
+        target: UInt32,
+        txCount: UInt32,
+        version: UInt32,
+        timestamp: UInt32?,
+        flags: [UInt8],
+        hashes: [BlockHash],
+        merkleRoot: BlockHash,
+        prevBlock: BlockHash
+    )
+
     public enum BlockBlob {
-        case btc (
-            hash: BlockHash,
-            height: UInt32,
-            nonce: UInt32,
-            target: UInt32,
-            txCount: UInt32,
-            version: UInt32,
-            timestamp: UInt32?,
-            flags: [UInt8],
-            hashes: [BlockHash],
-            merkleRoot: BlockHash,
-            prevBlock: BlockHash
-        )
+        case btc (BlockBlobBTCTuple)
     }
 
     ///
@@ -1916,13 +1677,15 @@ extension System {
     ///
     /// - btc:
     ///
+    public typealias PeerBlobBTCTuple = (
+        address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
+        port: UInt16,
+        services: UInt64,
+        timestamp: UInt32?
+    )
+
     public enum PeerBlob {
-        case btc (
-            address: UInt32,  // UInt128 { .u32 = { 0, 0, 0xffff, <address> }}
-            port: UInt16,
-            services: UInt64,
-            timestamp: UInt32?
-        )
+        case btc (PeerBlobBTCTuple)
     }
 
     ///
@@ -2113,9 +1876,9 @@ extension System {
                                             &blockHeight,
                                             &timestamp)
 
-            return TransactionBlob.btc (bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
-                                        blockHeight: blockHeight,
-                                        timestamp: timestamp)
+            return TransactionBlob.btc ((bytes: UnsafeMutableBufferPointer<UInt8> (start: bytes, count: bytesCount).map { $0 },
+                                         blockHeight: blockHeight,
+                                         timestamp: timestamp))
         default:
             return nil
         }

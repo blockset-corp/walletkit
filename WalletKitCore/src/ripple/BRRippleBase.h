@@ -78,6 +78,10 @@ typedef uint32_t BRRippleFlags;
 typedef uint32_t BRRippleLastLedgerSequence;
 typedef uint32_t BRRippleSourceTag;
 typedef uint32_t BRRippleDestinationTag;
+typedef  int64_t BRRippleBalance;
 
 #define RIPPLE_XRP_TO_DROPS(xrp)   (1000000 * (xrp))   // 1e6 drops/xrp
+
+extern char *rippleAlphabet;
+
 #endif

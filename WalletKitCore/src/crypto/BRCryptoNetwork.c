@@ -16,6 +16,7 @@
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 #include "ethereum/BREthereum.h"
 
 #include <stdbool.h>
@@ -33,6 +34,7 @@ cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         CRYPTO_NETWORK_CURRENCY_BTC,
         CRYPTO_NETWORK_CURRENCY_BCH,
+        CRYPTO_NETWORK_CURRENCY_BSV,
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,
@@ -177,6 +179,17 @@ cryptoNetworkCreateAsBCH (const char *uids,
 }
 
 static BRCryptoNetwork
+cryptoNetworkCreateAsBSV (const char *uids,
+                          const char *name,
+                          const BRChainParams *params) {
+    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BSV);
+    network->type = BLOCK_CHAIN_TYPE_BTC;
+    network->u.btc = params;
+
+    return network;
+}
+
+static BRCryptoNetwork
 cryptoNetworkCreateAsETH (const char *uids,
                           const char *name,
                           BREthereumNetwork net) {
@@ -263,7 +276,8 @@ cryptoNetworkIsMainnet (BRCryptoNetwork network) {
     switch (network->type) {
         case BLOCK_CHAIN_TYPE_BTC:
             return AS_CRYPTO_BOOLEAN (network->u.btc == BRMainNetParams ||
-                                      network->u.btc == BRBCashParams);
+                                      network->u.btc == BRBCashParams ||
+                                      network->u.btc == BRBSVParams);
         case BLOCK_CHAIN_TYPE_ETH:
             return AS_CRYPTO_BOOLEAN (network->u.eth == ethNetworkMainnet);
         case BLOCK_CHAIN_TYPE_GEN:
@@ -273,13 +287,18 @@ cryptoNetworkIsMainnet (BRCryptoNetwork network) {
 
 extern BRCryptoBlockChainHeight
 cryptoNetworkGetHeight (BRCryptoNetwork network) {
-    return network->height;
+    pthread_mutex_lock (&network->lock);
+    BRCryptoBlockChainHeight height = network->height;
+    pthread_mutex_unlock (&network->lock);
+    return height;
 }
 
 extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
                         BRCryptoBlockChainHeight height) {
+    pthread_mutex_lock (&network->lock);
     network->height = height;
+    pthread_mutex_unlock (&network->lock);
 }
 
 extern uint32_t
@@ -369,7 +388,7 @@ cryptoNetworkGetCurrencyForUids (BRCryptoNetwork network,
     BRCryptoCurrency currency = NULL;
     pthread_mutex_lock (&network->lock);
     for (size_t index = 0; index < array_count(network->associations); index++) {
-        if (0 == strcmp (uids, cryptoCurrencyGetUids (network->associations[index].currency))) {
+        if (0 == strcasecmp (uids, cryptoCurrencyGetUids (network->associations[index].currency))) {
             currency = cryptoCurrencyTake (network->associations[index].currency);
             break;
         }
@@ -658,6 +677,10 @@ cryptoNetworkCreateBuiltin (const char *symbol,
         network = cryptoNetworkCreateAsBCH (uids, name, BRBCashParams);
     else if (0 == strcmp ("bchTestnet", symbol))
         network = cryptoNetworkCreateAsBCH (uids, name, BRBCashTestNetParams);
+    else if (0 == strcmp ("bsvMainnet", symbol))
+        network = cryptoNetworkCreateAsBSV (uids, name, BRBSVParams);
+    else if (0 == strcmp ("bsvTestnet", symbol))
+        network = cryptoNetworkCreateAsBSV (uids, name, BRBSVTestNetParams);
     else if (0 == strcmp ("ethMainnet", symbol))
         network = cryptoNetworkCreateAsETH (uids, name, ethNetworkMainnet);
     else if (0 == strcmp ("ethRopsten", symbol))

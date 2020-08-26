@@ -68,11 +68,11 @@ extern "C" {
         return hexEncodeCreate (NULL, gen.bytes, gen.bytesCount);
     }
 
-    static inline uint32_t
+    static inline size_t
     genericHashSetValue (BRGenericHash gen) {
         assert (gen.bytesCount >= sizeof (uint32_t));
 
-        uint32_t *value = (uint32_t*) gen.bytes;
+        size_t *value = (size_t*) gen.bytes;
         return *value;
     }
 

@@ -16,6 +16,13 @@ public enum BRCryptoNetworkCanonicalType {
         }
     },
 
+    CRYPTO_NETWORK_TYPE_BSV {
+        @Override
+        public int toCore() {
+            return CRYPTO_NETWORK_TYPE_BSV_VALUE;
+        }
+    },
+
     CRYPTO_NETWORK_TYPE_ETH {
         @Override
         public int toCore() {
@@ -39,14 +46,16 @@ public enum BRCryptoNetworkCanonicalType {
 
     private static final int CRYPTO_NETWORK_TYPE_BTC_VALUE = 0;
     private static final int CRYPTO_NETWORK_TYPE_BCH_VALUE = 1;
-    private static final int CRYPTO_NETWORK_TYPE_ETH_VALUE = 2;
-    private static final int CRYPTO_NETWORK_TYPE_XRP_VALUE = 3;
-    private static final int CRYPTO_NETWORK_TYPE_HBAR_VALUE = 4;
+    private static final int CRYPTO_NETWORK_TYPE_BSV_VALUE = 2;
+    private static final int CRYPTO_NETWORK_TYPE_ETH_VALUE = 3;
+    private static final int CRYPTO_NETWORK_TYPE_XRP_VALUE = 4;
+    private static final int CRYPTO_NETWORK_TYPE_HBAR_VALUE = 5;
 
     public static BRCryptoNetworkCanonicalType fromCore(int nativeValue) {
         switch (nativeValue) {
             case CRYPTO_NETWORK_TYPE_BTC_VALUE: return CRYPTO_NETWORK_TYPE_BTC;
             case CRYPTO_NETWORK_TYPE_BCH_VALUE: return CRYPTO_NETWORK_TYPE_BCH;
+            case CRYPTO_NETWORK_TYPE_BSV_VALUE: return CRYPTO_NETWORK_TYPE_BSV;
             case CRYPTO_NETWORK_TYPE_ETH_VALUE: return CRYPTO_NETWORK_TYPE_ETH;
             case CRYPTO_NETWORK_TYPE_XRP_VALUE: return CRYPTO_NETWORK_TYPE_XRP;
             case CRYPTO_NETWORK_TYPE_HBAR_VALUE:return CRYPTO_NETWORK_TYPE_HBAR;

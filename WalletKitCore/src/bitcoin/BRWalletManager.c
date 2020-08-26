@@ -22,6 +22,7 @@
 #include "support/BRBase58.h"
 #include "BRChainParams.h"
 #include "bcash/BRBCashParams.h"
+#include "bsv/BRBSVParams.h"
 
 #include "support/BRFileService.h"
 #include "ethereum/event/BREvent.h"
@@ -77,13 +78,19 @@ getNetworkName (const BRChainParams *params) {
 
 static const char *
 getCurrencyName (const BRChainParams *params) {
-    if (params->magicNumber == BRMainNetParams->magicNumber ||
-        params->magicNumber == BRTestNetParams->magicNumber)
+    if (params == BRMainNetParams ||
+        params == BRTestNetParams)
         return "btc";
 
-    if (params->magicNumber == BRBCashParams->magicNumber ||
-        params->magicNumber == BRBCashTestNetParams->magicNumber)
+    if (params == BRBCashParams ||
+        params == BRBCashTestNetParams) {
         return "bch";
+    }
+    
+    if (params == BRBSVParams ||
+        params == BRBSVTestNetParams) {
+        return "bsv";
+    }
 
     // this should never happen!
     assert (0);
@@ -682,7 +689,7 @@ initialTransactionsLoad (BRWalletManager manager) {
     BRSetAll(transactionSet, (void**) transactions, transactionsCount);
     BRSetFree(transactionSet);
 
-    _peer_log ("BWM: loaded %zu transactions", transactionsCount);
+    _peer_log ("BWM: loaded %zu transactions\n", transactionsCount);
     return transactions;
 }
 
@@ -767,7 +774,7 @@ initialBlocksLoad (BRWalletManager manager) {
     BRSetAll(blockSet, (void**) blocks, blocksCount);
     BRSetFree(blockSet);
 
-    _peer_log ("BWM: loaded %zu blocks", blocksCount);
+    _peer_log ("BWM: loaded %zu blocks\n", blocksCount);
     return blocks;
 }
 
@@ -866,7 +873,7 @@ initialPeersLoad (BRWalletManager manager) {
     FOR_SET (BRPeer*, peer, peerSet) array_add (peers, *peer);
     BRSetFreeAll(peerSet, free);
 
-    _peer_log ("BWM: loaded %zu peers", peersCount);
+    _peer_log ("BWM: loaded %zu peers\n", peersCount);
     return peers;
 }
 
@@ -877,24 +884,24 @@ bwmFileServiceErrorHandler (BRFileServiceContext context,
     switch (error.type) {
         case FILE_SERVICE_IMPL:
             // This actually a FATAL - an unresolvable coding error.
-            _peer_log ("BWM: FileService Error: IMPL: %s", error.u.impl.reason);
+            _peer_log ("BWM: FileService Error: IMPL: %s\n", error.u.impl.reason);
             break;
         case FILE_SERVICE_UNIX:
-            _peer_log ("BWM: FileService Error: UNIX: %s", strerror(error.u.unx.error));
+            _peer_log ("BWM: FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
             break;
         case FILE_SERVICE_ENTITY:
             // This is likely a coding error too.
-            _peer_log ("BWM: FileService Error: ENTITY (%s): %s",
+            _peer_log ("BWM: FileService Error: ENTITY (%s): %s\n",
                      error.u.entity.type,
                      error.u.entity.reason);
             break;
         case FILE_SERVICE_SDB:
-            _peer_log ("BWM: FileService Error: SDB: (%d): %s",
+            _peer_log ("BWM: FileService Error: SDB: (%d): %s\n",
                        error.u.sdb.code,
                        error.u.sdb.reason);
             break;
     }
-    _peer_log ("BWM: FileService Error: FORCED SYNC%s", "");
+    _peer_log ("BWM: FileService Error: FORCED SYNC%s\n", "");
 
     // BRWalletManager bwm = (BRWalletManager) context;
     // TODO(fix): What do we actually want to happen here?
@@ -954,9 +961,9 @@ static_on_release size_t fileServiceSpecificationsCount = (sizeof (fileServiceSp
 static BRWalletManager
 bwmCreateErrorHandler (BRWalletManager bwm, int fileService, const char* reason) {
     if (fileService) {
-        _peer_log ("BWM: on bwmCreate: FileService Error: %s", reason);
+        _peer_log ("BWM: on bwmCreate: FileService Error: %s\n", reason);
     } else {
-        _peer_log ("BWM: on bwmCreate: Error: %s", reason);
+        _peer_log ("BWM: on bwmCreate: Error: %s\n", reason);
     }
 
     if (NULL != bwm) {
@@ -998,7 +1005,7 @@ BRWalletManagerNew (BRWalletManagerClient client,
                     const char *baseStoragePath,
                     uint64_t blockHeight,
                     uint64_t confirmationsUntilFinal) {
-    assert (mode == CRYPTO_SYNC_MODE_API_ONLY || CRYPTO_SYNC_MODE_P2P_ONLY);
+    assert (mode == CRYPTO_SYNC_MODE_API_ONLY || mode == CRYPTO_SYNC_MODE_P2P_ONLY);
 
     BRWalletManager bwm = calloc (1, sizeof (struct BRWalletManagerStruct));
     if (NULL == bwm) {
@@ -1073,7 +1080,7 @@ BRWalletManagerNew (BRWalletManagerClient client,
     array_new(bwm->transactions, MAX(1, array_count(transactions)));
 
     // Create the Wallet being managed and populate with the loaded transactions
-    _peer_log ("BWM: initializing wallet with %zu transactions", array_count(transactions));
+    _peer_log ("BWM: initializing wallet with %zu transactions\n", array_count(transactions));
     bwm->wallet = BRWalletNew (params->addrParams, transactions, array_count(transactions), mpk);
     if (NULL == bwm->wallet) {
         array_free(transactions); array_free(blocks); array_free(peers);
@@ -1089,7 +1096,7 @@ BRWalletManagerNew (BRWalletManagerClient client,
 
     // Create the SyncManager responsible for interacting with the P2P network or delegating to a client
     // for retrieving blockchain data
-    _peer_log ("BWM: initializing sync manager with %zu blocks and %zu peers",
+    _peer_log ("BWM: initializing sync manager with %zu blocks and %zu peers\n",
                array_count(blocks), array_count(peers));
     bwm->syncManager = BRSyncManagerNewForMode (mode,
                                                 bwm,
@@ -1218,6 +1225,11 @@ BRWalletManagerHandlesBTC (BRWalletManager manager) {
     return BRChainParamsIsBitcoin (manager->chainParams);
 }
 
+extern int
+BRWalletManagerHandlesBCH (BRWalletManager manager) {
+    return BRChainParamsIsBitcash (manager->chainParams);
+}
+
 extern void
 BRWalletManagerConnect (BRWalletManager manager) {
     pthread_mutex_lock (&manager->lock);
@@ -1311,7 +1323,7 @@ BRWalletManagerSetMode (BRWalletManager manager, BRCryptoSyncMode mode) {
         manager->mode = mode;
 
         // create the new sync manager
-        _peer_log ("BWM: initializing sync manager with %zu blocks and %zu peers",
+        _peer_log ("BWM: initializing sync manager with %zu blocks and %zu peers\n",
                    array_count(blocks), array_count(peers));
         manager->syncManager = BRSyncManagerNewForMode (mode,
                                                         manager,
@@ -2127,13 +2139,15 @@ bwmAnnounceTransaction (BRWalletManager manager,
                         OwnershipKept uint8_t *transaction,
                         size_t transactionLength,
                         uint64_t timestamp,
-                        uint64_t blockHeight) {
+                        uint64_t blockHeight,
+                        uint8_t  error) {
     bwmSignalAnnounceTransaction (manager,
                                   id,
                                   transaction,
                                   transactionLength,
                                   timestamp,
-                                  blockHeight);
+                                  blockHeight,
+                                  error);
     return 1;
 }
 
@@ -2186,7 +2200,8 @@ bwmHandleAnnounceTransaction (BRWalletManager manager,
                               OwnershipKept uint8_t *transaction,
                               size_t transactionLength,
                               uint64_t timestamp,
-                              uint64_t blockHeight) {
+                              uint64_t blockHeight,
+                              uint8_t  error) {
     assert (eventHandlerIsCurrentThread (manager->handler));
 
     pthread_mutex_lock (&manager->lock);
@@ -2195,7 +2210,8 @@ bwmHandleAnnounceTransaction (BRWalletManager manager,
                                               transaction,
                                               transactionLength,
                                               timestamp,
-                                              blockHeight);
+                                              blockHeight,
+                                              error);
     pthread_mutex_unlock (&manager->lock);
     return 1;
 }

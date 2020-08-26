@@ -14,6 +14,7 @@
 #include "base/BREthereumBase.h"
 #include "ewm/BREthereumEWM.h"
 #include "ewm/BREthereumAccount.h"
+#include "ewm/BREthereumTransfer.h"
 
 #ifdef __cplusplus
 extern "C" {

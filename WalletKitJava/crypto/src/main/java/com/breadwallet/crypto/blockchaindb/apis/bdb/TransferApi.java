@@ -45,6 +45,9 @@ public class TransferApi {
                              @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
                              CompletionHandler<List<Transfer>, QueryError> handler) {
+        if (addresses.isEmpty())
+            throw new IllegalArgumentException("Empty `addresses`");
+
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transfer> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 

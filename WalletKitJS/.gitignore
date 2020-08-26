@@ -1,0 +1,14 @@
+node_modules
+bower_components
+
+dist/**/*
+
+.idea
+*.iml
+
+.DS_Store
+Makefile
+CMakeFiles/
+CMakeCache.txt
+cmake_*.cmake
+!WalletKitCoreWasm/*.a

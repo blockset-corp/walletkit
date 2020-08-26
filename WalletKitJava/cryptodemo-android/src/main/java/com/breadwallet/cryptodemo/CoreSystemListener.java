@@ -171,9 +171,10 @@ public class CoreSystemListener implements SystemListener {
                             if (error instanceof AccountInitializationMultipleHederaAccountsError) {
                                 List<HederaAccount> accounts = ((AccountInitializationMultipleHederaAccountsError) error).getAccounts();
 
-                                // Sort accounts....
+                                // TODO: Sort accounts?
+
                                 system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
-                                        .transform((bytes) -> { serializationData.add(bytes); return null; });
+                                        .transform((bytes) -> { serializationData.add(bytes); return true; });
                             }
                             createWalletManagerIfAppropriate(serializationData, system, network, mode, addressScheme);
                         }

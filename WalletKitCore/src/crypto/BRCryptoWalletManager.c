@@ -304,7 +304,7 @@ cryptoWalletManagerCreate (BRCryptoCWMListener listener,
             BRArrayOf(BRGenericTransfer) transfers = genManagerLoadTransfers (cwm->u.gen);
             for (size_t index = 0; index < array_count (transfers); index++) {
                 // TODO: A BRGenericTransfer must allow us to determine the Wallet (via a Currency).
-                cryptoWalletManagerHandleTransferGEN (cwm, transfers[index]);
+                cryptoWalletManagerHandleTransferGENFilter (cwm, transfers[index], CRYPTO_FALSE);
             }
             array_free (transfers);
 
@@ -543,19 +543,21 @@ cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
     if (NULL == wallet) {
         switch (cwm->type) {
             case BLOCK_CHAIN_TYPE_BTC:
-                assert (0); // Only BTC currency; has `primaryWallet
+                // BTC has a single primary wallet.
                 break;
 
             case BLOCK_CHAIN_TYPE_ETH: {
                 const char *issuer = cryptoCurrencyGetIssuer (currency);
-                BREthereumAddress ethAddress = ethAddressCreate (issuer);
-                BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
-                assert (NULL != ethToken);
-                ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
+                if (NULL != issuer) {
+                    BREthereumAddress ethAddress = ethAddressCreate (issuer);
+                    BREthereumToken ethToken = ewmLookupToken (cwm->u.eth, ethAddress);
+                    assert (NULL != ethToken);
+                    ewmGetWalletHoldingToken (cwm->u.eth, ethToken);
+                }
                 break;
             }
             case BLOCK_CHAIN_TYPE_GEN:
-                assert (0);
+                // GEN has a single primary wallet.
                 break;
         }
     }
@@ -802,11 +804,13 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRCryptoTransfer transfer,
                                         BRGenericTransferState newGenericState) {
     pthread_mutex_lock (&cwm->lock);
-
+    BRGenericWallet        genericWallet   = cryptoWalletAsGEN   (wallet);
     BRGenericTransfer      genericTransfer = cryptoTransferAsGEN (transfer);
     BRGenericTransferState oldGenericState = genTransferGetState (genericTransfer);
 
     if (!genTransferStateEqual (oldGenericState, newGenericState)) {
+        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
+
         BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
         BRCryptoTransferState newState = cryptoTransferStateCreateGEN (newGenericState,
                                                                        cryptoTransferGetUnitForFee(transfer));
@@ -829,34 +833,30 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
 
         cryptoTransferStateRelease (&oldState);
         cryptoTransferStateRelease (&newState);
+
+        // Update wallet
+        genWalletUpdTransfer (genericWallet, genericTransfer);
+        BRCryptoAmount newBalance = cryptoWalletGetBalance (wallet);
+
+        if (CRYPTO_COMPARE_EQ != cryptoAmountCompare (oldBalance, newBalance)) {
+            cwm->listener.walletEventCallback (cwm->listener.context,
+                                                cryptoWalletManagerTake (cwm),
+                                                cryptoWalletTake (cwm->wallet),
+                                                (BRCryptoWalletEvent) {
+                                                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                                                    { .balanceUpdated = { cryptoAmountTake(newBalance) }}
+                                                });
+
+             cwm->listener.walletManagerEventCallback (cwm->listener.context,
+                                                       cryptoWalletManagerTake (cwm),
+                                                       (BRCryptoWalletManagerEvent) {
+                 CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
+                 { .wallet = cryptoWalletTake (cwm->wallet) }
+             });
+        }
+        cryptoAmountGive (newBalance);
+        cryptoAmountGive (oldBalance);
     }
-
-    //
-    // If this is an error case, then we must remove the genericTransfer from the
-    // genericWallet; otherwise the GEN balance and sequence number will be off.
-    //
-    // However, we leave the `transfer` in `wallet`.  And trouble is forecasted...
-    //
-    if (GENERIC_TRANSFER_STATE_ERRORED == newGenericState.type) {
-        genWalletRemTransfer(cryptoWalletAsGEN(wallet), genericTransfer);
-
-        BRCryptoAmount balance = cryptoWalletGetBalance(wallet);
-        cwm->listener.walletEventCallback (cwm->listener.context,
-                                           cryptoWalletManagerTake (cwm),
-                                           cryptoWalletTake (cwm->wallet),
-                                           (BRCryptoWalletEvent) {
-                                               CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                               { .balanceUpdated = { balance }}
-                                           });
-
-        cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                  cryptoWalletManagerTake (cwm),
-                                                  (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
-            { .wallet = cryptoWalletTake (cwm->wallet) }
-        });
-    }
-
     pthread_mutex_unlock (&cwm->lock);
 }
 
@@ -1191,7 +1191,10 @@ cryptoWalletManagerEstimateLimit (BRCryptoWalletManager cwm,
                 int negative = 0, overflow = 0;
 
                 // Get the balance
-                UInt256 balance = genWalletGetBalance (wallet->u.gen);
+                BRCryptoBoolean balanceIsNegative;
+                UInt256 balance = genWalletGetBalance (wallet->u.gen, &balanceIsNegative);
+                if (CRYPTO_TRUE == balanceIsNegative)
+                    balance = UINT256_ZERO;
 
                 // We are looking for the maximum amount; check if the wallet has a minimum
                 // balance.  If so, reduce the above balance.
@@ -1457,8 +1460,9 @@ cryptoWalletManagerFindWalletAsGEN (BRCryptoWalletManager cwm,
 }
 
 extern void
-cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
-                                      OwnershipGiven BRGenericTransfer transferGeneric) {
+cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
+                                            OwnershipGiven BRGenericTransfer transferGeneric,
+                                            BRCryptoBoolean needBalanceEvent) {
     int transferWasCreated = 0;
 
     // TODO: Determine the currency from `transferGeneric`
@@ -1528,6 +1532,9 @@ cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
             CRYPTO_TRANSFER_EVENT_CREATED
         });
 
+        // ... cache the 'current' balance
+        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
+
         // ... add the transfer to its wallet...
         cryptoWalletAddTransfer (wallet, transfer);
 
@@ -1543,15 +1550,22 @@ cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
             { .transfer = { cryptoTransferTake (transfer) }}
         });
 
-        BRCryptoAmount balance = cryptoWalletGetBalance(wallet);
-        cwm->listener.walletEventCallback (cwm->listener.context,
-                                           cryptoWalletManagerTake (cwm),
-                                           cryptoWalletTake (cwm->wallet),
-                                           (BRCryptoWalletEvent) {
-                                               CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                               { .balanceUpdated = { balance }}
-                                           });
+        // Get the new balance...
+        BRCryptoAmount newBalance = cryptoWalletGetBalance(wallet);
 
+        // ... if it differs from the old balance, geneate an event.
+        if (CRYPTO_TRUE == needBalanceEvent && CRYPTO_COMPARE_EQ != cryptoAmountCompare(oldBalance, newBalance))
+            cwm->listener.walletEventCallback (cwm->listener.context,
+                                               cryptoWalletManagerTake (cwm),
+                                               cryptoWalletTake (cwm->wallet),
+                                               (BRCryptoWalletEvent) {
+                                                CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                                                { .balanceUpdated = { newBalance }}
+                                            });
+        else cryptoAmountGive(newBalance);
+        cryptoAmountGive(oldBalance);
+
+        // Tell the manager that that wallet changed (added transfer, perhaps balance changed)
         cwm->listener.walletManagerEventCallback (cwm->listener.context,
                                                   cryptoWalletManagerTake (cwm),
                                                   (BRCryptoWalletManagerEvent) {
@@ -1581,6 +1595,12 @@ cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
     cryptoTransferGive(transfer);
     cryptoWalletGive (wallet);
     cryptoCurrencyGive(currency);
+}
+
+extern void
+cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
+                                      OwnershipGiven BRGenericTransfer transferGeneric) {
+    cryptoWalletManagerHandleTransferGENFilter (cwm, transferGeneric, CRYPTO_TRUE);
 }
 
 static void

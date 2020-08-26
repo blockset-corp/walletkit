@@ -50,7 +50,7 @@ struct TransferResult {
 }
 
 class BRCryptoTransferTests: BRCryptoSystemBaseTests {
-    let syncTimeoutInSeconds = 120.0
+    var syncTimeoutInSeconds = 120.0
 
     /// Recv: 0.00010000
     ///
@@ -101,8 +101,9 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
 
     func runTransferBTCTest (mode: WalletManagerMode) {
         isMainnet = false
-        currencyCodesToMode = ["btc":mode]
         prepareAccount (knownAccountSpecification)
+
+        currencyCodesToMode = ["btc":mode]
         prepareSystem()
 
         let knownTransferResults = knownTransferResultsByModeStrangely(mode: mode)
@@ -135,6 +136,8 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
         // Connect and wait for a number of transfers
         listener.transferIncluded = true
         listener.transferCount = knownTransferResults.count
+        self.syncTimeoutInSeconds = 15 * 60
+
         manager.connect()
         wait (for: [listener.transferExpectation], timeout: syncTimeoutInSeconds)
 
@@ -147,6 +150,10 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
         wait (for: [walletManagerDisconnectExpectation], timeout: 5)
 
         let transfers = wallet.transfers
+            .filter { (t) -> Bool in
+                knownTransferResults.contains { (tr) -> Bool in
+                    t.hash.map { $0.description == tr.hash} ?? false }
+        }
         XCTAssertEqual  (transfers.count, knownTransferResults.count)
 
         XCTAssertTrue (zip (knownTransferResults, transfers).reduce(true) {
@@ -198,8 +205,9 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
     /// TODO: This test fails intermittently
     func testTransferBCH_P2P () {
         isMainnet = true
-        currencyCodesToMode = ["bch":WalletManagerMode.p2p_only]
         prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bch":WalletManagerMode.p2p_only]
         prepareSystem()
 
         let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
@@ -239,9 +247,50 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
             if let target = transfer.target {
                 XCTAssertTrue (target.description.starts (with: (isMainnet ? "bitcoincash" : "bchtest")))
             }
+        }
     }
+
+    func testTransferBSV_P2P () {
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
+        currencyCodesToMode = ["bsv":WalletManagerMode.p2p_only]
+        prepareSystem()
+
+        let walletManagerDisconnectExpectation = XCTestExpectation (description: "Wallet Manager Disconnect")
+        listener.managerHandlers += [
+            { (system: System, manager:WalletManager, event: WalletManagerEvent) in
+                if case let .changed(_, newState) = event, case .disconnected = newState {
+                    walletManagerDisconnectExpectation.fulfill()
+                }
+            }]
+
+        let network: Network! = system.networks.first { .bsv == $0.type && isMainnet == $0.isMainnet }
+        XCTAssertNotNil (network)
+
+        let manager: WalletManager! = system.managers.first { $0.network == network }
+        XCTAssertNotNil (manager)
+        manager.addressScheme = AddressScheme.btcLegacy
+
+        let wallet = manager.primaryWallet
+        XCTAssertNotNil(wallet)
+
+        // Connect and wait for a number of transfers
+        listener.transferIncluded = true
+        listener.transferCount = 1
+        manager.connect()
+        wait (for: [listener.transferExpectation], timeout: syncTimeoutInSeconds)
+
+        manager.disconnect()
+        wait (for: [walletManagerDisconnectExpectation], timeout: 5)
+
+        XCTAssertTrue (wallet.transfers.count > 0)
+        if (wallet.transfers.count > 0) {
+            let transfer = wallet.transfers[0]
+            XCTAssertTrue (nil != transfer.source || nil != transfer.target)
+        }
     }
-    
+
     /// MARK: - ETH
 
     func runTransferETHTest () {
@@ -255,7 +304,10 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
         XCTAssertNotNil(wallet)
 
         // Connect and wait for a number of transfers
+        listener.transferIncluded = true
         listener.transferCount = 3
+        listener.transferWallet = wallet
+        
         manager.connect()
         wait (for: [listener.transferExpectation], timeout: 70)
 
@@ -296,14 +348,10 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
     }
 
     func testTransferETH_API () {
-        isMainnet = false
+        isMainnet = true
+        prepareAccount (identifier: "loan(C)")
+
         currencyCodesToMode = ["eth":WalletManagerMode.api_only]
-        prepareAccount (AccountSpecification (dict: [
-            "identifier": "ginger",
-            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
-            "timestamp":  "2018-01-01",
-            "network":    (isMainnet ? "mainnet" : "testnet")
-            ]))
         prepareSystem()
 
         runTransferETHTest()
@@ -345,6 +393,7 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
         ("testTransferBTC_API",      testTransferBTC_API),
         ("testTransferBTC_P2P",      testTransferBTC_P2P),
         ("testTransferBCH_P2P",      testTransferBCH_P2P),
+        ("testTransferBSV_P2P",      testTransferBSV_P2P),
         ("testTransferETH_API",      testTransferETH_API),
         ("testTransferConfirmation", testTransferConfirmation),
         ("testTransferDirection",    testTransferDirection),

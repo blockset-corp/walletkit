@@ -176,7 +176,7 @@ extern "C" {
     genWalletRelease (BRGenericWallet wallet);
 
     extern UInt256
-    genWalletGetBalance (BRGenericWallet wallet);
+    genWalletGetBalance (BRGenericWallet wallet, BRCryptoBoolean *negative);
 
     extern UInt256
     genWalletGetBalanceLimit (BRGenericWallet wallet,
@@ -207,6 +207,10 @@ extern "C" {
 
     extern void
     genWalletRemTransfer (BRGenericWallet wallet,
+                          OwnershipKept BRGenericTransfer transfer);
+
+    extern void
+    genWalletUpdTransfer (BRGenericWallet wallet,
                           OwnershipKept BRGenericTransfer transfer);
 
     extern BRGenericTransfer

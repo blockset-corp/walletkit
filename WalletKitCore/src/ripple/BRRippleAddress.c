@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <memory.h>
 
-static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
+char *rippleAlphabet = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 
 // A Ripple Address - 20 bytes
 #define ADDRESS_BYTES   (20)
@@ -143,7 +143,7 @@ BRRippleAddress rippleAddressStringToAddress(const char* input)
 
     // Decode the string input
     uint8_t bytes[25];
-    int length = BRBase58DecodeEx(NULL, 0, input, rippleAlphabet);
+    size_t length = BRBase58DecodeEx(NULL, 0, input, rippleAlphabet);
     if (length != 25) {
         // Since ripple addresses are created from 20 byte account IDs the
         // needed space to covert it back has to be 25 bytes.

@@ -11,5 +11,7 @@ public interface NetworkEventVisitor<T> {
 
     T visit(NetworkCreatedEvent event);
 
+    T visit(NetworkUpdatedEvent event);
+
     T visit(NetworkFeesUpdatedEvent event);
 }

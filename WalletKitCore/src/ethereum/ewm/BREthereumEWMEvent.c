@@ -98,7 +98,7 @@ typedef struct {
 static void
 ewmHandleBalanceEventDispatcher(BREventHandler ignore,
                                 BREthereumHandleBalanceEvent *event) {
-    ewmHandleBalance(event->ewm, event->amount);
+    ewmHandleBalance(event->ewm, event->amount, ETHEREUM_BOOLEAN_FALSE);
 }
 
 BREventType handleBalanceEventType = {
@@ -267,6 +267,44 @@ ewmSignalLog (BREthereumEWM ewm,
     BREthereumHandleLogEvent event = { { NULL, &handleLogEventType }, ewm, type, log };
     eventHandlerSignalEvent(ewm->handler, (BREvent*) &event);
 }
+
+// ==============================================================================================
+//
+// Handle Exchange
+//
+typedef struct {
+    BREvent base;
+    BREthereumEWM ewm;
+    BREthereumBCSCallbackExchangeType type;
+    BREthereumExchange exchange;
+} BREthereumHandleExchangeEvent;
+
+static void
+ewmHandleExchangeEventDispatcher(BREventHandler ignore,
+                            BREthereumHandleExchangeEvent *event) {
+    ewmHandleExchange(event->ewm, event->type, event->exchange);
+}
+
+static void
+ewmHandleExchangeEventDestroyer (BREthereumHandleExchangeEvent *event) {
+    ethExchangeRelease(event->exchange);
+}
+
+BREventType handleExchangeEventType = {
+    "EWM: Handle Exchange Event",
+    sizeof (BREthereumHandleExchangeEvent),
+    (BREventDispatcher) ewmHandleExchangeEventDispatcher,
+    (BREventDestroyer) ewmHandleExchangeEventDestroyer
+};
+
+extern void
+ewmSignalExchange (BREthereumEWM ewm,
+              BREthereumBCSCallbackExchangeType type,
+              OwnershipGiven BREthereumExchange exchange) {
+    BREthereumHandleExchangeEvent event = { { NULL, &handleExchangeEventType }, ewm, type, exchange };
+    eventHandlerSignalEvent(ewm->handler, (BREvent*) &event);
+}
+
 
 // ==============================================================================================
 //
@@ -909,6 +947,43 @@ ewmSignalAnnounceLog (BREthereumEWM ewm,
 }
 
 //
+// Announce Exchange
+//
+typedef struct {
+    struct BREventRecord base;
+    BREthereumEWM ewm;
+    BREthereumEWMClientAnnounceExchangeBundle *bundle;
+    int rid;
+} BREthereumEWMClientAnnounceExchangeEvent;
+
+static void
+ewmSignalAnnounceExchangeDispatcher (BREventHandler ignore,
+                                     BREthereumEWMClientAnnounceExchangeEvent *event) {
+    ewmHandleAnnounceExchange(event->ewm, event->bundle, event->rid);
+}
+
+static void
+ewmSignalAnnounceExchangeDestroyer (BREthereumEWMClientAnnounceExchangeEvent *event) {
+    ewmClientAnnounceExchangeBundleRelease(event->bundle);
+}
+
+static BREventType ewmClientAnnounceExchangeEventType = {
+    "EWM: Client Announce Exchange Event",
+    sizeof (BREthereumEWMClientAnnounceExchangeEvent),
+    (BREventDispatcher) ewmSignalAnnounceExchangeDispatcher,
+    (BREventDestroyer) ewmSignalAnnounceExchangeDestroyer
+};
+
+extern void
+ewmSignalAnnounceExchange (BREthereumEWM ewm,
+                           BREthereumEWMClientAnnounceExchangeBundle *bundle,
+                           int rid) {
+    BREthereumEWMClientAnnounceExchangeEvent message =
+    { { NULL, &ewmClientAnnounceExchangeEventType}, ewm, bundle, rid};
+    eventHandlerSignalEvent (ewm->handler, (BREvent*) &message);
+}
+
+//
 // Announce {Transaction, Log} Complete
 //
 typedef struct {
@@ -1021,6 +1096,7 @@ const BREventType *ewmEventTypes[] = {
     &handleGasEstimateEventType,
     &handleTransactionEventType,
     &handleLogEventType,
+    &handleExchangeEventType,
     &handleSaveBlocksEventType,
     &handleSaveNodesEventType,
     &handleSyncEventType,
@@ -1040,6 +1116,7 @@ const BREventType *ewmEventTypes[] = {
     &ewmClientAnnounceSubmitTransferEventType,
     &ewmClientAnnounceTransactionEventType,
     &ewmClientAnnounceLogEventType,
+    &ewmClientAnnounceExchangeEventType,
     &ewmClientAnnounceCompleteEventType,
     &ewmClientAnnounceTokenEventType,
     &ewmClientAnnounceTokenCompleteEventType,

@@ -167,6 +167,7 @@ class TestNetworkListener: NetworkListener {
 }
 
 class CryptoTestSystemListener: SystemListener {
+    private let queue = DispatchQueue (label: "Crypto System")
 
     private let isMainnet: Bool
     private let networkCurrencyCodesToMode: [String:WalletManagerMode]
@@ -185,40 +186,43 @@ class CryptoTestSystemListener: SystemListener {
 
     func handleSystemEvent(system: System, event: SystemEvent) {
         print ("TST: System Event: \(event)")
-        systemEvents.append (event)
-        switch event {
-        case .networkAdded (let network):
-            if isMainnet == network.isMainnet,
-                 network.currencies.contains(where: { nil != networkCurrencyCodesToMode[$0.code] }),
-                 let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
-                 // Get a valid mode, ideally from `currencyMode`
-
-                 let mode = network.supportsMode (currencyMode)
-                     ? currencyMode
-                     : network.defaultMode
-
-                 let scheme = network.defaultAddressScheme
-
-                 let currencies = network.currencies
-                     .filter { (c) in registerCurrencyCodes.contains { c.code == $0 } }
-
-                 let success = system.createWalletManager (network: network,
-                                                           mode: mode,
-                                                           addressScheme: scheme,
-                                                           currencies: currencies)
-                XCTAssertTrue(success)
+        queue.async {
+            
+            self.systemEvents.append (event)
+            switch event {
+            case .networkAdded (let network):
+                if self.isMainnet == network.isMainnet,
+                    network.currencies.contains(where: { nil != self.networkCurrencyCodesToMode[$0.code] }),
+                    let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
+                    // Get a valid mode, ideally from `currencyMode`
+                    
+                    let mode = network.supportsMode (currencyMode)
+                        ? currencyMode
+                        : network.defaultMode
+                    
+                    let scheme = network.defaultAddressScheme
+                    
+                    let currencies = network.currencies
+                        .filter { (c) in self.registerCurrencyCodes.contains { c.code == $0 } }
+                    
+                    let success = system.createWalletManager (network: network,
+                                                              mode: mode,
+                                                              addressScheme: scheme,
+                                                              currencies: currencies)
+                    XCTAssertTrue(success)
+                }
+                
+            case .discoveredNetworks:
+                self.networkExpectation.fulfill()
+                
+            case .managerAdded:
+                self.managerExpectation.fulfill()
+                
+            default: break
             }
-
-        case .discoveredNetworks:
-            networkExpectation.fulfill()
-
-        case .managerAdded:
-            managerExpectation.fulfill()
-
-        default: break
+            
+            self.systemHandlers.forEach { $0 (system, event) }
         }
-
-        systemHandlers.forEach { $0 (system, event) }
     }
 
     func checkSystemEvents (_ expected: [SystemEvent], strict: Bool = false) -> Bool {
@@ -226,7 +230,7 @@ class CryptoTestSystemListener: SystemListener {
     }
 
     func checkSystemEvents (_ matchers: [EventMatcher<SystemEvent>]) -> Bool {
-        return systemEvents.match(matchers)
+        return queue.sync { systemEvents.match(matchers) }
     }
 
     // MARK: - Wallet Manager Handler
@@ -235,17 +239,18 @@ class CryptoTestSystemListener: SystemListener {
     var managerEvents: [WalletManagerEvent] = []
     var managerExpectation = XCTestExpectation (description: "ManagerExpectation")
 
-
     func handleManagerEvent(system: System, manager: WalletManager, event: WalletManagerEvent) {
         print ("TST: Manager Event: \(event)")
-        managerEvents.append(event)
-        if case .walletAdded = event {
-            if walletExpectationNeeded {
-                walletExpectationNeeded = false
-                walletExpectation.fulfill()   // Might fulfill on ETH before BRD?
+        queue.async {
+            self.managerEvents.append(event)
+            if case .walletAdded = event {
+                if self.walletExpectationNeeded {
+                    self.walletExpectationNeeded = false
+                    self.walletExpectation.fulfill()   // Might fulfill on ETH before BRD?
+                }
             }
+            self.managerHandlers.forEach { $0 (system, manager, event) }
         }
-        managerHandlers.forEach { $0 (system, manager, event) }
     }
 
     func checkManagerEvents (_ expected: [WalletManagerEvent], strict: Bool = false) -> Bool {
@@ -265,8 +270,10 @@ class CryptoTestSystemListener: SystemListener {
 
     func handleWalletEvent(system: System, manager: WalletManager, wallet: Wallet, event: WalletEvent) {
         print ("TST: Wallet (\(wallet.name)) Event: \(event)")
-        walletEvents.append(event)
-        walletHandlers.forEach { $0 (system, manager, wallet, event) }
+        queue.async {
+            self.walletEvents.append(event)
+            self.walletHandlers.forEach { $0 (system, manager, wallet, event) }
+        }
     }
 
     func checkWalletEvents (_ expected: [WalletEvent], strict: Bool = false) -> Bool {
@@ -274,7 +281,7 @@ class CryptoTestSystemListener: SystemListener {
     }
 
     func checkWalletEvents (_ matchers: [EventMatcher<WalletEvent>]) -> Bool {
-        return walletEvents.match(matchers)
+        return queue.sync { walletEvents.match(matchers) }
     }
 
     // MARK: - Transfer Handler
@@ -284,19 +291,25 @@ class CryptoTestSystemListener: SystemListener {
     var transferHandlers: [TransferEventHandler] = []
     var transferEvents: [TransferEvent] = []
     var transferExpectation = XCTestExpectation (description: "TransferExpectation")
+    var transferWallet: Wallet? = nil
 
     func handleTransferEvent(system: System, manager: WalletManager, wallet: Wallet, transfer: Transfer, event: TransferEvent) {
+        guard transferWallet.map ({ $0 == wallet }) ?? true
+            else { return }
+
         print ("TST: Transfer Event: \(event)")
-        transferEvents.append (event)
-        if transferIncluded, case .included = transfer.state {
-            if 1 == transferCount { transferExpectation.fulfill()}
-            if 1 <= transferCount { transferCount -= 1 }
+        queue.async {
+            self.transferEvents.append (event)
+            if self.transferIncluded, case .included = transfer.state {
+                if 1 <= self.transferCount { self.transferCount -= 1 }
+                if 0 == self.transferCount { self.transferExpectation.fulfill()}
+            }
+            else if !self.transferIncluded, case .created = transfer.state {
+                if 1 <= self.transferCount { self.transferCount -= 1 }
+                if 0 == self.transferCount { self.transferExpectation.fulfill()}
+            }
+            self.transferHandlers.forEach { $0 (system, manager, wallet, transfer, event) }
         }
-        else if case .created = transfer.state {
-            if 1 == transferCount { transferExpectation.fulfill()}
-            if 1 <= transferCount { transferCount -= 1 }
-        }
-        transferHandlers.forEach { $0 (system, manager, wallet, transfer, event) }
     }
 
    func checkTransferEvents (_ expected: [TransferEvent], strict: Bool = false) -> Bool {
@@ -304,7 +317,7 @@ class CryptoTestSystemListener: SystemListener {
     }
 
     func checkTransferEvents (_ matchers: [EventMatcher<TransferEvent>]) -> Bool {
-        return transferEvents.match(matchers)
+        return queue.sync { transferEvents.match(matchers) }
     }
 
     // MARK: - Network Handler
@@ -315,8 +328,10 @@ class CryptoTestSystemListener: SystemListener {
 
     func handleNetworkEvent(system: System, network: Network, event: NetworkEvent) {
         print ("TST: Network Event: \(event)")
-        networkEvents.append (event)
-        networkHandlers.forEach { $0 (system, network, event) }
+        queue.async {
+            self.networkEvents.append (event)
+            self.networkHandlers.forEach { $0 (system, network, event) }
+        }
     }
 
     func checkNetworkEvents (_ expected: [NetworkEvent], strict: Bool = false) -> Bool {
@@ -324,7 +339,7 @@ class CryptoTestSystemListener: SystemListener {
     }
 
     func checkNetworkEvents (_ matchers: [EventMatcher<NetworkEvent>]) -> Bool {
-        return networkEvents.match(matchers)
+        return queue.sync { self.networkEvents.match(matchers) }
     }
 
     //
@@ -432,9 +447,9 @@ class BRCryptoSystemBaseTests: BRCryptoBaseTests {
         XCTAssertEqual (account.uids, system.account.uids)
 
         system.configure(withCurrencyModels: currencyModels) // Don't connect
-        wait (for: [self.listener.networkExpectation], timeout: 5)
-        wait (for: [self.listener.managerExpectation], timeout: 5)
-        wait (for: [self.listener.walletExpectation ], timeout: 5)
+        wait (for: [self.listener.networkExpectation], timeout: 15)
+        wait (for: [self.listener.managerExpectation], timeout: 15)
+        wait (for: [self.listener.walletExpectation ], timeout: 15)
     }
 
     override func setUp() {

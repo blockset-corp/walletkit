@@ -154,9 +154,8 @@ cryptoWalletGetBalance (BRCryptoWallet wallet) {
         case BLOCK_CHAIN_TYPE_BTC: {
             BRWallet *wid = wallet->u.btc.wid;
 
-            UInt256 value = uint256Create (BRWalletBalance (wid));
-            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-            return amount;
+            UInt256 balance = uint256Create (BRWalletBalance (wid));
+            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, balance);
         }
         case BLOCK_CHAIN_TYPE_ETH: {
             BREthereumEWM ewm = wallet->u.eth.ewm;
@@ -164,13 +163,13 @@ cryptoWalletGetBalance (BRCryptoWallet wallet) {
 
             BREthereumAmount balance = ewmWalletGetBalance (ewm, wid);
             UInt256 value = balance.type == AMOUNT_ETHER ? balance.u.ether.valueInWEI : balance.u.tokenQuantity.valueAsInteger;
-            BRCryptoAmount amount = cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
-            return amount;
+            return cryptoAmountCreate (wallet->unit, CRYPTO_FALSE, value);
         }
         case BLOCK_CHAIN_TYPE_GEN: {
-            return cryptoAmountCreate (wallet->unit,
-                                       CRYPTO_FALSE,
-                                       genWalletGetBalance (cryptoWalletAsGEN(wallet)));
+            BRCryptoBoolean negative;
+            UInt256 balance = genWalletGetBalance (cryptoWalletAsGEN(wallet), &negative);
+
+            return cryptoAmountCreate (wallet->unit, negative, balance);
         }
     }
 }
@@ -327,7 +326,7 @@ cryptoWalletGetAddress (BRCryptoWallet wallet,
             BRAddress btcAddress = (CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme
                                     ? BRWalletReceiveAddress(wid)
                                     : BRWalletLegacyAddress (wid));
-            return cryptoAddressCreateAsBTC (btcAddress, AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC(wallet->u.btc.bwm)));
+            return cryptoAddressCreateAsBTC (btcAddress, AS_CRYPTO_BOOLEAN (0 == BRWalletManagerHandlesBCH(wallet->u.btc.bwm)));
             }
 
         case BLOCK_CHAIN_TYPE_ETH: {
@@ -613,7 +612,7 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
 
                 BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
                 BRAddress address = cryptoAddressAsBTC (output->target, &isBitcoinAddr);
-                assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
+                assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (0 == BRWalletManagerHandlesBCH(bwm)));
 
                 BRCryptoBoolean overflow = CRYPTO_FALSE;
                 uint64_t value = cryptoAmountGetIntegerRaw (output->amount, &overflow);
@@ -628,7 +627,7 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
                                                                              outputsCount,
                                                                              cryptoFeeBasisAsBTC(estimatedFeeBasis));
             transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
-                                                                       AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
+                                                                       AS_CRYPTO_BOOLEAN(0 == BRWalletManagerHandlesBCH(bwm)));
             break;
         }
         case BLOCK_CHAIN_TYPE_ETH:
@@ -670,7 +669,7 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
 
             BRCryptoBoolean isBitcoinAddr = CRYPTO_TRUE;
             BRAddress address = cryptoAddressAsBTC (target, &isBitcoinAddr);
-            assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (BRWalletManagerHandlesBTC (bwm)));
+            assert (isBitcoinAddr == AS_CRYPTO_BOOLEAN (0 == BRWalletManagerHandlesBCH(bwm)));
 
             BRCryptoBoolean overflow = CRYPTO_FALSE;
             uint64_t value = cryptoAmountGetIntegerRaw (amount, &overflow);
@@ -679,7 +678,7 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
             BRTransaction *tid = BRWalletManagerCreateTransaction (bwm, wid, value, address,
                                                                    cryptoFeeBasisAsBTC(estimatedFeeBasis));
             transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
-                                                                       AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
+                                                                       AS_CRYPTO_BOOLEAN(0 == BRWalletManagerHandlesBCH(bwm)));
             break;
         }
 
@@ -784,7 +783,7 @@ cryptoWalletCreateTransferForWalletSweep (BRCryptoWallet  wallet,
                                                                        unitForFee,
                                                                        wid,
                                                                        tid,
-                                                                       AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
+                                                                       AS_CRYPTO_BOOLEAN(0 == BRWalletManagerHandlesBCH(bwm)));
             break;
         }
         default:
@@ -820,7 +819,7 @@ cryptoWalletCreateTransferForPaymentProtocolRequest (BRCryptoWallet wallet,
                         BRTransaction *tid = BRWalletManagerCreateTransactionForOutputs (bwm, wid, outputs, array_count (outputs),
                                                                                          cryptoFeeBasisAsBTC(estimatedFeeBasis));
                         transfer = NULL == tid ? NULL : cryptoTransferCreateAsBTC (unit, unitForFee, wid, tid,
-                                                                                   AS_CRYPTO_BOOLEAN(BRWalletManagerHandlesBTC(bwm)));
+                                                                                   AS_CRYPTO_BOOLEAN(0 == BRWalletManagerHandlesBCH(bwm)));
                         array_free (outputs);
                     }
                     break;

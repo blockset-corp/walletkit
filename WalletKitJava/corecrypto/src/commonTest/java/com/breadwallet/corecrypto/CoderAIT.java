@@ -55,5 +55,11 @@ public class CoderAIT {
                 (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
         s = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.BASE58CHECK).encode(d).get();
         assertArrayEquals(d, Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.BASE58CHECK).decode(s).get());
+
+        // BASE58RIPPLE
+
+        s = "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a";
+        d = Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.BASE58RIPPLE).decode(s).get();
+        assertEquals (s, Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.BASE58RIPPLE).encode(d).get());
     }
 }

@@ -118,6 +118,13 @@ extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction 
 extern BRHederaTimeStamp hederaGenerateTimeStamp(void);
 extern BRHederaTimeStamp hederaParseTimeStamp(const char* txID);
 
+// Internal
+extern int hederaTransactionHasSource (BRHederaTransaction tranaction, BRHederaAddress address);
+extern int hederaTransactionHasTarget (BRHederaTransaction tranaction, BRHederaAddress address);
+
+extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransaction transfer,
+                                                               BRHederaAddress address,
+                                                               int *negative);
 #ifdef __cplusplus
 }
 #endif

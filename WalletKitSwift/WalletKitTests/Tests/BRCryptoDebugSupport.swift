@@ -96,6 +96,8 @@ extension NetworkEvent:       MatchableEvent {
             return true
         case (.feesUpdated, .feesUpdated):
             return true
+        case (.updated, .updated):
+            return true
         default:
             return false
         }

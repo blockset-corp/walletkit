@@ -53,5 +53,12 @@ extern BRRippleTransaction rippleTransferGetTransaction(BRRippleTransfer transfe
 extern int rippleTransferHasSource (BRRippleTransfer transfer,
                                     BRRippleAddress source);
 
+extern int rippleTransferHasTarget (BRRippleTransfer transfer,
+                                    BRRippleAddress source);
+
+extern BRRippleUnitDrops rippleTransferGetAmountDirected (BRRippleTransfer transfer,
+                                                          BRRippleAddress address,
+                                                          int *negative);
+
 extern uint64_t rippleTransferGetBlockHeight (BRRippleTransfer transfer);
 #endif

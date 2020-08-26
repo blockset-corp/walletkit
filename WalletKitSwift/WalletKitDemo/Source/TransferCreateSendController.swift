@@ -160,43 +160,39 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
         wallet.estimateLimitMinimum (target: target, fee: fee) {
             (res: Result<Amount, Wallet.LimitEstimationError>) in
-            switch res {
-            case .success (let minimum):
-                DispatchQueue.main.async {
-                    self.minimum = minimum
 
-                    self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unitForFee) ?? 0.0)
-                    self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
+            let minimum = res.getWithRecovery { (reason) in
+                print ("APP: TCC: Missed estimateLimitMinimum: \(reason)")
+                return Amount.create(double: 0.0, unit: self.wallet.unit)
+            }
+            DispatchQueue.main.async {
+                self.minimum = minimum
 
-                    self.amountSlider.value = max (self.amountSlider.minimumValue, self.amountSlider.value)
-                    self.amountLabel.text = self.amount().description
+                self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unit) ?? 0.0)
+                self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
 
-                }
-
-            case .failure:
-                break
+                self.amountSlider.value = max (self.amountSlider.minimumValue, self.amountSlider.value)
+                self.amountLabel.text = self.amount().description
             }
         }
 
         wallet.estimateLimitMaximum (target: target, fee: fee) {
             (res: Result<Amount, Wallet.LimitEstimationError>) in
-            switch res {
-            case .success (let maximum):
-                DispatchQueue.main.async {
-                    self.maximum = maximum
 
-                    self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unitForFee) ?? 0.0)
-                    self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
+            let maximum = res.getWithRecovery { (reason) in
+                print ("APP: TCC: Missed estimateLimitMaximum: \(reason)")
+                return Amount.create(double: 0.0, unit: self.wallet.unit)
+            }
+            DispatchQueue.main.async {
+                self.maximum = maximum
 
-                    self.amountSlider.value = min (self.amountSlider.maximumValue, self.amountSlider.value)
-                    self.amountLabel.text = self.amount().description
-                }
+                self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unit) ?? 0.0)
+                self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
 
-            case .failure:
-                break
+                self.amountSlider.value = min (self.amountSlider.maximumValue, self.amountSlider.value)
+                self.amountLabel.text = self.amount().description
             }
         }
-
     }
 
     func updateFee () {

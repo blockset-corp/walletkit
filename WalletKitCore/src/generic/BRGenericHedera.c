@@ -202,16 +202,13 @@ genericHederaWalletFree (BRGenericWalletRef wallet) {
 }
 
 static UInt256
-genericHederaWalletGetBalance (BRGenericWalletRef wallet) {
-    // It appears possible for a wallet balance to be negative in two cases:
-    //   a) we load transfers from persistent stoarge in a random order
-    //   b) perhaps Blockset responds with two 'simultaneous transfers' in a swapped order.
-    // Both of these cases MUST be transitory; so we'll return '0' and wait for it to correct
-    // itself naturally.
+genericHederaWalletGetBalance (BRGenericWalletRef wallet, int *negative) {
     BRHederaUnitTinyBar balance = hederaWalletGetBalance ((BRHederaWallet) wallet);
-    return (balance >= 0
-            ? uint256Create (hederaTinyBarCoerceToUInt64 (balance))
-            : UINT256_ZERO);
+
+    *negative = balance < 0;
+    if (*negative) balance = -balance;
+
+    return uint256Create (hederaTinyBarCoerceToUInt64 (balance));
 }
 
 static UInt256
@@ -253,6 +250,12 @@ static void
 genericHederaWalletRemTransfer (BRGenericWalletRef wallet,
                                 OwnershipKept BRGenericTransferRef transfer) {
     hederaWalletRemTransfer ((BRHederaWallet) wallet, (BRHederaTransaction) transfer);
+}
+
+static void
+genericHederaWalletUpdTransfer (BRGenericWalletRef wallet,
+                                OwnershipKept BRGenericTransferRef transfer) {
+    hederaWalletUpdateTransfer ((BRHederaWallet) wallet, (BRHederaTransaction) transfer);
 }
 
 #define TRANSFER_ATTRIBUTE_MEMO_TAG         "Memo"
@@ -491,6 +494,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletHasTransfer,
         genericHederaWalletAddTransfer,
         genericHederaWalletRemTransfer,
+        genericHederaWalletUpdTransfer,
         genericHederaWalletCreateTransfer,
         genericHederaWalletEstimateFeeBasis,
 

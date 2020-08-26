@@ -129,10 +129,18 @@ extern BRHederaFeeBasis
 hederaWalletGetDefaultFeeBasis (BRHederaWallet wallet);
 
 // Wallet transfer list functions
-extern int hederaWalletHasTransfer (BRHederaWallet wallet, BRHederaTransaction transfer);
-extern void hederaWalletAddTransfer(BRHederaWallet wallet, BRHederaTransaction transfer);
+extern int hederaWalletHasTransfer (BRHederaWallet wallet,
+                                    OwnershipKept BRHederaTransaction transfer);
+
+extern void hederaWalletAddTransfer(BRHederaWallet wallet,
+                                    OwnershipKept BRHederaTransaction transfer);
+
 extern void hederaWalletRemTransfer (BRHederaWallet wallet,
                                      OwnershipKept BRHederaTransaction transaction);
+
+extern void hederaWalletUpdateTransfer (BRHederaWallet wallet,
+                                        OwnershipKept BRHederaTransaction transaction);
+
 extern int
 hederaWalletHasAddress (BRHederaWallet wallet,
                         BRHederaAddress address);

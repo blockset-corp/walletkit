@@ -389,8 +389,12 @@ genWalletRelease (BRGenericWallet wallet) {
 }
 
 extern UInt256
-genWalletGetBalance (BRGenericWallet wallet) {
-    return wallet->handlers.balance (wallet->ref);
+genWalletGetBalance (BRGenericWallet wallet, BRCryptoBoolean *negative) {
+    int balanceIsNegative;
+    UInt256 balance = wallet->handlers.balance (wallet->ref, &balanceIsNegative);
+
+    *negative = AS_CRYPTO_BOOLEAN(balanceIsNegative);
+    return balance;
 }
 
 extern UInt256
@@ -444,6 +448,12 @@ extern void
 genWalletRemTransfer (BRGenericWallet wallet,
                       OwnershipKept BRGenericTransfer transfer) {
     wallet->handlers.remTransfer (wallet->ref, transfer->ref);
+}
+
+extern void
+genWalletUpdTransfer (BRGenericWallet wallet,
+                      OwnershipKept BRGenericTransfer transfer) {
+    wallet->handlers.updTransfer (wallet->ref, transfer->ref);
 }
 
 extern BRGenericTransfer

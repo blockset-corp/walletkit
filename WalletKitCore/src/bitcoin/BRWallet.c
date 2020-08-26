@@ -1058,14 +1058,17 @@ void BRWalletUpdateTransactions(BRWallet *wallet, const UInt256 txHashes[], size
                                 uint32_t timestamp)
 {
     BRTransaction *tx;
-    UInt256 hashes[txCount];
+
+    UInt256 hashesBuf[4096];
+    UInt256 *hashes = (txCount <= 4096 ? hashesBuf : calloc (txCount, sizeof (UInt256)));
+
     int needsUpdate = 0;
     size_t i, j, k;
     
     assert(wallet != NULL);
     assert(txHashes != NULL || txCount == 0);
     pthread_mutex_lock(&wallet->lock);
-    if (blockHeight > wallet->blockHeight) wallet->blockHeight = blockHeight;
+    if (blockHeight != TX_UNCONFIRMED && blockHeight > wallet->blockHeight) wallet->blockHeight = blockHeight;
     
     for (i = 0, j = 0; txHashes && i < txCount; i++) {
         tx = BRSetGet(wallet->allTx, &txHashes[i]);
@@ -1093,6 +1096,7 @@ void BRWalletUpdateTransactions(BRWallet *wallet, const UInt256 txHashes[], size
     if (needsUpdate) _BRWalletUpdateBalance(wallet);
     pthread_mutex_unlock(&wallet->lock);
     if (j > 0 && wallet->txUpdated) wallet->txUpdated(wallet->callbackInfo, hashes, j, blockHeight, timestamp);
+    if (hashes != hashesBuf) free (hashes);
 }
 
 // marks all transactions confirmed after blockHeight as unconfirmed (useful for chain re-orgs)
@@ -1107,7 +1111,8 @@ void BRWalletSetTxUnconfirmedAfter(BRWallet *wallet, uint32_t blockHeight)
     while (i > 0 && wallet->transactions[i - 1]->blockHeight > blockHeight) i--;
     count -= i;
 
-    UInt256 hashes[count];
+    UInt256 hashesBuf[4096];
+    UInt256 *hashes = (count <= 4096 ? hashesBuf : calloc (count, sizeof (UInt256)));
 
     for (j = 0; j < count; j++) {
         wallet->transactions[i + j]->blockHeight = TX_UNCONFIRMED;
@@ -1117,6 +1122,7 @@ void BRWalletSetTxUnconfirmedAfter(BRWallet *wallet, uint32_t blockHeight)
     if (count > 0) _BRWalletUpdateBalance(wallet);
     pthread_mutex_unlock(&wallet->lock);
     if (count > 0 && wallet->txUpdated) wallet->txUpdated(wallet->callbackInfo, hashes, count, TX_UNCONFIRMED, 0);
+    if (hashes != hashesBuf) free (hashes);
 }
 
 // returns the amount received by the wallet from the transaction (total outputs to change and/or receive addresses)

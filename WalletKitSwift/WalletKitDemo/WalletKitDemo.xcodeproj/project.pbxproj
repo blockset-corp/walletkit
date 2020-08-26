@@ -7,7 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C13F33724C759A0008410C8 /* libresolv.tbd */; };
 		3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3C82745323ECC3770047A2D3 /* WalletKit */; };
+		3CCCFC0D24C0CDD90045FA37 /* CONTRIBUTORS in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */; };
+		3CCCFC0E24C0CDD90045FA37 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0B24C0CDD90045FA37 /* LICENSE */; };
+		3CCCFC0F24C0CDD90045FA37 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0C24C0CDD90045FA37 /* README.md */; };
+		3CCCFC1124C0E0310045FA37 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC1024C0E0310045FA37 /* CHANGELOG.md */; };
 		3CD5B25423EB7C2600CC8A56 /* TransferViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B23B23EB7C2500CC8A56 /* TransferViewController.swift */; };
 		3CD5B25523EB7C2600CC8A56 /* TransferCreateSweepController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B23C23EB7C2500CC8A56 /* TransferCreateSweepController.swift */; };
 		3CD5B25623EB7C2600CC8A56 /* SummaryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B23D23EB7C2500CC8A56 /* SummaryViewController.swift */; };
@@ -31,7 +36,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3C13F33724C759A0008410C8 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		3C82745123ECBD9F0047A2D3 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CONTRIBUTORS; path = ../../CONTRIBUTORS; sourceTree = "<group>"; };
+		3CCCFC0B24C0CDD90045FA37 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../../LICENSE; sourceTree = "<group>"; };
+		3CCCFC0C24C0CDD90045FA37 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../README.md; sourceTree = "<group>"; };
+		3CCCFC1024C0E0310045FA37 /* CHANGELOG.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = CHANGELOG.md; path = ../../CHANGELOG.md; sourceTree = "<group>"; };
 		3CD5B22323EB79D600CC8A56 /* WalletKitDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WalletKitDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3CD5B23B23EB7C2500CC8A56 /* TransferViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferViewController.swift; sourceTree = "<group>"; };
 		3CD5B23C23EB7C2500CC8A56 /* TransferCreateSweepController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferCreateSweepController.swift; sourceTree = "<group>"; };
@@ -63,6 +73,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */,
+				3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +83,10 @@
 		3CD5B21A23EB79D600CC8A56 = {
 			isa = PBXGroup;
 			children = (
+				3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */,
+				3CCCFC0B24C0CDD90045FA37 /* LICENSE */,
+				3CCCFC0C24C0CDD90045FA37 /* README.md */,
+				3CCCFC1024C0E0310045FA37 /* CHANGELOG.md */,
 				3CD5B23A23EB7C2500CC8A56 /* Source */,
 				3CD5B22423EB79D600CC8A56 /* Products */,
 				3CD5B26923EB7ED800CC8A56 /* Frameworks */,
@@ -117,6 +132,7 @@
 		3CD5B26923EB7ED800CC8A56 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3C13F33724C759A0008410C8 /* libresolv.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -185,10 +201,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CCCFC0D24C0CDD90045FA37 /* CONTRIBUTORS in Resources */,
 				3CD5B25E23EB7C2600CC8A56 /* Main.storyboard in Resources */,
 				3CD5B25923EB7C2600CC8A56 /* Initial Screen.storyboard in Resources */,
+				3CCCFC0E24C0CDD90045FA37 /* LICENSE in Resources */,
 				3CD5B25D23EB7C2600CC8A56 /* LaunchScreen.storyboard in Resources */,
 				3CD5B26423EB7C2600CC8A56 /* CoreTestsConfig.json in Resources */,
+				3CCCFC0F24C0CDD90045FA37 /* README.md in Resources */,
+				3CCCFC1124C0E0310045FA37 /* CHANGELOG.md in Resources */,
 				3CD5B25A23EB7C2600CC8A56 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

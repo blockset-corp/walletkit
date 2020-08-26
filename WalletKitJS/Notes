@@ -1,0 +1,10 @@
+cd WalletKitJS
+emconfigure cmake WalletKitCore
+emmake make
+emcc libcorecrypto.a -o libcorecrypto.js
+mv lib*.* WalletKitCoreWASM/
+
+
+funcs=\'["_cryptoNetworkCanonicalTypeGetCurrencyCode", "_cryptoAccountGeneratePaperKey", ...]\'
+
+emcc libcorecrypto.a -o libcorecrypto.js -s EXPORTED_FUNCTIONS='["_cryptoCurrencyCreate"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'

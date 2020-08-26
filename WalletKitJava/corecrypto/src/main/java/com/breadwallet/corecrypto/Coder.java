@@ -27,6 +27,9 @@ final class Coder implements com.breadwallet.crypto.Coder {
     @Nullable
     private static final Coder CODER_BASE58CHECK = BRCryptoCoder.createBase58Check().transform(Coder::create).orNull();
 
+    @Nullable
+    private static final Coder CODER_BASE58RIPPLE = BRCryptoCoder.createBase58Ripple().transform(Coder::create).orNull();
+
     /* package */
     static Coder createForAlgorithm(Algorithm algorithm) {
         Coder coder = null;
@@ -40,6 +43,9 @@ final class Coder implements com.breadwallet.crypto.Coder {
                 break;
             case BASE58CHECK:
                 coder = CODER_BASE58CHECK;
+                break;
+            case BASE58RIPPLE:
+                coder = CODER_BASE58RIPPLE;
                 break;
         }
 
