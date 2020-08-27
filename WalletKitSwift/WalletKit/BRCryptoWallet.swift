@@ -87,7 +87,7 @@ public final class Wallet: Equatable {
     /// - Parameter address: the address to check
     ///
     public func hasAddress (_ address: Address) -> Bool {
-        return CRYPTO_TRUE == cryptoWalletHasAddress (core, address.core);
+        return cryptoWalletHasAddress (core, address.core);
     }
 
     ///
@@ -149,9 +149,10 @@ public final class Wallet: Equatable {
         let transfersPtr = cryptoWalletGetTransfers(core, &transfersCount);
         defer { if let ptr = transfersPtr { cryptoMemoryFree (ptr) } }
         
-        let transfers: [BRCryptoTransfer] = transfersPtr?.withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
-            Array(UnsafeBufferPointer (start: $0, count: transfersCount))
-        } ?? []
+        let transfers: [BRCryptoTransfer] = transfersPtr?
+            .withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
+                Array(UnsafeBufferPointer (start: $0, count: transfersCount))
+            } ?? []
         
         return transfers
             .map { Transfer (core: $0,
@@ -247,7 +248,7 @@ public final class Wallet: Equatable {
 
     internal func createTransfer(sweeper: WalletSweeper,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
-        return cryptoWalletCreateTransferForWalletSweep(self.core, sweeper.core, estimatedFeeBasis.core)
+        return cryptoWalletSweeperCreateTransferForWalletSweep(sweeper.core, manager.core, self.core, estimatedFeeBasis.core)
             .map { Transfer (core: $0,
                              wallet: self,
                              take: false)
@@ -262,7 +263,7 @@ public final class Wallet: Equatable {
                              take: false)
         }
     }
-
+    
     /// MARK: Estimate Limit
 
     ///
@@ -535,14 +536,14 @@ public final class Wallet: Equatable {
                                              amount.core,
                                              fee.core)
     }
-    
+
     internal func estimateFee (sweeper: WalletSweeper,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
-        cryptoWalletManagerEstimateFeeBasisForWalletSweep (self.manager.core,
+        cryptoWalletManagerEstimateFeeBasisForWalletSweep (sweeper.core,
+                                                           self.manager.core,
                                                            self.core,
                                                            callbackCoordinator.addWalletFeeEstimateHandler(completion),
-                                                           sweeper.core,
                                                            fee.core)
     }
     
@@ -679,12 +680,58 @@ public enum WalletEvent {
 
     case transferAdded     (transfer: Transfer)
     case transferChanged   (transfer: Transfer)
-    case transferDeleted   (transfer: Transfer)
     case transferSubmitted (transfer: Transfer, success: Bool)
+    case transferDeleted   (transfer: Transfer)
 
     case balanceUpdated    (amount: Amount)
     case feeBasisUpdated   (feeBasis: TransferFeeBasis)
     case feeBasisEstimated (feeBasis: TransferFeeBasis)
+
+    init (wallet: Wallet, core: BRCryptoWalletEvent) {
+        switch core.type {
+        case CRYPTO_WALLET_EVENT_CREATED:
+            self = .created
+            
+        case CRYPTO_WALLET_EVENT_CHANGED:
+            self = .changed (oldState: WalletState (core: core.u.state.old),
+                             newState: WalletState (core: core.u.state.new))
+            
+        case CRYPTO_WALLET_EVENT_DELETED:
+            self = .deleted
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
+            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
+            self = .transferDeleted (transfer: Transfer (core: core.u.transfer,
+                                                         wallet: wallet,
+                                                         take: false))
+            
+        case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
+            self = .balanceUpdated (amount: Amount (core: core.u.balanceUpdated.amount, take: false))
+            
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
+            self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: core.u.feeBasisUpdated.basis, take: false))
+            
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
+            self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: core.u.feeBasisEstimated.basis, take: false))
+            
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 extension WalletEvent: CustomStringConvertible {

@@ -716,15 +716,8 @@ nodeCreate (BREthereumNodePriority priority,
 
     node->timeout = (time_t) -1;
     node->timeoutPingAllowed = ETHEREUM_BOOLEAN_TRUE;
-    
-    {
-        // The cacheLock is a normal, non-recursive lock
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init(&node->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+
+    pthread_mutex_init_brd (&node->lock, PTHREAD_MUTEX_NORMAL);
 
     return node;
 }

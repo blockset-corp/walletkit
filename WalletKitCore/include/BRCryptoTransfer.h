@@ -15,121 +15,13 @@
 #include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoFeeBasis.h"
+#include "BRCryptoNetwork.h"
+#include "BRCryptoListener.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    typedef struct BRCryptoTransferRecord *BRCryptoTransfer;
-
-    /// MARK: Transfer Submission Result
-
-    typedef enum {
-        CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN,
-        CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX,
-    } BRCryptoTransferSubmitErrorType;
-
-    typedef struct {
-        BRCryptoTransferSubmitErrorType type;
-        union {
-            struct {
-                int errnum;
-            } posix;
-        } u;
-    } BRCryptoTransferSubmitError;
-
-    extern BRCryptoTransferSubmitError
-    cryptoTransferSubmitErrorUnknown(void);
-
-    extern BRCryptoTransferSubmitError
-    cryptoTransferSubmitErrorPosix(int errnum);
-
-    /**
-     * Return a descriptive message as to why the error occurred.
-     *
-     *@return the detailed reason as a string or NULL
-     */
-    extern char *
-    cryptoTransferSubmitErrorGetMessage(BRCryptoTransferSubmitError *e);
-
-    /// MARK: - Transfer State
-
-    typedef enum {
-        CRYPTO_TRANSFER_STATE_CREATED,
-        CRYPTO_TRANSFER_STATE_SIGNED,
-        CRYPTO_TRANSFER_STATE_SUBMITTED,
-        CRYPTO_TRANSFER_STATE_INCLUDED,
-        CRYPTO_TRANSFER_STATE_ERRORED,
-        CRYPTO_TRANSFER_STATE_DELETED,
-    } BRCryptoTransferStateType;
-
-    extern const char *
-    cryptoTransferStateTypeString (BRCryptoTransferStateType type);
-
-    #define CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE     16
-
-    typedef struct {
-        BRCryptoTransferStateType type;
-        union {
-            struct {
-                uint64_t blockNumber;
-                uint64_t transactionIndex;
-                // This is not assuredly the including block's timestamp; it is the transaction's
-                // timestamp which varies depending on how the transaction was discovered.
-                uint64_t timestamp;
-                BRCryptoFeeBasis feeBasis;
-
-                // transfer that have failed can be included too
-                BRCryptoBoolean success;
-                char error[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
-            } included;
-
-            struct {
-                BRCryptoTransferSubmitError error;
-            } errored;
-        } u;
-    } BRCryptoTransferState;
-
-    extern BRCryptoTransferState
-    cryptoTransferStateInit (BRCryptoTransferStateType type);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateIncludedInit (uint64_t blockNumber,
-                                     uint64_t transactionIndex,
-                                     uint64_t timestamp,
-                                     BRCryptoFeeBasis feeBasis,
-                                     BRCryptoBoolean success,
-                                     const char *error);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateErroredInit (BRCryptoTransferSubmitError error);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateCopy (BRCryptoTransferState *state);
-
-    extern void
-    cryptoTransferStateRelease (BRCryptoTransferState *state);
-
-    /// MARK: - Transfer Event
-
-    typedef enum {
-        CRYPTO_TRANSFER_EVENT_CREATED,
-        CRYPTO_TRANSFER_EVENT_CHANGED,
-        CRYPTO_TRANSFER_EVENT_DELETED,
-    } BRCryptoTransferEventType;
-
-    extern const char *
-    cryptoTransferEventTypeString (BRCryptoTransferEventType t);
-
-    typedef struct {
-        BRCryptoTransferEventType type;
-        union {
-            struct {
-                BRCryptoTransferState old;
-                BRCryptoTransferState new;
-            } state;
-        } u;
-    } BRCryptoTransferEvent;
 
     /// MARK: - Transfer Direction
 
@@ -295,6 +187,16 @@ extern "C" {
     cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
                                   size_t index);
 
+    extern uint8_t *
+    cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                          BRCryptoNetwork  network,
+                                          size_t *serializationCount);
+
+    extern uint8_t *
+    cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
+                                             BRCryptoNetwork  network,
+                                             size_t *serializationCount);
+
     extern BRCryptoBoolean
     cryptoTransferEqual (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2);
 
@@ -343,7 +245,7 @@ extern "C" {
     typedef struct {
         BRCryptoAddress target;
         BRCryptoAmount  amount;
-    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH supported
+    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH, BSV supported
     } BRCryptoTransferOutput;
 
 #ifdef __cplusplus

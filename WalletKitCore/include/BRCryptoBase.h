@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
@@ -33,9 +34,14 @@ extern "C" {
 #endif
     extern const char* cryptoVersion;
 
-    typedef struct BRCryptoWalletRecord *BRCryptoWallet;
-
-    typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager;
+    // Forward Declarations - Required for BRCryptoListener
+    typedef struct BRCryptoTransferRecord      *BRCryptoTransfer;
+    typedef struct BRCryptoWalletRecord        *BRCryptoWallet;        // BRCrypto{Transfer,Payment}
+    typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager; // BRCrypto{Wallet,Transfer,Payment}
+    typedef struct BRCryptoNetworkRecord       *BRCryptoNetwork;
+    typedef struct BRCryptoSystemRecord        *BRCryptoSystem;        // BRCrypto{Manager,Wallet,Transfer,Payment}
+    typedef struct BRCryptoListenerRecord      *BRCryptoListener;
+    typedef void  *BRCryptoListenerContext;
 
     // Cookies are used as markers to match up an asynchronous operation
     // request with its corresponding event.
@@ -57,11 +63,22 @@ extern "C" {
         free (memory);
     }
 
+    // Same as: BRBlockHeight
+    typedef uint64_t BRCryptoBlockNumber;
 #if !defined(BLOCK_HEIGHT_UNBOUND)
 // See BRBase.h
 #define BLOCK_HEIGHT_UNBOUND       (UINT64_MAX)
 #endif
 extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
+
+#define BLOCK_NUMBER_UNKNWON        (BLOCK_HEIGHT_UNBOUND)
+
+    /// The Timestamp (in the Unix epoch) of the last block processed in a sync.
+    typedef uint32_t BRCryptoTimestamp;
+
+#define AS_CRYPTO_TIMESTAMP(unixSeconds)      ((BRCryptoTimestamp) (unixSeconds))
+#define NO_CRYPTO_TIMESTAMP                   (AS_CRYPTO_TIMESTAMP (0))
+
 
     /// MARK: - Data32 / Data16
 
@@ -148,10 +165,10 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_HBAR,
         CRYPTO_NETWORK_TYPE_XTZ,
         // CRYPTO_NETWORK_TYPE_XLM,
-    } BRCryptoNetworkCanonicalType;
+    } BRCryptoBlockChainType;
 
-#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_XTZ)
-
+#    define NUMBER_OF_NETWORK_TYPES     (1 + CRYPTO_NETWORK_TYPE_XTZ)
+#    define CRYPTO_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
     //
     // Crypto Network Base Currency
     //
@@ -167,7 +184,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_XTZ     "xtz"
 
     extern const char *
-    cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type);
+    cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type);
 
     /// MARK: - Reference Counting
 
@@ -194,6 +211,7 @@ static int cryptoRefDebug = 0;
   static void preface##Release (type obj);                                        \
   extern type                                                                     \
   preface##Take (type obj) {                                                      \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_fetch_add (&obj->ref.count, 1);                      \
     /* catch take after release */                                                \
     assert (0 != _c);                                                             \
@@ -201,6 +219,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern type                                                                     \
   preface##TakeWeak (type obj) {                                                  \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_load(&obj->ref.count);                               \
     /* keep trying to take unless object is released */                           \
     while (_c != 0 &&                                                             \
@@ -210,6 +229,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern void                                                                     \
   preface##Give (type obj) {                                                      \
+    if (NULL == obj) return;                                                      \
     unsigned int _c = atomic_fetch_sub (&obj->ref.count, 1);                      \
     /* catch give after release */                                                \
     assert (0 != _c);                                                             \

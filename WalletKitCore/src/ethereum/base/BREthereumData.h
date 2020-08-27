@@ -13,7 +13,7 @@
 
 #include "support/BRArray.h"
 #include "support/BRSet.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "BREthereumHash.h"
 
 #ifdef __cplusplus

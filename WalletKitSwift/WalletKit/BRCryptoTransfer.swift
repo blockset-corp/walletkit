@@ -257,7 +257,7 @@ public class TransferFeeBasis: Equatable {
     }
 
     public static func == (lhs: TransferFeeBasis, rhs: TransferFeeBasis) -> Bool {
-        return CRYPTO_TRUE == cryptoFeeBasisIsIdentical (lhs.core, rhs.core)
+        return CRYPTO_TRUE == cryptoFeeBasisIsEqual (lhs.core, rhs.core)
     }
 }
 
@@ -471,6 +471,23 @@ public enum TransferEvent {
     case created
     case changed (old: TransferState, new: TransferState)
     case deleted
+
+    init (core: BRCryptoTransferEvent) {
+        switch core.type {
+        case CRYPTO_TRANSFER_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_TRANSFER_EVENT_CHANGED:
+            self = .changed (old: TransferState (core: core.u.state.old),
+                             new: TransferState (core: core.u.state.new))
+
+        case CRYPTO_TRANSFER_EVENT_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///

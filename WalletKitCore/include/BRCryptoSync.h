@@ -11,6 +11,9 @@
 #ifndef BRCryptoSync_h
 #define BRCryptoSync_h
 
+#include <stdint.h>
+#include "BRCryptoBase.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -117,12 +120,6 @@ extern "C" {
     typedef float BRCryptoSyncPercentComplete;
 
 #define AS_CRYPTO_SYNC_PERCENT_COMPLETE(number)    ((BRCryptoSyncPercentComplete) (number))
-
-    /// The Timestamp (in the Unix epoch) of the last block processed in a sync.
-    typedef uint32_t BRCryptoSyncTimestamp;
-
-#define AS_CRYPTO_SYNC_TIMESTAMP(unixSeconds)      ((BRCryptoSyncTimestamp) (unixSeconds))
-#define NO_CRYPTO_SYNC_TIMESTAMP                   (AS_CRYPTO_SYNC_TIMESTAMP (0))
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,7 @@
 #define BR_Ethereum_Test_H
 
 #include "ethereum/blockchain/BREthereumNetwork.h"
-#include "ethereum/ewm/BREthereumAccount.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 #include "BRCryptoSync.h"
 #include "BRCryptoAccount.h"
 #include "BRCryptoNetwork.h"
@@ -47,6 +47,7 @@ extern void
 runNodeTests (void);
 
 // EWM
+#if REFACTOR
 extern void
 runEWMTests (const char *paperKey,
              const char *storagePath);
@@ -58,10 +59,10 @@ runSyncTest (BREthereumNetwork network,
              BREthereumTimestamp accountTimestamp,
              unsigned int durationInSeconds,
              const char *storagePath);
-
 //
 extern void
 installTokensForTest (void);
+#endif
 
 extern void
 runTests (int reallySend);
@@ -90,6 +91,7 @@ extern int BRRunTestsSync (const char *paperKey,
                            BRBitcoinChain bitcoinChain,
                            int isMainnet);
 
+#if REFACTOR
 extern int BRRunTestWalletManagerSync (const char *paperKey,
                                        const char *storagePath,
                                        BRBitcoinChain bitcoinChain,
@@ -106,6 +108,7 @@ extern int BRRunTestsBWM (const char *paperKey,
                           const char *storagePath,
                           BRBitcoinChain bitcoinChain,
                           int isMainnet);
+#endif
 
 extern void BRRandInit (void);
 

@@ -12,7 +12,7 @@
 #define BRCryptoAddress_h
 
 #include "BRCryptoBase.h"
-#include "BRCryptoNetwork.h"
+//#include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,9 +31,9 @@ extern "C" {
     ///
     /// @return An Address or NULL
     ///
-    extern BRCryptoAddress
-    cryptoAddressCreateFromString (BRCryptoNetwork network,
-                                   const char *string);
+//    extern BRCryptoAddress
+//    cryptoAddressCreateFromString (BRCryptoNetwork network,
+//                                   const char *string);
 
     ///
     /// Returns the address' string representation which is suitable for display.  Note that an

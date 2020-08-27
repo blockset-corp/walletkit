@@ -107,6 +107,10 @@ logExtractIdentifier (BREthereumLog log,
                       BREthereumHash *transactionHash,
                       size_t *transactionReceiptIndex);
 
+// Will be EMPTY_HASH_INIT if no identifier
+extern BREthereumHash
+logGetIdentifier (BREthereumLog log);
+
 extern BREthereumHash
 logGetHash (BREthereumLog log);
 

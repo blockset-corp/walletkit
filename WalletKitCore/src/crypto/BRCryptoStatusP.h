@@ -12,17 +12,21 @@
 #define BRCryptoStatusP_h
 
 #include "BRCryptoStatus.h"
+#ifdef REFACTOR
 #include "ethereum/BREthereum.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifdef REFACTOR
 private_extern BRCryptoStatus
 cryptoStatusFromETH (BREthereumStatus status);
 
 private_extern BREthereumStatus
 cryptoStatusAsETH (BRCryptoStatus status);
+#endif
 
 #ifdef __cplusplus
 }

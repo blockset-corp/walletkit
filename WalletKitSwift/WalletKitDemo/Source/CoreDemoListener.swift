@@ -102,7 +102,9 @@ class CoreDemoListener: SystemListener {
     func handleSystemEvent(system: System, event: SystemEvent) {
         print ("APP: System: \(event)")
         switch event {
-        case .created:
+        case .created,
+             .changed,
+             .deleted:
             break
 
         case .networkAdded(let network):
@@ -245,6 +247,7 @@ class CoreDemoListener: SystemListener {
     func handleNetworkEvent(system: System, network: Network, event: NetworkEvent) {
         CoreDemoListener.eventQueue.async {
             print ("APP: Network: \(event)")
+            #if false
             switch event {
             case .updated:
                 // On .updated, register a wallet for any new currencies.
@@ -264,6 +267,7 @@ class CoreDemoListener: SystemListener {
                                        network: network,
                                        event: event)
             }
+            #endif
         }
     }
 }

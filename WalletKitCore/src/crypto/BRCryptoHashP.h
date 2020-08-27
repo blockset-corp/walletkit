@@ -13,23 +13,28 @@
 
 #include "BRCryptoHash.h"
 
-#include "support/BRInt.h"
-#include "support/BRArray.h"
-#include "ethereum/base/BREthereumHash.h"
-#include "generic/BRGeneric.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-private_extern BRCryptoHash
-cryptoHashCreateAsBTC (UInt256 btc);
+// The number of 
+#define CRYPTO_HASH_BYTES       (64)
 
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth);
+struct BRCryptoHashRecord {
+    // The value to use for BRSet
+    uint32_t setValue;
 
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen);
+    // The raw bytes; ordered for 'proper display' (BTC is reversed from UInt256).
+    size_t bytesCount;
+    uint8_t bytes[CRYPTO_HASH_BYTES];
+
+    BRCryptoRef ref;
+};
+
+extern BRCryptoHash
+cryptoHashCreateInternal (uint32_t setValue,
+                          size_t   bytesCount,
+                          uint8_t *bytes);
 
 #ifdef __cplusplus
 }

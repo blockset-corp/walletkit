@@ -21,11 +21,15 @@
 #include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoTransferP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
+#include "crypto/BRCryptoSystemP.h"
 
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
+#include "support/util/BRHex.h"
 #include "bitcoin/BRChainParams.h"
 #include "bitcoin/BRWallet.h"
+
+#include "crypto/handlers/btc/BRCryptoBTC.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -273,7 +277,10 @@ transferTestsAddress (void) {
         tid->blockHeight = test->blockHeight;
         tid->timestamp   = test->timestamp;
         BRWalletRegisterTransaction (wid, tid); // ownership given
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (sat,
+
+        BRCryptoTransferListener listener = { NULL };
+        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (listener,
+                                                               sat,
                                                                sat,
                                                                wid,
                                                                tid, // ownership kept
@@ -371,7 +378,6 @@ _CWMNopGetTransactionsCallback (BRCryptoClientContext context,
                                 OwnershipGiven BRCryptoClientCallbackState callbackState,
                                 OwnershipKept const char **addresses,
                                 size_t addressCount,
-                                OwnershipKept const char *currency,
                                 uint64_t begBlockNumber,
                                 uint64_t endBlockNumber) {
     cryptoWalletManagerGive (manager);
@@ -383,7 +389,6 @@ _CWMNopGetTransfersCallback (BRCryptoClientContext context,
                              OwnershipGiven BRCryptoClientCallbackState callbackState,
                              OwnershipKept const char **addresses,
                              size_t addressCount,
-                             OwnershipKept const char *currency,
                              uint64_t begBlockNumber,
                              uint64_t endBlockNumber) {
     cryptoWalletManagerGive (manager);
@@ -410,7 +415,7 @@ _CWMNopEstimateTransactionFeeCallback (BRCryptoClientContext context,
 
 }
 
-// BRCryptoCWMListener Event Wrapper
+// BRCryptoListener Event Wrapper
 
 typedef enum {
     SYNC_EVENT_WALLET_MANAGER_TYPE,
@@ -497,7 +502,7 @@ CWMEventForWalletManagerWalletType(BRCryptoWalletManagerEventType type,
                 (BRCryptoWalletManagerEvent) {
                     type,
                     {
-                        .wallet = { wallet }
+                        .wallet = wallet
                     }
                 }
             }
@@ -539,13 +544,13 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                 switch (e1->u.m.event.type) {
                     case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
                         // Do we want to check iff the disconnect reason matched?
-                        success = (e1->u.m.event.u.state.oldValue.type == e2->u.m.event.u.state.oldValue.type &&
-                                   e1->u.m.event.u.state.newValue.type == e2->u.m.event.u.state.newValue.type);
+                        success = (e1->u.m.event.u.state.old.type == e2->u.m.event.u.state.old.type &&
+                                   e1->u.m.event.u.state.new.type == e2->u.m.event.u.state.new.type);
                         break;
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
                     case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
-                        success = CRYPTO_TRUE == cryptoWalletEqual (e1->u.m.event.u.wallet.value, e2->u.m.event.u.wallet.value);
+                        success = CRYPTO_TRUE == cryptoWalletEqual (e1->u.m.event.u.wallet, e2->u.m.event.u.wallet);
                         break;
                     case CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES:
                     case CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED:
@@ -569,18 +574,18 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                         success = CRYPTO_COMPARE_EQ == cryptoAmountCompare (e1->u.w.event.u.balanceUpdated.amount, e2->u.w.event.u.balanceUpdated.amount);
                         break;
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-                        success = CRYPTO_TRUE == cryptoFeeBasisIsIdentical (e1->u.w.event.u.feeBasisUpdated.basis, e2->u.w.event.u.feeBasisUpdated.basis);
+                        success = CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisUpdated.basis, e2->u.w.event.u.feeBasisUpdated.basis);
                         break;
                     case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
                     case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-                        success = CRYPTO_TRUE == cryptoTransferEqual (e1->u.w.event.u.transfer.value, e2->u.w.event.u.transfer.value);
+                        success = CRYPTO_TRUE == cryptoTransferEqual (e1->u.w.event.u.transfer, e2->u.w.event.u.transfer);
                         break;
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
                         success = (e1->u.w.event.u.feeBasisEstimated.cookie == e2->u.w.event.u.feeBasisEstimated.cookie &&
                                    e1->u.w.event.u.feeBasisEstimated.status == e2->u.w.event.u.feeBasisEstimated.status &&
-                                   CRYPTO_TRUE == cryptoFeeBasisIsIdentical (e1->u.w.event.u.feeBasisEstimated.basis, e2->u.w.event.u.feeBasisEstimated.basis));
+                                   CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisEstimated.basis, e2->u.w.event.u.feeBasisEstimated.basis));
                         break;
                     default:
                         break;
@@ -626,7 +631,7 @@ CWMEventString (CWMEvent *e) {
     return eventString;
 }
 
-// BRCryptoCWMListener Event Recording
+// BRCryptoListener Event Recording
 
 typedef struct {
     BRCryptoBoolean silent;
@@ -659,7 +664,21 @@ CWMEventRecordingStateFree (CWMEventRecordingState *state) {
 // TODO(fix): The below callbacks leak managers/wallets/transfers, as well as any ref counted event fields
 
 static void
-_CWMEventRecordingManagerCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingSystemCallback (BRCryptoListenerContext context,
+                                  BRCryptoSystem system,
+                                  BRCryptoSystemEvent event) {
+
+}
+
+static void
+_CWMEventRecordingNetworkCallback (BRCryptoListenerContext context,
+                                   BRCryptoNetwork network,
+                                   BRCryptoNetworkEvent event) {
+
+}
+
+static void
+_CWMEventRecordingManagerCallback (BRCryptoListenerContext context,
                                    BRCryptoWalletManager manager,
                                    BRCryptoWalletManagerEvent event) {
     CWMEventRecordingState *state = (CWMEventRecordingState*) context;
@@ -675,7 +694,7 @@ _CWMEventRecordingManagerCallback (BRCryptoCWMListenerContext context,
 }
 
 static void
-_CWMEventRecordingWalletCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingWalletCallback (BRCryptoListenerContext context,
                                   BRCryptoWalletManager manager,
                                   BRCryptoWallet wallet,
                                   BRCryptoWalletEvent event) {
@@ -693,7 +712,7 @@ _CWMEventRecordingWalletCallback (BRCryptoCWMListenerContext context,
 }
 
 static void
-_CWMEventRecordingTransferCallback (BRCryptoCWMListenerContext context,
+_CWMEventRecordingTransferCallback (BRCryptoListenerContext context,
                                     BRCryptoWalletManager manager,
                                     BRCryptoWallet wallet,
                                     BRCryptoTransfer transfer,
@@ -738,7 +757,7 @@ CWMEventRecordingGetNextWalletManagerEventIndexForWallet(CWMEventRecordingState 
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
-                    if (state->events[index]->u.m.event.u.wallet.value == wallet) {
+                    if (state->events[index]->u.m.event.u.wallet == wallet) {
                         return index;
                     }
                 default:
@@ -867,12 +886,12 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
                                             BRCryptoAddressScheme scheme,
                                             const char *storagePath)
 {
-    BRCryptoCWMListener listener = (BRCryptoCWMListener) {
-        state,
-        _CWMEventRecordingManagerCallback,
-        _CWMEventRecordingWalletCallback,
-        _CWMEventRecordingTransferCallback,
-    };
+    BRCryptoListener listener = cryptoListenerCreate (state,
+                                                     _CWMEventRecordingSystemCallback,
+                                                     _CWMEventRecordingNetworkCallback,
+                                                     _CWMEventRecordingManagerCallback,
+                                                     _CWMEventRecordingWalletCallback,
+                                                     _CWMEventRecordingTransferCallback);
 
     BRCryptoClient client = (BRCryptoClient) {
         state,
@@ -883,7 +902,15 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
         _CWMNopEstimateTransactionFeeCallback
     };
 
-    return cryptoWalletManagerCreate (listener, client, account, network, mode, scheme, storagePath);
+    BRCryptoSystem system = cryptoSystemCreate (client, listener, account, storagePath, cryptoNetworkIsMainnet(network));
+
+    return cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (listener, system),
+                                      client,
+                                      account,
+                                      network,
+                                      mode,
+                                      scheme,
+                                      storagePath);
 }
 
 static int
@@ -895,7 +922,7 @@ runCryptoWalletManagerLifecycleTest (BRCryptoAccount account,
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
-    BRCryptoBlockChainHeight originalNetworkHeight = cryptoNetworkGetHeight (network);
+    BRCryptoBlockNumber originalNetworkHeight = cryptoNetworkGetHeight (network);
 
     printf("Testing BRCryptoWalletManager events for mode=\"%s\", network=\"%s (%s)\" and path=\"%s\"...\n",
            cryptoSyncModeString (mode),
@@ -1219,9 +1246,9 @@ runCryptoWalletManagerLifecycleTest (BRCryptoAccount account,
     }
 
     printf("Testing BRCryptoWalletManager threading...\n");
-    if (mode == CRYPTO_SYNC_MODE_P2P_ONLY && BLOCK_CHAIN_TYPE_BTC == cryptoNetworkGetType (network)) {
+    if (mode == CRYPTO_SYNC_MODE_P2P_ONLY && CRYPTO_NETWORK_TYPE_BTC == cryptoNetworkGetType (network)) {
         // TODO(fix): There is a thread-related issue in BRPeerManager/BRPeer where we have a use after free; re-enable once that is fixed
-        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and BLOCK_CHAIN_TYPE_BTC\n", __func__, __LINE__);
+        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and CRYPTO_NETWORK_TYPE_BTC\n", __func__, __LINE__);
 
     } else {
         // Test setup
@@ -1297,7 +1324,7 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
-    BRCryptoBlockChainHeight originalNetworkHeight = cryptoNetworkGetHeight (network);
+    BRCryptoBlockNumber originalNetworkHeight = cryptoNetworkGetHeight (network);
 
     printf("Testing BRCryptoWalletManager events for mode=\"%s/%s\", network=\"%s (%s)\" and path=\"%s\"...\n",
            cryptoSyncModeString (primaryMode),
@@ -1434,10 +1461,10 @@ runCryptoWalletManagerLifecycleWithSetModeTest (BRCryptoAccount account,
    }
 
     printf("Testing BRCryptoWalletManager mode swap threading...\n");
-    if (BLOCK_CHAIN_TYPE_BTC == cryptoNetworkGetType (network) &&
+    if (CRYPTO_NETWORK_TYPE_BTC == cryptoNetworkGetType (network) &&
         (primaryMode == CRYPTO_SYNC_MODE_P2P_ONLY || secondaryMode == CRYPTO_SYNC_MODE_P2P_ONLY)) {
         // TODO(fix): There is a thread-related issue in BRPeerManager/BRPeer where we have a use after free; re-enable once that is fixed
-        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and BLOCK_CHAIN_TYPE_BTC\n", __func__, __LINE__);
+        fprintf(stderr, "***WARNING*** %s:%d: BRCryptoWalletManager threading test is disabled for CRYPTO_SYNC_MODE_P2P_ONLY and CRYPTO_NETWORK_TYPE_BTC\n", __func__, __LINE__);
 
     } else {
         // Test setup
@@ -1517,14 +1544,12 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     BRCryptoBlockChainType chainType = cryptoNetworkGetType (network);
 
-    BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_GEN == chainType);
-    BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_ETH == chainType);
-    BRCryptoBoolean isBtc = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRMainNetParams || cryptoNetworkAsBTC (network) == BRTestNetParams));
-    BRCryptoBoolean isBch = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRBCashParams || cryptoNetworkAsBTC (network) == BRBCashTestNetParams));
-    BRCryptoBoolean isBsv = (AS_CRYPTO_BOOLEAN (BLOCK_CHAIN_TYPE_BTC == chainType)
-                             && (cryptoNetworkAsBTC (network) == BRBSVParams || cryptoNetworkAsBTC (network) == BRBSVTestNetParams));
+ //   BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_GEN == chainType);
+    BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_ETH == chainType);
+    BRCryptoBoolean isBtc = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType);
+    BRCryptoBoolean isBch = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BTC == chainType);
+    BRCryptoBoolean isBsv = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_BSV == chainType);
+    BRCryptoBoolean isGen = (!isEth && !isBch && !isBch && !isBsv);
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
                                     CRYPTO_ADDRESS_SCHEME_BTC_LEGACY :

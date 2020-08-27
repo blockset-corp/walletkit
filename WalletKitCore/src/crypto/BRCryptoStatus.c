@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "BRCryptoStatusP.h"
+#ifdef REFACTOR
 #include "ethereum/BREthereum.h"
 
 extern BRCryptoStatus
@@ -64,3 +65,4 @@ extern BREthereumStatus
         default:                                    return ERROR_FAILED;
     }
 }
+#endif

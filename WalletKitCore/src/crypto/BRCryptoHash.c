@@ -9,56 +9,25 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 
-#include "BRCryptoHash.h"
+#include "BRCryptoHashP.h"
 #include "BRCryptoBaseP.h"
 
-#include "support/BRInt.h"
-#include "ethereum/base/BREthereumHash.h"
-#include "ethereum/util/BRUtilHex.h"
-#include "generic/BRGeneric.h"
-
-struct BRCryptoHashRecord {
-    BRCryptoBlockChainType type;
-    union {
-        UInt256 btc;
-        BREthereumHash eth;
-        BRGenericHash gen;
-    } u;
-    BRCryptoRef ref;
-};
+#include "support/util/BRHex.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoHash, cryptoHash)
 
-static BRCryptoHash
-cryptoHashCreateInternal (BRCryptoBlockChainType type) {
-    BRCryptoHash hash = malloc (sizeof (struct BRCryptoHashRecord));
+extern BRCryptoHash
+cryptoHashCreateInternal (uint32_t setValue,
+                          size_t   bytesCount,
+                          uint8_t *bytes) {
+    assert (bytesCount <= CRYPTO_HASH_BYTES);
+    BRCryptoHash hash = calloc (1, sizeof (struct BRCryptoHashRecord));
 
-    hash->type = type;
+    hash->setValue   = setValue;
+    hash->bytesCount = bytesCount;
+    memcpy (hash->bytes, bytes, bytesCount);
+
     hash->ref  = CRYPTO_REF_ASSIGN (cryptoHashRelease);
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsBTC (UInt256 btc) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_BTC);
-    hash->u.btc = btc;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsETH (BREthereumHash eth) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_ETH);
-    hash->u.eth = eth;
-
-    return hash;
-}
-
-private_extern BRCryptoHash
-cryptoHashCreateAsGEN (BRGenericHash gen) {
-    BRCryptoHash hash = cryptoHashCreateInternal (BLOCK_CHAIN_TYPE_GEN);
-    hash->u.gen = gen;
 
     return hash;
 }
@@ -71,12 +40,10 @@ cryptoHashRelease (BRCryptoHash hash) {
 
 extern BRCryptoBoolean
 cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2) {
-    return (h1->type == h2->type &&
-            ((BLOCK_CHAIN_TYPE_BTC == h1->type && UInt256Eq (h1->u.btc, h2->u.btc)) ||
-             (BLOCK_CHAIN_TYPE_ETH == h1->type && ETHEREUM_BOOLEAN_TRUE ==  ethHashEqual (h1->u.eth, h2->u.eth)) ||
-             (BLOCK_CHAIN_TYPE_GEN == h1->type && genericHashEqual (h1->u.gen, h2->u.gen)))
-            ? CRYPTO_TRUE
-            : CRYPTO_FALSE);
+    return AS_CRYPTO_BOOLEAN (h1 == h2 ||
+                              (h1->setValue   == h2->setValue   &&
+                               h1->bytesCount == h2->bytesCount &&
+                               0 == memcmp (h1->bytes, h2->bytes, h1->bytesCount)));
 }
 
 static char *
@@ -90,30 +57,14 @@ _cryptoHashAddPrefix (char *hash, int freeHash) {
 
 extern char *
 cryptoHashString (BRCryptoHash hash) {
-    switch (hash->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
-            UInt256 reversedHash = UInt256Reverse (hash->u.btc);
-            return _cryptoHashAddPrefix (hexEncodeCreate(NULL, reversedHash.u8, sizeof(reversedHash.u8)), 1);
-        }
-        case BLOCK_CHAIN_TYPE_ETH: {
-            return ethHashAsString (hash->u.eth);
-        }
-        case BLOCK_CHAIN_TYPE_GEN: {
-            return _cryptoHashAddPrefix (genericHashAsString(hash->u.gen), 1);
-        }
-    }
+    size_t stringLength = 2 * hash->bytesCount + 1;
+    char string [stringLength];
+
+    hexEncode (string, stringLength, hash->bytes, hash->bytesCount);
+    return _cryptoHashAddPrefix (string, 0);
 }
 
 extern int
 cryptoHashGetHashValue (BRCryptoHash hash) {
-    switch (hash->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            return (int) hash->u.btc.u32[0];
-
-        case BLOCK_CHAIN_TYPE_ETH:
-            return (int) ethHashSetValue (&hash->u.eth);
-
-        case BLOCK_CHAIN_TYPE_GEN:
-            return (int) genericHashSetValue (hash->u.gen);
-    }
+    return (int) hash->setValue;
 }

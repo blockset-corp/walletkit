@@ -11,12 +11,32 @@
 #ifndef BRCryptoNetwork_h
 #define BRCryptoNetwork_h
 
+#include "BRCryptoAccount.h"
+#include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoSync.h"
+#include "BRCryptoListener.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    /**
+      * A Crypto Network represents a Blockchain.  The blockchains are determined from the
+      * BlockChainDB '/blockchains' query; however, networks for testnets are also defined.
+      * Thus, the available networks are {btc,bch,eth,...} X {mainnet,testnet}
+      *
+      * A Crypto Network has a currency which represents the asset used to pay for network fees.
+      * For Bitcoin the currency is 'bitcoin'; for Ethereum the currency is 'Ethereum'.
+      *
+      * A Crypto Network may support more than one currency.  For Ethereum additional currencies
+      * include the ERC20 Smart Contracts of interest - for example, BRD.
+      *
+      * Every Crypto Network's currency has a defined base Unit, default Unit and an arbitrary
+      * set of other units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...]
+      * respectively.
+      */
+     typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
     /// MARK: - (Network) Address Scheme
 
@@ -29,9 +49,6 @@ extern "C" {
 
 #define NUMBER_OF_ADDRESS_SCHEMES   (1 + CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 
-
-    // Same as: BRBlockHeight
-    typedef uint64_t BRCryptoBlockChainHeight;
 
     typedef struct BRCryptoNetworkFeeRecord *BRCryptoNetworkFee;
 
@@ -62,27 +79,8 @@ extern "C" {
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoNetworkFee, cryptoNetworkFee);
 
-    /**
-     * A Crypto Network represents a Blockchain.  The blockchains are determined from the
-     * BlockChainDB '/blockchains' query; however, networks for testnets are also defined.
-     * Thus, the available networks are {btc,bch,eth,...} X {mainnet,testnet}
-     *
-     * A Crypto Network has a currency which represents the asset used to pay for network fees.
-     * For Bitcoin the currency is 'bitcoin'; for Ethereum the currency is 'Ethereum'.
-     *
-     * A Crypto Network may support more than one currency.  For Ethereum additional currencies
-     * include the ERC20 Smart Contracts of interest - for example, BRD.
-     *
-     * Every Crypto Network's currency has a defined base Unit, default Unit and an arbitrary
-     * set of other units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...]
-     * respectively.
-     */
-    typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
-    typedef void *BRCryptoNetworkListener;
-
-    extern BRCryptoNetworkCanonicalType
-    cryptoNetworkGetCanonicalType (BRCryptoNetwork network);
+    // MARK: - Network
 
     extern const char *
     cryptoNetworkGetUids (BRCryptoNetwork network);
@@ -92,6 +90,20 @@ extern "C" {
 
     extern BRCryptoBoolean
     cryptoNetworkIsMainnet (BRCryptoNetwork network);
+
+    extern BRCryptoBlockChainType
+    cryptoNetworkGetType (BRCryptoNetwork network);
+
+
+    /**
+     * Return the Blockchain type the network with `name` or CRYPTO_NETWORK_TYPE_UNKNOWN if
+     * there is no network with `name`.
+     *
+     * @param name the name
+     * @param isMainnet filled with true if `name` is for mainnet; false otherwise.
+     */
+    extern BRCryptoBlockChainType
+    cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet);
 
     /**
      * Returns the network's currency.  This is typically (always?) the currency used to pay
@@ -121,7 +133,7 @@ extern "C" {
      * Returns the currency's default unit or NULL
      *
      * @param network the network
-     * @param currency the currency desired for the default unit
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the currency's default unit or NULL w/ an incremented reference count (aka 'taken')
      */
@@ -133,7 +145,7 @@ extern "C" {
      * Returns the currency's base unit or NULL
      *
      * @param network the network
-     * @param currency the currency desired for the base unit
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the currency's base unit or NULL w/ an incremented reference count (aka 'taken')
      */
@@ -147,12 +159,12 @@ extern "C" {
                                   BRCryptoUnit unit);
 
 
-    extern BRCryptoBlockChainHeight
+    extern BRCryptoBlockNumber
     cryptoNetworkGetHeight (BRCryptoNetwork network);
 
     extern void
     cryptoNetworkSetHeight (BRCryptoNetwork network,
-                            BRCryptoBlockChainHeight height);
+                            BRCryptoBlockNumber height);
 
     extern uint32_t
     cryptoNetworkGetConfirmationsUntilFinal (BRCryptoNetwork network);
@@ -218,7 +230,7 @@ extern "C" {
      * be used in `cryptoNetworkGetUnitAt()`.
      *
      * @param network the network
-     * @param currency the currency
+     * @param currency the currency or NULL for the network's currency.
      *
      * @return the number of units for `currency`
      */
@@ -231,7 +243,7 @@ extern "C" {
      * assertion is signaled.
      *
      * @param network the network
-     * @param currency the currency
+     * @param currency the currency or NULL for the network's currency.
      * @param index the desired unit's index
      *
      * @return the currency unit w/ an incremented reference count (aka 'taken')
@@ -274,6 +286,12 @@ extern "C" {
     cryptoNetworkSupportsAddressScheme (BRCryptoNetwork network,
                                         BRCryptoAddressScheme scheme);
 
+    // MARK: - Address
+
+    extern BRCryptoAddress
+    cryptoNetworkCreateAddress (BRCryptoNetwork network,
+                                const char *address);
+
     // MARK: - Sync Mode
 
     extern BRCryptoSyncMode
@@ -294,13 +312,34 @@ extern "C" {
     extern const char *
     cryptoNetworkGetETHNetworkName (BRCryptoNetwork network);
 
+    // MARK: - Account Initialization
+
+    extern BRCryptoBoolean
+    cryptoNetworkIsAccountInitialized (BRCryptoNetwork network,
+                                       BRCryptoAccount account);
+
+
+    extern uint8_t *
+    cryptoNetworkGetAccountInitializationData (BRCryptoNetwork network,
+                                               BRCryptoAccount account,
+                                               size_t *bytesCount);
+
+    extern void
+    cryptoNetworkInitializeAccount (BRCryptoNetwork network,
+                                    BRCryptoAccount account,
+                                    const uint8_t *bytes,
+                                    size_t bytesCount);
+
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork);
 
     extern BRCryptoNetwork *
-    cryptoNetworkInstallBuiltins (size_t *networksCount);
+    cryptoNetworkInstallBuiltins (size_t *networksCount,
+                                  BRCryptoNetworkListener listener,
+                                  bool isMainnet);
 
     extern BRCryptoNetwork
-    cryptoNetworkFindBuiltin (const char *uids);
+    cryptoNetworkFindBuiltin (const char *uids,
+                              bool isMainnet);
 
 #ifdef __cplusplus
 }
