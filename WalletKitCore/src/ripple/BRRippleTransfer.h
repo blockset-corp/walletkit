@@ -61,4 +61,8 @@ extern BRRippleUnitDrops rippleTransferGetAmountDirected (BRRippleTransfer trans
                                                           int *negative);
 
 extern uint64_t rippleTransferGetBlockHeight (BRRippleTransfer transfer);
+
+extern int
+rippleTransferIsInBlock (BRRippleTransfer transfer);
+
 #endif
