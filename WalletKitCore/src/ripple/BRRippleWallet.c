@@ -207,21 +207,18 @@ static void rippleWalletUpdateSequence (BRRippleWallet wallet,
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         BRRippleTransfer transfer = wallet->transfers[index];
-        if (!rippleTransferHasError(transfer)) {
-            // We need to keep track of the first block where this account shows up due to a
-            // change in how ripple assigns the sequence number to new accounts
-            if (rippleTransferHasTarget (transfer, accountAddress)) {
-                // We trying to find the lowest block number where we were sent
-                // currency successful - basically this is the block where our account
-                // was created *** ignore failed transfers TO us since we end up seeing
-                // items before our account is actually created.
-                uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
-                minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
-            }
 
-            // The sequence number is the count of successfully sent transfers
-            if (rippleTransferHasSource (wallet->transfers[index], accountAddress))
+        // If we are the source of the transfer then we might want to update our sequence number
+        if (rippleTransferHasSource (wallet->transfers[index], accountAddress)) {
+            // Update the sequence number if in a block OR successful
+            if (rippleTransferIsInBlock(transfer) || !rippleTransferHasError(transfer))
                 sequence += 1;
+        } else if (!rippleTransferHasError(transfer) && rippleTransferHasTarget (transfer, accountAddress)) {
+            // We are the target of the transfer - so we need to find the very first (successful) transfer where
+            // our account received some XRP as this can affect our beginning sequence number. Ignore failed
+            // transfers as Bockset could create a failed transfer for us before our account is created
+            uint64_t blockHeight = rippleTransferGetBlockHeight(transfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
         }
     }
 

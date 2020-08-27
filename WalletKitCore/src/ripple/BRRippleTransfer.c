@@ -185,6 +185,12 @@ rippleTransferHasError(BRRippleTransfer transfer) {
     return transfer->error;
 }
 
+extern int
+rippleTransferIsInBlock (BRRippleTransfer transfer) {
+    assert(transfer);
+    return transfer->blockHeight == 0 ? 0 : 1;
+}
+
 extern uint64_t rippleTransferGetBlockHeight (BRRippleTransfer transfer) {
     assert(transfer);
     return transfer->blockHeight;
