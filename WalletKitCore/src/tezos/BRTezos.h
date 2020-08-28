@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include "BRTezosAccount.h"
 #include "BRTezosTransaction.h"
-#include "BRTezosWallet.h"
 #include "BRTezosTransfer.h"
 
 #ifdef __cplusplus

@@ -49,21 +49,6 @@ encodeAddress (BRTezosAddress address) {
 }
 
 static BRCryptoData
-encodeSource (BRTezosAddress address) {
-    // same as address encoding with a 0x0 byte prepended
-    BRCryptoData encodedAddress = encodeAddress (address);
-    
-    uint8_t prefix = 0x0;
-    
-    uint8_t encoded[encodedAddress.size + 1];
-    memcpy(&encoded[0], &prefix, 1);
-    memcpy(&encoded[1], encodedAddress.bytes, encodedAddress.size);
-    free (encodedAddress.bytes);
-    
-    return cryptoDataCopy (encoded, sizeof(encoded));
-}
-
-static BRCryptoData
 encodePublicKey (uint8_t * pubKey) {
     uint8_t prefix = 0x0; // ed25519
     BRCryptoData encoded = cryptoDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);

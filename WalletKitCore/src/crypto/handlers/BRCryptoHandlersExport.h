@@ -77,6 +77,16 @@ extern BRCryptoWalletHandlers cryptoWalletHandlersHBAR;
 // Payment Protocol
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR;
 
+// MARK: - XTZ Handlers
+
+extern BRCryptoAddressHandlers cryptoAddressHandlersXTZ;
+extern BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ;
+extern BRCryptoTransferHandlers cryptoTransferHandlersXTZ;
+extern BRCryptoWalletHandlers cryptoWalletHandlersXTZ;
+// Wallet Sweep
+// Payment Protocol
+extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ;
+
 #ifdef __cplusplus
 }
 #endif

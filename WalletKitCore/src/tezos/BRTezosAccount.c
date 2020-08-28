@@ -79,19 +79,6 @@ extern BRCryptoData
 tezosAccountSignData (BRTezosAccount account,
                       BRCryptoData data,
                       UInt512 seed) {
-    /*
-     Data watermarkedData = Data();
-     watermarkedData.push_back(0x03);
-     append(watermarkedData, data);
-
-     Data hash = Hash::blake2b(watermarkedData, 32);
-     Data signature = privateKey.sign(hash, TWCurve::TWCurveED25519);
-
-     Data signedData = Data();
-     append(signedData, data);
-     append(signedData, signature);
-     return signedData;
-     */
     BRKey publicKey = tezosAccountGetPublicKey ((BRTezosAccount)account);
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
     uint8_t privateKeyBytes[64];
@@ -152,11 +139,20 @@ tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount) {
 
 extern int
 tezosAccountHasAddress (BRTezosAccount account,
-                         BRTezosAddress address) {
+                        BRTezosAddress address) {
     assert(account);
     assert(address);
     assert(account->address);
     return tezosAddressEqual (account->address, address);
+}
+
+extern BRTezosUnitMutez
+tezosAccountGetBalanceLimit (BRTezosAccount account,
+                            int asMaximum,
+                            int *hasLimit) {
+    assert (NULL != hasLimit);
+    *hasLimit = 0;
+    return 0;
 }
 
 // MARK: - Crypto

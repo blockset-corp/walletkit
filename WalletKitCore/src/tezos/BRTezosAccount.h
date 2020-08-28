@@ -109,6 +109,20 @@ tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount);
 */
 extern int tezosAccountHasAddress (BRTezosAccount account, BRTezosAddress address);
 
+/**
+ * Return the balance limit, either asMaximum or asMinimum
+ *
+ * @param account   tezos account
+ * @param asMaximum - if true, return the wallet maximum limit; otherwise minimum limit
+ * @param hasLimit  - must be non-NULL; assigns if wallet as the specified limit
+ *
+ * @return balance limit - in mutez units
+ */
+extern BRTezosUnitMutez
+tezosAccountGetBalanceLimit (BRTezosAccount account,
+                            int asMaximum,
+                            int *hasLimit);
+
 #ifdef __cplusplus
 }
 #endif
