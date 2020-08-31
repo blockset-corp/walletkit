@@ -13,12 +13,45 @@
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtilMath.h"
+#include "support/BRBase58.h"
+
 
 private_extern BRCryptoAmount
 cryptoAmountCreateAsXTZ (BRCryptoUnit unit,
                          BRCryptoBoolean isNegative,
                          BRTezosUnitMutez value) {
-    return cryptoAmountCreate (unit, isNegative, uint256Create (value));
+    return cryptoAmountCreate (unit, isNegative, uint256Create ((uint64_t)value));
+}
+
+// MARK: - Hash
+
+static uint32_t
+tezosHashSetValue (const BRTezosHash *hash) {
+    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
+}
+
+private_extern BRCryptoHash
+cryptoHashCreateAsXTZ (BRTezosHash hash) {
+    return cryptoHashCreateInternal (tezosHashSetValue (&hash),
+                                     TEZOS_HASH_BYTES,
+                                     hash.bytes);
+}
+
+private_extern BRCryptoHash
+cryptoHashCreateFromStringAsXTZ(const char *input) {
+    size_t length = BRBase58CheckDecode(NULL, 0, input);
+    assert(length == TEZOS_HASH_BYTES);
+    BRTezosHash hash;
+    BRBase58CheckDecode(hash.bytes, length, input);
+    return cryptoHashCreateAsXTZ (hash);
+}
+
+private_extern BRTezosHash
+cryptoHashAsXTZ (BRCryptoHash hash) {
+    assert (TEZOS_HASH_BYTES == hash->bytesCount);
+    BRTezosHash xtz;
+    memcpy (xtz.bytes, hash->bytes, TEZOS_HASH_BYTES);
+    return xtz;
 }
 
 // MARK: -

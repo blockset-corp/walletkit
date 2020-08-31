@@ -83,9 +83,6 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
 private_extern void
 cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter);
 
-//TODO:XTZ needed?
-private_extern BRCryptoHash
-cryptoHashCreateAsXTZ (BRTezosTransactionHash hash);
 
 // MARK: - Wallet Manager
 
@@ -106,6 +103,14 @@ cryptoAmountCreateAsXTZ (BRCryptoUnit unit,
                          BRCryptoBoolean isNegative,
                          BRTezosUnitMutez value);
 
+private_extern BRCryptoHash
+cryptoHashCreateAsXTZ (BRTezosHash hash);
+
+private_extern BRCryptoHash
+cryptoHashCreateFromStringAsXTZ(const char *input);
+
+private_extern BRTezosHash
+cryptoHashAsXTZ (BRCryptoHash hash);
 
 private_extern const char **
 tezosGetTransactionAttributeKeys (int asRequired,

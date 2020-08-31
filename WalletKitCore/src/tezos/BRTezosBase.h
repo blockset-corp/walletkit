@@ -11,9 +11,6 @@
 #ifndef BRTezosBase_h
 #define BRTezosBase_h
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <arpa/inet.h>          // htonl()
 #include "BRCryptoBase.h"
 
 #ifdef __cplusplus
@@ -22,14 +19,12 @@ extern "C" {
 
 
 #define TEZOS_PUBLIC_KEY_SIZE 32
+#define TEZOS_HASH_BYTES 34
 
 typedef struct {
-    uint8_t bytes[34];
-} BRTezosTransactionHash;
+    uint8_t bytes[TEZOS_HASH_BYTES];
+} BRTezosHash;
 
-typedef struct {
-    uint8_t bytes[34];
-} BRTezosBlockHash;
 
 typedef int64_t BRTezosUnitMutez;
 

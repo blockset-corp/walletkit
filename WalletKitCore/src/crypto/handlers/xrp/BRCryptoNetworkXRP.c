@@ -120,6 +120,13 @@ cryptoNetworkInitializeAccountXRP (BRCryptoNetwork network,
     return;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringXRP (BRCryptoNetwork network,
+                                      const char *string) {
+    BRCryptoHash hash; //TODO:XTZ
+    return hash;
+}
+
 // MARK: - Handlers
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
@@ -129,6 +136,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP,
     cryptoNetworkIsAccountInitializedXRP,
     cryptoNetworkGetAccountInitializationDataXRP,
-    cryptoNetworkInitializeAccountXRP
+    cryptoNetworkInitializeAccountXRP,
+    cryptoNetworkCreateHashFromStringXRP
 };
 

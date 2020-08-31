@@ -185,8 +185,15 @@ cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
                                    size_t bytesCount) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
     (void) networkBTC;
+    
+    return;
+}
 
-return;
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
+                                      const char *string) {
+    BRCryptoHash hash; //TODO:XTZ
+    return hash;
 }
 
 // MARK: - Network Fee
@@ -206,7 +213,8 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
@@ -216,7 +224,8 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
@@ -226,7 +235,8 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC
 };
 
 

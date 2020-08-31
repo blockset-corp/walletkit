@@ -120,6 +120,13 @@ cryptoNetworkInitializeAccountHBAR (BRCryptoNetwork network,
     return;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringHBAR (BRCryptoNetwork network,
+                                      const char *string) {
+    BRCryptoHash hash; //TODO:XTZ
+    return hash;
+}
+
 // MARK: -
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR = {
@@ -129,6 +136,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR,
     cryptoNetworkIsAccountInitializedHBAR,
     cryptoNetworkGetAccountInitializationDataHBAR,
-    cryptoNetworkInitializeAccountHBAR
+    cryptoNetworkInitializeAccountHBAR,
+    cryptoNetworkCreateHashFromStringHBAR
 };
 

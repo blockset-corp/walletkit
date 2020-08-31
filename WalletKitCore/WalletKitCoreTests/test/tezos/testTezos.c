@@ -278,7 +278,7 @@ static void testWalletBalance() {
     BRTezosAddress sourceAddress = tezosAddressCreateFromString("tz1eEnQhbwf6trb8Q8mPb2RaPkNk2rN7BKi8", true);
     BRTezosAddress targetAddress = tezosWalletGetTargetAddress(wallet);
     
-    BRTezosTransactionHash hash1, hash2, hash3, hash4;
+    BRTezosHash hash1, hash2, hash3, hash4;
     
     BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "oot76ue8Jwyo5L6FgdiqyAPdDWAv84hXXkCi7oroJeDFXRbc298");
     BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooSVYUdKnRA1yTwHdB7MqH5iXWBdscgtxfDdDAWxK8iR7K6rtY3");
@@ -364,7 +364,7 @@ testTransactionSerialize() {
     counter = 3;
     amount = 100000000;
     
-    BRTezosBlockHash lastBlockHash;
+    BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
     
     BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
@@ -458,7 +458,7 @@ testBatchOperationSerialize() {
     counter = 3;
     amount = 100000000;
     
-    BRTezosBlockHash lastBlockHash;
+    BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
     
     uint8_t *pubKey = tezosAccountGetPublicKey(account).pubKey;
@@ -511,7 +511,7 @@ testTransactionSign() {
     counter = 3;
     amount = 100000000;
     
-    BRTezosBlockHash lastBlockHash;
+    BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
     
     BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
@@ -529,7 +529,7 @@ testTransactionSign() {
     bin2HexString(signedBytes, signedSize, serializedHex);
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052d0860303d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc8700073e2fa7352b0e0ee564ccc479d25283154cca085efc347b8cbbf025ecaa534c65ed3b87175f54377b2697712a2f91af8cfe52b4649c0c2712298d2625ce5130e", serializedHex));
     
-    BRTezosTransactionHash hash = tezosTransactionGetHash(tx);
+    BRTezosHash hash = tezosTransactionGetHash(tx);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
     assert (0 == strcmp ("op65fEeTdd5uSyUSXm5ouRsJFjF1PYAEmfJDZTsa1f77YHynB6m", hashString));
@@ -563,7 +563,7 @@ testTransactionSignWithReveal() {
     counter = 6307075;
     amount = 100000;
     
-    BRTezosBlockHash lastBlockHash;
+    BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BLcz2Y6BikLFrwnejtRgBPSiGt1RLTjizUCg15BsUZ6x6JFazJS");
 
     // transaction op
@@ -582,7 +582,7 @@ testTransactionSignWithReveal() {
     bin2HexString(signedBytes, signedSize, serializedHex);
     assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b5882783fa8003e05d000064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5882784fa8003e05d00a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f64500862e202a9b114cdb23c86900d8eaba43bd6aec08ff3d8d99eb3c5b6b895873d7bfa4c31a9e9a88fa472ee9324b645a1c83db4dd45daa284dc934246450f1ea09", serializedHex));
     
-    BRTezosTransactionHash hash = tezosTransactionGetHash(tx);
+    BRTezosHash hash = tezosTransactionGetHash(tx);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
     assert (0 == strcmp ("opWLrzRW4aAiFccfTxVFXP3LCwy5eRJWuqEMuPo112Qmk7YL7Mo", hashString));

@@ -120,6 +120,12 @@ cryptoNetworkInitializeAccountXTZ (BRCryptoNetwork network,
     return;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringXTZ (BRCryptoNetwork network,
+                                      const char *string) {
+    return cryptoHashCreateFromStringAsXTZ (string);
+}
+
 // MARK: - Handlers
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ = {
@@ -129,6 +135,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampXTZ,
     cryptoNetworkIsAccountInitializedXTZ,
     cryptoNetworkGetAccountInitializationDataXTZ,
-    cryptoNetworkInitializeAccountXTZ
+    cryptoNetworkInitializeAccountXTZ,
+    cryptoNetworkCreateHashFromStringXTZ
 };
 

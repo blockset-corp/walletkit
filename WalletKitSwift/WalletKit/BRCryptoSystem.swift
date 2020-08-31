@@ -773,6 +773,9 @@ public final class System {
                             if let blockHeight = blockchainModel.blockHeight {
                                 cryptoNetworkSetHeight (network.core, blockHeight)
                             }
+                            if let verifiedBlockHash = blockchainModel.verifiedBlockHash {
+                                cryptoNetworkSetVerifiedBlockHashAsString (network.core, verifiedBlockHash)
+                            }
 
                             self.configure (network: network, feesFrom: blockchainModel)
                         }
@@ -1675,8 +1678,8 @@ extension System {
                     (res: Result<SystemClient.Blockchain, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
-                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0) },
-                        failure: { (_) in cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
+                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0, $0.verifiedBlockHash) },
+                        failure: { (_) in cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0, nil) })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in

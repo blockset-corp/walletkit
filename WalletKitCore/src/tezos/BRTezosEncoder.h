@@ -27,7 +27,7 @@ extern BRCryptoData
 tezosSerializeTransaction (BRTezosTransaction tx);
 
 extern BRCryptoData
-tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosBlockHash blockHash);
+tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosHash blockHash);
 
 
 #ifdef __cplusplus

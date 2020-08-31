@@ -24,7 +24,7 @@ struct BRTezosTransferRecord {
     BRTezosAddress targetAddress;
     BRTezosUnitMutez amount;
     BRTezosUnitMutez fee;
-    BRTezosTransactionHash transactionId;
+    BRTezosHash transactionId;
     uint64_t timestamp;
     uint64_t blockHeight;
     int error;
@@ -36,7 +36,7 @@ tezosTransferCreate(BRTezosAddress from,
                     BRTezosAddress to,
                     BRTezosUnitMutez amount,
                     BRTezosUnitMutez fee,
-                    BRTezosTransactionHash hash,
+                    BRTezosHash hash,
                     uint64_t timestamp, uint64_t blockHeight, int error)
 {
     BRTezosTransfer transfer = (BRTezosTransfer) calloc (1, sizeof (struct BRTezosTransferRecord));
@@ -102,7 +102,7 @@ extern void tezosTransferFree(BRTezosTransfer transfer)
 }
 
 // Getters for all the values
-extern BRTezosTransactionHash tezosTransferGetTransactionId(BRTezosTransfer transfer)
+extern BRTezosHash tezosTransferGetTransactionId(BRTezosTransfer transfer)
 {
     assert(transfer);
     if (transfer->transaction) {

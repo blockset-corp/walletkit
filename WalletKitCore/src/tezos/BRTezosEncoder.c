@@ -87,7 +87,7 @@ encodeOperationKind (BRTezosOperationKind kind) {
 }
 
 static BRCryptoData
-encodeBranch (BRTezosBlockHash blockHash) {
+encodeBranch (BRTezosHash blockHash) {
     // omit prefix
     size_t numPrefixBytes = 2;
     size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
@@ -149,7 +149,7 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
 }
 
 extern BRCryptoData
-tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosBlockHash blockHash) {
+tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosHash blockHash) {
     
     BRCryptoData fields[txCount + 1];
     size_t numFields = 0;

@@ -22,7 +22,7 @@
 
 struct BRTezosTransactionRecord {
     
-    BRTezosTransactionHash hash;
+    BRTezosHash hash;
     BRTezosAddress source;
     BRTezosUnitMutez fee; //TODO: move into feeBasis?
     BRTezosFeeBasis feeBasis;
@@ -108,7 +108,7 @@ tezosTransactionCreateReveal (BRTezosAddress source,
 //                                                    BRTezosUnitMutez amount,
 //                                                    BRTezosUnitMutez fee,
 //                                                    const char * txID,
-//                                                    BRTezosTransactionHash hash,
+//                                                    BRTezosHash hash,
 //                                                    uint64_t timestamp, uint64_t blockHeight,
 //                                                    int error)
 //{
@@ -195,7 +195,7 @@ extern size_t
 tezosTransactionSignTransaction (BRTezosTransaction transaction,
                                  BRTezosAccount account,
                                  UInt512 seed,
-                                 BRTezosBlockHash lastBlockHash,
+                                 BRTezosHash lastBlockHash,
                                  bool needsReveal) {
     assert (transaction);
     assert (account);
@@ -252,7 +252,7 @@ tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size) {
     }
 }
 
-extern BRTezosTransactionHash tezosTransactionGetHash(BRTezosTransaction transaction){
+extern BRTezosHash tezosTransactionGetHash(BRTezosTransaction transaction){
     assert(transaction);
     return transaction->hash;
 }
@@ -338,8 +338,8 @@ extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2)
     // Equal means the same transaction id, source, target
     bool result = false;
     // Transaction IDs are not available - use the hash
-    BRTezosTransactionHash hash1 = tezosTransactionGetHash(t1);
-    BRTezosTransactionHash hash2 = tezosTransactionGetHash(t2);
+    BRTezosHash hash1 = tezosTransactionGetHash(t1);
+    BRTezosHash hash2 = tezosTransactionGetHash(t2);
     if (memcmp(hash1.bytes, hash2.bytes, sizeof(hash1.bytes)) == 0) {
         // Hash is the same - compare the source
         BRTezosAddress source1 = tezosTransactionGetSource(t1);

@@ -549,12 +549,18 @@ extern void
 cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
-                        uint64_t blockNumber) {
+                        uint64_t blockNumber,
+                        const char *blockHashString) {
 
     BRCryptoBlockNumber oldBlockNumber = cryptoNetworkGetHeight (cwm->network);
 
     if (oldBlockNumber != blockNumber) {
         cryptoNetworkSetHeight (cwm->network, blockNumber);
+        
+        if (NULL != blockHashString) {
+            BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
+            cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+        }
 
         cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,

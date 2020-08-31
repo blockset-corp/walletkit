@@ -147,6 +147,12 @@ cryptoNetworkFeeAsETH (BRCryptoNetworkFee fee) {
     return gasPrice;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringETH (BRCryptoNetwork network,
+                                      const char *string) {
+    return cryptoHashCreateAsETH (ethHashCreate (string));
+}
+
 BRCryptoNetworkHandlers cryptoNetworkHandlersETH = {
     cyptoNetworkCreateETH,
     cryptoNetworkReleaseETH,
@@ -154,5 +160,6 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersETH = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH,
     cryptoNetworkIsAccountInitializedETH,
     cryptoNetworkGetAccountInitializationDataETH,
-    cryptoNetworkInitializeAccountETH
+    cryptoNetworkInitializeAccountETH,
+    cryptoNetworkCreateHashFromStringETH
 };

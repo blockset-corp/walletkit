@@ -18,6 +18,7 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoFileService.h"
+#include "crypto/BRCryptoHashP.h"
 
 #include "tezos/BRTezosAccount.h"
 
@@ -101,7 +102,7 @@ cryptoWalletManagerSignTransactionWithSeedXTZ (BRCryptoWalletManager manager,
                                                BRCryptoWallet wallet,
                                                BRCryptoTransfer transfer,
                                                UInt512 seed) {
-    BRTezosBlockHash lastBlockHash; //TODO:TEZOS get from network (/blockchains)
+    BRTezosHash lastBlockHash = cryptoHashAsXTZ (cryptoNetworkGetVerifiedBlockHash (manager->network));
     BRTezosAccount account = cryptoAccountAsXTZ (manager->account);
     BRTezosTransaction tid = tezosTransferGetTransaction (cryptoTransferCoerceXTZ(transfer)->xtzTransfer);
     bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(tid)) && cryptoWalletNeedsRevealXTZ(wallet);
@@ -225,7 +226,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRTezosAddress toAddress   = tezosAddressCreateFromString (bundle->to,   false);
     BRTezosAddress fromAddress = tezosAddressCreateFromString (bundle->from, false);
     // Convert the hash string to bytes
-    BRTezosTransactionHash txId;
+    BRTezosHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 #ifdef REFACTOR

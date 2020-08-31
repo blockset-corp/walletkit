@@ -120,7 +120,7 @@ extern size_t
 tezosTransactionSignTransaction (BRTezosTransaction transaction,
                                  BRTezosAccount account,
                                  UInt512 seed,
-                                 BRTezosBlockHash lastBlockHash,
+                                 BRTezosHash lastBlockHash,
                                  bool needsReveal);
 
 /**
@@ -134,7 +134,7 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
 extern uint8_t * /* caller owns and must free using normal "free" function */
 tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size);
 
-extern BRTezosTransactionHash
+extern BRTezosHash
 tezosTransactionGetHash(BRTezosTransaction transaction);
 
 extern int64_t

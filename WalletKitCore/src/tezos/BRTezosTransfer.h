@@ -34,14 +34,14 @@ extern BRTezosTransfer /* caller must free - tezosTransferFree */
 tezosTransferCreate(BRTezosAddress from, BRTezosAddress to,
                     BRTezosUnitMutez amount,
                     BRTezosUnitMutez fee,
-                    BRTezosTransactionHash hash,
+                    BRTezosHash hash,
                     uint64_t timestamp, uint64_t blockHeight, int error);
 
 extern BRTezosTransfer tezosTransferClone (BRTezosTransfer transfer);
 extern void tezosTransferFree(BRTezosTransfer transfer);
 
 // Getters for all the values
-extern BRTezosTransactionHash tezosTransferGetTransactionId(BRTezosTransfer transfer);
+extern BRTezosHash tezosTransferGetTransactionId(BRTezosTransfer transfer);
 extern BRTezosUnitMutez tezosTransferGetAmount(BRTezosTransfer transfer);
 extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer);
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer);

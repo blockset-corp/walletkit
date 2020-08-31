@@ -223,6 +223,23 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
     pthread_mutex_unlock (&network->lock);
 }
 
+extern BRCryptoHash
+cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
+    return network->verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
+                                   BRCryptoHash verifiedBlockHash) {
+    network->verifiedBlockHash = verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
+                                           const char * blockHashString) {
+    network->verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+}
+
 extern uint32_t
 cryptoNetworkGetConfirmationsUntilFinal (BRCryptoNetwork network) {
     return network->confirmationsUntilFinal;
@@ -591,6 +608,12 @@ private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
                                                 BRCryptoTimestamp timestamp) {
     return network->handlers->getBlockNumberAtOrBeforeTimestamp (network, timestamp);
+}
+
+private_extern BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string) {
+    return network->handlers->createHashFromString (network, string);
 }
 
 // MARK: - Network Defaults

@@ -47,6 +47,7 @@ public protocol SystemClient {
         isMainnet: Bool,
         currency: String,
         blockHeight: UInt64?,
+        verifiedBlockHash: String?,
         feeEstimates: [BlockchainFee],
         confirmationsUntilFinal: UInt32)
     
