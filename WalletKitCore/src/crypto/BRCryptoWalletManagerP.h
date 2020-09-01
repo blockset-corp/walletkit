@@ -244,6 +244,8 @@ private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
                                                           OwnershipKept BRCryptoClientTransactionBundle bundle);
 
+// Is it possible that the transfers do not have the 'submitted' state?  In some race between
+// the submit call and the included call?  Highly, highly unlikely but possible?
 private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
