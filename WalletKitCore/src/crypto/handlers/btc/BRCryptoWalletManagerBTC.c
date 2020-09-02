@@ -426,35 +426,6 @@ cryptoWalletManagerCreateWalletSweeperBTC (BRCryptoWalletManager cwm,
 
 // MARK: BRWallet Callback Balance Changed
 
-static void
-cryptoWalletManagerUpdateTransferBTC (BRCryptoWalletManager manager,
-                                      BRCryptoWallet wallet,
-                                      BRCryptoTransfer transfer,
-                                      bool needCreate,
-                                      bool needAdded,
-                                      bool needBalance) {
-#if 0
-    if (needCreate)
-        cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer, (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CREATED
-        });
-
-
-    if (needAdded)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
-        });
-
-
-    if (needBalance)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-            { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
-        });
-#endif
-}
-
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi) {
     BRCryptoWalletManagerBTC manager = info;
     // printf ("BTC: BalanceChanged\n");
@@ -475,8 +446,8 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     printf ("BTC: TxAdded\n");
 
     pthread_mutex_lock (&manager->base.lock);
-    bool needEvents = true;
-    bool needCreateEvent = false;
+    bool wasDeleted = false;
+    bool wasCreated = false;
 
     BRCryptoWallet  wallet = manager->base.wallet;
     BRWallet       *wid    = cryptoWalletAsBTC(wallet);
@@ -494,7 +465,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
                                               wallet->type);
         transferBTC = cryptoTransferCoerceBTC (transfer);
         cryptoWalletAddTransfer (wallet, transfer);
-        needCreateEvent = true;
+        wasCreated = true;
     }
     else {
         BRTransaction *oldTid = transferBTC->tid;
@@ -503,7 +474,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
         if (transferBTC->isDeleted) {
             // We've seen it before but has already been deleted, somewhow?  We are quietly going
             // to skip out and avoid signalling any events. Perhaps should assert(0) here.
-            needEvents = false;
+            wasDeleted = true;
         }
         else {
             // this is a transaction we've submitted; set the reference transaction from the wallet
@@ -538,12 +509,25 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     pthread_mutex_unlock (&manager->base.lock);
 
-    if (transferBTC->isResolved)
-        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, transfer, needCreateEvent, needCreateEvent, true);
+    // If `transfer` wasCreated when we generated three events: TRANSFER_CREATED,
+    // WALLET_ADDED_TRANSFER, WALLET_BALANCE_UPDATED.  If not created and not deleted and
+    // now resolved, we'll generate a balance event.  This later case occurs if we've submitted
+    // a transaction (I think); this event might be extaneous.
+    if (!wasCreated && !wasDeleted && transferBTC->isResolved)
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+            { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
+        });
 
-    for (size_t index = 0; index < resolvedTransactionIndex; index++)
-        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, &resolvedTransfers[index]->base, false, false, true);
+    for (size_t index = 0; index < resolvedTransactionIndex; index++) {
+        BRCryptoTransferBTC transferBTC = resolvedTransfers[index];
 
+        cryptoWalletManagerBTCTxUpdated (info,
+                                         &transferBTC->tid->txHash, 1,
+                                         transferBTC->tid->blockHeight,
+                                         transferBTC->tid->timestamp);
+//        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, &resolvedTransfers[index]->base, false, false, true);
+    }
     // Only one UPDATE BALANCE?
 
     free (resolvedTransfers);
