@@ -47,7 +47,6 @@ typedef struct {
     BRTransaction *tid;
 
     bool isDeleted;
-    bool isResolved;
 
     uint64_t fee;
     uint64_t send;
@@ -63,7 +62,6 @@ cryptoTransferCreateCallbackBTC (BRCryptoTransferCreateContext context,
 
     transferBTC->tid  = contextBTC->tid;
 
-    transferBTC->isResolved = contextBTC->isResolved;
     transferBTC->isDeleted  = contextBTC->isDeleted;
 
     // cache the values that require the wallet
@@ -164,7 +162,6 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
 
     BRCryptoTransferCreateContextBTC contextBTC = {
         tid,
-        false,
         false,
         fee,
         recv,

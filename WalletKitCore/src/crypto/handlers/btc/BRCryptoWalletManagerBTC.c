@@ -443,14 +443,22 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     // is called (and assume BRTranactionFree() got invoked).  Gone.
     tid = BRTransactionCopy (tid);
 
+    pthread_mutex_lock (&manager->base.lock);
+    BRCryptoWallet wallet = manager->base.wallet;
+    BRWallet      *wid    = cryptoWalletAsBTC(wallet);
+
+    // If `tid` is not resolved in `wid`, then add it as unresolved to `wid` and skip out.
+    if (!BRWalletTransactionIsResolved (wid, tid)) {
+        printf ("BTC: TxAdded (Not Resolved)\n");
+        cryptoWalletAddUnresolvedAsBTC (wallet, tid);
+        pthread_mutex_unlock (&manager->base.lock);
+        return;
+    }
+
     printf ("BTC: TxAdded\n");
 
-    pthread_mutex_lock (&manager->base.lock);
     bool wasDeleted = false;
     bool wasCreated = false;
-
-    BRCryptoWallet  wallet = manager->base.wallet;
-    BRWallet       *wid    = cryptoWalletAsBTC(wallet);
 
     BRCryptoTransferBTC transferBTC = cryptoWalletFindTransferByHashAsBTC (wallet, tid->txHash);
     BRCryptoTransfer    transfer    = (BRCryptoTransfer) transferBTC;
@@ -488,24 +496,11 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     }
     assert (NULL != transfer);
 
-    transferBTC->isResolved = BRWalletTransactionIsResolved (wid, tid);
-
-    // Find other transfers that are now resolved.
-
-    size_t transfersCount = array_count (wallet->transfers);
-    BRCryptoTransferBTC *resolvedTransfers = calloc (transfersCount, sizeof (BRCryptoTransferBTC));
-
-    size_t resolvedTransactionIndex = 0;
-    for (size_t index = 0; index < transfersCount; index++) {
-        BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC (wallet->transfers[index]);
-
-        bool nowResolved = BRWalletTransactionIsResolved (wid, transferBTC->tid);
-
-        if (nowResolved && !transferBTC->isResolved) {
-            transferBTC->isResolved = true;
-            resolvedTransfers[resolvedTransactionIndex++] = transferBTC;
-        }
-    }
+    // Find other transations in `wallet` that are now resolved.
+    size_t resolvedTransactionsCount = cryptoWalletRemResolvedAsBTC (wallet, NULL, 0);
+    BRTransaction **resolvedTransactions = calloc (resolvedTransactionsCount, sizeof (BRTransaction*));
+    resolvedTransactionsCount = cryptoWalletRemResolvedAsBTC (wallet, resolvedTransactions, resolvedTransactionsCount);
+    // We now own `resolvedTransactions`
 
     pthread_mutex_unlock (&manager->base.lock);
 
@@ -513,24 +508,31 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     // WALLET_ADDED_TRANSFER, WALLET_BALANCE_UPDATED.  If not created and not deleted and
     // now resolved, we'll generate a balance event.  This later case occurs if we've submitted
     // a transaction (I think); this event might be extaneous.
-    if (!wasCreated && !wasDeleted && transferBTC->isResolved)
+    if (!wasCreated && !wasDeleted)
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
             { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
         });
 
-    for (size_t index = 0; index < resolvedTransactionIndex; index++) {
-        BRCryptoTransferBTC transferBTC = resolvedTransfers[index];
-
+    for (size_t index = 0; index < resolvedTransactionsCount; index++) {
+        BRTransaction *tid = resolvedTransactions[index];
+        cryptoWalletManagerBTCTxAdded   (info, tid);
         cryptoWalletManagerBTCTxUpdated (info,
-                                         &transferBTC->tid->txHash, 1,
-                                         transferBTC->tid->blockHeight,
-                                         transferBTC->tid->timestamp);
+                                         &tid->txHash, 1,
+                                         tid->blockHeight,
+                                         tid->timestamp);
+
+        //        BRCryptoTransferBTC transferBTC = resolvedTransfers[index];
+
+//        cryptoWalletManagerBTCTxUpdated (info,
+//                                         &transferBTC->tid->txHash, 1,
+//                                         transferBTC->tid->blockHeight,
+//                                         transferBTC->tid->timestamp);
 //        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, &resolvedTransfers[index]->base, false, false, true);
     }
     // Only one UPDATE BALANCE?
 
-    free (resolvedTransfers);
+    free (resolvedTransactions);
 }
 
 // MARK: - BRWallet Callback TX Updated
@@ -546,37 +548,40 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
 
     printf ("BTC: TxUpdated\n");
     for (size_t index = 0; index < count; index++) {
-        bool needEvents = true;
-
+        // TODO: This is here to allow events to flow; otherwise we'd block for too long??
         pthread_mutex_lock (&manager->base.lock);
         BRCryptoTransferBTC transfer = cryptoWalletFindTransferByHashAsBTC(wallet, hashes[index]);
-        assert (NULL != transfer);
 
-        assert (BRTransactionIsSigned (transfer->tid));
-
-        if (transfer->isDeleted) needEvents = false;
+        // If we don't know about `transfer` then it has not been added, typically because the
+        // associated transaction is not resolved, so just skip this hash.
+        if (NULL == transfer)
+            cryptoWalletUpdUnresolvedAsBTC (wallet, &hashes[index], blockHeight, timestamp);
         else {
-            transfer->tid->blockHeight = blockHeight;
-            transfer->tid->timestamp   = timestamp;
+            assert (BRTransactionIsSigned (transfer->tid));
+
+            if (!transfer->isDeleted) {
+                transfer->tid->blockHeight = blockHeight;
+                transfer->tid->timestamp   = timestamp;
+            }
+
+            if (TX_UNCONFIRMED != blockHeight) {
+                BRCryptoFeeBasis      feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
+                BRCryptoTransferState oldState = cryptoTransferGetState (&transfer->base);
+                BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockHeight,
+                                                                                  0,
+                                                                                  timestamp,
+                                                                                  feeBasis,
+                                                                                  CRYPTO_TRUE,
+                                                                                  NULL);
+                cryptoFeeBasisGive (feeBasis);
+                cryptoTransferSetState (&transfer->base, newState);
+
+                cryptoTransferStateRelease (&oldState);
+                cryptoTransferStateRelease (&newState);
+            }
         }
 
-        if (transfer->isResolved && TX_UNCONFIRMED != blockHeight) {
-            BRCryptoFeeBasis      feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
-            BRCryptoTransferState oldState = cryptoTransferGetState (&transfer->base);
-            BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockHeight,
-                                                                              0,
-                                                                              timestamp,
-                                                                              feeBasis,
-                                                                              CRYPTO_TRUE,
-                                                                              NULL);
-            cryptoFeeBasisGive (feeBasis);
-            cryptoTransferSetState (&transfer->base, newState);
-            pthread_mutex_unlock (&manager->base.lock);
-
-            cryptoTransferStateRelease (&oldState);
-            cryptoTransferStateRelease (&newState);
-        }
-        else pthread_mutex_unlock (&manager->base.lock);
+        pthread_mutex_unlock (&manager->base.lock);
     }
 }
 
@@ -587,29 +592,32 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
     BRCryptoWallet           wallet = manager->base.wallet;
 
     bool needEvents = true;
-    printf ("BTC: TxDeleted\n");
 
     pthread_mutex_lock (&manager->base.lock);
     BRCryptoTransferBTC transfer = cryptoWalletFindTransferByHashAsBTC (wallet, hash);
 
-    if (transfer->isDeleted) needEvents = false;
-    else {
-        transfer->isDeleted = true;
-        cryptoTransferSetState (&transfer->base, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_DELETED));
-    }
+    if (NULL != transfer) {
+        printf ("BTC: TxDeleted\n");
 
-    pthread_mutex_unlock (&manager->base.lock);
-    if (needEvents) {
-        if (transfer->isResolved)
+        if (transfer->isDeleted) needEvents = false;
+        else {
+            transfer->isDeleted = true;
+            cryptoTransferSetState (&transfer->base, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_DELETED));
+        }
+
+        pthread_mutex_unlock (&manager->base.lock);
+
+        if (needEvents) {
             cryptoTransferGenerateEvent (&transfer->base, (BRCryptoTransferEvent) {
                 CRYPTO_TRANSFER_EVENT_DELETED
             });
 
-        if (recommendRescan)
-            cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
-                { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
-            });
+            if (recommendRescan)
+                cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+                    CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
+                    { .syncRecommended = { CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND } }
+                });
+        }
     }
 }
 
