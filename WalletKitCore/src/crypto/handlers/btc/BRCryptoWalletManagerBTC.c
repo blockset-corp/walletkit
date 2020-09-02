@@ -208,7 +208,9 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRWallet *btcWallet = cryptoWalletAsBTC(wallet);
 
     BRCryptoBoolean overflow = CRYPTO_FALSE;

@@ -249,7 +249,9 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
 
     BREthereumFeeBasis ethFeeBasis = {
@@ -262,7 +264,8 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
                                                                target,
                                                                amount,
                                                                cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis),
-                                                               0, NULL,
+                                                               attributesCount,
+                                                               attributes,
                                                                currency,
                                                                wallet->unit,
                                                                wallet->unitForFee);

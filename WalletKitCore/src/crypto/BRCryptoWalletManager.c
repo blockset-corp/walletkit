@@ -1203,13 +1203,17 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                      BRCryptoCookie cookie,
                                      BRCryptoAddress target,
                                      BRCryptoAmount  amount,
-                                     BRCryptoNetworkFee fee) {
+                                     BRCryptoNetworkFee fee,
+                                     size_t attributesCount,
+                                     OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRCryptoFeeBasis feeBasis = manager->handlers->estimateFeeBasis (manager,
                                                                      wallet,
                                                                      cookie,
                                                                      target,
                                                                      amount,
-                                                                     fee);
+                                                                     fee,
+                                                                     attributesCount,
+                                                                     attributes);
     if (NULL != feeBasis)
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,

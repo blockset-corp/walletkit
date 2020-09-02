@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <string.h>
 
+#define TEZOS_SIGNATURE_BYTES 64
 
 struct BRTezosTransactionRecord {
     
@@ -35,13 +36,11 @@ struct BRTezosTransactionRecord {
     const char * protocol; // protocol name
     const char * branch; // hash of head block
     
-    BRCryptoData unsignedBytes;
-    BRCryptoData signature;
     BRCryptoData signedBytes;
 };
 
 struct BRTezosSignatureRecord {
-    uint8_t signature[64];
+    uint8_t signature[TEZOS_SIGNATURE_BYTES];
 };
 
 static BRTezosTransaction
@@ -159,8 +158,6 @@ extern void tezosTransactionFree (BRTezosTransaction transaction)
 {
     assert (transaction);
     tezosAddressFree (transaction->source);
-    cryptoDataFree(transaction->unsignedBytes);
-    cryptoDataFree(transaction->signature);
     cryptoDataFree(transaction->signedBytes);
     switch (transaction->operation.kind) {
         case TEZOS_OP_REVEAL:
@@ -191,18 +188,11 @@ createTransactionHash(BRTezosTransaction tx) {
     memcpy(&(tx->hash.bytes[sizeof(prefix)]), hash, sizeof(hash));
 }
 
-extern size_t
-tezosTransactionSignTransaction (BRTezosTransaction transaction,
-                                 BRTezosAccount account,
-                                 UInt512 seed,
-                                 BRTezosHash lastBlockHash,
-                                 bool needsReveal) {
-    assert (transaction);
-    assert (account);
-    
-    cryptoDataFree(transaction->signedBytes);
-    cryptoDataFree(transaction->signature);
-    
+static BRCryptoData
+tezosTransactionSerialize (BRTezosTransaction transaction,
+                           BRTezosAccount account,
+                           BRTezosHash lastBlockHash,
+                           bool needsReveal) {
     BRTezosTransaction opList[2];
     size_t opCount = 0;
     
@@ -220,19 +210,56 @@ tezosTransactionSignTransaction (BRTezosTransaction transaction,
     
     opList[opCount++] = transaction;
     
-    BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
-    BRCryptoData signature = tezosAccountSignData(account, unsignedBytes, seed);
+    return tezosSerializeOperationList(opList, opCount, lastBlockHash);
+}
+
+extern size_t
+tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
+                                           BRTezosAccount account,
+                                           BRTezosHash lastBlockHash,
+                                           bool needsReveal) {
+    assert (transaction);
+    assert (account);
     
-    assert(64 == signature.size);
+    cryptoDataFree(transaction->signedBytes);
+    
+    BRCryptoData unsignedBytes = tezosTransactionSerialize(transaction, account, lastBlockHash, needsReveal);
+    BRCryptoData signature = cryptoDataNew(TEZOS_SIGNATURE_BYTES); // empty signature
+    
+    BRCryptoData serializedBytes = cryptoDataNew(unsignedBytes.size + signature.size);
+    memcpy(serializedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
+    memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
+    
+    transaction->signedBytes = serializedBytes;
+    
+    if (transaction->signedBytes.size > 0) {
+        createTransactionHash(transaction);
+    }
+    
+    return transaction->signedBytes.size;
+}
+
+extern size_t
+tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
+                                  BRTezosAccount account,
+                                  UInt512 seed,
+                                  BRTezosHash lastBlockHash,
+                                  bool needsReveal) {
+    assert (transaction);
+    assert (account);
+    
+    cryptoDataFree(transaction->signedBytes);
+    
+    BRCryptoData unsignedBytes = tezosTransactionSerialize (transaction, account, lastBlockHash, needsReveal);
+    
+    BRCryptoData signature = tezosAccountSignData(account, unsignedBytes, seed);
+    assert(TEZOS_SIGNATURE_BYTES == signature.size);
     
     BRCryptoData signedBytes = cryptoDataNew(unsignedBytes.size + signature.size);
     memcpy(signedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
     memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
-    cryptoDataFree(unsignedBytes);
-    
     transaction->signedBytes = signedBytes;
-    transaction->signature = signature; //TODO:TEZOS does signature need to be stored?
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);

@@ -167,7 +167,9 @@ cryptoWalletManagerEstimateFeeBasisHBAR (BRCryptoWalletManager manager,
                                          BRCryptoCookie cookie,
                                          BRCryptoAddress target,
                                          BRCryptoAmount amount,
-                                         BRCryptoNetworkFee networkFee) {
+                                         BRCryptoNetworkFee networkFee,
+                                         size_t attributesCount,
+                                         OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = 1.0;  // 'cost factor' is 'transaction'
 

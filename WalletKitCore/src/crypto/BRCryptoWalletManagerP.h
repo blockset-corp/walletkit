@@ -85,7 +85,9 @@ typedef BRCryptoFeeBasis // If NULL, don't generate WalletEvent; expect QRY call
                                                  BRCryptoCookie cookie,
                                                  BRCryptoAddress target,
                                                  BRCryptoAmount amount,
-                                                 BRCryptoNetworkFee fee);
+                                                 BRCryptoNetworkFee fee,
+                                                 size_t attributesCount,
+                                                 OwnershipKept BRCryptoTransferAttribute *attributes);
 
 typedef BRCryptoClientP2PManager
 (*BRCryptoWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);

@@ -141,8 +141,8 @@ tezosAddressStringToAddress(const char *input) {
     }
     
     if (0 == memcmp(bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
-        || 0 == memcmp(bytes, TZ2_PREFIX, sizeof(TZ1_PREFIX))
-        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ1_PREFIX))) {
+        || 0 == memcmp(bytes, TZ2_PREFIX, sizeof(TZ2_PREFIX))
+        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ3_PREFIX))) {
         return tezosAddressCreateFromBytes(bytes, length);
     }
     

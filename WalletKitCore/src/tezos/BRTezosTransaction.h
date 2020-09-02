@@ -106,6 +106,22 @@ extern void
 tezosTransactionFree (BRTezosTransaction transaction);
 
 /**
+* Serializes (forges) a Tezos operation with an empty signature and stores the bytes in the transaction.
+* If a reveal operation is required it will be prepended to the serialized operation list.
+*
+* @param transaction
+* @param account         - the source account
+* @param lastBlockHash   - hash of the network's most recent block, needed for serialization payload
+*
+ * @return size           - number of bytes in the serialization
+ */
+extern size_t
+tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
+                                           BRTezosAccount account,
+                                           BRTezosHash lastBlockHash,
+                                           bool needsReveal);
+
+/**
  * Serializes (forges) and signs a Tezos operation and stores the signed bytes in the transaction.
  * If a reveal operation is required it will be prepended to the serialized operation list.
  *
@@ -117,7 +133,7 @@ tezosTransactionFree (BRTezosTransaction transaction);
  * @return size           - number of bytes in the signed transaction
  */
 extern size_t
-tezosTransactionSignTransaction (BRTezosTransaction transaction,
+tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
                                  BRTezosAccount account,
                                  UInt512 seed,
                                  BRTezosHash lastBlockHash,

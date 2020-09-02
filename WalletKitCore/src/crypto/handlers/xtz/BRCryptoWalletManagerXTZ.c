@@ -108,7 +108,7 @@ cryptoWalletManagerSignTransactionWithSeedXTZ (BRCryptoWalletManager manager,
     bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(tid)) && cryptoWalletNeedsRevealXTZ(wallet);
     
     if (tid) {
-        size_t tx_size = tezosTransactionSignTransaction (tid, account, seed, lastBlockHash, needsReveal);
+        size_t tx_size = tezosTransactionSerializeAndSign (tid, account, seed, lastBlockHash, needsReveal);
         return AS_CRYPTO_BOOLEAN(tx_size > 0);
     } else {
         return CRYPTO_FALSE;
@@ -133,37 +133,12 @@ cryptoWalletManagerEstimateLimitXTZ (BRCryptoWalletManager manager,
                                      BRCryptoBoolean *needEstimate,
                                      BRCryptoBoolean *isZeroIfInsuffientFunds,
                                      BRCryptoUnit unit) {
-    UInt256 amount = UINT256_ZERO;
-    
-    *needEstimate = CRYPTO_FALSE;
-    *isZeroIfInsuffientFunds = CRYPTO_FALSE;
-    
-    if (CRYPTO_TRUE == asMaximum) {
-        BRCryptoAmount minBalance = wallet->balanceMinimum;
-        assert(minBalance);
-        
-        // Available balance based on minimum wallet balance
-        BRCryptoAmount balance = cryptoAmountSub(wallet->balance, minBalance);
-        
-        // Tezos has fixed network fee (costFactor = 1.0)
-        BRCryptoAmount fee = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-        BRCryptoAmount newBalance = cryptoAmountSub(balance, fee);
-        
-        if (CRYPTO_TRUE == cryptoAmountIsNegative(newBalance)) {
-            amount = UINT256_ZERO;
-        } else {
-            amount = cryptoAmountGetValue(newBalance);
-        }
-        
-        cryptoAmountGive (balance);
-        cryptoAmountGive (fee);
-        cryptoAmountGive (newBalance);
-    }
-    
-    return cryptoAmountCreateInternal (unit,
-                                       CRYPTO_FALSE,
-                                       amount,
-                                       0);
+    // We always need an estimate as we do not know the fees.
+    *needEstimate = CRYPTO_TRUE;
+
+    return (CRYPTO_TRUE == asMaximum
+            ? cryptoWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'
+            : cryptoAmountCreateInteger (0, unit));  // No minimum
 }
 
 static BRCryptoFeeBasis
@@ -172,11 +147,46 @@ cryptoWalletManagerEstimateFeeBasisXTZ (BRCryptoWalletManager manager,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
+    //BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis ();
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (networkFee->pricePerCostFactor, 1.0);
+
+    BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
+    BRCryptoTransfer transfer = cryptoWalletCreateTransferXTZ (wallet,
+                                                               target,
+                                                               amount,
+                                                               feeBasis,
+                                                               attributesCount,
+                                                               attributes,
+                                                               currency,
+                                                               wallet->unit,
+                                                               wallet->unitForFee);
+
+    cryptoCurrencyGive(currency);
     
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+    // serialize the transaction for fee estimation payload
+    BRTezosHash lastBlockHash = cryptoHashAsXTZ (cryptoNetworkGetVerifiedBlockHash (manager->network));
+    BRTezosAccount account = cryptoAccountAsXTZ (manager->account);
+    BRTezosTransaction tid = tezosTransferGetTransaction (cryptoTransferCoerceXTZ(transfer)->xtzTransfer);
+    bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(tid)) && cryptoWalletNeedsRevealXTZ(wallet);
+    
+    tezosTransactionSerializeForFeeEstimation(tid,
+                                              account,
+                                              lastBlockHash,
+                                              needsReveal);
+
+    cryptoClientQRYEstimateTransferFee (manager->qryManager,
+                                        cookie,
+                                        transfer,
+                                        networkFee);
+
+    cryptoTransferGive (transfer);
+    cryptoFeeBasisGive (feeBasis);
+
+    // Require QRY with cookie - made above
+    return NULL;
 }
 
 static void

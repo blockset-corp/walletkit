@@ -76,6 +76,17 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
                          BRCryptoUnit unitForFee,
                          BRTezosAccount xtzAccount);
 
+extern BRCryptoTransfer
+cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
+                               BRCryptoAddress target,
+                               BRCryptoAmount  amount,
+                               BRCryptoFeeBasis estimatedFeeBasis,
+                               size_t attributesCount,
+                               OwnershipKept BRCryptoTransferAttribute *attributes,
+                               BRCryptoCurrency currency,
+                               BRCryptoUnit unit,
+                               BRCryptoUnit unitForFee);
+
 private_extern bool
 cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
 

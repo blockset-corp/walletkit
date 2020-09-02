@@ -210,12 +210,13 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     UInt256 value = cryptoAmountGetValue (amount);
     
     BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
+    BRTezosAddress xtzTarget  = cryptoAddressAsXTZ (target);
     BRTezosUnitMutez mutez = (BRTezosUnitMutez) value.u64[0];
     int64_t counter = walletXTZ->counter;
 
-    //TODO:TEZOS BRGenericFeeBasis fields are insufficient to populate Tezos fields
     BRTezosFeeBasis feeBasis;
-    feeBasis.gasLimit = (int64_t) estimatedFeeBasis->costFactor;
+    feeBasis.gasLimit = 0; // will be determined by fee estimation
+    feeBasis.storageLimit = 0; // will be determined by fee estimation
     int overflow = 0;
     feeBasis.fee = (BRTezosUnitMutez) uint64Coerce(cryptoAmountGetValue(estimatedFeeBasis->pricePerCostFactor), &overflow);
     assert(overflow == 0);
@@ -234,7 +235,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     }
     
     BRTezosTransfer xtzTransfer = tezosTransferCreateNew (source,
-                                                          (BRTezosAddress) target,
+                                                          xtzTarget,
                                                           mutez,
                                                           feeBasis,
                                                           counter,
@@ -247,7 +248,13 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
                                                            unitForFee,
                                                            walletXTZ->xtzAccount,
                                                            xtzTransfer);
-    cryptoTransferSetAttributes (transfer, attributes);
+    if (NULL != transfer && attributesCount > 0) {
+        BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
+        array_new (transferAttributes, attributesCount);
+        array_add_array (transferAttributes, attributes, attributesCount);
+        cryptoTransferSetAttributes (transfer, transferAttributes);
+        array_free (transferAttributes);
+    }
     
     return transfer;
 }

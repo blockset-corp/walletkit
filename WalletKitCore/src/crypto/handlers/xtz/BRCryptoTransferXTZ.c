@@ -100,7 +100,6 @@ cryptoTransferSerializeXTZ (BRCryptoTransfer transfer,
                             BRCryptoNetwork network,
                             BRCryptoBoolean  requireSignature,
                             size_t *serializationCount) {
-    assert (CRYPTO_TRUE == requireSignature);
     BRCryptoTransferXTZ transferXTZ = cryptoTransferCoerceXTZ (transfer);
 
     uint8_t *serialization = NULL;
