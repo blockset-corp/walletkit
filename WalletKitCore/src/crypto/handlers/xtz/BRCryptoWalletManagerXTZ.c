@@ -213,6 +213,21 @@ BRGenericTransferState transferState = genManagerRecoverTransferState (gwm,
 genTransferSetState (transfer, transferState);
 #endif
 
+//TODO:TEZOS refactor (copied from WalletManagerETH)
+static const char *
+cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
+    for (size_t index = 0; index < count; index++)
+        if (0 == strcasecmp (key, keys[index]))
+            return vals[index];
+    return NULL;
+}
+
+static uint64_t
+cwmParseUInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return strtoull(string, NULL, 0);
+}
+
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager manager,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
@@ -259,9 +274,17 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     
     cryptoTransferSetState (baseTransfer, transferState);
     
-    //TODO:XTZ attributes
-    //TODO:XTZ save to fileService
-    //TODO:XTZ announce
+    size_t attributesCount = bundle->attributesCount;
+    const char **attributeKeys   = (const char **) bundle->attributeKeys;
+    const char **attributeVals   = (const char **) bundle->attributeVals;
+    
+    // update wallet counter
+    bool parseError;
+    BRCryptoTransferDirection direction = cryptoTransferGetDirection (baseTransfer);
+    const char *key = (CRYPTO_TRANSFER_RECEIVED == direction) ? "destination_counter" : "source_counter";
+    int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (key, attributesCount, attributeKeys, attributeVals), &parseError);
+    
+    cryptoWalletSetCounterXTZ (wallet, counter);
 }
 
 extern BRCryptoWalletSweeperStatus

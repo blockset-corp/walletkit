@@ -110,6 +110,20 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet) {
     return true;
 }
 
+private_extern int64_t
+cryptoWalletGetCounterXTZ (BRCryptoWallet wallet) {
+    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
+    return walletXTZ->counter;
+}
+
+private_extern void
+cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter) {
+    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
+    if (counter > walletXTZ->counter) {
+        walletXTZ->counter = counter;
+    }
+}
+
 extern size_t
 cryptoWalletGetTransferAttributeCountXTZ (BRCryptoWallet wallet,
                                           BRCryptoAddress target) {

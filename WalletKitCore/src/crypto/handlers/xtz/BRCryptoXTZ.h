@@ -79,7 +79,9 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
 private_extern bool
 cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
 
-//TODO:TEZOS set the initial counter
+private_extern int64_t
+cryptoWalletGetCounterXTZ (BRCryptoWallet wallet);
+
 private_extern void
 cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter);
 
