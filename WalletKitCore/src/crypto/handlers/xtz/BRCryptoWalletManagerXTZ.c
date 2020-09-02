@@ -226,14 +226,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRTezosAddress toAddress   = tezosAddressCreateFromString (bundle->to,   false);
     BRTezosAddress fromAddress = tezosAddressCreateFromString (bundle->from, false);
     // Convert the hash string to bytes
-    BRTezosHash txId;
-    hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
+    BRTezosHash txId = cryptoHashAsXTZ (cryptoHashCreateFromStringAsXTZ (bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
-#ifdef REFACTOR
-    ||
-    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
-     && CRYPTO_FALSE == state.u.included.success));
-#endif
+
     BRTezosTransfer xtzTransfer = tezosTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     
     tezosAddressFree (toAddress);
