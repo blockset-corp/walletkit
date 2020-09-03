@@ -12,10 +12,11 @@
 
 #include "bitcoin/BRWallet.h"
 
-#define DEFAULT_FEE_BASIS_SIZE_IN_BYTES     200
+#define DEFAULT_FEE_BASIS_SIZE_IN_BYTES     (200)
+#define DEFAULT_TIDS_UNRESOLVED_COUNT         (2)
 
-static BRCryptoWalletBTC
-cryptoWalletCoerce (BRCryptoWallet wallet) {
+private_extern BRCryptoWalletBTC
+cryptoWalletCoerceBTC (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_BTC == wallet->type ||
             CRYPTO_NETWORK_TYPE_BCH == wallet->type ||
             CRYPTO_NETWORK_TYPE_BSV == wallet->type);
@@ -30,9 +31,10 @@ static void
 cryptoWalletCreateCallbackBTC (BRCryptoWalletCreateContext context,
                                BRCryptoWallet wallet) {
     BRCryptoWalletCreateContextBTC *contextBTC = (BRCryptoWalletCreateContextBTC*) context;
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce (wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC (wallet);
 
     walletBTC->wid = contextBTC->wid;
+    array_new (walletBTC->tidsUnresolved, DEFAULT_TIDS_UNRESOLVED_COUNT);
 }
 
 
@@ -67,11 +69,13 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
 
 static void
 cryptoWalletReleaseBTC (BRCryptoWallet wallet) {
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+    array_free_all (walletBTC->tidsUnresolved, BRTransactionFree);
 }
 
 private_extern BRWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet) {
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
     return walletBTC->wid;
 }
 
@@ -108,6 +112,60 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
     return transfer;
 }
 
+private_extern void
+cryptoWalletAddUnresolvedAsBTC (BRCryptoWallet wallet,
+                                OwnershipGiven BRTransaction *tid) {
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+
+    pthread_mutex_lock (&wallet->lock);
+    array_add (walletBTC->tidsUnresolved, tid);
+    pthread_mutex_unlock (&wallet->lock);
+}
+
+private_extern void
+cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
+                                const UInt256 *hash,
+                                uint32_t blockHeight,
+                                uint32_t timestamp) {
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+
+    pthread_mutex_lock (&wallet->lock);
+
+    for (size_t index = 0; index < array_count (walletBTC->tidsUnresolved); index++) {
+        BRTransaction *tid = walletBTC->tidsUnresolved[index];
+        if (BRTransactionEq (tid, hash)) {
+            tid->blockHeight = blockHeight;
+            tid->timestamp   = timestamp;
+        }
+    }
+
+    pthread_mutex_unlock (&wallet->lock);
+}
+
+private_extern size_t
+cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
+                              BRTransaction **tids,
+                              size_t tidsCount) {
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+
+    pthread_mutex_lock (&wallet->lock);
+    size_t count = array_count(walletBTC->tidsUnresolved);
+
+    if (NULL != tids) {
+        size_t  rIndex = 0;
+
+        for (ssize_t tIndex = (ssize_t) MIN (tidsCount, count) - 1; tIndex >= 0; tIndex--)
+            if (BRWalletTransactionIsResolved (walletBTC->wid, walletBTC->tidsUnresolved[tIndex])) {
+                tids[rIndex++] = walletBTC->tidsUnresolved[tIndex];
+                array_rm (walletBTC->tidsUnresolved, tIndex);
+            }
+
+        count = rIndex;
+    }
+    pthread_mutex_unlock (&wallet->lock);
+    return count;
+}
+
 static BRCryptoAddress
 cryptoWalletGetAddressBTC (BRCryptoWallet wallet,
                            BRCryptoAddressScheme addressScheme) {
@@ -115,7 +173,7 @@ cryptoWalletGetAddressBTC (BRCryptoWallet wallet,
     assert (CRYPTO_ADDRESS_SCHEME_BTC_LEGACY == addressScheme ||
             CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme);
 
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
     BRWallet *wid = walletBTC->wid;
 #ifdef REFACTOR
@@ -131,7 +189,7 @@ cryptoWalletGetAddressBTC (BRCryptoWallet wallet,
 static bool
 cryptoWalletHasAddressBTC (BRCryptoWallet wallet,
                            BRCryptoAddress address) {
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
     BRCryptoBoolean isBitcoinAddress;
 #ifdef REFACTOR
@@ -158,8 +216,8 @@ cryptoWalletHasAddressBTC (BRCryptoWallet wallet,
 
 static bool
 cryptoWalletIsEqualBTC (BRCryptoWallet wb1, BRCryptoWallet wb2) {
-    BRCryptoWalletBTC w1 = cryptoWalletCoerce(wb1);
-    BRCryptoWalletBTC w2 = cryptoWalletCoerce(wb2);
+    BRCryptoWalletBTC w1 = cryptoWalletCoerceBTC(wb1);
+    BRCryptoWalletBTC w2 = cryptoWalletCoerceBTC(wb2);
 
     // This does not compare the properties of `t1` to `t2`, just the 'id-ness'.  If the properties
     // are compared, one needs to be careful about the BRTransaction's timestamp.  Two transactions
@@ -197,7 +255,7 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
                                        BRCryptoCurrency currency,
                                        BRCryptoUnit unit,
                                        BRCryptoUnit unitForFee) {
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
 
 //    BRWalletManager bwm = wallet->bwm;
@@ -250,7 +308,7 @@ static OwnershipGiven BRSetOf(BRCryptoAddress)
 cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
     BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (10);
 
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
     BRWallet *btcWallet = walletBTC->wid;
 
     size_t btcAddressesCount = BRWalletAllAddrs (btcWallet, NULL, 0);
@@ -278,7 +336,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
                                BRCryptoCurrency currency,
                                BRCryptoUnit unit,
                                BRCryptoUnit unitForFee) {
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerce(wallet);
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
     //    BRWalletManager bwm = wallet->bwm;
     BRWallet *wid = walletBTC->wid;
