@@ -42,7 +42,24 @@ extern "C" {
 typedef struct {
     UInt256 hash;
     uint32_t n;
+    uint64_t amount;
 } BRUTXO;
+
+typedef enum {
+    // UTXOs are ordered as they appear; selection is from index 0.
+    UTXO_SELECTION_FIFO,
+
+    // UTXOs are order with larger amounts first; selection is from index 0.  This minimizes the
+    // fees for 'early' transactions but maximimizes the fees for later transactions, as small
+    // UTXOs gather up at the end of the UTXO array.
+    UTXO_SELECTION_MINIMIZE_EARLY_FEES,
+
+    // UTXOs are ordered randomly; selection is from index 0.  Probably offers a reasonably
+    // consistent fee profile between 'early and 'late' transactions.
+    UTXO_SELECTION_RANDOM
+} BRUTXOSelection;
+
+#define DEFAULT_UTXO_SELECTION    (UTXO_SELECTION_RANDOM)
 
 inline static size_t BRUTXOHash(const void *utxo)
 {
