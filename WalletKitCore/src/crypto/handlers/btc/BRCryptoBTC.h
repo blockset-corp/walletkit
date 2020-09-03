@@ -77,9 +77,8 @@ typedef struct BRCryptoTransferBTCRecord {
     // Prior to signing the hash will be empty.
     BRTransaction *tid;
 
-    // Tracking of 'deleted' and 'resolved'
+    // Tracking of 'deleted'
     bool isDeleted;
-    bool isResolved;
 
     uint64_t fee;
     uint64_t send;
@@ -109,9 +108,13 @@ cryptoTransferHasBTC (BRCryptoTransfer transfer,
 typedef struct BRCryptoWalletBTCRecord {
     struct BRCryptoWalletRecord base;
     BRWallet *wid;
+    BRArrayOf (BRTransaction*) tidsUnresolved;
 } *BRCryptoWalletBTC;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
+
+private_extern BRCryptoWalletBTC
+cryptoWalletCoerceBTC (BRCryptoWallet wallet);
 
 private_extern BRWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet);
@@ -130,6 +133,21 @@ cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
 private_extern BRCryptoTransferBTC
 cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
                                      UInt256 hash);
+
+private_extern void
+cryptoWalletAddUnresolvedAsBTC (BRCryptoWallet wallet,
+                                OwnershipGiven BRTransaction *tid);
+
+private_extern void
+cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
+                                const UInt256 *hash,
+                                uint32_t blockHeight,
+                                uint32_t timestamp);
+
+private_extern size_t
+cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
+                              BRTransaction **tids,
+                              size_t tidsCount);
 
 // MARK: - (Wallet) Manager
 
