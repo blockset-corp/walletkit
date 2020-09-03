@@ -77,9 +77,8 @@ typedef struct BRCryptoTransferBTCRecord {
     // Prior to signing the hash will be empty.
     BRTransaction *tid;
 
-    // Tracking of 'deleted' and 'resolved'
+    // Tracking of 'deleted'
     bool isDeleted;
-    //bool isResolved;
 
     uint64_t fee;
     uint64_t send;

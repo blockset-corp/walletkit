@@ -521,14 +521,6 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
                                          &tid->txHash, 1,
                                          tid->blockHeight,
                                          tid->timestamp);
-
-        //        BRCryptoTransferBTC transferBTC = resolvedTransfers[index];
-
-//        cryptoWalletManagerBTCTxUpdated (info,
-//                                         &transferBTC->tid->txHash, 1,
-//                                         transferBTC->tid->blockHeight,
-//                                         transferBTC->tid->timestamp);
-//        cryptoWalletManagerUpdateTransferBTC (&manager->base, wallet, &resolvedTransfers[index]->base, false, false, true);
     }
     // Only one UPDATE BALANCE?
 
