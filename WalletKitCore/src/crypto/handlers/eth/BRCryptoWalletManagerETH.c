@@ -235,8 +235,10 @@ cryptoWalletManagerEstimateLimitETH (BRCryptoWalletManager cwm,
                                      BRCryptoBoolean *needEstimate,
                                      BRCryptoBoolean *isZeroIfInsuffientFunds,
                                      BRCryptoUnit unit) {
-    // We always need an estimate as we do not know the fees.
-    *needEstimate = CRYPTO_TRUE;
+    // We only need a fee estimate if this IS the manager's primary wallet.  Otherwise, we are
+    // transfering some ERC20 token (typically) and the limits are not impacted by the fees, which
+    // are paid in ETH
+    *needEstimate = AS_CRYPTO_BOOLEAN (wallet == cwm->wallet);
 
     return (CRYPTO_TRUE == asMaximum
             ? cryptoWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'

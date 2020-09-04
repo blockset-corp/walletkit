@@ -962,7 +962,8 @@ public class BlocksetSystemClient: SystemClient {
                                         completion: @escaping (Result<SystemClient.TransactionFee, SystemClientError>) -> Void) {
         let json: JSON.Dict = [
             "blockchain_id": blockchainId,
-            "transaction_id": hashAsHex.isEmpty ? "0" : hashAsHex,
+            // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
+            "transaction_id": (hashAsHex.isEmpty ? "0x0000000000000000000000000000000000000000000000000000000000000000" : hashAsHex),
             "data" : transaction.base64EncodedString()
         ]
 
