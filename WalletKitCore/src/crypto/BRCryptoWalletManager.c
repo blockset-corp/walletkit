@@ -1203,13 +1203,17 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                      BRCryptoCookie cookie,
                                      BRCryptoAddress target,
                                      BRCryptoAmount  amount,
-                                     BRCryptoNetworkFee fee) {
+                                     BRCryptoNetworkFee fee,
+                                     size_t attributesCount,
+                                     OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRCryptoFeeBasis feeBasis = manager->handlers->estimateFeeBasis (manager,
                                                                      wallet,
                                                                      cookie,
                                                                      target,
                                                                      amount,
-                                                                     fee);
+                                                                     fee,
+                                                                     attributesCount,
+                                                                     attributes);
     if (NULL != feeBasis)
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
@@ -1835,4 +1839,19 @@ private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle) {
     cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
+}
+
+private_extern BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
+                                                BRCryptoNetworkFee networkFee,
+                                                double costUnits,
+                                                size_t attributesCount,
+                                                OwnershipKept const char **attributeKeys,
+                                                OwnershipKept const char **attributeVals) {
+    return cwm->handlers->recoverFeeBasisFromFeeEstimate (cwm,
+                                                          networkFee,
+                                                          costUnits,
+                                                          attributesCount,
+                                                          attributeKeys,
+                                                          attributeVals);
 }

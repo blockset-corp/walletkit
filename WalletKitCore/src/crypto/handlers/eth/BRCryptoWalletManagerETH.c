@@ -251,7 +251,9 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRCryptoWalletETH walletETH = cryptoWalletCoerce (wallet);
 
     BREthereumFeeBasis ethFeeBasis = {
@@ -280,6 +282,18 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
 
     // Require QRY with cookie - made above
     return NULL;
+}
+
+static BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimateETH (BRCryptoWalletManager cwm,
+                                                   BRCryptoNetworkFee networkFee,
+                                                   double costUnits,
+                                                   size_t attributesCount,
+                                                   OwnershipKept const char **attributeKeys,
+                                                   OwnershipKept const char **attributeVals) {
+    BREthereumFeeBasis feeBasis = ethFeeBasisCreate (ethGasCreate ((uint64_t) costUnits),
+                                                     cryptoNetworkFeeAsETH (networkFee));
+    return cryptoFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit, feeBasis);
 }
 
 static void
@@ -801,7 +815,10 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
-    cryptoWalletManagerRecoverTransferFromTransferBundleETH
+    cryptoWalletManagerRecoverTransferFromTransferBundleETH,
+    cryptoWalletManagerRecoverFeeBasisFromEstimateETH,
+    NULL,//BRCryptoWalletManagerWalletSweeperValidateSupportedHandler
+    NULL,//BRCryptoWalletManagerCreateWalletSweeperHandler
 };
 
 #if 0

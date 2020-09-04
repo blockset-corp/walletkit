@@ -12,6 +12,7 @@
 #define BRCryptoXRP_h
 
 #include "../BRCryptoHandlersExport.h"
+#include "crypto/BRCryptoFeeBasisP.h"
 
 #include "ripple/BRRipple.h"
 
@@ -88,7 +89,16 @@ typedef struct BRCryptoWalletManagerXRPRecord {
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;
 
-// MARK: - Events
+// MARK: - Fee Basis
+
+typedef struct BRCryptoFeeBasisXRPRecord {
+    struct BRCryptoFeeBasisRecord base;
+    BRRippleFeeBasis xrpFeeBasis;
+} *BRCryptoFeeBasisXRP;
+
+private_extern BRCryptoFeeBasis
+cryptoFeeBasisCreateAsXRP (BRCryptoUnit unit,
+                           BRRippleUnitDrops fee);
 
 // MARK: - Support
 

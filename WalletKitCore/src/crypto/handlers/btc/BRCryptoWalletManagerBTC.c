@@ -208,7 +208,9 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
     BRWallet *btcWallet = cryptoWalletAsBTC(wallet);
 
     BRCryptoBoolean overflow = CRYPTO_FALSE;
@@ -646,6 +648,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -663,6 +666,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -680,6 +684,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };

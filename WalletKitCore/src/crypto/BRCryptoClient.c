@@ -788,7 +788,10 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipGiven BRCryptoClientCallbackState callbackState,
                                    BRCryptoBoolean success,
                                    OwnershipKept const char *hash,
-                                   uint64_t costUnits) {
+                                   uint64_t costUnits,
+                                   size_t attributesCount,
+                                   OwnershipKept const char **attributeKeys,
+                                   OwnershipKept const char **attributeVals) {
     assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
 
     BRCryptoStatus status = (CRYPTO_TRUE == success ? CRYPTO_SUCCESS : CRYPTO_ERROR_FAILED);
@@ -798,7 +801,12 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+    BRCryptoFeeBasis feeBasis = cryptoWalletManagerRecoverFeeBasisFromEstimate(cwm,
+                                                                               networkFee,
+                                                                               costFactor,
+                                                                               attributesCount,
+                                                                               attributeKeys,
+                                                                               attributeVals);
 
     cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,

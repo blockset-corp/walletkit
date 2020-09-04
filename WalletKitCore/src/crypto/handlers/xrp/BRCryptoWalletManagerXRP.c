@@ -168,11 +168,12 @@ cryptoWalletManagerEstimateFeeBasisXRP (BRCryptoWalletManager manager,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
-    
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
+    UInt256 value = cryptoAmountGetValue (cryptoNetworkFeeGetPricePerCostFactor (networkFee));
+    BRRippleUnitDrops fee = value.u64[0];
+    return cryptoFeeBasisCreateAsXRP (wallet->unitForFee, fee);
 }
 
 static void
@@ -265,6 +266,18 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     //TODO:XRP announce
 }
 
+static BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXRP (BRCryptoWalletManager cwm,
+                                                      BRCryptoNetworkFee networkFee,
+                                                      double costUnits,
+                                                      size_t attributesCount,
+                                                      OwnershipKept const char **attributeKeys,
+                                                      OwnershipKept const char **attributeVals) {
+    // Not supported
+    assert (0);
+    return NULL;
+}
+
 extern BRCryptoWalletSweeperStatus
 cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
@@ -317,6 +330,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerEstimateFeeBasisXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
+    cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXRP,
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,
     cryptoWalletManagerCreateWalletSweeperXRP
 };

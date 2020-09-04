@@ -154,7 +154,7 @@ public protocol SystemClient {
     
     typealias TransactionFee = (
         costUnits: UInt64,
-        foo: String
+        properties: Dictionary<String,String>?
     )
     
     func estimateTransactionFee (blockchainId: String,

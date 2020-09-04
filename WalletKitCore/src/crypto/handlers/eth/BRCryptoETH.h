@@ -215,15 +215,21 @@ private_extern BRCryptoCurrency
 cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,
                                      BREthereumToken token);
 
-// MARK: - Support
+// MARK: - Fee Basis
+
+typedef struct BRCryptoFeeBasisETHRecord {
+    struct BRCryptoFeeBasisRecord base;
+    BREthereumFeeBasis ethFeeBasis;
+} *BRCryptoFeeBasisETH;
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
                            BREthereumFeeBasis feeBasis);
 
-
 private_extern BREthereumFeeBasis
 cryptoFeeBasisAsETH (BRCryptoFeeBasis feeBasis);
+
+// MARK: - Support
 
 private_extern BRCryptoHash
 cryptoHashCreateAsETH (BREthereumHash hash);
