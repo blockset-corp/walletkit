@@ -180,6 +180,18 @@ extern "C" {
     extern BRCryptoFeeBasis
     cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer);
 
+    ///
+    /// Return the transfer's fee.  If the transfer's fee is paid in a different currency from the
+    /// transfer's amount, such as an ERC20 transfer being paid in ETHER, then NULL is returned.  If
+    /// the transfers is not SEND by our User, then NULL is returned.
+    ///
+    /// TODO: The Transfer's Fee should be independent of the direction
+    ///
+    /// @param transfer the transfer
+    ///
+    extern BRCryptoAmount
+    cryptoTransferGetFee (BRCryptoTransfer transfer);
+
     extern size_t
     cryptoTransferGetAttributeCount (BRCryptoTransfer transfer);
 

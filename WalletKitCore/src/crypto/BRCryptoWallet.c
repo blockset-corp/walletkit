@@ -235,7 +235,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = cryptoTransferTake (transfer) }
         });
-        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirected(transfer));
+        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
      }
     pthread_mutex_unlock (&wallet->lock);
 }
@@ -252,7 +252,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
                 CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                 { .transfer = cryptoTransferTake (transfer) }
             });
-            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirected(transfer));
+            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
             break;
         }
     }
