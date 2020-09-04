@@ -568,11 +568,10 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
                                                                   logGetStatus (log));
 
         // Log becomes the new basis for transfer
-#ifdef REFACTOR
-        // release prior basis
-#else
-        assert (NULL == transferETH->basis.u.log);
-#endif
+        assert  (TRANSFER_BASIS_LOG == transferETH->basis.type);
+        assert (NULL != transferETH->basis.u.log);
+        logRelease(transferETH->basis.u.log);
+
         transferETH->basis.type = TRANSFER_BASIS_LOG;
         transferETH->basis.u.log = log;               // ownership give
     }

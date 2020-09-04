@@ -662,8 +662,9 @@ public final class System {
     }
 
     func configure (network: Network, feesFrom blockchainModel: SystemClient.Blockchain) {
-        // The feeUnit is always the network currency's base unit
-        guard let feeUnit = network.baseUnitFor (currency: network.currency)
+        guard let feeUnitForParse = network.baseUnitFor (currency: network.currency),
+            // The feeUnit is always the network currency's default unit
+            let feeUnit = network.defaultUnitFor(currency: network.currency)
             else { return }
 
         // Extract the network fees from the blockchainModel
@@ -671,7 +672,8 @@ public final class System {
             // Well, quietly ignore a fee if we can't parse the amount.
             .compactMap { (fee: SystemClient.BlockchainFee) -> NetworkFee? in
                 let timeInterval  = fee.confirmationTimeInMilliseconds
-                return Amount.create (string: fee.amount, unit: feeUnit)
+                return Amount.create (string: fee.amount, unit: feeUnitForParse)
+                    .map { $0.convert(to: feeUnit)! }
                     .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
                                        pricePerCostFactor: $0) }
         }

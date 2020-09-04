@@ -780,7 +780,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
         }
 
         // Create the Network Fees
-        BRCryptoUnit feeUnit = cryptoNetworkGetUnitAsBase (network, network->currency);
+        BRCryptoUnit feeUnit = cryptoNetworkGetUnitAsDefault (network, network->currency);
         for (size_t networkFeeIndex = 0; networkFeeIndex < NUMBER_OF_FEES; networkFeeIndex++) {
             struct NetworkFeeSpecification *networkFeeSpec = &networkFeeSpecifications[networkFeeIndex];
             if (0 == strcmp (networkSpec->networkId, networkFeeSpec->networkId)) {
