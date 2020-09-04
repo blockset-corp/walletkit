@@ -162,7 +162,8 @@ cryptoClientQRYManagerCreate (BRCryptoClient client,
     qry->sync.begBlockNumber = earliestBlockNumber;
     qry->sync.endBlockNumber = MAX (earliestBlockNumber, currentBlockNumber);
     qry->sync.completed = true;
-    qry->sync.success = false;
+    qry->sync.success   = false;
+    qry->sync.unbounded = CRYPTO_CLIENT_QRY_IS_UNBOUNDED;
 
     // gwm->syncContext  = syncContext;
     // gwm->syncCallback = syncCallback;
@@ -605,7 +606,9 @@ cryptoClientQRYRequestTransactions (BRCryptoClientQRYManager qry,
                                      (const char **) addressesEncoded,
                                      array_count(addressesEncoded),
                                      qry->sync.begBlockNumber,
-                                     qry->sync.endBlockNumber);
+                                     (qry->sync.unbounded
+                                      ? BLOCK_HEIGHT_UNBOUND_VALUE
+                                      : qry->sync.endBlockNumber));
 
     cryptoClientQRYReleaseAddresses (addressesEncoded);
 }
@@ -672,7 +675,9 @@ cryptoClientQRYRequestTransfers (BRCryptoClientQRYManager qry,
                                      (const char **) addressesEncoded,
                                      array_count(addressesEncoded),
                                      qry->sync.begBlockNumber,
-                                     qry->sync.endBlockNumber);
+                                    (qry->sync.unbounded
+                                     ? BLOCK_HEIGHT_UNBOUND_VALUE
+                                     : qry->sync.endBlockNumber));
 
     cryptoClientQRYReleaseAddresses (addressesEncoded);
 }
