@@ -210,6 +210,7 @@ struct BRCryptoClientQRYManagerRecord {
     struct {
         bool completed;
         bool success;
+        bool unbounded;     // true if `endBlockNumber` should be unbounded on request
         BRCryptoBlockNumber begBlockNumber;
         BRCryptoBlockNumber endBlockNumber;
         size_t rid;
@@ -218,6 +219,7 @@ struct BRCryptoClientQRYManagerRecord {
     size_t requestId;
 };
 
+#define CRYPTO_CLIENT_QRY_IS_UNBOUNDED            (true)
 
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,
