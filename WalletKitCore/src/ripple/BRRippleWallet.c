@@ -243,6 +243,10 @@ extern void rippleWalletAddTransfer (BRRippleWallet wallet,
         rippleAddressFree (source);
         rippleAddressFree (target);
 
+//        printf ("XRP: Add Transfer: Source: %s, Sequence: %d\n",
+//                (isSource ? "Yes" : "No"),
+//                rippleTransferGetSequence(transfer));
+
         rippleWalletUpdateSequence(wallet, accountAddress);
         rippleAddressFree (accountAddress);
     }

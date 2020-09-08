@@ -23,11 +23,12 @@ rippleTransferCreateNew(BRRippleAddress from, BRRippleAddress to, BRRippleUnitDr
 
 extern BRRippleTransfer /* caller must free - rippleTransferFree */
 rippleTransferCreate(BRRippleAddress from, BRRippleAddress to,
-                    BRRippleUnitDrops amount, // For now assume XRP drops.
-                    BRRippleUnitDrops fee,
-                    BRRippleTransactionHash hash,
-                    uint64_t timestamp, uint64_t blockHeight,
-                    int error);
+                     BRRippleUnitDrops amount, // For now assume XRP drops.
+                     BRRippleUnitDrops fee,
+                     BRRippleTransactionHash hash,
+                     BRRippleTransaction transaction, // nullable
+                     uint64_t timestamp, uint64_t blockHeight,
+                     int error);
 
 extern BRRippleTransfer rippleTransferClone (BRRippleTransfer transfer);
 extern void rippleTransferFree(BRRippleTransfer transfer);
@@ -54,4 +55,6 @@ extern int rippleTransferHasSource (BRRippleTransfer transfer,
                                     BRRippleAddress source);
 
 extern uint64_t rippleTransferGetBlockHeight (BRRippleTransfer transfer);
+extern BRRippleSequence rippleTransferGetSequence (BRRippleTransfer transfer);
+
 #endif

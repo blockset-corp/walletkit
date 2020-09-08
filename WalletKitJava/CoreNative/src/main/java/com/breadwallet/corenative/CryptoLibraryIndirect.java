@@ -42,7 +42,7 @@ public final class CryptoLibraryIndirect {
 
     public static void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
                                                   String hash, String uids, String sourceAddr, String targetAddr,
-                                                  String amount, String currency, String fee,
+                                                  String amount, String currency, String fee, String bytes,
                                                   long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
                                                   SizeT attributesCount,
                                                   String[] attributeKeys,
@@ -51,7 +51,7 @@ public final class CryptoLibraryIndirect {
         attributeVals = attributeVals.length == 0 ? null : attributeVals;
         INSTANCE.cwmAnnounceGetTransferItem(cwm, callbackState, status,
                 hash, uids, sourceAddr, targetAddr,
-                amount, currency, fee,
+                amount, currency, fee, bytes,
                 blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
     }
@@ -68,7 +68,7 @@ public final class CryptoLibraryIndirect {
 
         void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
                                         String hash, String uids, String sourceAddr, String targetAddr,
-                                        String amount, String currency, String fee,
+                                        String amount, String currency, String fee, String bytes,
                                         long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
                                         SizeT attributesCount,
                                         String[] attributeKeys,

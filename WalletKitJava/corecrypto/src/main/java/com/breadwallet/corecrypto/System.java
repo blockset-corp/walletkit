@@ -1738,7 +1738,7 @@ final class System implements com.breadwallet.crypto.System {
                         system.query.getTransactions(walletManager.getNetwork().getUids(), addresses,
                                 begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                false,
+                                true,
                                 false,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
@@ -1755,6 +1755,9 @@ final class System implements com.breadwallet.crypto.System {
                                                 UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
                                                 UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
                                                 String blockHash = transaction.getHash();
+                                                String transactionBytes = transaction.getRaw()
+                                                        .transform((data) -> Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX).encode(data).orNull())
+                                                        .orNull();
 
                                                 BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
 
@@ -1774,6 +1777,7 @@ final class System implements com.breadwallet.crypto.System {
                                                             o.o1.getAmount().getAmount(),
                                                             o.o1.getAmount().getCurrencyId(),
                                                             o.o2,
+                                                            transactionBytes,
                                                             blockTimestamp,
                                                             blockHeight,
                                                             blockConfirmations,
