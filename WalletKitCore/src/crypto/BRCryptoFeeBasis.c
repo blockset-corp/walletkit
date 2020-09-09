@@ -29,10 +29,11 @@ cryptoFeeBasisAllocAndInit (size_t sizeInBytes,
     feeBasis->type = type;
     feeBasis->handlers = cryptoHandlersLookup (type)->feeBasis;
     feeBasis->sizeInBytes = sizeInBytes;
+    feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
     
     feeBasis->unit = cryptoUnitTake (unit);
     
-    feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
+    if (NULL != createCallback) createCallback (createContext, feeBasis);
 
     return feeBasis;
 }
