@@ -79,6 +79,7 @@ BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersHBAR = {
     cryptoFeeBasisReleaseHBAR,
     cryptoFeeBasisGetCostFactorHBAR,
     cryptoFeeBasisGetPricePerCostFactorHBAR,
-    cryptoFeeBasisGetFeeHBAR
+    cryptoFeeBasisGetFeeHBAR,
+    cryptoFeeBasisIsEqualHBAR
 };
 
