@@ -1630,7 +1630,6 @@ extension System {
                                                 res.resolve(
                                                     success: {
                                                         var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
-                                                            //.map { UnsafeMutablePointer<BRCryptoClientTransactionBundle?> ($0) }
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                                                     failure: { (_) in
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
