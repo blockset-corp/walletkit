@@ -50,10 +50,8 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      tezosTransferGetAmount (xtzTransfer));
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsXTZ (unitForFee,
-                                                        CRYPTO_FALSE,
-                                                        tezosTransferGetFee (xtzTransfer));
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXTZ (unitForFee,
+                                                                    tezosTransferGetFeeBasis (xtzTransfer));
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXTZ (tezosTransferGetSource (xtzTransfer));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXTZ (tezosTransferGetTarget (xtzTransfer));

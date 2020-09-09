@@ -23,6 +23,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersBTC,
         &cryptoWalletSweeperHandlersBTC,
         &cryptoPaymentProtocolHandlersBTC,
+        &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBTC
     },
 
@@ -34,6 +35,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersBCH,
         &cryptoWalletSweeperHandlersBCH,
         &cryptoPaymentProtocolHandlersBTC,
+        &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBCH
     },
 
@@ -45,6 +47,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersBSV,
         &cryptoWalletSweeperHandlersBSV,
         &cryptoPaymentProtocolHandlersBTC,
+        &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBSV
     },
 
@@ -56,6 +59,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersETH,
         NULL,//BRCryptoWalletSweeperHandlers not supported
         NULL,//BRCryptoPaymentProtocolHandlers not supported
+        &cryptoFeeBasisHandlersETH,
         &cryptoWalletManagerHandlersETH
     },
 
@@ -67,6 +71,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersXRP,
         NULL,//BRCryptoWalletSweeperHandlers not supported
         NULL,//BRCryptoPaymentProtocolHandlers not supported
+        &cryptoFeeBasisHandlersXRP,
         &cryptoWalletManagerHandlersXRP
     },
 
@@ -78,6 +83,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersHBAR,
         NULL,//BRCryptoWalletSweeperHandlers not supported
         NULL,//BRCryptoPaymentProtocolHandlers not supported
+        &cryptoFeeBasisHandlersHBAR,
         &cryptoWalletManagerHandlersHBAR
     },
     
@@ -89,6 +95,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersXTZ,
         NULL,//BRCryptoWalletSweeperHandlers not supported
         NULL,//BRCryptoPaymentProtocolHandlers not supported
+        &cryptoFeeBasisHandlersXTZ,
         &cryptoWalletManagerHandlersXTZ
     },
 };

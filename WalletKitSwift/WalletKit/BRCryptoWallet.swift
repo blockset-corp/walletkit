@@ -592,11 +592,11 @@ public final class Wallet: Equatable {
     ///
     /// - Returns: An optional TransferFeeBasis
     ///
-    public func createTransferFeeBasis (pricePerCostFactor: Amount,
-                                        costFactor: Double) -> TransferFeeBasis? {
-        return cryptoWalletCreateFeeBasis (core, pricePerCostFactor.core, costFactor)
-            .map { TransferFeeBasis (core: $0, take: false) }
-    }
+//    public func createTransferFeeBasis (pricePerCostFactor: Amount,
+//                                        costFactor: Double) -> TransferFeeBasis? {
+//        return cryptoWalletCreateFeeBasis (core, pricePerCostFactor.core, costFactor)
+//            .map { TransferFeeBasis (core: $0, take: false) }
+//    }
     
     ///
     /// Create a wallet

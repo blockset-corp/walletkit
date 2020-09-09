@@ -150,8 +150,8 @@ cryptoWalletManagerEstimateFeeBasisXTZ (BRCryptoWalletManager manager,
                                         BRCryptoNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept BRCryptoTransferAttribute *attributes) {
-    //BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis ();
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (networkFee->pricePerCostFactor, 1.0);
+    BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis ();
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
     BRCryptoTransfer transfer = cryptoWalletCreateTransferXTZ (wallet,
@@ -297,6 +297,17 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     cryptoWalletSetCounterXTZ (wallet, counter);
 }
 
+static BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
+                                                      BRCryptoNetworkFee networkFee,
+                                                      double costUnits,
+                                                      size_t attributesCount,
+                                                      OwnershipKept const char **attributeKeys,
+                                                      OwnershipKept const char **attributeVals) {
+    //TODO:TEZOS
+    return NULL;
+}
+
 extern BRCryptoWalletSweeperStatus
 cryptoWalletManagerWalletSweeperValidateSupportedXTZ (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
@@ -349,6 +360,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ = {
     cryptoWalletManagerEstimateFeeBasisXTZ,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXTZ,
     cryptoWalletManagerRecoverTransferFromTransferBundleXTZ,
+    cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ,
     cryptoWalletManagerWalletSweeperValidateSupportedXTZ,
     cryptoWalletManagerCreateWalletSweeperXTZ
 };

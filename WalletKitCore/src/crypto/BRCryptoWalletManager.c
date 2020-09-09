@@ -1840,3 +1840,18 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle) {
     cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
 }
+
+private_extern BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
+                                                BRCryptoNetworkFee networkFee,
+                                                double costUnits,
+                                                size_t attributesCount,
+                                                OwnershipKept const char **attributeKeys,
+                                                OwnershipKept const char **attributeVals) {
+    return cwm->handlers->recoverFeeBasisFromFeeEstimate (cwm,
+                                                          networkFee,
+                                                          costUnits,
+                                                          attributesCount,
+                                                          attributeKeys,
+                                                          attributeVals);
+}

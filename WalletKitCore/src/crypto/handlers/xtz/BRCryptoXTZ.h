@@ -96,7 +96,6 @@ cryptoWalletGetCounterXTZ (BRCryptoWallet wallet);
 private_extern void
 cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter);
 
-
 // MARK: - Wallet Manager
 
 typedef struct BRCryptoWalletManagerXTZRecord {
@@ -105,7 +104,20 @@ typedef struct BRCryptoWalletManagerXTZRecord {
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ;
 
-// MARK: - Events
+// MARK: - Fee Basis
+
+typedef struct BRCryptoFeeBasisXTZRecord {
+    struct BRCryptoFeeBasisRecord base;
+    BRTezosFeeBasis xtzFeeBasis;
+} *BRCryptoFeeBasisXTZ;
+
+private_extern BRCryptoFeeBasis
+cryptoFeeBasisCreateAsXTZ (BRCryptoUnit unit,
+                           BRTezosFeeBasis xtzFeeBasis);
+
+private_extern BRCryptoFeeBasisXTZ
+cryptoFeeBasisCoerceXTZ (BRCryptoFeeBasis feeBasis);
+
 
 // MARK: - Support
 

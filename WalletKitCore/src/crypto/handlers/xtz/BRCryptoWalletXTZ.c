@@ -53,8 +53,7 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
     BRTezosUnitMutez maxBalanceDrops = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
 
     BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis ();
-    BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreate (cryptoAmountCreateInteger ((int64_t) tezosFeeBasisGetPricePerCostFactor(&feeBasisXTZ), unitForFee),
-                                                         (double) tezosFeeBasisGetCostFactor(&feeBasisXTZ));
+    BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
 
     BRCryptoWalletCreateContextXTZ contextXTZ = {
         xtzAccount,
@@ -214,12 +213,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     BRTezosUnitMutez mutez = (BRTezosUnitMutez) value.u64[0];
     int64_t counter = walletXTZ->counter;
 
-    BRTezosFeeBasis feeBasis;
-    feeBasis.gasLimit = 0; // will be determined by fee estimation
-    feeBasis.storageLimit = 0; // will be determined by fee estimation
-    int overflow = 0;
-    feeBasis.fee = (BRTezosUnitMutez) uint64Coerce(cryptoAmountGetValue(estimatedFeeBasis->pricePerCostFactor), &overflow);
-    assert(overflow == 0);
+    BRTezosFeeBasis feeBasis = cryptoFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
     
     bool delegationOp = false;
     

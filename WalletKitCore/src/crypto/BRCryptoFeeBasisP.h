@@ -18,11 +18,53 @@
 extern "C" {
 #endif
 
+typedef void
+(*BRCryptoFeeBasisReleaseHandler) (BRCryptoFeeBasis feeBasis);
+
+typedef double
+(*BRCryptoFeeBasisGetCostFactorHandler) (BRCryptoFeeBasis feeBasis);
+
+typedef BRCryptoAmount
+(*BRCryptoFeeBasisGetPricePerCostFactorHandler) (BRCryptoFeeBasis feeBasis);
+
+typedef BRCryptoAmount
+(*BRCryptoFeeBasisGetFeeHandler) (BRCryptoFeeBasis feeBasis);
+
+typedef BRCryptoBoolean
+(*BRCryptoFeeBasisIsEqualHandler) (BRCryptoFeeBasis feeBasis1,
+                                   BRCryptoFeeBasis feeBasis2);
+
+typedef struct {
+    BRCryptoFeeBasisReleaseHandler release;
+    BRCryptoFeeBasisGetCostFactorHandler getCostFactor;
+    BRCryptoFeeBasisGetPricePerCostFactorHandler getPricePerCostFactor;
+    BRCryptoFeeBasisGetFeeHandler getFee;
+    BRCryptoFeeBasisIsEqualHandler isEqual;
+} BRCryptoFeeBasisHandlers;
+
 struct BRCryptoFeeBasisRecord {
-    BRCryptoAmount pricePerCostFactor;
-    double costFactor;
+    BRCryptoBlockChainType type;
+    const BRCryptoFeeBasisHandlers *handlers;
     BRCryptoRef ref;
+    size_t sizeInBytes;
+    
+    BRCryptoUnit unit;
 };
+
+typedef void *BRCryptoFeeBasisCreateContext;
+typedef void (*BRCryptoFeeBasisCreateCallback) (BRCryptoFeeBasisCreateContext context,
+                                                BRCryptoFeeBasis feeBasis);
+
+private_extern BRCryptoFeeBasis
+cryptoFeeBasisAllocAndInit (size_t sizeInBytes,
+                            BRCryptoBlockChainType type,
+                            BRCryptoUnit unit,
+                            BRCryptoFeeBasisCreateContext  createContext,
+                            BRCryptoFeeBasisCreateCallback createCallback);
+
+private_extern BRCryptoBlockChainType
+cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis);
+
 
 #ifdef __cplusplus
 }

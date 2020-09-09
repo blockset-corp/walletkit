@@ -648,6 +648,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -665,6 +666,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -682,6 +684,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };

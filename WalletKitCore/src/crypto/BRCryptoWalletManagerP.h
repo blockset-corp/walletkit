@@ -104,6 +104,14 @@ typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
+typedef BRCryptoFeeBasis
+(*BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (BRCryptoWalletManager cwm,
+                                                               BRCryptoNetworkFee networkFee,
+                                                               double costUnits,
+                                                               size_t attributesCount,
+                                                               OwnershipKept const char **attributeKeys,
+                                                               OwnershipKept const char **attributeVals);
+
 typedef BRCryptoWalletSweeperStatus
 (*BRCryptoWalletManagerWalletSweeperValidateSupportedHandler) (BRCryptoWalletManager cwm,
                                                                BRCryptoWallet wallet,
@@ -127,6 +135,7 @@ typedef struct {
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler recoverFeeBasisFromFeeEstimate;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
@@ -261,6 +270,15 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 //                                          BRCryptoWallet wallet,
 //                                          BRCryptoWalletEvent event);
 //
+
+
+private_extern BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
+                                                BRCryptoNetworkFee networkFee,
+                                                double costUnits,
+                                                size_t attributesCount,
+                                                OwnershipKept const char **attributeKeys,
+                                                OwnershipKept const char **attributeVals);
 
 static inline void
 cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,

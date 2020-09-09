@@ -285,6 +285,18 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
     return NULL;
 }
 
+static BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimateETH (BRCryptoWalletManager cwm,
+                                                   BRCryptoNetworkFee networkFee,
+                                                   double costUnits,
+                                                   size_t attributesCount,
+                                                   OwnershipKept const char **attributeKeys,
+                                                   OwnershipKept const char **attributeVals) {
+    BREthereumFeeBasis feeBasis = ethFeeBasisCreate (ethGasCreate ((uint64_t) costUnits),
+                                                     cryptoNetworkFeeAsETH (networkFee));
+    return cryptoFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit, feeBasis);
+}
+
 static void
 cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
                                            BRCryptoCurrency currency,
@@ -804,7 +816,10 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
-    cryptoWalletManagerRecoverTransferFromTransferBundleETH
+    cryptoWalletManagerRecoverTransferFromTransferBundleETH,
+    cryptoWalletManagerRecoverFeeBasisFromEstimateETH,
+    NULL,//BRCryptoWalletManagerWalletSweeperValidateSupportedHandler
+    NULL,//BRCryptoWalletManagerCreateWalletSweeperHandler
 };
 
 #if 0

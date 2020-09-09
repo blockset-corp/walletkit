@@ -268,6 +268,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
     }
 
+    //TODO:FEEBASIS
+    /*
     func updateFeeBasisETH () {
         guard let pricePerCostFactorUnit = wallet.manager.network.baseUnitFor (currency: wallet.unitForFee.currency)
             else { return }
@@ -316,6 +318,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
             }
         }
     }
+ */
+    
 
     @IBAction func doUseCoinbase(_ sender: Any) {
         recvField.text = "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg";

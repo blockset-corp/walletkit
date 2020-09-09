@@ -138,10 +138,7 @@ extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer)
 }
 
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer) {
-    return (BRTezosFeeBasis) {
-        transfer->fee,
-        1
-    };
+    return tezosTransactionGetFeeBasis (transfer->transaction);
 }
 
 extern BRTezosTransaction tezosTransferGetTransaction(BRTezosTransfer transfer)
