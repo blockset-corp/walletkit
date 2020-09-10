@@ -489,12 +489,14 @@ static BRCryptoClientCallbackState
 cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
                                                        BRCryptoCookie cookie,
                                                        OwnershipKept BRCryptoNetworkFee networkFee,
+                                                       OwnershipKept BRCryptoFeeBasis initialFeeBasis,
                                                        size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
     state->u.estimateTransactionFee.hash   = cryptoHashTake (hash);
     state->u.estimateTransactionFee.cookie = cookie;
-    state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake(networkFee);
+    state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake (networkFee);
+    state->u.estimateTransactionFee.feeBasis = cryptoFeeBasisTake (initialFeeBasis);
 
     return state;
 }
@@ -517,6 +519,7 @@ cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
         case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
             cryptoHashGive (state->u.estimateTransactionFee.hash);
             cryptoNetworkFeeGive (state->u.estimateTransactionFee.networkFee);
+            cryptoFeeBasisGive (state->u.estimateTransactionFee.feeBasis);
             break;
 
         default:
@@ -765,7 +768,8 @@ extern void
 cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                     BRCryptoCookie   cookie,
                                     OwnershipKept BRCryptoTransfer transfer,
-                                    OwnershipKept BRCryptoNetworkFee networkFee) {
+                                    OwnershipKept BRCryptoNetworkFee networkFee,
+                                    OwnershipKept BRCryptoFeeBasis initialFeeBasis) {
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
     if (NULL == cwm) return;
 
@@ -779,6 +783,7 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
     BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
                                                                                                        cookie,
                                                                                                        networkFee,
+                                                                                                       initialFeeBasis,
                                                                                                        qry->requestId++);
 
     qry->client.funcEstimateTransactionFee (qry->client.context,
@@ -804,15 +809,19 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     BRCryptoCookie cookie = callbackState->u.estimateTransactionFee.cookie;
 
     BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
+    BRCryptoFeeBasis initialFeeBasis = callbackState->u.estimateTransactionFee.feeBasis;
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
-    BRCryptoFeeBasis feeBasis = cryptoWalletManagerRecoverFeeBasisFromEstimate(cwm,
-                                                                               networkFee,
-                                                                               costFactor,
-                                                                               attributesCount,
-                                                                               attributeKeys,
-                                                                               attributeVals);
+    BRCryptoFeeBasis feeBasis = NULL;
+    if (CRYPTO_TRUE == success)
+        feeBasis = cryptoWalletManagerRecoverFeeBasisFromFeeEstimate(cwm,
+                                                                     networkFee,
+                                                                     initialFeeBasis,
+                                                                     costFactor,
+                                                                     attributesCount,
+                                                                     attributeKeys,
+                                                                     attributeVals);
 
     cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,

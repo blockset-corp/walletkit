@@ -49,10 +49,10 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
                          BRTezosAccount xtzAccount) {
     int hasMinBalance;
     int hasMaxBalance;
-    BRTezosUnitMutez minBalanceDrops = tezosAccountGetBalanceLimit (xtzAccount, 0, &hasMinBalance);
-    BRTezosUnitMutez maxBalanceDrops = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
+    BRTezosUnitMutez minBalance = tezosAccountGetBalanceLimit (xtzAccount, 0, &hasMinBalance);
+    BRTezosUnitMutez maxBalance = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
 
-    BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis ();
+    BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis (TEZOS_DEFAULT_MUTEZ_PER_BYTE);
     BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
 
     BRCryptoWalletCreateContextXTZ contextXTZ = {
@@ -65,8 +65,8 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      hasMinBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL,
+                                                      hasMinBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, minBalance) : NULL,
+                                                      hasMaxBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, maxBalance) : NULL,
                                                       feeBasis,
                                                       &contextXTZ,
                                                       cryptoWalletCreateCallbackXTZ);
@@ -194,6 +194,7 @@ cryptoWalletValidateTransferAttributeXTZ (BRCryptoWallet wallet,
     return error;
 }
 
+// create for send
 extern BRCryptoTransfer
 cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
@@ -206,12 +207,10 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
                                BRCryptoUnit unitForFee) {
     BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
     
-    UInt256 value = cryptoAmountGetValue (amount);
-    
     BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
     BRTezosAddress xtzTarget  = cryptoAddressAsXTZ (target);
-    BRTezosUnitMutez mutez = (BRTezosUnitMutez) value.u64[0];
-    int64_t counter = walletXTZ->counter;
+    BRTezosUnitMutez mutez = tezosMutezCreate (amount);
+    int64_t counter = walletXTZ->counter + 1;
 
     BRTezosFeeBasis feeBasis = cryptoFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
     
@@ -235,7 +234,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
                                                           counter,
                                                           delegationOp);
 
-    tezosAddressFree(source);
+    tezosAddressFree (source);
     
     BRCryptoTransfer transfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
                                                            unit,

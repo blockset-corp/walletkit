@@ -25,7 +25,6 @@ struct BRTezosTransactionRecord {
     
     BRTezosHash hash;
     BRTezosAddress source;
-    BRTezosUnitMutez fee; //TODO: move into feeBasis?
     BRTezosFeeBasis feeBasis;
     
     BRTezosOperationData operation;
@@ -62,7 +61,6 @@ tezosTransactionCreateTransaction (BRTezosAddress source,
     transaction->operation.u.transaction.amount = amount;
     transaction->operation.u.transaction.target = tezosAddressClone (target);
     transaction->feeBasis = feeBasis;
-    transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
     transaction->blockHeight = 0;
     transaction->counter = counter;
     return transaction;
@@ -78,7 +76,6 @@ tezosTransactionCreateDelegation (BRTezosAddress source,
     transaction->operation.kind = TEZOS_OP_DELEGATION;
     transaction->operation.u.delegation.target = tezosAddressClone (target);
     transaction->feeBasis = feeBasis;
-    transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
     transaction->blockHeight = 0;
     transaction->counter = counter;
     return transaction;
@@ -94,52 +91,10 @@ tezosTransactionCreateReveal (BRTezosAddress source,
     transaction->operation.kind = TEZOS_OP_REVEAL;
     memcpy(transaction->operation.u.reveal.publicKey, pubKey, TEZOS_PUBLIC_KEY_SIZE);
     transaction->feeBasis = feeBasis;
-    transaction->fee = tezosFeeBasisGetFee (&transaction->feeBasis);
     transaction->blockHeight = 0;
     transaction->counter = counter;
     return transaction;
 }
-
-
-//
-//extern BRTezosTransaction tezosTransactionCreate (BRTezosAddress source,
-//                                                    BRTezosAddress target,
-//                                                    BRTezosUnitMutez amount,
-//                                                    BRTezosUnitMutez fee,
-//                                                    const char * txID,
-//                                                    BRTezosHash hash,
-//                                                    uint64_t timestamp, uint64_t blockHeight,
-//                                                    int error)
-//{
-//    // This is an existing transaction - it must have a transaction ID
-//    assert(source);
-//    assert(target);
-//    BRTezosTransaction transaction = calloc (1, sizeof(struct BRTezosTransactionRecord));
-//    transaction->source = tezosAddressClone (source);
-//    transaction->target = tezosAddressClone (target);
-//    transaction->amount = amount;
-//    transaction->fee = fee;
-//    transaction->feeBasis.pricePerCostFactor = fee;
-//    transaction->feeBasis.costFactor = 1;
-//
-//    // Parse the transactionID
-//    if (txID && strlen(txID) > 1) {
-//        transaction->transactionId = (char*) calloc(1, strlen(txID) + 1);
-//        strcpy(transaction->transactionId, txID);
-//        // Get the timestamp from the transaction id
-//        transaction->timeStamp = tezosParseTimeStamp(txID);
-//    } else {
-//        // It would great to be able to get the timestamp from the txID - but I guess
-//        // we just have to use whatever came from blockset
-//        transaction->timeStamp.seconds = (int64_t) timestamp;
-//    }
-//
-//    transaction->hash = hash;
-//    transaction->blockHeight = blockHeight;
-//    transaction->error = error;
-//
-//    return transaction;
-//}
 
 extern BRTezosTransaction
 tezosTransactionClone (BRTezosTransaction transaction) {
@@ -147,7 +102,6 @@ tezosTransactionClone (BRTezosTransaction transaction) {
     BRTezosTransaction newTransaction = calloc (1, sizeof(struct BRTezosTransactionRecord));
     newTransaction->source = tezosTransactionGetSource(transaction);
     newTransaction->operation = tezosTransactionGetOperationData (transaction);
-    newTransaction->fee = transaction->fee;
     newTransaction->feeBasis = transaction->feeBasis;
     newTransaction->hash = transaction->hash;
     newTransaction->blockHeight = transaction->blockHeight;
@@ -231,6 +185,7 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
     memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
     transaction->signedBytes = serializedBytes;
+    transaction->feeBasis.u.estimate.sizeInBytes = serializedBytes.size;
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
@@ -260,6 +215,7 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
     transaction->signedBytes = signedBytes;
+    transaction->feeBasis.u.estimate.sizeInBytes = signedBytes.size;
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
@@ -296,7 +252,7 @@ extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transactio
 
 extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction){
     assert(transaction);
-    return transaction->fee;
+    return tezosFeeBasisGetFee (&transaction->feeBasis);
 }
 
 extern BRTezosUnitMutez tezosTransactionGetAmount(BRTezosTransaction transaction){

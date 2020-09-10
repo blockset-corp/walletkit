@@ -128,6 +128,9 @@ cryptoAmountCreateAsXTZ (BRCryptoUnit unit,
                          BRCryptoBoolean isNegative,
                          BRTezosUnitMutez value);
 
+private_extern BRTezosUnitMutez
+tezosMutezCreate (BRCryptoAmount amount);
+
 private_extern BRCryptoHash
 cryptoHashCreateAsXTZ (BRTezosHash hash);
 

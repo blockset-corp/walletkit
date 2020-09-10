@@ -23,6 +23,12 @@ cryptoAmountCreateAsXTZ (BRCryptoUnit unit,
     return cryptoAmountCreate (unit, isNegative, uint256Create ((uint64_t)value));
 }
 
+private_extern BRTezosUnitMutez
+tezosMutezCreate (BRCryptoAmount amount) {
+    UInt256 value = cryptoAmountGetValue (amount);
+    return value.u64[0];
+}
+
 // MARK: - Hash
 
 static uint32_t

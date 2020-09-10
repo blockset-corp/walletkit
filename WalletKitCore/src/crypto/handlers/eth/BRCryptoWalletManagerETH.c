@@ -260,12 +260,14 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
         FEE_BASIS_GAS,
         { .gas = { walletETH->ethGasLimit, cryptoNetworkFeeAsETH (networkFee) }}
     };
+    
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis);
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
     BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (wallet,
                                                                target,
                                                                amount,
-                                                               cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis),
+                                                               feeBasis,
                                                                attributesCount,
                                                                attributes,
                                                                currency,
@@ -277,21 +279,24 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
     cryptoClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
-                                        networkFee);
+                                        networkFee,
+                                        feeBasis);
 
     cryptoTransferGive (transfer);
+    cryptoFeeBasisGive (feeBasis);
 
     // Require QRY with cookie - made above
     return NULL;
 }
 
 static BRCryptoFeeBasis
-cryptoWalletManagerRecoverFeeBasisFromEstimateETH (BRCryptoWalletManager cwm,
-                                                   BRCryptoNetworkFee networkFee,
-                                                   double costUnits,
-                                                   size_t attributesCount,
-                                                   OwnershipKept const char **attributeKeys,
-                                                   OwnershipKept const char **attributeVals) {
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimateETH (BRCryptoWalletManager cwm,
+                                                      BRCryptoNetworkFee networkFee,
+                                                      BRCryptoFeeBasis initialFeeBasis,
+                                                      double costUnits,
+                                                      size_t attributesCount,
+                                                      OwnershipKept const char **attributeKeys,
+                                                      OwnershipKept const char **attributeVals) {
     BREthereumFeeBasis feeBasis = ethFeeBasisCreate (ethGasCreate ((uint64_t) costUnits),
                                                      cryptoNetworkFeeAsETH (networkFee));
     return cryptoFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit, feeBasis);
@@ -817,7 +822,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerEstimateFeeBasisETH,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH,
-    cryptoWalletManagerRecoverFeeBasisFromEstimateETH,
+    cryptoWalletManagerRecoverFeeBasisFromFeeEstimateETH,
     NULL,//BRCryptoWalletManagerWalletSweeperValidateSupportedHandler
     NULL,//BRCryptoWalletManagerCreateWalletSweeperHandler
 };

@@ -81,6 +81,7 @@ struct BRCryptoClientCallbackStateRecord {
             BRCryptoHash hash;
             BRCryptoCookie cookie;
             BRCryptoNetworkFee networkFee;
+            BRCryptoFeeBasis feeBasis;
         } estimateTransactionFee;
         // ...
     } u;
@@ -244,7 +245,8 @@ extern void
 cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                     BRCryptoCookie   cookie,
                                     BRCryptoTransfer transfer,
-                                    BRCryptoNetworkFee networkFee);
+                                    BRCryptoNetworkFee networkFee,
+                                    BRCryptoFeeBasis initialFeeBasis);
 
 static inline BRCryptoClientSync
 cryptoClientQRYManagerAsSync (BRCryptoClientQRYManager qry) {

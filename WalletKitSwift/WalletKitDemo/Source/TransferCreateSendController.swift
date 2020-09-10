@@ -186,7 +186,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let maximum = res.getWithRecovery { (reason) in
                 print ("APP: TCC: Missed estimateLimitMaximum: \(reason)")
-                return Amount.create(double: 0.0, unit: self.wallet.unit)
+                return self.wallet.balance
             }
             DispatchQueue.main.async {
                 self.maximum = maximum

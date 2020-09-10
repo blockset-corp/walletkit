@@ -51,18 +51,31 @@ cryptoFeeBasisReleaseXTZ (BRCryptoFeeBasis feeBasis) {
 
 static double
 cryptoFeeBasisGetCostFactorXTZ (BRCryptoFeeBasis feeBasis) {
-    return (double) cryptoFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis.gasLimit;
+    BRTezosFeeBasis xtzFeeBasis = cryptoFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
+    switch (xtzFeeBasis.type) {
+        case FEE_BASIS_ESTIMATE:
+            return (double) xtzFeeBasis.u.estimate.sizeInBytes;
+        case FEE_BASIS_ACTUAL:
+            return 1.0;
+    }
 }
 
 static BRCryptoAmount
 cryptoFeeBasisGetPricePerCostFactorXTZ (BRCryptoFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = cryptoFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
-    return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.fee);
+    switch (xtzFeeBasis.type) {
+        case FEE_BASIS_ESTIMATE:
+            return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.u.estimate.mutezPerByte);
+        case FEE_BASIS_ACTUAL:
+            return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.u.actual.fee);
+    }
 }
 
 static BRCryptoAmount
 cryptoFeeBasisGetFeeXTZ (BRCryptoFeeBasis feeBasis) {
-    return cryptoFeeBasisGetPricePerCostFactor (feeBasis);
+    BRTezosFeeBasis xtzFeeBasis = cryptoFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
+    BRTezosUnitMutez fee = tezosFeeBasisGetFee (&xtzFeeBasis);
+    return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, fee);
 }
 
 static BRCryptoBoolean
@@ -70,7 +83,7 @@ cryptoFeeBasisIsEqualXTZ (BRCryptoFeeBasis feeBasis1, BRCryptoFeeBasis feeBasis2
     BRCryptoFeeBasisXTZ fb1 = cryptoFeeBasisCoerceXTZ (feeBasis1);
     BRCryptoFeeBasisXTZ fb2 = cryptoFeeBasisCoerceXTZ (feeBasis2);
     
-    return tezosFeeBasisIsEqual (&fb1->xtzFeeBasis, &fb2->xtzFeeBasis);
+    return AS_CRYPTO_BOOLEAN (tezosFeeBasisIsEqual (&fb1->xtzFeeBasis, &fb2->xtzFeeBasis));
 }
 
 // MARK: - Handlers

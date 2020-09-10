@@ -64,11 +64,10 @@ tezosTransferCreateNew(BRTezosAddress from,
     transfer->sourceAddress = tezosAddressClone (from);
     transfer->targetAddress = tezosAddressClone (to);
     transfer->amount = amount;
-    transfer->fee = feeBasis.fee;
+    transfer->fee = tezosFeeBasisGetFee (&feeBasis);
     if (delegationOp)
         transfer->transaction = tezosTransactionCreateDelegation (from, to, feeBasis, counter);
     else
-        //TODO:TEZOS if counter is not valid (first outgoing), create batch operation with REVEAL
         transfer->transaction = tezosTransactionCreateTransaction (from, to, amount, feeBasis, counter);
     return transfer;
 }
