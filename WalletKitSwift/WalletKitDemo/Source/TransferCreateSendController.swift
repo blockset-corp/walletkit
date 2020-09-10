@@ -65,9 +65,9 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
         target = Address.create (string: self.recvField.text!, network: self.wallet.manager.network)
 
-        gasPriceSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        gasLimitSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        satPerKBSegmentedController.isEnabled = isBitCurrency && canUseFeeBasis
+        gasPriceSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        gasLimitSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        satPerKBSegmentedController.isEnabled = false//isBitCurrency && canUseFeeBasis
 
         priorityPicker.dataSource = self
         priorityPicker.delegate = self
