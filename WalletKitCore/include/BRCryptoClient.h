@@ -58,6 +58,11 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
 extern void
 cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle);
 
+// b1 < b2 => -1; b1 > b2 => +1, b1 == b2 => 0
+extern int
+cryptoClientTransactionBundleCompare (const BRCryptoClientTransactionBundle b1,
+                                      const BRCryptoClientTransactionBundle b2);
+
 extern void
 cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -98,6 +103,10 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
 
 extern void
 cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle);
+
+extern int
+cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
+                                   const BRCryptoClientTransferBundle b2);
 
 extern void
 cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,

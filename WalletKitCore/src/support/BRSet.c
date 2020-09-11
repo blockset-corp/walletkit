@@ -82,6 +82,25 @@ BRSet *BRSetNew(size_t (*hash)(const void *), int (*eq)(const void *, const void
     return set;
 }
 
+BRSet *BRSetCopy(BRSet *set, void *(*itemApply) (void *item)) {
+    BRSet *newSet = calloc (1, sizeof(*set));
+
+    size_t tableSize = set->size * sizeof(void *);
+
+    newSet->table = malloc (tableSize);
+    memcpy (newSet->table, set->table, tableSize);
+    if (NULL != itemApply)
+        for (size_t i = 0; i < set->size; i++)
+            newSet->table[i] = itemApply (newSet->table[i]);
+
+    newSet->size = set->size;
+    newSet->itemCount = set->itemCount;
+    newSet->hash = set->hash;
+    newSet->eq = set->eq;
+
+    return newSet;
+}
+
 // rebuilds hashtable to hold up to capacity items
 static void _BRSetGrow(BRSet *set, size_t capacity)
 {
