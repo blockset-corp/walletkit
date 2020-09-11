@@ -266,18 +266,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     //TODO:XRP announce
 }
 
-static BRCryptoFeeBasis
-cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXRP (BRCryptoWalletManager cwm,
-                                                      BRCryptoNetworkFee networkFee,
-                                                      double costUnits,
-                                                      size_t attributesCount,
-                                                      OwnershipKept const char **attributeKeys,
-                                                      OwnershipKept const char **attributeVals) {
-    // Not supported
-    assert (0);
-    return NULL;
-}
-
 extern BRCryptoWalletSweeperStatus
 cryptoWalletManagerWalletSweeperValidateSupportedXRP (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
@@ -330,7 +318,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerEstimateFeeBasisXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
-    cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXRP,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,
     cryptoWalletManagerCreateWalletSweeperXRP
 };

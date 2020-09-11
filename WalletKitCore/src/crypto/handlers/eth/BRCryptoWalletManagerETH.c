@@ -817,8 +817,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH,
     cryptoWalletManagerRecoverFeeBasisFromEstimateETH,
-    NULL,//BRCryptoWalletManagerWalletSweeperValidateSupportedHandler
-    NULL,//BRCryptoWalletManagerCreateWalletSweeperHandler
+    NULL,//BRCryptoWalletManagerWalletSweeperValidateSupportedHandler not supported
+    NULL,//BRCryptoWalletManagerCreateWalletSweeperHandler not supported
 };
 
 #if 0

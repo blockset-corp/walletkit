@@ -1848,6 +1848,7 @@ cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
                                                 size_t attributesCount,
                                                 OwnershipKept const char **attributeKeys,
                                                 OwnershipKept const char **attributeVals) {
+    assert (NULL != cwm->handlers->recoverFeeBasisFromFeeEstimate); // not supported by chain
     return cwm->handlers->recoverFeeBasisFromFeeEstimate (cwm,
                                                           networkFee,
                                                           costUnits,

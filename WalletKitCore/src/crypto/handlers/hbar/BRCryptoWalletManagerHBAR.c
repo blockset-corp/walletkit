@@ -293,7 +293,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerEstimateFeeBasisHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHBAR,
-    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedHBAR,
     cryptoWalletManagerCreateWalletSweeperHBAR
 };
