@@ -33,6 +33,11 @@ cryptoHashCreateAsHBAR (BRHederaTransactionHash hash) {
     return cryptoHashCreateInternal (setValue, 48, hash.bytes);
 }
 
+private_extern uint32_t
+hederaHashSetValue (const BRHederaTransactionHash *hash) {
+    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
+}
+
 // MARK: -
 
 static const char *knownMemoRequiringAddresses[] = {
