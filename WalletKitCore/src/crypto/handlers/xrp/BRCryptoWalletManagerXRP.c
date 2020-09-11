@@ -168,11 +168,12 @@ cryptoWalletManagerEstimateFeeBasisXRP (BRCryptoWalletManager manager,
                                         BRCryptoCookie cookie,
                                         BRCryptoAddress target,
                                         BRCryptoAmount amount,
-                                        BRCryptoNetworkFee networkFee) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
-    
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+                                        BRCryptoNetworkFee networkFee,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes) {
+    UInt256 value = cryptoAmountGetValue (cryptoNetworkFeeGetPricePerCostFactor (networkFee));
+    BRRippleUnitDrops fee = value.u64[0];
+    return cryptoFeeBasisCreateAsXRP (wallet->unitForFee, fee);
 }
 
 static void
@@ -317,6 +318,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerEstimateFeeBasisXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,
     cryptoWalletManagerCreateWalletSweeperXRP
 };

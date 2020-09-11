@@ -1695,10 +1695,29 @@ extension System {
                     (res: Result<SystemClient.TransactionFee, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_TRUE, hash, $0.costUnits) },
+                        success: {
+                            let properties = $0.properties ?? [:]
+                            var metaKeysPtr = Array(properties.keys)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                            var metaValsPtr = Array(properties.values)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                            
+                            cwmAnnounceEstimateTransactionFee (cwm,
+                                                               sid,
+                                                               CRYPTO_TRUE,
+                                                               hash,
+                                                               $0.costUnits,
+                                                               metaKeysPtr.count,
+                                                               &metaKeysPtr,
+                                                               &metaValsPtr)
+                            
+                    },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0) })
+                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0, 0, nil, nil) })
                 }}
         )
     }

@@ -85,7 +85,9 @@ typedef BRCryptoFeeBasis // If NULL, don't generate WalletEvent; expect QRY call
                                                  BRCryptoCookie cookie,
                                                  BRCryptoAddress target,
                                                  BRCryptoAmount amount,
-                                                 BRCryptoNetworkFee fee);
+                                                 BRCryptoNetworkFee fee,
+                                                 size_t attributesCount,
+                                                 OwnershipKept BRCryptoTransferAttribute *attributes);
 
 typedef BRCryptoClientP2PManager
 (*BRCryptoWalletManagerCreateP2PManagerHandler) (BRCryptoWalletManager cwm);
@@ -101,6 +103,14 @@ typedef void
 typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
+
+typedef BRCryptoFeeBasis
+(*BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (BRCryptoWalletManager cwm,
+                                                               BRCryptoNetworkFee networkFee,
+                                                               double costUnits,
+                                                               size_t attributesCount,
+                                                               OwnershipKept const char **attributeKeys,
+                                                               OwnershipKept const char **attributeVals);
 
 typedef BRCryptoWalletSweeperStatus
 (*BRCryptoWalletManagerWalletSweeperValidateSupportedHandler) (BRCryptoWalletManager cwm,
@@ -125,6 +135,7 @@ typedef struct {
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler recoverFeeBasisFromFeeEstimate;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
@@ -259,6 +270,15 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 //                                          BRCryptoWallet wallet,
 //                                          BRCryptoWalletEvent event);
 //
+
+
+private_extern BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
+                                                BRCryptoNetworkFee networkFee,
+                                                double costUnits,
+                                                size_t attributesCount,
+                                                OwnershipKept const char **attributeKeys,
+                                                OwnershipKept const char **attributeVals);
 
 static inline void
 cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,

@@ -146,7 +146,10 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipGiven BRCryptoClientCallbackState callbackState,
                                    BRCryptoBoolean success,
                                    OwnershipKept const char *hash,
-                                   uint64_t costUnits);
+                                   uint64_t costUnits,
+                                   size_t attributesCount,
+                                   OwnershipKept const char **attributeKeys,
+                                   OwnershipKept const char **attributeVals);
 
 typedef struct {
     BRCryptoClientContext context;

@@ -14,28 +14,6 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtilMath.h"
 
-private_extern BRCryptoFeeBasis
-cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
-                           uint64_t feePerKB,
-                           uint32_t sizeInByte) {
-    return cryptoFeeBasisCreate (cryptoAmountCreate (unit,
-                                                     CRYPTO_FALSE,
-                                                     uint256Create(feePerKB)),
-                                 sizeInByte / 1000.0);
-}
-
-private_extern uint64_t // SAT-per-KB
-cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis) {
-#ifdef REFACTOR
-    assert (BLOCK_CHAIN_TYPE_BTC == feeBasis->type);
-#endif
-    BRCryptoBoolean overflow;
-    BRCryptoAmount costPerPriceFactor = cryptoFeeBasisGetPricePerCostFactor(feeBasis);
-    uint64_t satPerKb = cryptoAmountGetIntegerRaw(costPerPriceFactor, &overflow);
-
-    assert (CRYPTO_FALSE == overflow);
-    return satPerKb;
-}
 
 private_extern BRCryptoHash
 cryptoHashCreateAsBTC (UInt256 btc) {

@@ -213,10 +213,10 @@ cryptoPaymentProtocolRequestCreateForBip70BTC (BRCryptoNetwork cryptoNetwork,
 
 extern BRCryptoFeeBasis
 cryptoPaymentProtocolRequestEstimateFeBasisBTC (BRCryptoPaymentProtocolRequest protoReqBase,
-                                                         BRCryptoWalletManager cwm,
-                                                         BRCryptoWallet wallet,
-                                                         BRCryptoCookie cookie,
-                                                         BRCryptoNetworkFee networkFee) {
+                                                BRCryptoWalletManager cwm,
+                                                BRCryptoWallet wallet,
+                                                BRCryptoCookie cookie,
+                                                BRCryptoNetworkFee networkFee) {
     BRWallet *wid = cryptoWalletAsBTC (wallet);
     uint64_t btcFeePerKB = 1000 * cryptoNetworkFeeAsBTC (networkFee);
     uint64_t btcFee = 0;

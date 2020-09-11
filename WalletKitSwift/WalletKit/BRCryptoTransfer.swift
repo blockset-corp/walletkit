@@ -240,8 +240,8 @@ public class TransferFeeBasis: Equatable {
     internal init (core: BRCryptoFeeBasis, take: Bool) {
         self.core = take ? cryptoFeeBasisTake (core) : core
 
-        self.unit = Unit (core: cryptoFeeBasisGetPricePerCostFactorUnit(core), take: false)
         self.pricePerCostFactor = Amount (core: cryptoFeeBasisGetPricePerCostFactor(core), take: false)
+        self.unit = self.pricePerCostFactor.unit
         self.costFactor  = cryptoFeeBasisGetCostFactor (core)
 
         // TODO: The Core fee calculation might overflow.
