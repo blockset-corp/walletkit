@@ -594,12 +594,12 @@ cryptoTransferSubmitErrorPosix(int errnum) {
 }
 
 extern bool
- cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
-                                   const BRCryptoTransferSubmitError *e2) {
-     return (e1->type == e2->type &&
-             (e1->type != CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX ||
-              e1->u.posix.errnum == e2->u.posix.errnum));
- }
+cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
+                                  const BRCryptoTransferSubmitError *e2) {
+    return (e1->type == e2->type &&
+            (e1->type != CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX ||
+             e1->u.posix.errnum == e2->u.posix.errnum));
+}
 
 extern char *
 cryptoTransferSubmitErrorGetMessage (BRCryptoTransferSubmitError *e) {

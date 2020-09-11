@@ -900,9 +900,9 @@ cryptoTransferStateCreateGEN (BRGenericTransferState generic,
 
 private_extern void
 cryptoWalletManagerSetTransferState (BRCryptoWalletManager cwm,
-                                        BRCryptoWallet wallet,
-                                        BRCryptoTransfer transfer,
-                                        BRCryptoTransferState newState) {
+                                     BRCryptoWallet wallet,
+                                     BRCryptoTransfer transfer,
+                                     BRCryptoTransferState newState) {
     pthread_mutex_lock (&cwm->lock);
 
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);

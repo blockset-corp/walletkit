@@ -79,8 +79,6 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unitForFee,
                           BRHederaAccount hbarAccount);
 
-
-//TODO:HBAR needed?
 private_extern BRCryptoHash
 cryptoHashCreateAsHBAR (BRHederaTransactionHash hash);
 
