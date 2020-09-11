@@ -51,10 +51,7 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      xrpTransfer->amount);
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (unitForFee,
-                                                        CRYPTO_FALSE,
-                                                        xrpTransfer->fee);
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, xrpTransfer->fee);
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);

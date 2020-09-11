@@ -16,6 +16,7 @@
 
 #include "crypto/BRCryptoWalletSweeperP.h"
 #include "crypto/BRCryptoPaymentP.h"
+#include "crypto/BRCryptoFeeBasisP.h"
 
 #include "bitcoin/BRWallet.h"
 #include "bitcoin/BRTransaction.h"
@@ -203,7 +204,13 @@ typedef struct BRCryptoPaymentProtocolPaymentBTCRecord {
     BRPaymentProtocolPayment *payment; // only used for BIP70
 } *BRCryptoPaymentProtocolPaymentBTC;
 
-// MARK: - Support
+// MARK: - Fee Basis
+
+typedef struct BRCryptoFeeBasisBTCRecord {
+    struct BRCryptoFeeBasisRecord base;
+    uint64_t feePerKB;
+    uint32_t sizeInByte;
+} *BRCryptoFeeBasisBTC;
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
@@ -212,6 +219,8 @@ cryptoFeeBasisCreateAsBTC (BRCryptoUnit unit,
 
 private_extern uint64_t // SAT-per-KB
 cryptoFeeBasisAsBTC (BRCryptoFeeBasis feeBasis);
+
+// MARK: - Support
 
 private_extern BRCryptoHash
 cryptoHashCreateAsBTC (UInt256 btc);

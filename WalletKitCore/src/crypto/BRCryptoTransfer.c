@@ -191,15 +191,26 @@ cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
 extern BRCryptoAmount
 cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
     BRCryptoAmount amount = cryptoTransferGetAmountDirected (transfer);
-    BRCryptoAmount fee    = cryptoTransferGetFee (transfer);
+    BRCryptoAmount amountNet;
+    
+    switch (cryptoTransferGetDirection(transfer)) {
+        case CRYPTO_TRANSFER_RECOVERED:
+        case CRYPTO_TRANSFER_SENT: {
+            BRCryptoAmount fee = cryptoTransferGetFee (transfer);
+            amountNet = (NULL == fee) ? cryptoAmountTake (amount) : cryptoAmountSub (amount, fee);
+            cryptoAmountGive (fee);
+            break;
+        }
 
-    if (NULL == fee) return amount;
-
-    BRCryptoAmount amountNet = cryptoAmountSub (amount, fee);
-
-    cryptoAmountGive (fee);
+        case CRYPTO_TRANSFER_RECEIVED: {
+            amountNet = cryptoAmountTake (amount);
+            break;
+        }
+        default: assert(0);
+    }
+    
     cryptoAmountGive (amount);
-
+    
     return amountNet;
 }
 

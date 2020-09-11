@@ -50,8 +50,7 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     BRRippleUnitDrops maxBalanceDrops = rippleAccountGetBalanceLimit (xrpAccount, 1, &hasMaxBalance);
 
     BRRippleFeeBasis feeBasisXRP = rippleAccountGetDefaultFeeBasis (xrpAccount);
-    BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreate (cryptoAmountCreateInteger ((int64_t) rippleFeeBasisGetPricePerCostFactor(&feeBasisXRP), unitForFee),
-                                                         (double) rippleFeeBasisGetCostFactor(&feeBasisXRP));
+    BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreateAsXRP (unitForFee, feeBasisXRP.pricePerCostFactor);
 
     BRCryptoWalletCreateContextXRP contextXRP = {
         xrpAccount

@@ -14,30 +14,7 @@
 
 #include <math.h>
 
-private_extern BRCryptoFeeBasis
-cryptoFeeBasisCreateAsETH (BRCryptoUnit unit,
-                           BREthereumFeeBasis feeBasis) {
-    double costFactor = (double) feeBasis.u.gas.limit.amountOfGas;
-    BRCryptoAmount pricePerCostFactor = cryptoAmountCreate (unit,
-                                                            CRYPTO_FALSE,
-                                                            feeBasis.u.gas.price.etherPerGas.valueInWEI);
 
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
-}
-
-private_extern BREthereumFeeBasis
-cryptoFeeBasisAsETH (BRCryptoFeeBasis feeBasis) {
-    double         costFactor         = cryptoFeeBasisGetCostFactor(feeBasis);
-    BRCryptoAmount pricePerCostFactor = cryptoFeeBasisGetPricePerCostFactor(feeBasis);
-
-    BREthereumGas ethGas = ethGasCreate ((uint64_t) lround (costFactor));
-    BREthereumGasPrice ethGasPrice = ethGasPriceCreate (ethEtherCreate (cryptoAmountGetValue(pricePerCostFactor)));
-
-    return (BREthereumFeeBasis) {
-        FEE_BASIS_GAS,
-        { .gas = { ethGas, ethGasPrice }}
-    };
-}
 
 
 private_extern BRCryptoHash

@@ -527,14 +527,20 @@ public final class Wallet: Equatable {
     public func estimateFee (target: Address,
                              amount: Amount,
                              fee: NetworkFee,
+                             attributes: Set<TransferAttribute>? = nil,
                              completion: @escaping Wallet.EstimateFeeHandler) {
+        let coreAttributesCount = attributes?.count ?? 0
+        var coreAttributes: [BRCryptoTransferAttribute?] = attributes?.map { $0.core } ?? []
+        
         // 'Redirect' up to the 'manager'
         cryptoWalletManagerEstimateFeeBasis (self.manager.core,
                                              self.core,
                                              callbackCoordinator.addWalletFeeEstimateHandler(completion),
                                              target.core,
                                              amount.core,
-                                             fee.core)
+                                             fee.core,
+                                             coreAttributesCount,
+                                             &coreAttributes)
     }
 
     internal func estimateFee (sweeper: WalletSweeper,
@@ -568,23 +574,6 @@ public final class Wallet: Equatable {
             default: return .ServiceError // preconditionFailure ("Unknown FeeEstimateError")
             }
         }
-    }
-
-    ///
-    /// Create a `TransferFeeBasis` using a `pricePerCostFactor` and `costFactor`.
-    ///
-    /// - Note: This is 'private' until the parameters are described.  Meant for testing for now.
-    ///
-    /// - Parameters:
-    ///   - pricePerCostFactor:
-    ///   - costFactor:
-    ///
-    /// - Returns: An optional TransferFeeBasis
-    ///
-    public func createTransferFeeBasis (pricePerCostFactor: Amount,
-                                        costFactor: Double) -> TransferFeeBasis? {
-        return cryptoWalletCreateFeeBasis (core, pricePerCostFactor.core, costFactor)
-            .map { TransferFeeBasis (core: $0, take: false) }
     }
     
     ///

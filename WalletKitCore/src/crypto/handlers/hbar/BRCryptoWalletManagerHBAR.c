@@ -167,11 +167,15 @@ cryptoWalletManagerEstimateFeeBasisHBAR (BRCryptoWalletManager manager,
                                          BRCryptoCookie cookie,
                                          BRCryptoAddress target,
                                          BRCryptoAmount amount,
-                                         BRCryptoNetworkFee networkFee) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
-
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+                                         BRCryptoNetworkFee networkFee,
+                                         size_t attributesCount,
+                                         OwnershipKept BRCryptoTransferAttribute *attributes) {
+    UInt256 value = cryptoAmountGetValue (cryptoNetworkFeeGetPricePerCostFactor (networkFee));
+    BRHederaFeeBasis hbarFeeBasis;
+    hbarFeeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) value.u64[0];
+    hbarFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
+    
+    return cryptoFeeBasisCreateAsHBAR (wallet->unitForFee, hbarFeeBasis);
 }
 
 static void
@@ -289,6 +293,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerEstimateFeeBasisHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHBAR,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedHBAR,
     cryptoWalletManagerCreateWalletSweeperHBAR
 };
