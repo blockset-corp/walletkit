@@ -144,21 +144,17 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
         }
     }
 
-    //
+
     // Currently this function, cryptoTransferCreateAsBTC(), is only called in various CWM
     // event handlers based on BTC events.  Thus for a newly created BTC transfer, the
     // BRCryptoFeeBasis is long gone.  The best we can do is reconstruct the feeBasis from the
     // BRTransaction itself.
-    //
-    uint32_t feePerKB = 0;  // assume not our transaction (fee == UINT64_MAX)
-    uint32_t sizeInByte = (uint32_t) BRTransactionVSize (tid);
 
-    if (UINT64_MAX != fee) {
-        // round to nearest satoshi per kb
-        feePerKB = (uint32_t) (((1000 * fee) + (sizeInByte/2)) / sizeInByte);
-    }
-    
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsBTC (unitForFee, feePerKB, sizeInByte);
+    BRCryptoFeeBasis feeBasisEstimated =
+    cryptoFeeBasisCreateAsBTC (unitForFee,
+                               (fee == UINT64_MAX ? CRYPTO_FEE_BASIS_BTC_FEE_UNKNOWN        : fee),
+                               (fee == UINT64_MAX ? 0                                       : CRYPTO_FEE_BASIS_BTC_FEE_PER_KB_UNKNOWN),
+                               (uint32_t) BRTransactionVSize (tid));
 
     BRCryptoTransferCreateContextBTC contextBTC = {
         tid,

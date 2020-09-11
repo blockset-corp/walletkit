@@ -45,6 +45,7 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                          BRCryptoUnit unitForFee,
                          BRWallet *wid) {
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsBTC (unitForFee,
+                                                           CRYPTO_FEE_BASIS_BTC_FEE_UNKNOWN,
                                                            BRWalletFeePerKb(wid),
                                                            DEFAULT_FEE_BASIS_SIZE_IN_BYTES);
 

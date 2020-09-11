@@ -212,11 +212,11 @@ cryptoPaymentProtocolRequestCreateForBip70BTC (BRCryptoNetwork cryptoNetwork,
 }
 
 extern BRCryptoFeeBasis
-cryptoPaymentProtocolRequestEstimateFeBasisBTC (BRCryptoPaymentProtocolRequest protoReqBase,
-                                                BRCryptoWalletManager cwm,
-                                                BRCryptoWallet wallet,
-                                                BRCryptoCookie cookie,
-                                                BRCryptoNetworkFee networkFee) {
+cryptoPaymentProtocolRequestEstimateFeeBasisBTC (BRCryptoPaymentProtocolRequest protoReqBase,
+                                                 BRCryptoWalletManager cwm,
+                                                 BRCryptoWallet wallet,
+                                                 BRCryptoCookie cookie,
+                                                 BRCryptoNetworkFee networkFee) {
     BRWallet *wid = cryptoWalletAsBTC (wallet);
     uint64_t btcFeePerKB = 1000 * cryptoNetworkFeeAsBTC (networkFee);
     uint64_t btcFee = 0;
@@ -235,8 +235,7 @@ cryptoPaymentProtocolRequestEstimateFeBasisBTC (BRCryptoPaymentProtocolRequest p
         array_free (outputs);
     }
     
-    uint32_t sizeInBytes = (uint32_t) ((1000 * btcFee) / btcFeePerKB);
-    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFeePerKB, sizeInBytes);
+    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFee, btcFeePerKB, CRYPTO_FEE_BASIS_BTC_SIZE_UNKNOWN);
 }
 
 extern BRCryptoTransfer
@@ -758,7 +757,7 @@ BRCryptoPaymentProtocolHandlers cryptoPaymentProtocolHandlersBTC = {
     cryptoPaymentProtocolRequestValidateSupportedBTC,
     cryptoPaymentProtocolRequestCreateForBitPayBTC,
     cryptoPaymentProtocolRequestCreateForBip70BTC,
-    cryptoPaymentProtocolRequestEstimateFeBasisBTC,
+    cryptoPaymentProtocolRequestEstimateFeeBasisBTC,
     cryptoPaymentProtocolRequestCreateTransferBTC,
 
     cryptoPaymentProtocolRequestIsSecureBTC,
