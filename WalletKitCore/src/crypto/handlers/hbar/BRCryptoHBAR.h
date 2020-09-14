@@ -79,10 +79,11 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unitForFee,
                           BRHederaAccount hbarAccount);
 
-
-//TODO:HBAR needed?
 private_extern BRCryptoHash
 cryptoHashCreateAsHBAR (BRHederaTransactionHash hash);
+
+private_extern uint32_t
+hederaHashSetValue (const BRHederaTransactionHash *hash);
 
 // MARK: - Wallet Manager
 

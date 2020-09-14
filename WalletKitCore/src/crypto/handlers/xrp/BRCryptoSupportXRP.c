@@ -21,6 +21,17 @@ cryptoAmountCreateAsXRP (BRCryptoUnit unit,
     return cryptoAmountCreate (unit, isNegative, uint256Create (value));
 }
 
+private_extern BRCryptoHash
+cryptoHashCreateAsXRP (BRRippleTransactionHash hash) {
+    uint32_t setValue = (uint32_t) ((UInt256 *) hash.bytes)->u32[0];
+    return cryptoHashCreateInternal (setValue, 32, hash.bytes);
+}
+
+private_extern uint32_t
+rippleHashSetValue (const BRRippleTransactionHash *hash) {
+    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
+}
+
 // MARK: -
 
 private_extern int // 1 if equal, 0 if not.
