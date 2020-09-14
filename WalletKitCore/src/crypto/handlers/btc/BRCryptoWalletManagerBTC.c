@@ -219,9 +219,8 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
     assert(CRYPTO_FALSE == overflow);
 
     uint64_t btcFee = (0 == btcAmount ? 0 : BRWalletFeeForTxAmountWithFeePerKb (btcWallet, btcFeePerKB, btcAmount));
-    uint32_t btcSizeInBytes = (uint32_t) ((1000 * btcFee) / btcFeePerKB);
 
-    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFeePerKB, btcSizeInBytes);
+    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, btcFee, btcFeePerKB, CRYPTO_FEE_BASIS_BTC_SIZE_UNKNOWN);
 }
 
 static BRCryptoWallet
@@ -648,6 +647,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -665,6 +665,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };
@@ -682,6 +683,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerEstimateFeeBasisBTC,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedBTC,
     cryptoWalletManagerCreateWalletSweeperBTC
 };

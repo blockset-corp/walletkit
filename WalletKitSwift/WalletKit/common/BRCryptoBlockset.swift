@@ -430,8 +430,10 @@ public class BlocksetSystemClient: SystemClient {
         static internal func asTransactionFee (json: JSON) -> SystemClient.TransactionFee? {
             guard let costUnits = json.asUInt64(name: "cost_units")
                 else { return nil }
+            
+            let properties = json.asDict(name: "properties")?.mapValues { return $0 as! String }
 
-            return (costUnits: costUnits, foo: "ignore")
+            return (costUnits: costUnits, properties: properties)
         }
 
         /// Block

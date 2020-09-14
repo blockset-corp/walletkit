@@ -191,28 +191,26 @@ cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
 extern BRCryptoAmount
 cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
     BRCryptoAmount amount = cryptoTransferGetAmountDirected (transfer);
+    BRCryptoAmount amountNet;
+    
+    switch (cryptoTransferGetDirection(transfer)) {
+        case CRYPTO_TRANSFER_RECOVERED:
+        case CRYPTO_TRANSFER_SENT: {
+            BRCryptoAmount fee = cryptoTransferGetFee (transfer);
+            amountNet = (NULL == fee) ? cryptoAmountTake (amount) : cryptoAmountSub (amount, fee);
+            cryptoAmountGive (fee);
+            break;
+        }
 
-    // If the transfer->unit and transfer->unitForFee differ then there is no fee
-    if (cryptoUnitIsIdentical (transfer->unit, transfer->unitForFee))
-        return amount;
-
-    BRCryptoFeeBasis feeBasis = cryptoTransferGetConfirmedFeeBasis(transfer);
-    if (NULL == feeBasis)
-        feeBasis = cryptoFeeBasisTake (transfer->feeBasisEstimated);
-
-    // If there is no fee basis, then there is no fee
-    if (NULL == feeBasis)
-        return amount;
-
-    BRCryptoAmount fee = cryptoFeeBasisGetFee (feeBasis);
-    cryptoFeeBasisGive(feeBasis);
-
-    // Simply subtract off the fee.
-    BRCryptoAmount amountNet = cryptoAmountSub (amount, fee);
-
-    cryptoAmountGive(fee);
-    cryptoAmountGive(amount);
-
+        case CRYPTO_TRANSFER_RECEIVED: {
+            amountNet = cryptoAmountTake (amount);
+            break;
+        }
+        default: assert(0);
+    }
+    
+    cryptoAmountGive (amount);
+    
     return amountNet;
 }
 
@@ -321,6 +319,18 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
     pthread_mutex_unlock (&transfer->lock);
 
     return feeBasisConfirmed;
+}
+
+extern BRCryptoAmount
+cryptoTransferGetFee (BRCryptoTransfer transfer) {
+    if (CRYPTO_FALSE == cryptoUnitIsCompatible (transfer->unit, transfer->unitForFee))
+        return NULL;
+
+    BRCryptoFeeBasis feeBasis = (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state.type
+                                 ? transfer->state.u.included.feeBasis
+                                 : transfer->feeBasisEstimated);
+
+    return (NULL == feeBasis ? NULL : cryptoFeeBasisGetFee (feeBasis));
 }
 
 extern uint8_t *
@@ -584,12 +594,12 @@ cryptoTransferSubmitErrorPosix(int errnum) {
 }
 
 extern bool
- cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
-                                   const BRCryptoTransferSubmitError *e2) {
-     return (e1->type == e2->type &&
-             (e1->type != CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX ||
-              e1->u.posix.errnum == e2->u.posix.errnum));
- }
+cryptoTransferSubmitErrorIsEqual (const BRCryptoTransferSubmitError *e1,
+                                  const BRCryptoTransferSubmitError *e2) {
+    return (e1->type == e2->type &&
+            (e1->type != CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX ||
+             e1->u.posix.errnum == e2->u.posix.errnum));
+}
 
 extern char *
 cryptoTransferSubmitErrorGetMessage (BRCryptoTransferSubmitError *e) {

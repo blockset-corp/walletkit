@@ -49,8 +49,7 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     BRHederaUnitTinyBar maxBalance = hederaAccountGetBalanceLimit (hbarAccount, 1, &hasMaxBalance);
 
     BRHederaFeeBasis feeBasisHBAR = hederaAccountGetDefaultFeeBasis (hbarAccount);
-    BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreate (cryptoAmountCreateInteger(hederaFeeBasisGetPricePerCostFactor(&feeBasisHBAR), unitForFee),
-                                                          (double) hederaFeeBasisGetCostFactor(&feeBasisHBAR));
+    BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreateAsHBAR (unitForFee, feeBasisHBAR);
 
     BRCryptoWalletCreateContextHBAR contextHBAR = {
         hbarAccount
@@ -178,11 +177,7 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     UInt256 value = cryptoAmountGetValue (amount);
     BRHederaUnitTinyBar thbar = (BRHederaUnitTinyBar) value.u64[0];
     BRHederaAddress nodeAddress = hederaAccountGetNodeAddress (walletHBAR->hbarAccount);
-    BRHederaFeeBasis feeBasis;
-    feeBasis.costFactor = (uint32_t) estimatedFeeBasis->costFactor;
-    int overflow = 0;
-    feeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) uint64Coerce(cryptoAmountGetValue(estimatedFeeBasis->pricePerCostFactor), &overflow);
-    assert(overflow == 0);
+    BRHederaFeeBasis feeBasis = cryptoFeeBasisCoerceHBAR (estimatedFeeBasis)->hbarFeeBasis;
     
     BRHederaTransaction tid = hederaTransactionCreateNew (source,
                                                           cryptoAddressAsHBAR (target),
@@ -210,10 +205,10 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     hederaAddressFree (nodeAddress);
     
     BRCryptoTransfer transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
-                                                                unit,
-                                                                unitForFee,
-                                                                walletHBAR->hbarAccount,
-                                                                tid);
+                                                            unit,
+                                                            unitForFee,
+                                                            walletHBAR->hbarAccount,
+                                                            tid);
     cryptoTransferSetAttributes (transfer, attributes);
     
     return transfer;

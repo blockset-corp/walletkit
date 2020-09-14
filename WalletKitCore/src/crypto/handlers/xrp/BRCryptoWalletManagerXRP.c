@@ -171,10 +171,9 @@ cryptoWalletManagerEstimateFeeBasisXRP (BRCryptoWalletManager manager,
                                         BRCryptoNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept BRCryptoTransferAttribute *attributes) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
-    
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+    UInt256 value = cryptoAmountGetValue (cryptoNetworkFeeGetPricePerCostFactor (networkFee));
+    BRRippleUnitDrops fee = value.u64[0];
+    return cryptoFeeBasisCreateAsXRP (wallet->unitForFee, fee);
 }
 
 static void
@@ -240,13 +239,18 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
+    BRCryptoHash hash = cryptoHashCreateAsXRP (txId);
     
-    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
-                                                               wallet->unit,
-                                                               wallet->unitForFee,
-                                                               xrpAccount,
-                                                               xrpTransfer);
-    cryptoWalletAddTransfer (wallet, baseTransfer);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    
+    if (NULL == baseTransfer) {
+        baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                  wallet->unit,
+                                                  wallet->unitForFee,
+                                                  xrpAccount,
+                                                  xrpTransfer);
+        cryptoWalletAddTransfer (wallet, baseTransfer);
+    }
     
     BRCryptoTransferState transferState =
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
@@ -264,7 +268,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     //TODO:XRP attributes
     //TODO:XRP save to fileService
-    //TODO:XRP announce
+    
+    rippleTransferFree (xrpTransfer);
 }
 
 extern BRCryptoWalletSweeperStatus
@@ -319,6 +324,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerEstimateFeeBasisXRP,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedXRP,
     cryptoWalletManagerCreateWalletSweeperXRP
 };

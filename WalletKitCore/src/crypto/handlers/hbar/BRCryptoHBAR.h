@@ -12,6 +12,7 @@
 #define BRCryptoHBAR_h
 
 #include "../BRCryptoHandlersExport.h"
+#include "crypto/BRCryptoFeeBasisP.h"
 
 #include "hedera/BRHederaBase.h"
 #include "hedera/BRHederaAddress.h"
@@ -78,10 +79,11 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRCryptoUnit unitForFee,
                           BRHederaAccount hbarAccount);
 
-
-//TODO:HBAR needed?
 private_extern BRCryptoHash
 cryptoHashCreateAsHBAR (BRHederaTransactionHash hash);
+
+private_extern uint32_t
+hederaHashSetValue (const BRHederaTransactionHash *hash);
 
 // MARK: - Wallet Manager
 
@@ -91,7 +93,19 @@ typedef struct BRCryptoWalletManagerHBARRecord {
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR;
 
-// MARK: - Events
+// MARK: - Fee Basis
+
+typedef struct BRCryptoFeeBasisHBARRecord {
+    struct BRCryptoFeeBasisRecord base;
+    BRHederaFeeBasis hbarFeeBasis;
+} *BRCryptoFeeBasisHBAR;
+
+private_extern BRCryptoFeeBasis
+cryptoFeeBasisCreateAsHBAR (BRCryptoUnit unit,
+                            BRHederaFeeBasis hbarFeeBasis);
+
+private_extern BRCryptoFeeBasisHBAR
+cryptoFeeBasisCoerceHBAR (BRCryptoFeeBasis feeBasis);
 
 // MARK: - Support
 

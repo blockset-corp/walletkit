@@ -104,6 +104,14 @@ typedef void
 (*BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler) (BRCryptoWalletManager cwm,
                                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
+typedef BRCryptoFeeBasis
+(*BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (BRCryptoWalletManager cwm,
+                                                               BRCryptoNetworkFee networkFee,
+                                                               double costUnits,
+                                                               size_t attributesCount,
+                                                               OwnershipKept const char **attributeKeys,
+                                                               OwnershipKept const char **attributeVals);
+
 typedef BRCryptoWalletSweeperStatus
 (*BRCryptoWalletManagerWalletSweeperValidateSupportedHandler) (BRCryptoWalletManager cwm,
                                                                BRCryptoWallet wallet,
@@ -127,6 +135,7 @@ typedef struct {
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
     BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler recoverFeeBasisFromFeeEstimate;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
@@ -246,6 +255,8 @@ private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
                                                           OwnershipKept BRCryptoClientTransactionBundle bundle);
 
+// Is it possible that the transfers do not have the 'submitted' state?  In some race between
+// the submit call and the included call?  Highly, highly unlikely but possible?
 private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
@@ -261,6 +272,15 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 //                                          BRCryptoWallet wallet,
 //                                          BRCryptoWalletEvent event);
 //
+
+
+private_extern BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
+                                                BRCryptoNetworkFee networkFee,
+                                                double costUnits,
+                                                size_t attributesCount,
+                                                OwnershipKept const char **attributeKeys,
+                                                OwnershipKept const char **attributeVals);
 
 static inline void
 cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,

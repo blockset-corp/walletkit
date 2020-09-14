@@ -50,10 +50,8 @@ cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                                                       CRYPTO_FALSE,
                                                       hederaTransactionGetAmount (hbarTransaction));
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsHBAR (unitForFee,
-                                                         CRYPTO_FALSE,
-                                                         hederaTransactionGetFee (hbarTransaction));
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    BRHederaFeeBasis hbarFeeBasis = { hederaTransactionGetFee (hbarTransaction), 1 };
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsHBAR (unitForFee, hbarFeeBasis);
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetTarget (hbarTransaction));
@@ -92,7 +90,7 @@ static BRCryptoHash
 cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
     BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
     BRHederaTransactionHash hash = hederaTransactionGetHash (transferHBAR->hbarTransaction);
-    return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_HBAR, sizeof (hash.bytes), hash.bytes);
+    return cryptoHashCreateInternal (hederaHashSetValue (&hash), sizeof (hash.bytes), hash.bytes);
 }
 
 static uint8_t *

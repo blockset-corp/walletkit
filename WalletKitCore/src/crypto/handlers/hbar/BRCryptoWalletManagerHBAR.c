@@ -170,10 +170,12 @@ cryptoWalletManagerEstimateFeeBasisHBAR (BRCryptoWalletManager manager,
                                          BRCryptoNetworkFee networkFee,
                                          size_t attributesCount,
                                          OwnershipKept BRCryptoTransferAttribute *attributes) {
-    BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
-    double costFactor = 1.0;  // 'cost factor' is 'transaction'
-
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
+    UInt256 value = cryptoAmountGetValue (cryptoNetworkFeeGetPricePerCostFactor (networkFee));
+    BRHederaFeeBasis hbarFeeBasis;
+    hbarFeeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) value.u64[0];
+    hbarFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
+    
+    return cryptoFeeBasisCreateAsHBAR (wallet->unitForFee, hbarFeeBasis);
 }
 
 static void
@@ -196,9 +198,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     BRHederaAddress toAddress   = hederaAddressCreateFromString(bundle->to,   false);
     BRHederaAddress fromAddress = hederaAddressCreateFromString(bundle->from, false);
     // Convert the hash string to bytes
-    BRHederaTransactionHash txId;
-    hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
-    
     BRHederaTransactionHash txHash;
     memset(txHash.bytes, 0x00, sizeof(txHash.bytes));
     if (bundle->hash != NULL) {
@@ -224,17 +223,35 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
+    BRCryptoHash hash = cryptoHashCreateAsHBAR (txHash);
 
-    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
-                                                                wallet->unit,
-                                                                wallet->unitForFee,
-                                                                hbarAccount,
-                                                                hbarTransaction);
-    cryptoWalletAddTransfer (wallet, baseTransfer);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    
+    if (NULL == baseTransfer) {
+        baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                   wallet->unit,
+                                                   wallet->unitForFee,
+                                                   hbarAccount,
+                                                   hbarTransaction);
+        cryptoWalletAddTransfer (wallet, baseTransfer);
+    }
+    
+    BRCryptoTransferState transferState =
+    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+     ? cryptoTransferStateIncludedInit (bundle->blockNumber,
+                                        bundle->blockTransactionIndex,
+                                        bundle->blockTimestamp,
+                                        NULL,
+                                        CRYPTO_TRUE,
+                                        NULL)
+     : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
+        ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
+        : cryptoTransferStateInit (bundle->status)));
+    
+    cryptoTransferSetState (baseTransfer, transferState);
     
     //TODO:HBAR attributes
     //TODO:HBAR save to fileService
-    //TODO:HBAR announce
     
     hederaTransactionFree (hbarTransaction);
 }
@@ -291,6 +308,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerEstimateFeeBasisHBAR,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHBAR,
+    NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     cryptoWalletManagerWalletSweeperValidateSupportedHBAR,
     cryptoWalletManagerCreateWalletSweeperHBAR
 };

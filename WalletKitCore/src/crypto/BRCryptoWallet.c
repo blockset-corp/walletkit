@@ -235,7 +235,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = cryptoTransferTake (transfer) }
         });
-        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirected(transfer));
+        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
      }
     pthread_mutex_unlock (&wallet->lock);
 }
@@ -252,7 +252,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
                 CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                 { .transfer = cryptoTransferTake (transfer) }
             });
-            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirected(transfer));
+            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
             break;
         }
     }
@@ -446,21 +446,6 @@ cryptoWalletCreateTransferForPaymentProtocolRequest (BRCryptoWallet wallet,
     return paymentHandlers->createTransfer (request,
                                             wallet,
                                             estimatedFeeBasis);
-}
-
-extern BRCryptoFeeBasis
-cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
-                            BRCryptoAmount pricePerCostFactor,
-                            double costFactor) {
-
-    BRCryptoCurrency feeCurrency = cryptoUnitGetCurrency (wallet->unitForFee);
-    if (CRYPTO_FALSE == cryptoAmountHasCurrency (pricePerCostFactor, feeCurrency)) {
-        cryptoCurrencyGive (feeCurrency);
-        return NULL;
-    }
-    cryptoCurrencyGive (feeCurrency);
-
-    return cryptoFeeBasisCreate (pricePerCostFactor, costFactor);
 }
 
 extern BRCryptoBoolean

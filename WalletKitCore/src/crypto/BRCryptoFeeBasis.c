@@ -12,73 +12,68 @@
 
 #include "BRCryptoFeeBasisP.h"
 #include "BRCryptoAmountP.h"
+#include "BRCryptoHandlersP.h"
 #include "ethereum/util/BRUtilMath.h"
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoFeeBasis, cryptoFeeBasis)
 
 extern BRCryptoFeeBasis
-cryptoFeeBasisCreate (BRCryptoAmount pricePerCostFactor,
-                      double costFactor) {
-    assert (costFactor >= 0.0);
-
-    BRCryptoFeeBasis feeBasis = malloc (sizeof (struct BRCryptoFeeBasisRecord));
-
-    feeBasis->pricePerCostFactor = cryptoAmountTake (pricePerCostFactor);
-    feeBasis->costFactor =costFactor;
+cryptoFeeBasisAllocAndInit (size_t sizeInBytes,
+                            BRCryptoBlockChainType type,
+                            BRCryptoUnit unit,
+                            BRCryptoFeeBasisCreateContext  createContext,
+                            BRCryptoFeeBasisCreateCallback createCallback) {
+    assert (sizeInBytes >= sizeof (struct BRCryptoFeeBasisRecord));
+    BRCryptoFeeBasis feeBasis = calloc (1, sizeInBytes);
+    
+    feeBasis->type = type;
+    feeBasis->handlers = cryptoHandlersLookup (type)->feeBasis;
+    feeBasis->sizeInBytes = sizeInBytes;
     feeBasis->ref  = CRYPTO_REF_ASSIGN (cryptoFeeBasisRelease);
+    
+    feeBasis->unit = cryptoUnitTake (unit);
+    
+    if (NULL != createCallback) createCallback (createContext, feeBasis);
 
     return feeBasis;
 }
 
 static void
 cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
-    cryptoAmountGive (feeBasis->pricePerCostFactor);
-    memset (feeBasis, 0, sizeof(*feeBasis));
+    feeBasis->handlers->release (feeBasis);
+    
+    cryptoUnitGive (feeBasis->unit);
+    
+    memset (feeBasis, 0, feeBasis->sizeInBytes);
     free (feeBasis);
 }
 
+private_extern BRCryptoBlockChainType
+cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis) {
+    return feeBasis->type;
+}
 
 extern BRCryptoAmount
 cryptoFeeBasisGetPricePerCostFactor (BRCryptoFeeBasis feeBasis) {
-    return cryptoAmountTake (feeBasis->pricePerCostFactor);
+    return feeBasis->handlers->getPricePerCostFactor (feeBasis);
 }
 
 extern double
 cryptoFeeBasisGetCostFactor (BRCryptoFeeBasis feeBasis) {
-    return feeBasis->costFactor;
+    return feeBasis->handlers->getCostFactor (feeBasis);
 }
 
 extern BRCryptoAmount
 cryptoFeeBasisGetFee (BRCryptoFeeBasis feeBasis) {
-    int overflow, negative;
-    double rem;
-
-    UInt256 feeValue = uint256Mul_Double (cryptoAmountGetValue(feeBasis->pricePerCostFactor),
-                                          feeBasis->costFactor,
-                                          &overflow,
-                                          &negative,
-                                          &rem);
-
-    assert (!overflow); assert (!negative);
-
-    BRCryptoUnit   unit = cryptoAmountGetUnit (feeBasis->pricePerCostFactor);
-    BRCryptoAmount fee  = cryptoAmountCreate (unit, CRYPTO_FALSE, feeValue);
-    cryptoUnitGive(unit);
-
-    return fee;
+    return feeBasis->handlers->getFee (feeBasis);
 }
 
 extern BRCryptoBoolean
 cryptoFeeBasisIsEqual (BRCryptoFeeBasis feeBasis1,
                        BRCryptoFeeBasis feeBasis2) {
     return AS_CRYPTO_BOOLEAN (feeBasis1 == feeBasis2 ||
-                              (CRYPTO_COMPARE_EQ == cryptoAmountCompare (feeBasis1->pricePerCostFactor, feeBasis2->pricePerCostFactor) &&
-                               feeBasis1->costFactor == feeBasis2->costFactor));
-}
-
-extern BRCryptoUnit
-cryptoFeeBasisGetPricePerCostFactorUnit (BRCryptoFeeBasis feeBasis) {
-    return cryptoAmountGetUnit (feeBasis->pricePerCostFactor);
+                              (feeBasis1->type == feeBasis2->type &&
+                               feeBasis1->handlers->isEqual (feeBasis1, feeBasis2)));
 }
 
 #ifdef REFACTOR

@@ -59,6 +59,11 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
 extern void
 cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle);
 
+// b1 < b2 => -1; b1 > b2 => +1, b1 == b2 => 0
+extern int
+cryptoClientTransactionBundleCompare (const BRCryptoClientTransactionBundle b1,
+                                      const BRCryptoClientTransactionBundle b2);
+
 extern void
 cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -100,6 +105,10 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
 extern void
 cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle);
 
+extern int
+cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
+                                   const BRCryptoClientTransferBundle b2);
+
 extern void
 cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,
                       OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -120,8 +129,7 @@ typedef void
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           BRCryptoBoolean success,
-                           OwnershipKept const char *hash);
+                           BRCryptoBoolean success);
 
 // MARK: - Estimate Transaction Fee
 
@@ -138,7 +146,10 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipGiven BRCryptoClientCallbackState callbackState,
                                    BRCryptoBoolean success,
                                    OwnershipKept const char *hash,
-                                   uint64_t costUnits);
+                                   uint64_t costUnits,
+                                   size_t attributesCount,
+                                   OwnershipKept const char **attributeKeys,
+                                   OwnershipKept const char **attributeVals);
 
 typedef struct {
     BRCryptoClientContext context;

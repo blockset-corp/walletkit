@@ -74,6 +74,8 @@ struct BRCryptoClientCallbackStateRecord {
         } getTransactions;
 
         struct {
+            BRCryptoWallet wallet;
+            BRCryptoTransfer transfer;
             BRCryptoHash hash;
         } submitTransaction;
 
@@ -126,7 +128,9 @@ typedef struct {
 } BRCryptoClientSend;
 
 extern void
-cryptoClientSend (BRCryptoClientSend send, BRCryptoTransfer transfer);
+cryptoClientSend (BRCryptoClientSend send,
+                  BRCryptoWallet wallet,
+                  BRCryptoTransfer transfer);
 
 // MARK: Client P2P (Peer-to-Peer)
 
@@ -147,6 +151,7 @@ typedef void
 
 typedef void
 (*BRCryptoClientP2PManagerSendHandler) (BRCryptoClientP2PManager p2p,
+                                        BRCryptoWallet   wallet,
                                         BRCryptoTransfer transfer);
 
 typedef struct {
@@ -210,6 +215,7 @@ struct BRCryptoClientQRYManagerRecord {
     struct {
         bool completed;
         bool success;
+        bool unbounded;     // true if `endBlockNumber` should be unbounded on request
         BRCryptoBlockNumber begBlockNumber;
         BRCryptoBlockNumber endBlockNumber;
         size_t rid;
@@ -218,6 +224,7 @@ struct BRCryptoClientQRYManagerRecord {
     size_t requestId;
 };
 
+#define CRYPTO_CLIENT_QRY_IS_UNBOUNDED            (true)
 
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,

@@ -41,6 +41,9 @@ typedef struct BRSetStruct BRSet;
 // capacity is the initial number of items the set can hold, which will be auto-increased as needed
 BRSet *BRSetNew(size_t (*hash)(const void *), int (*eq)(const void *, const void *), size_t capacity);
 
+// copy set; items in set are shared with the new set.
+BRSet *BRSetCopy(BRSet *set, void *(*itemApply) (void *item));
+
 // adds given item to set or replaces an equivalent existing item and returns item replaced if any
 void *BRSetAdd(BRSet *set, void *item);
 

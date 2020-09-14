@@ -51,10 +51,7 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      xrpTransfer->amount);
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsXRP (unitForFee,
-                                                        CRYPTO_FALSE,
-                                                        xrpTransfer->fee);
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, xrpTransfer->fee);
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
@@ -99,7 +96,7 @@ static BRCryptoHash
 cryptoTransferGetHashXRP (BRCryptoTransfer transfer) {
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
     BRRippleTransactionHash hash = rippleTransferGetTransactionId (transferXRP->xrpTransfer);
-    return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XRP, sizeof (hash.bytes), hash.bytes);
+    return cryptoHashCreateInternal (rippleHashSetValue (&hash), sizeof (hash.bytes), hash.bytes);
 }
 
 static uint8_t *

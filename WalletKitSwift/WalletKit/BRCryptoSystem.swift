@@ -1704,7 +1704,6 @@ extension System {
                                                 res.resolve(
                                                     success: {
                                                         var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
-                                                            //.map { UnsafeMutablePointer<BRCryptoClientTransactionBundle?> ($0) }
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                                                     failure: { (_) in
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
@@ -1750,10 +1749,10 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (_) in
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE,  hash) },
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE, hash) })
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
@@ -1770,10 +1769,29 @@ extension System {
                     (res: Result<SystemClient.TransactionFee, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_TRUE, hash, $0.costUnits) },
+                        success: {
+                            let properties = $0.properties ?? [:]
+                            var metaKeysPtr = Array(properties.keys)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                            var metaValsPtr = Array(properties.values)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                            
+                            cwmAnnounceEstimateTransactionFee (cwm,
+                                                               sid,
+                                                               CRYPTO_TRUE,
+                                                               hash,
+                                                               $0.costUnits,
+                                                               metaKeysPtr.count,
+                                                               &metaKeysPtr,
+                                                               &metaValsPtr)
+                            
+                    },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0) })
+                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0, 0, nil, nil) })
                 }}
         )
     }

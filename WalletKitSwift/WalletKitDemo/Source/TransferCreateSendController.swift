@@ -88,9 +88,9 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
         target = Address.create (string: self.recvField.text!, network: self.wallet.manager.network)
 
-        gasPriceSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        gasLimitSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        satPerKBSegmentedController.isEnabled = isBitCurrency && canUseFeeBasis
+        gasPriceSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        gasLimitSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        satPerKBSegmentedController.isEnabled = false//isBitCurrency && canUseFeeBasis
 
         priorityPicker.dataSource = self
         priorityPicker.delegate = self
@@ -268,6 +268,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
     }
 
+    //TODO:FEEBASIS
+    /*
     func updateFeeBasisETH () {
         guard let pricePerCostFactorUnit = wallet.manager.network.baseUnitFor (currency: wallet.unitForFee.currency)
             else { return }
@@ -316,6 +318,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
             }
         }
     }
+ */
+    
 
     @IBAction func doUseCoinbase(_ sender: Any) {
         recvField.text = "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg";
