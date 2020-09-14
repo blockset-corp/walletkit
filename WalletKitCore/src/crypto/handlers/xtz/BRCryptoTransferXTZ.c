@@ -12,6 +12,7 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoHashP.h"
 #include "tezos/BRTezosTransfer.h"
+#include "tezos/BRTezosFeeBasis.h"
 #include "ethereum/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
@@ -50,10 +51,9 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      tezosTransferGetAmount (xtzTransfer));
     
-    BRCryptoAmount feeAmount = cryptoAmountCreateAsXTZ (unitForFee,
-                                                        CRYPTO_FALSE,
-                                                        tezosTransferGetFee (xtzTransfer));
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreate (feeAmount, 1.0);
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (tezosTransferGetFee(xtzTransfer));
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXTZ (unitForFee,
+                                                           xtzFeeBasis);
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXTZ (tezosTransferGetSource (xtzTransfer));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXTZ (tezosTransferGetTarget (xtzTransfer));
@@ -67,7 +67,7 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                             listener,
                                                             unit,
                                                             unitForFee,
-                                                            feeBasisEstimated,
+                                                            feeBasis,
                                                             amount,
                                                             direction,
                                                             sourceAddress,
@@ -75,7 +75,7 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                             &contextXTZ,
                                                             cryptoTransferCreateCallbackXTZ);
     
-    cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoFeeBasisGive (feeBasis);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);
 

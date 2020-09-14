@@ -18,20 +18,48 @@
 extern "C" {
 #endif
 
+#define TEZOS_DEFAULT_MUTEZ_PER_BYTE 1
+
+typedef enum {
+    FEE_BASIS_ESTIMATE,
+    FEE_BASIS_ACTUAL
+} BRTezosFeeBasisType;
+
 typedef struct
 {
-    BRTezosUnitMutez    fee;
-    int64_t             gasLimit;
-    int64_t             storageLimit; // not used for fee calculation but needed for tx serialization
+    BRTezosFeeBasisType type;
+    union {
+        struct {
+            BRTezosUnitMutez    mutezPerByte;
+            size_t              sizeInBytes;
+            int64_t             gasLimit;
+            int64_t             storageLimit;
+        } estimate;
+        
+        struct {
+            BRTezosUnitMutez fee;
+        } actual;
+    } u;
 } BRTezosFeeBasis;
 
-extern BRTezosFeeBasis tezosDefaultFeeBasis();
 
-extern BRTezosUnitMutez tezosFeeBasisGetPricePerCostFactor(BRTezosFeeBasis *feeBasis);
-extern uint64_t tezosFeeBasisGetCostFactor(BRTezosFeeBasis *feeBasis);
-extern uint32_t tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
+extern BRTezosFeeBasis
+tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerByte);
 
-extern BRTezosUnitMutez tezosFeeBasisGetFee(BRTezosFeeBasis *feeBasis);
+extern BRTezosFeeBasis
+tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
+                            size_t sizeInBytes,
+                            int64_t gasLimit,
+                            int64_t storageLimit);
+
+extern BRTezosFeeBasis
+tezosFeeBasisCreateActual(BRTezosUnitMutez fee);
+
+extern BRTezosUnitMutez
+tezosFeeBasisGetFee(BRTezosFeeBasis *feeBasis);
+
+extern bool
+tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
 
 
 #ifdef __cplusplus

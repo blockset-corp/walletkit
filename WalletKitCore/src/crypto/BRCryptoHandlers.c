@@ -95,6 +95,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersXTZ,
         NULL,//BRCryptoWalletSweeperHandlers not supported
         NULL,//BRCryptoPaymentProtocolHandlers not supported
+        &cryptoFeeBasisHandlersXTZ,
         &cryptoWalletManagerHandlersXTZ
     },
 };

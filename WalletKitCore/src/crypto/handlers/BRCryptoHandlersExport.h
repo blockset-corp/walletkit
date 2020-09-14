@@ -91,6 +91,7 @@ extern BRCryptoTransferHandlers cryptoTransferHandlersXTZ;
 extern BRCryptoWalletHandlers cryptoWalletHandlersXTZ;
 // Wallet Sweep
 // Payment Protocol
+extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersXTZ;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ;
 
 #ifdef __cplusplus

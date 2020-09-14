@@ -134,7 +134,7 @@ cryptoWalletManagerEstimateLimitXTZ (BRCryptoWalletManager manager,
                                      BRCryptoBoolean *isZeroIfInsuffientFunds,
                                      BRCryptoUnit unit) {
     // We always need an estimate as we do not know the fees.
-    *needEstimate = CRYPTO_TRUE;
+    *needEstimate = asMaximum;
 
     return (CRYPTO_TRUE == asMaximum
             ? cryptoWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'
@@ -150,8 +150,9 @@ cryptoWalletManagerEstimateFeeBasisXTZ (BRCryptoWalletManager manager,
                                         BRCryptoNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept BRCryptoTransferAttribute *attributes) {
-    //BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis ();
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreate (networkFee->pricePerCostFactor, 1.0);
+    BRTezosUnitMutez mutezPerByte = tezosMutezCreate (networkFee->pricePerCostFactor);
+    BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis (mutezPerByte/1000); //TODO:TEZOS network fee seems to be in nanotez not mutez
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
     BRCryptoTransfer transfer = cryptoWalletCreateTransferXTZ (wallet,
@@ -176,11 +177,16 @@ cryptoWalletManagerEstimateFeeBasisXTZ (BRCryptoWalletManager manager,
                                               account,
                                               lastBlockHash,
                                               needsReveal);
+    
+    // serialized tx size is needed for fee estimation
+    cryptoFeeBasisGive (feeBasis);
+    feeBasis = cryptoFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, tezosTransactionGetFeeBasis(tid));
 
     cryptoClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
-                                        networkFee);
+                                        networkFee,
+                                        feeBasis);
 
     cryptoTransferGive (transfer);
     cryptoFeeBasisGive (feeBasis);
@@ -245,16 +251,16 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
 
     BRTezosAccount xtzAccount = cryptoAccountAsXTZ(manager->account);
     
-    BRTezosUnitMutez amountDrops, feeDrops = 0;
-    sscanf(bundle->amount, "%" PRIu64, &amountDrops);
-    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeDrops);
+    BRTezosUnitMutez amountMutez, feeMutez = 0;
+    sscanf(bundle->amount, "%" PRIu64, &amountMutez);
+    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeMutez);
     BRTezosAddress toAddress   = tezosAddressCreateFromString (bundle->to,   false);
     BRTezosAddress fromAddress = tezosAddressCreateFromString (bundle->from, false);
     // Convert the hash string to bytes
     BRTezosHash txId = cryptoHashAsXTZ (cryptoHashCreateFromStringAsXTZ (bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
-    BRTezosTransfer xtzTransfer = tezosTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
+    BRTezosTransfer xtzTransfer = tezosTransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     
     tezosAddressFree (toAddress);
     tezosAddressFree (fromAddress);
@@ -295,6 +301,26 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (key, attributesCount, attributeKeys, attributeVals), &parseError);
     
     cryptoWalletSetCounterXTZ (wallet, counter);
+}
+
+static BRCryptoFeeBasis
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
+                                                      BRCryptoNetworkFee networkFee,
+                                                      BRCryptoFeeBasis initialFeeBasis,
+                                                      double costUnits,
+                                                      size_t attributesCount,
+                                                      OwnershipKept const char **attributeKeys,
+                                                      OwnershipKept const char **attributeVals) {
+    bool parseError;
+    
+    int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
+    int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
+    BRTezosUnitMutez mutezPerByte = tezosMutezCreate (networkFee->pricePerCostFactor) / 1000; //TODO:TEZOS network fee seems to be in nanotez not mutez
+    size_t sizeInBytes = cryptoFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.estimate.sizeInBytes;
+    
+    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte, sizeInBytes, gasUsed, storageUsed);
+    
+    return cryptoFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, feeBasis);
 }
 
 extern BRCryptoWalletSweeperStatus
@@ -349,6 +375,7 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ = {
     cryptoWalletManagerEstimateFeeBasisXTZ,
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXTZ,
     cryptoWalletManagerRecoverTransferFromTransferBundleXTZ,
+    cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ,
     cryptoWalletManagerWalletSweeperValidateSupportedXTZ,
     cryptoWalletManagerCreateWalletSweeperXTZ
 };

@@ -15,45 +15,87 @@
 #include <stdio.h>
 #include <assert.h>
 
+// https://tezos.gitlab.io/protocols/004_Pt24m4xi.html#gas-and-fees
+#define TEZOS_MINIMAL_FEE_MUTEZ 100
+#define TEZOS_MUTEZ_PER_GAS_UNIT 0.1
+#define TEZOS_MUTEZ_PER_STORAGE_UNIT 1000
+#define TEZOS_DEFAULT_FEE_MUTEZ 1420
+
+
 extern BRTezosFeeBasis
-tezosDefaultFeeBasis() {
-    BRTezosFeeBasis feeBasis;
-    // https://github.com/TezTech/eztz/blob/master/PROTO_004_FEES.md
-    feeBasis.gasLimit = 10600;
-    feeBasis.storageLimit = 300;
-    feeBasis.fee = 1420;
-    return feeBasis;
+tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerByte) {
+    return (BRTezosFeeBasis) {
+        FEE_BASIS_ESTIMATE,
+        { .estimate = {
+            mutezPerByte,
+            0,
+            // https://github.com/TezTech/eztz/blob/master/PROTO_004_FEES.md
+            1040000, // hard gas limit, actual will be given by node estimate_fee
+            60000, // hard limit, actual will be given by node estimate_fee
+        } }
+    };
+}
+
+extern BRTezosFeeBasis
+tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
+                            size_t sizeInBytes,
+                            int64_t gasLimit,
+                            int64_t storageLimit) {
+    return (BRTezosFeeBasis) {
+        FEE_BASIS_ESTIMATE,
+        { .estimate = {
+            mutezPerByte,
+            sizeInBytes,
+            gasLimit,
+            storageLimit
+        } }
+    };
+}
+
+extern BRTezosFeeBasis
+tezosFeeBasisCreateActual(BRTezosUnitMutez fee) {
+    return (BRTezosFeeBasis) {
+        FEE_BASIS_ACTUAL,
+        { .actual = {
+            fee
+        } }
+    };
 }
 
 extern BRTezosUnitMutez
-tezosFeeBasisGetPricePerCostFactor (BRTezosFeeBasis *feeBasis)
-{
-    return 1; //TODO:TEZOS 1 mutez / opbyte
+tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis) {
+    if (FEE_BASIS_ESTIMATE == feeBasis->type) {
+        if (0 == feeBasis->u.estimate.sizeInBytes) {
+            // unserialized transaction
+            return TEZOS_DEFAULT_FEE_MUTEZ;
+        } else {
+            // storage is burned and not part of the fee
+            return  TEZOS_MINIMAL_FEE_MUTEZ
+                    + (int64_t)(TEZOS_MUTEZ_PER_GAS_UNIT * feeBasis->u.estimate.gasLimit)
+                    + (feeBasis->u.estimate.mutezPerByte * (int64_t)feeBasis->u.estimate.sizeInBytes);
+        }
+    } else {
+        return feeBasis->u.actual.fee;
+    }
 }
 
-extern uint64_t
-tezosFeeBasisGetCostFactor (BRTezosFeeBasis *feeBasis)
-{
-    return feeBasis ? (uint64_t)(feeBasis->gasLimit) : 1; //TODO:TEZOS
-}
-
-extern BRTezosUnitMutez
-tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis)
-{
-    // min + (gas_limit * 0.1) + (opbytes * 1)
-    return feeBasis ? feeBasis->fee : 0; //TODO:TEZOS default/min value?
-}
-
-
-extern uint32_t
-tezosFeeBasisIsEqual (BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2)
-{
+extern bool
+tezosFeeBasisIsEqual (BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2) {
     assert(fb1);
     assert(fb2);
-    if (fb1->fee == fb2->fee &&
-        fb1->gasLimit == fb2->gasLimit &&
-        fb1->storageLimit == fb2->storageLimit) {
-        return 1;
+    
+    if (fb1->type != fb2->type) return false;
+    
+    switch (fb1->type) {
+        case FEE_BASIS_ESTIMATE:
+            return (fb1->u.estimate.mutezPerByte == fb2->u.estimate.mutezPerByte &&
+                    fb1->u.estimate.gasLimit == fb2->u.estimate.gasLimit &&
+                    fb1->u.estimate.storageLimit == fb2->u.estimate.storageLimit);
+            
+        case FEE_BASIS_ACTUAL:
+            return (fb1->u.actual.fee == fb2->u.actual.fee);
+            
+        default:
+            return false;
     }
-    return 0;
 }
