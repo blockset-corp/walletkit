@@ -1029,7 +1029,7 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoWalletAddTransfer (wallet, transfer);
 
-    cryptoClientSend (cwm->canSend, transfer);
+    cryptoClientSend (cwm->canSend, wallet, transfer);
 
     cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,

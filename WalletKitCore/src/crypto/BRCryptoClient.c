@@ -30,13 +30,13 @@ static void
 cryptoClientP2PManagerSync (BRCryptoClientP2PManager p2p, BRCryptoSyncDepth depth, BRCryptoBlockNumber height);
 
 static void
-cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p, BRCryptoTransfer transfer);
+cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p, BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
 static void
 cryptoClientQRYManagerSync (BRCryptoClientQRYManager qry, BRCryptoSyncDepth depth, BRCryptoBlockNumber height);
 
 static void
-cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer);
+cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry,  BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
 // MARK: Client Sync
 
@@ -69,13 +69,15 @@ cryptoClientSyncPeriodic (BRCryptoClientSync sync) {
 // MARK: Client Send
 
 extern void
-cryptoClientSend (BRCryptoClientSend send, BRCryptoTransfer transfer) {
+cryptoClientSend (BRCryptoClientSend send,
+                  BRCryptoWallet wallet,
+                  BRCryptoTransfer transfer) {
     switch (send.type) {
         case CRYPTO_CLIENT_P2P_MANAGER_TYPE:
-            cryptoClientP2PManagerSend (send.u.p2pManager, transfer);
+            cryptoClientP2PManagerSend (send.u.p2pManager, wallet, transfer);
             break;
         case CRYPTO_CLIENT_QRY_MANAGER_TYPE:
-            cryptoClientQRYManagerSend (send.u.qryManager, transfer);
+            cryptoClientQRYManagerSend (send.u.qryManager, wallet, transfer);
             break;
     }
 }
@@ -123,8 +125,10 @@ cryptoClientP2PManagerSync (BRCryptoClientP2PManager p2p,
 }
 
 static void
-cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p, BRCryptoTransfer transfer) {
-    p2p->handlers->send (p2p, transfer);
+cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p,
+                            BRCryptoWallet   wallet,
+                            BRCryptoTransfer transfer) {
+    p2p->handlers->send (p2p, wallet, transfer);
 }
 
 // MARK: Client QRY (QueRY)
@@ -135,7 +139,9 @@ static bool cryptoClientQRYRequestTransactionsOrTransfers (BRCryptoClientQRYMana
                                                            OwnershipKept  BRSetOf(BRCryptoAddress) oldAddresses,
                                                            OwnershipGiven BRSetOf(BRCryptoAddress) newAddresses,
                                                            size_t requestId);
-static void cryptoClientQRYSubmitTransfer      (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer);
+static void cryptoClientQRYSubmitTransfer      (BRCryptoClientQRYManager qry,
+                                                BRCryptoWallet   wallet,
+                                                BRCryptoTransfer transfer);
 
 extern BRCryptoClientQRYManager
 cryptoClientQRYManagerCreate (BRCryptoClient client,
@@ -200,8 +206,10 @@ cryptoClientQRYGetNetworkBlockHeight (BRCryptoClientQRYManager qry){
 }
 
 static void
-cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer) {
-    cryptoClientQRYSubmitTransfer (qry, transfer);
+cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry,
+                            BRCryptoWallet wallet,
+                            BRCryptoTransfer transfer) {
+    cryptoClientQRYSubmitTransfer (qry, wallet, transfer);
 }
 
 extern void
@@ -462,11 +470,15 @@ cryptoClientCallbackStateCreateGetTrans (BRCryptoClientCallbackType type,
 }
 
 static BRCryptoClientCallbackState
-cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoHash hash,
+cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoWallet wallet,
+                                                  BRCryptoTransfer transfer,
+                                                  BRCryptoHash hash,
                                                   size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_SUBMIT_TRANSACTION, rid);
 
-    state->u.submitTransaction.hash = cryptoHashTake (hash);
+    state->u.submitTransaction.hash     = cryptoHashTake (hash);
+    state->u.submitTransaction.wallet   = cryptoWalletTake   (wallet);
+    state->u.submitTransaction.transfer = cryptoTransferTake (transfer);
 
     return state;
 }
@@ -497,7 +509,9 @@ cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
             break;
 
         case CLIENT_CALLBACK_SUBMIT_TRANSACTION:
-            cryptoHashGive (state->u.submitTransaction.hash);
+            cryptoHashGive     (state->u.submitTransaction.hash);
+            cryptoWalletGive   (state->u.submitTransaction.wallet);
+            cryptoTransferGive (state->u.submitTransaction.transfer);
             break;
 
         case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
@@ -773,7 +787,9 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
 // MARK: Announce Submit Transfer
 
 static void
-cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer transfer) {
+cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
+                               BRCryptoWallet   wallet,
+                               BRCryptoTransfer transfer) {
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
     if (NULL == cwm) return;
 
@@ -782,14 +798,14 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer tr
                                                                    cwm->network,
                                                                    &serializationCount);
 
-
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
-    char *hashAsHex = cryptoHashString(hash);
+    char *hashAsHex = cryptoHashString (hash);
 
-    BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateSubmitTransaction (hash, qry->requestId++);
+    BRCryptoClientCallbackState callbackState =
+    cryptoClientCallbackStateCreateSubmitTransaction (wallet, transfer, hash, qry->requestId++);
 
     qry->client.funcSubmitTransaction (qry->client.context,
-                                       cryptoWalletManagerTake(cwm),
+                                       cwm,
                                        callbackState,
                                        serialization,
                                        serializationCount,
@@ -803,13 +819,27 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry, BRCryptoTransfer tr
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
-                           BRCryptoBoolean success,
-                           OwnershipKept const char *hash) {
+                           BRCryptoBoolean success) {
     assert (CLIENT_CALLBACK_SUBMIT_TRANSACTION == callbackState->type);
+
+    BRCryptoWallet   wallet   = callbackState->u.submitTransaction.wallet;
+    BRCryptoTransfer transfer = callbackState->u.submitTransaction.transfer;
+
+    // Must be the case... 'belt and suspenders'
+    if (CRYPTO_TRUE == cryptoWalletHasTransfer (wallet, transfer)) {
+        // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
+        // a possible race condition, whereby the transfer can already be INCLUDED by the time this
+        // `announce` is called.  That has got to be impossible right?
+        BRCryptoTransferState state = (CRYPTO_TRUE == success
+                                       ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)
+                                       : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown()));
+
+        // Assign the state; generate events in the process.
+        cryptoTransferSetState(transfer, state);
+    }
 
     cryptoClientCallbackStateRelease(callbackState);
 }
-
 
 // MARK: - Announce Estimate Transaction Fee
 

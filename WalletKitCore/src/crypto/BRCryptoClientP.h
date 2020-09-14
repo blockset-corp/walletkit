@@ -74,6 +74,8 @@ struct BRCryptoClientCallbackStateRecord {
         } getTransactions;
 
         struct {
+            BRCryptoWallet wallet;
+            BRCryptoTransfer transfer;
             BRCryptoHash hash;
         } submitTransaction;
 
@@ -126,7 +128,9 @@ typedef struct {
 } BRCryptoClientSend;
 
 extern void
-cryptoClientSend (BRCryptoClientSend send, BRCryptoTransfer transfer);
+cryptoClientSend (BRCryptoClientSend send,
+                  BRCryptoWallet wallet,
+                  BRCryptoTransfer transfer);
 
 // MARK: Client P2P (Peer-to-Peer)
 
@@ -147,6 +151,7 @@ typedef void
 
 typedef void
 (*BRCryptoClientP2PManagerSendHandler) (BRCryptoClientP2PManager p2p,
+                                        BRCryptoWallet   wallet,
                                         BRCryptoTransfer transfer);
 
 typedef struct {
