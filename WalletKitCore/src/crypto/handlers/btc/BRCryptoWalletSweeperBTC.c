@@ -87,9 +87,8 @@ cryptoWalletSweeperEstimateFeeBasisForWalletSweepBTC (BRCryptoWalletManager cwm,
     //            context to the caller.
     uint64_t fee = 0;
     BRWalletSweeperEstimateFee (sweeperBTC, wid, feePerKb, &fee);
-    uint32_t sizeInByte = (uint32_t) ((1000 * fee)/ feePerKb);
     
-    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, (uint32_t) feePerKb, sizeInByte);
+    return cryptoFeeBasisCreateAsBTC (wallet->unitForFee, fee, feePerKb, CRYPTO_FEE_BASIS_BTC_SIZE_UNKNOWN);
 }
 
 static BRTransaction *
