@@ -426,13 +426,18 @@ cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys,
 
 static uint64_t
 cwmParseUInt64 (const char *string, bool *error) {
-    if (!string) { *error = true; return 0; }
-    return strtoull(string, NULL, 0);
+    if (!string || 0 == strlen(string)) { *error = true; return 0; }
+
+    char *endPtr;
+    unsigned long long result = strtoull (string, &endPtr, 0);
+    if ('\0' != *endPtr) { *error = true; return 0; } // must parse the entire string
+
+    return result;
 }
 
 static UInt256
 cwmParseUInt256 (const char *string, bool *error) {
-    if (!string) { *error = true; return UINT256_ZERO; }
+    if (!string || 0 == strlen (string)) { *error = true; return UINT256_ZERO; }
 
     BRCoreParseStatus status;
     UInt256 result = uint256CreateParse (string, 0, &status);
@@ -441,6 +446,7 @@ cwmParseUInt256 (const char *string, bool *error) {
     return result;
 }
 
+// Assigns `true` into `*error` if there is a parse error; otherwise leaves `*error` unchanged.
 static void
 cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
                       UInt256 *amount,
@@ -449,7 +455,6 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
                       UInt256  *gasPrice,
                       uint64_t *nonce,
                       bool     *error) {
-    *error  = false;
     *amount = cwmParseUInt256 (bundle->amount, error);
 
     size_t attributesCount = bundle->attributesCount;
@@ -457,18 +462,10 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     const char **attributeVals   = (const char **) bundle->attributeVals;
 
     *gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), error);
-    *gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), error); // strtoull(strGasUsed, NULL, 0);
+    *gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), error);
     *gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), error);
     *nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), error);
-
-    *error |= (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 }
-
-//static bool
-//cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
-//                                  const char *address) {
-//    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
-//}
 
 static bool // true if error
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
@@ -476,16 +473,18 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
 
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    UInt256 amount;
+    UInt256  amount;
     uint64_t gasLimit;
     uint64_t gasUsed;
     UInt256  gasPrice;
     uint64_t nonce;
-    bool     error;
 
+    bool error = false;
     cwmExtractAttributes (bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
-    // TODO: Handle `error` - bundle->status of 'ERROR' means??? Pay the fee
-    // if (error) return true;
+    if (error) return true;
+
+    bool statusError = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+    (void) statusError; // avoid 'unused variable' warning
 
     BREthereumAddress sourceAddress = ethAddressCreate (bundle->from);
     BREthereumAddress targetAddress = ethAddressCreate (bundle->to);
@@ -522,6 +521,7 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
     transactionSetHash (tid, ethHashCreate (bundle->hash));
 
+    // TODO: Handle `errorStatus`; which means what?
     BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
@@ -541,17 +541,25 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
                                OwnershipKept BRCryptoClientTransferBundle bundle) {
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    UInt256 amount;
+    UInt256  amount;
     uint64_t gasLimit;
     uint64_t gasUsed;
     UInt256  gasPrice;
     uint64_t nonce;
-    bool     error;
+    size_t   logIndex = 0;
 
-    size_t logIndex = 0;
-
+    bool error = false;
     cwmExtractAttributes(bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
     if (error) return true;
+
+    bool statusError = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+
+    // On a `statusError`, until we understand the meaning, assume that the log can't be recovered.
+    // Not that cryptoWalletManagerRecoverTransaction DOES NOT avoid the transaction; and thus
+    // we'll get `nonce` and `fee` updates.
+
+    // TODO: Handle `errorStatus`; which means what?
+    if (statusError) return true;
 
     // TODO: Is `nonce` relevent here?  Or only in cryptoWalletManagerRecoverTransaction
 
