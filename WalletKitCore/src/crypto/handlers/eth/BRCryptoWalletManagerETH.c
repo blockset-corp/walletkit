@@ -469,7 +469,7 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
 //    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
 //}
 
-static void
+static bool // true if error
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
                                        OwnershipKept BRCryptoClientTransferBundle bundle) {
 
@@ -483,27 +483,21 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     bool     error;
 
     cwmExtractAttributes (bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
-#if 0
-    ewmAnnounceTransaction (cwm->u.eth,
-                            callbackState->rid,
-                            bundle->hash,
-                            bundle->from,
-                            bundle->to,
-                            contract,
-                            value,
-                            gasLimit,
-                            gasPrice,
-                            "",
-                            nonce,
-                            gasUsed,
-                            bundle->blockNumber,
-                            bundle->blockHash,
-                            bundle->blockConfirmations,
-                            bundle->blockTransactionIndex,
-                            bundle->blockTimestamp,
-                            error);
+    // TODO: Handle `error` - bundle->status of 'ERROR' means??? Pay the fee
+    // if (error) return true;
 
-#endif
+    BREthereumAddress sourceAddress = ethAddressCreate (bundle->from);
+    BREthereumAddress targetAddress = ethAddressCreate (bundle->to);
+
+    // If account contains the source address, then update the nonce
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethAccountHasAddress (managerETH->account, sourceAddress))) {
+        assert (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (sourceAddress, ethAccountGetPrimaryAddress (managerETH->account))));
+        // Update the ETH account's nonce if we originzed this
+        ethAccountSetAddressNonce (managerETH->account,
+                                   ethAccountGetPrimaryAddress (managerETH->account),
+                                   nonce,
+                                   ETHEREUM_BOOLEAN_FALSE);
+    }
 
     //
     // This 'announce' call is coming from the guaranteed BRD endpoint; thus we don't need to
@@ -511,8 +505,8 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // if newly submitted?
 
     // TODO: Confirm we are not repeatedly creating transactions
-    BREthereumTransaction tid = transactionCreate (ethAddressCreate (bundle->from),
-                                                   ethAddressCreate (bundle->to),
+    BREthereumTransaction tid = transactionCreate (sourceAddress,
+                                                   targetAddress,
                                                    ethEtherCreate(amount),
                                                    ethGasPriceCreate(ethEtherCreate(gasPrice)),
                                                    ethGasCreate(gasLimit),
@@ -536,6 +530,8 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
     ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_UPDATED, tid);
+
+    return false;
 }
 
 static bool // true if error
@@ -556,33 +552,7 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
     cwmExtractAttributes(bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
     if (error) return true;
 
-#if 0
-    size_t topicsCount = 3;
-    char *topics[3] = {
-        (char *) ethEventGetSelector(ethEventERC20Transfer),
-        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, bundle->from),
-        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, bundle->to)
-    };
-
-    size_t logIndex = 0;
-
-    ewmAnnounceLog (cwm->u.eth,
-                    callbackState->rid,
-                    bundle->hash,
-                    contract,
-                    topicsCount,
-                    (const char **) &topics[0],
-                    amount,
-                    gasPrice,
-                    gasUsed,
-                    logIndex,
-                    bundle->blockNumber,
-                    bundle->blockTransactionIndex,
-                    bundle->blockTimestamp);
-
-    free (topics[1]);
-    free (topics[2]);
-#endif
+    // TODO: Is `nonce` relevent here?  Or only in cryptoWalletManagerRecoverTransaction
 
     // This 'announce' call is coming from the guaranteed BRD endpoint; thus we don't need to
     // worry about the validity of the transaction - it is surely confirmed.
