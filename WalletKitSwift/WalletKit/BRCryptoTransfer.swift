@@ -296,7 +296,7 @@ public class TransferHash: Hashable, CustomStringConvertible {
     }
 
     public var description: String {
-        return asUTF8String (cryptoHashString (core), true)
+        return asUTF8String (cryptoHashEncodeString (core), true)
     }
 }
 

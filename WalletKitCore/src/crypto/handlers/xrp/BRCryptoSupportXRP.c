@@ -13,6 +13,7 @@
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRHex.h"
 
 private_extern BRCryptoAmount
 cryptoAmountCreateAsXRP (BRCryptoUnit unit,
@@ -24,12 +25,14 @@ cryptoAmountCreateAsXRP (BRCryptoUnit unit,
 private_extern BRCryptoHash
 cryptoHashCreateAsXRP (BRRippleTransactionHash hash) {
     uint32_t setValue = (uint32_t) ((UInt256 *) hash.bytes)->u32[0];
-    return cryptoHashCreateInternal (setValue, 32, hash.bytes);
+    return cryptoHashCreateInternal (setValue, 32, hash.bytes, CRYPTO_NETWORK_TYPE_XRP);
 }
 
-private_extern uint32_t
-rippleHashSetValue (const BRRippleTransactionHash *hash) {
-    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
+private_extern BRRippleTransactionHash
+rippleHashCreateFromString (const char *string) {
+    BRRippleTransactionHash hash;
+    hexDecode (hash.bytes, sizeof (hash.bytes), string, strlen (string));
+    return hash;
 }
 
 // MARK: -

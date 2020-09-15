@@ -10,6 +10,7 @@
 //
 #include "BRCryptoHBAR.h"
 #include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoHashP.h"
 
 static BRCryptoNetworkHBAR
 cryptoNetworkCoerce (BRCryptoNetwork network) {
@@ -60,23 +61,16 @@ cryptoNetworkReleaseHBAR (BRCryptoNetwork network) {
     (void) networkHBAR;
 }
 
-//TODO:HBAR make common? remove network param?
 static BRCryptoAddress
 cryptoNetworkCreateAddressHBAR (BRCryptoNetwork network,
                                 const char *addressAsString) {
-    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
-    (void) networkHBAR;
-
     return cryptoAddressCreateFromStringAsHBAR (addressAsString);
 }
 
 static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR (BRCryptoNetwork network,
                                                     BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
-    (void) networkHBAR;
-
-    //TODO:HBAR
+    // not supported (used for p2p sync checkpoints)
     return 0;
 }
 
@@ -123,8 +117,13 @@ cryptoNetworkInitializeAccountHBAR (BRCryptoNetwork network,
 static BRCryptoHash
 cryptoNetworkCreateHashFromStringHBAR (BRCryptoNetwork network,
                                       const char *string) {
-    BRCryptoHash hash; //TODO:XTZ
-    return hash;
+    BRHederaTransactionHash hash = hederaHashCreateFromString(string);
+    return cryptoHashCreateAsHBAR (hash);
+}
+
+static char *
+cryptoNetworkEncodeHashHBAR (BRCryptoHash hash) {
+    return cryptoHashStringAsHex (hash);
 }
 
 // MARK: -
@@ -137,6 +136,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR = {
     cryptoNetworkIsAccountInitializedHBAR,
     cryptoNetworkGetAccountInitializationDataHBAR,
     cryptoNetworkInitializeAccountHBAR,
-    cryptoNetworkCreateHashFromStringHBAR
+    cryptoNetworkCreateHashFromStringHBAR,
+    cryptoNetworkEncodeHashHBAR
 };
 

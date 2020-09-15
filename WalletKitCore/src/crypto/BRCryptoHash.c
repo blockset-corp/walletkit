@@ -11,6 +11,7 @@
 
 #include "BRCryptoHashP.h"
 #include "BRCryptoBaseP.h"
+#include "BRCryptoNetworkP.h"
 
 #include "support/util/BRHex.h"
 
@@ -19,14 +20,16 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoHash, cryptoHash)
 extern BRCryptoHash
 cryptoHashCreateInternal (uint32_t setValue,
                           size_t   bytesCount,
-                          uint8_t *bytes) {
+                          uint8_t *bytes,
+                          BRCryptoBlockChainType type) {
     assert (bytesCount <= CRYPTO_HASH_BYTES);
     BRCryptoHash hash = calloc (1, sizeof (struct BRCryptoHashRecord));
 
     hash->setValue   = setValue;
     hash->bytesCount = bytesCount;
     memcpy (hash->bytes, bytes, bytesCount);
-
+    
+    hash->type = type;
     hash->ref  = CRYPTO_REF_ASSIGN (cryptoHashRelease);
 
     return hash;
@@ -46,6 +49,11 @@ cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2) {
                                0 == memcmp (h1->bytes, h2->bytes, h1->bytesCount)));
 }
 
+extern OwnershipGiven char *
+cryptoHashEncodeString (BRCryptoHash hash) {
+    return cryptoNetworkEncodeHash (hash);
+}
+
 static char *
 _cryptoHashAddPrefix (char *hash, int freeHash) {
     char *result = malloc (2 + strlen (hash) + 1);
@@ -55,8 +63,8 @@ _cryptoHashAddPrefix (char *hash, int freeHash) {
     return result;
 }
 
-extern char *
-cryptoHashString (BRCryptoHash hash) {
+private_extern OwnershipGiven char *
+cryptoHashStringAsHex (BRCryptoHash hash) {
     size_t stringLength = 2 * hash->bytesCount + 1;
     char string [stringLength];
 
