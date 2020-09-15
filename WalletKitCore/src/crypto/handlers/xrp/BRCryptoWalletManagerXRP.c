@@ -226,6 +226,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+
 #ifdef REFACTOR
     ||
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
@@ -246,13 +247,15 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
                                                                xrpAccount,
                                                                xrpTransfer);
     cryptoWalletAddTransfer (wallet, baseTransfer);
-    
+
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
+
     BRCryptoTransferState transferState =
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
-                                        NULL,
+                                        feeBasis,
                                         CRYPTO_TRUE,
                                         NULL)
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
@@ -260,7 +263,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
         : cryptoTransferStateInit (bundle->status)));
     
     cryptoTransferSetState (baseTransfer, transferState);
-    
+
+    cryptoFeeBasisGive (feeBasis);
+
     //TODO:XRP attributes
     //TODO:XRP save to fileService
     //TODO:XRP announce
