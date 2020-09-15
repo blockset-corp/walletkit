@@ -449,6 +449,7 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
                       UInt256  *gasPrice,
                       uint64_t *nonce,
                       bool     *error) {
+    *error  = false;
     *amount = cwmParseUInt256 (bundle->amount, error);
 
     size_t attributesCount = bundle->attributesCount;
