@@ -232,6 +232,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      && CRYPTO_FALSE == state.u.included.success));
 #endif
+    bool xrpTransferNeedFree = true;
     BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     
     rippleAddressFree (toAddress);
@@ -250,6 +251,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
                                                   wallet->unitForFee,
                                                   xrpAccount,
                                                   xrpTransfer);
+        xrpTransferNeedFree = false;
+
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     
@@ -273,8 +276,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     //TODO:XRP attributes
     //TODO:XRP save to fileService
-    
-    rippleTransferFree (xrpTransfer);
+
+    if (xrpTransferNeedFree)
+        rippleTransferFree (xrpTransfer);
 }
 
 extern BRCryptoWalletSweeperStatus
