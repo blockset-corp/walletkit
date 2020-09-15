@@ -492,10 +492,10 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // If account contains the source address, then update the nonce
     if (ETHEREUM_BOOLEAN_IS_TRUE (ethAccountHasAddress (managerETH->account, sourceAddress))) {
         assert (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (sourceAddress, ethAccountGetPrimaryAddress (managerETH->account))));
-        // Update the ETH account's nonce if we originzed this
+        // Update the ETH account's nonce if we originated this.
         ethAccountSetAddressNonce (managerETH->account,
                                    ethAccountGetPrimaryAddress (managerETH->account),
-                                   nonce,
+                                   nonce + 1, // The NEXT nonce; one more than this transaction's
                                    ETHEREUM_BOOLEAN_FALSE);
     }
 
