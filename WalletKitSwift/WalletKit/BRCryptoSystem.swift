@@ -1675,10 +1675,10 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (_) in
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE,  hash) },
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE, hash) })
+                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in

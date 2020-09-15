@@ -86,11 +86,13 @@ typedef struct {
 } BRCryptoClientP2PManagerPublishInfo;
 
 static void
-cryptoClientP2PManagerSendETH (BRCryptoClientP2PManager baseManager, BRCryptoTransfer baseTransfer) {
-    BRCryptoClientP2PManagerETH manager = cryptoClientP2PManagerCoerce (baseManager);
-    BRCryptoTransferETH transfer = cryptoTransferCoerceETH (baseTransfer);
+cryptoClientP2PManagerSendETH (BRCryptoClientP2PManager manager,
+                               BRCryptoWallet   wallet,
+                               BRCryptoTransfer transfer) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+    BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (transfer);
 
-    bcsSendTransaction (manager->bcs, transfer->originatingTransaction);
+    bcsSendTransaction (managerETH->bcs, transferETH->originatingTransaction);
 }
 
 static BRCryptoClientP2PHandlers p2pHandlersETH = {

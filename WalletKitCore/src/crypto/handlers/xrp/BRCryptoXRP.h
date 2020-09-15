@@ -76,10 +76,11 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
                          BRCryptoUnit unitForFee,
                          BRRippleAccount xrpAccount);
 
-
-//TODO:XRP needed?
 private_extern BRCryptoHash
 cryptoHashCreateAsXRP (BRRippleTransactionHash hash);
+
+private_extern uint32_t
+rippleHashSetValue (const BRRippleTransactionHash *hash);
 
 // MARK: - Wallet Manager
 

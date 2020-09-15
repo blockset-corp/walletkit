@@ -123,17 +123,21 @@ cryptoClientP2PManagerSyncBTC (BRCryptoClientP2PManager baseManager,
 
 typedef struct {
     BRCryptoWalletManager manager;
+    BRCryptoWallet   wallet;
     BRCryptoTransfer transfer;
 } BRCryptoClientP2PManagerPublishInfo;
 
 static void
-cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager, BRCryptoTransfer transfer) {
+cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager,
+                               BRCryptoWallet   wallet,
+                               BRCryptoTransfer transfer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
     BRTransaction *btcTransaction = cryptoTransferAsBTC (transfer);
 
     BRCryptoClientP2PManagerPublishInfo *btcInfo = calloc (1, sizeof (BRCryptoClientP2PManagerPublishInfo));
-    btcInfo->manager  = cryptoWalletManagerTake(&manager->manager->base);
+    btcInfo->manager  = cryptoWalletManagerTake (&manager->manager->base);
+    btcInfo->wallet   = cryptoWalletTake   (wallet);
     btcInfo->transfer = cryptoTransferTake (transfer);
 
     BRPeerManagerPublishTx (manager->btcPeerManager,

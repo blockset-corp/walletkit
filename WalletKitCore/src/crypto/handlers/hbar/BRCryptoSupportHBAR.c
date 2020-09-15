@@ -11,6 +11,7 @@
 #include "BRCryptoHBAR.h"
 #include "hedera/BRHederaBase.h"
 #include "crypto/BRCryptoAmountP.h"
+#include "crypto/BRCryptoHashP.h"
 #include "ethereum/util/BRUtilMath.h"
 
 static uint64_t
@@ -24,6 +25,17 @@ cryptoAmountCreateAsHBAR (BRCryptoUnit unit,
                           BRCryptoBoolean isNegative,
                           BRHederaUnitTinyBar value) {
     return cryptoAmountCreate (unit, isNegative, uint256Create (hederaTinyBarCoerceToUInt64 (value)));
+}
+
+private_extern BRCryptoHash
+cryptoHashCreateAsHBAR (BRHederaTransactionHash hash) {
+    uint32_t setValue = (uint32_t) ((UInt256 *) hash.bytes)->u32[0];
+    return cryptoHashCreateInternal (setValue, 48, hash.bytes);
+}
+
+private_extern uint32_t
+hederaHashSetValue (const BRHederaTransactionHash *hash) {
+    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
 }
 
 // MARK: -

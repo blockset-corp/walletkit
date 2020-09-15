@@ -900,9 +900,9 @@ cryptoTransferStateCreateGEN (BRGenericTransferState generic,
 
 private_extern void
 cryptoWalletManagerSetTransferState (BRCryptoWalletManager cwm,
-                                        BRCryptoWallet wallet,
-                                        BRCryptoTransfer transfer,
-                                        BRCryptoTransferState newState) {
+                                     BRCryptoWallet wallet,
+                                     BRCryptoTransfer transfer,
+                                     BRCryptoTransferState newState) {
     pthread_mutex_lock (&cwm->lock);
 
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
@@ -1029,7 +1029,7 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoWalletAddTransfer (wallet, transfer);
 
-    cryptoClientSend (cwm->canSend, transfer);
+    cryptoClientSend (cwm->canSend, wallet, transfer);
 
     cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,
