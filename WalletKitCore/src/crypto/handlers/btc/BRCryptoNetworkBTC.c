@@ -192,8 +192,9 @@ cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
 static BRCryptoHash
 cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
                                       const char *string) {
-    BRCryptoHash hash; //TODO:XTZ
-    return hash;
+    assert(64 == strlen (string));
+    UInt256 hash = uint256(string);
+    return cryptoHashCreateAsBTC (hash);
 }
 
 static char *
