@@ -254,5 +254,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersHBAR = {
     cryptoWalletCreateTransferHBAR,
     cryptoWalletCreateTransferMultipleHBAR,
     cryptoWalletGetAddressesForRecoveryHBAR,
+    NULL,
     cryptoWalletIsEqualHBAR
 };

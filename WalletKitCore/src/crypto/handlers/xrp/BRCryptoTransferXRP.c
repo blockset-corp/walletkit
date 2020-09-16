@@ -29,6 +29,12 @@ typedef struct {
     BRRippleTransfer xrpTransfer;
 } BRCryptoTransferCreateContextXRP;
 
+extern BRRippleTransfer
+cryptoTransferAsXRP (BRCryptoTransfer transfer) {
+    BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
+    return transferXRP->xrpTransfer;
+}
+
 static void
 cryptoTransferCreateCallbackXRP (BRCryptoTransferCreateContext context,
                                     BRCryptoTransfer transfer) {

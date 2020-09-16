@@ -257,6 +257,45 @@ cryptoWalletGetAddressesForRecoveryXRP (BRCryptoWallet wallet) {
     return addresses;
 }
 
+static void
+cryptoWalletAnnounceTransferXRP (BRCryptoWallet wallet,
+                                 BRCryptoTransfer transfer,
+                                 BRCryptoWalletEventType type) {
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+
+    // Now update the account's sequence id
+    BRRippleSequence sequence = 0;
+
+    // The address for comparison with `transfer` source and target addresses.
+    BRRippleAddress accountAddress = rippleAccountGetAddress (walletXRP->xrpAccount);
+
+    // We need to keep track of the first block where this account shows up due to a
+    // change in how ripple assigns the sequence number to new accounts
+    uint64_t minBlockHeight = UINT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRRippleTransfer xrpTransfer = cryptoTransferAsXRP (wallet->transfers[index]);
+        BRRippleAddress targetAddress = rippleTransferGetTarget(xrpTransfer);
+
+        if (rippleTransferHasError(xrpTransfer) == 0
+            && rippleAddressEqual(accountAddress, targetAddress)) {
+            // We trying to find the lowest block number where we were sent
+            // currency successful - basically this is the block where our account
+            // was created *** ignore failed transfers TO us since we end up seeing
+            // items before our account is actually created.
+            uint64_t blockHeight = rippleTransferGetBlockHeight(xrpTransfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        }
+        rippleAddressFree(targetAddress);
+        if (rippleTransferHasSource (xrpTransfer, accountAddress))
+            sequence += 1;
+    }
+
+    rippleAddressFree (accountAddress);
+
+    rippleAccountSetBlockNumberAtCreation(walletXRP->xrpAccount, minBlockHeight);
+    rippleAccountSetSequence (walletXRP->xrpAccount, sequence);
+}
+
 static bool
 cryptoWalletIsEqualXRP (BRCryptoWallet wb1, BRCryptoWallet wb2) {
     if (wb1 == wb2) return true;
@@ -276,6 +315,7 @@ BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
     cryptoWalletCreateTransferXRP,
     cryptoWalletCreateTransferMultipleXRP,
     cryptoWalletGetAddressesForRecoveryXRP,
+    cryptoWalletAnnounceTransferXRP,
     cryptoWalletIsEqualXRP
 };
 

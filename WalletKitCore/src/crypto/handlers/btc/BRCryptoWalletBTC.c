@@ -380,6 +380,7 @@ BRCryptoWalletHandlers cryptoWalletHandlersBTC = {
     cryptoWalletCreateTransferBTC,
     cryptoWalletCreateTransferMultipleBTC,
     cryptoWalletGetAddressesForRecoveryBTC,
+    NULL,
     cryptoWalletIsEqualBTC
 };
 
@@ -393,6 +394,7 @@ BRCryptoWalletHandlers cryptoWalletHandlersBCH = {
     cryptoWalletCreateTransferBTC,
     cryptoWalletCreateTransferMultipleBTC,
     cryptoWalletGetAddressesForRecoveryBTC,
+    NULL,
     cryptoWalletIsEqualBTC
 };
 
@@ -406,5 +408,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersBSV = {
     cryptoWalletCreateTransferBTC,
     cryptoWalletCreateTransferMultipleBTC,
     cryptoWalletGetAddressesForRecoveryBTC,
+    NULL,
     cryptoWalletIsEqualBTC
 };

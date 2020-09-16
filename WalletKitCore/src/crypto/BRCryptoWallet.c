@@ -307,12 +307,23 @@ cryptoWalletHasTransfer (BRCryptoWallet wallet,
     return cryptoWalletHasTransferLock(wallet, transfer, true);
 }
 
+static void
+cryptoWalletAnnounceTransfer (BRCryptoWallet wallet,
+                              BRCryptoTransfer transfer,
+                              BRCryptoWalletEventType type) {  // TRANSFER_{ADDED,DELETED}
+    assert (CRYPTO_WALLET_EVENT_TRANSFER_ADDED == type ||
+            CRYPTO_WALLET_EVENT_TRANSFER_DELETED == type);
+    if (NULL != wallet->handlers->announceTransfer)
+        wallet->handlers->announceTransfer (wallet, transfer, type);
+}
+
 extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer) {
     pthread_mutex_lock (&wallet->lock);
     if (CRYPTO_FALSE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
         array_add (wallet->transfers, cryptoTransferTake(transfer));
+        cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
             CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
             { .transfer = cryptoTransferTake (transfer) }
@@ -330,6 +341,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
         if (CRYPTO_TRUE == cryptoTransferEqual (wallet->transfers[index], transfer)) {
             walletTransfer = wallet->transfers[index];
             array_rm (wallet->transfers, index);
+            cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
             cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
                 CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
                 { .transfer = cryptoTransferTake (transfer) }

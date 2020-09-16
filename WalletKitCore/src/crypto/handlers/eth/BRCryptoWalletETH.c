@@ -422,5 +422,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersETH = {
     cryptoWalletCreateTransferETH,
     cryptoWalletCreateTransferMultipleETH,
     cryptoWalletGetAddressesForRecoveryETH,
+    NULL,
     cryptoWalletIsEqualETH
 };
