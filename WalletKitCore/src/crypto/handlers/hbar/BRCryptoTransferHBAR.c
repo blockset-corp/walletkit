@@ -90,7 +90,7 @@ static BRCryptoHash
 cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
     BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
     BRHederaTransactionHash hash = hederaTransactionGetHash (transferHBAR->hbarTransaction);
-    return cryptoHashCreateInternal (hederaHashSetValue (&hash), sizeof (hash.bytes), hash.bytes);
+    return cryptoHashCreateAsHBAR (hash);
 }
 
 static uint8_t *

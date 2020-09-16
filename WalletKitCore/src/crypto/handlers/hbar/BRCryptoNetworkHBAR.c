@@ -90,7 +90,8 @@ cryptoNetworkIsAccountInitializedHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
-    return AS_CRYPTO_BOOLEAN (true);
+
+    return AS_CRYPTO_BOOLEAN (hederaAccountHasPrimaryAddress (hbarAccount));
 }
 
 
@@ -103,8 +104,8 @@ cryptoNetworkGetAccountInitializationDataHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
-    if (NULL != bytesCount) *bytesCount = 0;
-    return NULL;
+
+    return hederaAccountGetPublicKeyBytes (hbarAccount, bytesCount);
 }
 
 static void
@@ -117,6 +118,17 @@ cryptoNetworkInitializeAccountHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
+
+    char *hederaAddressString = malloc (bytesCount + 1);
+    memcpy (hederaAddressString, bytes, bytesCount);
+    hederaAddressString[bytesCount] = 0;
+
+    BRHederaAddress hederaAddress = hederaAddressCreateFromString (hederaAddressString, true);
+    free (hederaAddressString);
+
+    hederaAccountSetAddress (hbarAccount, hederaAddress);
+    hederaAddressFree(hederaAddress);
+
     return;
 }
 
