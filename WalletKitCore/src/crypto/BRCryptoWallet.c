@@ -284,7 +284,7 @@ cryptoWalletGetTransferByHash (BRCryptoWallet wallet, BRCryptoHash hashToMatch) 
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
         BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
-        if (cryptoHashEqual(hash, hashToMatch))
+        if (CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch))
             transfer = wallet->transfers[index];
         cryptoHashGive(hash);
     }
