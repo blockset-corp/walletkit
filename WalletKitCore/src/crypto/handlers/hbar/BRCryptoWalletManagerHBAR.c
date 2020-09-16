@@ -206,7 +206,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     }
     
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
-    
+
+    bool hbarTransactionNeedFree = true;
     BRHederaTransaction hbarTransaction = hederaTransactionCreate(fromAddress,
                                                                   toAddress,
                                                                   amountHbar,
@@ -216,7 +217,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
                                                                   bundle->blockTimestamp,
                                                                   bundle->blockNumber,
                                                                   error);
-    
+
     hederaAddressFree (toAddress);
     hederaAddressFree (fromAddress);
 
@@ -233,9 +234,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
                                                    wallet->unitForFee,
                                                    hbarAccount,
                                                    hbarTransaction);
+        hbarTransactionNeedFree = false;
+
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
-    
+
     BRCryptoTransferState transferState =
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
@@ -252,8 +255,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     
     //TODO:HBAR attributes
     //TODO:HBAR save to fileService
-    
-    hederaTransactionFree (hbarTransaction);
+
+    if (hbarTransactionNeedFree)
+        hederaTransactionFree (hbarTransaction);
 }
 
 extern BRCryptoWalletSweeperStatus

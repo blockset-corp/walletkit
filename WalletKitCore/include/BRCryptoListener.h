@@ -74,11 +74,20 @@ cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
 
 // MARK: - Transfer Listener
 
+// A Hack: Instead Wallet should listen for CRYPTO_TRANSFER_EVENT_CHANGED
+typedef void
+(*BRCryptoTransferStateChangedCallback) (BRCryptoWallet wallet,
+                                         BRCryptoTransfer transfer,
+                                         OwnershipKept BRCryptoTransferState newState);
+
 typedef struct {
     BRCryptoListener listener;
     BRCryptoSystem system;
     BRCryptoWalletManager manager;
     BRCryptoWallet wallet;
+
+    // A Hack: Instead Wallet should listen for CRYPTO_TRANSFER_EVENT_CHANGED
+    BRCryptoTransferStateChangedCallback transferChangedCallback;
 } BRCryptoTransferListener;
 
 extern void
@@ -92,16 +101,20 @@ typedef struct {
     BRCryptoListener listener;
     BRCryptoSystem system;
     BRCryptoWalletManager manager;
+    BRCryptoTransferStateChangedCallback transferChangedCallback;
 } BRCryptoWalletListener;
 
 static inline BRCryptoTransferListener
 cryptoListenerCreateTransferListener (const BRCryptoWalletListener *listener,
-                                      BRCryptoWallet wallet) {
+                                      BRCryptoWallet wallet,
+                                      // A Hack: Instead Wallet should listen for CRYPTO_TRANSFER_EVENT_CHANGED
+                                      BRCryptoTransferStateChangedCallback transferChangedCallback) {
     return (BRCryptoTransferListener) {
         listener->listener,
         listener->system,
         listener->manager,
-        wallet
+        wallet,
+        transferChangedCallback
     };
 }
 

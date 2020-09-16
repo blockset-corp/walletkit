@@ -283,14 +283,19 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
     transfer->state = newState;
     pthread_mutex_unlock (&transfer->lock);
 
-    if (!cryptoTransferStateIsEqual (&oldState, &newState))
+    if (!cryptoTransferStateIsEqual (&oldState, &newState)) {
+        // A Hack: Instead Wallet shouild listen for CRYPTO_TRANSFER_EVENT_CHANGED
+        if (NULL != transfer->listener.transferChangedCallback)
+            transfer->listener.transferChangedCallback (transfer->listener.wallet, transfer, newState);
+
         cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
             CRYPTO_TRANSFER_EVENT_CHANGED,
             { .state = {
                 cryptoTransferStateCopy (&oldState),
                 cryptoTransferStateCopy (&newState) }}
         });
-
+    }
+    
     cryptoTransferStateRelease (&oldState);
 }
 
@@ -310,6 +315,14 @@ cryptoTransferGetEstimatedFeeBasis (BRCryptoTransfer transfer) {
     return cryptoFeeBasisTake (transfer->feeBasisEstimated);
 }
 
+private_extern BRCryptoAmount
+cryptoTransferGetEstimatedFee (BRCryptoTransfer transfer) {
+    // TODO: NULL on unit vs unitForFee mismatch?
+   return (NULL != transfer->feeBasisEstimated
+            ? cryptoFeeBasisGetFee (transfer->feeBasisEstimated)
+            : NULL);
+}
+
 extern BRCryptoFeeBasis
 cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
     pthread_mutex_lock (&transfer->lock);
@@ -319,6 +332,15 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
     pthread_mutex_unlock (&transfer->lock);
 
     return feeBasisConfirmed;
+}
+
+private_extern BRCryptoAmount
+cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer) {
+    // TODO: NULL on unit vs unitForFee mismatch?
+    return ((CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state.type &&
+             NULL != transfer->state.u.included.feeBasis)
+            ? cryptoFeeBasisGetFee (transfer->state.u.included.feeBasis)
+            : NULL);
 }
 
 extern BRCryptoAmount

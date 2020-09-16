@@ -135,6 +135,12 @@ cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
     cryptoListenerGenerateTransferEvent(&transfer->listener, transfer, event);
 }
 
+private_extern BRCryptoAmount
+cryptoTransferGetEstimatedFee (BRCryptoTransfer transfer);
+
+private_extern BRCryptoAmount
+cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer);
+
 #ifdef __cplusplus
 }
 #endif
