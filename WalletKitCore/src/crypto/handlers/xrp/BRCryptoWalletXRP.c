@@ -229,7 +229,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                                            unitForFee,
                                                            walletXRP->xrpAccount,
                                                            xrpTransfer);
-    cryptoTransferSetAttributes (transfer, attributes);
+    cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
 }

@@ -209,7 +209,7 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
                                                             unitForFee,
                                                             walletHBAR->hbarAccount,
                                                             tid);
-    cryptoTransferSetAttributes (transfer, attributes);
+    cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
 }

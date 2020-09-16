@@ -524,13 +524,8 @@ cryptoWalletCreateTransfer (BRCryptoWallet  wallet,
                                                                   unit,
                                                                   unitForFee);
 
-    if (NULL != transfer && attributesCount > 0) {
-        BRArrayOf (BRCryptoTransferAttribute) transferAttributes;
-        array_new (transferAttributes, attributesCount);
-        array_add_array (transferAttributes, attributes, attributesCount);
-        cryptoTransferSetAttributes (transfer, transferAttributes);
-        array_free (transferAttributes);
-    }
+    if (NULL != transfer && attributesCount > 0)
+        cryptoTransferSetAttributes (transfer, attributesCount, attributes);
 
     cryptoCurrencyGive(currency);
     cryptoUnitGive (unitForFee);
