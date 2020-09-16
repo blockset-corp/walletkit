@@ -20,6 +20,16 @@
 
 #include "BRCryptoHandlersP.h"
 
+
+static void
+cryptoWalletUpdTransfer (BRCryptoWallet wallet,
+                                  BRCryptoTransfer transfer,
+                                  OwnershipKept BRCryptoTransferState newState);
+
+static void
+cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
+                                              BRCryptoTransfer transfer);
+
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet)
 
 extern BRCryptoWallet
@@ -61,7 +71,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
     wallet->ref = CRYPTO_REF_ASSIGN (cryptoWalletRelease);
 
-    wallet->listenerTransfer = cryptoListenerCreateTransferListener (&wallet->listener, wallet);
+    wallet->listenerTransfer = cryptoListenerCreateTransferListener (&wallet->listener, wallet, cryptoWalletUpdTransfer);
 
     pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
@@ -169,7 +179,7 @@ cryptoWalletGetBalance (BRCryptoWallet wallet) {
 
 static void
 cryptoWalletSetBalance (BRCryptoWallet wallet,
-                        BRCryptoAmount newBalance) {
+                        OwnershipGiven BRCryptoAmount newBalance) {
     BRCryptoAmount oldBalance = wallet->balance;
 
     wallet->balance = newBalance;
@@ -194,6 +204,78 @@ static void
 cryptoWalletDecBalance (BRCryptoWallet wallet,
                         BRCryptoAmount amount) {
     cryptoWalletSetBalance (wallet, cryptoAmountSub (wallet->balance, amount));
+}
+
+//
+// Recompute the balance by iterating over all transfers and summing the 'amount directed net'.
+// This is appropriately used when the 'amount directed net' has changed; typically when a
+// transfer's state is become 'included' and thus the fee has been finalized.  Note, however, we
+// handle an estimated vs confirmed fee explicitly in the subsequent function.
+//
+#pragma clang diagnostic push
+#pragma GCC   diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma GCC   diagnostic ignored "-Wunused-function"
+static void
+cryptoWalletUpdBalance (BRCryptoWallet wallet) {
+    pthread_mutex_lock (&wallet->lock);
+    BRCryptoAmount balance = cryptoAmountCreateInteger (0, wallet->unit);
+
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRCryptoAmount amount     = cryptoTransferGetAmountDirectedNet (wallet->transfers[index]);
+        BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
+
+        cryptoAmountGive(amount);
+        cryptoAmountGive(balance);
+
+        balance = newBalance;
+    }
+    pthread_mutex_unlock (&wallet->lock);
+
+    cryptoWalletSetBalance (wallet, balance);
+}
+#pragma clang diagnostic pop
+#pragma GCC   diagnostic pop
+
+//
+// When a transfer is confirmed, the fee can change.  A typical example is that for ETH a transfer
+// has an estimated fee based on `gasLimit` but an actual, included fee based on `gasUsed`.  The
+// following code handles a fee change - and only a fee change.
+//
+// There are BTC cases where the amount changes when *another* transfer is confirmed.  Specifically,
+// BRWallet has a BRTransaction 'in the future' where one of the inputs is an early UTXO.  The
+// other inputs and the outputs of the BRTransaction aren't resolved until early transactions are
+// added to the BRWallet, and then addresses are generated upto the gap_limit.  Only then can the
+// later transactions inputs and outputs be resovled.  We don't handle that case in this function.
+//
+static void
+cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
+                                              BRCryptoTransfer transfer) {
+    // if this wallet does not pay fees, then there is nothing to do
+    if (CRYPTO_FALSE == cryptoUnitIsCompatible (wallet->unit, wallet->unitForFee))
+        return;
+
+    BRCryptoAmount feeEstimated = cryptoTransferGetEstimatedFee (transfer);
+    BRCryptoAmount feeConfirmed = cryptoTransferGetConfirmedFee (transfer);
+    assert (NULL == feeConfirmed || NULL == feeEstimated || cryptoAmountIsCompatible (feeEstimated, feeConfirmed));
+    assert (NULL == feeConfirmed || cryptoAmountIsCompatible (feeConfirmed, wallet->balance));
+    // TODO: assert (NULL != feeConfirmed)
+
+    BRCryptoAmount change = NULL;
+
+    if (NULL != feeConfirmed && NULL != feeEstimated)
+        change = cryptoAmountSub (feeConfirmed, feeEstimated);
+    else if (NULL != feeConfirmed)
+        change = cryptoAmountTake (feeConfirmed);
+    else if (NULL != feeEstimated)
+        change = cryptoAmountNegate (feeEstimated);
+
+    if (NULL != change && CRYPTO_FALSE == cryptoAmountIsZero(change))
+        cryptoWalletIncBalance (wallet, change);
+
+    cryptoAmountGive (change);
+    cryptoAmountGive (feeEstimated);
+    cryptoAmountGive (feeConfirmed);
 }
 
 extern BRCryptoAmount /* nullable */
@@ -260,6 +342,16 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
 
     // drop reference outside of lock to avoid potential case where release function runs
     if (NULL != walletTransfer) cryptoTransferGive (transfer);
+}
+
+static void
+cryptoWalletUpdTransfer (BRCryptoWallet wallet,
+                         BRCryptoTransfer transfer,
+                         OwnershipKept BRCryptoTransferState newState) {
+    // The transfer's state has changed.  This implies a possible amount/fee change.
+    if (newState.type == CRYPTO_TRANSFER_STATE_INCLUDED &&
+        CRYPTO_TRUE == cryptoWalletHasTransfer (wallet, transfer))
+        cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
 }
 
 extern BRCryptoTransfer *

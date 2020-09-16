@@ -12,7 +12,7 @@
 import UIKit
 import WalletKit
 
-class WalletViewController: UITableViewController, TransferListener, WalletManagerListener {
+class WalletViewController: UITableViewController, WalletListener, WalletManagerListener {
 
     /// The wallet viewed.
     var wallet : Wallet! {
@@ -46,8 +46,8 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
         }
         
         if let listener = UIApplication.sharedSystem.listener as? CoreDemoListener {
-            listener.add (managerListener: self)
-            listener.add (transferListener: self)
+            listener.add (managerListener:  self)
+            listener.add (walletListener:   self)
         }
         
         super.viewWillAppear(animated)
@@ -55,8 +55,8 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
 
     override func viewWillDisappear(_ animated: Bool) {
         if let listener = UIApplication.sharedSystem.listener as? CoreDemoListener {
-            listener.remove (managerListener: self)
-            listener.remove (transferListener: self)
+            listener.remove (managerListener:  self)
+            listener.remove (walletListener:   self)
         }
         
         super.viewWillDisappear(animated)
@@ -176,12 +176,16 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
         }
     }
 
-    func handleTransferEvent(system: System, manager: WalletManager, wallet: Wallet, transfer: Transfer, event: TransferEvent) {
+    func handleWalletEvent (system: System,
+                            manager: WalletManager,
+                            wallet: Wallet,
+                            event: WalletEvent) {
         DispatchQueue.main.async {
-            print ("APP: WVC: TransferEvent: \(event)")
+            print ("APP: WVC: WalletEvent: \(event)")
             guard self.wallet == wallet /* && view is visible */  else { return }
+
             switch event {
-            case .created:
+             case .transferAdded(transfer: let transfer):
                 precondition(!self.transfers.contains(transfer))
 
                 // Simple, but inefficient
@@ -194,19 +198,26 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
                 let path = IndexPath (row: index, section: 0)
                 self.tableView.insertRows (at: [path], with: .automatic)
 
-            case .changed: //  (let old, let new)
+
+            case .transferChanged(transfer: let transfer):
                 if let index = self.transfers.firstIndex (of: transfer) {
                     let path = IndexPath (row: index, section: 0)
                     self.tableView.reloadRows(at: [path], with: .automatic)
                 }
 
-            case .deleted:
+//            case .transferSubmitted(transfer: let transfer, success: let success):
+//                break
+
+            case .transferDeleted(transfer: let transfer):
                 if let index = self.transfers.firstIndex (of: transfer) {
                     self.transfers.remove(at: index)
 
                     let path = IndexPath (row: index, section: 0)
                     self.tableView.deleteRows(at: [path], with: .automatic)
                 }
+
+            default:
+                break;
             }
         }
     }
