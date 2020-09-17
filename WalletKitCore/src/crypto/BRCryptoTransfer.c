@@ -43,7 +43,11 @@ cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
 
     switch (s1->type) {
         case CRYPTO_TRANSFER_STATE_INCLUDED:
-            return false;
+            return (s1->u.included.blockNumber      == s2->u.included.blockNumber      &&
+                    s1->u.included.transactionIndex == s2->u.included.transactionIndex &&
+                    s1->u.included.timestamp        == s2->u.included.timestamp        &&
+                    CRYPTO_TRUE == cryptoFeeBasisIsEqual (s1->u.included.feeBasis, s2->u.included.feeBasis) &&
+                    s1->u.included.success          == s2->u.included.success);
 
         case CRYPTO_TRANSFER_STATE_ERRORED:
             return cryptoTransferSubmitErrorIsEqual (&s1->u.errored.error, &s2->u.errored.error);
