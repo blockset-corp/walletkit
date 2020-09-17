@@ -39,7 +39,8 @@ extern BREthereumGasPrice
 ethFeeBasisGetGasPrice (BREthereumFeeBasis basis);
 
 extern BREthereumEther
-ethFeeBasisGetFee (BREthereumFeeBasis feeBasis, int *overflow);
+ethFeeBasisGetFee (BREthereumFeeBasis feeBasis,
+                   BREthereumBoolean *overflow);
 
 extern BREthereumBoolean
 ethFeeBasisEqual (const BREthereumFeeBasis *feeBasis1,

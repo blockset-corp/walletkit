@@ -189,6 +189,7 @@ transferProvideOriginatingTransaction (BREthereumTransfer transfer) {
     free (data);
 }
 #endif
+
 extern BRCryptoTransfer
 cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                BRCryptoAddress target,
@@ -206,6 +207,15 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
 
+    // When creating an BREthereumTransaction, we'll apply margin to the `ethFeeBasis` if and only
+    // if this is not the primary wallet (which is determined by unit and unitForFee compatibility).
+    assert (FEE_BASIS_GAS == ethFeeBasis.type);
+    ethFeeBasis.u.gas.limit = (CRYPTO_FALSE == cryptoUnitIsCompatible (unit, unitForFee)
+                               ? gasApplyLimitMargin (ethFeeBasis.u.gas.limit)
+                               : ethFeeBasis.u.gas.limit);
+    cryptoFeeBasisGive (estimatedFeeBasis);
+    estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, ethFeeBasis);
+
     BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = cryptoAddressAsETH (target);
 
@@ -219,7 +229,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                        cryptoTransferProvideOriginatingTargetAddress (type, ethTargetAddress, ethToken),
                        cryptoTransferProvideOriginatingAmount (type, value),
                        ethFeeBasisGetGasPrice(ethFeeBasis),
-                       ethFeeBasisGetGasLimit(ethFeeBasis),
+                       ethFeeBasisGetGasLimit(ethFeeBasis),     // margin applied
                        data,
                        TRANSACTION_NONCE_IS_NOT_ASSIGNED);
 
@@ -239,7 +249,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     BRCryptoTransfer transfer = cryptoTransferCreateAsETH (wallet->listenerTransfer,
                                                            unit,
                                                            unitForFee,
-                                                           estimatedFeeBasis,
+                                                           estimatedFeeBasis,   // margin applied
                                                            amount,
                                                            direction,
                                                            source,
@@ -248,12 +258,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                                            walletETH->ethAccount,
                                                            basis,
                                                            ethTransaction);
-#if 0
-    transfer->sourceAddress = cryptoAddressCreateAsETH (ethSourceAddress);
-    transfer->targetAddress = cryptoAddressCreateAsETH (ethTargetAddress);
-    transfer->feeBasisEstimated = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
-#endif
-    
+
     if (NULL != transfer && attributesCount > 0)
         cryptoTransferSetAttributes (transfer, attributesCount, attributes);
 

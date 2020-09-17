@@ -193,11 +193,9 @@ public final class Wallet: Equatable {
     /// Generates events: TransferEvent.created and WalletEvent.transferAdded(transfer).
     ///
     /// - Parameters:
-    ///   - listener: The transfer listener
-    ///   - source: The source spends 'amount + fee'
     ///   - target: The target receives 'amount
     ///   - amount: The amount
-    ///   - feeBasis: The basis for 'fee'
+    ///   - estimatedFeeBasis: The basis for 'fee'
     ///   - attributes: Optional transfer attributes.
     ///
     /// - Returns: A new transfer

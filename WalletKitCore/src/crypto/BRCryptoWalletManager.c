@@ -951,19 +951,10 @@ cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                    BRCryptoFeeBasis estimatedFeeBasis,
                                    size_t attributesCount,
                                    OwnershipKept BRCryptoTransferAttribute *attributes) {
-    BRCryptoTransfer transfer = cryptoWalletCreateTransfer (wallet, target, amount,
-                                                            estimatedFeeBasis,
-                                                            attributesCount,
-                                                            attributes);
-
-#if 0
-    if (NULL != transfer)
-        cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                                  (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CREATED
-        });
-#endif
-    return transfer;
+    return cryptoWalletCreateTransfer (wallet, target, amount,
+                                       estimatedFeeBasis,
+                                       attributesCount,
+                                       attributes);
 }
 
 extern BRCryptoTransfer
@@ -972,15 +963,7 @@ cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
                                            size_t outputsCount,
                                            BRCryptoTransferOutput *outputs,
                                            BRCryptoFeeBasis estimatedFeeBasis) {
-    BRCryptoTransfer transfer = cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
-
-#if 0
-    cryptoWalletManagerGenerateTransferEvent (cwm, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_CREATED
-    });
-#endif
-    return transfer;
+    return cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
 }
 
 
