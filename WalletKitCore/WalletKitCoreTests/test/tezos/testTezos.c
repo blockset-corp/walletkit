@@ -23,8 +23,8 @@
 #include "support/BRBase58.h"
 
 #include "tezos/BRTezosTransaction.h"
+#include "tezos/BRTezosTransfer.h"
 #include "tezos/BRTezosAccount.h"
-#include "tezos/BRTezosWallet.h"
 #include "tezos/BRTezosEncoder.h"
 
 static int debug_log = 0;
@@ -246,71 +246,63 @@ void testUnknownAddress() {
 static void testCreateWallet() {
     BRTezosAccount account = makeAccount(testAccount1);
 
-    BRTezosWallet wallet = tezosWalletCreate(account);
-    assert(wallet);
-
     BRTezosAddress expectedAddress = tezosAddressCreateFromString(testAccount1.address, true);
 
-    BRTezosAddress sourceAddress = tezosWalletGetSourceAddress(wallet);
+    BRTezosAddress sourceAddress = tezosAccountGetAddress(account);
     assert(tezosAddressEqual(sourceAddress, expectedAddress) == 1);
 
-    BRTezosAddress targetAddress = tezosWalletGetTargetAddress(wallet);
-    assert(tezosAddressEqual(targetAddress, expectedAddress) == 1);
-
     tezosAccountFree(account);
-    tezosWalletFree(wallet);
     tezosAddressFree (expectedAddress);
     tezosAddressFree (sourceAddress);
-    tezosAddressFree (targetAddress);
 }
 
 static void testWalletBalance() {
-    BRTezosAccount account = makeAccount(testAccount1);
-    BRTezosWallet wallet = tezosWalletCreate(account);
-    BRTezosUnitMutez expectedBalance = 0;
-    assert(expectedBalance == tezosWalletGetBalance(wallet));
+//    BRTezosAccount account = makeAccount(testAccount1);
+//    BRTezosUnitMutez expectedBalance = 0;
     
-    tezosWalletSetBalance(wallet, 250000);
-    assert(250000 == tezosWalletGetBalance(wallet));
+//    assert(expectedBalance == tezosWalletGetBalance(wallet));
+//    
+//    tezosWalletSetBalance(wallet, 250000);
+//    assert(250000 == tezosWalletGetBalance(wallet));
+//    
+//    tezosWalletSetBalance(wallet, 0);
     
-    tezosWalletSetBalance(wallet, 0);
-    
-    BRTezosAddress sourceAddress = tezosAddressCreateFromString("tz1eEnQhbwf6trb8Q8mPb2RaPkNk2rN7BKi8", true);
-    BRTezosAddress targetAddress = tezosWalletGetTargetAddress(wallet);
-    
-    BRTezosHash hash1, hash2, hash3, hash4;
-    
-    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "oot76ue8Jwyo5L6FgdiqyAPdDWAv84hXXkCi7oroJeDFXRbc298");
-    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooSVYUdKnRA1yTwHdB7MqH5iXWBdscgtxfDdDAWxK8iR7K6rtY3");
-    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "opT4Kb1WyijRnCakEy8PHX87KYHJpP2WA3ciLfmZqmRi4CTafCb");
-    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooYSWSUBhtUZkNUzGbMHDYjiSKUDu4TUZKEW3rNHG69hMEN16Tc");
-
-    // incoming
-    BRTezosTransfer tf1 = tezosTransferCreate(sourceAddress, targetAddress, 100000000, 10000, hash1, 0, 1, 0);
-    BRTezosTransfer tf2 = tezosTransferCreate(sourceAddress, targetAddress, 200000000, 5000, hash2, 1, 1, 0);
-    BRTezosTransfer tf3 = tezosTransferCreate(sourceAddress, targetAddress, 300000000, 5000, hash3, 2, 1, 0);
-    expectedBalance = 100000000L + 200000000L + 300000000L;
-    
-    tezosWalletAddTransfer(wallet, tf1);
-    tezosWalletAddTransfer(wallet, tf2);
-    tezosWalletAddTransfer(wallet, tf3);
-    assert(expectedBalance == tezosWalletGetBalance(wallet));
-    
-    // outgoing
-    BRTezosTransfer tf4 = tezosTransferCreate(targetAddress, sourceAddress, 50000000, 5000, hash4, 3, 1, 0);
-    
-    expectedBalance -= (50000000L + 5000L);
-    
-    tezosWalletAddTransfer(wallet, tf4);
-    assert(expectedBalance == tezosWalletGetBalance(wallet));
-
-    tezosTransferFree(tf1);
-    tezosTransferFree(tf2);
-    tezosTransferFree(tf3);
-    tezosTransferFree(tf4);
-    
-    tezosWalletFree(wallet);
-    tezosAccountFree(account);
+//    BRTezosAddress sourceAddress = tezosAddressCreateFromString("tz1eEnQhbwf6trb8Q8mPb2RaPkNk2rN7BKi8", true);
+//    BRTezosAddress targetAddress = tezosAccountGetAddress(wallet);
+//
+//    BRTezosHash hash1, hash2, hash3, hash4;
+//
+//    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "oot76ue8Jwyo5L6FgdiqyAPdDWAv84hXXkCi7oroJeDFXRbc298");
+//    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooSVYUdKnRA1yTwHdB7MqH5iXWBdscgtxfDdDAWxK8iR7K6rtY3");
+//    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "opT4Kb1WyijRnCakEy8PHX87KYHJpP2WA3ciLfmZqmRi4CTafCb");
+//    BRBase58Decode(hash1.bytes, sizeof(hash1.bytes), "ooYSWSUBhtUZkNUzGbMHDYjiSKUDu4TUZKEW3rNHG69hMEN16Tc");
+//
+//    // incoming
+//    BRTezosTransfer tf1 = tezosTransferCreate(sourceAddress, targetAddress, 100000000, 10000, hash1, 0, 1, 0);
+//    BRTezosTransfer tf2 = tezosTransferCreate(sourceAddress, targetAddress, 200000000, 5000, hash2, 1, 1, 0);
+//    BRTezosTransfer tf3 = tezosTransferCreate(sourceAddress, targetAddress, 300000000, 5000, hash3, 2, 1, 0);
+//    expectedBalance = 100000000L + 200000000L + 300000000L;
+//
+//    tezosWalletAddTransfer(wallet, tf1);
+//    tezosWalletAddTransfer(wallet, tf2);
+//    tezosWalletAddTransfer(wallet, tf3);
+//    assert(expectedBalance == tezosWalletGetBalance(wallet));
+//
+//    // outgoing
+//    BRTezosTransfer tf4 = tezosTransferCreate(targetAddress, sourceAddress, 50000000, 5000, hash4, 3, 1, 0);
+//
+//    expectedBalance -= (50000000L + 5000L);
+//
+//    tezosWalletAddTransfer(wallet, tf4);
+//    assert(expectedBalance == tezosWalletGetBalance(wallet));
+//
+//    tezosTransferFree(tf1);
+//    tezosTransferFree(tf2);
+//    tezosTransferFree(tf3);
+//    tezosTransferFree(tf4);
+//
+//    tezosWalletFree(wallet);
+//    tezosAccountFree(account);
 }
 
 // MARK: - Encoder Tests
@@ -346,7 +338,6 @@ testEncodeZarith() {
 static void
 testTransactionSerialize() {
     BRTezosAccount account = makeAccount(testAccount1);
-    BRTezosWallet wallet = tezosWalletCreate(account);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
     BRTezosFeeBasis feeBasis;
@@ -358,9 +349,12 @@ testTransactionSerialize() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.gasLimit = 10200;
-    feeBasis.storageLimit = 0;
-    feeBasis.fee = 50000;
+    feeBasis.type = FEE_BASIS_ESTIMATE;
+    feeBasis.u.estimate.gasLimit = 10200;
+    feeBasis.u.estimate.storageLimit = 0;
+    feeBasis.u.estimate.mutezPerByte = 48880;
+    feeBasis.u.estimate.sizeInBytes = 1;
+//    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
     
@@ -434,14 +428,12 @@ testTransactionSerialize() {
 
     
     tezosAddressFree(sourceAddress);
-    tezosWalletFree(wallet);
     tezosAccountFree(account);
 }
 
 static void
 testBatchOperationSerialize() {
     BRTezosAccount account = makeAccount(testAccount1);
-    BRTezosWallet wallet = tezosWalletCreate(account);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
     BRTezosFeeBasis feeBasis;
@@ -452,9 +444,12 @@ testBatchOperationSerialize() {
     
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.gasLimit = 10200;
-    feeBasis.storageLimit = 0;
-    feeBasis.fee = 50000;
+    feeBasis.type = FEE_BASIS_ESTIMATE;
+    feeBasis.u.estimate.gasLimit = 10200;
+    feeBasis.u.estimate.storageLimit = 0;
+    feeBasis.u.estimate.mutezPerByte = 48880;
+    feeBasis.u.estimate.sizeInBytes = 1;
+    //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
     
@@ -485,7 +480,6 @@ testBatchOperationSerialize() {
     cryptoDataFree(unsignedBytes);
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
-    tezosWalletFree(wallet);
     tezosAccountFree(account);
 }
 
@@ -493,7 +487,6 @@ static void
 testTransactionSign() {
     BRTezosAccount account = makeAccount(testAccount1);
     UInt512 seed = getSeed(testAccount1);
-    BRTezosWallet wallet = tezosWalletCreate(account);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
     BRTezosFeeBasis feeBasis;
@@ -505,9 +498,12 @@ testTransactionSign() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.gasLimit = 10200;
-    feeBasis.storageLimit = 0;
-    feeBasis.fee = 50000;
+    feeBasis.type = FEE_BASIS_ESTIMATE;
+    feeBasis.u.estimate.gasLimit = 10200;
+    feeBasis.u.estimate.storageLimit = 0;
+    feeBasis.u.estimate.mutezPerByte = 48880;
+    feeBasis.u.estimate.sizeInBytes = 1;
+    //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
     
@@ -517,7 +513,7 @@ testTransactionSign() {
     BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
     BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
 
-    size_t signedSize = tezosTransactionSignTransaction(tx, account, seed, lastBlockHash, 0);
+    size_t signedSize = tezosTransactionSerializeAndSign(tx, account, seed, lastBlockHash, 0);
     assert(signedSize > 0);
 
     size_t signedSize2 = 0;
@@ -537,7 +533,6 @@ testTransactionSign() {
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
     tezosTransferFree(transfer);
-    tezosWalletFree(wallet);
     tezosAccountFree(account);
 }
 
@@ -545,7 +540,6 @@ static void
 testTransactionSignWithReveal() {
     BRTezosAccount account = makeAccount(testAccount2);
     UInt512 seed = getSeed(testAccount2);
-    BRTezosWallet wallet = tezosWalletCreate(account);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
     BRTezosFeeBasis feeBasis;
@@ -557,9 +551,12 @@ testTransactionSignWithReveal() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1PTZ7kd7BwpB9sNuMgJrwksEiYX3fb9Bdf", true);
     targetAddress = tezosAddressCreateFromString("tz1YZpECan19MCZpubtM4zo4mgURHaLoMomy", true);
-    feeBasis.gasLimit = 12000;
-    feeBasis.storageLimit = 0;
-    feeBasis.fee = 5000;
+    feeBasis.type = FEE_BASIS_ESTIMATE;
+    feeBasis.u.estimate.gasLimit = 12000;
+    feeBasis.u.estimate.storageLimit = 0;
+    feeBasis.u.estimate.mutezPerByte = 3700;
+    feeBasis.u.estimate.sizeInBytes = 1;
+    //    feeBasis.u.estimate.fee = 5000;
     counter = 6307075;
     amount = 100000;
     
@@ -570,7 +567,7 @@ testTransactionSignWithReveal() {
     BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
     BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
 
-    size_t signedSize = tezosTransactionSignTransaction(tx, account, seed, lastBlockHash, 1);
+    size_t signedSize = tezosTransactionSerializeAndSign(tx, account, seed, lastBlockHash, 1);
     assert(signedSize > 0);
 
     size_t signedSize2 = 0;
@@ -590,7 +587,6 @@ testTransactionSignWithReveal() {
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
     tezosTransferFree(transfer);
-    tezosWalletFree(wallet);
     tezosAccountFree(account);
 }
 

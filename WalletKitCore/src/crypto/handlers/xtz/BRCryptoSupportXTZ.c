@@ -26,7 +26,7 @@ cryptoAmountCreateAsXTZ (BRCryptoUnit unit,
 private_extern BRTezosUnitMutez
 tezosMutezCreate (BRCryptoAmount amount) {
     UInt256 value = cryptoAmountGetValue (amount);
-    return value.u64[0];
+    return (BRTezosUnitMutez) value.u64[0];
 }
 
 // MARK: - Hash
@@ -40,7 +40,8 @@ private_extern BRCryptoHash
 cryptoHashCreateAsXTZ (BRTezosHash hash) {
     return cryptoHashCreateInternal (tezosHashSetValue (&hash),
                                      TEZOS_HASH_BYTES,
-                                     hash.bytes);
+                                     hash.bytes,
+                                     CRYPTO_NETWORK_TYPE_XTZ);
 }
 
 private_extern BRCryptoHash
