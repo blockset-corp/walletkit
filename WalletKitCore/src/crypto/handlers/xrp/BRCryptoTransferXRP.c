@@ -96,7 +96,7 @@ static BRCryptoHash
 cryptoTransferGetHashXRP (BRCryptoTransfer transfer) {
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
     BRRippleTransactionHash hash = rippleTransferGetTransactionId (transferXRP->xrpTransfer);
-    return cryptoHashCreateInternal (rippleHashSetValue (&hash), sizeof (hash.bytes), hash.bytes);
+    return cryptoHashCreateAsXRP (hash);
 }
 
 static uint8_t *

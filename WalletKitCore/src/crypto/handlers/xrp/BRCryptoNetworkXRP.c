@@ -10,6 +10,7 @@
 //
 #include "BRCryptoXRP.h"
 #include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoHashP.h"
 
 static BRCryptoNetworkXRP
 cryptoNetworkCoerce (BRCryptoNetwork network) {
@@ -60,23 +61,16 @@ cryptoNetworkReleaseXRP (BRCryptoNetwork network) {
     (void) networkXRP;
 }
 
-//TODO:XRP make common? remove network param?
 static BRCryptoAddress
 cryptoNetworkCreateAddressXRP (BRCryptoNetwork network,
                                const char *addressAsString) {
-    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
-    (void) networkXRP;
-
     return cryptoAddressCreateFromStringAsXRP (addressAsString);
 }
 
 static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkXRP networkXRP = cryptoNetworkCoerce (network);
-    (void) networkXRP;
-
-    //TODO:XRP
+    // not supported (used for p2p sync checkpoints)
     return 0;
 }
 
@@ -120,6 +114,18 @@ cryptoNetworkInitializeAccountXRP (BRCryptoNetwork network,
     return;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringXRP (BRCryptoNetwork network,
+                                      const char *string) {
+    BRRippleTransactionHash hash = rippleHashCreateFromString (string);
+    return cryptoHashCreateAsXRP (hash);
+}
+
+static char *
+cryptoNetworkEncodeHashXRP (BRCryptoHash hash) {
+    return cryptoHashStringAsHex (hash);
+}
+
 // MARK: - Handlers
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
@@ -129,6 +135,8 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersXRP = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampXRP,
     cryptoNetworkIsAccountInitializedXRP,
     cryptoNetworkGetAccountInitializationDataXRP,
-    cryptoNetworkInitializeAccountXRP
+    cryptoNetworkInitializeAccountXRP,
+    cryptoNetworkCreateHashFromStringXRP,
+    cryptoNetworkEncodeHashXRP
 };
 

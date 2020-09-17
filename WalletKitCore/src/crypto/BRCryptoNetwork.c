@@ -13,6 +13,7 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoAccountP.h"
+#include "BRCryptoHashP.h"
 
 #include "BRCryptoHandlersP.h"
 
@@ -590,6 +591,18 @@ private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
                                                 BRCryptoTimestamp timestamp) {
     return network->handlers->getBlockNumberAtOrBeforeTimestamp (network, timestamp);
+}
+
+private_extern BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string) {
+    return network->handlers->createHashFromString (network, string);
+}
+
+private_extern OwnershipGiven char *
+cryptoNetworkEncodeHash (BRCryptoHash hash) {
+    const BRCryptoHandlers *handlers = cryptoHandlersLookup (hash->type);
+    return handlers->network->encodeHash (hash);
 }
 
 // MARK: - Network Defaults

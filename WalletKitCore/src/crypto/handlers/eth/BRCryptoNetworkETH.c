@@ -10,6 +10,7 @@
 //
 #include "BRCryptoETH.h"
 #include "crypto/BRCryptoAmountP.h"
+#include "crypto/BRCryptoHashP.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/blockchain/BREthereumBlock.h"
 
@@ -147,6 +148,19 @@ cryptoNetworkFeeAsETH (BRCryptoNetworkFee fee) {
     return gasPrice;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringETH (BRCryptoNetwork network,
+                                      const char *string) {
+    return cryptoHashCreateAsETH (ethHashCreate (string));
+}
+
+static char *
+cryptoNetworkEncodeHashETH (BRCryptoHash hash) {
+    return cryptoHashStringAsHex (hash);
+}
+
+// MARK: -
+
 BRCryptoNetworkHandlers cryptoNetworkHandlersETH = {
     cyptoNetworkCreateETH,
     cryptoNetworkReleaseETH,
@@ -154,5 +168,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersETH = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH,
     cryptoNetworkIsAccountInitializedETH,
     cryptoNetworkGetAccountInitializationDataETH,
-    cryptoNetworkInitializeAccountETH
+    cryptoNetworkInitializeAccountETH,
+    cryptoNetworkCreateHashFromStringETH,
+    cryptoNetworkEncodeHashETH
 };

@@ -16,6 +16,7 @@
 
 #include "support/BRArray.h"
 #include "BRCryptoBaseP.h"
+#include "BRCryptoHashP.h"
 #include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
@@ -82,6 +83,13 @@ typedef void
                                             const uint8_t *bytes,
                                             size_t bytesCount);
 
+typedef BRCryptoHash
+(*BRCryptoNetworkCreateHashFromStringHandler) (BRCryptoNetwork network,
+                                               const char *string);
+
+typedef char *
+(*BRCryptoNetworkEncodeHashHandler) (BRCryptoHash hash);
+
 typedef struct {
     BRCryptoNetworkCreateHandler create;
     BRCryptoNetworkReleaseHandler release;
@@ -90,6 +98,8 @@ typedef struct {
     BRCryptoNetworkIsAccountInitializedHandler isAccountInitialized;
     BRCryptoNetworkGetAccountInitializationDataHandler getAccountInitializationData;
     BRCryptoNetworkInitializeAccountHandler initializeAccount;
+    BRCryptoNetworkCreateHashFromStringHandler createHashFromString;
+    BRCryptoNetworkEncodeHashHandler encodeHash;
 } BRCryptoNetworkHandlers;
 
 /// MARK: - Network
@@ -196,6 +206,13 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
 private_extern BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestamp (BRCryptoNetwork network,
                                                 BRCryptoTimestamp timestamp);
+
+private_extern BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string);
+
+private_extern OwnershipGiven char *
+cryptoNetworkEncodeHash (BRCryptoHash hash);
 
 static inline void
 cryptoNetworkGenerateEvent (BRCryptoNetwork network,
