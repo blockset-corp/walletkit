@@ -17,6 +17,7 @@
 
 #include "support/BRArray.h"
 #include "BRCryptoAddressP.h"
+#include "BRCryptoHashP.h"
 #include "BRCryptoTransferP.h"
 #include "BRCryptoNetworkP.h"
 #include "BRCryptoWalletP.h"
@@ -799,7 +800,7 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
                                                                    &serializationCount);
 
     BRCryptoHash hash = cryptoTransferGetHash (transfer);
-    char *hashAsHex = cryptoHashString (hash);
+    char *hashAsString = cryptoHashEncodeString (hash);
 
     BRCryptoClientCallbackState callbackState =
     cryptoClientCallbackStateCreateSubmitTransaction (wallet, transfer, hash, qry->requestId++);
@@ -809,11 +810,11 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
                                        callbackState,
                                        serialization,
                                        serializationCount,
-                                       hashAsHex);
+                                       hashAsString);
 
     cryptoHashGive (hash);
     free (serialization);
-    free (hashAsHex);
+    free (hashAsString);
 }
 
 extern void

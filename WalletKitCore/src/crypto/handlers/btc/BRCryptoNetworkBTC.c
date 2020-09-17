@@ -12,6 +12,7 @@
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
 #include "bsv/BRBSVParams.h"
+#include "crypto/BRCryptoHashP.h"
 
 static BRCryptoNetworkBTC
 cryptoNetworkCoerce (BRCryptoNetwork network, BRCryptoBlockChainType type) {
@@ -125,7 +126,6 @@ cryptoNetworkReleaseBTC (BRCryptoNetwork network) {
     (void) networkBTC;
 }
 
-
 static BRCryptoAddress
 cryptoNetworkCreateAddressBTC (BRCryptoNetwork network,
                                 const char *addressAsString) {
@@ -189,6 +189,19 @@ cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
 return;
 }
 
+static BRCryptoHash
+cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
+                                      const char *string) {
+    assert(64 == strlen (string));
+    UInt256 hash = uint256(string);
+    return cryptoHashCreateAsBTC (hash);
+}
+
+static char *
+cryptoNetworkEncodeHashBTC (BRCryptoHash hash) {
+    return cryptoHashStringAsHex (hash);
+}
+
 // MARK: - Network Fee
 
 extern uint64_t
@@ -206,7 +219,9 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC,
+    cryptoNetworkEncodeHashBTC
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
@@ -216,7 +231,9 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC,
+    cryptoNetworkEncodeHashBTC
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
@@ -226,7 +243,9 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     cryptoNetworkIsAccountInitializedBTC,
     cryptoNetworkGetAccountInitializationDataBTC,
-    cryptoNetworkInitializeAccountBTC
+    cryptoNetworkInitializeAccountBTC,
+    cryptoNetworkCreateHashFromStringBTC,
+    cryptoNetworkEncodeHashBTC
 };
 
 
