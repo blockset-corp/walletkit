@@ -10,6 +10,7 @@
 //
 #include "BRCryptoHBAR.h"
 #include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoHashP.h"
 
 static BRCryptoNetworkHBAR
 cryptoNetworkCoerce (BRCryptoNetwork network) {
@@ -60,23 +61,16 @@ cryptoNetworkReleaseHBAR (BRCryptoNetwork network) {
     (void) networkHBAR;
 }
 
-//TODO:HBAR make common? remove network param?
 static BRCryptoAddress
 cryptoNetworkCreateAddressHBAR (BRCryptoNetwork network,
                                 const char *addressAsString) {
-    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
-    (void) networkHBAR;
-
     return cryptoAddressCreateFromStringAsHBAR (addressAsString);
 }
 
 static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampHBAR (BRCryptoNetwork network,
                                                     BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkHBAR networkHBAR = cryptoNetworkCoerce (network);
-    (void) networkHBAR;
-
-    //TODO:HBAR
+    // not supported (used for p2p sync checkpoints)
     return 0;
 }
 
@@ -90,7 +84,8 @@ cryptoNetworkIsAccountInitializedHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
-    return AS_CRYPTO_BOOLEAN (true);
+
+    return AS_CRYPTO_BOOLEAN (hederaAccountHasPrimaryAddress (hbarAccount));
 }
 
 
@@ -103,8 +98,8 @@ cryptoNetworkGetAccountInitializationDataHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
-    if (NULL != bytesCount) *bytesCount = 0;
-    return NULL;
+
+    return hederaAccountGetPublicKeyBytes (hbarAccount, bytesCount);
 }
 
 static void
@@ -117,14 +112,30 @@ cryptoNetworkInitializeAccountHBAR (BRCryptoNetwork network,
 
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR (account);
     assert (NULL != hbarAccount);
+
+    char *hederaAddressString = malloc (bytesCount + 1);
+    memcpy (hederaAddressString, bytes, bytesCount);
+    hederaAddressString[bytesCount] = 0;
+
+    BRHederaAddress hederaAddress = hederaAddressCreateFromString (hederaAddressString, true);
+    free (hederaAddressString);
+
+    hederaAccountSetAddress (hbarAccount, hederaAddress);
+    hederaAddressFree(hederaAddress);
+
     return;
 }
 
 static BRCryptoHash
 cryptoNetworkCreateHashFromStringHBAR (BRCryptoNetwork network,
                                       const char *string) {
-    BRCryptoHash hash; //TODO:XTZ
-    return hash;
+    BRHederaTransactionHash hash = hederaHashCreateFromString(string);
+    return cryptoHashCreateAsHBAR (hash);
+}
+
+static char *
+cryptoNetworkEncodeHashHBAR (BRCryptoHash hash) {
+    return cryptoHashStringAsHex (hash);
 }
 
 // MARK: -
@@ -137,6 +148,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR = {
     cryptoNetworkIsAccountInitializedHBAR,
     cryptoNetworkGetAccountInitializationDataHBAR,
     cryptoNetworkInitializeAccountHBAR,
-    cryptoNetworkCreateHashFromStringHBAR
+    cryptoNetworkCreateHashFromStringHBAR,
+    cryptoNetworkEncodeHashHBAR
 };
 

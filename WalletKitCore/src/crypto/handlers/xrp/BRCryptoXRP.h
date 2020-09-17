@@ -79,8 +79,8 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
 private_extern BRCryptoHash
 cryptoHashCreateAsXRP (BRRippleTransactionHash hash);
 
-private_extern uint32_t
-rippleHashSetValue (const BRRippleTransactionHash *hash);
+private_extern BRRippleTransactionHash
+rippleHashCreateFromString (const char *string);
 
 // MARK: - Wallet Manager
 

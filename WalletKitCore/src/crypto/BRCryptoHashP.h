@@ -27,14 +27,21 @@ struct BRCryptoHashRecord {
     // The raw bytes; ordered for 'proper display' (BTC is reversed from UInt256).
     size_t bytesCount;
     uint8_t bytes[CRYPTO_HASH_BYTES];
+    
+    BRCryptoBlockChainType type;
 
     BRCryptoRef ref;
 };
 
-extern BRCryptoHash
+private_extern BRCryptoHash
 cryptoHashCreateInternal (uint32_t setValue,
                           size_t   bytesCount,
-                          uint8_t *bytes);
+                          uint8_t *bytes,
+                          BRCryptoBlockChainType type);
+
+private_extern OwnershipGiven char *
+cryptoHashStringAsHex (BRCryptoHash hash);
+
 
 #ifdef __cplusplus
 }

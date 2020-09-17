@@ -226,11 +226,13 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+
 #ifdef REFACTOR
     ||
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      && CRYPTO_FALSE == state.u.included.success));
 #endif
+    bool xrpTransferNeedFree = true;
     BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     
     rippleAddressFree (toAddress);
@@ -249,15 +251,19 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
                                                   wallet->unitForFee,
                                                   xrpAccount,
                                                   xrpTransfer);
+        xrpTransferNeedFree = false;
+
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
+
     BRCryptoTransferState transferState =
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
-                                        NULL,
+                                        feeBasis,
                                         CRYPTO_TRUE,
                                         NULL)
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
@@ -265,11 +271,14 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
         : cryptoTransferStateInit (bundle->status)));
     
     cryptoTransferSetState (baseTransfer, transferState);
-    
+
+    cryptoFeeBasisGive (feeBasis);
+
     //TODO:XRP attributes
     //TODO:XRP save to fileService
-    
-    rippleTransferFree (xrpTransfer);
+
+    if (xrpTransferNeedFree)
+        rippleTransferFree (xrpTransfer);
 }
 
 extern BRCryptoWalletSweeperStatus

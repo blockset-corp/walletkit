@@ -432,13 +432,18 @@ cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys,
 
 static uint64_t
 cwmParseUInt64 (const char *string, bool *error) {
-    if (!string) { *error = true; return 0; }
-    return strtoull(string, NULL, 0);
+    if (!string || 0 == strlen(string)) { *error = true; return 0; }
+
+    char *endPtr;
+    unsigned long long result = strtoull (string, &endPtr, 0);
+    if ('\0' != *endPtr) { *error = true; return 0; } // must parse the entire string
+
+    return result;
 }
 
 static UInt256
 cwmParseUInt256 (const char *string, bool *error) {
-    if (!string) { *error = true; return UINT256_ZERO; }
+    if (!string || 0 == strlen (string)) { *error = true; return UINT256_ZERO; }
 
     BRCoreParseStatus status;
     UInt256 result = uint256CreateParse (string, 0, &status);
@@ -447,6 +452,7 @@ cwmParseUInt256 (const char *string, bool *error) {
     return result;
 }
 
+// Assigns `true` into `*error` if there is a parse error; otherwise leaves `*error` unchanged.
 static void
 cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
                       UInt256 *amount,
@@ -462,54 +468,42 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     const char **attributeVals   = (const char **) bundle->attributeVals;
 
     *gasLimit = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasLimit", attributesCount, attributeKeys, attributeVals), error);
-    *gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), error); // strtoull(strGasUsed, NULL, 0);
+    *gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), error);
     *gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), error);
     *nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), error);
-
-    *error |= (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 }
 
-//static bool
-//cryptoWalletManagerHasAddressETH (BRCryptoWalletManagerETH manager,
-//                                  const char *address) {
-//    return 0 == strcasecmp (address, ethAccountGetPrimaryAddressString (manager->account));
-//}
-
-static void
+static bool // true if error
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
                                        OwnershipKept BRCryptoClientTransferBundle bundle) {
 
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    UInt256 amount;
+    UInt256  amount;
     uint64_t gasLimit;
     uint64_t gasUsed;
     UInt256  gasPrice;
     uint64_t nonce;
-    bool     error;
 
+    bool error = false;
     cwmExtractAttributes (bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
-#if 0
-    ewmAnnounceTransaction (cwm->u.eth,
-                            callbackState->rid,
-                            bundle->hash,
-                            bundle->from,
-                            bundle->to,
-                            contract,
-                            value,
-                            gasLimit,
-                            gasPrice,
-                            "",
-                            nonce,
-                            gasUsed,
-                            bundle->blockNumber,
-                            bundle->blockHash,
-                            bundle->blockConfirmations,
-                            bundle->blockTransactionIndex,
-                            bundle->blockTimestamp,
-                            error);
+    if (error) return true;
 
-#endif
+    bool statusError = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
+    (void) statusError; // avoid 'unused variable' warning
+
+    BREthereumAddress sourceAddress = ethAddressCreate (bundle->from);
+    BREthereumAddress targetAddress = ethAddressCreate (bundle->to);
+
+    // If account contains the source address, then update the nonce
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethAccountHasAddress (managerETH->account, sourceAddress))) {
+        assert (ETHEREUM_BOOLEAN_IS_TRUE (ethAddressEqual (sourceAddress, ethAccountGetPrimaryAddress (managerETH->account))));
+        // Update the ETH account's nonce if we originated this.
+        ethAccountSetAddressNonce (managerETH->account,
+                                   ethAccountGetPrimaryAddress (managerETH->account),
+                                   nonce + 1, // The NEXT nonce; one more than this transaction's
+                                   ETHEREUM_BOOLEAN_FALSE);
+    }
 
     //
     // This 'announce' call is coming from the guaranteed BRD endpoint; thus we don't need to
@@ -517,8 +511,8 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // if newly submitted?
 
     // TODO: Confirm we are not repeatedly creating transactions
-    BREthereumTransaction tid = transactionCreate (ethAddressCreate (bundle->from),
-                                                   ethAddressCreate (bundle->to),
+    BREthereumTransaction tid = transactionCreate (sourceAddress,
+                                                   targetAddress,
                                                    ethEtherCreate(amount),
                                                    ethGasPriceCreate(ethEtherCreate(gasPrice)),
                                                    ethGasCreate(gasLimit),
@@ -533,6 +527,7 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
     transactionSetHash (tid, ethHashCreate (bundle->hash));
 
+    // TODO: Handle `errorStatus`; which means what?
     BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
@@ -542,6 +537,8 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
     ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_UPDATED, tid);
+
+    return false;
 }
 
 static bool // true if error
@@ -550,45 +547,27 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
                                OwnershipKept BRCryptoClientTransferBundle bundle) {
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    UInt256 amount;
+    UInt256  amount;
     uint64_t gasLimit;
     uint64_t gasUsed;
     UInt256  gasPrice;
     uint64_t nonce;
-    bool     error;
+    size_t   logIndex = 0;
 
-    size_t logIndex = 0;
-
+    bool error = false;
     cwmExtractAttributes(bundle, &amount, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
     if (error) return true;
 
-#if 0
-    size_t topicsCount = 3;
-    char *topics[3] = {
-        (char *) ethEventGetSelector(ethEventERC20Transfer),
-        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, bundle->from),
-        ethEventERC20TransferEncodeAddress (ethEventERC20Transfer, bundle->to)
-    };
+    bool statusError = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
-    size_t logIndex = 0;
+    // On a `statusError`, until we understand the meaning, assume that the log can't be recovered.
+    // Not that cryptoWalletManagerRecoverTransaction DOES NOT avoid the transaction; and thus
+    // we'll get `nonce` and `fee` updates.
 
-    ewmAnnounceLog (cwm->u.eth,
-                    callbackState->rid,
-                    bundle->hash,
-                    contract,
-                    topicsCount,
-                    (const char **) &topics[0],
-                    amount,
-                    gasPrice,
-                    gasUsed,
-                    logIndex,
-                    bundle->blockNumber,
-                    bundle->blockTransactionIndex,
-                    bundle->blockTimestamp);
+    // TODO: Handle `errorStatus`; which means what?
+    if (statusError) return true;
 
-    free (topics[1]);
-    free (topics[2]);
-#endif
+    // TODO: Is `nonce` relevent here?  Or only in cryptoWalletManagerRecoverTransaction
 
     // This 'announce' call is coming from the guaranteed BRD endpoint; thus we don't need to
     // worry about the validity of the transaction - it is surely confirmed.

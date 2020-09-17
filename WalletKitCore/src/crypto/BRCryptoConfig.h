@@ -8,6 +8,14 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#define HAS_BTC_TESTNET     1
+#define HAS_BCH_TESTNET     1
+#define HAS_BSV_TESTNET     0
+#define HAS_ETH_TESTNET     0
+#define HAS_XRP_TESTNET     0
+#define HAS_HBAR_TESTNET    0
+#define HAS_XTZ_TESTNET     0
+
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)
 #endif
@@ -49,7 +57,11 @@ DEFINE_CURRENCY ("bitcoin-testnet",     "bitcoin-testnet:__native__",   NETWORK_
     DEFINE_UNIT ("bitcoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("bitcoin-testnet:__native__",      NETWORK_NAME, "btc",      8,      "₿")
 DEFINE_ADDRESS_SCHEMES  ("bitcoin-testnet", CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT,   CRYPTO_ADDRESS_SCHEME_BTC_LEGACY)
+#if HAS_BTC_TESTNET
 DEFINE_MODES            ("bitcoin-testnet", CRYPTO_SYNC_MODE_API_ONLY,          CRYPTO_SYNC_MODE_P2P_ONLY)
+#else
+DEFINE_MODES            ("bitcoin-testnet", CCRYPTO_SYNC_MODE_P2P_ONLY)
+#endif
 #undef NETWORK_NAME
 
 // MARK: - BCH
@@ -69,7 +81,11 @@ DEFINE_CURRENCY ("bitcoincash-testnet",     "bitcoincash-testnet:__native__",   
     DEFINE_UNIT ("bitcoincash-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("bitcoincash-testnet:__native__",      NETWORK_NAME, "bch",      8,      "BCH")
 DEFINE_ADDRESS_SCHEMES  ("bitcoincash-testnet", CRYPTO_ADDRESS_SCHEME_BTC_LEGACY)
+#if HAS_BCH_TESTNET
 DEFINE_MODES            ("bitcoincash-testnet", CRYPTO_SYNC_MODE_API_ONLY,  CRYPTO_SYNC_MODE_P2P_ONLY)
+#else
+DEFINE_MODES            ("bitcoincash-testnet", CRYPTO_SYNC_MODE_P2P_ONLY)
+#endif
 #undef NETWORK_NAME
 
 // MARK: - BSV
@@ -89,7 +105,11 @@ DEFINE_CURRENCY ("bitcoinsv-testnet",     "bitcoinsv-testnet:__native__",   NETW
     DEFINE_UNIT ("bitcoinsv-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("bitcoinsv-testnet:__native__",      NETWORK_NAME, "bsv",      8,      "BSV")
 DEFINE_ADDRESS_SCHEMES  ("bitcoinsv-testnet", CRYPTO_ADDRESS_SCHEME_BTC_LEGACY)
+#if HAS_BSV_TESTNET
 DEFINE_MODES            ("bitcoinsv-testnet", CRYPTO_SYNC_MODE_API_ONLY,  CRYPTO_SYNC_MODE_P2P_ONLY)
+#else
+DEFINE_MODES            ("bitcoinsv-testnet", CRYPTO_SYNC_MODE_P2P_ONLY)
+#endif
 #undef NETWORK_NAME
 
 // MARK: - ETH
@@ -107,6 +127,7 @@ DEFINE_CURRENCY ("ethereum-mainnet",    "ethereum-mainnet:0x558ec3152e2eb2174905
 DEFINE_ADDRESS_SCHEMES  ("ethereum-mainnet", CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT)
 DEFINE_MODES            ("ethereum-mainnet", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_SYNC_MODE_API_WITH_P2P_SEND, CRYPTO_SYNC_MODE_P2P_ONLY)
 
+#if HAS_ETH_TESTNET
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_ETH,  "ethereum-ropsten", NETWORK_NAME, "testnet", false, 7119019, 6, 15)
 DEFINE_NETWORK_FEE_ESTIMATE ("ethereum-ropsten", "17500000000", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("ethereum-ropsten",     "ethereum-ropsten:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_ETH,  "native",   NULL,   true)
@@ -118,6 +139,7 @@ DEFINE_CURRENCY ("ethereum-ropsten",    "ethereum-ropsten:0x7108ca7c4718efa81045
     DEFINE_UNIT ("ethereum-ropsten:0x7108ca7c4718efa810457f228305c9c71390931a",      "BRD Token",             "brd",       18,     "BRD")
 DEFINE_ADDRESS_SCHEMES  ("ethereum-ropsten", CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT)
 DEFINE_MODES            ("ethereum-ropsten", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_SYNC_MODE_API_WITH_P2P_SEND, CRYPTO_SYNC_MODE_P2P_ONLY)
+#endif
 #undef NETWORK_NAME
 
 // MARK: XRP
@@ -131,6 +153,7 @@ DEFINE_CURRENCY ("ripple-mainnet",     "ripple-mainnet:__native__",   NETWORK_NA
 DEFINE_ADDRESS_SCHEMES  ("ripple-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("ripple-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
+#if HAS_XRP_TESTNET
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XRP,  "ripple-testnet", NETWORK_NAME, "testnet", false, 0, 6, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("ripple-testnet", "10", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("ripple-testnet",     "ripple-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XRP,  "native",   NULL,   true)
@@ -138,9 +161,10 @@ DEFINE_CURRENCY ("ripple-testnet",     "ripple-testnet:__native__",   NETWORK_NA
     DEFINE_UNIT ("ripple-testnet:__native__",      NETWORK_NAME, "xrp",       6,      "XRP")
 DEFINE_ADDRESS_SCHEMES  ("ripple-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("ripple-testnet", CRYPTO_SYNC_MODE_API_ONLY)
+#endif
 #undef NETWORK_NAME
 
-// MARK: HBAR Mainnet
+// MARK: HBAR
 
 #define NETWORK_NAME    "Hedera"
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_HBAR,  "hedera-mainnet", NETWORK_NAME, "mainnet", true, 52473542, 1, 5)
@@ -151,6 +175,7 @@ DEFINE_CURRENCY ("hedera-mainnet",     "hedera-mainnet:__native__",   NETWORK_NA
 DEFINE_ADDRESS_SCHEMES  ("hedera-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("hedera-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
+#if HAS_HBAR_TESTNET
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_HBAR,  "hedera-testnet", NETWORK_NAME, "testnet", false, 50000, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("hedera-testnet", "500000", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("hedera-testnet",     "hedera-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_HBAR,  "native",   NULL,   true)
@@ -158,9 +183,10 @@ DEFINE_CURRENCY ("hedera-testnet",     "hedera-testnet:__native__",   NETWORK_NA
     DEFINE_UNIT ("hedera-testnet:__native__",  NETWORK_NAME,  "hbar",   8,  "ℏ")
 DEFINE_ADDRESS_SCHEMES  ("hedera-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("hedera-testnet", CRYPTO_SYNC_MODE_API_ONLY)
+#endif
 #undef NETWORK_NAME
 
-// MARK: Tezos Mainnet
+// MARK: Tezos
 
 #define NETWORK_NAME    "Tezos"
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 52473542, 1, 60)
@@ -171,6 +197,7 @@ DEFINE_CURRENCY ("tezos-mainnet",     "tezos-mainnet:__native__",   NETWORK_NAME
 DEFINE_ADDRESS_SCHEMES  ("tezos-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("tezos-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
+#if HAS_XTZ_TESTNET
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 1, 60)
 DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "500000", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
@@ -178,6 +205,7 @@ DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME
     DEFINE_UNIT ("tezos-testnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
 DEFINE_ADDRESS_SCHEMES  ("tezos-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("tezos-testnet", CRYPTO_SYNC_MODE_API_ONLY)
+#endif
 #undef NETWORK_NAME
 
 // MARK: XLM Mainnet
