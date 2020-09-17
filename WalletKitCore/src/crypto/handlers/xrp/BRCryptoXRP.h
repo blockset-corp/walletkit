@@ -48,7 +48,7 @@ typedef struct BRCryptoNetworkXRPRecord {
 typedef struct BRCryptoTransferXRPRecord {
     struct BRCryptoTransferRecord base;
 
-    BRRippleTransfer xrpTransfer;
+    BRRippleTransaction xrpTransaction;
 } *BRCryptoTransferXRP;
 
 extern BRCryptoTransferXRP
@@ -59,9 +59,9 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRRippleAccount xrpAccount,
-                           BRRippleTransfer xrpTransfer);
+                           BRRippleTransaction xrpTransaction);
 
-extern BRRippleTransfer
+extern BRRippleTransaction
 cryptoTransferAsXRP (BRCryptoTransfer transfer);
 
 // MARK: - Wallet
@@ -103,6 +103,9 @@ typedef struct BRCryptoFeeBasisXRPRecord {
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsXRP (BRCryptoUnit unit,
                            BRRippleUnitDrops fee);
+
+private_extern BRRippleFeeBasis
+cryptoFeeBasisAsXRP (BRCryptoFeeBasis feeBasis);
 
 // MARK: - Support
 
