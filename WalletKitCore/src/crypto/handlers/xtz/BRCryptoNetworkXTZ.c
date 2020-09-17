@@ -10,6 +10,8 @@
 //
 #include "BRCryptoXTZ.h"
 #include "crypto/BRCryptoAccountP.h"
+#include "crypto/BRCryptoHashP.h"
+#include "support/BRBase58.h"
 
 static BRCryptoNetworkXTZ
 cryptoNetworkCoerce (BRCryptoNetwork network) {
@@ -60,7 +62,6 @@ cryptoNetworkReleaseXTZ (BRCryptoNetwork network) {
     (void) networkXTZ;
 }
 
-//TODO:XTZ make common? remove network param?
 static BRCryptoAddress
 cryptoNetworkCreateAddressXTZ (BRCryptoNetwork network,
                                const char *addressAsString) {
@@ -73,10 +74,7 @@ cryptoNetworkCreateAddressXTZ (BRCryptoNetwork network,
 static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampXTZ (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
-    BRCryptoNetworkXTZ networkXTZ = cryptoNetworkCoerce (network);
-    (void) networkXTZ;
-
-    //TODO:XTZ
+    // not supported (used for p2p sync checkpoints)
     return 0;
 }
 
@@ -126,6 +124,14 @@ cryptoNetworkCreateHashFromStringXTZ (BRCryptoNetwork network,
     return cryptoHashCreateFromStringAsXTZ (string);
 }
 
+static char *
+cryptoNetworkEncodeHashXTZ (BRCryptoHash hash) {
+    size_t len = BRBase58CheckEncode (NULL, 0, hash->bytes, TEZOS_HASH_BYTES);
+    char * string = calloc (1, len);
+    BRBase58CheckEncode (string, len, hash->bytes, TEZOS_HASH_BYTES);
+    return string;
+}
+
 // MARK: - Handlers
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ = {
@@ -136,6 +142,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ = {
     cryptoNetworkIsAccountInitializedXTZ,
     cryptoNetworkGetAccountInitializationDataXTZ,
     cryptoNetworkInitializeAccountXTZ,
-    cryptoNetworkCreateHashFromStringXTZ
+    cryptoNetworkCreateHashFromStringXTZ,
+    cryptoNetworkEncodeHashXTZ
 };
 

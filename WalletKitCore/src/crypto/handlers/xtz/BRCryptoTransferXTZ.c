@@ -92,7 +92,7 @@ static BRCryptoHash
 cryptoTransferGetHashXTZ (BRCryptoTransfer transfer) {
     BRCryptoTransferXTZ transferXTZ = cryptoTransferCoerceXTZ(transfer);
     BRTezosHash hash = tezosTransferGetTransactionId (transferXTZ->xtzTransfer);
-    return cryptoHashCreateInternal (CRYPTO_NETWORK_TYPE_XTZ, sizeof (hash.bytes), hash.bytes);
+    return cryptoHashCreateAsXTZ (hash);
 }
 
 static uint8_t *
