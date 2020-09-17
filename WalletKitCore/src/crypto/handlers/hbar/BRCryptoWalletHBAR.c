@@ -209,7 +209,7 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
                                                             unitForFee,
                                                             walletHBAR->hbarAccount,
                                                             tid);
-    cryptoTransferSetAttributes (transfer, attributes);
+    cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
 }
@@ -254,5 +254,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersHBAR = {
     cryptoWalletCreateTransferHBAR,
     cryptoWalletCreateTransferMultipleHBAR,
     cryptoWalletGetAddressesForRecoveryHBAR,
+    NULL,
     cryptoWalletIsEqualHBAR
 };

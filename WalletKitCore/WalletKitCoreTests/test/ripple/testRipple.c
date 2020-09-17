@@ -993,11 +993,14 @@ static void submitWithoutDestinationTag() {
 }
 
 static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence,
-                                          int addFailedFirstTransfer)
+                                          int addFailedFirstTransfer, int addFailedSentTransfersFromBlockset)
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
     BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
+    BRRippleWallet wallet = rippleWalletCreate(account);
+    assert(wallet);
+    uint8_t hashByte = 0;
 
     const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
     BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
@@ -1015,17 +1018,37 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     // NOTE: this transfer MUST use the start_block unaltered as the height
     hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
     BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
-//    rippleWalletAddTransfer(wallet, transfer);
+    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
     // Add 2 more receives
-    hash.bytes[0] = 1; // needs a different hash
+    hash.bytes[0] = hashByte++; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
-//    rippleWalletAddTransfer(wallet, transfer);
+    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
-    hash.bytes[0] = 2; // needs a different hash
+    hash.bytes[0] = hashByte++; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
-//    rippleWalletAddTransfer(wallet, transfer);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Add 1 failed receive
+    hash.bytes[0] = hashByte++; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 30, 1);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    for (int i = 0; i < addFailedSentTransfersFromBlockset; i++) {
+        // Add 1 failed send from blockset
+        hash.bytes[0] = hashByte++; // needs a different hash
+        transfer = rippleTransferCreate(address, targetAddress, 5000000, 12, hash, 0, start_block + 40, 1);
+        rippleWalletAddTransfer(wallet, transfer);
+        rippleTransferFree(transfer);
+    }
+
+    // Always add in a failed local transfer (i.e. blockHeight is 0), since one is not
+    // in blockset and it failed it should not increment the sequence number
+    transfer = rippleTransferCreate(address, targetAddress, 5000000, 12, hash, 0, 0, 1);
+    rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
     // Create a signed transaction for this account
@@ -1046,16 +1069,48 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     rippleAccountFree(account);
     rippleAddressFree(targetAddress);
     rippleAccountFree(targetAccount);
+    rippleWalletFree(wallet);
 }
 
 static void testStartingSequence()
 {
-    testStartingSequenceFromBlock(40000000, 1, 0); // Just an old account created at 40000000
-    testStartingSequenceFromBlock(40000000, 1, 1); // This time with a failed first transfer
-    testStartingSequenceFromBlock(55313920, 1, 0); // The last block before the new behavior
-    testStartingSequenceFromBlock(55313920, 1, 1); // This time with a failed first transfer
-    testStartingSequenceFromBlock(55313921, 55313921, 0); // The first block after the new behavior
-    testStartingSequenceFromBlock(55313921, 55313921, 1); // This time with a failed first transfer
+    // Test 1 - just a regular old block
+    int failedBlocksetCount = 1;
+    // Test 1A - an old account created at block 40000000 (sequence = 1)
+    testStartingSequenceFromBlock(40000000, 1, 0, 0); // Just an old account created at 40000000
+    // Test 1B - old account, failed first received tranfer (sequence = 1)
+    testStartingSequenceFromBlock(40000000, 1, 1, 0); // Just an old account created at 40000000
+    // Test 1C - old account, failed blockset send, sequence = 2
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 0, failedBlocksetCount);
+    // Test 1D - old account, failed first receive, failed blockset send, sequence = 2
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+    // Test 1E - old account, failed first receive, 3 failed blockset sends, sequence = 4
+    failedBlocksetCount = 3;
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+
+    // Test 2 - the block just before the protocol change to add AccountDelete which changed
+    // the starting sequence, same tests as above
+    failedBlocksetCount = 1;
+    testStartingSequenceFromBlock(55313920, 1, 0, 0);
+    testStartingSequenceFromBlock(55313920, 1, 1, 0);
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 0, failedBlocksetCount);
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+    failedBlocksetCount = 20;
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+
+    // Now an account that is created in the first block where the protocol change happened
+    failedBlocksetCount = 1;
+    // 1A - simple new account (sequence = first block)
+    testStartingSequenceFromBlock(55313921, 55313921, 0, 0);
+    // 1B - new account with failed first incoming transfer (sequence = first block)
+    testStartingSequenceFromBlock(55313921, 55313921, 1, 0);
+    // 1C - new account with failed first send from blockset (sequence = first block + 1)
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 0, failedBlocksetCount);
+    // 1D - new account with failed first incoming and failed first send from blockset (sequence = first block + 1)
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 1, failedBlocksetCount);
+    // 1E - new account with failed first incoming and 5 failed first send from blockset (sequence = first block + 5)
+    failedBlocksetCount = 5;
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 1, failedBlocksetCount);
 }
 
 #pragma clang diagnostic pop
@@ -1075,6 +1130,9 @@ runRippleTest (void /* ... */) {
 
     // Transaction tests
     rippleTransactionTests();
+
+    // Wallet tests
+    runWalletTests();
 
     // getAccountInfo is just a utility to print out info if needed
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";

@@ -229,7 +229,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                                            unitForFee,
                                                            walletXRP->xrpAccount,
                                                            xrpTransfer);
-    cryptoTransferSetAttributes (transfer, attributes);
+    cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
 }
@@ -257,6 +257,44 @@ cryptoWalletGetAddressesForRecoveryXRP (BRCryptoWallet wallet) {
     return addresses;
 }
 
+static void
+cryptoWalletAnnounceTransferXRP (BRCryptoWallet wallet,
+                                 BRCryptoTransfer transfer,
+                                 BRCryptoWalletEventType type) {
+    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
+
+    // Now update the account's sequence id
+    BRRippleSequence sequence = 0;
+
+    // The address for comparison with `transfer` source and target addresses.
+    BRRippleAddress accountAddress = rippleAccountGetAddress (walletXRP->xrpAccount);
+
+    // We need to keep track of the first block where this account shows up due to a
+    // change in how ripple assigns the sequence number to new accounts
+    uint64_t minBlockHeight = UINT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRRippleTransfer xrpTransfer = cryptoTransferAsXRP (wallet->transfers[index]);
+
+        // If we are the source of the transfer then we might want to update our sequence number
+        if (rippleTransferHasSource (xrpTransfer, accountAddress)) {
+            // Update the sequence number if in a block OR successful
+            if (rippleTransferIsInBlock(xrpTransfer) || !rippleTransferHasError(xrpTransfer))
+                sequence += 1;
+        } else if (!rippleTransferHasError(xrpTransfer) && rippleTransferHasTarget (xrpTransfer, accountAddress)) {
+            // We are the target of the transfer - so we need to find the very first (successful) transfer where
+            // our account received some XRP as this can affect our beginning sequence number. Ignore failed
+            // transfers as Bockset could create a failed transfer for us before our account is created
+            uint64_t blockHeight = rippleTransferGetBlockHeight(xrpTransfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        }
+    }
+
+    rippleAddressFree (accountAddress);
+
+    rippleAccountSetBlockNumberAtCreation(walletXRP->xrpAccount, minBlockHeight);
+    rippleAccountSetSequence (walletXRP->xrpAccount, sequence);
+}
+
 static bool
 cryptoWalletIsEqualXRP (BRCryptoWallet wb1, BRCryptoWallet wb2) {
     if (wb1 == wb2) return true;
@@ -276,6 +314,7 @@ BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
     cryptoWalletCreateTransferXRP,
     cryptoWalletCreateTransferMultipleXRP,
     cryptoWalletGetAddressesForRecoveryXRP,
+    cryptoWalletAnnounceTransferXRP,
     cryptoWalletIsEqualXRP
 };
 

@@ -43,7 +43,11 @@ cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
 
     switch (s1->type) {
         case CRYPTO_TRANSFER_STATE_INCLUDED:
-            return false;
+            return (s1->u.included.blockNumber      == s2->u.included.blockNumber      &&
+                    s1->u.included.transactionIndex == s2->u.included.transactionIndex &&
+                    s1->u.included.timestamp        == s2->u.included.timestamp        &&
+                    CRYPTO_TRUE == cryptoFeeBasisIsEqual (s1->u.included.feeBasis, s2->u.included.feeBasis) &&
+                    s1->u.included.success          == s2->u.included.success);
 
         case CRYPTO_TRANSFER_STATE_ERRORED:
             return cryptoTransferSubmitErrorIsEqual (&s1->u.errored.error, &s2->u.errored.error);
@@ -243,7 +247,8 @@ cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
 
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
-                             OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes) {
+                             size_t attributesCount,
+                             OwnershipKept BRCryptoTransferAttribute *attributes) {
     pthread_mutex_lock (&transfer->lock);
 
     // Give existing attributes and empty `transfer->attributes`
@@ -253,7 +258,7 @@ cryptoTransferSetAttributes (BRCryptoTransfer transfer,
 
     if (NULL != attributes)
         // Take new attributes.
-        for (size_t index = 0; index < array_count(attributes); index++)
+        for (size_t index = 0; index < attributesCount; index++)
             array_add (transfer->attributes, cryptoTransferAttributeTake (attributes[index]));
     pthread_mutex_unlock (&transfer->lock);
 }

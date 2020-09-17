@@ -197,14 +197,6 @@ cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
     return cryptoHashCreateAsBTC (hash);
 }
 
-static BRCryptoHash
-cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
-                                      const char *string) {
-    assert(64 == strlen (string));
-    UInt256 hash = uint256(string);
-    return cryptoHashCreateAsBTC (hash);
-}
-
 static char *
 cryptoNetworkEncodeHashBTC (BRCryptoHash hash) {
     return cryptoHashStringAsHex (hash);
