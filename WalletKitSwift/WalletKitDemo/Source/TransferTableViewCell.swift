@@ -42,8 +42,8 @@ class TransferTableViewCell: UITableViewCell {
         switch state {
         case .created: return UIColor.gray
         case .submitted: return UIColor.yellow
-        case .included: return
-            transfer!.confirmation!.success ? UIColor.green : UIColor.red
+        case .included (let confirmation):
+            return confirmation.success ? UIColor.green : UIColor.red
         case .deleted: return UIColor.black
 
         case .signed: return UIColor.yellow
