@@ -61,6 +61,9 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRRippleAccount xrpAccount,
                            BRRippleTransfer xrpTransfer);
 
+extern BRRippleTransfer
+cryptoTransferAsXRP (BRCryptoTransfer transfer);
+
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletXRPRecord {

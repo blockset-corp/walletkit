@@ -247,7 +247,8 @@ cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
 
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
-                             OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes) {
+                             size_t attributesCount,
+                             OwnershipKept BRCryptoTransferAttribute *attributes) {
     pthread_mutex_lock (&transfer->lock);
 
     // Give existing attributes and empty `transfer->attributes`
@@ -257,7 +258,7 @@ cryptoTransferSetAttributes (BRCryptoTransfer transfer,
 
     if (NULL != attributes)
         // Take new attributes.
-        for (size_t index = 0; index < array_count(attributes); index++)
+        for (size_t index = 0; index < attributesCount; index++)
             array_add (transfer->attributes, cryptoTransferAttributeTake (attributes[index]));
     pthread_mutex_unlock (&transfer->lock);
 }
