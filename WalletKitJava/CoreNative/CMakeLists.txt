@@ -259,8 +259,6 @@ target_sources (corecrypto
                 src/main/cpp/core/src/ripple/BRRippleSignature.h
                 src/main/cpp/core/src/ripple/BRRippleTransaction.c
                 src/main/cpp/core/src/ripple/BRRippleTransaction.h
-                src/main/cpp/core/src/ripple/BRRippleTransfer.c
-                src/main/cpp/core/src/ripple/BRRippleTransfer.h
                 src/main/cpp/core/src/ripple/BRRippleUtils.c
                 src/main/cpp/core/src/ripple/BRRippleUtils.h
                 src/main/cpp/core/src/ripple/BRRippleWallet.c
