@@ -274,20 +274,19 @@ cryptoWalletAnnounceTransferXRP (BRCryptoWallet wallet,
     uint64_t minBlockHeight = UINT64_MAX;
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         BRRippleTransfer xrpTransfer = cryptoTransferAsXRP (wallet->transfers[index]);
-        BRRippleAddress targetAddress = rippleTransferGetTarget(xrpTransfer);
 
-        if (rippleTransferHasError(xrpTransfer) == 0
-            && rippleAddressEqual(accountAddress, targetAddress)) {
-            // We trying to find the lowest block number where we were sent
-            // currency successful - basically this is the block where our account
-            // was created *** ignore failed transfers TO us since we end up seeing
-            // items before our account is actually created.
+        // If we are the source of the transfer then we might want to update our sequence number
+        if (rippleTransferHasSource (xrpTransfer, accountAddress)) {
+            // Update the sequence number if in a block OR successful
+            if (rippleTransferIsInBlock(xrpTransfer) || !rippleTransferHasError(xrpTransfer))
+                sequence += 1;
+        } else if (!rippleTransferHasError(xrpTransfer) && rippleTransferHasTarget (xrpTransfer, accountAddress)) {
+            // We are the target of the transfer - so we need to find the very first (successful) transfer where
+            // our account received some XRP as this can affect our beginning sequence number. Ignore failed
+            // transfers as Bockset could create a failed transfer for us before our account is created
             uint64_t blockHeight = rippleTransferGetBlockHeight(xrpTransfer);
             minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
         }
-        rippleAddressFree(targetAddress);
-        if (rippleTransferHasSource (xrpTransfer, accountAddress))
-            sequence += 1;
     }
 
     rippleAddressFree (accountAddress);
