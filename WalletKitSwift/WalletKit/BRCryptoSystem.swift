@@ -1607,7 +1607,9 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
                         success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0) },
-                        failure: { (_) in cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
+                        failure: { (e) in
+                            print ("SYS: GetBlockNumber: Error: \(e)")
+                            cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
@@ -1631,7 +1633,8 @@ extension System {
                                                     success: {
                                                         var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
-                                                    failure: { (_) in
+                                                    failure: { (e) in
+                                                        print ("SYS: GetTransactions: Error: \(e)")
                                                         cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
                 }},
 
@@ -1656,7 +1659,8 @@ extension System {
                                                     success: {
                                                         var bundles: [BRCryptoClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
                                                         cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
-                                                    failure: { (_) in
+                                                    failure: { (e) in
+                                                        print ("SYS: GetTransfers: Error: \(e)")
                                                         cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},
 
