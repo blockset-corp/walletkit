@@ -105,9 +105,17 @@ cryptoTransferSerializeHBAR (BRCryptoTransfer transfer,
 
 static int
 cryptoTransferIsEqualHBAR (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
-    return (tb1 == tb2 ||
-            cryptoHashEqual (cryptoTransferGetHashHBAR(tb1),
-                             cryptoTransferGetHashHBAR(tb2)));
+    if (tb1 == tb2) return 1;
+
+    BRCryptoHash h1 = cryptoTransferGetHashHBAR (tb1);
+    BRCryptoHash h2 = cryptoTransferGetHashHBAR (tb2);
+
+    int result = (CRYPTO_TRUE == cryptoHashEqual (h1, h2));
+
+    cryptoHashGive (h2);
+    cryptoHashGive (h1);
+
+    return result;
 }
 
 static BRCryptoTransferDirection

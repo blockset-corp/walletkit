@@ -260,6 +260,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRTezosHash txId = cryptoHashAsXTZ (cryptoHashCreateFromStringAsXTZ (bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
+    bool xtzTransferNeedFree = true;
     BRTezosTransfer xtzTransfer = tezosTransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     
     tezosAddressFree (toAddress);
@@ -268,20 +269,40 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     // create BRCryptoTransfer
     
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
+    BRCryptoHash hash = cryptoHashCreateAsXTZ (txId);
     
-    BRCryptoTransfer baseTransfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
-                                                               wallet->unit,
-                                                               wallet->unitForFee,
-                                                               xtzAccount,
-                                                               xtzTransfer);
-    cryptoWalletAddTransfer (wallet, baseTransfer);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    bool isBurnTransfer = tezosAddressIsUnknownAddress (toAddress);
+    bool burnTransferNeeded = isBurnTransfer;
+
+    if (NULL != baseTransfer) {
+        BRTezosTransfer foundTransfer = cryptoTransferCoerceXTZ (baseTransfer)->xtzTransfer;
+        BRTezosAddress destination = tezosTransferGetTarget (foundTransfer);
+        burnTransferNeeded = isBurnTransfer && (0 == tezosAddressIsUnknownAddress (destination));
+        tezosAddressFree (destination);
+        cryptoTransferGive (baseTransfer);
+        baseTransfer = NULL;
+    }
+    
+    if (NULL == baseTransfer) {
+        baseTransfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                  wallet->unit,
+                                                  wallet->unitForFee,
+                                                  xtzAccount,
+                                                  xtzTransfer);
+        xtzTransferNeedFree = false;
+        cryptoWalletAddTransfer (wallet, baseTransfer);
+    }
+    
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (feeMutez);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXTZ (wallet->unitForFee, xtzFeeBasis);
     
     BRCryptoTransferState transferState =
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
-                                        NULL,
+                                        feeBasis,
                                         CRYPTO_TRUE,
                                         NULL)
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
@@ -289,6 +310,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
         : cryptoTransferStateInit (bundle->status)));
     
     cryptoTransferSetState (baseTransfer, transferState);
+    
+    cryptoFeeBasisGive (feeBasis);
     
     size_t attributesCount = bundle->attributesCount;
     const char **attributeKeys   = (const char **) bundle->attributeKeys;
@@ -306,6 +329,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
         counter += 1;
     }
     cryptoWalletSetCounterXTZ (wallet, counter);
+    
+    if (xtzTransferNeedFree)
+        tezosTransferFree (xtzTransfer);
 }
 
 static BRCryptoFeeBasis

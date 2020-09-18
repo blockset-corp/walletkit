@@ -82,6 +82,9 @@ tezosAddressFree (BRTezosAddress address);
 extern int
 tezosAddressIsFeeAddress (BRTezosAddress address);
 
+extern int
+tezosAddressIsUnknownAddress (BRTezosAddress address);
+
 /**
  * Copy a BRTezosAddress
  *

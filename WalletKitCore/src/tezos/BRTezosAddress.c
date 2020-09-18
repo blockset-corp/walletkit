@@ -81,7 +81,7 @@ tezosAddressIsFeeAddress (BRTezosAddress address) {
     }
 }
 
-static int
+extern int
 tezosAddressIsUnknownAddress (BRTezosAddress address)
 {
     assert(address);
