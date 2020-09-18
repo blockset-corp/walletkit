@@ -342,7 +342,8 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
 private_extern BRCryptoAmount
 cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer) {
     // TODO: NULL on unit vs unitForFee mismatch?
-    return (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state.type
+    return ((CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state.type &&
+             NULL != transfer->state.u.included.feeBasis)
             ? cryptoFeeBasisGetFee (transfer->state.u.included.feeBasis)
             : NULL);
 }
