@@ -295,11 +295,16 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     const char **attributeVals   = (const char **) bundle->attributeVals;
     
     // update wallet counter
+    // destination counter is the receiving wallet's counter for the current transfer, the next outgoing transfer must increment the counter
+    // source counter is the source wallet's counter for the next outgoing transfer
     bool parseError;
     BRCryptoTransferDirection direction = cryptoTransferGetDirection (baseTransfer);
     const char *key = (CRYPTO_TRANSFER_RECEIVED == direction) ? "destination_counter" : "source_counter";
     int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (key, attributesCount, attributeKeys, attributeVals), &parseError);
     
+    if (CRYPTO_TRANSFER_RECEIVED == direction) {
+        counter += 1;
+    }
     cryptoWalletSetCounterXTZ (wallet, counter);
 }
 
