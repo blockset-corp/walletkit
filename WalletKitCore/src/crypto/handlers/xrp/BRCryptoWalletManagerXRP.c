@@ -102,7 +102,7 @@ cryptoWalletManagerSignTransactionWithSeedXRP (BRCryptoWalletManager manager,
                                                BRCryptoTransfer transfer,
                                                UInt512 seed) {
     BRRippleAccount account = cryptoAccountAsXRP (manager->account);
-    BRRippleTransaction tid = rippleTransferGetTransaction (cryptoTransferCoerceXRP(transfer)->xrpTransfer);
+    BRRippleTransaction tid = cryptoTransferCoerceXRP(transfer)->xrpTransaction;
     if (tid) {
         size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
         return AS_CRYPTO_BOOLEAN(tx_size > 0);
@@ -217,9 +217,13 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
     
-    BRRippleUnitDrops amountDrops, feeDrops = 0;
+    BRRippleUnitDrops amountDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
+
+    BRRippleUnitDrops feeDrops = 0;
     if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeDrops);
+    BRRippleFeeBasis xrpFeeBasis = { feeDrops, 1};
+
     BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
     // Convert the hash string to bytes
@@ -232,9 +236,17 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
      && CRYPTO_FALSE == state.u.included.success));
 #endif
-    bool xrpTransferNeedFree = true;
-    BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
-    
+    bool xrpTransactionNeedFree = true;
+//    BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
+    BRRippleTransaction xrpTransaction = rippleTransactionCreateFull (fromAddress,
+                                                                      toAddress,
+                                                                      amountDrops,
+                                                                      xrpFeeBasis,
+                                                                      txId,
+                                                                      bundle->blockTimestamp,
+                                                                      bundle->blockNumber,
+                                                                      error);
+
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
 
@@ -250,8 +262,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   xrpAccount,
-                                                  xrpTransfer);
-        xrpTransferNeedFree = false;
+                                                  xrpTransaction);
+        xrpTransactionNeedFree = false;
 
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
@@ -277,8 +289,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     //TODO:XRP attributes
     //TODO:XRP save to fileService
 
-    if (xrpTransferNeedFree)
-        rippleTransferFree (xrpTransfer);
+    if (xrpTransactionNeedFree)
+        rippleTransactionFree (xrpTransaction);
 }
 
 extern BRCryptoWalletSweeperStatus

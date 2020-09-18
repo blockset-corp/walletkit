@@ -34,14 +34,14 @@ cryptoAddressCreateCallbackXRP (BRCryptoAddressCreateContext context,
 }
 
 extern BRCryptoAddress
-cryptoAddressCreateAsXRP (BRRippleAddress addr) {
+cryptoAddressCreateAsXRP (OwnershipGiven BRRippleAddress addr) {
     BRCryptoAddressCreateContextXRP contextXRP = {
         addr
     };
 
     return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXRPRecord),
                                       CRYPTO_NETWORK_TYPE_XRP,
-                                      0, //TODO:XRP address hash
+                                      rippleAddressHashValue(addr),
                                       &contextXRP,
                                       cryptoAddressCreateCallbackXRP);
 }
@@ -56,7 +56,7 @@ cryptoAddressCreateFromStringAsXRP (const char *string) {
             : NULL);
 }
 
-private_extern BRRippleAddress
+private_extern OwnershipKept BRRippleAddress
 cryptoAddressAsXRP (BRCryptoAddress address) {
     BRCryptoAddressXRP addressXRP = cryptoAddressCoerce (address);
     return addressXRP->addr;
