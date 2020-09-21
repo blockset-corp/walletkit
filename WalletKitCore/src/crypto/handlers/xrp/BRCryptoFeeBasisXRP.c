@@ -49,6 +49,12 @@ cryptoFeeBasisCreateAsXRP (BRCryptoUnit unit,
                                        cryptoFeeBasisCreateCallbackXRP);
 }
 
+private_extern BRRippleFeeBasis
+cryptoFeeBasisAsXRP (BRCryptoFeeBasis feeBasis) {
+    BRCryptoFeeBasisXRP feeBasisXRP = cryptoFeeBasisCoerce (feeBasis);
+    return feeBasisXRP->xrpFeeBasis;
+}
+
 static void
 cryptoFeeBasisReleaseXRP (BRCryptoFeeBasis feeBasis) {
 }

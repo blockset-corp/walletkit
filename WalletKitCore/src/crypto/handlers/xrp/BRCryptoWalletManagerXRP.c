@@ -102,7 +102,7 @@ cryptoWalletManagerSignTransactionWithSeedXRP (BRCryptoWalletManager manager,
                                                BRCryptoTransfer transfer,
                                                UInt512 seed) {
     BRRippleAccount account = cryptoAccountAsXRP (manager->account);
-    BRRippleTransaction tid = rippleTransferGetTransaction (cryptoTransferCoerceXRP(transfer)->xrpTransfer);
+    BRRippleTransaction tid = cryptoTransferCoerceXRP(transfer)->xrpTransaction;
     if (tid) {
         size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
         return AS_CRYPTO_BOOLEAN(tx_size > 0);
@@ -217,9 +217,13 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
     
-    BRRippleUnitDrops amountDrops, feeDrops = 0;
+    BRRippleUnitDrops amountDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
+
+    BRRippleUnitDrops feeDrops = 0;
     if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeDrops);
+    BRRippleFeeBasis xrpFeeBasis = { feeDrops, 1};
+
     BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
     // Convert the hash string to bytes
@@ -227,14 +231,16 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
-#ifdef REFACTOR
-    ||
-    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
-     && CRYPTO_FALSE == state.u.included.success));
-#endif
-    bool xrpTransferNeedFree = true;
-    BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
-    
+    bool xrpTransactionNeedFree = true;
+    BRRippleTransaction xrpTransaction = rippleTransactionCreateFull (fromAddress,
+                                                                      toAddress,
+                                                                      amountDrops,
+                                                                      xrpFeeBasis,
+                                                                      txId,
+                                                                      bundle->blockTimestamp,
+                                                                      bundle->blockNumber,
+                                                                      error);
+
     rippleAddressFree (toAddress);
     rippleAddressFree (fromAddress);
 
@@ -250,22 +256,27 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   xrpAccount,
-                                                  xrpTransfer);
-        xrpTransferNeedFree = false;
+                                                  xrpTransaction);
+        xrpTransactionNeedFree = false;
 
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
 
+    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
+                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
+                        0 != bundle->blockNumber &&
+                        0 != bundle->blockTimestamp));
+
     BRCryptoTransferState transferState =
-    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+    (isIncluded
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
                                         feeBasis,
-                                        CRYPTO_TRUE,
-                                        NULL)
+                                        AS_CRYPTO_BOOLEAN(CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status),
+                                        (isIncluded ? NULL : "unknown"))
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
         ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
         : cryptoTransferStateInit (bundle->status)));
@@ -277,8 +288,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     //TODO:XRP attributes
     //TODO:XRP save to fileService
 
-    if (xrpTransferNeedFree)
-        rippleTransferFree (xrpTransfer);
+    if (xrpTransactionNeedFree)
+        rippleTransactionFree (xrpTransaction);
 }
 
 extern BRCryptoWalletSweeperStatus

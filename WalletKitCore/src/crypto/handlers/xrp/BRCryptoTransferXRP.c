@@ -11,12 +11,11 @@
 #include "BRCryptoXRP.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoHashP.h"
-#include "ripple/BRRippleTransfer.h"
-#include "ripple/BRRipplePrivateStructs.h"
+#include "ripple/BRRippleTransaction.h"
 #include "ethereum/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
-transferGetDirectionFromXRP (BRRippleTransfer transfer,
+transferGetDirectionFromXRP (BRRippleTransaction transaction,
                              BRRippleAccount account);
 
 extern BRCryptoTransferXRP
@@ -26,13 +25,13 @@ cryptoTransferCoerceXRP (BRCryptoTransfer transfer) {
 }
 
 typedef struct {
-    BRRippleTransfer xrpTransfer;
+    BRRippleTransaction xrpTransaction;
 } BRCryptoTransferCreateContextXRP;
 
-extern BRRippleTransfer
+extern BRRippleTransaction
 cryptoTransferAsXRP (BRCryptoTransfer transfer) {
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
-    return transferXRP->xrpTransfer;
+    return transferXRP->xrpTransaction;
 }
 
 static void
@@ -41,7 +40,7 @@ cryptoTransferCreateCallbackXRP (BRCryptoTransferCreateContext context,
     BRCryptoTransferCreateContextXRP *contextXRP = (BRCryptoTransferCreateContextXRP*) context;
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP (transfer);
 
-    transferXRP->xrpTransfer = contextXRP->xrpTransfer;
+    transferXRP->xrpTransaction = contextXRP->xrpTransaction;
 }
 
 extern BRCryptoTransfer
@@ -49,18 +48,18 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            OwnershipKept BRRippleAccount xrpAccount,
-                           OwnershipGiven BRRippleTransfer xrpTransfer) {
+                           OwnershipGiven BRRippleTransaction xrpTransfer) {
     
     BRCryptoTransferDirection direction = transferGetDirectionFromXRP (xrpTransfer, xrpAccount);
     
     BRCryptoAmount amount = cryptoAmountCreateAsXRP (unit,
                                                      CRYPTO_FALSE,
-                                                     xrpTransfer->amount);
+                                                     rippleTransactionGetAmount(xrpTransfer));
+
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, rippleTransactionGetFee(xrpTransfer));
     
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, xrpTransfer->fee);
-    
-    BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (xrpTransfer->sourceAddress);
-    BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (xrpTransfer->targetAddress);
+    BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (rippleTransactionGetSource(xrpTransfer));
+    BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (rippleTransactionGetTarget(xrpTransfer));
 
     BRCryptoTransferCreateContextXRP contextXRP = {
         xrpTransfer
@@ -95,13 +94,13 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
 static void
 cryptoTransferReleaseXRP (BRCryptoTransfer transfer) {
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
-    rippleTransferFree (transferXRP->xrpTransfer);
+    rippleTransactionFree (transferXRP->xrpTransaction);
 }
 
 static BRCryptoHash
 cryptoTransferGetHashXRP (BRCryptoTransfer transfer) {
     BRCryptoTransferXRP transferXRP = cryptoTransferCoerceXRP(transfer);
-    BRRippleTransactionHash hash = rippleTransferGetTransactionId (transferXRP->xrpTransfer);
+    BRRippleTransactionHash hash = rippleTransactionGetHash(transferXRP->xrpTransaction);
     return cryptoHashCreateAsXRP (hash);
 }
 
@@ -115,7 +114,7 @@ cryptoTransferSerializeXRP (BRCryptoTransfer transfer,
 
     uint8_t *serialization = NULL;
     *serializationCount = 0;
-    BRRippleTransaction transaction = rippleTransferGetTransaction (transferXRP->xrpTransfer);
+    BRRippleTransaction transaction = transferXRP->xrpTransaction;
     if (transaction) {
         serialization = rippleTransactionSerialize (transaction, serializationCount);
     }
@@ -125,20 +124,29 @@ cryptoTransferSerializeXRP (BRCryptoTransfer transfer,
 
 static int
 cryptoTransferIsEqualXRP (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
-    return (tb1 == tb2 ||
-            cryptoHashEqual (cryptoTransferGetHashXRP(tb1),
-                             cryptoTransferGetHashXRP(tb2)));
+    if (tb1 == tb2) return 1;
+
+    BRCryptoHash h1 = cryptoTransferGetHashXRP (tb1);
+    BRCryptoHash h2 = cryptoTransferGetHashXRP (tb2);
+
+    int result = (CRYPTO_TRUE == cryptoHashEqual (h1, h2));
+
+    cryptoHashGive (h2);
+    cryptoHashGive (h1);
+
+    return result;
 }
 
 static BRCryptoTransferDirection
-transferGetDirectionFromXRP (BRRippleTransfer transfer,
+transferGetDirectionFromXRP (BRRippleTransaction transaction,
                              BRRippleAccount account) {
-    BRRippleAddress source = rippleTransferGetSource (transfer);
-    BRRippleAddress target = rippleTransferGetTarget (transfer);
-    
-    int isSource = rippleAccountHasAddress (account, source);
-    int isTarget = rippleAccountHasAddress (account, target);
-    
+    BRRippleAddress address = rippleAccountGetAddress(account);
+
+    int isSource = rippleTransactionHasSource(transaction, address);
+    int isTarget = rippleTransactionHasTarget(transaction, address);
+
+    rippleAddressFree(address);
+
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED
             : (isSource
