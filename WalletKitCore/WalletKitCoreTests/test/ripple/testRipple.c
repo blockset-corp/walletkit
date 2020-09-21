@@ -120,12 +120,12 @@ testRippleTransactionGetters (void /* ... */) {
     BRRippleAccount account = rippleAccountCreate(paper_key);
     BRRippleFeeBasis feeBasis;
     feeBasis.pricePerCostFactor = 10;
-    feeBasis.costFactor = 1;
+    feeBasis.costFactor = 2;
     transaction = rippleTransactionCreate(sourceAddress, targetAddress, 1000000, feeBasis);
     assert(transaction);
 
     uint64_t fee = rippleTransactionGetFee(transaction);
-    assert(fee == 0); // before serialization
+    assert(fee == 20); // before serialization, from feeBasis
     
     uint64_t amount = rippleTransactionGetAmount(transaction);
     assert(amount == 1000000);
@@ -992,6 +992,7 @@ static void submitWithoutDestinationTag() {
     rippleAccountFree(sourceAccount);
 }
 
+#if 0 // No BRRippleWallet; No BRRippleTransfer
 static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence,
                                           int addFailedFirstTransfer, int addFailedSentTransfersFromBlockset)
 {
@@ -1115,12 +1116,14 @@ static void testStartingSequence()
 
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
+#endif // No BRRippleWallet; No BRRippleTransfer
 
 extern void
 runRippleTest (void /* ... */) {
 
+#if 0 // No BRRippleWallet; No BRRippleTransfer
     testStartingSequence();
-
+#endif
     // Read data from external file and deserialize
     runDeserializeTests("200 new transaction", test_tx_list, (int)(sizeof(test_tx_list)/sizeof(char*)));
     runDeserializeTests("200 old transactions", test_tx_list2, (int)(sizeof(test_tx_list2)/sizeof(char*)));
@@ -1132,7 +1135,9 @@ runRippleTest (void /* ... */) {
     rippleTransactionTests();
 
     // Wallet tests
+#if 0 // No BRRippleWallet; No BRRippleTransfer
     runWalletTests();
+#endif
 
     // getAccountInfo is just a utility to print out info if needed
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";

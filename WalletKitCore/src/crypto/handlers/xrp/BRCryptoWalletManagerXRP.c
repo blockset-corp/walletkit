@@ -231,13 +231,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
-#ifdef REFACTOR
-    ||
-    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
-     && CRYPTO_FALSE == state.u.included.success));
-#endif
     bool xrpTransactionNeedFree = true;
-//    BRRippleTransfer xrpTransfer = rippleTransferCreate(fromAddress, toAddress, amountDrops, feeDrops, txId, bundle->blockTimestamp, bundle->blockNumber, error);
     BRRippleTransaction xrpTransaction = rippleTransactionCreateFull (fromAddress,
                                                                       toAddress,
                                                                       amountDrops,
@@ -270,14 +264,19 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
 
+    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
+                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
+                        0 != bundle->blockNumber &&
+                        0 != bundle->blockTimestamp));
+
     BRCryptoTransferState transferState =
-    (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status
+    (isIncluded
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
                                         feeBasis,
-                                        CRYPTO_TRUE,
-                                        NULL)
+                                        AS_CRYPTO_BOOLEAN(CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status),
+                                        (isIncluded ? NULL : "unknown"))
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
         ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
         : cryptoTransferStateInit (bundle->status)));
