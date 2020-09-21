@@ -56,7 +56,7 @@ cryptoAddressCreateFromStringAsXTZ (const char *string) {
             : NULL);
 }
 
-private_extern BRTezosAddress
+private_extern OwnershipKept BRTezosAddress
 cryptoAddressAsXTZ (BRCryptoAddress address) {
     BRCryptoAddressXTZ addressXTZ = cryptoAddressCoerce (address);
     return addressXTZ->addr;

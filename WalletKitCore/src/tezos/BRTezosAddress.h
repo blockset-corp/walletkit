@@ -129,6 +129,9 @@ tezosAddressGetRawBytes (BRTezosAddress address, uint8_t *buffer, size_t bufferS
 extern int // 1 if equal
 tezosAddressEqual (BRTezosAddress a1, BRTezosAddress a2);
 
+extern size_t
+tezosAddressHashValue (BRTezosAddress address);
+
 extern bool
 tezosAddressIsImplicit (BRTezosAddress address);
 
