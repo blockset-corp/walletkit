@@ -262,9 +262,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
 
     bool xtzTransferNeedFree = true;
     BRTezosTransfer xtzTransfer = tezosTransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, bundle->blockTimestamp, bundle->blockNumber, error);
-    
-    tezosAddressFree (toAddress);
-    tezosAddressFree (fromAddress);
 
     // create BRCryptoTransfer
     
@@ -272,16 +269,24 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRCryptoHash hash = cryptoHashCreateAsXTZ (txId);
     
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
-    bool isBurnTransfer = tezosAddressIsUnknownAddress (toAddress);
-    bool burnTransferNeeded = isBurnTransfer;
+    bool isRecoveringBurnTransfer = (1 == tezosAddressIsUnknownAddress (toAddress));
+    
+    tezosAddressFree (toAddress);
+    tezosAddressFree (fromAddress);
 
+    // A transaction may include a "burn" transfer to target address 'unknown' in addition to the normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed address.
+    // It must be included since the burn amount is subtracted from wallet balance, but is not considered a normal fee.
     if (NULL != baseTransfer) {
         BRTezosTransfer foundTransfer = cryptoTransferCoerceXTZ (baseTransfer)->xtzTransfer;
         BRTezosAddress destination = tezosTransferGetTarget (foundTransfer);
-        burnTransferNeeded = isBurnTransfer && (0 == tezosAddressIsUnknownAddress (destination));
+        bool foundBurnTransfer = (1 == tezosAddressIsUnknownAddress (destination));
         tezosAddressFree (destination);
         cryptoTransferGive (baseTransfer);
-        baseTransfer = NULL;
+        if (isRecoveringBurnTransfer != foundBurnTransfer) {
+            // transfers do not match
+            cryptoTransferGive (baseTransfer);
+            baseTransfer = NULL;
+        }
     }
     
     if (NULL == baseTransfer) {
