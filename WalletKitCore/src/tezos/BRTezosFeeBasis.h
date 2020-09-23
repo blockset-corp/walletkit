@@ -34,6 +34,7 @@ typedef struct
             size_t              sizeInBytes;
             int64_t             gasLimit;
             int64_t             storageLimit;
+            int64_t             counter;
         } estimate;
         
         struct {
@@ -50,7 +51,8 @@ extern BRTezosFeeBasis
 tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
                             size_t sizeInBytes,
                             int64_t gasLimit,
-                            int64_t storageLimit);
+                            int64_t storageLimit,
+                            int64_t counter);
 
 extern BRTezosFeeBasis
 tezosFeeBasisCreateActual(BRTezosUnitMutez fee);

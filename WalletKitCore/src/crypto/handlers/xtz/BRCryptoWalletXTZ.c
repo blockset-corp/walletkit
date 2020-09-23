@@ -210,9 +210,9 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
     BRTezosAddress xtzTarget  = cryptoAddressAsXTZ (target);
     BRTezosUnitMutez mutez = tezosMutezCreate (amount);
-    int64_t counter = walletXTZ->counter;
-
     BRTezosFeeBasis feeBasis = cryptoFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
+    assert (FEE_BASIS_ESTIMATE == feeBasis.type);
+    int64_t counter = MAX (walletXTZ->counter, feeBasis.u.estimate.counter);
     
     bool delegationOp = false;
     
