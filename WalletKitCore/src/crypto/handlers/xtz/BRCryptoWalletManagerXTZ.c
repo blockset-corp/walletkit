@@ -327,17 +327,12 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     const char **attributeKeys   = (const char **) bundle->attributeKeys;
     const char **attributeVals   = (const char **) bundle->attributeVals;
     
-    // update wallet counter
-    // destination counter is the receiving wallet's counter for the current transfer, the next outgoing transfer must increment the counter
-    // source counter is the source wallet's counter for the next outgoing transfer
+    // update wallet counter. given value is the 'current' counter and must be incremented.
     bool parseError;
     BRCryptoTransferDirection direction = cryptoTransferGetDirection (baseTransfer);
     const char *key = (CRYPTO_TRANSFER_RECEIVED == direction) ? "destination_counter" : "source_counter";
     int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (key, attributesCount, attributeKeys, attributeVals), &parseError);
-    
-    if (CRYPTO_TRANSFER_RECEIVED == direction) {
-        counter += 1;
-    }
+    counter += 1;
     cryptoWalletSetCounterXTZ (wallet, counter);
     
     if (xtzTransferNeedFree)
@@ -356,7 +351,11 @@ cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
     
     int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
     int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
-    BRTezosUnitMutez mutezPerByte = tezosMutezCreate (networkFee->pricePerCostFactor) / 1000; //TODO:TEZOS network fee seems to be in nanotez not mutez
+    // add 10% padding
+    gasUsed = (int64_t)(gasUsed * 1.1);
+    storageUsed = (int64_t)(storageUsed * 1.1);
+    BRTezosUnitMutez mutezPerByte = tezosMutezCreate (networkFee->pricePerCostFactor) / 1000; // network fee is nanotez/byte
+    // get the serialized txn size from the estimation payload
     size_t sizeInBytes = cryptoFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.estimate.sizeInBytes;
     
     BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte, sizeInBytes, gasUsed, storageUsed);

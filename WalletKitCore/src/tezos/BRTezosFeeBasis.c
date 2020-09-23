@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "BRTezosFeeBasis.h"
 #include "ethereum/util/BRUtilMath.h"
+#include "crypto/BRCryptoBaseP.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -20,6 +21,7 @@
 #define TEZOS_MUTEZ_PER_GAS_UNIT 0.1
 #define TEZOS_MUTEZ_PER_STORAGE_UNIT 1000
 #define TEZOS_DEFAULT_FEE_MUTEZ 1420
+#define TEZOS_MINIMAL_STORAGE_LIMIT 300 // sending to inactive accounts
 
 
 extern BRTezosFeeBasis
@@ -47,7 +49,7 @@ tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
             mutezPerByte,
             sizeInBytes,
             gasLimit,
-            storageLimit
+            MAX(storageLimit, TEZOS_MINIMAL_STORAGE_LIMIT)
         } }
     };
 }
