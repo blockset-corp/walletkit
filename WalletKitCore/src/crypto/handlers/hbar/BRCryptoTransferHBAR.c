@@ -104,10 +104,16 @@ cryptoTransferSerializeHBAR (BRCryptoTransfer transfer,
 }
 
 static int
-cryptoTransferIsEqualHBAR (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
-    return (tb1 == tb2 ||
-            cryptoHashEqual (cryptoTransferGetHashHBAR(tb1),
-                             cryptoTransferGetHashHBAR(tb2)));
+cryptoTransferIsEqualHBAR (BRCryptoTransfer t1, BRCryptoTransfer t2) {
+    if (t1 == t2) return 1;
+
+    BRCryptoTransferHBAR th1 = cryptoTransferCoerceHBAR (t1);
+    BRCryptoTransferHBAR th2 = cryptoTransferCoerceHBAR (t2);
+
+    if (th1->hbarTransaction == th2->hbarTransaction) return 1;
+
+    return hederaTransactionHashIsEqual (hederaTransactionGetHash (th1->hbarTransaction),
+                                         hederaTransactionGetHash (th2->hbarTransaction));
 }
 
 static BRCryptoTransferDirection
