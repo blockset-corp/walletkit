@@ -114,9 +114,30 @@ cryptoTransferSerializeXTZ (BRCryptoTransfer transfer,
 
 static int
 cryptoTransferIsEqualXTZ (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
-    return (tb1 == tb2 ||
-            cryptoHashEqual (cryptoTransferGetHashXTZ(tb1),
-                             cryptoTransferGetHashXTZ(tb2)));
+    if (tb1 == tb2) return 1;
+
+    BRCryptoHash h1 = cryptoTransferGetHashXTZ (tb1);
+    BRCryptoHash h2 = cryptoTransferGetHashXTZ (tb2);
+    
+    int result = (CRYPTO_TRUE == cryptoHashEqual (h1, h2));
+    
+    if (1 == result) {
+        // prevent burn transfers with same hash but different target address from being matched
+        BRTezosTransfer xtz1 = cryptoTransferCoerceXTZ (tb1)->xtzTransfer;
+        BRTezosTransfer xtz2 = cryptoTransferCoerceXTZ (tb2)->xtzTransfer;
+        BRTezosAddress target1 = tezosTransferGetTarget (xtz1);
+        BRTezosAddress target2 = tezosTransferGetTarget (xtz2);
+        
+        result = (1 == tezosAddressEqual (target1, target2));
+        
+        tezosAddressFree (target1);
+        tezosAddressFree (target2);
+    }
+
+    cryptoHashGive (h2);
+    cryptoHashGive (h1);
+
+    return result;
 }
 
 static BRCryptoTransferDirection

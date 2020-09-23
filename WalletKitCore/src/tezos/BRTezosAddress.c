@@ -81,7 +81,7 @@ tezosAddressIsFeeAddress (BRTezosAddress address) {
     }
 }
 
-static int
+extern int
 tezosAddressIsUnknownAddress (BRTezosAddress address)
 {
     assert(address);
@@ -170,6 +170,11 @@ tezosAddressCreateFromString(const char * addressString, bool strict) {
 extern int // 1 if equal
 tezosAddressEqual (BRTezosAddress a1, BRTezosAddress a2) {
     return 0 == memcmp (a1->bytes, a2->bytes, TEZOS_ADDRESS_BYTES);
+}
+
+extern size_t
+tezosAddressHashValue (BRTezosAddress address) {
+    return *((size_t*) address->bytes);
 }
 
 extern BRTezosAddress
