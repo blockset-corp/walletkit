@@ -324,18 +324,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     
     cryptoFeeBasisGive (feeBasis);
     
-    size_t attributesCount = bundle->attributesCount;
-    const char **attributeKeys   = (const char **) bundle->attributeKeys;
-    const char **attributeVals   = (const char **) bundle->attributeVals;
-    
-    // update wallet counter. given value is the 'current' counter and must be incremented.
-    bool parseError;
-    BRCryptoTransferDirection direction = cryptoTransferGetDirection (baseTransfer);
-    const char *key = (CRYPTO_TRANSFER_RECEIVED == direction) ? "destination_counter" : "source_counter";
-    int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (key, attributesCount, attributeKeys, attributeVals), &parseError);
-    counter += 1;
-    cryptoWalletSetCounterXTZ (wallet, counter);
-    
     if (xtzTransferNeedFree)
         tezosTransferFree (xtzTransfer);
 }
@@ -353,6 +341,8 @@ cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
     int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
     int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
     int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("counter", attributesCount, attributeKeys, attributeVals), &parseError);
+    // increment counter
+    counter += 1;
     // add 10% padding to gas/storage limits
     gasUsed = (int64_t)(gasUsed * 1.1);
     storageUsed = (int64_t)(storageUsed * 1.1);
@@ -360,7 +350,11 @@ cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
     // get the serialized txn size from the estimation payload
     size_t sizeInBytes = cryptoFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.estimate.sizeInBytes;
     
-    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte, sizeInBytes, gasUsed, storageUsed, counter);
+    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte,
+                                                            sizeInBytes,
+                                                            gasUsed,
+                                                            storageUsed,
+                                                            counter);
     
     return cryptoFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, feeBasis);
 }

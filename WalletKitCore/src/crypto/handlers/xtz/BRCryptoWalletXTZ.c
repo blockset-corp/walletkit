@@ -29,7 +29,6 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 
 typedef struct {
     BRTezosAccount xtzAccount;
-    int64_t counter;
 } BRCryptoWalletCreateContextXTZ;
 
 static void
@@ -39,7 +38,6 @@ cryptoWalletCreateCallbackXTZ (BRCryptoWalletCreateContext context,
     BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
 
     walletXTZ->xtzAccount = contextXTZ->xtzAccount;
-    walletXTZ->counter = contextXTZ->counter;
 }
 
 private_extern BRCryptoWallet
@@ -56,8 +54,7 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
     BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
 
     BRCryptoWalletCreateContextXTZ contextXTZ = {
-        xtzAccount,
-        0
+        xtzAccount
     };
 
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXTZRecord),
@@ -107,20 +104,6 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet) {
         if (CRYPTO_TRANSFER_SENT == direction) return false;
     }
     return true;
-}
-
-private_extern int64_t
-cryptoWalletGetCounterXTZ (BRCryptoWallet wallet) {
-    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
-    return walletXTZ->counter;
-}
-
-private_extern void
-cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter) {
-    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
-    if (counter > walletXTZ->counter) {
-        walletXTZ->counter = counter;
-    }
 }
 
 extern size_t
@@ -212,7 +195,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     BRTezosUnitMutez mutez = tezosMutezCreate (amount);
     BRTezosFeeBasis feeBasis = cryptoFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
     assert (FEE_BASIS_ESTIMATE == feeBasis.type);
-    int64_t counter = MAX (walletXTZ->counter, feeBasis.u.estimate.counter);
+    int64_t counter = feeBasis.u.estimate.counter;
     
     bool delegationOp = false;
     

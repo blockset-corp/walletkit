@@ -65,7 +65,6 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
 typedef struct BRCryptoWalletXTZRecord {
     struct BRCryptoWalletRecord base;
     BRTezosAccount xtzAccount;
-    int64_t counter;
 } *BRCryptoWalletXTZ;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersXTZ;
@@ -89,12 +88,6 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
 
 private_extern bool
 cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
-
-private_extern int64_t
-cryptoWalletGetCounterXTZ (BRCryptoWallet wallet);
-
-private_extern void
-cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter);
 
 // MARK: - Wallet Manager
 
