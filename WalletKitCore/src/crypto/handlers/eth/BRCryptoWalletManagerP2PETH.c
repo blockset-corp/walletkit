@@ -323,6 +323,7 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
     BRCryptoWallet  wallet = manager->base.wallet;
 
     BRCryptoTransfer transfer = cryptoWalletGetTransferByHash (wallet, hash);
+    cryptoHashGive(hash);
 
     bool needStatusEvent = false;
 

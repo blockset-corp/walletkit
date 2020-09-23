@@ -227,6 +227,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     BRCryptoHash hash = cryptoHashCreateAsHBAR (txHash);
 
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    cryptoHashGive(hash);
     
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
