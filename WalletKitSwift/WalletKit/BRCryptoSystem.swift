@@ -1486,13 +1486,17 @@ extension System {
                 // We may or may not have a non-fee transfer matching `transferWithFee`.  We
                 // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-                // Find the first of the non-fee transfers matching `transferWithFee`.
-                let transferMatchingFee = transfers[partition...]
-                    .first {
-                        $0.transactionId == transferWithFee.transactionId &&
-                            $0.source == transferWithFee.source &&
-                            $0.amount.currency == transferWithFee.amount.currency
-                }
+                // Find all the non-fee transfers with `source`. These are candidates for 'fee'
+                let transfersMatchingSource = transfers[partition...]
+                    .filter { $0.transactionId == transferWithFee.transactionId &&
+                        $0.source == transferWithFee.source }
+
+                // Find the first of the non-fee transfers matching `transferWithFee`.  Try to
+                // find a transfer that also matches the fee's currency (e.g. and ETH fee matches
+                // an ETH transfer).  Otherwise take the first transfer (e.g. the ETH fee does not
+                // match an ERC20 transfer).
+                let transferMatchingFee = transfersMatchingSource.first { $0.amount.currency == transferWithFee.amount.currency }
+                    ?? transfersMatchingSource.first
 
                 // We must have a transferMatchingFee; if we don't add one
                 let transfers = transfers[partition...] +
