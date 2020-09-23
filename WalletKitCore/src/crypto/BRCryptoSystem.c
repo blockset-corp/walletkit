@@ -16,11 +16,22 @@
 
 // MARK: - All Systems
 
-#if defined (NOT_WORKABLE_NEEDS_RO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
+#if defined (NOT_WORKABLE_NEEDS_TO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
 static pthread_once_t  _cryptoAllSystemsOnce   = PTHREAD_ONCE_INIT;
 static pthread_mutex_t _cryptoAllSystemsMutex;
 
-// TODO: If this had a `void*` field to the Swift/Java reference... it might then work.
+//
+// We can't create a Swift/Java System based solely on BRCryptoSystem - because the System
+// holds references to SystemClient and SystemListener which are not - and can never be - in the
+// C code.
+//
+// We'd like to keep a table of all Systems herein; rather than distinctly in the Swift and the
+// Java and the <other languages>.  To do so, requires a reference to the Swift/Java/other
+// System.  Not sure what to hold, if anything.
+//
+// We keep System because BRCryptoListener, created in the Swift/Java, needs a 'Listener Context'
+// which must be something that allows the Swift/Java to find the System.  
+//
 typedef struct {
     char *uids;
     BRCryptoSystem system;
@@ -78,7 +89,7 @@ cryptoAllSystemsAdd (BRCryptoSystem system) { // , void* context)
     array_add (systems, entry);
     pthread_mutex_unlock (&_cryptoAllSystemsMutex);
 }
-#endif
+#endif // defined (NOT_WORKABLE_NEEDS_TO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
 
 // MARK: - System
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
@@ -201,7 +212,25 @@ cryptoSystemSetState (BRCryptoSystem system,
          });
 }
 
-// MARK: System Network
+extern const char *
+cryptoSystemEventTypeString (BRCryptoSystemEventType type) {
+    static const char *names[] = {
+        "CRYPTO_WALLET_EVENT_CREATED",
+        "CRYPTO_SYSTEM_EVENT_CHANGED",
+        "CRYPTO_SYSTEM_EVENT_DELETED",
+
+        "CRYPTO_SYSTEM_EVENT_NETWORK_ADDED",
+        "CRYPTO_SYSTEM_EVENT_NETWORK_CHANGED",
+        "CRYPTO_SYSTEM_EVENT_NETWORK_DELETED",
+
+        "CRYPTO_SYSTEM_EVENT_MANAGER_ADDED",
+        "CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED",
+        "CRYPTO_SYSTEM_EVENT_MANAGER_DELETED"
+    };
+    return names [type];
+}
+
+// MARK: - System Network
 
 static BRCryptoBoolean
 cryptoSystemHasNetworkFor (BRCryptoSystem system,
@@ -394,6 +423,8 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
     return manager;
 }
 
+// MARK: - System Control
+
 extern void
 cryptoSystemStart (BRCryptoSystem system) {
     cryptoListenerStart(system->listener);
@@ -418,12 +449,4 @@ extern void
 cryptoSystemDisconnect (BRCryptoSystem system) {
     for (size_t index = 0; index < array_count(system->managers); index++)
          cryptoWalletManagerDisconnect (system->managers[index]);
-}
-
-extern const char *
-cryptoSystemEventTypeString (BRCryptoSystemEventType type) {
-    static const char *names[] = {
-        "CRYPTO_WALLET_EVENT_CREATED",
-    };
-    return names [type];
 }
