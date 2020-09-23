@@ -595,25 +595,30 @@ cryptoClientQRYRequestTransactionsOrTransfers (BRCryptoClientQRYManager qry,
                                                OwnershipKept  BRSetOf(BRCryptoAddress) oldAddresses,
                                                OwnershipGiven BRSetOf(BRCryptoAddress) newAddresses,
                                                size_t requestId) {
-    bool madeRequest = false;
 
     BRCryptoWalletManager manager = cryptoWalletManagerTakeWeak(qry->manager);
-    if (NULL == manager) return madeRequest;
+    if (NULL == manager) {
+        cryptoAddressSetRelease(newAddresses);
+        return false;
+    }
 
-    // Determine the set of address needed as `newAddresses - oldAddresses`
+    // Determine the set of addresses needed as `newAddresses - oldAddresses`.  The elements in
+    // `addresses` ARE NOT owned by `addresses`; they remain owned by `newAddresses`
     BRSetOf(BRCryptoAddress) addresses = BRSetCopy (newAddresses, NULL);
 
     if (NULL != oldAddresses)
         BRSetMinus (addresses, oldAddresses);
 
-        // If there are no `addresses` then there is no need for a reqeust
-    if (BRSetCount (addresses) > 0) {
+    // If there are `addresses` then a reqeust is needed.
+    bool needRequest = BRSetCount (addresses) > 0;
 
+    if (needRequest) {
         // Get an array of the remaining, needed `addresses`
         BRArrayOf(char *) addressesEncoded = cryptoClientQRYGetAddresses (qry, addresses);
 
         // Create a `calllbackState`; importantly, report `newAddress` as the accumulated addresses
         // that have been requested.  Note, this specific request will be for `addresses` only.
+        // The elements in `newAddresses` are now owned by `callbackState`.
         BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateGetTrans (type,
                                                                                              newAddresses,
                                                                                              requestId);
@@ -642,23 +647,22 @@ cryptoClientQRYRequestTransactionsOrTransfers (BRCryptoClientQRYManager qry,
                                                   ? BLOCK_HEIGHT_UNBOUND_VALUE
                                                   : qry->sync.endBlockNumber));
                 break;
+
             default:
                 assert (false);
         }
 
         cryptoClientQRYReleaseAddresses (addressesEncoded);
-
-        madeRequest = true;
     }
-
-    if (!madeRequest) {
-        cryptoAddressSetRelease(newAddresses);
+    else {
+        // If `newAddresses` ownership was not transfered to `callbackState`, then release everything.
+        cryptoAddressSetRelease (newAddresses);
     }
 
     cryptoWalletManagerGive (manager);
-    BRSetFree(addresses);
+    BRSetFree (addresses);
 
-    return madeRequest;
+    return needRequest;
 }
 
 extern void
