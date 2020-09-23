@@ -124,6 +124,9 @@ transferGetDirectionFromHBAR (BRHederaTransaction transaction,
     
     int isSource = hederaAccountHasAddress (account, source);
     int isTarget = hederaAccountHasAddress (account, target);
+
+    hederaAddressFree (target);
+    hederaAddressFree (source);
     
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED

@@ -999,6 +999,7 @@ cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
     free (bundle->from);
     free (bundle->to);
     free (bundle->amount);
+    free (bundle->currency);
     if (NULL != bundle->fee) free (bundle->fee);
 
     free (bundle->blockHash);

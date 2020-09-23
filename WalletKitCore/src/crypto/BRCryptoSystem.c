@@ -122,6 +122,7 @@ cryptoSystemCreate (BRCryptoClient client,
                                                               CRYPTO_TRUE == onMainnet);
     array_new (system->networks, networksCount);
     array_add_array (system->networks, networks, networksCount);
+    free (networks);
 
     // Start w/ no `managers`; never more than `networksCount`
     array_new (system->managers, networksCount);
