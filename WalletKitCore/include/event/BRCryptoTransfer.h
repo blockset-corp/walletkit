@@ -96,7 +96,7 @@ extern "C" {
     cryptoTransferStateIncludedInit (uint64_t blockNumber,
                                      uint64_t transactionIndex,
                                      uint64_t timestamp,
-                                     BRCryptoFeeBasis feeBasis,
+                                     OwnershipKept BRCryptoFeeBasis feeBasis,
                                      BRCryptoBoolean success,
                                      const char *error);
 

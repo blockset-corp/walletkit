@@ -101,6 +101,7 @@ hederaTransactionSerialize (BRHederaTransaction transaction, size_t *size);
 extern BRHederaTransactionHash hederaTransactionGetHash(BRHederaTransaction transaction);
 extern char * // Caller owns memory and must free calling "free"
 hederaTransactionGetTransactionId(BRHederaTransaction transaction);
+extern BRHederaFeeBasis hederaTransactionGetFeeBasis (BRHederaTransaction transaction);
 extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transaction);
 extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction);
