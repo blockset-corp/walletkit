@@ -63,6 +63,9 @@ extern int tezosTransferHasSource (BRTezosTransfer transfer,
 
 extern uint64_t tezosTransferGetBlockHeight (BRTezosTransfer transfer);
 
+extern int
+tezosTransferIsEqual (BRTezosTransfer t1, BRTezosTransfer t2);
+
 #ifdef __cplusplus
 }
 #endif

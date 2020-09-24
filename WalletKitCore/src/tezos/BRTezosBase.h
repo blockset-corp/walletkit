@@ -38,6 +38,12 @@ typedef enum {
     TEZOS_OP_DELEGATION = 110
 } BRTezosOperationKind;
 
+static inline bool
+tezosHashIsEqual (const BRTezosHash h1,
+                  const BRTezosHash h2) {
+    return 0 == memcmp (h1.bytes, h2.bytes, TEZOS_HASH_BYTES);
+}
+
 
 #ifdef __cplusplus
 }

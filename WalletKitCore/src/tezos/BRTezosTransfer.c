@@ -160,3 +160,12 @@ extern uint64_t tezosTransferGetBlockHeight (BRTezosTransfer transfer) {
     assert(transfer);
     return transfer->blockHeight;
 }
+
+extern int
+tezosTransferIsEqual (BRTezosTransfer t1, BRTezosTransfer t2) {
+    // burn transfers with same hash but different target address are not matched
+    return  (t1 == t2) ||
+            (tezosHashIsEqual (tezosTransferGetTransactionId (t1),
+                               tezosTransferGetTransactionId (t2)) &&
+             tezosAddressEqual(t1->targetAddress, t2->targetAddress));
+}

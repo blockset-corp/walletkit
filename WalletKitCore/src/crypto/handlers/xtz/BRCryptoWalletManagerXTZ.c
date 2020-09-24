@@ -271,6 +271,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
     bool isRecoveringBurnTransfer = (1 == tezosAddressIsUnknownAddress (toAddress));
     
+    cryptoHashGive (hash);
     tezosAddressFree (toAddress);
     tezosAddressFree (fromAddress);
 
