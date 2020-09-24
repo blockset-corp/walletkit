@@ -52,7 +52,7 @@ typedef uint8_t *
                                      BRCryptoBoolean  requireSignature,
                                      size_t *serializationCount);
 
-typedef int
+typedef int // 1 if equal, 0 if not
 (*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
                                    BRCryptoTransfer t2);
 

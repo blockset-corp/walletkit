@@ -118,7 +118,7 @@ cryptoAddressIsEqualBTC (BRCryptoAddress address1, BRCryptoAddress address2) {
     BRCryptoAddressBTC a1 = cryptoAddressCoerce (address1, address1->type);
     BRCryptoAddressBTC a2 = cryptoAddressCoerce (address2, address2->type);
 
-    return (a1->base.type == a1->base.type &&
+    return (a1->base.type == a2->base.type &&
             0 == strcmp (a1->addr.s, a2->addr.s));
 }
 

@@ -307,8 +307,6 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
 
 static OwnershipGiven BRSetOf(BRCryptoAddress)
 cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
-    BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (10);
-
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
     BRWallet *btcWallet = walletBTC->wid;
 
@@ -316,10 +314,25 @@ cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
     BRAddress *btcAddresses = calloc (btcAddressesCount, sizeof (BRAddress));
     BRWalletAllAddrs (btcWallet, btcAddresses, btcAddressesCount);
 
+    BRCryptoAddress replacedAddress = NULL;
+
+    BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (btcAddressesCount);
+
     for (size_t index = 0; index < btcAddressesCount; index++) {
-        BRSetAdd (addresses, cryptoAddressCreateAsBTC (wallet->type, btcAddresses[index]));
-        // TODO: BCH vs BTC vs BSV
-        BRSetAdd (addresses, cryptoAddressCreateAsBTC (wallet->type, BRWalletAddressToLegacy(btcWallet, &btcAddresses[index])));
+        // The currency, may or may not have a legacy address;
+        BRAddress btcPrimaryAddress = btcAddresses[index];
+        BRAddress btcLegacyAddress  = BRWalletAddressToLegacy(btcWallet, &btcAddresses[index]);
+
+        // Add in the primaryAddress
+        replacedAddress = BRSetAdd (addresses, cryptoAddressCreateAsBTC (wallet->type, btcPrimaryAddress));
+        if (replacedAddress) cryptoAddressGive (replacedAddress);
+
+
+        // If the primaryAddress nd legacyAddress differ, then add it in
+        if (!BRAddressEq (&btcPrimaryAddress, &btcLegacyAddress)) {
+            replacedAddress = BRSetAdd (addresses, cryptoAddressCreateAsBTC (wallet->type, btcLegacyAddress));
+            if (replacedAddress) cryptoAddressGive (replacedAddress);
+        }
     }
 
     free (btcAddresses);
