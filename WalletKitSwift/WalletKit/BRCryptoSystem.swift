@@ -16,16 +16,28 @@ import WalletKitCore
 ///
 public final class System {
 
+    ///
     /// The Core representation
+    ///
+    /// Unlike other abstractions, such as WalletManager, Wallet and Transaction, the properties
+    /// of a System are not all derived from the `core` instance.  A `System` provides the
+    /// interface to WalletKit for cryptocurrency Apps and other programs; therefore, a `System`
+    /// holds instances, specifically the SystemListener and the SystemClient, from the App space.
+    /// Such instances cannot be held in the `core` state.
+    ///
+    /// As a consequence of `System` being the WalletKit interface, callbacks from the WalletKit
+    /// 'C' code, will need some way to map the callback context and arguments to the `System`
+    /// itself.
+    ///
     internal private(set) var core: BRCryptoSystem! = nil
 
     /// The listener.  Gets all events for {Network, WalletManger, Wallet, Transfer}
     public private(set) weak var listener: SystemListener?
 
-    /// The listenerQueue where all listener 'handle events' are asynchronously performed.
-    internal let listenerQueue: DispatchQueue
+    /// The client to use for queries
+    public let client: SystemClient
 
-    // TODO: The 'account uids' only; if 'universal', the 'network uid' is needed
+    // A unique identifier (derived from the account's unique identifier).
     public let uids: String
     
     /// The account
@@ -37,8 +49,8 @@ public final class System {
     /// If on mainnet
     public let onMainnet: Bool
 
-    /// The client to use for queries
-    public let client: SystemClient
+    /// Flag indicating if the network is reachable; defaults to true
+    internal var isNetworkReachable = true
 
     /// The queue for asynchronous functionality.  Notably this is used in `configure()` to
     /// gather all of the `query` results as Networks are created and added.
@@ -46,15 +58,15 @@ public final class System {
 
     internal let callbackCoordinator: SystemCallbackCoordinator
 
-    /// Flag indicating if the network is reachable; defaults to true
-    internal var isNetworkReachable = true
+    /// The listenerQueue where all listener 'handle events' are asynchronously performed.
+    internal let listenerQueue: DispatchQueue
 
-    // the number of networks
+    /// The number of networks
     public var networksCount: Int {
         return cryptoSystemGetNetworksCount (core)
     }
 
-    /// the networks, unsorted.
+    /// The networks, unsorted.
     public var networks: [Network] {
         var count: BRCryptoCount = 0;
         let pointers = cryptoSystemGetNetworks (core, &count);
@@ -63,26 +75,40 @@ public final class System {
         let networks: [BRCryptoNetwork] = pointers?
             .withMemoryRebound (to: BRCryptoNetwork.self, capacity: count) {
                 Array (UnsafeBufferPointer (start: $0, count: count))
-        } ?? []
+            } ?? []
 
         return networks.map { Network (core: $0, take: false) }
     }
 
-     internal func networkBy (uids: String) -> Network? {
+    ///
+    /// Find a system's network from the `uids`.
+    ///
+    /// - Parameter uids: The network's uids.
+    ///
+    /// - Returns: An optional Network, if found.
+    ///
+    internal func networkBy (uids: String) -> Network? {
         return cryptoSystemGetNetworkForUids (core, uids)
             .map { Network (core: $0, take: false) }
-      }
+    }
 
+    ///
+    /// Find a system's network from the `core`.
+    ///
+    /// - Parameter core: The network's core.
+    ///
+    /// - Returns: An optional Network, if found.
+    ///
     internal func networkBy (core: BRCryptoNetwork) -> Network? {
         return networks.first { $0.core == core }
-     }
+    }
 
-    // the number of managers
+    /// The number of managers
     public var managersCount: Int {
         return cryptoSystemGetWalletManagersCount (core)
     }
 
-     /// The wallet managers, unsorted.  A WalletManager will hold an 'unowned'
+    /// The wallet managers, unsorted.  A WalletManager will hold an 'unowned'
     /// reference back to `System`
     public var managers: [WalletManager] {
         var count: BRCryptoCount = 0;
@@ -92,7 +118,7 @@ public final class System {
         let managers: [BRCryptoWalletManager] = pointers?
             .withMemoryRebound (to: BRCryptoWalletManager.self, capacity: count) {
                 Array (UnsafeBufferPointer (start: $0, count: count))
-        } ?? []
+            } ?? []
 
         return managers.map {
             WalletManager (core: $0,
@@ -101,19 +127,141 @@ public final class System {
                            take: false) }
     }
 
-     internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
+    ///
+    /// Find a system's wallet manager from the `core`.
+    ///
+    /// - Parameter core: The wallet manager's core.
+    ///
+    /// - Returns: An optional WalletManager, if found.
+    ///
+    internal func managerBy (core: BRCryptoWalletManager) -> WalletManager? {
         return (CRYPTO_TRUE == cryptoSystemHasWalletManager (self.core, core)
-            ? WalletManager (core: core, system: self, callbackCoordinator: callbackCoordinator, take: true)
-            : nil)
+                        ? WalletManager (core: core, system: self, callbackCoordinator: callbackCoordinator, take: true)
+                        : nil)
     }
 
+    ///
+    /// Find a system's wallet manager from the `network`.
+    ///
+    /// - Parameter network: The network.
+    ///
+    /// - Returns: An optional WalletManager, if found.
+    ///
     internal func managerBy (network: BRCryptoNetwork) -> WalletManager? {
         return cryptoSystemGetWalletManagerByNetwork (core, network)
             .map { WalletManager (core: $0,
                                   system: self,
                                   callbackCoordinator: callbackCoordinator,
                                   take: false)
+            }
+    }
+
+    /// Wallets - derived as a 'flatMap' of the managers' wallets.
+    public var wallets: [Wallet] {
+        return managers.flatMap { $0.wallets }
+    }
+
+    // MARK: - Initialization, System and WalletManager
+
+    ///
+    /// Initialize System
+    ///
+    /// - Parameters:
+    ///   - listener: The listener for handlng events.
+    ///
+    ///   - client: The client for external data
+    ///
+    ///   - account: The account, derived from the `paperKey`, that will be used for all networks.
+    ///
+    ///   - onMainnet: boolean to indicate if this is for mainnet or for testnet.  As blockchains
+    ///       are announced, we'll filter them to be for mainent or testnet.
+    ///
+    ///   - path: The path to use for persistent storage of data, such as for BTC and ETH blocks,
+    ///       peers, transaction and logs.
+    ///
+    ///   - query: The query for BlockchiainDB interaction.
+    ///
+    ///   - listenerQueue: The queue to use when performing listen event handler callbacks.  If a
+    ///       queue is not specficied (default to `nil`), then one will be provided.
+    ///
+    internal init (client: SystemClient,
+                   listener: SystemListener,
+                   account: Account,
+                   onMainnet: Bool,
+                   path: String,
+                   listenerQueue: DispatchQueue? = nil) {
+
+        let basePath = path.hasSuffix("/") ? String(path.dropLast()) : path
+        let uids     = account.fileSystemIdentifier
+        precondition (System.ensurePath (basePath + "/" + uids))
+
+        self.uids      = uids
+        self.path      = basePath + "/" + uids
+
+        self.listener  = listener
+        self.client    = client
+        self.account   = account
+        self.onMainnet = onMainnet
+        self.listenerQueue = listenerQueue ?? DispatchQueue (label: "Crypto System Listener")
+        self.callbackCoordinator = SystemCallbackCoordinator (queue: self.listenerQueue)
+
+        // Assign a system identifier.  This happens here so that `cryptoClient` and
+        // `cryptoListener` will have their context (which is based on `self.index`)
+        self.index = System.systemIndexIncrement;
+
+        self.core = cryptoSystemCreate (self.cryptoClient,
+                                        self.cryptoListener,
+                                        account.core,
+                                        basePath,
+                                        onMainnet ? CRYPTO_TRUE : CRYPTO_FALSE)
+
+        // Add `system` to our known set of systems; this allows event callbacks from Core to
+        // find the initiating Swift instance.
+        System.systemExtend (with: self)
+
+        // Start `system` so that the event handlers are started and thus events are processed.
+        // There is not explicit interface for start/stop; and thus no stopping `system` now.
+        cryptoSystemStart (self.core)
+
+    }
+
+    public static func create (client: SystemClient,
+                               listener: SystemListener,
+                               account: Account,
+                               onMainnet: Bool,
+                               path: String,
+                               listenerQueue: DispatchQueue? = nil) -> System {
+        return System (client: client,
+                       listener: listener,
+                       account: account,
+                       onMainnet: onMainnet,
+                       path: path,
+                       listenerQueue: listenerQueue)
+    }
+
+    static func ensurePath (_ path: String) -> Bool {
+        // Apple on `fileExists`, `isWritableFile`
+        //    "The following methods are of limited utility. Attempting to predicate behavior
+        //     based on the current state of the filesystem or a particular file on the filesystem
+        //     is encouraging odd behavior in the face of filesystem race conditions. It's far
+        //     better to attempt an operation (like loading a file or creating a directory) and
+        //     handle the error gracefully than it is to try to figure out ahead of time whether
+        //     the operation will succeed."
+
+        do {
+            // Ensure that `storagePath` exists.  Seems the return value can be ignore:
+            //    "true if the directory was created, true if createIntermediates is set and the
+            //     directory already exists, or false if an error occurred."
+            // The `attributes` need not be provided as we have write permission :
+            //    "Permissions are set according to the umask of the current process"
+            try FileManager.default.createDirectory (atPath: path,
+                                                     withIntermediateDirectories: true,
+                                                     attributes: nil)
         }
+        catch { return false }
+
+        // Ensure `path` is writeable.
+        return FileManager.default.isWritableFile (atPath: path)
     }
 
     ///
@@ -155,23 +303,6 @@ public final class System {
                                                        addressScheme.core,
                                                        &coreCurrences,
                                                        coreCurrences.count)
-
-//        guard accountIsInitialized (account, onNetwork: network),
-//            let manager = WalletManager (system: self,
-//                                         callbackCoordinator: callbackCoordinator,
-//                                         account: account,
-//                                         network: network,
-//                                         mode: mode,
-//                                         addressScheme: addressScheme,
-//                                         currencies: currencies,
-//                                         storagePath: path,
-//                                         listener: cryptoListener,
-//                                         client: cryptoClient)
-//            else { return false }
-//        
-//        manager.setNetworkReachable(isNetworkReachable)
-//        self.add (manager: manager)
-//        return true
     }
 
     ///
@@ -190,12 +321,7 @@ public final class System {
         }
     }
 
-    // Wallets - derived as a 'flatMap' of the managers' wallets.
-    public var wallets: [Wallet] {
-        return managers.flatMap { $0.wallets }
-    }
-
-    // Account Initialization
+    // MARK: - Account Initialization
     
     public enum AccountInitializationError: Error {
         /// The function `accountInitialize(...callback)` was called but `accountIsInitialized()`
@@ -251,16 +377,16 @@ public final class System {
                                    createIfDoesNotExist create: Bool,
                                    completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
         guard !accountIsInitialized(account, onNetwork: network)
-            else {
-                accountInitializeReportResult (Result.failure(.alreadyInitialized), completion)
-                return
+        else {
+            accountInitializeReportResult (Result.failure(.alreadyInitialized), completion)
+            return
         }
 
         switch network.type {
         case .hbar:
             // For Hedera, the account initialization data is the public key.
             guard let publicKey = account.getInitializationdData(onNetwork: network)
-                .flatMap ({ CoreCoder.hex.encode(data: $0) })
+                        .flatMap ({ CoreCoder.hex.encode(data: $0) })
             else {
                 accountInitializeReportResult (Result.failure(.queryFailure("No initialization data")), completion)
                 return
@@ -357,103 +483,18 @@ public final class System {
 
             failure: { (error: SystemClientError) in
                 accountInitializeReportResult (Result.failure (.queryFailure (error.localizedDescription)), completion)
-        })
+            })
     }
 
     private func accountInitializeReportResult (_ res: Result<Data?, AccountInitializationError>,
                                                 _ completion: @escaping  (Result<Data, AccountInitializationError>) -> Void) {
-        queue.async { completion (res.flatMap {
-            $0.map { Result.success ($0) } ?? Result.failure(.queryFailure("No Data")) }) }
-    }
-
-    /// System Initialization
-
-    static func ensurePath (_ path: String) -> Bool {
-        // Apple on `fileExists`, `isWritableFile`
-        //    "The following methods are of limited utility. Attempting to predicate behavior
-        //     based on the current state of the filesystem or a particular file on the filesystem
-        //     is encouraging odd behavior in the face of filesystem race conditions. It's far
-        //     better to attempt an operation (like loading a file or creating a directory) and
-        //     handle the error gracefully than it is to try to figure out ahead of time whether
-        //     the operation will succeed."
-
-        do {
-            // Ensure that `storagePath` exists.  Seems the return value can be ignore:
-            //    "true if the directory was created, true if createIntermediates is set and the
-            //     directory already exists, or false if an error occurred."
-            // The `attributes` need not be provided as we have write permission :
-            //    "Permissions are set according to the umask of the current process"
-            try FileManager.default.createDirectory (atPath: path,
-                                                     withIntermediateDirectories: true,
-                                                     attributes: nil)
+        queue.async {
+            completion (res.flatMap { $0.map { Result.success ($0) }
+                                ?? Result.failure(.queryFailure("No Data")) })
         }
-        catch { return false }
-
-        // Ensure `path` is writeable.
-        return FileManager.default.isWritableFile (atPath: path)
     }
 
-    ///
-    /// Initialize System
-    ///
-    /// - Parameters:
-    ///   - listener: The listener for handlng events.
-    ///
-    ///   - client: The client for external data
-    ///
-    ///   - account: The account, derived from the `paperKey`, that will be used for all networks.
-    ///
-    ///   - onMainnet: boolean to indicate if this is for mainnet or for testnet.  As blockchains
-    ///       are announced, we'll filter them to be for mainent or testnet.
-    ///
-    ///   - path: The path to use for persistent storage of data, such as for BTC and ETH blocks,
-    ///       peers, transaction and logs.
-    ///
-    ///   - query: The query for BlockchiainDB interaction.
-    ///
-    ///   - listenerQueue: The queue to use when performing listen event handler callbacks.  If a
-    ///       queue is not specficied (default to `nil`), then one will be provided.
-    ///
-    internal init (client: SystemClient,
-                   listener: SystemListener,
-                   account: Account,
-                   onMainnet: Bool,
-                   path: String,
-                   listenerQueue: DispatchQueue? = nil) {
-
-        let basePath = path.hasSuffix("/") ? String(path.dropLast()) : path
-        let uids     = account.fileSystemIdentifier
-        precondition (System.ensurePath (basePath + "/" + uids))
-
-        self.uids      = uids
-        self.path      = basePath + "/" + uids
-
-        self.listener  = listener
-        self.client    = client
-        self.account   = account
-        self.onMainnet = onMainnet
-        self.listenerQueue = listenerQueue ?? DispatchQueue (label: "Crypto System Listener")
-        self.callbackCoordinator = SystemCallbackCoordinator (queue: self.listenerQueue)
-
-        // Assign a system identifier.  This happens here so that `cryptoClient` and
-        // `cryptoListener` will have their context (which is based on `self.index`)
-        self.index = System.systemIndexIncrement;
-
-        self.core = cryptoSystemCreate (self.cryptoClient,
-                                        self.cryptoListener,
-                                        account.core,
-                                        basePath,
-                                        onMainnet ? CRYPTO_TRUE : CRYPTO_FALSE)
-
-        // Add `system` to our known set of systems; this allows event callbacks from Core to
-        // find the initiating Swift instance.
-        System.systemExtend (with: self)
-
-        // Start `system` so that the event handlers are started and thus events are processed.
-        // There is not explicit interface for start/stop; and thus no stopping `system` now.
-        cryptoSystemStart (self.core)
-        
-    }
+    // MARK: - Subscription
 
     ///
     /// Subscribe (or unsubscribe) to BlockChainDB notifications.  Notifications provide an
@@ -468,7 +509,7 @@ public final class System {
     ///
     public func subscribe (using subscription: SystemClient.Subscription) {
         self.client.subscribe (walletId: account.uids,
-                              subscription: subscription)
+                               subscription: subscription)
     }
 
     ///
@@ -493,7 +534,8 @@ public final class System {
         }
     }
     #endif
-    /// MARK: - Network Fees
+
+    // MARK: - Network Fees
 
     ////
     /// A NetworkFeeUpdateError
@@ -523,14 +565,14 @@ public final class System {
 
             // On an error, just skip out; we'll query again later, presumably
             guard case let .success (blockChainModels) = blockChainResult
-                else {
-                    completion? (Result.failure (NetworkFeeUpdateError.feesUnavailable))
-                    return
+            else {
+                completion? (Result.failure (NetworkFeeUpdateError.feesUnavailable))
+                return
             }
 
             let networks = blockChainModels.compactMap { (blockChainModel: SystemClient.Blockchain) -> Network? in
                 guard let network = self.networkBy (uids: blockChainModel.id)
-                    else { return nil }
+                else { return nil }
 
                 // We always have a feeUnit for network
                 let feeUnit = network.baseUnitFor(currency: network.currency)!
@@ -542,7 +584,7 @@ public final class System {
                         return Amount.create (string: fee.amount, unit: feeUnit)
                             .map { NetworkFee (timeIntervalInMilliseconds: fee.confirmationTimeInMilliseconds,
                                                pricePerCostFactor: $0) }
-                }
+                    }
 
                 // The fees are unlikely to change; but we'll announce .feesUpdated anyways.
                 network.fees = fees
@@ -658,14 +700,14 @@ public final class System {
 
                 // Add the units - this will not replace an existing unti
                 units.forEach { network.addUnitFor (currency: currency, unit: $0) }
-        }
+            }
     }
 
     func configure (network: Network, feesFrom blockchainModel: SystemClient.Blockchain) {
         guard let feeUnitForParse = network.baseUnitFor (currency: network.currency),
-            // The feeUnit is always the network currency's default unit
-            let feeUnit = network.defaultUnitFor(currency: network.currency)
-            else { return }
+              // The feeUnit is always the network currency's default unit
+              let feeUnit = network.defaultUnitFor(currency: network.currency)
+        else { return }
 
         // Extract the network fees from the blockchainModel
         let fees = blockchainModel.feeEstimates
@@ -676,17 +718,17 @@ public final class System {
                     .map { $0.convert(to: feeUnit)! }
                     .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
                                        pricePerCostFactor: $0) }
-        }
+            }
 
         // We require fees
         guard !fees.isEmpty
-            else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
+        else { print ("SYS: CONFIGURE: Missed Fees (\(blockchainModel.name)) on '\(blockchainModel.network)'"); return }
 
         // Update the network's fees.
         network.fees = fees
     }
 
-     ///
+    ///
     /// Configure the system.  This will query various BRD services, notably the BlockChainDB, to
     /// establish the available networks (aka blockchains) and their currencies.  For each
     /// `Network` there will be `SystemEvent` which can be used by the App to create a
@@ -709,20 +751,20 @@ public final class System {
 
         func announceNetwork (_ network: Network) {
             // Save the network
-//             self.networks.append (network)
+            //             self.networks.append (network)
 
-             self.listenerQueue.async {
-                 // Announce NetworkEvent.created...
-                 self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
+            self.listenerQueue.async {
+                // Announce NetworkEvent.created...
+                self.listener?.handleNetworkEvent (system: self, network: network, event: NetworkEvent.created)
 
-                 // Announce SystemEvent.networkAdded - this will likely be handled with
-                 // system.createWalletManager(network:...) which will then announce
-                 // numerous events as wallets are created.
-                 self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
-             }
+                // Announce SystemEvent.networkAdded - this will likely be handled with
+                // system.createWalletManager(network:...) which will then announce
+                // numerous events as wallets are created.
+                self.listener?.handleSystemEvent  (system: self, event: SystemEvent.networkAdded(network: network))
+            }
 
-             // Keep a running total of discovered networks
-             discoveredNetworks.append(network)
+            // Keep a running total of discovered networks
+            discoveredNetworks.append(network)
         }
 
         func announceNetworkUpdate (_ network: Network) {
@@ -740,11 +782,11 @@ public final class System {
                 .getWithRecovery {
                     print ("SYS: CONFIGURE: Missed Blockchains Query: \($0)")
                     return []
-            }
+                }
 
             // Make a map from the supported models
             let blockchainModelsMap = Dictionary (uniqueKeysWithValues:
-                blockchainModels.map { ($0.id, $0) })
+                                                        blockchainModels.map { ($0.id, $0) })
 
             // Query currencies for all blockchains on mainnet/testnet
             self.client.getCurrencies (mainnet: self.onMainnet) {
@@ -757,7 +799,7 @@ public final class System {
                         print ("SYS: CONFIGURE: Missed Currencies Query: \($0)")
                         return applicationCurrencies
                             .filter { $0.verified == true }
-                }
+                    }
 
                 // Handle each network
                 supportedNetworks
@@ -792,7 +834,7 @@ public final class System {
                         else {
                             announceNetworkUpdate(network)
                         }
-                }
+                    }
 
                 // Announce the newly discoveredNetworks on completion
                 if existingNetworks.isEmpty || !discoveredNetworks.isEmpty {
@@ -836,9 +878,18 @@ public final class System {
                         address: (address != "__native__" ? address : nil),
                         verified: true,
                         demoninations: System.makeCurrencyDemominationsERC20 (code, decimals: decimals))
-        }
+            }
     }
 
+    // MARK: - System Mapping
+
+    /// The index of this system.  Set in `init` with  `System.systemIndexIncrement()`
+    var index: Int32 = 0
+
+    var systemContext: BRCryptoClientContext? {
+        let index = Int(self.index)
+        return UnsafeMutableRawPointer (bitPattern: index)
+    }
 
     //
     // Static Weak System References
@@ -847,7 +898,7 @@ public final class System {
     /// A serial queue to protect `systemIndex` and `systemMapping`
     static let systemQueue = DispatchQueue (label: "System", attributes: .concurrent)
 
-    /// A index to globally identify systems.
+    /// An index to globally identify systems.
     static var systemIndex: Int32 = 0;
 
     /// Increment the index
@@ -889,7 +940,7 @@ public final class System {
                     if systemRemovedSystemsSave {
                         systemRemovedSystems.append ($0)
                     }
-            }
+                }
         }
     }
 
@@ -923,7 +974,7 @@ public final class System {
                                        system: $0,
                                        callbackCoordinator: $0.callbackCoordinator,
                                        take: true))
-        }
+            }
     }
 
     static func systemExtract (_ context: BRCryptoListenerContext!,
@@ -935,7 +986,7 @@ public final class System {
             .map { ($0.0,
                     $0.1,
                     $0.1.walletByCoreOrCreate (wid, create: true)!)
-        }
+            }
     }
 
     static func systemExtract (_ context: BRCryptoListenerContext!,
@@ -950,30 +1001,10 @@ public final class System {
                     $0.1,
                     $0.2,
                     $0.2.transferByCoreOrCreate (tid, create: true)!)
-        }
+            }
     }
 
-    /// The index of this system.  Set by `System.systemExtend()`
-    var index: Int32 = 0
-
-    var systemContext: BRCryptoClientContext? {
-        let index = Int(self.index)
-        return UnsafeMutableRawPointer (bitPattern: index)
-    }
-
-    public static func create (client: SystemClient,
-                               listener: SystemListener,
-                               account: Account,
-                               onMainnet: Bool,
-                               path: String,
-                               listenerQueue: DispatchQueue? = nil) -> System {
-        return System (client: client,
-                       listener: listener,
-                       account: account,
-                       onMainnet: onMainnet,
-                       path: path,
-                       listenerQueue: listenerQueue)
-    }
+    // MARK: - Wipe
 
     static func destroy (system: System) {
         // Stop all callbacks.  This might be inconsistent with 'deleted' events.
@@ -1040,11 +1071,13 @@ public final class System {
                         try FileManager.default.removeItem (atPath: path)
                     }
                     catch {}
-            }
+                }
         }
         catch {}
     }
 }
+
+// MARK: - System State
 
 public enum SystemState {
     case created
@@ -1063,6 +1096,8 @@ public enum SystemState {
         }
     }
 }
+
+// MARK: - System Event
 
 public enum SystemEvent {
     case created
@@ -1119,6 +1154,8 @@ public enum SystemEvent {
     }
 }
 
+// MARK: - System Listener
+
 ///
 /// A SystemListener recieves asynchronous events announcing state changes to Networks, to Managers,
 /// to Wallets and to Transfers.  This is an application's sole mechanism to learn of asynchronous
@@ -1143,6 +1180,8 @@ public protocol SystemListener : /* class, */ WalletManagerListener, WalletListe
     func handleSystemEvent (system: System,
                             event: SystemEvent)
 }
+
+// MARK: - System Callback Coordinator
 
 /// A Functional Interface for a Handler
 public typealias SystemEventHandler = (System, SystemEvent) -> Void
@@ -1185,7 +1224,7 @@ internal final class SystemCallbackCoordinator {
                     switch $0 {
                     case .walletFeeEstimate (let handler): return handler
                     }
-            }
+                }
         }
     }
 
@@ -1210,6 +1249,7 @@ internal final class SystemCallbackCoordinator {
     }
 }
 
+// MARK: - Crypto Listener
 
 extension System {
     internal var cryptoListener: BRCryptoListener {
@@ -1228,7 +1268,7 @@ extension System {
                 system.listener?.handleSystemEvent(system: system,
                                                    event: SystemEvent.init (system: system,
                                                                             core: event))
-        },
+            },
 
             // BRCryptoListenerNetworkCallback
             { (context, net, event) in
@@ -1236,20 +1276,20 @@ extension System {
                 defer { cryptoNetworkGive (net) }
 
                 guard let system = System.systemExtract(context),
-                    let network = system.networkBy(core: net!)
-                    else { print ("SYS: Event: \(event.type): Missed (net)"); return }
+                      let network = system.networkBy(core: net!)
+                else { print ("SYS: Event: \(event.type): Missed (net)"); return }
 
                 system.listener?.handleNetworkEvent(system: system,
                                                     network: network,
                                                     event: NetworkEvent.init(core: event))
-        },
+            },
             // BRCryptoListenerWalletManagerCallback
             { (context, cwm, event) in
                 precondition (nil != context  && nil != cwm)
                 defer { cryptoWalletManagerGive(cwm) }
 
                 guard let (system, manager) = System.systemExtract (context, cwm)
-                    else { print ("SYS: Event: \(event.type): Missed {cwm}"); return }
+                else { print ("SYS: Event: \(event.type): Missed {cwm}"); return }
 
                 if event.type != CRYPTO_WALLET_MANAGER_EVENT_CHANGED {
                     print ("SYS: Event: Manager (\(manager.name)): \(event.type)")
@@ -1271,19 +1311,19 @@ extension System {
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
                     defer { if let wid = event.u.wallet { cryptoWalletGive (wid) }}
                     guard let wallet = manager.walletBy (core: event.u.wallet)
-                        else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
                     walletManagerEvent = WalletManagerEvent.walletAdded (wallet: wallet)
 
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
                     defer { if let wid = event.u.wallet { cryptoWalletGive (wid) }}
                     guard let wallet = manager.walletBy (core: event.u.wallet)
-                        else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
                     walletManagerEvent = WalletManagerEvent.walletChanged(wallet: wallet)
 
                 case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
                     defer { if let wid = event.u.wallet { cryptoWalletGive (wid) }}
                     guard let wallet = manager.walletBy (core: event.u.wallet)
-                        else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (wallet)"); return }
                     walletManagerEvent = WalletManagerEvent.walletDeleted(wallet: wallet)
 
                 case CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED:
@@ -1291,8 +1331,8 @@ extension System {
 
                 case CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES:
                     let timestamp: Date? = (0 == event.u.syncContinues.timestamp // NO_CRYPTO_TIMESTAMP
-                        ? nil
-                        : Date (timeIntervalSince1970: TimeInterval(event.u.syncContinues.timestamp)))
+                                                ? nil
+                                                : Date (timeIntervalSince1970: TimeInterval(event.u.syncContinues.timestamp)))
 
                     walletManagerEvent = WalletManagerEvent.syncProgress (
                         timestamp: timestamp,
@@ -1317,7 +1357,7 @@ extension System {
                                                          manager: manager,
                                                          event: event)
                 }
-        },
+            },
 
             // BRCryptoListenerWalletCallback
             { (context, cwm, wid, event) in
@@ -1325,7 +1365,7 @@ extension System {
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid) }
 
                 guard let (system, manager, wallet) = System.systemExtract (context, cwm, wid)
-                    else { print ("SYS: Event: \(event.type): Missed {cwm, wid}"); return }
+                else { print ("SYS: Event: \(event.type): Missed {cwm, wid}"); return }
 
                 if event.type != CRYPTO_WALLET_EVENT_CHANGED {
                     print ("SYS: Event: Wallet (\(wallet.name)): \(event.type)")
@@ -1348,25 +1388,25 @@ extension System {
                 case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
                     defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
                     guard let transfer = wallet.transferBy (core: event.u.transfer)
-                        else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
                     walletEvent = WalletEvent.transferAdded (transfer: transfer)
 
                 case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
                     defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
                     guard let transfer = wallet.transferBy (core: event.u.transfer)
-                        else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
                     walletEvent = WalletEvent.transferChanged (transfer: transfer)
 
                 case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
                     defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
                     guard let transfer = wallet.transferBy (core: event.u.transfer)
-                        else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
                     walletEvent = WalletEvent.transferSubmitted (transfer: transfer, success: true)
 
                 case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
                     defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
                     guard let transfer = wallet.transferBy (core: event.u.transfer)
-                        else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
+                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
                     walletEvent = WalletEvent.transferDeleted (transfer: transfer)
 
                 case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
@@ -1381,8 +1421,8 @@ extension System {
                 case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
                     let cookie = event.u.feeBasisEstimated.cookie!
                     if CRYPTO_SUCCESS == event.u.feeBasisEstimated.status,
-                        let feeBasis = event.u.feeBasisEstimated.basis
-                            .map ({ TransferFeeBasis (core: $0, take: false) }) {
+                       let feeBasis = event.u.feeBasisEstimated.basis
+                        .map ({ TransferFeeBasis (core: $0, take: false) }) {
                         system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: feeBasis)
                     }
                     else {
@@ -1398,7 +1438,7 @@ extension System {
                                                         wallet: wallet,
                                                         event: event)
                 }
-        },
+            },
 
             // BRCryptoListenerWalletCallback
             { (context, cwm, wid, tid, event) in
@@ -1406,7 +1446,7 @@ extension System {
                 defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid); cryptoTransferGive(tid) }
 
                 guard let (system, manager, wallet, transfer) = System.systemExtract (context, cwm, wid, tid)
-                    else { print ("SYS: Event: \(event.type): Missed {cwm, wid, tid}"); return }
+                else { print ("SYS: Event: \(event.type): Missed {cwm, wid, tid}"); return }
 
                 if event.type != CRYPTO_TRANSFER_EVENT_CHANGED {
                     print ("SYS: Event: Transfer (\(wallet.name) @ \(transfer.hash?.description ?? "pending")): \(event.type)")
@@ -1439,9 +1479,11 @@ extension System {
                                                           transfer: transfer,
                                                           event: event)
                 }
-        })
+            })
     }
 }
+
+// MARK: - Crypto Client
 
 extension System {
     private static func cleanup (_ message: String,
@@ -1462,44 +1504,42 @@ extension System {
         default: preconditionFailure()
         }
     }
-}
 
-extension System {
     private static func mergeTransfers (_ transaction: SystemClient.Transaction, with addresses: [String])
-        -> [(transfer: SystemClient.Transfer, fee: SystemClient.Amount?)] {
-            // Only consider transfers w/ `address`
-            var transfers = transaction.transfers.filter {
-                ($0.source.map { addresses.caseInsensitiveContains($0) } ?? false) ||
-                    ($0.target.map { addresses.caseInsensitiveContains($0) } ?? false)
-            }
+    -> [(transfer: SystemClient.Transfer, fee: SystemClient.Amount?)] {
+        // Only consider transfers w/ `address`
+        var transfers = transaction.transfers.filter {
+            ($0.source.map { addresses.caseInsensitiveContains($0) } ?? false) ||
+                ($0.target.map { addresses.caseInsensitiveContains($0) } ?? false)
+        }
 
-            // Note for later: all transfers have a unique id
+        // Note for later: all transfers have a unique id
 
-            let partition = transfers.partition { "__fee__" != $0.target }
-            switch (0..<partition).count {
-            case 0:
-                // There is no "__fee__" entry
-                return transfers[partition...]
-                    .map { (transfer: $0, fee: nil) }
+        let partition = transfers.partition { "__fee__" != $0.target }
+        switch (0..<partition).count {
+        case 0:
+            // There is no "__fee__" entry
+            return transfers[partition...]
+                .map { (transfer: $0, fee: nil) }
 
-            case 1:
-                // There is a single "__fee__" entry
-                let transferWithFee = transfers[..<partition][0]
+        case 1:
+            // There is a single "__fee__" entry
+            let transferWithFee = transfers[..<partition][0]
 
-                // We may or may not have a non-fee transfer matching `transferWithFee`.  We
-                // may or may not have more than one non-fee transfers matching `transferWithFee`
+            // We may or may not have a non-fee transfer matching `transferWithFee`.  We
+            // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-                // Find the first of the non-fee transfers matching `transferWithFee`.
-                let transferMatchingFee = transfers[partition...]
-                    .first {
-                        $0.transactionId == transferWithFee.transactionId &&
-                            $0.source == transferWithFee.source &&
-                            $0.amount.currency == transferWithFee.amount.currency
+            // Find the first of the non-fee transfers matching `transferWithFee`.
+            let transferMatchingFee = transfers[partition...]
+                .first {
+                    $0.transactionId == transferWithFee.transactionId &&
+                        $0.source == transferWithFee.source &&
+                        $0.amount.currency == transferWithFee.amount.currency
                 }
 
-                // We must have a transferMatchingFee; if we don't add one
-                let transfers = transfers[partition...] +
-                    (nil != transferMatchingFee
+            // We must have a transferMatchingFee; if we don't add one
+            let transfers = transfers[partition...] +
+                (nil != transferMatchingFee
                         ? []
                         : [(id: transferWithFee.id,
                             source: transferWithFee.source,
@@ -1512,13 +1552,13 @@ extension System {
                             blockchainId: transferWithFee.blockchainId,
                             metaData: transferWithFee.metaData)])
 
-                // Hold the Id for the transfer that we'll add a fee to.
-                let transferForFeeId = transferMatchingFee.map { $0.id } ?? transferWithFee.id
+            // Hold the Id for the transfer that we'll add a fee to.
+            let transferForFeeId = transferMatchingFee.map { $0.id } ?? transferWithFee.id
 
-                // Map transfers adding the fee to the `transferforFeeId`
-                return transfers
-                    .map { (transfer: $0,
-                            fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
+            // Map transfers adding the fee to the `transferforFeeId`
+            return transfers
+                .map { (transfer: $0,
+                        fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
                 }
 
             default:
@@ -1527,9 +1567,7 @@ extension System {
                 return transfers.map { (transfer: $0, fee: nil) }
             }
     }
-}
 
-extension System {
     internal static func makeAddresses (_ addresses: UnsafeMutablePointer<UnsafePointer<Int8>?>?,
                                         _ addressesCount: Int) -> [String] {
         var cAddresses = addresses!
@@ -1592,7 +1630,7 @@ extension System {
                                                          metaKeysPtr.count,
                                                          &metaKeysPtr,
                                                          &metaValsPtr)
-        }
+            }
     }
 
     internal var cryptoClient: BRCryptoClient {
@@ -1603,7 +1641,7 @@ extension System {
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
+                else { System.cleanup("SYS: GetBlockNumber: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: GetBlockNumber")
 
                 manager.client.getBlockchain (blockchainId: manager.network.uids) {
@@ -1620,59 +1658,59 @@ extension System {
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup ("SYS: BTC: GetTransactions: Missed {cwm}", cwm: cwm); return }
+                else { System.cleanup ("SYS: BTC: GetTransactions: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: BTC: GetTransactions: Blocks: {\(begBlockNumber), \(endBlockNumber)}")
 
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
                 manager.client.getTransactions (blockchainId: manager.network.uids,
-                                               addresses: addresses,
-                                               begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
-                                               endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: true,
-                                               includeTransfers: false) {
-                                                (res: Result<[SystemClient.Transaction], SystemClientError>) in
-                                                defer { cryptoWalletManagerGive (cwm!) }
-                                                res.resolve(
-                                                    success: {
-                                                        var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
-                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
-                                                    failure: { (e) in
-                                                        print ("SYS: GetTransactions: Error: \(e)")
-                                                        cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
+                                                addresses: addresses,
+                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
+                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
+                                                includeRaw: true,
+                                                includeTransfers: false) {
+                    (res: Result<[SystemClient.Transaction], SystemClientError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve(
+                        success: {
+                            var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
+                            cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
+                        failure: { (e) in
+                            print ("SYS: GetTransactions: Error: \(e)")
+                            cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
                 }},
 
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { print ("SYS: GetTransfers: Missed {cwm}"); return }
+                else { print ("SYS: GetTransfers: Missed {cwm}"); return }
                 print ("SYS: GetTransfers: Blocks: {\(begBlockNumber), \(endBlockNumber)}")
 
                 let addresses = System.makeAddresses (addresses, addressesCount)
 
                 manager.client.getTransactions (blockchainId: manager.network.uids,
-                                               addresses: addresses,
-                                               begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
-                                               endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: false,
-                                               includeTransfers: true) {
-                                                (res: Result<[SystemClient.Transaction], SystemClientError>) in
-                                                defer { cryptoWalletManagerGive(cwm) }
-                                                res.resolve(
-                                                    success: {
-                                                        var bundles: [BRCryptoClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
-                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
-                                                    failure: { (e) in
-                                                        print ("SYS: GetTransfers: Error: \(e)")
-                                                        cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
+                                                addresses: addresses,
+                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
+                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
+                                                includeRaw: false,
+                                                includeTransfers: true) {
+                    (res: Result<[SystemClient.Transaction], SystemClientError>) in
+                    defer { cryptoWalletManagerGive(cwm) }
+                    res.resolve(
+                        success: {
+                            var bundles: [BRCryptoClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
+                            cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
+                        failure: { (e) in
+                            print ("SYS: GetTransfers: Error: \(e)")
+                            cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},
 
             funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: SubmitTransaction: Missed {cwm}", cwm: cwm); return }
+                else { System.cleanup  ("SYS: SubmitTransaction: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: SubmitTransaction")
 
                 let hash = asUTF8String (hashAsHex!)
@@ -1693,7 +1731,7 @@ extension System {
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
-                    else { System.cleanup  ("SYS: EstimateTransactionFee: Missed {cwm}", cwm: cwm); return }
+                else { System.cleanup  ("SYS: EstimateTransactionFee: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: EstimateTransactionFee")
 
                 let hash = asUTF8String (hashAsHex!)
@@ -1722,7 +1760,7 @@ extension System {
                                                                &metaKeysPtr,
                                                                &metaValsPtr)
                             
-                    },
+                        },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
                             cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0, 0, nil, nil) })
@@ -1730,6 +1768,8 @@ extension System {
         )
     }
 }
+
+// MARK: - Migrate
 
 /// Support for Persistent Storage Migration.
 ///
@@ -1841,7 +1881,7 @@ extension System {
                                 blockBlobs: [BlockBlob],
                                 peerBlobs: [PeerBlob]) throws {
         guard migrateRequired (network: network)
-            else { throw MigrateError.invalid }
+        else { throw MigrateError.invalid }
 
         switch cryptoNetworkGetType (network.core) {
         case CRYPTO_NETWORK_TYPE_BTC,
@@ -1864,12 +1904,12 @@ extension System {
                                       peerBlobs: [PeerBlob]) throws {
 
         guard let migrator = cryptoWalletMigratorCreate (network.core, path)
-            else { throw MigrateError.create }
+        else { throw MigrateError.create }
         defer { cryptoWalletMigratorRelease (migrator) }
 
         try transactionBlobs.forEach { (blob: TransactionBlob) in
             guard case let .btc (blob) = blob
-                else { throw MigrateError.transaction }
+            else { throw MigrateError.transaction }
 
             var bytes = blob.bytes
             let status = cryptoWalletMigratorHandleTransactionAsBTC (migrator,
@@ -1883,17 +1923,17 @@ extension System {
 
         try blockBlobs.forEach { (blob: BlockBlob) in
             guard case let .btc (blob) = blob
-                else { throw MigrateError.block }
+            else { throw MigrateError.block }
 
             // On a `nil` timestamp, by definition skip out, don't migrate this blob
             guard nil != blob.timestamp
-                else { return }
+            else { return }
 
             guard blob.hashes.allSatisfy (System.validateBlockHash(_:)),
-                System.validateBlockHash(blob.hash),
-                System.validateBlockHash(blob.merkleRoot),
-                System.validateBlockHash(blob.prevBlock)
-                else { throw MigrateError.block }
+                  System.validateBlockHash(blob.hash),
+                  System.validateBlockHash(blob.merkleRoot),
+                  System.validateBlockHash(blob.prevBlock)
+            else { throw MigrateError.block }
 
             var flags  = blob.flags
             var hashes = blob.hashes.flatMap { $0 }  // [[UInt8 ...] ...] => [UInt8 ... ...]
@@ -1925,11 +1965,11 @@ extension System {
 
         try peerBlobs.forEach { (blob: PeerBlob) in
             guard case let .btc (blob) = blob
-                else { throw MigrateError.peer }
+            else { throw MigrateError.peer }
 
             // On a `nil` timestamp, by definition skip out, don't migrate this blob
             guard nil != blob.timestamp
-                else { return }
+            else { return }
 
             let status = cryptoWalletMigratorHandlePeerAsBTC (migrator,
                                                               blob.address,
@@ -1975,7 +2015,7 @@ extension System {
     internal func asBlob (transfer: Transfer) -> TransactionBlob? {
         let network = transfer.manager.network
         guard migrateRequired(network: network)
-            else { return nil }
+        else { return nil }
 
         switch cryptoNetworkGetType (network.core) {
         case CRYPTO_NETWORK_TYPE_BTC,
@@ -2000,6 +2040,8 @@ extension System {
     }
 }
 
+// MARK: - Support
+
 extension BRCryptoTransferEventType: CustomStringConvertible {
     public var description: String {
         return asUTF8String (cryptoTransferEventTypeString(self))
@@ -2018,3 +2060,14 @@ extension BRCryptoWalletManagerEventType: CustomStringConvertible {
     }
 }
 
+extension BRCryptoNetworkEventType: CustomStringConvertible {
+    public var description: String {
+        return asUTF8String(cryptoNetworkEventTypeString(self))
+    }
+}
+
+extension BRCryptoSystemEventType: CustomStringConvertible {
+    public var description: String {
+        return asUTF8String(cryptoSystemEventTypeString(self))
+    }
+}

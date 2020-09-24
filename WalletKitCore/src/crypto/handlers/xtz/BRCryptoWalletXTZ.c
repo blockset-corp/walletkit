@@ -288,5 +288,6 @@ BRCryptoWalletHandlers cryptoWalletHandlersXTZ = {
     cryptoWalletCreateTransferXTZ,
     cryptoWalletCreateTransferMultipleXTZ,
     cryptoWalletGetAddressesForRecoveryXTZ,
+    NULL,//BRCryptoWalletAnnounceTransfer
     cryptoWalletIsEqualXTZ
 };

@@ -227,6 +227,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     BRCryptoHash hash = cryptoHashCreateAsHBAR (txHash);
 
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    cryptoHashGive(hash);
     
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
@@ -239,18 +240,19 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
 
-
     bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
                        (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
                         0 != bundle->blockNumber &&
                         0 != bundle->blockTimestamp));
+
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsHBAR (wallet->unit, hederaTransactionGetFeeBasis(hbarTransaction));
 
     BRCryptoTransferState transferState =
     (isIncluded
      ? cryptoTransferStateIncludedInit (bundle->blockNumber,
                                         bundle->blockTransactionIndex,
                                         bundle->blockTimestamp,
-                                        NULL,
+                                        feeBasis,
                                         AS_CRYPTO_BOOLEAN(CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status),
                                         (isIncluded ? NULL : "unknown"))
      : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
@@ -259,6 +261,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
 
     cryptoTransferSetState (baseTransfer, transferState);
     
+    cryptoFeeBasisGive (feeBasis);
+
     //TODO:HBAR attributes
     //TODO:HBAR save to fileService
 

@@ -623,6 +623,16 @@ cryptoNetworkEncodeHash (BRCryptoHash hash) {
     return handlers->network->encodeHash (hash);
 }
 
+extern const char *
+cryptoNetworkEventTypeString (BRCryptoNetworkEventType type) {
+    static const char *names[] = {
+        "CRYPTO_NETWORK_EVENT_CREATED",
+        "CRYPTO_NETWORK_EVENT_FEES_UPDATED",
+        "CRYPTO_NETWORK_EVENT_DELETED"
+    };
+    return names [type];
+}
+
 // MARK: - Network Defaults
 
 extern BRCryptoNetwork *

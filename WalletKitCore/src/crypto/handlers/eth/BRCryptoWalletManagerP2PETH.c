@@ -323,8 +323,10 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
     BRCryptoWallet  wallet = manager->base.wallet;
 
     BRCryptoTransfer transfer = cryptoWalletGetTransferByHash (wallet, hash);
+    cryptoHashGive(hash);
 
     bool needStatusEvent = false;
+    bool needTransactionRelease = true;
 
     if (NULL == transfer) {
         transfer = cryptoTransferCreateWithTransactionAsETH (wallet->listenerTransfer,
@@ -332,12 +334,12 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
                                                              wallet->unitForFee,
                                                              manager->account,
                                                              transaction);
+        needTransactionRelease = false;
 
         cryptoWalletAddTransfer (wallet, transfer);
     }
 
     else {
-
     }
 
     // If this transfer is referenced, fill out the referencer's fee basis.
@@ -356,6 +358,9 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
     }
 
     ewmHandleTransactionOriginatingLog (manager, type, transfer);
+
+    if (needTransactionRelease)
+        transactionRelease(transaction);
 
 #if 0
     BREthereumHash hash = transactionGetHash(transaction);
