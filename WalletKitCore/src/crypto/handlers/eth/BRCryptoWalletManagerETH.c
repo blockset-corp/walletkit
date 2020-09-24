@@ -725,15 +725,15 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             // one Log for the ERC20 token (with a 'contract') and one Transaction for the ETH fee
             else if (strPrefix ("0xa9059cbb", data)) {
                 needLog         = (NULL != contract);
-                needTransaction = (NULL == contract);
+                needTransaction = (NULL != bundle->fee);
             }
 
             // A Primary Transaction of some arbitrary asset.  The Transaction produces one or more
             // Transfers - one Transaction for the ETH fee and any number of other transfers, including
             // others for ETH
             else {
-                needExchange    = (NULL == bundle->fee);        // NULL contract -> ETH exchange
-                needTransaction = (NULL != bundle->fee && NULL == contract);
+                needExchange    = (NULL == contract);        // NULL contract -> ETH exchange
+                needTransaction = (NULL != bundle->fee);
             }
 
             // On errors, skip Log and Exchange; but keep Transaction if needed.
@@ -752,13 +752,17 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 
             if (needTransaction) {
                 if (needLog || needExchange) {
-#ifdef REFACTOR
                     // If needLog or needExchange w/ needTransaction then the transaction
-                     //     a) holds the fee; and
-                     //     b) increases the nonce.
-                     value = UINT256_ZERO;
-                     to    = contract;
-#endif
+                    //     a) holds the fee; and
+                    //     b) increases the nonce.
+
+                    free (bundle->amount);
+                    bundle->amount = strdup ("0x0");
+
+                    if (NULL != contract) {
+                        free (bundle->to);
+                        bundle->to = strdup (contract);
+                    }
                 }
                 // bundle->data?
                 cryptoWalletManagerRecoverTransaction (manager, bundle);
