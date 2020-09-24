@@ -1969,7 +1969,8 @@ final class System implements com.breadwallet.crypto.System {
             // We may or may not have a non-fee transfer matching `transferWithFee`.  We
             // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-            // Find the first of the non-fee transfers matching `transferWithFee`
+            // Find the first of the non-fee transfers matching `transferWithFee` that also matches
+            // the amount's currency.
             com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
             for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
@@ -1979,6 +1980,16 @@ final class System implements com.breadwallet.crypto.System {
                     break;
                 }
             }
+
+            // If there is still no `transferWithFee`, find the first w/o matching the amount's currency
+            if (null == transferMatchingFee)
+                for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer : transfersWithoutFee) {
+                    if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
+                            transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
+                        transferMatchingFee = transfer;
+                        break;
+                    }
+                }
 
             // We must have a transferMatchingFee; if we don't add one
             transfers = new ArrayList<>(transfersWithoutFee);
