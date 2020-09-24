@@ -578,6 +578,9 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
 
         for (size_t index = 0; index < topicsCount; index++)
             topics[index] = logTopicCreateFromString(topicsStr[index]);
+
+        free (topicsStr[1]);
+        free (topicsStr[2]);
     }
 
     // In general, log->data is arbitrary data.  In the case of an ERC20 token, log->data

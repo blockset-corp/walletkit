@@ -250,6 +250,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     BRCryptoHash hash = cryptoHashCreateAsXRP (txId);
     
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    cryptoHashGive (hash);
     
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,

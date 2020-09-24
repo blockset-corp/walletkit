@@ -25,6 +25,9 @@ typedef enum {
     CRYPTO_NETWORK_EVENT_DELETED,
 } BRCryptoNetworkEventType;
 
+extern const char *
+cryptoNetworkEventTypeString (BRCryptoNetworkEventType t);
+
 typedef struct {
     BRCryptoNetworkEventType type;
     union {

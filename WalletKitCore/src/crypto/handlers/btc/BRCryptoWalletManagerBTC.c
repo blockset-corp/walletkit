@@ -522,6 +522,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
                                          &tid->txHash, 1,
                                          tid->blockHeight,
                                          tid->timestamp);
+        BRTransactionFree(tid);
     }
     // Only one UPDATE BALANCE?
 
