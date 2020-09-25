@@ -36,21 +36,6 @@ import static com.google.common.base.Preconditions.checkState;
 /* package */
 final class Network implements com.breadwallet.crypto.Network {
 
-    /* package */
-    static Optional<Network> findBuiltin (String uids) {
-        return BRCryptoNetwork.findBuiltin(uids)
-                .transform(Network::create);
-    }
-
-    static List<Network> installBuiltins () {
-        List<BRCryptoNetwork> cores = BRCryptoNetwork.installBuiltins();
-        List<Network> builtins = new ArrayList<>();
-        for (BRCryptoNetwork core: cores) {
-            builtins.add (Network.create(core));
-        }
-        return builtins;
-    }
-
     static Network create(BRCryptoNetwork core) {
         Network network = new Network(core);
         ReferenceCleaner.register(network, core::give);

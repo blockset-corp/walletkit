@@ -10,6 +10,8 @@ package com.breadwallet.crypto.events.system;
 public interface SystemEventVisitor<T> {
 
     T visit(SystemCreatedEvent event);
+    T visit(SystemChangedEvent event);
+    T visit(SystemDeletedEvent event);
 
     T visit(SystemManagerAddedEvent event);
 

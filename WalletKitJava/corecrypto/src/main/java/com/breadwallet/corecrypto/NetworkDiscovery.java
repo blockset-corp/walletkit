@@ -55,7 +55,7 @@ final class NetworkDiscovery {
         final List<com.breadwallet.crypto.Network> existingNetworks = networks;
 
         // The 'supportedNetworks' will be builtin networks matching isMainnet.
-        final List<Network> supportedNetworks = findBuiltinNetworks(isMainnet);
+        final List<com.breadwallet.crypto.Network> supportedNetworks = networks; // findBuiltinNetworks(isMainnet);
 
          getBlockChains(latch, query, isMainnet, remoteModels -> {
              // If there are no 'remoteModels' the query might have failed.
@@ -67,9 +67,11 @@ final class NetworkDiscovery {
                  // If there are no 'currencyModels' the query might have failed.
                  //
                  // Process each supportedNetwork based on the remote model
-                 for (Network network: supportedNetworks) {
+                 for (com.breadwallet.crypto.Network network: supportedNetworks) {
                     boolean existing = existingNetworks.contains(network);
                     String blockchainModelId = network.getUids();
+
+                    Network coreNetwork = Network.from(network);
 
                     for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
                         if (currencyModel.getBlockchainId().equals(blockchainModelId)) {
@@ -94,14 +96,14 @@ final class NetworkDiscovery {
                             Unit defaultUnit = units.get(0);
 
                             // The currency and unit here will not override builtins.
-                            network.addCurrency(currency, baseUnit, defaultUnit);
+                            coreNetwork.addCurrency(currency, baseUnit, defaultUnit);
                             for (Unit u : units) {
-                                network.addUnitFor(currency, u);
+                                coreNetwork.addUnitFor(currency, u);
                             }
                         }
                     }
 
-                    Unit feeUnit = network.baseUnitFor(network.getCurrency()).orNull();
+                    Unit feeUnit = coreNetwork.baseUnitFor(network.getCurrency()).orNull();
                     if (null == feeUnit) { /* never here */
                         return null;
                     }
@@ -119,7 +121,7 @@ final class NetworkDiscovery {
 
                         // Update the network's height
                         if (blockchainModel.getBlockHeight().isPresent())
-                            network.setHeight(blockchainModel.getBlockHeightValue());
+                            coreNetwork.setHeight(blockchainModel.getBlockHeightValue());
 
                         // Extract the network fees
                         List<NetworkFee> fees = new ArrayList<>();
@@ -133,7 +135,7 @@ final class NetworkDiscovery {
                         if (fees.isEmpty()) {
                             Log.log(Level.FINE, String.format("Missed Fees %s", blockchainModel.getName()));
                         } else {
-                            network.setFees(fees);
+                            coreNetwork.setFees(fees);
                         }
                     } else {
                         Log.log(Level.FINE, String.format("Missed Model for Network: %s", blockchainModelId));
@@ -141,13 +143,13 @@ final class NetworkDiscovery {
 
                     if (!existing) {
                         // Announce the network
-                        callback.discovered(network);
+                        callback.discovered(coreNetwork);
 
                         // Keep a running total of discovered networks
                         networks.add(network);
                     }
                     else {
-                        callback.updated(network);
+                        callback.updated(coreNetwork);
                     }
                 }
                 return null;
@@ -329,16 +331,6 @@ final class NetworkDiscovery {
             }
         }
         return Optional.absent();
-    }
-
-    private static List<Network> findBuiltinNetworks(boolean isMainnet) {
-        List<Network> builtins = Network.installBuiltins();
-        List<Network> networks = new ArrayList<>();
-        for (Network n: builtins) {
-            if (isMainnet == n.isMainnet())
-                networks.add(n);
-        }
-        return networks;
     }
 
     private static Network findNetwork (List<Network> supportedNetworks, String id) {

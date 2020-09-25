@@ -35,7 +35,7 @@ public class BRCryptoWalletManager extends PointerType {
         CryptoLibraryDirect.cryptoWalletManagerWipe(network.getPointer(), path);
     }
 
-    public static Optional<BRCryptoWalletManager> create(BRCryptoCWMListener listener,
+    public static Optional<BRCryptoWalletManager> create(BRCryptoListener listener,
                                                          BRCryptoClient client,
                                                          BRCryptoAccount account,
                                                          BRCryptoNetwork network,
@@ -44,7 +44,7 @@ public class BRCryptoWalletManager extends PointerType {
                                                          String path) {
         return Optional.fromNullable(
                 CryptoLibraryDirect.cryptoWalletManagerCreate(
-                        listener.toByValue(),
+                        listener.getPointer(),
                         client.toByValue(),
                         account.getPointer(),
                         network.getPointer(),

@@ -8,10 +8,12 @@
 package com.breadwallet.corecrypto;
 
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
-import com.breadwallet.corenative.crypto.BRCryptoNetworkCanonicalType;
+import com.breadwallet.corenative.crypto.BRCryptoListener;
+import com.breadwallet.corenative.crypto.BRCryptoNetworkType;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolError;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolType;
 import com.breadwallet.corenative.crypto.BRCryptoStatus;
+import com.breadwallet.corenative.crypto.BRCryptoSystemState;
 import com.breadwallet.corenative.crypto.BRCryptoTransferAttributeValidationError;
 import com.breadwallet.corenative.crypto.BRCryptoTransferDirection;
 import com.breadwallet.corenative.crypto.BRCryptoTransferState;
@@ -23,6 +25,7 @@ import com.breadwallet.corenative.crypto.BRCryptoSyncStoppedReason;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.NetworkType;
 import com.breadwallet.crypto.PaymentProtocolRequestType;
+import com.breadwallet.crypto.SystemState;
 import com.breadwallet.crypto.TransferConfirmation;
 import com.breadwallet.crypto.TransferDirection;
 import com.breadwallet.crypto.TransferState;
@@ -51,6 +54,15 @@ import java.util.concurrent.TimeUnit;
 
 /* package */
 final class Utilities {
+
+    /* package */
+    static SystemState systemStateFromCrypto (BRCryptoSystemState state) {
+        switch (state) {
+            case CRYPTO_SYSTEM_STATE_CREATED: return SystemState.CREATED();
+            case CRYPTO_SYSTEM_STATE_DELETED: return SystemState.DELETED();
+            default: throw new IllegalArgumentException("Unsupported state");
+        }
+    }
 
     /* package */
     static BRCryptoSyncMode walletManagerModeToCrypto(WalletManagerMode mode) {
