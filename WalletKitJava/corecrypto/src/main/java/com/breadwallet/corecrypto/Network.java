@@ -10,11 +10,9 @@ package com.breadwallet.corecrypto;
 import android.support.annotation.Nullable;
 
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
-import com.breadwallet.corenative.crypto.BRCryptoAddress;
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
 import com.breadwallet.corenative.crypto.BRCryptoCurrency;
 import com.breadwallet.corenative.crypto.BRCryptoNetwork;
-import com.breadwallet.corenative.crypto.BRCryptoNetworkCanonicalType;
 import com.breadwallet.corenative.crypto.BRCryptoNetworkFee;
 import com.breadwallet.corenative.crypto.BRCryptoSyncMode;
 import com.breadwallet.crypto.AddressScheme;
@@ -349,9 +347,5 @@ final class Network implements com.breadwallet.crypto.Network {
     /* package */
     BRCryptoNetwork getCoreBRCryptoNetwork() {
         return core;
-    }
-
-    String getNetworkNameETH() {
-        return getCoreBRCryptoNetwork().getNetworkNameETH();
     }
 }

@@ -40,20 +40,60 @@ public final class CryptoLibraryIndirect {
         return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, countOfAttributes, attributes, validates);
     }
 
-    public static void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
-                                                  String hash, String uids, String sourceAddr, String targetAddr,
-                                                  String amount, String currency, String fee,
-                                                  long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
-                                                  SizeT attributesCount,
-                                                  String[] attributeKeys,
-                                                  String[] attributeVals) {
+    public static void cwmAnnounceEstimateTransactionFee(Pointer cwm,
+                                                         Pointer callbackState,
+                                                         boolean success,
+                                                         String hash,
+                                                         long costUnits,
+                                                         SizeT attributesCount,
+                                                         String[] attributeKeys,
+                                                         String[] attributeVals) {
         attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
         attributeVals = attributeVals.length == 0 ? null : attributeVals;
-        INSTANCE.cwmAnnounceGetTransferItem(cwm, callbackState, status,
+
+        INSTANCE.cwmAnnounceEstimateTransactionFee(cwm, callbackState, success,
+                hash,
+                costUnits,
+                attributesCount,
+                attributeKeys,
+                attributeVals);
+    }
+
+    public static Pointer cryptoClientTransferBundleCreate(int status,
+                                                           String hash,
+                                                           String uids,
+                                                           String sourceAddr,
+                                                           String targetAddr,
+                                                           String amount,
+                                                           String currency,
+                                                           String fee,
+                                                           long blockTimestamp,
+                                                           long blockHeight,
+                                                           long blockConfirmations,
+                                                           long blockTransactionIndex,
+                                                           String blockHash,
+                                                           SizeT attributesCount,
+                                                           String[] attributeKeys,
+                                                           String[] attributeVals) {
+        attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
+        attributeVals = attributeVals.length == 0 ? null : attributeVals;
+        return INSTANCE.cryptoClientTransferBundleCreate(status,
                 hash, uids, sourceAddr, targetAddr,
                 amount, currency, fee,
                 blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
+    }
+
+    public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cwmAnnounceTransactions(cwm, callbackState, success,
+                bundles,
+                bundlesCount);
+    }
+
+    public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cwmAnnounceTransfers(cwm, callbackState, success,
+                bundles,
+                bundlesCount);
     }
 
     public interface LibraryInterface extends Library {
@@ -66,12 +106,33 @@ public final class CryptoLibraryIndirect {
 
         int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates);
 
-        void cwmAnnounceGetTransferItem(Pointer cwm, Pointer callbackState, int status,
-                                        String hash, String uids, String sourceAddr, String targetAddr,
-                                        String amount, String currency, String fee,
-                                        long blockTimestamp, long blockHeight, long blockConfirmations, long blockTransactionIndex, String blockHash,
-                                        SizeT attributesCount,
-                                        String[] attributeKeys,
-                                        String[] attributeVals);
+        Pointer cryptoClientTransferBundleCreate(int status,
+                                                 String hash,
+                                                 String uids,
+                                                 String sourceAddr,
+                                                 String targetAddr,
+                                                 String amount,
+                                                 String currency,
+                                                 String fee,
+                                                 long blockTimestamp,
+                                                 long blockHeight,
+                                                 long blockConfirmations,
+                                                 long blockTransactionIndex,
+                                                 String blockHash,
+                                                 SizeT attributesCount,
+                                                 String[] attributeKeys,
+                                                 String[] attributeVals);
+
+        void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
+        void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
+
+        void cwmAnnounceEstimateTransactionFee(Pointer cwm,
+                                               Pointer callbackState,
+                                               boolean success,
+                                               String hash,
+                                               long costUnits,
+                                               SizeT attributesCount,
+                                               String[] attributeKeys,
+                                               String[] attributeVals);
     }
 }

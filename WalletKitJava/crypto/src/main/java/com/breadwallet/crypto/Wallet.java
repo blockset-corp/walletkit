@@ -27,7 +27,7 @@ public interface Wallet {
      * Note: This is 'private' until the parameters are described.  Meant for testing for now.
      *
      */
-    Optional<? extends TransferFeeBasis> createTransferFeeBasis(Amount pricePerCostFactor, double costFactor);
+    //Optional<? extends TransferFeeBasis> createTransferFeeBasis(Amount pricePerCostFactor, double costFactor);
 
     Optional<? extends Transfer> createTransfer(Address target, Amount amount, TransferFeeBasis estimatedFeeBasis, @Nullable Set<TransferAttribute> attributes);
 

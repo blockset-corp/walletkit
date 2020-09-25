@@ -183,20 +183,20 @@ final class Utilities {
     }
 
     /* package */
-    static BRCryptoNetworkCanonicalType networkTypeToCrypto(NetworkType type) {
+    static BRCryptoNetworkType networkTypeToCrypto(NetworkType type) {
         switch (type) {
-            case BTC: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BTC;
-            case BCH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BCH;
-            case BSV: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BSV;
-            case ETH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_ETH;
-            case XRP: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_XRP;
-            case HBAR:return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_HBAR;
+            case BTC: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BTC;
+            case BCH: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BCH;
+            case BSV: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BSV;
+            case ETH: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_ETH;
+            case XRP: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_XRP;
+            case HBAR:return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_HBAR;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
 
     /* package */
-    static NetworkType networkTypeFromCrypto(BRCryptoNetworkCanonicalType type) {
+    static NetworkType networkTypeFromCrypto(BRCryptoNetworkType type) {
         switch (type) {
             case CRYPTO_NETWORK_TYPE_BTC: return NetworkType.BTC;
             case CRYPTO_NETWORK_TYPE_BCH: return NetworkType.BCH;
