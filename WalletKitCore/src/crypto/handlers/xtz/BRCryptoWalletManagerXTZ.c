@@ -268,26 +268,14 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
     BRCryptoHash hash = cryptoHashCreateAsXTZ (txId);
     
-    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
-    bool isRecoveringBurnTransfer = (1 == tezosAddressIsUnknownAddress (toAddress));
-    
-    cryptoHashGive (hash);
-    tezosAddressFree (toAddress);
-    tezosAddressFree (fromAddress);
-
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed address.
     // It must be included since the burn amount is subtracted from wallet balance, but is not considered a normal fee.
-    if (NULL != baseTransfer) {
-        BRTezosTransfer foundTransfer = cryptoTransferCoerceXTZ (baseTransfer)->xtzTransfer;
-        BRTezosAddress destination = tezosTransferGetTarget (foundTransfer);
-        bool foundBurnTransfer = (1 == tezosAddressIsUnknownAddress (destination));
-        tezosAddressFree (destination);
-        if (isRecoveringBurnTransfer != foundBurnTransfer) {
-            // transfers do not match
-            cryptoTransferGive (baseTransfer);
-            baseTransfer = NULL;
-        }
-    }
+    BRCryptoAddress target = cryptoAddressCreateAsXTZ (toAddress);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHashAndTargetXTZ (wallet, hash, target);
+    
+    cryptoAddressGive (target);
+    cryptoHashGive (hash);
+    tezosAddressFree (fromAddress);
     
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,

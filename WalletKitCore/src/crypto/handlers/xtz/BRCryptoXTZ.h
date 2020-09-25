@@ -89,6 +89,11 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
 private_extern bool
 cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
 
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHashAndTargetXTZ (BRCryptoWallet wallet,
+                                           BRCryptoHash hashToMatch,
+                                           BRCryptoAddress targetToMatch);
+
 // MARK: - Wallet Manager
 
 typedef struct BRCryptoWalletManagerXTZRecord {

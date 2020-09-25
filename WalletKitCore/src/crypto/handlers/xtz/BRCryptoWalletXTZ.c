@@ -106,6 +106,25 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet) {
     return true;
 }
 
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHashAndTargetXTZ (BRCryptoWallet wallet,
+                                           BRCryptoHash hashToMatch,
+                                           BRCryptoAddress targetToMatch) {
+    BRCryptoTransfer transfer = NULL;
+    
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
+        BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
+        if (CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch) &&
+            cryptoAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
+            transfer = wallet->transfers[index];
+        cryptoHashGive(hash);
+    }
+    pthread_mutex_unlock (&wallet->lock);
+    
+    return cryptoTransferTake (transfer);
+}
+
 extern size_t
 cryptoWalletGetTransferAttributeCountXTZ (BRCryptoWallet wallet,
                                           BRCryptoAddress target) {
