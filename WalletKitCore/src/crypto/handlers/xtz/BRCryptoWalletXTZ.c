@@ -29,7 +29,6 @@ cryptoWalletCoerce (BRCryptoWallet wallet) {
 
 typedef struct {
     BRTezosAccount xtzAccount;
-    int64_t counter;
 } BRCryptoWalletCreateContextXTZ;
 
 static void
@@ -39,7 +38,6 @@ cryptoWalletCreateCallbackXTZ (BRCryptoWalletCreateContext context,
     BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
 
     walletXTZ->xtzAccount = contextXTZ->xtzAccount;
-    walletXTZ->counter = contextXTZ->counter;
 }
 
 private_extern BRCryptoWallet
@@ -56,8 +54,7 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
     BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
 
     BRCryptoWalletCreateContextXTZ contextXTZ = {
-        xtzAccount,
-        0
+        xtzAccount
     };
 
     BRCryptoWallet wallet = cryptoWalletAllocAndInit (sizeof (struct BRCryptoWalletXTZRecord),
@@ -109,18 +106,23 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet) {
     return true;
 }
 
-private_extern int64_t
-cryptoWalletGetCounterXTZ (BRCryptoWallet wallet) {
-    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
-    return walletXTZ->counter;
-}
-
-private_extern void
-cryptoWalletSetCounterXTZ (BRCryptoWallet wallet, int64_t counter) {
-    BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
-    if (counter > walletXTZ->counter) {
-        walletXTZ->counter = counter;
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHashAndTargetXTZ (BRCryptoWallet wallet,
+                                           BRCryptoHash hashToMatch,
+                                           BRCryptoAddress targetToMatch) {
+    BRCryptoTransfer transfer = NULL;
+    
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
+        BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
+        if (CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch) &&
+            cryptoAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
+            transfer = wallet->transfers[index];
+        cryptoHashGive(hash);
     }
+    pthread_mutex_unlock (&wallet->lock);
+    
+    return cryptoTransferTake (transfer);
 }
 
 extern size_t
@@ -210,9 +212,9 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
     BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
     BRTezosAddress xtzTarget  = cryptoAddressAsXTZ (target);
     BRTezosUnitMutez mutez = tezosMutezCreate (amount);
-    int64_t counter = walletXTZ->counter;
-
     BRTezosFeeBasis feeBasis = cryptoFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
+    assert (FEE_BASIS_ESTIMATE == feeBasis.type);
+    int64_t counter = feeBasis.u.estimate.counter;
     
     bool delegationOp = false;
     

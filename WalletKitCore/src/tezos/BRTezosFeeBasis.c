@@ -34,6 +34,7 @@ tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerByte) {
             // https://github.com/TezTech/eztz/blob/master/PROTO_004_FEES.md
             1040000, // hard gas limit, actual will be given by node estimate_fee
             60000, // hard limit, actual will be given by node estimate_fee
+            0 // counter will be given by estimate_fee
         } }
     };
 }
@@ -42,14 +43,16 @@ extern BRTezosFeeBasis
 tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
                             size_t sizeInBytes,
                             int64_t gasLimit,
-                            int64_t storageLimit) {
+                            int64_t storageLimit,
+                            int64_t counter) {
     return (BRTezosFeeBasis) {
         FEE_BASIS_ESTIMATE,
         { .estimate = {
             mutezPerByte,
             sizeInBytes,
             gasLimit,
-            MAX(storageLimit, TEZOS_MINIMAL_STORAGE_LIMIT)
+            MAX(storageLimit, TEZOS_MINIMAL_STORAGE_LIMIT),
+            counter
         } }
     };
 }
