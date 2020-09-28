@@ -184,18 +184,6 @@ public class BRCryptoWallet extends PointerType {
         );
     }
 
-    public Optional<BRCryptoFeeBasis> createTransferFeeBasis(BRCryptoAmount pricePerCostFactor, double costFactor) {
-        Pointer thisPtr = this.getPointer();
-
-        return Optional.fromNullable(
-                CryptoLibraryDirect.cryptoWalletCreateFeeBasis(
-                        thisPtr,
-                        pricePerCostFactor.getPointer(),
-                        costFactor
-                )
-        ).transform(BRCryptoFeeBasis::new);
-    }
-
     public Optional<BRCryptoTransfer> createTransfer(BRCryptoAddress target, BRCryptoAmount amount,
                                                      BRCryptoFeeBasis estimatedFeeBasis,
                                                      List<BRCryptoTransferAttribute> attributes) {
@@ -217,13 +205,15 @@ public class BRCryptoWallet extends PointerType {
         ).transform(BRCryptoTransfer::new);
     }
 
-    public Optional<BRCryptoTransfer> createTransferForWalletSweep(BRCryptoWalletSweeper sweeper, BRCryptoFeeBasis estimatedFeeBasis) {
+    public Optional<BRCryptoTransfer> createTransferForWalletSweep(BRCryptoWalletSweeper sweeper, BRCryptoWalletManager manager, BRCryptoFeeBasis estimatedFeeBasis) {
         Pointer thisPtr = this.getPointer();
 
+        assert (false); // TODO: Need WalletManager?
         return Optional.fromNullable(
-                CryptoLibraryDirect.cryptoWalletCreateTransferForWalletSweep(
-                        thisPtr,
+                CryptoLibraryDirect.cryptoWalletSweeperCreateTransferForWalletSweep(
                         sweeper.getPointer(),
+                        manager.getPointer(),
+                        thisPtr,
                         estimatedFeeBasis.getPointer()
                 )
         ).transform(BRCryptoTransfer::new);

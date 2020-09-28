@@ -11,7 +11,7 @@ import android.support.annotation.Nullable;
 
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
-import com.breadwallet.corenative.crypto.BRCryptoCWMListener;
+import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoWallet;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManager;
 import com.breadwallet.crypto.AddressScheme;
@@ -39,7 +39,7 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
     }
 
     /* package */
-    static Optional<WalletManager> create(BRCryptoCWMListener listener,
+    static Optional<WalletManager> create(BRCryptoListener listener,
                                           BRCryptoClient client,
                                           Account account,
                                           Network network,

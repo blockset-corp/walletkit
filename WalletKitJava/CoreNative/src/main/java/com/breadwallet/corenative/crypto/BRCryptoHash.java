@@ -38,7 +38,7 @@ public class BRCryptoHash extends PointerType {
     public String toString() {
         Pointer thisPtr = this.getPointer();
 
-        Pointer ptr = CryptoLibraryDirect.cryptoHashString(thisPtr);
+        Pointer ptr = CryptoLibraryDirect.cryptoHashEncodeString(thisPtr);
         try {
             return ptr.getString(0, "UTF-8");
         } finally {
