@@ -370,9 +370,11 @@ cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
 extern uint8_t *
 cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
                                          BRCryptoNetwork  network,
-                                         size_t *serializationCount) {
-    assert (NULL != serializationCount);
-    return transfer->handlers->serialize (transfer, network, CRYPTO_FALSE, serializationCount);
+                                         size_t *bytesCount) {
+    assert (NULL != bytesCount);
+    return (NULL != transfer->handlers->getBytesForFeeEstimate
+            ? transfer->handlers->getBytesForFeeEstimate (transfer, network, bytesCount)
+            : transfer->handlers->serialize (transfer, network, CRYPTO_FALSE, bytesCount));
 }
 
 extern BRCryptoBoolean
