@@ -17,6 +17,16 @@ public abstract class DefaultSystemEventVisitor<T> implements SystemEventVisitor
     }
 
     @Nullable
+    public T visit(SystemChangedEvent event) {
+        return null;
+    }
+
+    @Nullable
+    public T visit(SystemDeletedEvent event) {
+        return null;
+    }
+
+    @Nullable
     public T visit(SystemManagerAddedEvent event) {
         return null;
     }

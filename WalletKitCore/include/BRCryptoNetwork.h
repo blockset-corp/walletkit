@@ -37,7 +37,6 @@ extern "C" {
       * set of other units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...]
       * respectively.
       */
-     typedef struct BRCryptoNetworkRecord *BRCryptoNetwork;
 
     /// MARK: - (Network) Address Scheme
 

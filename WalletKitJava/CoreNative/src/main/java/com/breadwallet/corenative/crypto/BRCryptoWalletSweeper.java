@@ -10,7 +10,6 @@ package com.breadwallet.corenative.crypto;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.utility.SizeT;
 import com.google.common.base.Optional;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 
@@ -28,7 +27,7 @@ public class BRCryptoWalletSweeper extends PointerType {
                                                                 BRCryptoWallet wallet,
                                                                 BRCryptoKey key) {
         return BRCryptoWalletSweeperStatus.fromCore(
-                CryptoLibraryDirect.cryptoWalletSweeperValidateSupported(
+                CryptoLibraryDirect.cryptoWalletManagerWalletSweeperValidateSupported(
                         cwm.getPointer(),
                         wallet.getPointer(),
                         key.getPointer()

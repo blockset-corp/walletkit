@@ -7,7 +7,6 @@
  */
 package com.breadwallet.corenative.crypto;
 
-import com.breadwallet.corenative.CryptoLibrary;
 import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.utility.SizeT;
@@ -59,9 +58,9 @@ public class BRCryptoNetwork extends PointerType {
         super(address);
     }
 
-    public BRCryptoNetworkCanonicalType getCanonicalType () {
-        return BRCryptoNetworkCanonicalType.fromCore(
-                CryptoLibraryDirect.cryptoNetworkGetCanonicalType(
+    public BRCryptoNetworkType getCanonicalType () {
+        return BRCryptoNetworkType.fromCore(
+                CryptoLibraryDirect.cryptoNetworkGetType(
                         this.getPointer())
         );
     }
@@ -177,12 +176,6 @@ public class BRCryptoNetwork extends PointerType {
         Pointer thisPtr = this.getPointer();
 
         return CryptoLibraryDirect.cryptoNetworkGetName(thisPtr).getString(0, "UTF-8");
-    }
-
-    public String getNetworkNameETH () {
-        Pointer thisPtr = this.getPointer();
-
-        return CryptoLibraryDirect.cryptoNetworkGetETHNetworkName(thisPtr).getString(0, "UTF-8");
     }
 
     public void addFee(BRCryptoNetworkFee networkFee) {
