@@ -347,6 +347,13 @@ cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer) {
             : NULL);
 }
 
+private_extern BRCryptoFeeBasis
+cryptoTransferGetFeeBasis (BRCryptoTransfer transfer) {
+    return cryptoFeeBasisTake (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state.type
+                               ? transfer->state.u.included.feeBasis
+                               : transfer->feeBasisEstimated);
+}
+
 extern BRCryptoAmount
 cryptoTransferGetFee (BRCryptoTransfer transfer) {
     if (CRYPTO_FALSE == cryptoUnitIsCompatible (transfer->unit, transfer->unitForFee))
