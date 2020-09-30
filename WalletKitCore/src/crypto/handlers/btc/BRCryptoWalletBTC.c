@@ -247,6 +247,42 @@ cryptoWalletValidateTransferAttributeBTC (BRCryptoWallet wallet,
 }
 
 extern BRCryptoTransfer
+cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
+                               BRCryptoAddress target,
+                               BRCryptoAmount  amount,
+                               BRCryptoFeeBasis estimatedFeeBasis,
+                               size_t attributesCount,
+                               OwnershipKept BRCryptoTransferAttribute *attributes,
+                               BRCryptoCurrency currency,
+                               BRCryptoUnit unit,
+                               BRCryptoUnit unitForFee) {
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+
+    BRWallet *wid = walletBTC->wid;
+
+    BRCryptoBlockChainType addressType;
+    BRAddress address = cryptoAddressAsBTC (target, &addressType);
+    assert (addressType == wallet->type);
+
+    BRCryptoBoolean overflow = CRYPTO_FALSE;
+    uint64_t value = cryptoAmountGetIntegerRaw (amount, &overflow);
+    if (CRYPTO_TRUE == overflow) { return NULL; }
+
+    uint64_t feePerKb = cryptoFeeBasisAsBTC(estimatedFeeBasis);
+
+    BRTransaction *tid = BRWalletCreateTransactionWithFeePerKb (wid, feePerKb, value, address.s);
+
+    return (NULL == tid
+            ? NULL
+            : cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                         unit,
+                                         unitForFee,
+                                         wid,
+                                         tid,
+                                         wallet->type));
+}
+
+extern BRCryptoTransfer
 cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
                                        size_t outputsCount,
                                        BRCryptoTransferOutput *outputs,
@@ -328,42 +364,6 @@ cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
     free (btcAddresses);
 
     return addresses;
-}
-
-extern BRCryptoTransfer
-cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
-                               BRCryptoAddress target,
-                               BRCryptoAmount  amount,
-                               BRCryptoFeeBasis estimatedFeeBasis,
-                               size_t attributesCount,
-                               OwnershipKept BRCryptoTransferAttribute *attributes,
-                               BRCryptoCurrency currency,
-                               BRCryptoUnit unit,
-                               BRCryptoUnit unitForFee) {
-    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
-
-    BRWallet *wid = walletBTC->wid;
-
-    BRCryptoBlockChainType addressType;
-    BRAddress address = cryptoAddressAsBTC (target, &addressType);
-    assert (addressType == wallet->type);
-
-    BRCryptoBoolean overflow = CRYPTO_FALSE;
-    uint64_t value = cryptoAmountGetIntegerRaw (amount, &overflow);
-    if (CRYPTO_TRUE == overflow) { return NULL; }
-
-    uint64_t feePerKb = cryptoFeeBasisAsBTC(estimatedFeeBasis);
-
-    BRTransaction *tid = BRWalletCreateTransactionWithFeePerKb (wid, feePerKb, value, address.s);
-
-    return (NULL == tid
-            ? NULL
-            : cryptoTransferCreateAsBTC (wallet->listenerTransfer,
-                                         unit,
-                                         unitForFee,
-                                         wid,
-                                         tid,
-                                         wallet->type));
 }
 
 BRCryptoWalletHandlers cryptoWalletHandlersBTC = {
