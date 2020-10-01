@@ -1,6 +1,6 @@
 package com.breadwallet.corenative.crypto;
 
-public enum BRCryptoNetworkCanonicalType {
+public enum BRCryptoNetworkType {
 
     CRYPTO_NETWORK_TYPE_BTC {
         @Override
@@ -51,7 +51,7 @@ public enum BRCryptoNetworkCanonicalType {
     private static final int CRYPTO_NETWORK_TYPE_XRP_VALUE = 4;
     private static final int CRYPTO_NETWORK_TYPE_HBAR_VALUE = 5;
 
-    public static BRCryptoNetworkCanonicalType fromCore(int nativeValue) {
+    public static BRCryptoNetworkType fromCore(int nativeValue) {
         switch (nativeValue) {
             case CRYPTO_NETWORK_TYPE_BTC_VALUE: return CRYPTO_NETWORK_TYPE_BTC;
             case CRYPTO_NETWORK_TYPE_BCH_VALUE: return CRYPTO_NETWORK_TYPE_BCH;

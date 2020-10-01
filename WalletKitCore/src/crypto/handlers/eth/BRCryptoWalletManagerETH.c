@@ -642,7 +642,9 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
 
     BREthereumExchange exchange = ethExchangeCreate (ethAddressCreate(bundle->from),
                                                      ethAddressCreate(bundle->to),
-                                                     ethAddressCreate(contract),
+                                                     (NULL != contract
+                                                      ? ethAddressCreate(contract)
+                                                      : EMPTY_ADDRESS_INIT),
                                                      0, // contractdAssetIndex,
                                                      amount);
 
@@ -690,7 +692,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 
     BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (manager);
 
-    // We'll only have a `walletCurrency` if the bundle->currency is for ETH or fro an ERC20 token
+    // We'll only have a `walletCurrency` if the bundle->currency is for ETH or from an ERC20 token
     // that is known.  If `bundle` indicates a `transfer` that we sent and we do not know about
     // the ERC20 token we STILL MUST process the fee and the nonce.
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, bundle->currency);
@@ -721,19 +723,32 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
                 needTransaction = true;
             }
 
-            // A Primary Transaction of ERC20 Transfer.  The Transaction produces at most two Transfers -
-            // one Log for the ERC20 token (with a 'contract') and one Transaction for the ETH fee
+            // A Primary Transaction of some arbitrary asset.  The Transaction produces one or more
+            // Transfers - one Transfer for some asset (ETH or ERC20) w/ the ETH fee (if we sent
+            // it).  The Primary Transaction might have other transfers
+
+            // ... an `ERC20 Transfer Event` produces a BREthereumLog - if we know about the token
             else if (strPrefix ("0xa9059cbb", data)) {
+                // See below analogous description for 'Internal Transfer'
                 needLog         = (NULL != contract);
                 needTransaction = (NULL != bundle->fee);
             }
 
-            // A Primary Transaction of some arbitrary asset.  The Transaction produces one or more
-            // Transfers - one Transaction for the ETH fee and any number of other transfers, including
-            // others for ETH
+            // ... an 'Internal Transfer' produces a BREthereumExchang - if we know about the token
             else {
-                needExchange    = (NULL == contract);        // NULL contract -> ETH exchange
-                needTransaction = (NULL != bundle->fee);
+
+                // If contract is NULL, then we do not know about this ERC20 token; we won't need
+                // an exchange but might need a transaction if we sent the tranaction (paid a fee).
+                //
+                // If contract is not NULL, then we know about this ERC20 token; we will need
+                // an exchange.  We'll need a transaction if we sent the transaction.
+                // `needTransaction`.
+
+                needExchange    = (NULL != contract);        // NULL contract -> ETH exchange
+                needTransaction = (NULL != bundle->fee);     // && NULL == contract
+
+                // if ( needExchange && needTransaction) then the transaction will have amount == 0
+                // if (!needExchange && needTransaction) then the transaction will have amount  > 0
             }
 
             // On errors, skip Log and Exchange; but keep Transaction if needed.
@@ -743,15 +758,21 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             if (needLog) {
                 // This could produce an error - generally a parse error.  We'll soldier on.
                 cryptoWalletManagerRecoverLog (manager, contract, bundle);
-
             }
 
             if (needExchange) {
                 cryptoWalletManagerRecoverExchange (manager, contract, bundle);
             }
 
+            // We must handle Log and Exchange above, based on the contents of `bundle`.  In the
+            // following we'll possibly re-write `bundle` so that it works with a Log or Exchange.
             if (needTransaction) {
+
+                // If we need a Log or Exchange then we zero-out the amount.  If we don't need
+                // a Log nor Exhange, then the recovered transaction is for an ETH transfer and
+                // we'll keep the amount.
                 if (needLog || needExchange) {
+                    
                     // If needLog or needExchange w/ needTransaction then the transaction
                     //     a) holds the fee; and
                     //     b) increases the nonce.
@@ -764,7 +785,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
                         bundle->to = strdup (contract);
                     }
                 }
-                // bundle->data?
                 cryptoWalletManagerRecoverTransaction (manager, bundle);
             }
             break;
