@@ -177,23 +177,22 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     UInt256 value = cryptoAmountGetValue (amount);
     BRHederaUnitTinyBar thbar = (BRHederaUnitTinyBar) value.u64[0];
     BRHederaAddress nodeAddress = hederaAccountGetNodeAddress (walletHBAR->hbarAccount);
-    BRHederaFeeBasis feeBasis = cryptoFeeBasisCoerceHBAR (estimatedFeeBasis)->hbarFeeBasis;
+    BRHederaFeeBasis hbarFeeBasis = cryptoFeeBasisCoerceHBAR (estimatedFeeBasis)->hbarFeeBasis;
     
-    BRHederaTransaction tid = hederaTransactionCreateNew (source,
-                                                          cryptoAddressAsHBAR (target),
-                                                          thbar,
-                                                          feeBasis,
-                                                          nodeAddress,
-                                                          NULL);
-    if (NULL == tid) {
+    BRHederaTransaction hbarTransaction = hederaTransactionCreateNew (source,
+                                                                      cryptoAddressAsHBAR (target),
+                                                                      thbar,
+                                                                      hbarFeeBasis,
+                                                                      nodeAddress,
+                                                                      NULL);
+    if (NULL == hbarTransaction)
         return NULL;
-    }
     
     for (size_t index = 0; index < attributesCount; index++) {
         BRCryptoTransferAttribute attribute = attributes[index];
         if (NULL != cryptoTransferAttributeGetValue(attribute)) {
             if (hederaCompareAttribute (cryptoTransferAttributeGetKey(attribute), TRANSFER_ATTRIBUTE_MEMO_TAG)) {
-                hederaTransactionSetMemo (tid, cryptoTransferAttributeGetValue(attribute));
+                hederaTransactionSetMemo (hbarTransaction, cryptoTransferAttributeGetValue(attribute));
             }
             else {
                 // TODO: Impossible if validated?
@@ -208,7 +207,9 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
                                                             unit,
                                                             unitForFee,
                                                             walletHBAR->hbarAccount,
-                                                            tid);
+                                                            hbarTransaction);
+
+    // Take all the attributes, even if there aren't for HBAR.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
