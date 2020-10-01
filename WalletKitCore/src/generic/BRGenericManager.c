@@ -172,6 +172,7 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     // Derive `wallet` from currency
     BRGenericWallet  wallet = genManagerGetPrimaryWallet (gwm);
 
+    // We'll never recover the transaction's bytes; we never wrote them.
     BRGenericTransfer transfer = genManagerRecoverTransfer (gwm, wallet, strHash,
                                                             strUids,
                                                             strSource,
@@ -179,6 +180,7 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
                                                             strAmount,
                                                             currency,
                                                             strFee,
+                                                            NULL,       // bytes
                                                             timestamp,
                                                             blockHeight,
                                                             GENERIC_TRANSFER_STATE_ERRORED == state.type ||
@@ -533,11 +535,12 @@ genManagerRecoverTransfer (BRGenericManager gwm,
                            const char *amount,
                            const char *currency,
                            const char *fee,
+                           const char *transactionBytes,
                            uint64_t timestamp,
                            uint64_t blockHeight,
                            int error) {
     BRGenericTransfer transfer = genTransferAllocAndInit (gwm->handlers->type,
-                                                          gwm->handlers->manager.transferRecover (hash, from, to, amount, currency, fee, timestamp, blockHeight, error));
+                                                          gwm->handlers->manager.transferRecover (hash, from, to, amount, currency, fee, transactionBytes, timestamp, blockHeight, error));
 
     transfer->uids = strdup (uids);
 

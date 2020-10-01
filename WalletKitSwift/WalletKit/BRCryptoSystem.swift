@@ -1445,7 +1445,7 @@ extension System {
                                                addresses: addresses,
                                                begBlockNumber: (begBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : begBlockNumber),
                                                endBlockNumber: (endBlockNumber == BLOCK_HEIGHT_UNBOUND_VALUE ? nil : endBlockNumber),
-                                               includeRaw: false) {
+                                               includeRaw: true) {
                                                 (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
                                                 defer { cryptoWalletManagerGive(cwm) }
                                                 res.resolve(
@@ -1457,6 +1457,7 @@ extension System {
                                                             let blockTransactionIndex = transaction.index ?? 0
                                                             let blockHash             = transaction.blockHash
                                                             let status    = System.getTransferStatus (transaction.status)
+                                                            let transactionBytes = transaction.raw?.asHexEncodedString()
 
                                                             System.mergeTransfers (transaction, with: addresses)
                                                                 .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: BlockChainDB.Model.Amount?)) in
@@ -1481,6 +1482,7 @@ extension System {
                                                                                                    transfer.amount.value,
                                                                                                    transfer.amount.currency,
                                                                                                    fee.map { $0.value },
+                                                                                                   fee.flatMap { (_) in transactionBytes},
                                                                                                    blockTimestamp,
                                                                                                    blockHeight,
                                                                                                    blockConfirmations,

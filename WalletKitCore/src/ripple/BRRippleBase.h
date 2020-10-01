@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 #include "BRCryptoBase.h"
 
 // Even though we only support the Payment type - plan for
@@ -80,4 +81,5 @@ typedef uint32_t BRRippleSourceTag;
 typedef uint32_t BRRippleDestinationTag;
 
 #define RIPPLE_XRP_TO_DROPS(xrp)   (1000000 * (xrp))   // 1e6 drops/xrp
+#define RIPPLE_SEQUENCE_UNKNOWN    (UINT32_MAX)
 #endif

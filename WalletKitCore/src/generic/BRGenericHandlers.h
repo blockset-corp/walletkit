@@ -185,6 +185,7 @@ extern "C" {
                                                                            const char *amount,
                                                                            const char *currency,
                                                                            const char *fee,
+                                                                           const char *transactionBytes,
                                                                            uint64_t timestamp,
                                                                            uint64_t blockHeight,
                                                                            int error);

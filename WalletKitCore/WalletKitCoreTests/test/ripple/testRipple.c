@@ -1036,23 +1036,23 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     if (addFailedFirstTransfer) {
         // Add a failed transfer at an earlier block - we should ignore this when determing
         // the block where the account is created
-        BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 0, 12, hash, 0, start_block - 1000, 1);
+        BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 0, 12, hash, NULL, 0, start_block - 1000, 1);
     }
 
     // Create the initial transfer the creates the account (from target to us)
     // NOTE: this transfer MUST use the start_block unaltered as the height
     hex2bin("B3CD5808EB172BE1A532CF372363C505D499F277D4B56241CF3F0FC19ACECA2B", hash.bytes);
-    BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, 0, start_block, 0);
+    BRRippleTransfer transfer = rippleTransferCreate(targetAddress, address, 20000000, 12, hash, NULL, 0, start_block, 0);
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
     // Add 2 more receives
     hash.bytes[0] = 1; // needs a different hash
-    transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
+    transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, NULL, 0, start_block + 10, 0);
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
     hash.bytes[0] = 2; // needs a different hash
-    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, NULL, 0, start_block + 20, 0);
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
