@@ -11,7 +11,6 @@
 #ifndef BRCryptoWalletEvent_h
 #define BRCryptoWalletEvent_h
 
-#include "BRCryptoStatus.h"
 #include "BRCryptoNetwork.h"        // NetworkFee
 #include "BRCryptoFeeBasis.h"
 
