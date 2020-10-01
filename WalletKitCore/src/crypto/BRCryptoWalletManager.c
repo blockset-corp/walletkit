@@ -51,16 +51,6 @@ cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
                                             BRFileService fs,
                                             BRFileServiceError error);
 
-#ifdef REFACTOR
-static void
-cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
-                                    BRGenericManager manager,
-                                    uint64_t begBlockHeight,
-                                    uint64_t endBlockHeight,
-                                    uint64_t fullSyncIncrement);
-#endif
-
-
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWalletManager, cryptoWalletManager)
 
 /// =============================================================================================

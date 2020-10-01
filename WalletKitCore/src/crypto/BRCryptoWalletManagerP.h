@@ -225,32 +225,6 @@ private_extern void
 cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet);
 
-#ifdef REFACTOR
-private_extern BRWalletManagerClient
-cryptoWalletManagerClientCreateBTCClient (OwnershipKept BRCryptoWalletManager cwm);
-
-private_extern BREthereumClient
-cryptoWalletManagerClientCreateETHClient (OwnershipKept BRCryptoWalletManager cwm);
-
-private_extern BRGenericClient
-cryptoWalletManagerClientCreateGENClient (OwnershipKept BRCryptoWalletManager cwm);
-
-extern void
-cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
-                                      OwnershipGiven BRGenericTransfer transferGeneric);
-
-extern void
-cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
-                                            OwnershipGiven BRGenericTransfer transferGeneric,
-                                            BRCryptoBoolean needBalanceEvent);
-
-private_extern void
-cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
-                                        BRCryptoWallet wallet,
-                                        BRCryptoTransfer transfer,
-                                        BRGenericTransferState newGenericState);
-#endif
-
 private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,
                                                           OwnershipKept BRCryptoClientTransactionBundle bundle);
