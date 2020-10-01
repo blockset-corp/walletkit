@@ -183,33 +183,6 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP (BRCryptoWalletManag
     assert (0);
 }
 
-#ifdef REFACTOR
-extern BRGenericTransferState
-genManagerRecoverTransferState (BRGenericManager gwm,
-                                uint64_t timestamp,
-                                uint64_t blockHeight,
-                                BRGenericFeeBasis feeBasis,
-                                BRCryptoBoolean error) {
-    return (blockHeight == BLOCK_HEIGHT_UNBOUND && CRYPTO_TRUE == error
-            ? genTransferStateCreateOther (GENERIC_TRANSFER_STATE_ERRORED)
-            : (blockHeight == BLOCK_HEIGHT_UNBOUND
-               ? genTransferStateCreateOther(GENERIC_TRANSFER_STATE_SUBMITTED)
-               : genTransferStateCreateIncluded (blockHeight,
-                                                 GENERIC_TRANSFER_TRANSACTION_INDEX_UNKNOWN,
-                                                 timestamp,
-                                                 feeBasis,
-                                                 error,
-                                                 NULL)));
-}
-
-BRGenericTransferState transferState = genManagerRecoverTransferState (gwm,
-                                                                       timestamp,
-                                                                       blockHeight,
-                                                                       feeBasis,
-                                                                       AS_CRYPTO_BOOLEAN (0 == error));
-genTransferSetState (transfer, transferState);
-#endif
-
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager manager,
                                                          OwnershipKept BRCryptoClientTransferBundle bundle) {
