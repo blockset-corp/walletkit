@@ -52,7 +52,7 @@ cryptoAddressCreateFromStringAsBSV (BRAddressParams params, const char *bsvAddre
 
 private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
-                    BRCryptoBoolean *isBitcoinAddr);
+                    BRCryptoBlockChainType *type);
 
 // MARK: - Network
 

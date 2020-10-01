@@ -479,7 +479,6 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
     //    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
     if (0 == outputsCount) return NULL;
 
-
     BRCryptoUnit unit         = cryptoWalletGetUnit (wallet);
     BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee(wallet);
     BRCryptoCurrency currency = cryptoUnitGetCurrency(unit);

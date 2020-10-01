@@ -573,14 +573,14 @@ cryptoPaymentProtocolPaymentCreateBTC (BRCryptoPaymentProtocolRequest protoReqBa
             if (NULL != baseAmount) {
                 BRCryptoBoolean overflow = CRYPTO_TRUE;
                 uint64_t refundAmountInt = cryptoAmountGetIntegerRaw (baseAmount, &overflow);
-                
-                BRCryptoBoolean isAddressBTC = 0;
-                BRAddress refundAddressBtc = cryptoAddressAsBTC (refundAddress, &isAddressBTC);
+
+                BRCryptoBlockChainType refundType;
+                BRAddress refundAddressBtc = cryptoAddressAsBTC (refundAddress, &refundType);
                 
                 const BRChainParams * chainParams = cryptoNetworkAsBTC (cryptoNetwork);
                 BRCryptoBoolean isBTC = AS_CRYPTO_BOOLEAN (BRChainParamsIsBitcoin (chainParams));
                 
-                if (isBTC == isAddressBTC && CRYPTO_FALSE == overflow) {
+                if (CRYPTO_TRUE == isBTC && CRYPTO_NETWORK_TYPE_BTC == refundType && CRYPTO_FALSE == overflow) {
                     size_t merchantDataLen = 0;
                     const uint8_t *merchantData = cryptoPaymentProtocolRequestGetMerchantDataBTC (protoReqBase, &merchantDataLen);
                     
