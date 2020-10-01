@@ -124,6 +124,8 @@ typedef enum {
 
 } BREthereumTransferStatus;
 
+/** The Ethereum gasLimit for a transfer of ETHER. */
+#define DEFAULT_ETHER_GAS_LIMIT    21000ull
 
 #ifdef __cplusplus
 }

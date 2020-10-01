@@ -12,8 +12,6 @@
 #include <assert.h>
 #include "BREthereumAmount.h"
 
-#define DEFAULT_ETHER_GAS_LIMIT    21000ull
-
 //
 // amount
 //
