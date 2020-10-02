@@ -1268,49 +1268,19 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
             BRCryptoAddress source = cryptoWalletGetAddress (wallet, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT);
             UInt256 ethValue       = cryptoAmountGetValue (amount);
 
-            BREthereumGasPrice ethGasPrice = cryptoNetworkFeeAsETH (fee);
-            BREthereumToken    ethToken    = ewmWalletGetToken (ewm, wid);
+            BREthereumToken  ethToken  = ewmWalletGetToken (ewm, wid);
+            BREthereumAmount ethAmount = (NULL != ethToken
+                                          ? ethAmountCreateToken (ethTokenQuantityCreate (ethToken, ethValue))
+                                          : ethAmountCreateEther (ethEtherCreate (ethValue)));
 
-            // For an ETH transfer the gasLimit is 100% guaranteed known as 21,000
-            if (NULL == ethToken) {
-
-                BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee (wallet);
-                BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsETH (unitForFee,
-                                                                       ethGasCreate (DEFAULT_ETHER_GAS_LIMIT),
-                                                                       ethGasPrice);
-
-                // Generate a CRYPTO_WALLET_EVENT directly; the ERC20 branch (below) will generate
-                // a Ethereum WALLET_EVENT_FEE_ESTIMATED which will eventual generate the CRYPTO one
-                cwm->listener.walletEventCallback (cwm->listener.context,
-                                                   cryptoWalletManagerTake (cwm),
-                                                   cryptoWalletTake (wallet),
-                                                   (BRCryptoWalletEvent) {
-                    CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-                    { .feeBasisEstimated = {
-                        CRYPTO_SUCCESS,
-                        cookie,
-                        cryptoFeeBasisTake (feeBasis)
-                    }}
-                });
-
-                cryptoFeeBasisGive (feeBasis);
-                cryptoUnitGive(unitForFee);
-            }
-
-            // For a ERC20 transfers, the gasLimit must be estimated using the 'client'.
-            else {
-                BREthereumAmount ethAmount = ethAmountCreateToken (ethTokenQuantityCreate (ethToken, ethValue));
-
-                ewmWalletEstimateTransferFeeForTransfer (ewm,
-                                                         wid,
-                                                         cookie,
-                                                         cryptoAddressAsETH (source),
-                                                         cryptoAddressAsETH (target),
-                                                         ethAmount,
-                                                         ethGasPrice,
-                                                         ewmWalletGetDefaultGasLimit (ewm, wid));
-
-            }
+            ewmWalletEstimateTransferFeeForTransfer (ewm,
+                                                     wid,
+                                                     cookie,
+                                                     cryptoAddressAsETH (source),
+                                                     cryptoAddressAsETH (target),
+                                                     ethAmount,
+                                                     cryptoNetworkFeeAsETH (fee),
+                                                     ewmWalletGetDefaultGasLimit (ewm, wid));
 
             cryptoAddressGive (source);
             break;
