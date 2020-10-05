@@ -75,9 +75,11 @@ tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis) {
             return TEZOS_DEFAULT_FEE_MUTEZ;
         } else {
             // storage is burned and not part of the fee
-            return  TEZOS_MINIMAL_FEE_MUTEZ
-                    + (int64_t)(TEZOS_MUTEZ_PER_GAS_UNIT * feeBasis->u.estimate.gasLimit)
-                    + (feeBasis->u.estimate.mutezPerByte * (int64_t)feeBasis->u.estimate.sizeInBytes);
+            BRTezosUnitMutez minimalFee = TEZOS_MINIMAL_FEE_MUTEZ
+                                          + (int64_t)(TEZOS_MUTEZ_PER_GAS_UNIT * feeBasis->u.estimate.gasLimit)
+                                          + (feeBasis->u.estimate.mutezPerByte * (int64_t)feeBasis->u.estimate.sizeInBytes);
+            // add a 5% padding to the estimated minimum to improve chance of acceptance by network
+            return  (BRTezosUnitMutez)(minimalFee * 1.05);
         }
     } else {
         return feeBasis->u.actual.fee;
