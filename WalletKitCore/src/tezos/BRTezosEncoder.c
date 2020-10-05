@@ -120,7 +120,7 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     
     if (TEZOS_OP_TRANSACTION == opData.kind) {
         fields[numFields++] = encodeZarith(opData.u.transaction.amount);
-        //TODO:TEZOS support sending to KT addresses
+        //TODO:XTZ support sending to KT addresses
         fields[numFields++] = encodeBool(false); // is originated (KT) address
         fields[numFields++] = encodeAddress(opData.u.transaction.target);
         fields[numFields++] = encodeBool(false); // contract execution params (0x0 for no params)

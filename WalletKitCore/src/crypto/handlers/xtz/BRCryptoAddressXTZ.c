@@ -41,7 +41,7 @@ cryptoAddressCreateAsXTZ (BRTezosAddress addr) {
 
     return cryptoAddressAllocAndInit (sizeof (struct BRCryptoAddressXTZRecord),
                                       CRYPTO_NETWORK_TYPE_XTZ,
-                                      0, //TODO:XTZ address hash
+                                      tezosAddressHashValue (addr),
                                       &contextXTZ,
                                       cryptoAddressCreateCallbackXTZ);
 }
