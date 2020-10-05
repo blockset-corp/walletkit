@@ -375,6 +375,10 @@ public enum NetworkEvent {
 
     // The netwok had its fees updated.
     case feesUpdated
+
+    // The network had its currencies updated.
+    case currenciesUpdated
+
     case deleted
 
     init (core: BRCryptoNetworkEvent) {
@@ -384,6 +388,9 @@ public enum NetworkEvent {
 
         case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
             self = .feesUpdated
+
+        case CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED:
+            self = .currenciesUpdated
 
         case CRYPTO_NETWORK_EVENT_DELETED:
             self = .deleted

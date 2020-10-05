@@ -815,6 +815,8 @@ final class System implements com.breadwallet.crypto.System {
                         break;
                     case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
                         break;
+                    case CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED:
+                        break;
                     case CRYPTO_NETWORK_EVENT_DELETED:
                         break;
                     }
