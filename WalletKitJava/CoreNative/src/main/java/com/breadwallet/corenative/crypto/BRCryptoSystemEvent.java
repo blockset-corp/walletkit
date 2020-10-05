@@ -15,11 +15,13 @@ public class BRCryptoSystemEvent extends Structure {
     public static class u_union extends Union {
 
         public state_struct state;
+        public BRCryptoNetwork network;
+        public BRCryptoWalletManager walletManager;
 
         public static class state_struct extends Structure {
 
-            public BRCryptoSystemState oldState;
-            public BRCryptoSystemState newState;
+            public int oldState;
+            public int newState;
 
             public state_struct() {
                 super();
@@ -29,7 +31,7 @@ public class BRCryptoSystemEvent extends Structure {
                 return Arrays.asList("oldState", "newState");
             }
 
-            public state_struct(BRCryptoSystemState oldState, BRCryptoSystemState newState) {
+            public state_struct(int oldState, int newState) {
                 super();
                 this.oldState = oldState;
                 this.newState = newState;
@@ -37,6 +39,14 @@ public class BRCryptoSystemEvent extends Structure {
 
             public state_struct(Pointer peer) {
                 super(peer);
+            }
+
+            public BRCryptoSystemState oldState () {
+                return BRCryptoSystemState.fromCore(oldState);
+            }
+
+            public BRCryptoSystemState newState () {
+                return BRCryptoSystemState.fromCore(newState);
             }
 
             public static class ByReference extends state_struct implements Structure.ByReference {
@@ -54,6 +64,18 @@ public class BRCryptoSystemEvent extends Structure {
             super();
             this.state = state;
             setType(state_struct.class);
+        }
+
+        public u_union(BRCryptoNetwork network) {
+            super ();
+            this.network = network;
+            setType(BRCryptoNetwork.class);
+        }
+
+        public u_union (BRCryptoWalletManager walletManager) {
+            super ();
+            this.walletManager = walletManager;
+            setType(BRCryptoWalletManager.class);
         }
 
         public u_union(Pointer peer) {
@@ -92,17 +114,17 @@ public class BRCryptoSystemEvent extends Structure {
     @Override
     public void read() {
         super.read();
-        if (type() == BRCryptoSystemEventType.CRYPTO_SYSTEM_EVENT_CHANGED) {
-            u.setType(u_union.state_struct.class);
-            u.read();
+        switch (type()) {
+            case CRYPTO_SYSTEM_EVENT_CHANGED:
+                u.setType(u_union.state_struct.class);
+                u.read();
+                break;
         }
     }
 
     public static class ByReference extends BRCryptoSystemEvent implements Structure.ByReference {
-
     }
 
     public static class ByValue extends BRCryptoSystemEvent implements Structure.ByValue {
-
     }
 }

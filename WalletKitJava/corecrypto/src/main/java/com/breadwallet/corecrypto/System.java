@@ -763,8 +763,8 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleSystemChanged(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState);
-        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState);
+        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState());
+        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState());
 
         Log.log(Level.FINE, String.format("SystemChanged (%s -> %s)", oldState, newState));
 
