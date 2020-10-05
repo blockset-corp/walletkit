@@ -213,7 +213,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                 rippleTransactionSetDestinationTag (xrpTransactoin, tag);
             }
             else if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
-                // TODO:
+                // TODO: Handle INVOICE_ID (note: not used in BRD App)
             }
             else {
                 // TODO: Impossible if validated?
@@ -228,6 +228,8 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                                            unitForFee,
                                                            walletXRP->xrpAccount,
                                                            xrpTransactoin);
+
+    // Take all the attributes, even if there aren't for XRP.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;

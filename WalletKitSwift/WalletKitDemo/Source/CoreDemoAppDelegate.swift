@@ -119,9 +119,9 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         currencyCodesToMode = [
             "btc" : .api_only,
-            "eth" : .api_only,
             "bch" : .api_only,
             "bsv" : .p2p_only,
+            "eth" : .api_only,
             "xrp" : .api_only,
             "hbar" : .api_only,
             "xtz": .api_only
