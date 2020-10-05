@@ -1459,20 +1459,28 @@ cwmGetGasEstimateAsETH (BREthereumClientContext context,
     callbackState->rid = rid;
 
     BREthereumBoolean encoded = ETHEREUM_BOOLEAN_FALSE;
-    BRRlpData transactionData = ewmTransferGetRLPEncoding (ewm, wid, tid, RLP_TYPE_TRANSACTION_UNSIGNED, &encoded);
+    BRRlpData transactionRLPData = ewmTransferGetRLPEncoding (ewm, wid, tid, RLP_TYPE_TRANSACTION_UNSIGNED, &encoded);
     assert (ETHEREUM_BOOLEAN_IS_TRUE(encoded));
+
+    // Prepend the transaction's RLP data bytes with the 20 bytes in the source/from address.
+    BREthereumAddress source = ewmTransferGetSource (ewm, tid);
+    size_t   transactionSize  = ADDRESS_BYTES + transactionRLPData.bytesCount;
+    uint8_t *transactionBytes = malloc (transactionSize);
+    memcpy (&transactionBytes[0],             source.bytes,             ADDRESS_BYTES);
+    memcpy (&transactionBytes[ADDRESS_BYTES], transactionRLPData.bytes, transactionRLPData.bytesCount);
+    rlpDataRelease (transactionRLPData);
 
     char *transactionHash = ethHashAsString (ewmTransferGetOriginatingTransactionHash(ewm, tid));
 
     cwm->client.funcEstimateTransactionFee (cwm->client.context,
                                             cryptoWalletManagerTake (cwm),
                                             callbackState,
-                                            transactionData.bytes,
-                                            transactionData.bytesCount,
+                                            transactionBytes,
+                                            transactionSize,
                                             transactionHash);
 
     free (transactionHash);
-    rlpDataRelease (transactionData);
+    free (transactionBytes);
 
     cryptoWalletManagerGive (cwm);
 }
