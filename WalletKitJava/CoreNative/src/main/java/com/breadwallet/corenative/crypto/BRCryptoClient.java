@@ -223,8 +223,8 @@ public class BRCryptoClient extends Structure {
         super();
     }
 
-    public BRCryptoClient(Pointer peer) {
-        super(peer);
+    public BRCryptoClient(Pointer pointer) {
+        super(pointer);
     }
 
     public BRCryptoClient(Cookie context,

@@ -31,7 +31,7 @@ public class BRCryptoFeeBasis extends PointerType {
     public BRCryptoUnit getPricePerCostFactorUnit() {
         Pointer thisPtr = this.getPointer();
 
-        return new BRCryptoUnit(CryptoLibraryDirect.cryptoFeeBasisGetPricePerCostFactorUnit(thisPtr));
+        return getPricePerCostFactor().getUnit();
     }
 
     public BRCryptoAmount getPricePerCostFactor() {
@@ -49,7 +49,7 @@ public class BRCryptoFeeBasis extends PointerType {
     public boolean isIdentical(BRCryptoFeeBasis other) {
         Pointer thisPtr = this.getPointer();
 
-        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoFeeBasisIsIdentical(thisPtr, other.getPointer());
+        return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoFeeBasisIsEqual(thisPtr, other.getPointer());
     }
 
     public void give() {

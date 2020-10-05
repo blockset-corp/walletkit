@@ -10,11 +10,9 @@ package com.breadwallet.corecrypto;
 import android.support.annotation.Nullable;
 
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
-import com.breadwallet.corenative.crypto.BRCryptoAddress;
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
 import com.breadwallet.corenative.crypto.BRCryptoCurrency;
 import com.breadwallet.corenative.crypto.BRCryptoNetwork;
-import com.breadwallet.corenative.crypto.BRCryptoNetworkCanonicalType;
 import com.breadwallet.corenative.crypto.BRCryptoNetworkFee;
 import com.breadwallet.corenative.crypto.BRCryptoSyncMode;
 import com.breadwallet.crypto.AddressScheme;
@@ -37,21 +35,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 /* package */
 final class Network implements com.breadwallet.crypto.Network {
-
-    /* package */
-    static Optional<Network> findBuiltin (String uids) {
-        return BRCryptoNetwork.findBuiltin(uids)
-                .transform(Network::create);
-    }
-
-    static List<Network> installBuiltins () {
-        List<BRCryptoNetwork> cores = BRCryptoNetwork.installBuiltins();
-        List<Network> builtins = new ArrayList<>();
-        for (BRCryptoNetwork core: cores) {
-            builtins.add (Network.create(core));
-        }
-        return builtins;
-    }
 
     static Network create(BRCryptoNetwork core) {
         Network network = new Network(core);
@@ -349,9 +332,5 @@ final class Network implements com.breadwallet.crypto.Network {
     /* package */
     BRCryptoNetwork getCoreBRCryptoNetwork() {
         return core;
-    }
-
-    String getNetworkNameETH() {
-        return getCoreBRCryptoNetwork().getNetworkNameETH();
     }
 }

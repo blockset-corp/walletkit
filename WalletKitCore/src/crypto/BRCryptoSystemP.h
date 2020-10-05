@@ -16,6 +16,8 @@
 #include "BRCryptoSystem.h"
 #include "BRCryptoBaseP.h"
 
+#include <pthread.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

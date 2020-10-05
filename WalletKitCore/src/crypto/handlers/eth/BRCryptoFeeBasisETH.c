@@ -93,7 +93,7 @@ cryptoFeeBasisIsEqualETH (BRCryptoFeeBasis feeBasis1, BRCryptoFeeBasis feeBasis2
     BRCryptoFeeBasisETH fb1 = cryptoFeeBasisCoerce (feeBasis1);
     BRCryptoFeeBasisETH fb2 = cryptoFeeBasisCoerce (feeBasis2);
 
-    return ethFeeBasisEqual (&fb1->ethFeeBasis, &fb2->ethFeeBasis);
+    return AS_CRYPTO_BOOLEAN (ETHEREUM_BOOLEAN_TRUE == ethFeeBasisEqual (&fb1->ethFeeBasis, &fb2->ethFeeBasis));
 }
 
 // MARK: - Handlers

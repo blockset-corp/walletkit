@@ -124,11 +124,11 @@ cryptoAddressIsEqualBTC (BRCryptoAddress address1, BRCryptoAddress address2) {
 
 private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
-                    BRCryptoBoolean *isBitcoinAddr) {
+                    BRCryptoBlockChainType *type) {
     BRCryptoAddressBTC addressANY = cryptoAddressCoerce (address, address->type);
 
-    assert (NULL != isBitcoinAddr);
-    *isBitcoinAddr = AS_CRYPTO_BOOLEAN (address->type == CRYPTO_NETWORK_TYPE_BTC);
+    if (NULL != type) *type = address->type;
+
     return addressANY->addr;
 }
 
