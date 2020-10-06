@@ -131,6 +131,9 @@ transferGetDirectionFromXTZ (BRTezosTransfer transfer,
     int isSource = tezosAccountHasAddress (account, source);
     int isTarget = tezosAccountHasAddress (account, target);
     
+    tezosAddressFree (target);
+    tezosAddressFree (source);
+    
     return (isSource && isTarget
             ? CRYPTO_TRANSFER_RECOVERED
             : (isSource

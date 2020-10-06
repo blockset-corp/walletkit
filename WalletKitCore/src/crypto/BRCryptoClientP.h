@@ -83,7 +83,7 @@ struct BRCryptoClientCallbackStateRecord {
             BRCryptoHash hash;
             BRCryptoCookie cookie;
             BRCryptoNetworkFee networkFee;
-            BRCryptoFeeBasis feeBasis;
+            BRCryptoFeeBasis initialFeeBasis;
         } estimateTransactionFee;
         // ...
     } u;

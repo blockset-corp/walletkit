@@ -495,7 +495,7 @@ cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
     state->u.estimateTransactionFee.hash   = cryptoHashTake (hash);
     state->u.estimateTransactionFee.cookie = cookie;
     state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake (networkFee);
-    state->u.estimateTransactionFee.feeBasis = cryptoFeeBasisTake (initialFeeBasis);
+    state->u.estimateTransactionFee.initialFeeBasis = cryptoFeeBasisTake (initialFeeBasis);
 
     return state;
 }
@@ -520,7 +520,7 @@ cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
         case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
             cryptoHashGive (state->u.estimateTransactionFee.hash);
             cryptoNetworkFeeGive (state->u.estimateTransactionFee.networkFee);
-            cryptoFeeBasisGive (state->u.estimateTransactionFee.feeBasis);
+            cryptoFeeBasisGive (state->u.estimateTransactionFee.initialFeeBasis);
             break;
 
         default:
@@ -902,7 +902,7 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     BRCryptoCookie cookie = callbackState->u.estimateTransactionFee.cookie;
 
     BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
-    BRCryptoFeeBasis initialFeeBasis = callbackState->u.estimateTransactionFee.feeBasis;
+    BRCryptoFeeBasis initialFeeBasis = callbackState->u.estimateTransactionFee.initialFeeBasis;
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
