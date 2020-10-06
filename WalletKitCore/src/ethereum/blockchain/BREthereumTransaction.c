@@ -230,11 +230,9 @@ transactionSetGasEstimate (BREthereumTransaction transaction,
                            BREthereumGas gasEstimate) {
     transaction->gasEstimate = gasEstimate;
 
-    // Ensure that the gasLimit is at least 20% more than gasEstimate
-    // unless the gasEstimate is 21000 (special case for ETH transfers).
-    BREthereumGas gasLimitWithMargin = (21000 != gasEstimate.amountOfGas
-                                        ? gasLimitApplyMargin (gasEstimate)
-                                        : ethGasCreate(21000));
+    // Ensure that the gasLimit is at least 20% more than the gasEstimate
+    BREthereumGas gasLimitWithMargin = gasLimitApplyMargin (gasEstimate);
+
     if (gasLimitWithMargin.amountOfGas > transaction->gasLimit.amountOfGas)
         transaction->gasLimit = gasLimitWithMargin;
 }
