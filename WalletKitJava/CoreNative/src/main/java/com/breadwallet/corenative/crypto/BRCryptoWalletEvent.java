@@ -21,7 +21,7 @@ public class BRCryptoWalletEvent extends Structure {
     public static class u_union extends Union {
 
         public state_struct state;
-        public transfer_struct transfer;
+        public BRCryptoTransfer transfer;
         public balanceUpdated_struct balanceUpdated;
         public feeBasisUpdated_struct feeBasisUpdated;
         public feeBasisEstimated_struct feeBasisEstimated;
@@ -62,36 +62,6 @@ public class BRCryptoWalletEvent extends Structure {
             }
 
             public static class ByValue extends state_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class transfer_struct extends Structure {
-
-            public BRCryptoTransfer value;
-
-            public transfer_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("value");
-            }
-
-            public transfer_struct(BRCryptoTransfer value) {
-                super();
-                this.value = value;
-            }
-
-            public transfer_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends transfer_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends transfer_struct implements Structure.ByValue {
 
             }
         }
@@ -204,10 +174,10 @@ public class BRCryptoWalletEvent extends Structure {
             setType(state_struct.class);
         }
 
-        public u_union(transfer_struct transfer) {
+        public u_union(BRCryptoTransfer transfer) {
             super();
             this.transfer = transfer;
-            setType(transfer_struct.class);
+            setType(BRCryptoTransfer.class);
         }
 
         public u_union(balanceUpdated_struct balanceUpdated) {
@@ -275,7 +245,7 @@ public class BRCryptoWalletEvent extends Structure {
             case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
             case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
             case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
-                u.setType(u_union.transfer_struct.class);
+                u.setType(BRCryptoTransfer.class);
                 u.read();
                 break;
             case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:

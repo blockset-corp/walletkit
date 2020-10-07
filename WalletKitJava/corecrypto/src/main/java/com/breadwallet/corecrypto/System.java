@@ -763,8 +763,8 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleSystemChanged(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState);
-        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState);
+        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState());
+        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState());
 
         Log.log(Level.FINE, String.format("SystemChanged (%s -> %s)", oldState, newState));
 
@@ -814,6 +814,8 @@ final class System implements com.breadwallet.crypto.System {
                     case CRYPTO_NETWORK_EVENT_CREATED:
                         break;
                     case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
+                        break;
+                    case CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED:
                         break;
                     case CRYPTO_NETWORK_EVENT_DELETED:
                         break;
@@ -944,7 +946,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletAdded");
 
@@ -979,7 +981,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletChanged");
 
@@ -1014,7 +1016,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletDeleted");
 
@@ -1138,7 +1140,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerBlockHeightUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight.value);
+        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight);
 
         Log.log(Level.FINE, String.format("WalletManagerBlockHeightUpdated (%s)", blockHeight));
 
@@ -1306,7 +1308,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.u.transfer;
         try {
             Log.log(Level.FINE, "WalletTransferAdded");
 
@@ -1348,7 +1350,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.u.transfer;
         try {
             Log.log(Level.FINE, "WalletTransferChanged");
 
@@ -1390,7 +1392,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferSubmitted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.u.transfer;
         try {
             Log.log(Level.FINE, "WalletTransferSubmitted");
 
@@ -1432,7 +1434,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.u.transfer;
         try {
             Log.log(Level.FINE, "WalletTransferDeleted");
 
