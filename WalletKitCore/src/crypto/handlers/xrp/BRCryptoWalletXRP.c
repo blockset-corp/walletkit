@@ -196,14 +196,13 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
     BRRippleAddress source  = rippleAccountGetAddress(walletXRP->xrpAccount);
     BRRippleUnitDrops drops = value.u64[0];
 
-    BRRippleTransfer xrpTransfer = rippleTransferCreateNew (source,
-                                                            cryptoAddressAsXRP (target),
-                                                            drops);
-    if (NULL == xrpTransfer) {
-        return NULL;
-    }
+    BRRippleTransaction xrpTransactoin = rippleTransactionCreate (source,
+                                                                  cryptoAddressAsXRP(target),
+                                                                  drops,
+                                                                  cryptoFeeBasisAsXRP(estimatedFeeBasis));
 
-    BRRippleTransaction transaction = rippleTransferGetTransaction (xrpTransfer);
+    if (NULL == xrpTransactoin)
+        return NULL;
 
     for (size_t index = 0; index < attributesCount; index++) {
         BRCryptoTransferAttribute attribute = attributes[index];
@@ -211,10 +210,10 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
             if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
                 BRCoreParseStatus tag;
                 sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &tag);
-                rippleTransactionSetDestinationTag (transaction, tag);
+                rippleTransactionSetDestinationTag (xrpTransactoin, tag);
             }
             else if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
-                // TODO:
+                // TODO: Handle INVOICE_ID (note: not used in BRD App)
             }
             else {
                 // TODO: Impossible if validated?
@@ -228,7 +227,9 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                                            unit,
                                                            unitForFee,
                                                            walletXRP->xrpAccount,
-                                                           xrpTransfer);
+                                                           xrpTransactoin);
+
+    // Take all the attributes, even if there aren't for XRP.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     
     return transfer;
@@ -273,18 +274,18 @@ cryptoWalletAnnounceTransferXRP (BRCryptoWallet wallet,
     // change in how ripple assigns the sequence number to new accounts
     uint64_t minBlockHeight = UINT64_MAX;
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        BRRippleTransfer xrpTransfer = cryptoTransferAsXRP (wallet->transfers[index]);
+        BRRippleTransaction xrpTransfer = cryptoTransferAsXRP (wallet->transfers[index]);
 
         // If we are the source of the transfer then we might want to update our sequence number
-        if (rippleTransferHasSource (xrpTransfer, accountAddress)) {
+        if (rippleTransactionHasSource (xrpTransfer, accountAddress)) {
             // Update the sequence number if in a block OR successful
-            if (rippleTransferIsInBlock(xrpTransfer) || !rippleTransferHasError(xrpTransfer))
+            if (rippleTransactionIsInBlock(xrpTransfer) || !rippleTransactionHasError(xrpTransfer))
                 sequence += 1;
-        } else if (!rippleTransferHasError(xrpTransfer) && rippleTransferHasTarget (xrpTransfer, accountAddress)) {
+        } else if (!rippleTransactionHasError(xrpTransfer) && rippleTransactionHasTarget (xrpTransfer, accountAddress)) {
             // We are the target of the transfer - so we need to find the very first (successful) transfer where
             // our account received some XRP as this can affect our beginning sequence number. Ignore failed
             // transfers as Bockset could create a failed transfer for us before our account is created
-            uint64_t blockHeight = rippleTransferGetBlockHeight(xrpTransfer);
+            uint64_t blockHeight = rippleTransactionGetBlockHeight(xrpTransfer);
             minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
         }
     }

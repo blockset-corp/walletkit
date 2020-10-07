@@ -88,9 +88,8 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
     transaction->source = hederaAddressClone (source);
     transaction->target = hederaAddressClone (target);
     transaction->amount = amount;
-    transaction->fee = fee;
-    transaction->feeBasis.pricePerCostFactor = fee;
-    transaction->feeBasis.costFactor = 1;
+    transaction->feeBasis = (BRHederaFeeBasis) { fee, 1 };
+    transaction->fee = hederaFeeBasisGetFee(&transaction->feeBasis);
 
     // Parse the transactionID
     if (txID && strlen(txID) > 1) {
@@ -276,6 +275,11 @@ extern char * hederaTransactionGetTransactionId(BRHederaTransaction transaction)
         return strdup(transaction->transactionId);
     }
     return NULL;
+}
+
+extern BRHederaFeeBasis hederaTransactionGetFeeBasis (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->feeBasis;;
 }
 
 extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transaction)

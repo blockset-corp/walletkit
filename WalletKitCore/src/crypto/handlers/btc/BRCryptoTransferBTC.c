@@ -178,6 +178,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                             cryptoTransferCreateCallbackBTC);
 
     cryptoFeeBasisGive (feeBasisEstimated);
+    cryptoAmountGive  (amount);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);
 
@@ -279,6 +280,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
 };
 
@@ -286,6 +288,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
 };
 
@@ -293,5 +296,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersBSV = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     cryptoTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
 };

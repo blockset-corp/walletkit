@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "BRRippleAccount.h"
 #include "BRRippleTransaction.h"
-#include "BRRippleTransfer.h"
+//#include "BRRippleTransfer.h"
 
 #ifdef __cplusplus
 extern "C" {

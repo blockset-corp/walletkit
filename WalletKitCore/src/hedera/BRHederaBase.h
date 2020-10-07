@@ -35,6 +35,12 @@ typedef struct {
     uint8_t bytes[48];
 } BRHederaTransactionHash;
 
+static inline bool
+hederaTransactionHashIsEqual (const BRHederaTransactionHash h1,
+                              const BRHederaTransactionHash h2) {
+    return 0 == memcmp (h1.bytes, h2.bytes, 48);
+}
+
 // Needed for Android builds
 #if !defined (ntohll)
 #define ntohll(x) ((1==ntohl(1)) ? (x) : (((uint64_t)ntohl((x) & 0xFFFFFFFFUL)) << 32) | ntohl((uint32_t)((x) >> 32)))

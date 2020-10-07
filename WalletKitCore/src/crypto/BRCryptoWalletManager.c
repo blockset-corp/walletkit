@@ -866,37 +866,7 @@ cryptoWalletManagerWipe (BRCryptoNetwork network,
     fileServiceWipe (path, currencyName, networkName);
 }
 
-// MARK: - Gen Stuff
-
-#ifdef REFACTOR
-static BRCryptoTransferState
-cryptoTransferStateCreateGEN (BRGenericTransferState generic,
-                              BRCryptoUnit feeUnit) { // feeUnit already taken
-    switch (generic.type) {
-        case GENERIC_TRANSFER_STATE_CREATED:
-            return cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
-        case GENERIC_TRANSFER_STATE_SIGNED:
-            return cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_SIGNED);
-        case GENERIC_TRANSFER_STATE_SUBMITTED:
-            return cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_SUBMITTED);
-        case GENERIC_TRANSFER_STATE_INCLUDED: {
-            BRCryptoFeeBasis      basis = cryptoFeeBasisCreateAsGEN (feeUnit, generic.u.included.feeBasis);
-            BRCryptoTransferState state = cryptoTransferStateIncludedInit (generic.u.included.blockNumber,
-                                                                           generic.u.included.transactionIndex,
-                                                                           generic.u.included.timestamp,
-                                                                           basis,
-                                                                           generic.u.included.success,
-                                                                           generic.u.included.error);
-            cryptoFeeBasisGive (basis);
-            return state;
-        }
-        case GENERIC_TRANSFER_STATE_ERRORED:
-            return cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown());
-        case GENERIC_TRANSFER_STATE_DELETED:
-            return cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_SIGNED);
-    }
-}
-#endif
+// MARK: - Create Transfer
 
 private_extern void
 cryptoWalletManagerSetTransferState (BRCryptoWalletManager cwm,
@@ -966,6 +936,7 @@ cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
     return cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
 }
 
+// MARK: - Sign/Submit
 
 extern BRCryptoBoolean
 cryptoWalletManagerSign (BRCryptoWalletManager manager,
@@ -1041,6 +1012,8 @@ cryptoWalletManagerSubmitForKey (BRCryptoWalletManager manager,
     if (CRYPTO_TRUE == cryptoWalletManagerSignWithKey(manager, wallet, transfer, key))
         cryptoWalletManagerSubmitSigned (manager, wallet, transfer);
 }
+
+// MARK: - Estimate Limit/Fee
 
 extern BRCryptoAmount
 cryptoWalletManagerEstimateLimit (BRCryptoWalletManager manager,
@@ -1204,6 +1177,30 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
         });
 }
 
+extern void
+cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletManager cwm,
+                                                              BRCryptoWallet wallet,
+                                                              BRCryptoCookie cookie,
+                                                              BRCryptoPaymentProtocolRequest request,
+                                                              BRCryptoNetworkFee fee) {
+    const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup(cryptoWalletGetType(wallet))->payment;
+
+    assert (NULL != paymentHandlers);
+
+    BRCryptoFeeBasis feeBasis = paymentHandlers->estimateFeeBasis (request,
+                                                                   cwm,
+                                                                   wallet,
+                                                                   cookie,
+                                                                   fee);
+    if (NULL != feeBasis)
+        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
+        });
+}
+
+// MARK: - Sweeper
+
 extern BRCryptoWalletSweeperStatus
 cryptoWalletManagerWalletSweeperValidateSupported (BRCryptoWalletManager cwm,
                                                    BRCryptoWallet wallet,
@@ -1228,28 +1225,6 @@ cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager cwm,
     return cwm->handlers->createSweeper (cwm,
                                          wallet,
                                          key);
-}
-
-extern void
-cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletManager cwm,
-                                                              BRCryptoWallet wallet,
-                                                              BRCryptoCookie cookie,
-                                                              BRCryptoPaymentProtocolRequest request,
-                                                              BRCryptoNetworkFee fee) {
-    const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup(cryptoWalletGetType(wallet))->payment;
-    
-    assert (NULL != paymentHandlers);
-    
-    BRCryptoFeeBasis feeBasis = paymentHandlers->estimateFeeBasis (request,
-                                                                   cwm,
-                                                                   wallet,
-                                                                   cookie,
-                                                                   fee);
-    if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
 }
 
 #ifdef REFACTOR

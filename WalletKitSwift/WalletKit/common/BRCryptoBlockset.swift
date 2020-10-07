@@ -1211,7 +1211,7 @@ public class BlocksetSystemClient: SystemClient {
                         case .failure (let error):
                             // If a reponse error with HTTP status of 422, the Hedera accont
                             // already exists.  Just get it.
-                            if case let .response (code) = error, code == 422 {
+                            if case let .response (code, _) = error, code == 422 {
                                 self.getHederaAccount (blockchainId: blockchainId,
                                                        publicKey: publicKey,
                                                        completion: completion)
@@ -1353,7 +1353,12 @@ public class BlocksetSystemClient: SystemClient {
             }
 
             guard responseSuccess.contains(res.statusCode) else {
-                completion (Result.failure (SystemClientError.response(res.statusCode)))
+                let errorMessage = data
+                    .flatMap { try? JSONSerialization.jsonObject(with: $0, options: []) as? [String:Any] }
+                    .map { JSON (dict: $0)}
+                    .map { $0.asString(name: "message") ?? "internal error" }
+
+                completion (Result.failure (SystemClientError.response(res.statusCode, errorMessage)))
                 return
             }
 

@@ -22,6 +22,8 @@
 #include "support/BRArray.h"
 #include "support/BRInt.h"
 
+static uint64_t calculateFee(BRRippleTransaction transaction);
+
 static VLBytes *
 rippleVLBytesClone (VLBytes *bytes) {
     if (NULL == bytes) return NULL;
@@ -124,6 +126,9 @@ struct BRRippleTransactionRecord {
     // The account
     BRKey publicKey;
 
+    // The hash; if not provided, derived from signedBytes
+    BRRippleTransactionHash hash;
+
     // The ripple payment information
     // TODO in the future if more transaction are supported this could
     // be changed to a union of the various types
@@ -146,6 +151,10 @@ struct BRRippleTransactionRecord {
     BRRippleSourceTag sourceTag;
 
     BRRippleMemoNode * memos;
+
+    uint64_t timestamp;
+    uint64_t blockHeight;
+    int error;
 };
 
 void rippleSerializedTransactionRecordFree(BRRippleSerializedTransaction * signedBytes)
@@ -175,11 +184,15 @@ rippleTransactionCreate(BRRippleAddress sourceAddress,
 
     // Common fields
     transaction->feeBasis = feeBasis;
-    transaction->fee = 0; // Don't know it yet
     transaction->sourceAddress = rippleAddressClone (sourceAddress);
     transaction->transactionType = RIPPLE_TX_TYPE_PAYMENT;
     transaction->flags = 0x80000000; // tfFullyCanonicalSig
     transaction->lastLedgerSequence = 0;
+
+    transaction->hash = RIPPLE_TRANSACTION_HASH_EMPTY;
+    transaction->timestamp   = 0; // unknown, not included
+    transaction->blockHeight = 0; // unknwon, not included
+    transaction->error       = false;
 
     // Payment information
     transaction->payment.targetAddress = rippleAddressClone (targetAddress);
@@ -187,6 +200,28 @@ rippleTransactionCreate(BRRippleAddress sourceAddress,
     transaction->payment.amount.amount.u64Amount = amount; // XRP only
     
     transaction->signedBytes = NULL;
+
+    transaction->fee = calculateFee(transaction);
+
+    return transaction;
+}
+
+extern BRRippleTransaction /* caller must free - rippleTransferFree */
+rippleTransactionCreateFull (BRRippleAddress sourceAddress,
+                             BRRippleAddress targetAddress,
+                             BRRippleUnitDrops amount, // For now assume XRP drops.
+                             BRRippleFeeBasis feeBasis,
+                             BRRippleTransactionHash hash,
+                             uint64_t timestamp,
+                             uint64_t blockHeight,
+                             int error) {
+
+    BRRippleTransaction transaction = rippleTransactionCreate (sourceAddress, targetAddress, amount, feeBasis);
+
+    transaction->hash        = hash;
+    transaction->timestamp   = timestamp;
+    transaction->blockHeight = blockHeight;
+    transaction->error       = error;
 
     return transaction;
 }
@@ -421,15 +456,12 @@ extern uint8_t* rippleTransactionSerialize(BRRippleTransaction transaction, size
 
 extern BRRippleTransactionHash rippleTransactionGetHash(BRRippleTransaction transaction)
 {
-    BRRippleTransactionHash hash;
-    memset(hash.bytes, 0x00, sizeof(hash.bytes));
-
     // See if we have any signed bytes
     if (transaction->signedBytes) {
-        memcpy(hash.bytes, transaction->signedBytes->txHash, 32);
+        memcpy (&transaction->hash, transaction->signedBytes->txHash, 32);
     }
 
-    return hash;
+    return transaction->hash;
 }
 
 extern BRRippleTransactionHash rippleTransactionGetAccountTxnId(BRRippleTransaction transaction)
@@ -476,10 +508,21 @@ extern BRRippleAddress rippleTransactionGetSource(BRRippleTransaction transactio
     assert(transaction);
     return rippleAddressClone (transaction->sourceAddress);
 }
+
+extern int rippleTransactionHasSource (BRRippleTransaction transaction,
+                                       BRRippleAddress source) {
+    return rippleAddressEqual (transaction->sourceAddress, source);
+}
+
 extern BRRippleAddress rippleTransactionGetTarget(BRRippleTransaction transaction)
 {
     assert(transaction);
     return rippleAddressClone (transaction->payment.targetAddress);
+}
+
+extern int rippleTransactionHasTarget (BRRippleTransaction transaction,
+                                       BRRippleAddress target) {
+    return rippleAddressEqual (transaction->payment.targetAddress, target);
 }
 
 extern BRKey rippleTransactionGetPublicKey(BRRippleTransaction transaction)
@@ -685,3 +728,19 @@ extern BRSetOf(BRRippleTransaction) rippleTransactionSetCreate (size_t initialSi
     return BRSetNew (rippleTransactionHashValue, rippleTransactionHashEqual, initialSize);
 }
 
+
+extern int
+rippleTransactionHasError(BRRippleTransaction transaction) {
+    return transaction->error;
+}
+
+extern int
+rippleTransactionIsInBlock (BRRippleTransaction transaction) {
+    assert(transaction);
+    return transaction->blockHeight == 0 ? 0 : 1;
+}
+
+extern uint64_t rippleTransactionGetBlockHeight (BRRippleTransaction transaction) {
+    assert(transaction);
+    return transaction->blockHeight;
+}

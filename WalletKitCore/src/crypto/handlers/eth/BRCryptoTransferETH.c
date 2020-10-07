@@ -472,6 +472,30 @@ cryptoTransferSerializeETH (BRCryptoTransfer transfer,
     return data.bytes;
 }
 
+extern uint8_t *
+cryptoTransferGetBytesForFeeEstimateETH (BRCryptoTransfer transfer,
+                                         BRCryptoNetwork  network,
+                                         size_t *bytesCount) {
+    BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (transfer);
+    BREthereumTransaction ethTransaction = transferETH->originatingTransaction;
+
+    if (NULL == ethTransaction) { *bytesCount = 0; return NULL; }
+
+    BRRlpData data = transactionGetRlpData (ethTransaction,
+                                            cryptoNetworkAsETH(network),
+                                            RLP_TYPE_TRANSACTION_UNSIGNED);
+    BREthereumAddress ethSource = transactionGetSourceAddress (ethTransaction);
+
+    *bytesCount = ADDRESS_BYTES + data.bytesCount;
+    uint8_t *bytes = malloc (*bytesCount);
+    memcpy (&bytes[0],             ethSource.bytes, ADDRESS_BYTES);
+    memcpy (&bytes[ADDRESS_BYTES], data.bytes,      data.bytesCount);
+
+    rlpDataRelease(data);
+
+    return bytes;
+}
+
 static int
 cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     if (tb1 == tb2) return 1;
@@ -555,5 +579,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersETH = {
     cryptoTransferReleaseETH,
     cryptoTransferGetHashETH,
     cryptoTransferSerializeETH,
+    cryptoTransferGetBytesForFeeEstimateETH,
     cryptoTransferEqualAsETH
 };

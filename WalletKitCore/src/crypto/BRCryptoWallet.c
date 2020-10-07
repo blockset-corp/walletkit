@@ -196,14 +196,16 @@ cryptoWalletSetBalance (BRCryptoWallet wallet,
 
 static void
 cryptoWalletIncBalance (BRCryptoWallet wallet,
-                        BRCryptoAmount amount) {
+                        OwnershipGiven BRCryptoAmount amount) {
     cryptoWalletSetBalance (wallet, cryptoAmountAdd (wallet->balance, amount));
+    cryptoAmountGive(amount);
 }
 
 static void
 cryptoWalletDecBalance (BRCryptoWallet wallet,
-                        BRCryptoAmount amount) {
+                        OwnershipGiven BRCryptoAmount amount) {
     cryptoWalletSetBalance (wallet, cryptoAmountSub (wallet->balance, amount));
+    cryptoAmountGive(amount);
 }
 
 //
@@ -476,7 +478,6 @@ cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
                                     BRCryptoFeeBasis estimatedFeeBasis) {
     //    assert (cryptoWalletGetType(wallet) == cryptoFeeBasisGetType(estimatedFeeBasis));
     if (0 == outputsCount) return NULL;
-
 
     BRCryptoUnit unit         = cryptoWalletGetUnit (wallet);
     BRCryptoUnit unitForFee   = cryptoWalletGetUnitForFee(wallet);

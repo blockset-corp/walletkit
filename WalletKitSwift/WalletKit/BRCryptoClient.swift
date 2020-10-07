@@ -15,7 +15,7 @@ public enum SystemClientError: Error {
     case submission (Error)
     
     // HTTP response unexpected (typically not 200/OK)
-    case response (Int) // includes the status code
+    case response (Int, String?) // includes the status code, an optional error message
     
     // HTTP submission didn't error but returned no data
     case noData

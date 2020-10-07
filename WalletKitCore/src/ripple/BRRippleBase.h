@@ -49,6 +49,11 @@ typedef struct {
     uint8_t bytes[32];
 } BRRippleTransactionHash;
 
+#define RIPPLE_TRANSACTION_HASH_EMPTY   ((const BRRippleTransactionHash) { \
+0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0, \
+0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0  \
+})
+
 typedef struct {
     int currencyType; // 0 - ripple, 1 - other, -1 unknown/invalid
     uint8_t currencyCode[20];
