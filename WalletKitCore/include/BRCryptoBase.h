@@ -186,6 +186,39 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
     extern const char *
     cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type);
 
+    // MARK: - Status
+
+    typedef enum {
+        CRYPTO_SUCCESS = 0,
+        // Generic catch-all failure. This should only be used as if creating a
+        // specific error code does not make sense (you really should create
+        // a specifc error code...).
+        CRYPTO_ERROR_FAILED,
+
+        // Reference access
+        CRYPTO_ERROR_UNKNOWN_NODE = 10000,
+        CRYPTO_ERROR_UNKNOWN_TRANSFER,
+        CRYPTO_ERROR_UNKNOWN_ACCOUNT,
+        CRYPTO_ERROR_UNKNOWN_WALLET,
+        CRYPTO_ERROR_UNKNOWN_BLOCK,
+        CRYPTO_ERROR_UNKNOWN_LISTENER,
+
+        // Node
+        CRYPTO_ERROR_NODE_NOT_CONNECTED = 20000,
+
+        // Transfer
+        CRYPTO_ERROR_TRANSFER_HASH_MISMATCH = 30000,
+        CRYPTO_ERROR_TRANSFER_SUBMISSION,
+
+        // Numeric
+        CRYPTO_ERROR_NUMERIC_PARSE = 40000,
+
+        // Acount
+        // Wallet
+        // Block
+        // Listener
+    } BRCryptoStatus;
+
     /// MARK: - Reference Counting
 
     typedef struct {

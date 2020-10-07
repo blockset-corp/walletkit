@@ -412,7 +412,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoPayment.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoPeer.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoSigner.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoStatus.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoSync.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoSystem.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoTransfer.h
@@ -455,8 +454,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPayment.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPeer.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSigner.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoStatusP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoStatus.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSystemP.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSystem.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoTransferP.h

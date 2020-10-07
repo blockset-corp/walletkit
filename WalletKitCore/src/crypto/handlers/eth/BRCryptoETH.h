@@ -74,9 +74,10 @@ typedef struct BRCryptoTransferETHRecord {
 
     BREthereumAccount account;
     BREthereumGas gasEstimate;
-    BREthereumTransferStatus status;
     BREthereumTransferBasis basis;
 
+    // The tranaction that originated this transfer.  Will be NULL if the transaction's source
+    // address is not in `account`.  My be NULL if the transaction has not been seen yet.
     BREthereumTransaction originatingTransaction;
 } *BRCryptoTransferETH;
 

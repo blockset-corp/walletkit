@@ -148,6 +148,9 @@ cryptoTransferGetEstimatedFee (BRCryptoTransfer transfer);
 private_extern BRCryptoAmount
 cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer);
 
+private_extern BRCryptoFeeBasis
+cryptoTransferGetFeeBasis (BRCryptoTransfer transfer);
+
 #ifdef __cplusplus
 }
 #endif

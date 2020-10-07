@@ -12,6 +12,19 @@
 #include <assert.h>
 #include "BREthereumTransactionStatus.h"
 
+extern const char *
+transactionGetStatusTypeName (BREthereumTransactionStatusType type) {
+    static const char *names[] = {
+        "unknown",
+        "queued",
+        "pending",
+        "included",
+        "errored"
+    };
+
+    return names[type];
+}
+
 const char *
 transactionGetErrorName (BREthereumTransactionErrorType type) {
     static const char *names[] = {
