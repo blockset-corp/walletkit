@@ -262,16 +262,19 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
     };
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis);
+
     BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (wallet,
                                                                target,
                                                                amount,
-                                                               cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis),
+                                                               feeBasis,
                                                                0, NULL,
                                                                currency,
                                                                wallet->unit,
                                                                wallet->unitForFee);
 
-    cryptoCurrencyGive(currency);
+    cryptoFeeBasisGive (feeBasis);
+    cryptoCurrencyGive (currency);
 
     cryptoClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
