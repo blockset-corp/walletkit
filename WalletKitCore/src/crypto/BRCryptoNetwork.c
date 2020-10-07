@@ -34,6 +34,7 @@ cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type) {
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,
+        CRYPTO_NETWORK_CURRENCY_XTZ,
         // "Stellar"
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
@@ -221,6 +222,23 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
     pthread_mutex_lock (&network->lock);
     network->height = height;
     pthread_mutex_unlock (&network->lock);
+}
+
+extern BRCryptoHash
+cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
+    return network->verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
+                                   BRCryptoHash verifiedBlockHash) {
+    network->verifiedBlockHash = verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
+                                           const char * blockHashString) {
+    network->verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
 }
 
 extern uint32_t

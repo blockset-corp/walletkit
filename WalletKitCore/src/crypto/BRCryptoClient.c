@@ -488,12 +488,14 @@ static BRCryptoClientCallbackState
 cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
                                                        BRCryptoCookie cookie,
                                                        OwnershipKept BRCryptoNetworkFee networkFee,
+                                                       OwnershipKept BRCryptoFeeBasis initialFeeBasis,
                                                        size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
     state->u.estimateTransactionFee.hash   = cryptoHashTake (hash);
     state->u.estimateTransactionFee.cookie = cookie;
-    state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake(networkFee);
+    state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake (networkFee);
+    state->u.estimateTransactionFee.initialFeeBasis = cryptoFeeBasisTake (initialFeeBasis);
 
     return state;
 }
@@ -518,6 +520,7 @@ cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
         case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
             cryptoHashGive (state->u.estimateTransactionFee.hash);
             cryptoNetworkFeeGive (state->u.estimateTransactionFee.networkFee);
+            cryptoFeeBasisGive (state->u.estimateTransactionFee.initialFeeBasis);
             break;
 
         default:
@@ -551,12 +554,18 @@ extern void
 cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
-                        uint64_t blockNumber) {
+                        uint64_t blockNumber,
+                        const char *blockHashString) {
 
     BRCryptoBlockNumber oldBlockNumber = cryptoNetworkGetHeight (cwm->network);
 
     if (oldBlockNumber != blockNumber) {
         cryptoNetworkSetHeight (cwm->network, blockNumber);
+        
+        if (NULL != blockHashString) {
+            BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
+            cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+        }
 
         cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
@@ -852,7 +861,8 @@ extern void
 cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
                                     BRCryptoCookie   cookie,
                                     OwnershipKept BRCryptoTransfer transfer,
-                                    OwnershipKept BRCryptoNetworkFee networkFee) {
+                                    OwnershipKept BRCryptoNetworkFee networkFee,
+                                    OwnershipKept BRCryptoFeeBasis initialFeeBasis) {
     BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(qry->manager);
     if (NULL == cwm) return;
 
@@ -866,6 +876,7 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
     BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
                                                                                                        cookie,
                                                                                                        networkFee,
+                                                                                                       initialFeeBasis,
                                                                                                        qry->requestId++);
 
     qry->client.funcEstimateTransactionFee (qry->client.context,
@@ -891,15 +902,19 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     BRCryptoCookie cookie = callbackState->u.estimateTransactionFee.cookie;
 
     BRCryptoNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
+    BRCryptoFeeBasis initialFeeBasis = callbackState->u.estimateTransactionFee.initialFeeBasis;
 
     BRCryptoAmount pricePerCostFactor = cryptoNetworkFeeGetPricePerCostFactor (networkFee);
     double costFactor = (double) costUnits;
-    BRCryptoFeeBasis feeBasis = cryptoWalletManagerRecoverFeeBasisFromEstimate(cwm,
-                                                                               networkFee,
-                                                                               costFactor,
-                                                                               attributesCount,
-                                                                               attributeKeys,
-                                                                               attributeVals);
+    BRCryptoFeeBasis feeBasis = NULL;
+    if (CRYPTO_TRUE == success)
+        feeBasis = cryptoWalletManagerRecoverFeeBasisFromFeeEstimate(cwm,
+                                                                     networkFee,
+                                                                     initialFeeBasis,
+                                                                     costFactor,
+                                                                     attributesCount,
+                                                                     attributeKeys,
+                                                                     attributeVals);
 
     cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,

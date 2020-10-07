@@ -1800,15 +1800,17 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 }
 
 private_extern BRCryptoFeeBasis
-cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
-                                                BRCryptoNetworkFee networkFee,
-                                                double costUnits,
-                                                size_t attributesCount,
-                                                OwnershipKept const char **attributeKeys,
-                                                OwnershipKept const char **attributeVals) {
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimate (BRCryptoWalletManager cwm,
+                                                   BRCryptoNetworkFee networkFee,
+                                                   BRCryptoFeeBasis initialFeeBasis,
+                                                   double costUnits,
+                                                   size_t attributesCount,
+                                                   OwnershipKept const char **attributeKeys,
+                                                   OwnershipKept const char **attributeVals) {
     assert (NULL != cwm->handlers->recoverFeeBasisFromFeeEstimate); // not supported by chain
     return cwm->handlers->recoverFeeBasisFromFeeEstimate (cwm,
                                                           networkFee,
+                                                          initialFeeBasis,
                                                           costUnits,
                                                           attributesCount,
                                                           attributeKeys,

@@ -19,6 +19,7 @@
 #include "ethereum/blockchain/BREthereumAccount.h"
 #include "ripple/BRRippleAccount.h"
 #include "hedera/BRHederaAccount.h"
+#include "tezos/BRTezosAccount.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,7 @@ struct BRCryptoAccountRecord {
     BREthereumAccount eth;
     BRRippleAccount xrp;
     BRHederaAccount hbar;
+    BRTezosAccount xtz;
     // ...
 
     char *uids;
@@ -57,7 +59,7 @@ cryptoAccountInstall (void);
 private_extern UInt512
 cryptoAccountDeriveSeed (const char *phrase);
 
-// MARK: Account As {ETH,BTC,XRP,HBAR
+// MARK: Account As {ETH,BTC,XRP,HBAR,XTZ}
 
 static inline BRMasterPubKey
 cryptoAccountAsBTC (BRCryptoAccount account) {
@@ -77,6 +79,11 @@ cryptoAccountAsXRP (BRCryptoAccount account) {
 static inline BRHederaAccount
 cryptoAccountAsHBAR (BRCryptoAccount account) {
     return account->hbar;
+}
+
+static inline BRTezosAccount
+cryptoAccountAsXTZ (BRCryptoAccount account) {
+    return account->xtz;
 }
 
 #ifdef __cplusplus

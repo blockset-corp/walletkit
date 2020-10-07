@@ -123,7 +123,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
             "bsv" : .p2p_only,
             "eth" : .api_only,
             "xrp" : .api_only,
-            "hbar" : .api_only
+            "hbar" : .api_only,
+            "xtz": .api_only
             ]
         if mainnet {
 
@@ -371,6 +372,7 @@ extension Network {
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"
+        case .xtz: return "tezos"
 //        case .xlm:  return "stellar"
         }
     }

@@ -817,6 +817,9 @@ public final class System {
                             if let blockHeight = blockchainModel.blockHeight {
                                 cryptoNetworkSetHeight (network.core, blockHeight)
                             }
+                            if let verifiedBlockHash = blockchainModel.verifiedBlockHash {
+                                cryptoNetworkSetVerifiedBlockHashAsString (network.core, verifiedBlockHash)
+                            }
 
                             self.configure (network: network, feesFrom: blockchainModel)
                         }
@@ -1562,10 +1565,11 @@ extension System {
                         fee: ($0.id == transferForFeeId ? transferWithFee.amount : nil))
                 }
 
-        default:
-            // There is more than one "__fee__" entry
-            preconditionFailure()
-        }
+            default:
+                // There is more than one "__fee__" entry
+                assertionFailure()
+                return transfers.map { (transfer: $0, fee: nil) }
+            }
     }
 
     internal static func makeAddresses (_ addresses: UnsafeMutablePointer<UnsafePointer<Int8>?>?,
@@ -1648,10 +1652,10 @@ extension System {
                     (res: Result<SystemClient.Blockchain, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
-                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0) },
+                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0, $0.verifiedBlockHash) },
                         failure: { (e) in
                             print ("SYS: GetBlockNumber: Error: \(e)")
-                            cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0) })
+                            cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0, nil) })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
