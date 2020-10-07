@@ -70,7 +70,7 @@ class BRBlockChainDBTest: XCTestCase {
 
         expectation = XCTestExpectation (description: "currencies")
 
-        client.getCurrencies { (res: Result<[SystemClient.Currency], SystemClientError>) in
+        client.getCurrencies (mainnet: true) { (res: Result<[SystemClient.Currency], SystemClientError>) in
             guard case let .success (currencies) = res
                 else { XCTAssert(false); return }
 
@@ -227,7 +227,8 @@ class BRBlockChainDBTest: XCTestCase {
                                 addresses: [],
                                 begBlockNumber: 0,
                                 endBlockNumber: 1,
-                                includeRaw: true) {
+                                includeRaw: true,
+                                includeTransfers: false) {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
@@ -247,7 +248,8 @@ class BRBlockChainDBTest: XCTestCase {
                                 addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                                 begBlockNumber: nil,
                                 endBlockNumber: nil,
-                                includeRaw: true) {
+                                includeRaw: true,
+                                includeTransfers: false) {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
@@ -267,7 +269,8 @@ class BRBlockChainDBTest: XCTestCase {
                                 addresses: ["2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"],
                                 begBlockNumber: 1446080,
                                 endBlockNumber: 1446090,
-                                includeRaw: false) {
+                                includeRaw: false,
+                                includeTransfers: false) {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
                                         else { XCTAssert(false); return }
@@ -289,6 +292,7 @@ class BRBlockChainDBTest: XCTestCase {
                                 endBlockNumber: 1446090,
                                 includeRaw: false,
                                 includeProof: false,
+                                includeTransfers: false,
                                 maxPageSize: 1) {
                                     (res: Result<[SystemClient.Transaction], SystemClientError>) in
                                     guard case let .success (transactions) = res
@@ -321,7 +325,7 @@ class BRBlockChainDBTest: XCTestCase {
         }
 
         wait (for: [expectation], timeout: 60)
-
+        #endif
     }
 
     func testBlocks () {

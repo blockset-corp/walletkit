@@ -36,7 +36,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         XCTAssertTrue (system     === manager.system)
         //      XCTAssertTrue (account === manager.account)
         XCTAssertTrue (network  == manager.network)
-        XCTAssertTrue (query   === manager.query)
+        // XCTAssertTrue (query   === manager.query)
 
         XCTAssertTrue (manager === system.managerBy(core: manager.core))
 
