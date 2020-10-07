@@ -185,7 +185,9 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
     BREthereumEther ethAmount = transactionGetAmount(ethTransaction);
     BRCryptoAmount  amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethEtherGetValue (ethAmount, WEI));
 
-    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisLimit(ethTransaction));
+    // Get the estimated and confirmed feeBasis'.  If ethTransaction is not INCLUDDED, then the
+    // confirmedFeeBasis will be the estimate.
+    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisEstimated (ethTransaction));
     BRCryptoFeeBasis confirmedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasis(ethTransaction));
 
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));

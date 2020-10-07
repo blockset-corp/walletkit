@@ -260,10 +260,10 @@ cryptoWalletManagerEstimateFeeBasisETH (BRCryptoWalletManager manager,
         FEE_BASIS_GAS,
         { .gas = { walletETH->ethGasLimit, cryptoNetworkFeeAsETH (networkFee) }}
     };
-    
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis);
 
     BRCryptoCurrency currency = cryptoAmountGetCurrency (amount);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsETH (wallet->unitForFee, ethFeeBasis);
+
     BRCryptoTransfer transfer = cryptoWalletCreateTransferETH (wallet,
                                                                target,
                                                                amount,

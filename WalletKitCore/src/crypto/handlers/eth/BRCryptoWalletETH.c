@@ -190,7 +190,6 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
 
     BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = cryptoFeeBasisAsETH (estimatedFeeBasis);
-
     BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = cryptoAddressAsETH (target);
 
@@ -199,12 +198,16 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     UInt256 value = cryptoAmountGetValue (amount);
     char   *data  = cryptoTransferProvideOriginatingData (type, ethTargetAddress, value);
 
+    // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
+    // This helps to ensure that the transaction will be accepted into the blockchain rather than
+    // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
+    // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.
     BREthereumTransaction ethTransaction =
     transactionCreate (ethSourceAddress,
                        cryptoTransferProvideOriginatingTargetAddress (type, ethTargetAddress, ethToken),
                        cryptoTransferProvideOriginatingAmount (type, value),
                        ethFeeBasisGetGasPrice(ethFeeBasis),
-                       ethFeeBasisGetGasLimit(ethFeeBasis),
+                       gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
                        data,
                        TRANSACTION_NONCE_IS_NOT_ASSIGNED);
 
@@ -226,7 +229,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     BRCryptoTransfer transfer = cryptoTransferCreateAsETH (wallet->listenerTransfer,
                                                            unit,
                                                            unitForFee,
-                                                           estimatedFeeBasis,
+                                                           estimatedFeeBasis,  // w/o margin
                                                            amount,
                                                            direction,
                                                            source,
