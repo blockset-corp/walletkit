@@ -22,6 +22,7 @@ extern "C" {
 typedef enum {
     CRYPTO_NETWORK_EVENT_CREATED,
     CRYPTO_NETWORK_EVENT_FEES_UPDATED,
+    CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED,
     CRYPTO_NETWORK_EVENT_DELETED,
 } BRCryptoNetworkEventType;
 
@@ -30,9 +31,7 @@ cryptoNetworkEventTypeString (BRCryptoNetworkEventType t);
 
 typedef struct {
     BRCryptoNetworkEventType type;
-    union {
-        // fees
-    } u;
+    // No union; no data (at this time).
 } BRCryptoNetworkEvent;
 
 #ifdef __cplusplus

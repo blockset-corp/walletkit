@@ -21,11 +21,11 @@ public class BRCryptoWalletManagerEvent extends Structure {
     public static class u_union extends Union {
 
         public state_struct state;
-        public wallet_struct wallet;
+        public BRCryptoWallet wallet;
         public syncContinues_struct syncContinues;
         public syncStopped_struct syncStopped;
         public syncRecommended_struct syncRecommended;
-        public blockHeight_struct blockHeight;
+        public long blockHeight;
 
         public static class state_struct extends Structure {
 
@@ -55,36 +55,6 @@ public class BRCryptoWalletManagerEvent extends Structure {
             }
 
             public static class ByValue extends state_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class wallet_struct extends Structure {
-
-            public BRCryptoWallet value;
-
-            public wallet_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("value");
-            }
-
-            public wallet_struct(BRCryptoWallet value) {
-                super();
-                this.value = value;
-            }
-
-            public wallet_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends wallet_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends wallet_struct implements Structure.ByValue {
 
             }
         }
@@ -184,35 +154,6 @@ public class BRCryptoWalletManagerEvent extends Structure {
             }
         }
 
-        public static class blockHeight_struct extends Structure {
-
-            public long value;
-
-            public blockHeight_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("value");
-            }
-
-            public blockHeight_struct(long value) {
-                super();
-                this.value = value;
-            }
-
-            public blockHeight_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends blockHeight_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends blockHeight_struct implements Structure.ByValue {
-
-            }
-        }
 
         public u_union() {
             super();
@@ -224,10 +165,10 @@ public class BRCryptoWalletManagerEvent extends Structure {
             setType(state_struct.class);
         }
 
-        public u_union(wallet_struct wallet) {
+        public u_union(BRCryptoWallet wallet) {
             super();
             this.wallet = wallet;
-            setType(wallet_struct.class);
+            setType(BRCryptoWallet.class);
         }
 
         public u_union(syncContinues_struct syncContinues) {
@@ -248,10 +189,10 @@ public class BRCryptoWalletManagerEvent extends Structure {
             setType(syncRecommended_struct.class);
         }
 
-        public u_union(blockHeight_struct blockHeight) {
+        public u_union(long blockHeight) {
             super();
             this.blockHeight = blockHeight;
-            setType(blockHeight_struct.class);
+            setType(long.class);
         }
 
         public u_union(Pointer peer) {
@@ -294,7 +235,7 @@ public class BRCryptoWalletManagerEvent extends Structure {
         super.read();
         switch (type()){
             case CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED:
-                u.setType(u_union.blockHeight_struct.class);
+                u.setType(long.class);
                 u.read();
                 break;
             case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
@@ -316,7 +257,7 @@ public class BRCryptoWalletManagerEvent extends Structure {
             case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
             case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
             case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
-                u.setType(u_union.wallet_struct.class);
+                u.setType(BRCryptoWallet.class);
                 u.read();
                 break;
         }
