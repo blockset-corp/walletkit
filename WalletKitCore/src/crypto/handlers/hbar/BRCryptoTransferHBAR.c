@@ -139,5 +139,6 @@ BRCryptoTransferHandlers cryptoTransferHandlersHBAR = {
     cryptoTransferReleaseHBAR,
     cryptoTransferGetHashHBAR,
     cryptoTransferSerializeHBAR,
+    NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualHBAR
 };
