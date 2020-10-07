@@ -185,8 +185,8 @@ cryptoNetworkInitializeAccountBTC (BRCryptoNetwork network,
                                    size_t bytesCount) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerceANY (network);
     (void) networkBTC;
-
-return;
+    
+    return;
 }
 
 static BRCryptoHash

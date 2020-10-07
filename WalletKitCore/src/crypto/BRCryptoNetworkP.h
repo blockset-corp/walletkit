@@ -120,6 +120,7 @@ struct BRCryptoNetworkRecord {
     bool isMainnet;
 
     BRCryptoBlockNumber height;
+    BRCryptoHash verifiedBlockHash;
 
     // Base and associated currencies.
     BRCryptoCurrency currency;

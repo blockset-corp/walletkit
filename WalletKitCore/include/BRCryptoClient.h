@@ -33,7 +33,8 @@ extern void
 cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
-                        uint64_t blockNumber);
+                        uint64_t blockNumber,
+                        const char *verifiedBlockHash);
 
 // MARK: - Get Transactions
 

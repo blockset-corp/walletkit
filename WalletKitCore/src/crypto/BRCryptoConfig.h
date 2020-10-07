@@ -14,6 +14,7 @@
 #define HAS_ETH_TESTNET     0
 #define HAS_XRP_TESTNET     0
 #define HAS_HBAR_TESTNET    0
+#define HAS_XTZ_TESTNET     0
 
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)
@@ -185,7 +186,29 @@ DEFINE_MODES            ("hedera-testnet", CRYPTO_SYNC_MODE_API_ONLY)
 #endif
 #undef NETWORK_NAME
 
-// MARK: XLM
+// MARK: Tezos
+
+#define NETWORK_NAME    "Tezos"
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 52473542, 1, 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_CURRENCY ("tezos-mainnet",     "tezos-mainnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
+    DEFINE_UNIT ("tezos-mainnet:__native__",  "mutez",     "mutez",   0,  "mutez")
+    DEFINE_UNIT ("tezos-mainnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
+DEFINE_ADDRESS_SCHEMES  ("tezos-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
+DEFINE_MODES            ("tezos-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
+
+#if HAS_XTZ_TESTNET
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 1, 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
+    DEFINE_UNIT ("tezos-testnet:__native__",  "mutez",     "mutez",   0,  "mutez")
+    DEFINE_UNIT ("tezos-testnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
+DEFINE_ADDRESS_SCHEMES  ("tezos-testnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
+DEFINE_MODES            ("tezos-testnet", CRYPTO_SYNC_MODE_API_ONLY)
+#endif
+#undef NETWORK_NAME
+
+// MARK: XLM Mainnet
 
 #undef DEFINE_NETWORK
 #undef DEFINE_NETWORK_FEE_ESTIMATE

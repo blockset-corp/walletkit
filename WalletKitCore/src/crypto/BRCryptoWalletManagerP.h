@@ -94,7 +94,7 @@ typedef BRCryptoClientP2PManager
 
 typedef BRCryptoWallet
 (*BRCryptoWalletManagerCreateWalletHandler) (BRCryptoWalletManager cwm,
-                                               BRCryptoCurrency currency);
+                                             BRCryptoCurrency currency);
 
 typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
@@ -107,6 +107,7 @@ typedef void
 typedef BRCryptoFeeBasis
 (*BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (BRCryptoWalletManager cwm,
                                                                BRCryptoNetworkFee networkFee,
+                                                               BRCryptoFeeBasis initialFeeBasis,
                                                                double costUnits,
                                                                size_t attributesCount,
                                                                OwnershipKept const char **attributeKeys,
@@ -275,12 +276,13 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
 
 
 private_extern BRCryptoFeeBasis
-cryptoWalletManagerRecoverFeeBasisFromEstimate (BRCryptoWalletManager cwm,
-                                                BRCryptoNetworkFee networkFee,
-                                                double costUnits,
-                                                size_t attributesCount,
-                                                OwnershipKept const char **attributeKeys,
-                                                OwnershipKept const char **attributeVals);
+cryptoWalletManagerRecoverFeeBasisFromFeeEstimate (BRCryptoWalletManager cwm,
+                                                   BRCryptoNetworkFee networkFee,
+                                                   BRCryptoFeeBasis initialFeeBasis,
+                                                   double costUnits,
+                                                   size_t attributesCount,
+                                                   OwnershipKept const char **attributeKeys,
+                                                   OwnershipKept const char **attributeVals);
 
 static inline void
 cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,

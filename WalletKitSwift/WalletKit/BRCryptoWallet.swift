@@ -294,7 +294,7 @@ public final class Wallet: Equatable {
     public func estimateLimitMaximum (target: Address,
                                       fee: NetworkFee,
                                       completion: @escaping Wallet.EstimateLimitHandler) {
-        estimateLimit (asMaximum: true, target: target, fee: fee, completion: completion)
+        estimateLimit (asMaximum: true, target: target, fee: fee, attributes: nil, completion: completion)
     }
 
     ///
@@ -319,7 +319,7 @@ public final class Wallet: Equatable {
     public func estimateLimitMinimum (target: Address,
                                       fee: NetworkFee,
                                       completion: @escaping Wallet.EstimateLimitHandler) {
-        estimateLimit (asMaximum: false, target: target, fee: fee, completion: completion)
+        estimateLimit (asMaximum: false, target: target, fee: fee, attributes: nil, completion: completion)
     }
 
     ///
@@ -328,6 +328,7 @@ public final class Wallet: Equatable {
     internal func estimateLimit (asMaximum: Bool,
                                  target: Address,
                                  fee: NetworkFee,
+                                 attributes: Set<TransferAttribute>?,
                                  completion: @escaping Wallet.EstimateLimitHandler) {
         var needFeeEstimate: BRCryptoBoolean = CRYPTO_TRUE
         var isZeroIfInsuffientFunds: BRCryptoBoolean = CRYPTO_FALSE;
@@ -385,7 +386,7 @@ public final class Wallet: Equatable {
         if self != walletForFee {
             // This `amount` will not unusually be zero.
             // TODO: Does ETH fee estimation work if the ERC20 amount is zero?
-            self.estimateFee (target: target, amount: amount, fee: fee) {
+            self.estimateFee (target: target, amount: amount, fee: fee, attributes: attributes) {
                 (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                 switch res {
                 case .success (let feeBasis):
@@ -407,7 +408,7 @@ public final class Wallet: Equatable {
         // balance is enough to cover the (minimum) amount plus the fee
         //
         if !asMaximum {
-            self.estimateFee (target: target, amount: amount, fee: fee) {
+            self.estimateFee (target: target, amount: amount, fee: fee, attributes: attributes) {
                 (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                 switch res {
                 case .success (let feeBasis):
@@ -462,7 +463,7 @@ public final class Wallet: Equatable {
                 else if estimationCompleterRecurseCount < estimationCompleterRecurseLimit {
                     // but is they haven't converged try again with the new amount
                     transferFee = newTransferFee
-                    self.estimateFee (target: target, amount: newTransferAmount, fee: fee, completion: estimationCompleter)
+                    self.estimateFee (target: target, amount: newTransferAmount, fee: fee, attributes: attributes, completion: estimationCompleter)
                 }
 
                 else {
@@ -475,7 +476,7 @@ public final class Wallet: Equatable {
             }
         }
 
-        estimateFee (target: target, amount: amount, fee: fee, completion: estimationCompleter)
+        estimateFee (target: target, amount: amount, fee: fee, attributes: attributes, completion: estimationCompleter)
     }
 
     private func estimateLimitCompleteInQueue (_ completion: @escaping Wallet.EstimateLimitHandler,
@@ -525,8 +526,12 @@ public final class Wallet: Equatable {
     public func estimateFee (target: Address,
                              amount: Amount,
                              fee: NetworkFee,
-                             attributes: Set<TransferAttribute>? = nil,
+                             attributes: Set<TransferAttribute>?,
                              completion: @escaping Wallet.EstimateFeeHandler) {
+        if nil != attributes && nil != self.validateTransferAttributes(attributes!) {
+            assertionFailure()
+        }
+
         let coreAttributesCount = attributes?.count ?? 0
         var coreAttributes: [BRCryptoTransferAttribute?] = attributes?.map { $0.core } ?? []
         

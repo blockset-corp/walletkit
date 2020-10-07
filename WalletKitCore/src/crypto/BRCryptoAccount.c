@@ -31,7 +31,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 1: BTC (w/ BCH), ETH
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  3
+// Version 4: XTZ
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  4
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAccount, cryptoAccount);
 
@@ -77,6 +78,7 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
                              BREthereumAccount eth,
                              BRRippleAccount xrp,
                              BRHederaAccount hbar,
+                             BRTezosAccount xtz,
                              BRCryptoTimestamp timestamp,
                              const char *uids) {
     BRCryptoAccount account = malloc (sizeof (struct BRCryptoAccountRecord));
@@ -85,6 +87,7 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
     account->eth = eth;
     account->xrp = xrp;
     account->hbar = hbar;
+    account->xtz = xtz;
     account->uids = strdup (uids);
     account->timestamp = timestamp;
     account->ref = CRYPTO_REF_ASSIGN(cryptoAccountRelease);
@@ -100,6 +103,7 @@ cryptoAccountCreateFromSeedInternal (UInt512 seed,
                                         ethAccountCreateWithBIP32Seed(seed),
                                         rippleAccountCreateWithSeed (seed),
                                         hederaAccountCreateWithSeed(seed),
+                                        tezosAccountCreateWithSeed(seed),
                                         timestamp,
                                         uids);
 }
@@ -209,8 +213,16 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     BRHederaAccount hbar = hederaAccountCreateWithSerialization(bytesPtr, hbarSize);
     assert (NULL != hbar);
     BYTES_PTR_INCR_AND_CHECK (hbarSize); // Move the pointer to the end of the Hedera account
+    
+    // XTZ
+    size_t xtzSize = UInt32GetBE(bytesPtr);
+    BYTES_PTR_INCR_AND_CHECK (szSize);
 
-    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, AS_CRYPTO_TIMESTAMP (timestamp), uids);
+    BRTezosAccount xtz = tezosAccountCreateWithSerialization (bytesPtr, xtzSize);
+    assert (NULL != xtz);
+    BYTES_PTR_INCR_AND_CHECK (xtzSize); // Move the pointer to then end of the Tezos account
+
+    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, xtz, AS_CRYPTO_TIMESTAMP (timestamp), uids);
 #undef BYTES_PTR_INCR_AND_CHECK
 }
 
@@ -219,6 +231,7 @@ cryptoAccountRelease (BRCryptoAccount account) {
     ethAccountRelease(account->eth);
     rippleAccountFree(account->xrp);
     hederaAccountFree(account->hbar);
+    tezosAccountFree(account->xtz);
 
     free (account->uids);
     memset (account, 0, sizeof(*account));
@@ -264,14 +277,19 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     // HBAR
     size_t   hbarSize = 0;
-    uint8_t *hbarBytes = hederaAccountGetSerialization(account->hbar, &hbarSize);
+    uint8_t *hbarBytes = hederaAccountGetSerialization (account->hbar, &hbarSize);
+
+    // XTZ
+    size_t   xtzSize = 0;
+    uint8_t *xtzBytes = tezosAccountGetSerialization (account->xtz, &xtzSize);
 
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize
                    + (szSize + mpkSize)
                    + (szSize + ethSize)
                    + (szSize + xrpSize)
-                   + (szSize + hbarSize));
+                   + (szSize + hbarSize)
+                   + (szSize + xtzSize));
     uint8_t *bytes = calloc (1, *bytesCount);
     uint8_t *bytesPtr = bytes;
 
@@ -319,6 +337,13 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     memcpy (bytesPtr, hbarBytes, hbarSize);
     bytesPtr += hbarSize;
+    
+    // XTZ
+    UInt32SetBE (bytesPtr, (uint32_t) xtzSize);
+    bytesPtr += szSize;
+
+    memcpy (bytesPtr, xtzBytes, xtzSize);
+    bytesPtr += xtzSize;
 
     // Avoid static analysis warning
     (void) bytesPtr;
@@ -329,6 +354,7 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     free (xrpBytes);
     free (hbarBytes);
+    free (xtzBytes);
 
     return bytes;
 }
