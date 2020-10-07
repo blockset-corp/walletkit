@@ -1,6 +1,13 @@
-/**
-*/
-
+//
+//  BRHederaTransaction.c
+//  Core
+//
+//  Created by Carl Cherry on Oct. 16, 2019.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #include "BRHederaTransaction.h"
 #include "BRHederaCrypto.h"
 #include "BRHederaSerialize.h"
@@ -81,9 +88,8 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
     transaction->source = hederaAddressClone (source);
     transaction->target = hederaAddressClone (target);
     transaction->amount = amount;
-    transaction->fee = fee;
-    transaction->feeBasis.pricePerCostFactor = fee;
-    transaction->feeBasis.costFactor = 1;
+    transaction->feeBasis = (BRHederaFeeBasis) { fee, 1 };
+    transaction->fee = hederaFeeBasisGetFee(&transaction->feeBasis);
 
     // Parse the transactionID
     if (txID && strlen(txID) > 1) {
@@ -269,6 +275,11 @@ extern char * hederaTransactionGetTransactionId(BRHederaTransaction transaction)
         return strdup(transaction->transactionId);
     }
     return NULL;
+}
+
+extern BRHederaFeeBasis hederaTransactionGetFeeBasis (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->feeBasis;;
 }
 
 extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transaction)

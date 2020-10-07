@@ -237,29 +237,37 @@ public final class Network: CustomStringConvertible {
         self.uids = asUTF8String (cryptoNetworkGetUids (core))
         self.name = asUTF8String (cryptoNetworkGetName (core))
         self.isMainnet  = (CRYPTO_TRUE == cryptoNetworkIsMainnet (core))
-        self.type       = NetworkType (core: cryptoNetworkGetCanonicalType(core))
+        self.type       = NetworkType (core: cryptoNetworkGetType(core))
         self.currency   = Currency (core: cryptoNetworkGetCurrency(core), take: false)
     }
 
     internal static func findBuiltin (uids: String) -> Network? {
-        return cryptoNetworkFindBuiltin(uids)
+        return cryptoNetworkFindBuiltin(uids, uids.hasSuffix("mainnet"))
             .map { Network (core: $0, take: false) }
     }
 
-    internal static func installBuiltins () -> [Network] {
-        var builtinCoresCount: Int = 0
-        let builtinCores = cryptoNetworkInstallBuiltins (&builtinCoresCount)!
-        defer { cryptoMemoryFree (builtinCores) }
-
-        return builtinCores
-            .withMemoryRebound (to: BRCryptoNetwork.self, capacity: builtinCoresCount) {
-                Array (UnsafeBufferPointer (start: $0, count: builtinCoresCount))
-        }
-        .map { Network (core: $0, take: false) }
-    }
+//    internal static func installBuiltins (isMainnet: Bool = true) -> [Network] {
+//        var builtinCoresCount: Int = 0
+//        let builtinCores = cryptoNetworkInstallBuiltins (&builtinCoresCount, isMainnet)!
+//        defer { cryptoMemoryFree (builtinCores) }
+//
+//        return builtinCores
+//            .withMemoryRebound (to: BRCryptoNetwork.self, capacity: builtinCoresCount) {
+//                Array (UnsafeBufferPointer (start: $0, count: builtinCoresCount))
+//        }
+//        .map { Network (core: $0, take: false) }
+//    }
 
     public var description: String {
         return name
+    }
+
+    public static func getTypeFromName (name: String) -> NetworkType? {
+        var isMainnet: BRCryptoBoolean = CRYPTO_FALSE
+        let core = cryptoNetworkGetTypeFromName (name, &isMainnet)
+        return (core == BRCryptoBlockChainType (CRYPTO_NETWORK_TYPE_UNKNOWN)
+            ? nil
+            : NetworkType (core: core))
     }
 
     deinit {
@@ -282,6 +290,7 @@ extension Network: Hashable {
     }
 }
 
+#if false
 extension Network {
     internal var ethNetworkName: String? {
         if case .eth = type {
@@ -293,6 +302,21 @@ extension Network {
         }
     }
 }
+#endif
+
+//extension BRCryptoBlockChainType: BinaryInteger {
+//    public typealias Words = <#type#>
+//
+//    public typealias Magnitude = <#type#>
+//
+//    public static func + (lhs: BRCryptoBlockChainType, rhs: BRCryptoBlockChainType) -> BRCryptoBlockChainType {
+//        <#code#>
+//    }
+//
+//    public typealias IntegerLiteralType = <#type#>
+//
+//
+//}
 ///
 /// Try as we might, certain functionality outside of WalletKit will require knowing the
 /// canonical network type as: BTC, BCH, ETH, etc.  The NetworkType provides this information.
@@ -310,9 +334,10 @@ public enum NetworkType: CustomStringConvertible {
     case eth
     case xrp
     case hbar
+    case xtz
 //    case xlm
 
-    internal init (core: BRCryptoNetworkCanonicalType) {
+    internal init (core: BRCryptoBlockChainType) {
         switch core {
         case CRYPTO_NETWORK_TYPE_BTC:  self = .btc
         case CRYPTO_NETWORK_TYPE_BCH:  self = .bch
@@ -320,12 +345,13 @@ public enum NetworkType: CustomStringConvertible {
         case CRYPTO_NETWORK_TYPE_ETH:  self = .eth
         case CRYPTO_NETWORK_TYPE_XRP:  self = .xrp
         case CRYPTO_NETWORK_TYPE_HBAR: self = .hbar
+        case CRYPTO_NETWORK_TYPE_XTZ:  self = .xtz
 //        case CRYPTO_NETWORK_TYPE_XLM:  self = .xlm
         default: preconditionFailure()
         }
     }
 
-    internal var core: BRCryptoNetworkCanonicalType {
+    internal var core: BRCryptoBlockChainType {
         switch self {
         case .btc: return CRYPTO_NETWORK_TYPE_BTC
         case .bch: return CRYPTO_NETWORK_TYPE_BCH
@@ -333,12 +359,13 @@ public enum NetworkType: CustomStringConvertible {
         case .eth: return CRYPTO_NETWORK_TYPE_ETH
         case .xrp: return CRYPTO_NETWORK_TYPE_XRP
         case .hbar: return CRYPTO_NETWORK_TYPE_HBAR
+        case .xtz: return CRYPTO_NETWORK_TYPE_XTZ
 //        case .xml: return CRYPTO_NETWORK_TYPE_XLM
         }
     }
 
     public var description: String {
-        return "CRYPTO_NETWORK_TYPE_" + asUTF8String (cryptoNetworkCanonicalTypeGetCurrencyCode (core)).uppercased()
+        return "CRYPTO_NETWORK_TYPE_" + asUTF8String (cryptoBlockChainTypeGetCurrencyCode (core)).uppercased()
     }
 }
 
@@ -351,6 +378,30 @@ public enum NetworkEvent {
 
     // The netwok had its fees updated.
     case feesUpdated
+
+    // The network had its currencies updated.
+    case currenciesUpdated
+
+    case deleted
+
+    init (core: BRCryptoNetworkEvent) {
+        switch core.type {
+        case CRYPTO_NETWORK_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
+            self = .feesUpdated
+
+        case CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED:
+            self = .currenciesUpdated
+
+        case CRYPTO_NETWORK_EVENT_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///

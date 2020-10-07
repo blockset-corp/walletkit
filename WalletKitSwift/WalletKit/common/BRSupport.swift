@@ -211,6 +211,12 @@ extension Array {
     }
 }
 
+extension Sequence where Iterator.Element == String {
+    func caseInsensitiveContains(_ string: Element) -> Bool {
+        return self.contains { ComparisonResult.orderedSame == $0.caseInsensitiveCompare(string) }
+    }
+}
+
 extension Date {
     var asUnixTimestamp: UInt64 {
         let since1970 = self.timeIntervalSince1970

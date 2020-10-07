@@ -12,6 +12,7 @@
 #define BRCryptoAmountP_h
 
 #include "BRCryptoAmount.h"
+#include "support/BRInt.h"
 
 #ifdef __cplusplus
 extern "C" {

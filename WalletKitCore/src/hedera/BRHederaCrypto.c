@@ -1,6 +1,13 @@
-/**
-*/
-
+//
+//  BRHederaCrypto.c
+//  Core
+//
+//  Created by Carl Cherry on Oct. 16, 2019.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
 #include "BRHederaCrypto.h"
 #include "support/BRBIP32Sequence.h"
 #include "ed25519/ed25519.h"
@@ -66,6 +73,7 @@ static void _deriveKeyImpl(BRKey *key, const void *seed, size_t seedLen, int dep
         var_clean(&secret, &chainCode);
     }
 }
+#undef ED25519_SEED_KEY
 
 static void _hederaDeriveKey(BRKey *key, const void *seed, size_t seedLen, int depth, ...)
 {

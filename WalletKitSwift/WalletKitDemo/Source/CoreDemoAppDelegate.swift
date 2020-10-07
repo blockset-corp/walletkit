@@ -39,7 +39,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var accountSerialization: Data!
     var accountUids: String!
 
-    var query: BlockChainDB!
+    var client: SystemClient!
 
     var currencyCodesToMode: [String:WalletManagerMode]!
     var registerCurrencyCodes: [String]!
@@ -119,11 +119,12 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         currencyCodesToMode = [
             "btc" : .api_only,
-            "eth" : .api_only,
             "bch" : .api_only,
             "bsv" : .p2p_only,
+            "eth" : .api_only,
             "xrp" : .api_only,
-            "hbar" : .api_only
+            "hbar" : .api_only,
+            "xtz": .api_only
             ]
         if mainnet {
 
@@ -145,20 +146,24 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
                                      isMainnet: mainnet)
 
         // Create the BlockChainDB
-        query = BlockChainDB.createForTest ()
+        client = BlocksetSystemClient.createForTest ()
 
         // Create the system
-        self.system = System.create (listener: listener,
+        self.system = System.create (client: client,
+                                     listener: listener,
                                      account: account,
                                      onMainnet: mainnet,
-                                     path: storagePath,
-                                     query: query)
+                                     path: storagePath)
 
         System.wipeAll (atPath: storagePath, except: [self.system])
         
         // Subscribe to notificiations or not (Provide an endpoint if notifications are enabled).
         let subscriptionId = UIDevice.current.identifierForVendor!.uuidString
-        let subscription = BlockChainDB.Subscription (id: subscriptionId, endpoint: nil);
+        let subscriptionEp = BlocksetSystemClient.SubscriptionEndpoint (environment: "env", kind: "knd", value: "val")
+        let subscription = BlocksetSystemClient.Subscription (id: subscriptionId,
+                                                              device: "ignore",
+                                                              endpoint: subscriptionEp,
+                                                              currencies: []);
         self.system.subscribe (using: subscription)
 
         self.system.configure(withCurrencyModels: [])
@@ -262,11 +267,11 @@ extension UIApplication {
         print ("APP: Mainnet           : \(app.mainnet)")
 
         // Create a new system
-        app.system = System.create (listener: app.listener!,
+        app.system = System.create (client: app.client,
+                                    listener: app.listener!,
                                     account: account,
                                     onMainnet: app.listener.isMainnet,  // Wipe might change.
-                                    path: app.storagePath,
-                                    query: app.query)
+                                    path: app.storagePath)
 
         // Passing `[]`... it is a demo app...
         app.system.configure(withCurrencyModels: [])
@@ -310,11 +315,11 @@ extension UIApplication {
                     // Create the listener
                     app.listener.isMainnet = mainnet
 
-                    app.system = System.create (listener: app.listener!,
+                    app.system = System.create (client: app.client,
+                                                listener: app.listener!,
                                                 account: app.account,
                                                 onMainnet: mainnet,
-                                                path: app.storagePath,
-                                                query: app.query)
+                                                path: app.storagePath)
 
                     app.system.configure(withCurrencyModels: [])
                     alert.dismiss (animated: true) {
@@ -367,6 +372,7 @@ extension Network {
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"
+        case .xtz: return "tezos"
 //        case .xlm:  return "stellar"
         }
     }

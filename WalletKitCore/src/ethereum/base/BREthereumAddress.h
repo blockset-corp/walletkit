@@ -13,7 +13,7 @@
 
 #include <stdlib.h>
 #include "support/BRKey.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "BREthereumLogic.h"
 #include "BREthereumHash.h"
 

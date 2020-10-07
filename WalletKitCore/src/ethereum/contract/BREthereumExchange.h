@@ -58,9 +58,13 @@ ethExchangeInitializeIdentifier (BREthereumExchange exchange,
  * @return TRUE if recorded in a block, FALSE otherwise.
  */
 extern BREthereumBoolean
-ethExchangeExtractIdentifier (BREthereumExchange log,
+ethExchangeExtractIdentifier (BREthereumExchange exchange,
                               BREthereumHash *transactionHash,
                               size_t *exchangeIndex);
+
+// Will be EMPTY_HASH_INIT if no identifier
+extern BREthereumHash
+ethExchangeGetIdentifier (BREthereumExchange exchange);
 
 extern BREthereumHash
 ethExchangeGetHash (BREthereumExchange exchange);

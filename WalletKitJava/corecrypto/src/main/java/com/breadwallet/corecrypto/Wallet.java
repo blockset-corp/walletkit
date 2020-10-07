@@ -87,12 +87,6 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
     }
 
     @Override
-    public Optional<TransferFeeBasis> createTransferFeeBasis(com.breadwallet.crypto.Amount pricePerCostFactor, double costFactor) {
-        BRCryptoAmount corePricePerCostFactor = Amount.from(pricePerCostFactor).getCoreBRCryptoAmount();
-        return core.createTransferFeeBasis(corePricePerCostFactor, costFactor).transform(TransferFeeBasis::create);
-    }
-
-    @Override
     public Optional<Transfer> createTransfer(com.breadwallet.crypto.Address target,
                                              com.breadwallet.crypto.Amount amount,
                                              com.breadwallet.crypto.TransferFeeBasis estimatedFeeBasis,
@@ -115,7 +109,7 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
                                       com.breadwallet.crypto.TransferFeeBasis estimatedFeeBasis) {
         BRCryptoWalletSweeper coreSweeper = sweeper.getCoreBRWalletSweeper();
         BRCryptoFeeBasis coreFeeBasis = TransferFeeBasis.from(estimatedFeeBasis).getCoreBRFeeBasis();
-        return core.createTransferForWalletSweep(coreSweeper, coreFeeBasis).transform(t -> Transfer.create(t, this));
+        return core.createTransferForWalletSweep(coreSweeper, getWalletManager().getCoreBRCryptoWalletManager(), coreFeeBasis).transform(t -> Transfer.create(t, this));
     }
 
     /* package */

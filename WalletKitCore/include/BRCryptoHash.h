@@ -17,18 +17,18 @@
 extern "C" {
 #endif
 
-    typedef struct BRCryptoHashRecord *BRCryptoHash;
+typedef struct BRCryptoHashRecord *BRCryptoHash;
 
-    extern BRCryptoBoolean
-    cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2);
+extern BRCryptoBoolean
+cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2);
 
-    extern char *
-    cryptoHashString (BRCryptoHash hash);
+extern OwnershipGiven char *
+cryptoHashEncodeString (BRCryptoHash hash);
 
-    extern int
-    cryptoHashGetHashValue (BRCryptoHash hash);
+extern int
+cryptoHashGetHashValue (BRCryptoHash hash);
 
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoHash, cryptoHash);
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoHash, cryptoHash);
 
 #ifdef __cplusplus
 }

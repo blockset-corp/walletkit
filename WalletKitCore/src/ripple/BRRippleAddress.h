@@ -125,6 +125,9 @@ extern BRRippleAddress rippleAddressClone (BRRippleAddress address);
 extern int // 1 if equal
 rippleAddressEqual (BRRippleAddress a1, BRRippleAddress a2);
 
+extern size_t
+rippleAddressHashValue (BRRippleAddress address);
+
 #ifdef __cplusplus
 }
 #endif

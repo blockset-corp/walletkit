@@ -48,7 +48,6 @@
 #include "bitcoin/BRChainParams.h"
 #include "bitcoin/BRPaymentProtocol.h"
 #include "bitcoin/BRTransaction.h"
-#include "bitcoin/BRWalletManager.h"
 
 #include "test.h"
 

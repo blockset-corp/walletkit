@@ -12,18 +12,24 @@
 #define BRCryptoTransferP_h
 
 #include <pthread.h>
+#include "support/BRArray.h"
 
 #include "BRCryptoTransfer.h"
+#include "BRCryptoNetwork.h"
 #include "BRCryptoBaseP.h"
 
-#include "bitcoin/BRWallet.h"
-#include "bitcoin/BRTransaction.h"
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// MARK: - Transfer State
+
+private_extern bool
+cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
+                            const BRCryptoTransferState *s2);
+
+// MARK: - Transfer Confirmation
 
 typedef struct {
     uint64_t blockNumber;
@@ -32,25 +38,47 @@ typedef struct {
     BRCryptoAmount fee; // ouch; => cant be a struct
 } BRCryptoTransferConfirmation;
 
+// MARK: - Transfer Handlers
+
+typedef void
+(*BRCryptoTransferReleaseHandler) (BRCryptoTransfer transfer);
+
+typedef BRCryptoHash
+(*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
+
+typedef uint8_t *
+(*BRCryptoTransferSerializeHandler) (BRCryptoTransfer transfer,
+                                     BRCryptoNetwork  network,
+                                     BRCryptoBoolean  requireSignature,
+                                     size_t *serializationCount);
+
+typedef uint8_t *
+(*BRCryptoTransferGetBytesForFeeEstimateHandler) (BRCryptoTransfer transfer,
+                                                  BRCryptoNetwork  network,
+                                                  size_t *bytesCount);
+
+typedef int // 1 if equal, 0 if not
+(*BRCryptoTransferIsEqualHandler) (BRCryptoTransfer t1,
+                                   BRCryptoTransfer t2);
+
+typedef struct {
+    BRCryptoTransferReleaseHandler release;
+    BRCryptoTransferGetHashHandler getHash;
+    BRCryptoTransferSerializeHandler serialize;
+    BRCryptoTransferGetBytesForFeeEstimateHandler getBytesForFeeEstimate;
+    BRCryptoTransferIsEqualHandler isEqual;
+} BRCryptoTransferHandlers;
+
+/// MARK: - Transfer
 
 struct BRCryptoTransferRecord {
-    pthread_mutex_t lock;
-
     BRCryptoBlockChainType type;
-    union {
-        struct {
-            BRTransaction *tid;
-            uint64_t fee;
-            uint64_t send;
-            uint64_t recv;
-        } btc;
-        struct {
-            BREthereumEWM ewm;
-            BREthereumTransfer tid;
-            BREthereumAddress accountAddress;
-        } eth;
-        BRGenericTransfer gen;
-    } u;
+    const BRCryptoTransferHandlers *handlers;
+    BRCryptoRef ref;
+    size_t sizeInBytes;
+
+    pthread_mutex_t lock;
+    BRCryptoTransferListener listener;
 
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
@@ -69,11 +97,32 @@ struct BRCryptoTransferRecord {
 
     /// Actually this can be derived from { btc.fee / txSize(btc.tid), txSize(btc.tid) }
     BRCryptoFeeBasis feeBasisEstimated;
+    
+    BRCryptoTransferDirection direction;
+    
+    /// The amount (unsigned value).
+    BRCryptoAmount amount;
 
     BRArrayOf(BRCryptoTransferAttribute) attributes;
-
-    BRCryptoRef ref;
 };
+
+typedef void *BRCryptoTransferCreateContext;
+typedef void (*BRCryptoTransferCreateCallback) (BRCryptoTransferCreateContext context,
+                                                BRCryptoTransfer transfer);
+
+extern BRCryptoTransfer
+cryptoTransferAllocAndInit (size_t sizeInBytes,
+                            BRCryptoBlockChainType type,
+                            BRCryptoTransferListener listener,
+                            BRCryptoUnit unit,
+                            BRCryptoUnit unitForFee,
+                            BRCryptoFeeBasis feeBasisEstimated,
+                            BRCryptoAmount amount,
+                            BRCryptoTransferDirection direction,
+                            BRCryptoAddress sourceAddress,
+                            BRCryptoAddress targetAddress,
+                            BRCryptoTransferCreateContext  createContext,
+                            BRCryptoTransferCreateCallback createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
@@ -82,53 +131,25 @@ private_extern void
 cryptoTransferSetState (BRCryptoTransfer transfer,
                         BRCryptoTransferState state);
 
-private_extern BRCryptoTransfer
-cryptoTransferCreateAsBTC (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BRWallet *wid,
-                           OwnershipKept BRTransaction *tid,
-                           BRCryptoBoolean isBTC); // TRUE if BTC; FALSE if BCH
-
-private_extern BRCryptoTransfer
-cryptoTransferCreateAsETH (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BREthereumEWM ewm,
-                           BREthereumTransfer tid,
-                           BRCryptoFeeBasis feeBasisEstimated);
-
-extern BRCryptoTransfer
-cryptoTransferCreateAsGEN (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-                           BRGenericTransfer tid);
-
-private_extern void
-cryptoTransferSetConfirmedFeeBasis (BRCryptoTransfer transfer,
-                                    BRCryptoFeeBasis feeBasisConfirmed);
-
-private_extern BRTransaction *
-cryptoTransferAsBTC (BRCryptoTransfer transfer);
-
-private_extern BREthereumTransfer
-cryptoTransferAsETH (BRCryptoTransfer transfer);
-
-private_extern BRGenericTransfer
-cryptoTransferAsGEN (BRCryptoTransfer transfer);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasBTC (BRCryptoTransfer transfer,
-                      BRTransaction *btc);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasETH (BRCryptoTransfer transfer,
-                      BREthereumTransfer eth);
-
-private_extern BRCryptoBoolean
-cryptoTransferHasGEN (BRCryptoTransfer transfer,
-                      BRGenericTransfer gen);
-
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
-                             OwnershipKept BRArrayOf(BRCryptoTransferAttribute) attributes);
+                             size_t attributesCount,
+                             OwnershipKept BRCryptoTransferAttribute *attributes);
+
+static inline void
+cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
+                             BRCryptoTransferEvent event) {
+    cryptoListenerGenerateTransferEvent(&transfer->listener, transfer, event);
+}
+
+private_extern BRCryptoAmount
+cryptoTransferGetEstimatedFee (BRCryptoTransfer transfer);
+
+private_extern BRCryptoAmount
+cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer);
+
+private_extern BRCryptoFeeBasis
+cryptoTransferGetFeeBasis (BRCryptoTransfer transfer);
 
 #ifdef __cplusplus
 }

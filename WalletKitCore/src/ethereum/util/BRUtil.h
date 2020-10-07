@@ -11,7 +11,7 @@
 #ifndef BR_Util_H
 #define BR_Util_H
 
-#include "BRUtilHex.h"
+#include "support/util/BRHex.h"
 #include "BRUtilMath.h"
 
 #define eth_log(topic, formatter, ...)   _eth_log("ETH: %s: " formatter "\n", (topic), __VA_ARGS__)

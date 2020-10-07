@@ -24,12 +24,9 @@
 #include "support/BRSet.h"
 #include "support/BRCrypto.h"
 #include "support/BRBIP39WordsEn.h"
-#include "ethereum/event/BREventAlarm.h"
+#include "support/event/BREventAlarm.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
-#include "ethereum/ewm/BREthereumAccount.h"
-#include "ethereum/ewm/BREthereumWallet.h"
-#include "ethereum/ewm/BREthereumTransfer.h"
-#include "ethereum/BREthereum.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 
 #include "test.h"
 
@@ -89,6 +86,8 @@ void runAddressTests (BREthereumAccount account) {
 
     free ((void *) addressString);
 }
+
+#if REFACTOR
 
 //
 // Transaction Tests
@@ -322,7 +321,7 @@ void runTransactionTests (BREthereumAccount account, BREthereumNetwork network) 
     runTransactionTests3 (account, network);
     runTransactionTests4 (account, network);
 }
-
+#endif
 //
 // Account Tests
 //
@@ -333,12 +332,13 @@ void runAccountTests () {
     
     printf ("==== Account: %p\n", account);
     runAddressTests(account);
-    runTransactionTests(account, network);
+//    runTransactionTests(account, network);
     
     ethAccountRelease (account);
     printf ("\n\n");
 }
 
+#if REFACTOR
 //
 // EWM Tests
 //
@@ -497,17 +497,20 @@ void testTransactionCodingToken () {
 }
 
 
+#endif // REFACTOR
 
 //
 // All Tests
 //
+#define TEST_CODER_SIGNED_TX "f8a90184773594008301676094dd974d5c2e2928dea5f71b9825b8b646686bd20080b844a9059cbb00000000000000000000000049f4c50d9bcc7afdbcf77e0d6e364c29d5a660df00000000000000000000000000000000000000000000000002c68af0bb14000025a09d4477bf97f638e1007d897bfd29a2053e2187a6d92c0e186ec98d81d291bf87a07f8c9e24255970b6282d3a21aa146add70b65f74a463eac54b2b11015bc37fbe"
+
 extern void
 runPerfTestsCoder (int repeat, int many) {
     BRRlpCoder coder = rlpCoderCreate();
     BRRlpCoder coderSaved = coder;
 
     BRRlpData data;
-    data.bytes = hexDecodeCreate(&data.bytesCount, TEST_TRANS4_SIGNED_TX, strlen (TEST_TRANS4_SIGNED_TX));
+    data.bytes = hexDecodeCreate(&data.bytesCount, TEST_CODER_SIGNED_TX, strlen (TEST_CODER_SIGNED_TX));
 
     BRRlpItem item = rlpDataGetItem(coder, data);
     BREthereumTransaction transaction = transactionRlpDecode(item, ethNetworkMainnet, RLP_TYPE_TRANSACTION_SIGNED, coder);
@@ -531,27 +534,25 @@ runPerfTestsCoder (int repeat, int many) {
     rlpCoderRelease(coderSaved);
 }
 
-
+#if REFACTOR
 extern void
 installTokensForTest (void);
+#endif
 
 extern void
 runTests (int reallySend) {
-    installSharedWordList(BRBIP39WordsEn, BIP39_WORDLIST_COUNT);
-    installTokensForTest ();
+//    installSharedWordList(BRBIP39WordsEn, BIP39_WORDLIST_COUNT);
+//    installTokensForTest ();
 
     // Initialize tokens
-//    tokenGet(0);
     runAccountTests();
-    testTransactionCodingEther ();
-    testTransactionCodingToken ();
+//    testTransactionCodingEther ();
+//    testTransactionCodingToken ();
 
 //*    if (reallySend) testReallySend();
     printf ("Done\n");
 }
 
-extern void
-installTokensForTest (void);
 
 #if defined (TEST_ETHEREUM_NEED_MAIN)
 int main(int argc, const char *argv[]) {
@@ -565,4 +566,3 @@ int main(int argc, const char *argv[]) {
     runTests(0);
 }
 #endif
-

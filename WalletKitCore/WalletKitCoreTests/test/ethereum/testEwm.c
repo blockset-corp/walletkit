@@ -12,9 +12,9 @@
 #include <time.h>
 #include <assert.h>
 #include <unistd.h>
-#include "ethereum/event/BREventAlarm.h"
-#include "ethereum/ewm/BREthereumEWMPrivate.h"
+#include "support/event/BREventAlarm.h"
 
+#if REFACTOR
 //
 // EWM Tests
 //
@@ -924,3 +924,5 @@ runEWMTests (const char *paperKey,
     runEWM_TOKEN_test (paperKey, storagePath);
     runEWM_PUBLIC_KEY_test (ethNetworkMainnet, paperKey, storagePath);
 }
+
+#endif

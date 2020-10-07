@@ -13,9 +13,12 @@ import com.breadwallet.crypto.events.transfer.DefaultTransferListener;
 import com.breadwallet.crypto.events.wallet.DefaultWalletListener;
 import com.breadwallet.crypto.events.walletmanager.DefaultWalletManagerListener;
 
-public interface DefaultSystemListener extends SystemListener, DefaultWalletManagerListener, DefaultWalletListener, DefaultTransferListener, DefaultNetworkListener {
+public interface DefaultSystemListener extends SystemListener,
+        DefaultWalletManagerListener,
+        DefaultWalletListener,
+        DefaultTransferListener,
+        DefaultNetworkListener {
 
     default void handleSystemEvent(System system, SystemEvent event) {
-
     }
 }

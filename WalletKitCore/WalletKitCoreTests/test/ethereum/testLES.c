@@ -28,12 +28,11 @@
 #include "support/BRCrypto.h"
 #include "support/BROSCompat.h"
 #include "ethereum/base/BREthereumHash.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/les/BREthereumLESRandom.h"
 #include "ethereum/les/BREthereumLES.h"
 #include "ethereum/les/BREthereumNode.h"
-
-#include "ethereum/BREthereum.h"
 
 #define TST_LOG_TOPIC    "TST"
 

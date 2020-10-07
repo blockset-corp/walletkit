@@ -120,12 +120,12 @@ testRippleTransactionGetters (void /* ... */) {
     BRRippleAccount account = rippleAccountCreate(paper_key);
     BRRippleFeeBasis feeBasis;
     feeBasis.pricePerCostFactor = 10;
-    feeBasis.costFactor = 1;
+    feeBasis.costFactor = 2;
     transaction = rippleTransactionCreate(sourceAddress, targetAddress, 1000000, feeBasis);
     assert(transaction);
 
     uint64_t fee = rippleTransactionGetFee(transaction);
-    assert(fee == 0); // before serialization
+    assert(fee == 20); // before serialization, from feeBasis
     
     uint64_t amount = rippleTransactionGetAmount(transaction);
     assert(amount == 1000000);
@@ -588,60 +588,41 @@ const char * tx_one = "120000228007000024002BD71F201B02CF99B861D5838D7EA4C680000
 
 const char * tx_two = "1200002200000000240000003E6140000002540BE40068400000000000000A7321034AADB09CFF4A4804073701EC53C3510CDC95917C2BB0150FB742D0C66E6CEE9E74473045022022EB32AECEF7C644C891C19F87966DF9C62B1F34BABA6BE774325E4BB8E2DD62022100A51437898C28C2B297112DF8131F2BB39EA5FE613487DDD611525F17962646398114550FC62003E785DC231A1058A05E56E3F09CF4E68314D4CC8AB5B21D86A82C3E9E8D0ECF2404B77FECBA";
 
-static void createAndDeleteWallet()
+static void createAndDeleteAccount()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
-    rippleWalletFree(wallet);
+    rippleAccountFree(account);
 }
 
 static void testWalletValues()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
 
-    BRRippleBalance balance = rippleWalletGetBalance(wallet);
-    assert(balance == 0);
-
-    BRRippleBalance expected_balance = 25000000;
-    rippleWalletSetBalance(wallet, expected_balance);
-    balance = rippleWalletGetBalance(wallet);
-    assert(balance == expected_balance);
-
-    // Set the wallet's feeBasis and then confirm.
-    rippleWalletSetDefaultFeeBasis(wallet, (BRRippleFeeBasis) { 10, 1});
-    BRRippleFeeBasis newFeeBasis = rippleWalletGetDefaultFeeBasis(wallet);
+    BRRippleFeeBasis newFeeBasis = rippleAccountGetDefaultFeeBasis(account);
     assert(10 == newFeeBasis.pricePerCostFactor);
     assert( 1 == newFeeBasis.costFactor);
-
-    rippleWalletFree(wallet);
 }
 
-static void testWalletAddress()
+static void testAccountAddress()
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
-    BRRippleWallet wallet = rippleWalletCreate(account);
-    assert(wallet);
 
     uint8_t accountBytes[] = { 0xEF, 0xFC, 0x27, 0x52, 0xB5, 0xC9, 0xDA, 0x22, 0x88, 0xC5,
         0xD0, 0x1F, 0x30, 0x4E, 0xC8, 0x29, 0x51, 0xE3, 0x7C, 0xA2 };
 
-    BRRippleAddress sourceAddress = rippleWalletGetSourceAddress(wallet);
+    BRRippleAddress sourceAddress = rippleAccountGetAddress(account);
     BRRippleAddress accountAddress = rippleAddressCreateFromBytes(accountBytes, 20);
     assert(1 == rippleAddressEqual(sourceAddress, accountAddress));
 
-    BRRippleAddress targetAddress = rippleWalletGetTargetAddress(wallet);
+    BRRippleAddress targetAddress = rippleAccountGetAddress(account);
     assert(1 == rippleAddressEqual(targetAddress, accountAddress));
 
     rippleAddressFree(sourceAddress);
     rippleAddressFree(accountAddress);
     rippleAddressFree(targetAddress);
-    rippleWalletFree(wallet);
 }
 
 static void checkRippleEncodeAddress (const char *addr) {
@@ -801,6 +782,7 @@ void rippleAccountTests()
     testCreateRippleAccountWithSeed();
     testCreateRippleAccountWithKey();
     testCreateRippleAccountWithSerializedAccount();
+    createAndDeleteAccount();
     testRippleEncode();
     testRippleAddressCreate();
     testRippleAddressEqual();
@@ -825,12 +807,6 @@ void rippleTransactionTests()
     testTransactionDeserialize1(tx_two);
 }
 
-static void runWalletTests()
-{
-    createAndDeleteWallet();
-    testWalletValues();
-    testWalletAddress();
-}
 
 static void comparebuffers(const char *input, uint8_t * output, size_t outputSize)
 {
@@ -1016,14 +992,16 @@ static void submitWithoutDestinationTag() {
     rippleAccountFree(sourceAccount);
 }
 
+#if 0 // No BRRippleWallet; No BRRippleTransfer
 static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expected_sequence,
-                                          int addFailedFirstTransfer)
+                                          int addFailedFirstTransfer, int addFailedSentTransfersFromBlockset)
 {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     BRRippleAccount account = rippleAccountCreate(paper_key);
     BRRippleAddress address = rippleAccountGetPrimaryAddress(account);
     BRRippleWallet wallet = rippleWalletCreate(account);
     assert(wallet);
+    uint8_t hashByte = 0;
 
     const char * target_paper_key = "choose color rich dose toss winter dutch cannon over air cash market";
     BRRippleAccount targetAccount = rippleAccountCreate(target_paper_key);
@@ -1045,12 +1023,32 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
     rippleTransferFree(transfer);
 
     // Add 2 more receives
-    hash.bytes[0] = 1; // needs a different hash
+    hash.bytes[0] = hashByte++; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 10000000, 12, hash, 0, start_block + 10, 0);
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
-    hash.bytes[0] = 2; // needs a different hash
+    hash.bytes[0] = hashByte++; // needs a different hash
     transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 20, 0);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    // Add 1 failed receive
+    hash.bytes[0] = hashByte++; // needs a different hash
+    transfer = rippleTransferCreate(targetAddress, address, 5000000, 12, hash, 0, start_block + 30, 1);
+    rippleWalletAddTransfer(wallet, transfer);
+    rippleTransferFree(transfer);
+
+    for (int i = 0; i < addFailedSentTransfersFromBlockset; i++) {
+        // Add 1 failed send from blockset
+        hash.bytes[0] = hashByte++; // needs a different hash
+        transfer = rippleTransferCreate(address, targetAddress, 5000000, 12, hash, 0, start_block + 40, 1);
+        rippleWalletAddTransfer(wallet, transfer);
+        rippleTransferFree(transfer);
+    }
+
+    // Always add in a failed local transfer (i.e. blockHeight is 0), since one is not
+    // in blockset and it failed it should not increment the sequence number
+    transfer = rippleTransferCreate(address, targetAddress, 5000000, 12, hash, 0, 0, 1);
     rippleWalletAddTransfer(wallet, transfer);
     rippleTransferFree(transfer);
 
@@ -1077,22 +1075,55 @@ static void testStartingSequenceFromBlock(uint64_t start_block, uint32_t expecte
 
 static void testStartingSequence()
 {
-    testStartingSequenceFromBlock(40000000, 1, 0); // Just an old account created at 40000000
-    testStartingSequenceFromBlock(40000000, 1, 1); // This time with a failed first transfer
-    testStartingSequenceFromBlock(55313920, 1, 0); // The last block before the new behavior
-    testStartingSequenceFromBlock(55313920, 1, 1); // This time with a failed first transfer
-    testStartingSequenceFromBlock(55313921, 55313921, 0); // The first block after the new behavior
-    testStartingSequenceFromBlock(55313921, 55313921, 1); // This time with a failed first transfer
+    // Test 1 - just a regular old block
+    int failedBlocksetCount = 1;
+    // Test 1A - an old account created at block 40000000 (sequence = 1)
+    testStartingSequenceFromBlock(40000000, 1, 0, 0); // Just an old account created at 40000000
+    // Test 1B - old account, failed first received tranfer (sequence = 1)
+    testStartingSequenceFromBlock(40000000, 1, 1, 0); // Just an old account created at 40000000
+    // Test 1C - old account, failed blockset send, sequence = 2
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 0, failedBlocksetCount);
+    // Test 1D - old account, failed first receive, failed blockset send, sequence = 2
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+    // Test 1E - old account, failed first receive, 3 failed blockset sends, sequence = 4
+    failedBlocksetCount = 3;
+    testStartingSequenceFromBlock(40000000, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+
+    // Test 2 - the block just before the protocol change to add AccountDelete which changed
+    // the starting sequence, same tests as above
+    failedBlocksetCount = 1;
+    testStartingSequenceFromBlock(55313920, 1, 0, 0);
+    testStartingSequenceFromBlock(55313920, 1, 1, 0);
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 0, failedBlocksetCount);
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+    failedBlocksetCount = 20;
+    testStartingSequenceFromBlock(55313920, 1 + failedBlocksetCount, 1, failedBlocksetCount);
+
+    // Now an account that is created in the first block where the protocol change happened
+    failedBlocksetCount = 1;
+    // 1A - simple new account (sequence = first block)
+    testStartingSequenceFromBlock(55313921, 55313921, 0, 0);
+    // 1B - new account with failed first incoming transfer (sequence = first block)
+    testStartingSequenceFromBlock(55313921, 55313921, 1, 0);
+    // 1C - new account with failed first send from blockset (sequence = first block + 1)
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 0, failedBlocksetCount);
+    // 1D - new account with failed first incoming and failed first send from blockset (sequence = first block + 1)
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 1, failedBlocksetCount);
+    // 1E - new account with failed first incoming and 5 failed first send from blockset (sequence = first block + 5)
+    failedBlocksetCount = 5;
+    testStartingSequenceFromBlock(55313921, 55313921 + failedBlocksetCount, 1, failedBlocksetCount);
 }
 
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
+#endif // No BRRippleWallet; No BRRippleTransfer
 
 extern void
 runRippleTest (void /* ... */) {
 
+#if 0 // No BRRippleWallet; No BRRippleTransfer
     testStartingSequence();
-
+#endif
     // Read data from external file and deserialize
     runDeserializeTests("200 new transaction", test_tx_list, (int)(sizeof(test_tx_list)/sizeof(char*)));
     runDeserializeTests("200 old transactions", test_tx_list2, (int)(sizeof(test_tx_list2)/sizeof(char*)));
@@ -1104,7 +1135,9 @@ runRippleTest (void /* ... */) {
     rippleTransactionTests();
 
     // Wallet tests
+#if 0 // No BRRippleWallet; No BRRippleTransfer
     runWalletTests();
+#endif
 
     // getAccountInfo is just a utility to print out info if needed
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";

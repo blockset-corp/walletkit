@@ -42,6 +42,18 @@ pthread_setname_brd(pthread_t thread,  const char *name) {
 #endif
 }
 
+extern int
+pthread_mutex_init_brd (pthread_mutex_t *mutex, int type) {
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, type);
+
+    int result = pthread_mutex_init(mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+
+    return result;
+}
+
 extern void
 pthread_yield_brd (void) {
 #if defined (__ANDROID__) || defined (__linux__)

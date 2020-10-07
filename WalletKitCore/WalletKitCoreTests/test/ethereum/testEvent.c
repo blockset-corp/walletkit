@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
-#include "ethereum/event/BREvent.h"
-#include "ethereum/event/BREventAlarm.h"
+#include "support/event/BREvent.h"
+#include "support/event/BREventAlarm.h"
 
 static pthread_cond_t testEventAlarmConditional = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t testEventAlarmMutex = PTHREAD_MUTEX_INITIALIZER;

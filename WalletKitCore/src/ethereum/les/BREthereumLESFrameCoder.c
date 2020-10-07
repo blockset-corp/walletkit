@@ -13,7 +13,7 @@
 #include "support/BRCrypto.h"
 #include "support/BRKey.h"
 #include "bitcoin/BRBIP38Key.h"
-#include "ethereum/rlp/BRRlpCoder.h"
+#include "support/rlp/BRRlpCoder.h"
 #include "ethereum/util/BRKeccak.h"
 #include "BREthereumLESFrameCoder.h"
 

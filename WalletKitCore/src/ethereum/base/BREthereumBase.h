@@ -16,7 +16,7 @@
 #include "support/BRBase.h"
 #include "support/BRSet.h"
 #include "ethereum/util/BRUtil.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 
 // All 'base'
 #include "BREthereumLogic.h"

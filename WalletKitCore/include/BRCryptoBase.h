@@ -13,9 +13,11 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
+#include <assert.h>
 
 // temporary
 
@@ -32,9 +34,14 @@ extern "C" {
 #endif
     extern const char* cryptoVersion;
 
-    typedef struct BRCryptoWalletRecord *BRCryptoWallet;
-
-    typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager;
+    // Forward Declarations - Required for BRCryptoListener
+    typedef struct BRCryptoTransferRecord      *BRCryptoTransfer;
+    typedef struct BRCryptoWalletRecord        *BRCryptoWallet;        // BRCrypto{Transfer,Payment}
+    typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager; // BRCrypto{Wallet,Transfer,Payment}
+    typedef struct BRCryptoNetworkRecord       *BRCryptoNetwork;
+    typedef struct BRCryptoSystemRecord        *BRCryptoSystem;        // BRCrypto{Manager,Wallet,Transfer,Payment}
+    typedef struct BRCryptoListenerRecord      *BRCryptoListener;
+    typedef void  *BRCryptoListenerContext;
 
     // Cookies are used as markers to match up an asynchronous operation
     // request with its corresponding event.
@@ -56,11 +63,22 @@ extern "C" {
         free (memory);
     }
 
+    // Same as: BRBlockHeight
+    typedef uint64_t BRCryptoBlockNumber;
 #if !defined(BLOCK_HEIGHT_UNBOUND)
 // See BRBase.h
 #define BLOCK_HEIGHT_UNBOUND       (UINT64_MAX)
 #endif
 extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
+
+#define BLOCK_NUMBER_UNKNWON        (BLOCK_HEIGHT_UNBOUND)
+
+    /// The Timestamp (in the Unix epoch) of the last block processed in a sync.
+    typedef uint32_t BRCryptoTimestamp;
+
+#define AS_CRYPTO_TIMESTAMP(unixSeconds)      ((BRCryptoTimestamp) (unixSeconds))
+#define NO_CRYPTO_TIMESTAMP                   (AS_CRYPTO_TIMESTAMP (0))
+
 
     /// MARK: - Data32 / Data16
 
@@ -78,6 +96,51 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
     static inline void cryptoData16Clear (BRCryptoData16 *data16) {
         memset (data16, 0, sizeof (BRCryptoData16));
+    }
+
+    /// MARK: - Variable Size Data
+
+    typedef struct {
+        uint8_t * bytes;
+        size_t size;
+    } BRCryptoData;
+
+    static inline BRCryptoData cryptoDataNew (size_t size) {
+        BRCryptoData data;
+        data.size = size;
+        if (size < 1) data.size = 1;
+        data.bytes = calloc (data.size, sizeof(uint8_t));
+        assert (data.bytes != NULL);
+        return data;
+    }
+
+    static inline BRCryptoData cryptoDataCopy (uint8_t * bytes, size_t size) {
+        BRCryptoData data;
+        data.bytes = malloc (size * sizeof(uint8_t));
+        memcpy (data.bytes, bytes, size);
+        data.size = size;
+        return data;
+    }
+
+    static inline BRCryptoData
+    cryptoDataConcat (BRCryptoData * fields, size_t numFields) {
+        size_t totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            totalSize += fields[i].size;
+        }
+        BRCryptoData concat = cryptoDataNew (totalSize);
+        totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            memcpy (&concat.bytes[totalSize], fields[i].bytes, fields[i].size);
+            totalSize += fields[i].size;
+        }
+        return concat;
+    }
+
+    static inline void cryptoDataFree (BRCryptoData data) {
+        if (data.bytes) free(data.bytes);
+        data.bytes = NULL;
+        data.size = 0;
     }
 
     /// MARK: Network Canonical Type
@@ -100,11 +163,12 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_ETH,
         CRYPTO_NETWORK_TYPE_XRP,
         CRYPTO_NETWORK_TYPE_HBAR,
+        CRYPTO_NETWORK_TYPE_XTZ,
         // CRYPTO_NETWORK_TYPE_XLM,
-    } BRCryptoNetworkCanonicalType;
+    } BRCryptoBlockChainType;
 
-#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
-
+#    define NUMBER_OF_NETWORK_TYPES     (1 + CRYPTO_NETWORK_TYPE_XTZ)
+#    define CRYPTO_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
     //
     // Crypto Network Base Currency
     //
@@ -117,9 +181,43 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_ETH     "eth"
 #    define CRYPTO_NETWORK_CURRENCY_XRP     "xrp"
 #    define CRYPTO_NETWORK_CURRENCY_HBAR    "hbar"
+#    define CRYPTO_NETWORK_CURRENCY_XTZ     "xtz"
 
     extern const char *
-    cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type);
+    cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type);
+
+    // MARK: - Status
+
+    typedef enum {
+        CRYPTO_SUCCESS = 0,
+        // Generic catch-all failure. This should only be used as if creating a
+        // specific error code does not make sense (you really should create
+        // a specifc error code...).
+        CRYPTO_ERROR_FAILED,
+
+        // Reference access
+        CRYPTO_ERROR_UNKNOWN_NODE = 10000,
+        CRYPTO_ERROR_UNKNOWN_TRANSFER,
+        CRYPTO_ERROR_UNKNOWN_ACCOUNT,
+        CRYPTO_ERROR_UNKNOWN_WALLET,
+        CRYPTO_ERROR_UNKNOWN_BLOCK,
+        CRYPTO_ERROR_UNKNOWN_LISTENER,
+
+        // Node
+        CRYPTO_ERROR_NODE_NOT_CONNECTED = 20000,
+
+        // Transfer
+        CRYPTO_ERROR_TRANSFER_HASH_MISMATCH = 30000,
+        CRYPTO_ERROR_TRANSFER_SUBMISSION,
+
+        // Numeric
+        CRYPTO_ERROR_NUMERIC_PARSE = 40000,
+
+        // Acount
+        // Wallet
+        // Block
+        // Listener
+    } BRCryptoStatus;
 
     /// MARK: - Reference Counting
 
@@ -146,6 +244,7 @@ static int cryptoRefDebug = 0;
   static void preface##Release (type obj);                                        \
   extern type                                                                     \
   preface##Take (type obj) {                                                      \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_fetch_add (&obj->ref.count, 1);                      \
     /* catch take after release */                                                \
     assert (0 != _c);                                                             \
@@ -153,6 +252,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern type                                                                     \
   preface##TakeWeak (type obj) {                                                  \
+    if (NULL == obj) return NULL;                                                 \
     unsigned int _c = atomic_load(&obj->ref.count);                               \
     /* keep trying to take unless object is released */                           \
     while (_c != 0 &&                                                             \
@@ -162,6 +262,7 @@ static int cryptoRefDebug = 0;
   }                                                                               \
   extern void                                                                     \
   preface##Give (type obj) {                                                      \
+    if (NULL == obj) return;                                                      \
     unsigned int _c = atomic_fetch_sub (&obj->ref.count, 1);                      \
     /* catch give after release */                                                \
     assert (0 != _c);                                                             \

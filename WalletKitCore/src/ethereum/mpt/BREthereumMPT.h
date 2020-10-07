@@ -12,7 +12,7 @@
 #define BR_Ethereum_MPT_h
 
 #include "support/BRArray.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "ethereum/base/BREthereumData.h"
 
 #ifdef __cplusplus

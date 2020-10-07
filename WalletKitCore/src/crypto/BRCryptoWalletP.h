@@ -12,39 +12,103 @@
 #define BRCryptoWalletP_h
 
 #include <pthread.h>
+#include <stdbool.h>
+#include <assert.h>
+#include "support/BRArray.h"
+#include "support/BRSet.h"
 
 #include "BRCryptoWallet.h"
 #include "BRCryptoBaseP.h"
-
-#include "bitcoin/BRWallet.h"
-#include "bitcoin/BRWalletManager.h"
-
-#include "ethereum/BREthereum.h"
-#include "generic/BRGeneric.h"
+#include "BRCryptoClient.h"
+#include "BRCryptoTransferP.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// MARK: - Wallet Handlers
+
+typedef void
+(*BRCryptoWalletReleaseHandler) (BRCryptoWallet address);
+
+typedef BRCryptoAddress
+(*BRCryptoWalletGetAddressHandler) (BRCryptoWallet wallet,
+                                    BRCryptoAddressScheme addressScheme);
+
+typedef bool
+(*BRCryptoWalletHasAddressHandler) (BRCryptoWallet wallet,
+                                    BRCryptoAddress address);
+
+typedef size_t
+(*BRCryptoWalletGetTransferAttributeCountHandler) (BRCryptoWallet wallet,
+                                                   BRCryptoAddress target);
+
+typedef BRCryptoTransferAttribute
+(*BRCryptoWalletGetTransferAttributeAtHandler) (BRCryptoWallet wallet,
+                                                BRCryptoAddress target,
+                                                size_t index);
+
+typedef BRCryptoTransferAttributeValidationError
+(*BRCryptoWalletValidateTransferAttributeHandler) (BRCryptoWallet wallet,
+                                                   OwnershipKept BRCryptoTransferAttribute attribute,
+                                                   BRCryptoBoolean *validates);
+
+typedef BRCryptoTransfer
+(*BRCryptoWalletCreateTransferHandler) (BRCryptoWallet  wallet,
+                                        BRCryptoAddress target,
+                                        BRCryptoAmount  amount,
+                                        BRCryptoFeeBasis estimatedFeeBasis,
+                                        size_t attributesCount,
+                                        OwnershipKept BRCryptoTransferAttribute *attributes,
+                                        BRCryptoCurrency currency,
+                                        BRCryptoUnit unit,
+                                        BRCryptoUnit unitForFee);
+
+typedef BRCryptoTransfer
+(*BRCryptoWalletCreateTransferMultipleHandler) (BRCryptoWallet wallet,
+                                                size_t outputsCount,
+                                                BRCryptoTransferOutput *outputs,
+                                                BRCryptoFeeBasis estimatedFeeBasis,
+                                                BRCryptoCurrency currency,
+                                                BRCryptoUnit unit,
+                                                BRCryptoUnit unitForFee);
+
+typedef OwnershipGiven BRSetOf(BRCryptoAddress)
+(*BRCryptoWalletGetAddressesForRecoveryHandler) (BRCryptoWallet wallet);
+
+typedef void
+(*BRCryptoWalletAnnounceTransfer) (BRCryptoWallet wallet,
+                                   BRCryptoTransfer transfer,
+                                   BRCryptoWalletEventType type); // TRANSFER_{ADDED,DELETED}
+
+typedef bool
+(*BRCryptoWalletIsEqualHandler) (BRCryptoWallet wallet1, BRCryptoWallet wallet2);
+
+typedef struct {
+    BRCryptoWalletReleaseHandler release;
+    BRCryptoWalletGetAddressHandler getAddress;
+    BRCryptoWalletHasAddressHandler hasAdress;
+    BRCryptoWalletGetTransferAttributeCountHandler getTransferAttributeCount;
+    BRCryptoWalletGetTransferAttributeAtHandler getTransferAttributeAt;
+    BRCryptoWalletValidateTransferAttributeHandler validateTransferAttribute;
+    BRCryptoWalletCreateTransferHandler createTransfer;
+    BRCryptoWalletCreateTransferMultipleHandler createTransferMultiple;
+    BRCryptoWalletGetAddressesForRecoveryHandler getAddressesForRecovery;
+    BRCryptoWalletAnnounceTransfer announceTransfer; // May be NULL
+    BRCryptoWalletIsEqualHandler isEqual;
+} BRCryptoWalletHandlers;
+
+
+// MARK: - Wallet
 
 struct BRCryptoWalletRecord {
-    pthread_mutex_t lock;
-
     BRCryptoBlockChainType type;
-    union {
-        struct {
-            BRWalletManager bwm;
-            BRWallet *wid;
-        } btc;
+    const BRCryptoWalletHandlers *handlers;
+    BRCryptoRef ref;
+    size_t sizeInBytes;
 
-        struct {
-            BREthereumEWM ewm;
-            BREthereumWallet wid;
-        } eth;
-
-        // The GEN wallet is owned by the GEN Manager!
-        BRGenericWallet gen;
-    } u;
+    pthread_mutex_t lock;
+    BRCryptoWalletListener listener;
 
     BRCryptoWalletState state;
 
@@ -62,10 +126,30 @@ struct BRCryptoWalletRecord {
     //
     BRArrayOf (BRCryptoTransfer) transfers;
 
-    BRCryptoRef ref;
+    BRCryptoAmount balance;
+    BRCryptoAmount balanceMinimum;
+    BRCryptoAmount balanceMaximum;
+
+    BRCryptoFeeBasis defaultFeeBasis;
+
+    BRCryptoTransferListener listenerTransfer;
 };
 
-/// MARK: - Wallet
+typedef void  *BRCryptoWalletCreateContext;
+typedef void (*BRCryptoWalletCreateCallbak) (BRCryptoWalletCreateContext context,
+                                             BRCryptoWallet wallet);
+
+extern BRCryptoWallet
+cryptoWalletAllocAndInit (size_t sizeInBytes,
+                          BRCryptoBlockChainType type,
+                          BRCryptoWalletListener listener,
+                          BRCryptoUnit unit,
+                          BRCryptoUnit unitForFee,
+                          BRCryptoAmount balanceMinimum,
+                          BRCryptoAmount balanceMaximum,
+                          BRCryptoFeeBasis defaultFeeBasis,
+                          BRCryptoWalletCreateContext createContext,
+                          BRCryptoWalletCreateCallbak createCallback);
 
 private_extern BRCryptoBlockChainType
 cryptoWalletGetType (BRCryptoWallet wallet);
@@ -74,43 +158,8 @@ private_extern void
 cryptoWalletSetState (BRCryptoWallet wallet,
                       BRCryptoWalletState state);
 
-private_extern BRWallet *
-cryptoWalletAsBTC (BRCryptoWallet wallet);
-
-private_extern BREthereumWallet
-cryptoWalletAsETH (BRCryptoWallet wallet);
-
-private_extern BRGenericWallet
-cryptoWalletAsGEN (BRCryptoWallet wallet);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRWalletManager bwm,
-                         BRWallet *wid);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsETH (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BREthereumEWM ewm,
-                         BREthereumWallet wid);
-
-private_extern BRCryptoWallet
-cryptoWalletCreateAsGEN (BRCryptoUnit unit,
-                         BRCryptoUnit unitForFee,
-                         BRGenericWallet wid);
-
 private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
-                               BRTransaction *btc);
-
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsETH (BRCryptoWallet wallet,
-                               BREthereumTransfer eth);
-
-private_extern BRCryptoTransfer
-cryptoWalletFindTransferAsGEN (BRCryptoWallet wallet,
-                               BRGenericTransfer gen);
+cryptoWalletGetTransferByHash (BRCryptoWallet wallet, BRCryptoHash hashToMatch);
 
 private_extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
@@ -118,10 +167,14 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 private_extern void
 cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
-/// MARK: - Wallet Sweeper
+private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
+cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
-private_extern BRWalletSweeper
-cryptoWalletSweeperAsBTC (BRCryptoWalletSweeper sweeper);
+static inline void
+cryptoWalletGenerateEvent (BRCryptoWallet wallet,
+                           BRCryptoWalletEvent event) {
+    cryptoListenerGenerateWalletEvent (&wallet->listener, wallet, event);
+}
 
 #ifdef __cplusplus
 }

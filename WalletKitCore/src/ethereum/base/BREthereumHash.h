@@ -15,7 +15,7 @@
 #include <memory.h>
 #include "support/BRInt.h"
 #include "support/BRArray.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "BREthereumLogic.h"
 
 #ifdef __cplusplus

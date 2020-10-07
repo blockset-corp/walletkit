@@ -72,6 +72,7 @@ class TransferCreateSweepController: TransferCreateController {
                 self.feeLabel.text = nil
             }
 
+//            self.walletSweeper = nil
             self.wallet.manager.createSweeper (wallet: wallet, key: key) {
                 (res: Result<WalletSweeper, WalletSweeperError>) in
                 guard case let .success (sweeper) = res

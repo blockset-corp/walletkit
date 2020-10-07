@@ -39,6 +39,16 @@ rippleTransactionCreate(BRRippleAddress sourceAddress,
                         BRRippleUnitDrops amount, // For now assume XRP drops.
                         BRRippleFeeBasis feeBasis);
 
+extern BRRippleTransaction /* caller must free - rippleTransferFree */
+rippleTransactionCreateFull (BRRippleAddress from,
+                             BRRippleAddress to,
+                             BRRippleUnitDrops amount, // For now assume XRP drops.
+                             BRRippleFeeBasis feeBasis,
+                             BRRippleTransactionHash hash,
+                             uint64_t timestamp,
+                             uint64_t blockHeight,
+                             int error);
+
 /**
  * Create a Ripple transaction
  *
@@ -115,6 +125,12 @@ rippleTransactionGetSource(BRRippleTransaction transaction);
 extern BRRippleAddress // caller owns object, must free with rippleAddressFree
 rippleTransactionGetTarget(BRRippleTransaction transaction);
 
+extern int rippleTransactionHasSource (BRRippleTransaction transaction,
+                                       BRRippleAddress source);
+
+extern int rippleTransactionHasTarget (BRRippleTransaction transaction,
+                                       BRRippleAddress target);
+
 extern BRKey rippleTransactionGetPublicKey(BRRippleTransaction transaction);
 
 extern UInt256 rippleTransactionGetInvoiceID(BRRippleTransaction transaction);
@@ -122,6 +138,11 @@ extern BRRippleSourceTag rippleTransactionGetSourceTag(BRRippleTransaction trans
 extern BRRippleDestinationTag rippleTransactionGetDestinationTag(BRRippleTransaction transaction);
 
 extern BRRippleAmount rippleTransactionGetAmountRaw(BRRippleTransaction transaction, BRRippleAmountType amountType);
+
+extern int rippleTransactionHasError(BRRippleTransaction transaction);
+
+extern int rippleTransactionIsInBlock (BRRippleTransaction transaction);
+extern uint64_t rippleTransactionGetBlockHeight (BRRippleTransaction transaction);
 
 extern BRSetOf(BRRippleTransaction) rippleTransactionSetCreate (size_t initialSize);
 
@@ -134,4 +155,5 @@ extern const char *rippleTransactionFieldOptionalNames[];
 
 extern void rippleTransactionSetDestinationTag (BRRippleTransaction transaction, BRRippleDestinationTag tag);
 extern void rippleTransactionSetInvoiceID (BRRippleTransaction transaction, UInt256 invoiceId);
-#endif
+
+#endif // BRRipple_transaction_h

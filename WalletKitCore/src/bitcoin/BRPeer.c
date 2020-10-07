@@ -993,7 +993,11 @@ static void *_peerThreadRoutine(void *arg)
     int socket, error = 0;
 
     pthread_cleanup_push(ctx->threadCleanup, ctx->info);
-    
+
+    char name[9 + 1 + INET6_ADDRSTRLEN + 1];
+    sprintf (name, "Core BTX, %s", ctx->host);
+    pthread_setname_brd (pthread_self(), name);
+
     if (_BRPeerOpenSocket(peer, PF_INET6, CONNECT_TIMEOUT, &error)) {
         struct timeval tv;
         double time = 0, msgTimeout;

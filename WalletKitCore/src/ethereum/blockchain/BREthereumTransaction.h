@@ -20,11 +20,13 @@
 extern "C" {
 #endif
 
+#define TRANSACTION_NONCE_IS_NOT_ASSIGNED   UINT64_MAX
+
 /// If we get a gasEstimate we'll want the gasLimit to have a margin over the estimate
 #define GAS_LIMIT_MARGIN_PERCENT        (20)
 
 static inline BREthereumGas
-gasApplyLmitMargin (BREthereumGas gas) {
+gasApplyLimitMargin (BREthereumGas gas) {
     return ethGasCreate(((100 + GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
 }
 
@@ -75,7 +77,44 @@ extern BREthereumEther
 transactionGetAmount(BREthereumTransaction transaction);
 
 /**
- * Return the feeBais for transaction.  If the transaction is confirmed (aka blocked) then
+ * Return the gasPrice
+ */
+extern BREthereumGasPrice
+transactionGetGasPrice (BREthereumTransaction transaction);
+
+/**
+ * Return the gasLimit
+ */
+extern BREthereumGas
+transactionGetGasLimit (BREthereumTransaction transaction);
+
+/**
+ * Return the gasUsed if the transaction is included.  In that case *isValid will be
+ * ETHEREUM_BOOLEAN_TRUE.  If not included, then *isValid will be ETHEREUM_BOOLEAN_FALSE and the
+ * gasUsed will be zero.
+ */
+extern BREthereumGas
+transactionGetGasUsed (BREthereumTransaction transaction,
+                       BREthereumBoolean *isValid);
+
+/**
+ * Return the feeBasis for transaction based on the gasLimit.  The gasLimit is an upper bound
+ * on the gasUsed; thus the returned feeBasis is but an estimate.
+ */
+extern BREthereumFeeBasis
+transactionGetFeeBasisEstimated (BREthereumTransaction transaction);
+
+/**
+ * Return the feeBasis for transaction if the transaction is included.  When included *isValid
+ * will be ETHEREUM_BOOLEAN_TRUE.  If not included, then *isValid will be ETHEREUM_BOOLEAN_FALSE
+ * and the returned feeBasis should not be referenced (it will be filled with zeros).
+ */
+extern BREthereumFeeBasis
+transactionGetFeeBasisConfirmed (BREthereumTransaction transaction,
+                                 BREthereumBoolean *isValid);
+
+/**
+ * Return the feeBasis for transaction.  If the transaction is confirmed (aka blocked) then
  * the value returned is the actual feeBasis paid {gasUsed, gasPrice}; if the transaction is not
  * confirmed then an estimated feeBasis is returned {gasEstimate, gasPrice}.
  */
@@ -83,36 +122,12 @@ extern BREthereumFeeBasis
 transactionGetFeeBasis (BREthereumTransaction transaction);
 
 /**
- * Return the fee (in Ether) for transaction based on `transactionGetFeeBasis()`
+ * Return the fee (in Ether) for transaction based on `transactionGetFeeBasis()`.  If the fee
+ * computation overflows, then *overflow is set to ETHEREUM_BOOLEAN_TRUE.
  */
 extern BREthereumEther
-transactionGetFee (BREthereumTransaction transaction, int *overflow);
-
-/**
- * Return the feeBasis for transaction {gasLimit, gasPrice}
- */
-extern BREthereumFeeBasis
-transactionGetFeeBasisLimit (BREthereumTransaction transaction);
-
-/**
- * Return the maximum fee (in Ether) for transaction (as gasLimit * gasPrice) from
- * transactionGetFeeBasisLimit()
- */
-extern BREthereumEther
-transactionGetFeeLimit (BREthereumTransaction transaction, int *overflow);
-
-extern BREthereumGasPrice
-transactionGetGasPrice (BREthereumTransaction transaction);
-
-extern BREthereumGas
-transactionGetGasLimit (BREthereumTransaction transaction);
-
-extern BREthereumGas
-transactionGetGasEstimate (BREthereumTransaction transaction);
-
-extern void
-transactionSetGasEstimate (BREthereumTransaction transaction,
-                           BREthereumGas gasEstimate);
+transactionGetFee (BREthereumTransaction transaction,
+                   BREthereumBoolean *overflow);
 
 extern uint64_t
 transactionGetNonce (BREthereumTransaction transaction);

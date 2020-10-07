@@ -17,7 +17,7 @@ public class BRCryptoAddress extends PointerType {
 
     public static Optional<BRCryptoAddress> create(String address, BRCryptoNetwork network) {
         return Optional.fromNullable(
-                CryptoLibraryDirect.cryptoAddressCreateFromString(
+                CryptoLibraryDirect.cryptoNetworkCreateAddress(
                         network.getPointer(),
                         address
                 )
