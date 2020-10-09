@@ -148,6 +148,12 @@ extern "C" {
                                             OwnershipKept BRCryptoTransferAttribute *attribute,
                                             BRCryptoBoolean *validates);
 
+    extern BRCryptoBoolean
+    cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
+                                            BRCryptoAddress target,
+                                            const char *key,
+                                            BRCryptoBoolean *isRequired);
+
     /**
      * Create a transfer.
      *

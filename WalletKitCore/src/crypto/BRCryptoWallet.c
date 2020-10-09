@@ -471,6 +471,27 @@ cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
     return (BRCryptoTransferAttributeValidationError) 0;
 }
 
+extern BRCryptoBoolean
+cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
+                                        BRCryptoAddress target,
+                                        const char *key,
+                                        BRCryptoBoolean *isRequired) {
+    assert(NULL != isRequired);
+    
+    size_t count = cryptoWalletGetTransferAttributeCount (wallet, target);
+    for (size_t index = 0; index < count; index++) {
+        BRCryptoTransferAttribute attribute = cryptoWalletGetTransferAttributeAt (wallet, target, index);
+        if (0 == strcasecmp(key, cryptoTransferAttributeGetKey (attribute))) {
+            *isRequired = cryptoTransferAttributeIsRequired (attribute);
+            return CRYPTO_TRUE;
+        }
+        cryptoTransferAttributeGive (attribute);
+    }
+    
+    *isRequired = CRYPTO_FALSE;
+    return CRYPTO_FALSE;
+}
+
 extern BRCryptoTransfer
 cryptoWalletCreateTransferMultiple (BRCryptoWallet wallet,
                                     size_t outputsCount,

@@ -1530,6 +1530,41 @@ cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
     cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
 }
 
+private_extern void
+cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (BRCryptoWallet wallet,
+                                                                BRCryptoTransfer transfer,
+                                                                OwnershipKept BRCryptoClientTransferBundle bundle) {
+    // If we are passed in attribues, they will replace any attribute already held
+    // in `genTransfer`.  Specifically, for example, if we created an XRP transfer, then
+    // we might have a 'DestinationTag'.  If the attributes provided do not include
+    // 'DestinatinTag' then that attribute will be lost.  Losing such an attribute would
+    // indicate a BlockSet error in processing transfers.
+    if (bundle->attributesCount > 0) {
+        BRCryptoAddress target = cryptoTransferGetTargetAddress (transfer);
+
+        // Build the transfer attributes
+        BRArrayOf(BRCryptoTransferAttribute) attributes;
+        array_new(attributes, bundle->attributesCount);
+        for (size_t index = 0; index < bundle->attributesCount; index++) {
+            const char *key = bundle->attributeKeys[index];
+            BRCryptoBoolean isRequiredAttribute;
+            BRCryptoBoolean isAttribute = cryptoWalletHasTransferAttributeForKey (wallet,
+                                                                                  target,
+                                                                                  key,
+                                                                                  &isRequiredAttribute);
+            if (CRYPTO_TRUE == isAttribute)
+                array_add (attributes,
+                           cryptoTransferAttributeCreate(key,
+                                                         bundle->attributeVals[index],
+                                                         isRequiredAttribute));
+        }
+        
+        cryptoTransferSetAttributes (transfer, array_count(attributes), attributes);
+        cryptoTransferAttributeReleaseAll (attributes);
+        cryptoAddressGive (target);
+    }
+}
+
 private_extern BRCryptoFeeBasis
 cryptoWalletManagerRecoverFeeBasisFromFeeEstimate (BRCryptoWalletManager cwm,
                                                    BRCryptoNetworkFee networkFee,
