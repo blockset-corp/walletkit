@@ -463,9 +463,9 @@ cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
     *validates = CRYPTO_TRUE;
 
     for (size_t index = 0; index <attributesCount; index++) {
-        cryptoWalletValidateTransferAttribute (wallet, attributes[index], validates);
+        BRCryptoTransferAttributeValidationError error = cryptoWalletValidateTransferAttribute (wallet, attributes[index], validates);
         if (CRYPTO_FALSE == *validates)
-            return CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
+            return error;
     }
 
     return (BRCryptoTransferAttributeValidationError) 0;

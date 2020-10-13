@@ -1560,7 +1560,7 @@ cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (BRCryptoWallet w
         }
         
         cryptoTransferSetAttributes (transfer, array_count(attributes), attributes);
-        cryptoTransferAttributeReleaseAll (attributes);
+        cryptoTransferAttributeArrayRelease (attributes);
         cryptoAddressGive (target);
     }
 }

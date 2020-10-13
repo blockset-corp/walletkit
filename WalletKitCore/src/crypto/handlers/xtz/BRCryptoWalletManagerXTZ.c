@@ -260,6 +260,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     
+    cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
+    
     bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
                        (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
                         0 != bundle->blockNumber &&

@@ -137,7 +137,7 @@ cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              OwnershipKept BRCryptoTransferAttribute *attributes);
 
 private_extern void
-cryptoTransferAttributeReleaseAll (OwnershipGiven BRArrayOf(BRCryptoTransferAttribute) attributes);
+cryptoTransferAttributeArrayRelease (BRArrayOf(BRCryptoTransferAttribute) attributes);
 
 static inline void
 cryptoTransferGenerateEvent (BRCryptoTransfer transfer,

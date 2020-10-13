@@ -719,9 +719,9 @@ cryptoTransferAttributeIsRequired (BRCryptoTransferAttribute attribute) {
 }
 
 private_extern void
-cryptoTransferAttributeReleaseAll (OwnershipGiven BRArrayOf(BRCryptoTransferAttribute) attributes) {
+cryptoTransferAttributeArrayRelease (BRArrayOf(BRCryptoTransferAttribute) attributes) {
     if (NULL == attributes) return;
-    array_free_all (attributes, cryptoTransferAttributeRelease);
+    array_free_all (attributes, cryptoTransferAttributeGive);
 }
 
 DECLARE_CRYPTO_GIVE_TAKE (BRCryptoTransferAttribute, cryptoTransferAttribute);
