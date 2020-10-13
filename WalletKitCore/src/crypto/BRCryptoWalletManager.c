@@ -474,15 +474,9 @@ cryptoWalletManagerGetPath (BRCryptoWalletManager cwm) {
 extern void
 cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
                                         BRCryptoBoolean isNetworkReachable) {
-#ifdef REFACTOR
-    switch (cwm->type) {
-        case BLOCK_CHAIN_TYPE_BTC:
-            BRWalletManagerSetNetworkReachable (cwm->u.btc, CRYPTO_TRUE == isNetworkReachable);
-            break;
-        default:
-            break;
+    if (NULL != cwm->p2pManager) {
+        cryptoClientP2PManagerSetNetworkReachable (cwm->p2pManager, isNetworkReachable);
     }
-#endif
 }
 
 //extern BRCryptoPeer
