@@ -106,7 +106,10 @@ extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transacti
 extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transaction);
+
 extern int hederaTransactionHasError (BRHederaTransaction transaction);
+extern BRHederaTimeStamp hederaTransactionGetTimestamp (BRHederaTransaction transaction);
+extern uint64_t hederaTransactionGetBlockheight (BRHederaTransaction transaction);
 
 // Memo
 extern void hederaTransactionSetMemo(BRHederaTransaction transaction, const char* memo);

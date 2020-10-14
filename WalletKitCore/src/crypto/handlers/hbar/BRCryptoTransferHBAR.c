@@ -41,6 +41,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
+                            BRCryptoTransferState state,
                             OwnershipKept BRHederaAccount hbarAccount,
                             OwnershipGiven BRHederaTransaction hbarTransaction) {
     
@@ -70,6 +71,7 @@ cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                                                             direction,
                                                             sourceAddress,
                                                             targetAddress,
+                                                            state,
                                                             &contextHBAR,
                                                             cryptoTransferCreateCallbackHBAR);
 

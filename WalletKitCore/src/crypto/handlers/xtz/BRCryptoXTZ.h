@@ -57,6 +57,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoTransferState state,
                            BRTezosAccount xtzAccount,
                            BRTezosTransfer xtzTransfer);
 

@@ -347,6 +347,16 @@ extern int hederaTransactionHasError (BRHederaTransaction transaction) {
     return transaction->error;
 }
 
+extern BRHederaTimeStamp hederaTransactionGetTimestamp (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->timeStamp;
+}
+
+extern uint64_t hederaTransactionGetBlockheight (BRHederaTransaction transaction) {
+    assert (transaction);
+    return transaction->blockHeight;
+}
+
 extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2)
 {
     assert(t1);

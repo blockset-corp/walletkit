@@ -224,40 +224,27 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
     cryptoHashGive (hash);
-    
+
+    BRCryptoFeeBasis      feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
+    BRCryptoTransferState state    = cryptoClientTransferBundleGetTransferState (bundle, feeBasis);
+
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                   wallet->unit,
                                                   wallet->unitForFee,
+                                                  state,
                                                   xrpAccount,
                                                   xrpTransaction);
         xrpTransactionNeedFree = false;
 
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
-    
-    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
-
-    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
-                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
-                        0 != bundle->blockNumber &&
-                        0 != bundle->blockTimestamp));
-
-    BRCryptoTransferState transferState =
-    (isIncluded
-     ? cryptoTransferStateIncludedInit (bundle->blockNumber,
-                                        bundle->blockTransactionIndex,
-                                        bundle->blockTimestamp,
-                                        feeBasis,
-                                        AS_CRYPTO_BOOLEAN(CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status),
-                                        (isIncluded ? NULL : "unknown"))
-     : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
-        ? cryptoTransferStateErroredInit ((BRCryptoTransferSubmitError) { CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN })
-        : cryptoTransferStateInit (bundle->status)));
-    
-    cryptoTransferSetState (baseTransfer, transferState);
+    else {
+        cryptoTransferSetState (baseTransfer, state);
+    }
 
     cryptoFeeBasisGive (feeBasis);
+    cryptoTransferStateRelease (&state);
 
     //TODO:XRP attributes
     //TODO:XRP save to fileService

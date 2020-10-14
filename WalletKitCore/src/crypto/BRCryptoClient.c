@@ -1052,6 +1052,26 @@ cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
                       :  0))));
 }
 
+extern BRCryptoTransferState
+cryptoClientTransferBundleGetTransferState (const BRCryptoClientTransferBundle bundle,
+                                            BRCryptoFeeBasis confirmedFeeBasis) {
+    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
+                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
+                        0 != bundle->blockNumber &&
+                        0 != bundle->blockTimestamp));
+
+    return (isIncluded
+            ? cryptoTransferStateIncludedInit (bundle->blockNumber,
+                                               bundle->blockTransactionIndex,
+                                               bundle->blockTimestamp,
+                                               confirmedFeeBasis,
+                                               AS_CRYPTO_BOOLEAN(CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status),
+                                               (isIncluded ? NULL : "unknown"))
+            : (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status
+               ? cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown())
+               : cryptoTransferStateInit (bundle->status)));
+}
+
 static BRRlpItem
 cryptoClientTransferBundleRlpEncodeAttributes (size_t count,
                                                const char **keys,

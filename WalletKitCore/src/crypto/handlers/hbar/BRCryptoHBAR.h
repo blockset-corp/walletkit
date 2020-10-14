@@ -61,6 +61,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
+                            BRCryptoTransferState state,
                             BRHederaAccount hbarAccount,
                             BRHederaTransaction hbarTransaction);
 

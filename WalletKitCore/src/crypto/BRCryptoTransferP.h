@@ -121,6 +121,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
                             BRCryptoAddress targetAddress,
+                            BRCryptoTransferState state,
                             BRCryptoTransferCreateContext  createContext,
                             BRCryptoTransferCreateCallback createCallback);
 

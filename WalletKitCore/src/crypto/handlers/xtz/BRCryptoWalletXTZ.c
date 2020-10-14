@@ -237,13 +237,34 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
                                                           delegationOp);
 
     tezosAddressFree (source);
-    
+
+#ifdef REFACTOR
+    uint64_t hbarBlockheight = hederaTransactionGetBlockheight (hbarTransaction);
+    uint64_t hbarTimestamp   = (uint64_t) hederaTransactionGetTimestamp (hbarTransaction).seconds;
+    bool     hbarSuccess     = !hederaTransactionHasError (hbarTransaction);
+
+    BRCryptoTransferState state =
+    (0 != hbarBlockheight
+     ? cryptoTransferStateIncludedInit (hbarBlockheight,
+                                        0,
+                                        hbarTimestamp,
+                                        estimatedFeeBasis,
+                                        AS_CRYPTO_BOOLEAN(hbarSuccess),
+                                        (hbarSuccess ? NULL : "unknown error"))
+     : (hbarSuccess
+        ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED)
+        : cryptoTransferStateErroredInit(cryptoTransferSubmitErrorUnknown())));
+#endif
+    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
+
     BRCryptoTransfer transfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
                                                            unit,
                                                            unitForFee,
+                                                           state,
                                                            walletXTZ->xtzAccount,
                                                            xtzTransfer);
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
+    cryptoTransferStateRelease (&state);
     
     return transfer;
 }

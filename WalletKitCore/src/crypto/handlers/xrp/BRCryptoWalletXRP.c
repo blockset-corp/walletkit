@@ -196,12 +196,12 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
     BRRippleAddress source  = rippleAccountGetAddress(walletXRP->xrpAccount);
     BRRippleUnitDrops drops = value.u64[0];
 
-    BRRippleTransaction xrpTransactoin = rippleTransactionCreate (source,
+    BRRippleTransaction xrpTransaction = rippleTransactionCreate (source,
                                                                   cryptoAddressAsXRP(target),
                                                                   drops,
                                                                   cryptoFeeBasisAsXRP(estimatedFeeBasis));
 
-    if (NULL == xrpTransactoin)
+    if (NULL == xrpTransaction)
         return NULL;
 
     for (size_t index = 0; index < attributesCount; index++) {
@@ -210,7 +210,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
             if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
                 BRCoreParseStatus tag;
                 sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &tag);
-                rippleTransactionSetDestinationTag (xrpTransactoin, tag);
+                rippleTransactionSetDestinationTag (xrpTransaction, tag);
             }
             else if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
                 // TODO: Handle INVOICE_ID (note: not used in BRD App)
@@ -222,13 +222,32 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
     }
 
     rippleAddressFree(source);
-    
+
+    uint64_t xrpBlockheight = rippleTransactionGetBlockHeight (xrpTransaction);
+    uint64_t xrpTimestamp   = rippleTransactionGetTimestamp   (xrpTransaction);
+    bool     xrpSuccess     = rippleTransactionHasError (xrpTransaction);
+
+    BRCryptoTransferState state =
+    (0 != xrpBlockheight
+     ? cryptoTransferStateIncludedInit (xrpBlockheight,
+                                        0,
+                                        xrpTimestamp,
+                                        estimatedFeeBasis,
+                                        AS_CRYPTO_BOOLEAN(xrpSuccess),
+                                        (xrpSuccess ? NULL : "unknown error"))
+     : (xrpSuccess
+        ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED)
+        : cryptoTransferStateErroredInit(cryptoTransferSubmitErrorUnknown())));
+
     BRCryptoTransfer transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                            unit,
                                                            unitForFee,
+                                                           state,
                                                            walletXRP->xrpAccount,
-                                                           xrpTransactoin);
+                                                           xrpTransaction);
 
+    cryptoTransferStateRelease (&state);
+    
     // Take all the attributes, even if there aren't for XRP.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     

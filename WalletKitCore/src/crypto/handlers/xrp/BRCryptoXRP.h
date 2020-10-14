@@ -58,6 +58,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoTransferState state,
                            BRRippleAccount xrpAccount,
                            BRRippleTransaction xrpTransaction);
 
