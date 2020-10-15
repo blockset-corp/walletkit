@@ -74,7 +74,8 @@ tezosTransactionCreateDelegation (BRTezosAddress source,
     BRTezosTransaction transaction = createTransactionObject();
     transaction->source = tezosAddressClone (source);
     transaction->operation.kind = TEZOS_OP_DELEGATION;
-    transaction->operation.u.delegation.target = tezosAddressClone (target);
+    bool endDelegation = tezosAddressEqual(source, target);
+    transaction->operation.u.delegation.target = endDelegation ? NULL : tezosAddressClone (target);
     transaction->feeBasis = feeBasis;
     transaction->blockHeight = 0;
     transaction->counter = counter;
