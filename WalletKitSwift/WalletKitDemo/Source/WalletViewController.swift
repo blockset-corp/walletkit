@@ -113,9 +113,9 @@ class WalletViewController: UITableViewController, WalletListener, WalletManager
         }
     }
 
-    func addAlertAction (alert: UIAlertController, _ canDisable: Bool, _ action: UIAlertAction) {
-        if canDisable {
-            action.isEnabled = (NetworkType.btc == wallet.manager.network.type)
+    func addAlertAction (alert: UIAlertController, networkTypes: [NetworkType]? = nil, _ action: UIAlertAction) {
+        if let networkTypes = networkTypes {
+            action.isEnabled = networkTypes.contains(wallet.manager.network.type)
         }
         alert.addAction(action);
     }
@@ -125,27 +125,33 @@ class WalletViewController: UITableViewController, WalletListener, WalletManager
                                        message: nil,
                                        preferredStyle: UIAlertController.Style.actionSheet)
 
-        addAlertAction(alert: alert, false, UIAlertAction (title: "Send", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, UIAlertAction (title: "Send", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Send")
             self.showCreateTransferController(named: "createTransferSendNC")
             alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, false, UIAlertAction (title: "Receive", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, UIAlertAction (title: "Receive", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Receive")
             self.showCreateTransferController(named: "createTransferRecvNC")
            alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, true, UIAlertAction (title: "Payment", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Payment", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Pay")
             self.showCreateTransferController(named: "createTransferPayNC")
            alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, true, UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Sweep")
             self.showCreateTransferController(named: "createTransferSweepNC")
+           alert.dismiss(animated: true) {}
+        })
+        
+        addAlertAction(alert: alert, networkTypes: [.xtz], UIAlertAction (title: "Delegate", style: UIAlertAction.Style.default) { (action) in
+            print ("APP: WVC: Want to Delegate")
+            self.showCreateTransferController(named: "createTransferDelegateNC")
            alert.dismiss(animated: true) {}
         })
 
