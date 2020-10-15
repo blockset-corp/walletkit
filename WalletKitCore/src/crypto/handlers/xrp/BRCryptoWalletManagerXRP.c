@@ -236,6 +236,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     
+    cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
+    
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
 
     bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
@@ -259,7 +261,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     cryptoFeeBasisGive (feeBasis);
 
-    //TODO:XRP attributes
     //TODO:XRP save to fileService
 
     if (xrpTransactionNeedFree)

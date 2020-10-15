@@ -103,7 +103,7 @@ cryptoWalletHasAddressHBAR (BRCryptoWallet wallet,
 extern size_t
 cryptoWalletGetTransferAttributeCountHBAR (BRCryptoWallet wallet,
                                            BRCryptoAddress target) {
-    BRHederaAddress hbarTarget = cryptoAddressAsHBAR (target);
+    BRHederaAddress hbarTarget = (NULL == target) ? NULL : cryptoAddressAsHBAR (target);
     
     size_t countRequired, countOptional;
     hederaWalletGetTransactionAttributeKeys (hbarTarget, 1, &countRequired);
@@ -115,7 +115,7 @@ extern BRCryptoTransferAttribute
 cryptoWalletGetTransferAttributeAtHBAR (BRCryptoWallet wallet,
                                         BRCryptoAddress target,
                                         size_t index) {
-    BRHederaAddress hbarTarget = cryptoAddressAsHBAR (target);
+    BRHederaAddress hbarTarget = (NULL == target) ? NULL : cryptoAddressAsHBAR (target);
     
     size_t countRequired, countOptional;
     const char **keysRequired = hederaWalletGetTransactionAttributeKeys (hbarTarget, 1, &countRequired);
