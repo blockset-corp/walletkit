@@ -67,6 +67,8 @@ typedef struct {
     BRCryptoSystem system;
 } BRCryptoNetworkListener;
 
+#define CRYPTO_NETWORK_LISTENER_EMPTY       ((BRCryptoNetworkListener) { NULL, NULL })
+
 extern void
 cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
                                     BRCryptoNetwork network,
@@ -90,6 +92,8 @@ typedef struct {
     BRCryptoTransferStateChangedCallback transferChangedCallback;
 } BRCryptoTransferListener;
 
+#define CRYPTO_TRANSFER_LISTENER_EMPTY      ((BRCryptoTransferListener) { NULL, NULL, NULL, NULL, NULL })
+
 extern void
 cryptoListenerGenerateTransferEvent (const BRCryptoTransferListener *listener,
                                      BRCryptoTransfer transfer,
@@ -103,6 +107,8 @@ typedef struct {
     BRCryptoWalletManager manager;
     BRCryptoTransferStateChangedCallback transferChangedCallback;
 } BRCryptoWalletListener;
+
+#define CRYPTO_WALLET_LISTENER_EMPTY       ((BRCryptoWalletListener) { NULL, NULL, NULL, NULL })
 
 static inline BRCryptoTransferListener
 cryptoListenerCreateTransferListener (const BRCryptoWalletListener *listener,
@@ -129,6 +135,8 @@ typedef struct {
     BRCryptoListener listener;
     BRCryptoSystem system;
 } BRCryptoWalletManagerListener;
+
+#define CRYPTO_WALLET_MANAGER_LISTENER_EMPTY       ((BRCryptoWalletManagerListener) { NULL, NULL })
 
 static inline BRCryptoWalletListener
 cryptoListenerCreateWalletListener (const BRCryptoWalletManagerListener *listener,
