@@ -50,7 +50,7 @@ extern "C" {
     typedef void (*BRGenericAccountInitialize) (BRGenericAccountRef account, const uint8_t *bytes, size_t bytesCount);
     typedef int (*BRGenericAccountIsInitialized) (BRGenericAccountRef account);
     typedef uint8_t * (*BRGenericAccountGetSerialization) (BRGenericAccountRef account, size_t *bytesCount);
-    typedef void (*BRGenericAccountSignTransferWithSeed) (BRGenericAccountRef account, BRGenericTransferRef transfer, UInt512 seed);
+    typedef void (*BRGenericAccountSignTransferWithSeed) (BRGenericAccountRef account, BRGenericWalletRef wallet, BRGenericTransferRef transfer, UInt512 seed);
     typedef void (*BRGenericAccountSignTransferWithKey) (BRGenericAccountRef account, BRGenericTransferRef transfer, BRKey *key);
 
     typedef struct {

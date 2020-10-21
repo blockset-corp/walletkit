@@ -81,6 +81,7 @@ extern "C" {
 
     extern void
     genAccountSignTransferWithSeed (BRGenericAccount account,
+                                    BRGenericWallet wallet,
                                     BRGenericTransfer transfer,
                                     UInt512 seed);
 

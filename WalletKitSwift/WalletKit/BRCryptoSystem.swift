@@ -1360,7 +1360,8 @@ extension System {
 
             default:
                 // There is more than one "__fee__" entry
-                preconditionFailure()
+                assertionFailure()
+                return transfers.map { (transfer: $0, fee: nil) }
             }
     }
 }
@@ -1603,6 +1604,7 @@ extension System {
                                                                 let timestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
                                                                 let height    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                                 let status    = System.getTransferStatus (transaction.status)
+                                                                let blockHash = transaction.blockHash ?? ""
 
                                                                 System.mergeTransfers (transaction.transfers, with: addresses)
                                                                     .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: String?)) in
@@ -1627,6 +1629,7 @@ extension System {
                                                                                                        fee,
                                                                                                        timestamp,
                                                                                                        height,
+                                                                                                       blockHash,
                                                                                                        metaKeysPtr.count,
                                                                                                        &metaKeysPtr,
                                                                                                        &metaValsPtr)
