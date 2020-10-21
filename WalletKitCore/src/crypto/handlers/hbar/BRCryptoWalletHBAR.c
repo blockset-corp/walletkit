@@ -70,12 +70,6 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     return wallet;
 }
 
-//private_extern BRHederaWallet
-//cryptoWalletAsHBAR (BRCryptoWallet wallet) {
-//    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce(wallet);
-//    return walletHBAR->wid;
-//}
-
 static void
 cryptoWalletReleaseHBAR (BRCryptoWallet wallet) {
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);

@@ -122,12 +122,12 @@ cryptoWalletManagerReleaseETH (BRCryptoWalletManager manager) {
 }
 
 static BRFileService
-crytpWalletManagerCreateFileServiceETH (BRCryptoWalletManager manager,
-                                        const char *basePath,
-                                        const char *currency,
-                                        const char *network,
-                                        BRFileServiceContext context,
-                                        BRFileServiceErrorHandler handler) {
+cryptoWalletManagerCreateFileServiceETH (BRCryptoWalletManager manager,
+                                         const char *basePath,
+                                         const char *currency,
+                                         const char *network,
+                                         BRFileServiceContext context,
+                                         BRFileServiceErrorHandler handler) {
     return fileServiceCreateFromTypeSpecfications (basePath, currency, network,
                                                    context, handler,
                                                    fileServiceSpecificationsCountETH,
@@ -818,7 +818,7 @@ const unsigned int eventTypesCountETH = (sizeof (eventTypesETH) / sizeof (BREven
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerCreateETH,
     cryptoWalletManagerReleaseETH,
-    crytpWalletManagerCreateFileServiceETH,
+    cryptoWalletManagerCreateFileServiceETH,
     cryptoWalletManagerGetEventTypesETH,
     cryptoWalletManagerCreateP2PManagerETH,
     cryptoWalletManagerCreateWalletETH,

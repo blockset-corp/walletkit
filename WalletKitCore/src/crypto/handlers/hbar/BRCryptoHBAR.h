@@ -105,6 +105,9 @@ private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsHBAR (BRCryptoUnit unit,
                             BRHederaFeeBasis hbarFeeBasis);
 
+private_extern BRHederaFeeBasis
+cryptoFeeBasisAsHBAR (BRCryptoFeeBasis feeBasis);
+
 private_extern BRCryptoFeeBasisHBAR
 cryptoFeeBasisCoerceHBAR (BRCryptoFeeBasis feeBasis);
 

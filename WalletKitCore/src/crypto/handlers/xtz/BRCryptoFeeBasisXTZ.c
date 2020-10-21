@@ -49,6 +49,12 @@ static void
 cryptoFeeBasisReleaseXTZ (BRCryptoFeeBasis feeBasis) {
 }
 
+private_extern BRTezosFeeBasis
+cryptoFeeBasisAsXTZ (BRCryptoFeeBasis feeBasis) {
+    BRCryptoFeeBasisXTZ feeBasisXTZ = cryptoFeeBasisCoerceXTZ(feeBasis);
+    return feeBasisXTZ->xtzFeeBasis;
+}
+
 static double
 cryptoFeeBasisGetCostFactorXTZ (BRCryptoFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = cryptoFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;

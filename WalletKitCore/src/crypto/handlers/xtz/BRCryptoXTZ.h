@@ -117,6 +117,8 @@ cryptoFeeBasisCreateAsXTZ (BRCryptoUnit unit,
 private_extern BRCryptoFeeBasisXTZ
 cryptoFeeBasisCoerceXTZ (BRCryptoFeeBasis feeBasis);
 
+private_extern BRTezosFeeBasis
+cryptoFeeBasisAsXTZ (BRCryptoFeeBasis feeBasis);
 
 // MARK: - Support
 

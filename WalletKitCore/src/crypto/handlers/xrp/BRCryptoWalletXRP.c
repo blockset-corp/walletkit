@@ -71,12 +71,6 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     return wallet;
 }
 
-//private_extern BRRippleWallet
-//cryptoWalletAsXRP (BRCryptoWallet wallet) {
-//    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce(wallet);
-//    return walletXRP->wid;
-//}
-
 static void
 cryptoWalletReleaseXRP (BRCryptoWallet wallet) {
     BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
