@@ -24,6 +24,7 @@
 #include "BRCryptoWalletP.h"
 #include "BRCryptoPaymentP.h"
 #include "BRCryptoClientP.h"
+#include "BRCryptoFileService.h"
 
 #include "BRCryptoWalletManager.h"
 #include "BRCryptoWalletManagerP.h"
@@ -32,7 +33,6 @@
 
 #include "bitcoin/BRMerkleBlock.h"
 #include "bitcoin/BRPeer.h"
-#include "support/BRFileService.h"
 #include "support/event/BREventAlarm.h"
 
 // We'll do a period QRY 'tick-tock' CWM_CONFIRMATION_PERIOD_FACTOR times in
@@ -169,11 +169,11 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     // TODO: Replace `createFileService` with `getFileServiceSpecifications`
     manager->fileService = manager->handlers->createFileService (manager,
-                                                         manager->path,
-                                                         currencyName,
-                                                         networkName,
-                                                         manager,
-                                                         cryptoWalletManagerFileServiceErrorHandler);
+                                                                 manager->path,
+                                                                 currencyName,
+                                                                 networkName,
+                                                                 manager,
+                                                                 cryptoWalletManagerFileServiceErrorHandler);
 
     // Create the alarm clock, but don't start it.
     alarmClockCreateIfNecessary(0);
@@ -243,6 +243,39 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     pthread_mutex_lock (&manager->lock);
     return manager;
+}
+
+static OwnershipGiven BRSetOf(BRCryptoClientTransferBundle)
+cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
+    BRSetOf(BRCryptoClientTransferBundle) bundles = cryptoClientTransferBundleSetCreate (25);
+    if (1 != fileServiceLoad (manager->fileService, bundles, fileServiceTypeTransfers, 1)) {
+        cryptoClientTransferBundleSetRelease (bundles);
+        printf ("CRY: %4s: failed to load transfers",
+                cryptoBlockChainTypeGetCurrencyCode (manager->type));
+        return NULL;
+    }
+
+    printf ("CRY: %4s: loaded %4zu transfers\n",
+            cryptoBlockChainTypeGetCurrencyCode (manager->type),
+            BRSetCount(bundles));
+
+    return bundles;
+}
+
+static OwnershipGiven BRSetOf(BRCryptoClientTransactionBundle)
+cryptoWalletManagerInitialTransactionBundlesLoad (BRCryptoWalletManager manager) {
+    BRSetOf(BRCryptoClientTransactionBundle) bundles = cryptoClientTransactionBundleSetCreate (25);
+    if (1 != fileServiceLoad (manager->fileService, bundles, fileServiceTypeTransactions, 1)) {
+        cryptoClientTransactionBundleSetRelease (bundles);
+        printf ("CRY: %4s: failed to load transactions",
+                cryptoBlockChainTypeGetCurrencyCode (manager->type));
+        return NULL;
+    }
+
+    printf ("CRY: %4s: loaded %4zu transactions\n",
+            cryptoBlockChainTypeGetCurrencyCode (manager->type),
+            BRSetCount(bundles));
+    return bundles;
 }
 
 extern BRCryptoWalletManager

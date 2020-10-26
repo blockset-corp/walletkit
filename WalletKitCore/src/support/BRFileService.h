@@ -27,6 +27,7 @@
 #define BRFileService_h
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "BRSet.h"
 #include "BRInt.h"
 
@@ -133,10 +134,15 @@ fileServiceSave (BRFileService fs,
                  const char *type,  /* block, peers, transactions, logs, ... */
                  const void *entity);     /* BRMerkleBlock*, BRTransaction, BREthereumTransaction, ... */
 
-extern int
+extern int  // 1 -> success, 0 -> failure
 fileServiceRemove (BRFileService fs,
                    const char *type,
-                   UInt256 identifier);
+                   const void *entity);
+
+extern int  // 1 -> success, 0 -> failure
+fileServiceRemoveByIdentifier (BRFileService fs,
+                               const char *type,
+                               UInt256 identifier);
 
 extern int
 fileServiceReplace (BRFileService fs,
@@ -251,5 +257,9 @@ extern int
 fileServiceWipe (const char *basePath,
                  const char *currency,
                  const char *network);
+
+extern bool
+fileServiceHasType (BRFileService fs,
+                    const char *type);
 
 #endif /* BRFileService_h */
