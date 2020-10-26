@@ -16,6 +16,8 @@
 #include <stdio.h>          // printf
 
 #include "support/BRArray.h"
+#include "support/BRCrypto.h"
+
 #include "BRCryptoAddressP.h"
 #include "BRCryptoHashP.h"
 #include "BRCryptoTransferP.h"
@@ -1050,6 +1052,140 @@ cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
                       :  0))));
 }
 
+static BRRlpItem
+cryptoClientTransferBundleRlpEncodeAttributes (size_t count,
+                                               const char **keys,
+                                               const char **vals,
+                                               BRRlpCoder coder) {
+    BRRlpItem items[count];
+
+    for (size_t index = 0; index < count; index++)
+    items[index] = rlpEncodeList2 (coder,
+                                   rlpEncodeString (coder, keys[index]),
+                                   rlpEncodeString (coder, vals[index]));
+
+    return rlpEncodeListItems (coder, items, count);
+}
+
+typedef struct {
+    BRArrayOf(char*) keys;
+    BRArrayOf(char*) vals;
+} BRCryptoTransferBundleRlpDecodeAttributesResult;
+
+static BRCryptoTransferBundleRlpDecodeAttributesResult
+cryptoClientTransferBundleRlpDecodeAttributes (BRRlpItem item,
+                                               BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+
+    BRArrayOf(char*) keys;
+    array_new (keys, itemsCount);
+
+    BRArrayOf(char*) vals;
+    array_new (vals, itemsCount);
+
+    for (size_t index = 0; index < itemsCount; index++) {
+        size_t count;
+        const BRRlpItem *pair = rlpDecodeList (coder, items[index], &count);
+        assert (2 == count);
+
+        array_add (keys, rlpDecodeString (coder, pair[0]));
+        array_add (vals, rlpDecodeString (coder, pair[1]));
+    }
+
+    return (BRCryptoTransferBundleRlpDecodeAttributesResult) { keys, vals };
+}
+
+private_extern BRRlpItem
+cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
+                                     BRRlpCoder coder) {
+
+    return rlpEncodeList (coder, 14,
+                          rlpEncodeUInt64 (coder, bundle->status, 0),
+                          rlpEncodeString (coder, bundle->hash),
+                          rlpEncodeString (coder, bundle->uids),
+                          rlpEncodeString (coder, bundle->from),
+                          rlpEncodeString (coder, bundle->to),
+                          rlpEncodeString (coder, bundle->amount),
+                          rlpEncodeString (coder, bundle->currency),
+                          rlpEncodeString (coder, bundle->fee),
+                          rlpEncodeUInt64 (coder, bundle->blockTimestamp,        0),
+                          rlpEncodeUInt64 (coder, bundle->blockNumber,           0),
+                          rlpEncodeUInt64 (coder, bundle->blockConfirmations,    0),
+                          rlpEncodeUInt64 (coder, bundle->blockTransactionIndex, 0),
+                          rlpEncodeString (coder, bundle->blockHash),
+                          cryptoClientTransferBundleRlpEncodeAttributes (bundle->attributesCount,
+                                                                         (const char **) bundle->attributeKeys,
+                                                                         (const char **) bundle->attributeVals,
+                                                                         coder));
+}
+
+private_extern BRCryptoClientTransferBundle
+cryptoClientTransferBundleRlpDecode (BRRlpItem item,
+                                     BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+    assert (14 == itemsCount);
+
+    char *hash     = rlpDecodeString (coder, items[ 1]);
+    char *uids     = rlpDecodeString (coder, items[ 2]);
+    char *from     = rlpDecodeString (coder, items[ 3]);
+    char *to       = rlpDecodeString (coder, items[ 4]);
+    char *amount   = rlpDecodeString (coder, items[ 5]);
+    char *currency = rlpDecodeString (coder, items[ 6]);
+    char *fee      = rlpDecodeString (coder, items[ 7]);
+    char *blkHash  = rlpDecodeString (coder, items[12]);
+
+    BRCryptoTransferBundleRlpDecodeAttributesResult attributesResult =
+    cryptoClientTransferBundleRlpDecodeAttributes (items[13], coder);
+
+    BRCryptoClientTransferBundle bundle =
+    cryptoClientTransferBundleCreate ((BRCryptoTransferStateType) rlpDecodeUInt64 (coder, items[ 0], 0),
+                                      hash,
+                                      uids,
+                                      from,
+                                      to,
+                                      amount,
+                                      currency,
+                                      fee,
+                                      rlpDecodeUInt64 (coder, items[ 8], 0),
+                                      rlpDecodeUInt64 (coder, items[ 9], 0),
+                                      rlpDecodeUInt64 (coder, items[10], 0),
+                                      rlpDecodeUInt64 (coder, items[11], 0),
+                                      blkHash,
+                                      array_count(attributesResult.keys),
+                                      (const char **) attributesResult.keys,
+                                      (const char **) attributesResult.vals);
+
+    free (blkHash);
+    free (fee);
+    free (currency);
+    free (amount);
+    free (to);
+    free (from);
+    free (uids);
+    free (hash);
+
+    array_free_all (attributesResult.keys, free);
+    array_free_all (attributesResult.vals, free);
+
+    return bundle;
+}
+
+private_extern size_t
+cryptoClientTransferBundleGetHashValue (BRCryptoClientTransferBundle bundle) {
+    uint8_t md16[16];
+    BRMD5 (md16, bundle->uids, strlen(bundle->uids));
+    return *((size_t *) md16);
+}
+
+private_extern bool
+cryptoClientTransferBundleIsEqual (BRCryptoClientTransferBundle bundle1,
+                                   BRCryptoClientTransferBundle bundle2) {
+    return 0 == strcmp (bundle1->uids, bundle2->uids);
+}
+
+
 // MARK: - Transaction Bundle
 
 extern BRCryptoClientTransactionBundle
@@ -1087,5 +1223,48 @@ cryptoClientTransactionBundleCompare (const BRCryptoClientTransactionBundle b1,
             : (b1->blockHeight > b2->blockHeight
                ? +1
                :  0));
+}
+
+private_extern BRRlpItem
+cryptoClientTransactionBundleRlpEncode (BRCryptoClientTransactionBundle bundle,
+                                        BRRlpCoder coder) {
+    return rlpEncodeList (coder, 4,
+                          rlpEncodeUInt64 (coder, bundle->status,      0),
+                          rlpEncodeBytes  (coder, bundle->serialization, bundle->serializationCount),
+                          rlpEncodeUInt64 (coder, bundle->timestamp,   0),
+                          rlpEncodeUInt64 (coder, bundle->blockHeight, 0));
+}
+
+private_extern BRCryptoClientTransactionBundle
+cryptoClientTransactionBundleRlpDecode (BRRlpItem item,
+                                        BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+    assert (4 == itemsCount);
+
+    BRRlpData serializationData = rlpDecodeBytesSharedDontRelease (coder, items[1]);
+
+    return cryptoClientTransactionBundleCreate ((BRCryptoTransferStateType) rlpDecodeUInt64 (coder, items[0], 0),
+                                                serializationData.bytes,
+                                                serializationData.bytesCount,
+                                                rlpDecodeUInt64(coder, items[2], 0),
+                                                rlpDecodeUInt64(coder, items[3], 0));
+}
+
+private_extern size_t
+cryptoClientTransactionBundleGetHashValue (BRCryptoClientTransactionBundle bundle) {
+    uint8_t md16[16];
+    BRMD5 (md16, bundle->serialization, bundle->serializationCount);
+    return *((size_t *) md16);
+}
+
+private_extern bool
+cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
+                                      BRCryptoClientTransactionBundle bundle2) {
+    return (bundle1->status             == bundle2->status             &&
+            bundle1->timestamp          == bundle2->timestamp          &&
+            bundle1->blockHeight        == bundle2->blockHeight        &&
+            bundle1->serializationCount == bundle2->serializationCount &&
+            0 == memcmp (bundle1->serialization, bundle2->serialization, bundle1->serializationCount));
 }
 
