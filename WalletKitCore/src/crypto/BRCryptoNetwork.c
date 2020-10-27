@@ -13,6 +13,7 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoAccountP.h"
+#include "BRCryptoHashP.h"
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
@@ -280,6 +281,23 @@ extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
                         BRCryptoBlockChainHeight height) {
     network->height = height;
+}
+
+extern BRCryptoHash
+cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
+    return network->verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
+                                   BRCryptoHash verifiedBlockHash) {
+    network->verifiedBlockHash = verifiedBlockHash;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
+                                           const char * blockHashString) {
+    network->verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
 }
 
 extern uint32_t
@@ -639,6 +657,25 @@ cryptoNetworkAsGEN (BRCryptoNetwork network) {
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
     return network->type;
+}
+
+private_extern BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string) {
+    switch (network->type) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            assert(64 == strlen (string));
+            UInt256 hash = uint256(string);
+            return cryptoHashCreateAsBTC (hash);
+            
+        case BLOCK_CHAIN_TYPE_ETH:
+            return cryptoHashCreateAsETH (ethHashCreate (string));
+            
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericNetwork genNetwork = cryptoNetworkAsGEN (network);
+            return cryptoHashCreateAsGEN (genNetworkHashFromString (genNetwork, string));
+        }
+    }
 }
 
 // MARK: - Network Defaults

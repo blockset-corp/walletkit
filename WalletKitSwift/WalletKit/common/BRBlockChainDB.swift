@@ -240,6 +240,7 @@ public class BlockChainDB {
             isMainnet: Bool,
             currency: String,
             blockHeight: UInt64?,
+            verifiedBlockHash: String?,
             feeEstimates: [BlockchainFee],
             confirmationsUntilFinal: UInt32)
 
@@ -260,6 +261,7 @@ public class BlockChainDB {
                 let isMainnet = json.asBool (name: "is_mainnet"),
                 let currency = json.asString (name: "native_currency_id"),
                 let blockHeight = json.asInt64 (name: "block_height"),
+                let verifiedBlockHash = json.asString(name: "verified_block_hash"),
                 let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
                 else { return nil }
 
@@ -270,6 +272,7 @@ public class BlockChainDB {
 
             return (id: id, name: name, network: network, isMainnet: isMainnet, currency: currency,
                     blockHeight: (-1 == blockHeight ? nil : UInt64 (blockHeight)),
+                    verifiedBlockHash: verifiedBlockHash,
                     feeEstimates: feeEstimates,
                     confirmationsUntilFinal: confirmationsUntilFinal)
         }
@@ -436,6 +439,22 @@ public class BlockChainDB {
                      raw: raw,
                      transfers: transfers,
                      acknowledgements: acks)
+        }
+        
+        // Transaction Fee
+        
+        public typealias TransactionFee = (
+            costUnits: UInt64,
+            properties: Dictionary<String,String>?
+        )
+        
+        static internal func asTransactionFee (json: JSON) -> Model.TransactionFee? {
+            guard let costUnits = json.asUInt64(name: "cost_units")
+                else { return nil }
+            
+            let properties = json.asDict(name: "properties")?.mapValues { return $0 as! String }
+
+            return (costUnits: costUnits, properties: properties)
         }
 
         /// Block
@@ -959,6 +978,34 @@ public class BlockChainDB {
                      httpMethod: "POST",
                      deserializer: { (_) in Result.success(()) },
                      completion: completion)
+    }
+    
+    public func estimateTransactionFee (blockchainId: String,
+                                        hashAsHex: String,
+                                        transaction: Data,
+                                        completion: @escaping (Result<Model.TransactionFee, QueryError>) -> Void) {
+        let json: JSON.Dict = [
+            "blockchain_id": blockchainId,
+            // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
+            "transaction_id": (hashAsHex.isEmpty ? "0x0000000000000000000000000000000000000000000000000000000000000000" : hashAsHex),
+            "data" : transaction.base64EncodedString()
+        ]
+        
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: "/transactions",
+                     query: zip(["estimate_fee"], ["true"]),
+                     data: json,
+                     httpMethod: "POST") {
+            self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                (more: URL?, res: Result<[JSON], QueryError>) in
+                precondition (nil == more)
+                completion (res.flatMap {
+                    BlockChainDB.getOneExpected (id: "POST /transactions?estimate_fee",
+                                                 data: $0,
+                                                 transform: Model.asTransactionFee)
+                })
+            }
+        }
     }
 
     // Blocks

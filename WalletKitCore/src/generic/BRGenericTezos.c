@@ -20,6 +20,20 @@
 
 // MARK: - Generic Network
 
+static BRGenericHash
+genericTezosNetworkCreateHashFromString (const char *string) {
+    BRTezosHash hash = tezosHashFromString (string);
+    return genericHashCreate(TEZOS_HASH_BYTES, hash.bytes, GENERIC_HASH_ENCODING_BASE58);
+}
+
+static char *
+genericTezosNetworkEncodeHash (BRGenericHash hash) {
+    size_t len = BRBase58CheckEncode (NULL, 0, hash.bytes, TEZOS_HASH_BYTES);
+    char * string = calloc (1, len);
+    BRBase58CheckEncode (string, len, hash.bytes, TEZOS_HASH_BYTES);
+    return string;
+}
+
 // MARK: - Generic Account
 
 static BRGenericAccountRef
@@ -143,7 +157,7 @@ genericTezosTransferGetFeeBasis (BRGenericTransferRef transfer) {
 static BRGenericHash
 genericTezosTransferGetHash (BRGenericTransferRef transfer) {
     BRTezosHash hash = tezosTransferGetTransactionId ((BRTezosTransfer) transfer);
-    return genericHashCreate (sizeof (hash.bytes), hash.bytes);
+    return genericHashCreate (sizeof (hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_BASE58);
 }
 
 static uint8_t *
@@ -349,8 +363,7 @@ genericTezosWalletManagerRecoverTransfer (const char *hash,
     BRTezosAddress toAddress   = tezosAddressCreateFromString (to,   false);
     BRTezosAddress fromAddress = tezosAddressCreateFromString (from, false);
     // Convert the hash string to bytes
-    BRTezosHash txId;
-    BRBase58Decode(txId.bytes, sizeof(txId.bytes), hash);
+    BRTezosHash txId = tezosHashFromString (hash);
     
     BRTezosTransfer transfer = tezosTransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, timestamp, blockHeight, error);
     
@@ -376,6 +389,8 @@ genericTezosWalletManagerGetAPISyncType (void) {
 struct BRGenericHandersRecord genericTezosHandlersRecord = {
     CRYPTO_NETWORK_TYPE_XTZ,
     { // Network
+        genericTezosNetworkCreateHashFromString,
+        genericTezosNetworkEncodeHash
     },
     
     {    // Account

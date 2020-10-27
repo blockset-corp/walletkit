@@ -66,6 +66,7 @@ struct BRCryptoNetworkRecord {
     char *name;
     BRCryptoNetworkCanonicalType canonicalType;
     BRCryptoBlockChainHeight height;
+    BRCryptoHash verifiedBlockHash;
     BRCryptoCurrency currency;
     BRArrayOf(BRCryptoCurrencyAssociation) associations;
     BRArrayOf(BRCryptoNetworkFee) fees;
@@ -138,6 +139,10 @@ cryptoNetworkAsGEN (BRCryptoNetwork network);
 
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
+
+BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string);
 
 private_extern BRCryptoCurrency
 cryptoNetworkGetCurrencyforTokenETH (BRCryptoNetwork network,

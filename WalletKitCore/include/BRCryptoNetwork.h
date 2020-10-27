@@ -13,6 +13,7 @@
 
 #include "BRCryptoAmount.h"
 #include "BRCryptoSync.h"
+#include "BRCryptoHash.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,6 +154,17 @@ extern "C" {
     extern void
     cryptoNetworkSetHeight (BRCryptoNetwork network,
                             BRCryptoBlockChainHeight height);
+
+    extern BRCryptoHash
+    cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network);
+
+    extern void
+    cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
+                                       BRCryptoHash verifiedBlockHash);
+
+    extern void
+    cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
+                                               const char * verifiedBlockHashString);
 
     extern uint32_t
     cryptoNetworkGetConfirmationsUntilFinal (BRCryptoNetwork network);
