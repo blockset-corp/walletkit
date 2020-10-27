@@ -103,6 +103,7 @@ extern "C" {
     typedef BRGenericFeeBasis (*BRGenericTransferGetFeeBasis) (BRGenericTransferRef transfer);
     typedef BRGenericHash (*BRGenericTransferGetHash) (BRGenericTransferRef transfer);
     typedef uint8_t * (*BRGenericTransferGetSerialization) (BRGenericTransferRef transfer, size_t *bytesCount);
+    typedef uint8_t * (*BRGenericTransferGetSerializationForFeeEstimation) (BRGenericTransferRef transfer, BRGenericWalletRef wallet, BRGenericAccountRef account, size_t *bytesCount);
 
     typedef struct {
         BRGenericTransferCreate create;
@@ -114,6 +115,7 @@ extern "C" {
         BRGenericTransferGetFeeBasis feeBasis;
         BRGenericTransferGetHash hash;
         BRGenericTransferGetSerialization getSerialization;
+        BRGenericTransferGetSerializationForFeeEstimation getSerializationForFeeEstimation;
     } BRGenericTransferHandlers;
 
     // MARK: - Generic Wallet
@@ -207,10 +209,17 @@ extern "C" {
 
     typedef BRGenericAPISyncType (*BRGenericWalletManagerGetAPISyncType) (void);
 
+    typedef BRGenericFeeBasis (*BRGenericWalletMangerRecoverFeeBasisFromEstimate) (BRGenericManager gwm,
+                                                                                   BRGenericFeeBasis initialFeeBasis,
+                                                                                   size_t attributesCount,
+                                                                                   OwnershipKept const char **attributeKeys,
+                                                                                   OwnershipKept const char **attributeVals);
+
     typedef struct {
         BRGenericWalletManagerRecoverTransfer transferRecover;
         BRGenericWalletManagerRecoverTransfersFromRawTransaction transfersRecoverFromRawTransaction;
         BRGenericWalletManagerGetAPISyncType apiSyncType;
+        BRGenericWalletMangerRecoverFeeBasisFromEstimate recoverFeeBasisFromEstimate;
     } BRGenericManagerHandlers;
 
     // MARK: - Generic Handlers

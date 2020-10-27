@@ -1244,7 +1244,9 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
                                      BRCryptoCookie cookie,
                                      BRCryptoAddress target,
                                      BRCryptoAmount  amount,
-                                     BRCryptoNetworkFee fee) {
+                                     BRCryptoNetworkFee fee,
+                                     size_t attributesCount,
+                                     OwnershipKept BRCryptoTransferAttribute *attributes) {
     //    assert (cryptoWalletGetType (wallet) == cryptoFeeBasisGetType(feeBasis));
     switch (cwm->type) {
         case BLOCK_CHAIN_TYPE_BTC: {
@@ -1295,29 +1297,52 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
 
             UInt256 genValue = cryptoAmountGetValue(amount);
             UInt256 genPricePerCostFactor = uint256Create (cryptoNetworkFeeAsGEN(fee));
-
-            BRGenericFeeBasis genFeeBasis = genWalletEstimateTransferFee (genWallet,
-                                                                          genAddress,
-                                                                          genValue,
-                                                                          genPricePerCostFactor);
-
-            BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (wallet);
-            BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsGEN (unitForFee, genFeeBasis);
             
-            cwm->listener.walletEventCallback (cwm->listener.context,
-                                               cryptoWalletManagerTake (cwm),
-                                               cryptoWalletTake (wallet),
-                                               (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-                { .feeBasisEstimated = {
-                    CRYPTO_SUCCESS,
-                    cookie,
-                    cryptoFeeBasisTake (feeBasis)
-                }}
-            });
+            BRArrayOf(BRGenericTransferAttribute) genAttributes;
+            array_new (genAttributes, attributesCount);
+            for (size_t index = 0; index < attributesCount; index++) {
+                // There is no need to give/take this attribute.  It is OwnershipKept
+                // (by the caller) and we only extract info.
+                BRCryptoTransferAttribute attribute = attributes[index];
+                BRGenericTransferAttribute genAttribute =
+                genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
+                                            cryptoTransferAttributeGetValue(attribute),
+                                            CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
+                array_add (genAttributes, genAttribute);
+            }
+            
+            if (genManagerSupportsLocalFeeEstimation(cwm->u.gen)) {
+                BRGenericFeeBasis genFeeBasis = genWalletEstimateTransferFee (genWallet,
+                                                                              genAddress,
+                                                                              genValue,
+                                                                              genPricePerCostFactor);
 
-            cryptoFeeBasisGive (feeBasis);
-            cryptoUnitGive(unitForFee);
+                BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (wallet);
+                BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsGEN (unitForFee, genFeeBasis);
+                
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+                    { .feeBasisEstimated = {
+                        CRYPTO_SUCCESS,
+                        cookie,
+                        cryptoFeeBasisTake (feeBasis)
+                    }}
+                });
+
+                cryptoFeeBasisGive (feeBasis);
+                cryptoUnitGive(unitForFee);
+            } else {
+                genManagerEstimateFeeForTransfer (cwm->u.gen,
+                                                  genWallet,
+                                                  cookie,
+                                                  genAddress,
+                                                  genValue,
+                                                  genPricePerCostFactor,
+                                                  genAttributes);
+            }
         }
     }
 }

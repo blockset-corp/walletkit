@@ -505,6 +505,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleTransferGetFeeBasis,
         genericRippleTransferGetHash,
         genericRippleTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -531,6 +532,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleWalletManagerRecoverTransfer,
         genericRippleWalletManagerRecoverTransfersFromRawTransaction,
         genericRippleWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

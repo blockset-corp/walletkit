@@ -172,6 +172,30 @@ genericTezosTransferGetSerialization (BRGenericTransferRef transfer, size_t *byt
     return result;
 }
 
+static uint8_t *
+genericTezosTransferGetSerializationForFeeEstimation (BRGenericTransferRef transfer,
+                                                      BRGenericWalletRef wallet,
+                                                      BRGenericAccountRef account,
+                                                      size_t *bytesCount)
+{
+    BRTezosHash lastBlockHash = tezosWalletGetLastBlockHash ((BRTezosWallet) wallet);
+    BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
+    assert(transaction);
+    bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal((BRTezosWallet) wallet);
+    
+    tezosTransactionSerializeForFeeEstimation (transaction,
+                                               (BRTezosAccount) account,
+                                               lastBlockHash,
+                                               needsReveal);
+    
+    uint8_t * result = NULL;
+    *bytesCount = 0;
+    if (transaction) {
+        result = tezosTransactionGetSignedBytes (transaction, bytesCount);
+    }
+    return result;
+}
+
 // MARK: Generic Wallet
 
 static BRGenericWalletRef
@@ -291,9 +315,11 @@ genericTezosWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                     BRGenericAddressRef address,
                                     UInt256 amount,
                                     UInt256 pricePerCostFactor) {
+    BRTezosUnitMutez mutezPerByte = (BRTezosUnitMutez) pricePerCostFactor.u64[0];
+    BRTezosFeeBasis defaultFeeBasis = tezosDefaultFeeBasis(mutezPerByte);
     return (BRGenericFeeBasis) {
-        pricePerCostFactor,
-        1 //TODO:TEZOS fee basis
+        tezosFeeBasisGetFee (&defaultFeeBasis),
+        1
     };
 }
 
@@ -384,6 +410,49 @@ genericTezosWalletManagerGetAPISyncType (void) {
     return GENERIC_SYNC_TYPE_TRANSFER;
 }
 
+static const char *
+cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
+    for (size_t index = 0; index < count; index++)
+        if (0 == strcasecmp (key, keys[index]))
+            return vals[index];
+    return NULL;
+}
+
+static uint64_t
+cwmParseUInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return strtoull(string, NULL, 0);
+}
+
+static BRGenericFeeBasis
+genericTezosWalletManagerRecoverFeeBasisFromEstimate (BRGenericManager gwm,
+                                                      BRGenericFeeBasis initialFeeBasis,
+                                                      size_t attributesCount,
+                                                      OwnershipKept const char **attributeKeys,
+                                                      OwnershipKept const char **attributeVals) {
+    bool parseError;
+    
+    int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
+    int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
+    int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("counter", attributesCount, attributeKeys, attributeVals), &parseError);
+    // increment counter
+    counter += 1;
+    // add 10% padding to gas/storage limits
+    gasUsed = (int64_t)(gasUsed * 1.1);
+    storageUsed = (int64_t)(storageUsed * 1.1);
+    BRTezosUnitMutez mutezPerByte = (BRTezosUnitMutez) (initialFeeBasis.pricePerCostFactor.u64[0]) / 1000; // given as nanotez/byte
+    // get the serialized txn size from the estimation payload
+    size_t sizeInBytes = (size_t) initialFeeBasis.costFactor;
+    
+    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte,
+                                                            sizeInBytes,
+                                                            gasUsed,
+                                                            storageUsed,
+                                                            counter);
+    //TODO:TEZOSREBASE need a way to propagate full BRTezosFeeBasis back to submit
+    return genFeeBasisCreate (uint256Create((uint64_t)tezosFeeBasisGetFee(&feeBasis)), 1.0);
+}
+
 // MARK: - Generic Handlers
 
 struct BRGenericHandersRecord genericTezosHandlersRecord = {
@@ -424,6 +493,7 @@ struct BRGenericHandersRecord genericTezosHandlersRecord = {
         genericTezosTransferGetFeeBasis,
         genericTezosTransferGetHash,
         genericTezosTransferGetSerialization,
+        genericTezosTransferGetSerializationForFeeEstimation
     },
     
     {   // Wallet
@@ -450,6 +520,7 @@ struct BRGenericHandersRecord genericTezosHandlersRecord = {
         genericTezosWalletManagerRecoverTransfer,
         genericTezosWalletManagerRecoverTransfersFromRawTransaction,
         genericTezosWalletManagerGetAPISyncType,
+        genericTezosWalletManagerRecoverFeeBasisFromEstimate
     },
 };
 

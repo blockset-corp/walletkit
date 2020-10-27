@@ -499,6 +499,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetFeeBasis,
         genericHederaTransferGetHash,
         genericHederaTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -525,6 +526,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletManagerRecoverTransfer,
         genericHederaWalletManagerRecoverTransfersFromRawTransaction,
         genericHederaWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

@@ -134,6 +134,7 @@ cryptoWalletManagerSetTransferStateGEN (BRCryptoWalletManager cwm,
                                         BRCryptoTransfer transfer,
                                         BRGenericTransferState newGenericState);
 
+
 #ifdef __cplusplus
 }
 #endif

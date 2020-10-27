@@ -355,6 +355,17 @@ genTransferSerialize (BRGenericTransfer transfer, size_t *bytesCount) {
     return transfer->handlers.getSerialization (transfer->ref, bytesCount);
 }
 
+extern uint8_t *
+genTransferSerializeForFeeEstimation (BRGenericTransfer transfer,
+                                      BRGenericWallet wallet,
+                                      BRGenericAccount account,
+                                      size_t *bytesCount) {
+    return transfer->handlers.getSerializationForFeeEstimation (transfer->ref,
+                                                                wallet->ref,
+                                                                account->ref,
+                                                                bytesCount);
+}
+
 static size_t
 genTransferGetHashForSet (const void *transferPtr) {
     BRGenericTransfer transfer = (BRGenericTransfer) transferPtr;

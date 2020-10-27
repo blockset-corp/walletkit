@@ -329,7 +329,9 @@ extern "C" {
                                          BRCryptoCookie cookie,
                                          BRCryptoAddress target,
                                          BRCryptoAmount  amount,
-                                         BRCryptoNetworkFee fee);
+                                         BRCryptoNetworkFee fee,
+                                         size_t attributesCount,
+                                         OwnershipKept BRCryptoTransferAttribute *attributes);
 
     extern void
     cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager manager,
