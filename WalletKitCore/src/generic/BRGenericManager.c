@@ -151,9 +151,10 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     BRGenericTransferState state = genTransferStateDecode (items[7], coder);
     BRArrayOf(BRGenericTransferAttribute) attributes = genTransferAttributesDecode(items[8], coder);
 
-    BRGenericHash hash = genericHashCreate(hashData.bytesCount, hashData.bytes);
-
-    char *strHash   = genericHashAsString (hash);
+    // encoding is ignored here since the hash will be recreated from string by the network handler
+    BRGenericHash hash = genericHashCreate (hashData.bytesCount, hashData.bytes, GENERIC_HASH_ENCODING_HEX);
+    
+    char *strHash = gwm->handlers->network.encodeHash (hash);
     char *strAmount = uint256CoerceString (amount, 10);
 
     int overflow = 0;

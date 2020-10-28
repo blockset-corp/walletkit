@@ -39,6 +39,12 @@ extern "C" {
     extern int
     genNetworkIsMainnet (BRGenericNetwork network);
 
+    extern BRGenericHash
+    genNetworkHashFromString (BRGenericNetwork network, const char *string);
+
+    extern char *
+    genNetworkEncodeHash (BRGenericNetwork network, BRGenericHash hash);
+
     // MARK: - Account
 
     extern BRGenericAccount

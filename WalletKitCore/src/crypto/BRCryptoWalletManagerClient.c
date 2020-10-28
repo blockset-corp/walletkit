@@ -1875,7 +1875,8 @@ cryptoWalletManagerClientCreateGENClient (BRCryptoWalletManager cwm) {
 extern void
 cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager cwm,
                                            OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                           uint64_t blockNumber) {
+                                           uint64_t blockNumber,
+                                           const char *blockHashString) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_GET_BLOCK_NUMBER == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_GET_BLOCK_NUMBER == callbackState->type);
@@ -1897,6 +1898,11 @@ cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager c
             // GEN does not signal events; so we must do it ourselves.
             BRCryptoNetwork network = cryptoWalletManagerGetNetwork(cwm);
             cryptoNetworkSetHeight (network, blockNumber);
+            
+            if (NULL != blockHashString) {
+                BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
+                cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+            }
 
             cwm->listener.walletManagerEventCallback (cwm->listener.context,
                                                       cryptoWalletManagerTake(cwm),

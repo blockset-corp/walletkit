@@ -12,6 +12,7 @@
 #define BRTezosBase_h
 
 #include "BRCryptoBase.h"
+#include "support/BRBase58.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -43,6 +44,15 @@ static inline bool
 tezosHashIsEqual (const BRTezosHash h1,
                   const BRTezosHash h2) {
     return 0 == memcmp (h1.bytes, h2.bytes, TEZOS_HASH_BYTES);
+}
+
+static inline BRTezosHash
+tezosHashFromString(const char *input) {
+    size_t length = BRBase58CheckDecode(NULL, 0, input);
+    assert(length == TEZOS_HASH_BYTES);
+    BRTezosHash hash;
+    BRBase58CheckDecode(hash.bytes, length, input);
+    return hash;
 }
 
 

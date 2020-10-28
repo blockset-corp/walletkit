@@ -35,7 +35,15 @@ extern "C" {
 
     // MARK: - Generic Network
 
+    typedef BRGenericHash
+    (*BRGenericNetworkCreateHashFromString) (const char *string);
+
+    typedef char *
+    (*BRGenericNetworkEncodeHash) (BRGenericHash hash);
+
     typedef struct {
+        BRGenericNetworkCreateHashFromString createHashFromString;
+        BRGenericNetworkEncodeHash encodeHash;
     } BRGenericNetworkHandlers;
 
 

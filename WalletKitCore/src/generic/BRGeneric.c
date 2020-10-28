@@ -51,6 +51,16 @@ genNetworkIsMainnet (BRGenericNetwork network) {
     return network->isMainnet;
 }
 
+extern BRGenericHash
+genNetworkHashFromString (BRGenericNetwork network, const char *string) {
+    return network->handlers.createHashFromString (string);
+}
+
+extern char *
+genNetworkEncodeHash (BRGenericNetwork network, BRGenericHash hash) {
+    return network->handlers.encodeHash (hash);
+}
+
 // MARK: - Account
 
 IMPLEMENT_GENERIC_TYPE(Account, account)
