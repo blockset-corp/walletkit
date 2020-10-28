@@ -284,6 +284,7 @@ struct BRCryptoClientQRYManagerRecord {
         size_t rid;
     } sync;
 
+    bool connected;
     size_t requestId;
 };
 

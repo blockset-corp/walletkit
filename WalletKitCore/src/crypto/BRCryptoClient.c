@@ -174,8 +174,7 @@ cryptoClientQRYManagerCreate (BRCryptoClient client,
     qry->sync.success   = false;
     qry->sync.unbounded = CRYPTO_CLIENT_QRY_IS_UNBOUNDED;
 
-    // gwm->syncContext  = syncContext;
-    // gwm->syncCallback = syncCallback;
+    qry->connected = true;
     return qry;
 }
 
@@ -187,12 +186,12 @@ cryptoClientQRYManagerRelease (BRCryptoClientQRYManager qry) {
 
 extern void
 cryptoClientQRYManagerConnect (BRCryptoClientQRYManager qry) {
-    printf ("QRY: Want to Connect\n");
+    qry->connected = true;
 }
 
 extern void
 cryptoClientQRYManagerDisconnect (BRCryptoClientQRYManager qry) {
-    printf ("QRY: Want to Disconnect\n");
+    qry->connected = false;
 }
 
 
@@ -217,6 +216,9 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry,
 
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
+    // Skip out if not connected.
+    if (!qry->connected) return;
+
     // Skip out if not an API sync.
     if (CRYPTO_SYNC_MODE_API_ONLY          != qry->manager->syncMode &&
         CRYPTO_SYNC_MODE_API_WITH_P2P_SEND != qry->manager->syncMode) return;
