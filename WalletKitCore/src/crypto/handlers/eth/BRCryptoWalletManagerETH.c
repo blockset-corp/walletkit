@@ -349,7 +349,9 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
-                                    BRCryptoCurrency currency) {
+                                    BRCryptoCurrency currency,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers) {
     BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerceETH (manager);
 
     BREthereumToken ethToken = NULL;

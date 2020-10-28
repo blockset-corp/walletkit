@@ -165,6 +165,10 @@ private_extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
 private_extern void
+cryptoWalletAddTransfers (BRCryptoWallet wallet,
+                          OwnershipGiven BRArrayOf(BRCryptoTransfer) transfers);
+
+private_extern void
 cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)

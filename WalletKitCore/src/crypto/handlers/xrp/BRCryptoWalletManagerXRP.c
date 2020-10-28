@@ -270,7 +270,9 @@ cryptoWalletManagerCreateWalletSweeperXRP (BRCryptoWalletManager manager,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletXRP (BRCryptoWalletManager manager,
-                                    BRCryptoCurrency currency) {
+                                    BRCryptoCurrency currency,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers) {
     BRRippleAccount xrpAccount = cryptoAccountAsXRP(manager->account);
 
     // Create the primary BRCryptoWallet

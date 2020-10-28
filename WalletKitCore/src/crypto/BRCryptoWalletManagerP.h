@@ -94,7 +94,9 @@ typedef BRCryptoClientP2PManager
 
 typedef BRCryptoWallet
 (*BRCryptoWalletManagerCreateWalletHandler) (BRCryptoWalletManager cwm,
-                                             BRCryptoCurrency currency);
+                                             BRCryptoCurrency currency,
+                                             Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                             Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers);
 
 typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
@@ -189,6 +191,9 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoWalletManagerListener listener;
     BRCryptoWalletListener listenerWallet;
 //    BRCryptoListener listenerTrampoline;
+
+    Nullable BRArrayOf(BRCryptoClientTransferBundle) bundleTransfers;
+    Nullable BRArrayOf(BRCryptoClientTransactionBundle) bundleTransactions;
 };
 
 typedef void *BRCryptoWalletManagerCreateContext;
@@ -225,6 +230,12 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
 private_extern void
 cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet);
+
+private_extern BRCryptoWallet
+cryptoWalletManagerCreateWalletInitialized (BRCryptoWalletManager cwm,
+                                            BRCryptoCurrency currency,
+                                            Nullable BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                            Nullable BRArrayOf(BRCryptoClientTransferBundle) transfers);
 
 private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,

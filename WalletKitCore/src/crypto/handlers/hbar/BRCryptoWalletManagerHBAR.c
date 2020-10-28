@@ -274,7 +274,9 @@ cryptoWalletManagerCreateWalletSweeperHBAR (BRCryptoWalletManager manager,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletHBAR (BRCryptoWalletManager manager,
-                                     BRCryptoCurrency currency) {
+                                     BRCryptoCurrency currency,
+                                     Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                     Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers) {
     BRHederaAccount hbarAccount = cryptoAccountAsHBAR(manager->account);
 
     // Create the primary BRCryptoWallet

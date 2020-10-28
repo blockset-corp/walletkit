@@ -225,7 +225,9 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
-                                    BRCryptoCurrency currency) {
+                                    BRCryptoCurrency currency,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) initialTransactionsBundles,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) initialTransferBundles) {
     assert (NULL == manager->wallet);
     
     // Get the btcMasterPublicKey
@@ -235,8 +237,26 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
 
     // Load the BTC transactions from the fileService
-    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
-    if (NULL == transactions) array_new (transactions, 1);
+    size_t transactionsCount = (NULL == initialTransactionsBundles ? 0 : array_count(initialTransactionsBundles));
+    BRArrayOf(BRTransaction*) transactions = NULL;
+    array_new (transactions, transactionsCount);
+
+    for (size_t index = 0; index < transactionsCount; index++) {
+        BRCryptoClientTransactionBundle bundle = initialTransactionsBundles[index];
+
+        size_t   serializationCount = 0;
+        uint8_t *serialization = cryptoClientTransactionBundleGetSerialization (bundle, &serializationCount);
+
+        BRTransaction *transaction = BRTransactionParse (serialization, serializationCount);
+        if (NULL == transaction)
+            printf ("BTC: CreateWallet: Initial Bundle Missed @ Height %"PRIu64"\n", bundle->blockHeight);
+        else {
+            transaction->blockHeight = (uint32_t) bundle->blockHeight;
+            transaction->timestamp   = bundle->timestamp;
+            array_add (transactions, transaction);
+
+        }
+    }
 
     // Create the BTC wallet
     //
@@ -274,15 +294,19 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     BRTransaction *btcTransactions[btcTransactionsCount > 0 ? btcTransactionsCount : 1]; // avoid a static analysis error
     BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
 
+    BRArrayOf(BRCryptoTransfer) transfers;
+    array_new (transfers, btcTransactionsCount);
+
     for (size_t index = 0; index < btcTransactionsCount; index++) {
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (wallet->listenerTransfer,
-                                                               unitAsDefault,
-                                                               unitAsBase,
-                                                               btcWallet,
-                                                               BRTransactionCopy(btcTransactions[index]),
-                                                               manager->type);
-        cryptoWalletAddTransfer (wallet, transfer);
+        array_add (transfers,
+                   cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                              unitAsDefault,
+                                              unitAsBase,
+                                              btcWallet,
+                                              BRTransactionCopy(btcTransactions[index]),
+                                              manager->type));
     }
+    cryptoWalletAddTransfers (wallet, transfers);
 
     cryptoUnitGive (unitAsDefault);
     cryptoUnitGive (unitAsBase);
@@ -360,7 +384,7 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
 
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleBTC (BRCryptoWalletManager cwm,
-                                                                OwnershipKept BRCryptoClientTransferBundle bundle) {
+                                                         OwnershipKept BRCryptoClientTransferBundle bundle) {
     // Not BTC functionality
     assert (0);
 }

@@ -33,6 +33,10 @@ struct BRCryptoClientTransactionBundleRecord {
     BRCryptoBlockNumber blockHeight;
 };
 
+private_extern OwnershipKept uint8_t *
+cryptoClientTransactionBundleGetSerialization (BRCryptoClientTransactionBundle bundle,
+                                               size_t *serializationCount);
+
 private_extern BRRlpItem
 cryptoClientTransactionBundleRlpEncode (BRCryptoClientTransactionBundle bundle,
                                         BRRlpCoder coder);

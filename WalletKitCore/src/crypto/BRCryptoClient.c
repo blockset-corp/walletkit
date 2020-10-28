@@ -20,6 +20,7 @@
 
 #include "BRCryptoAddressP.h"
 #include "BRCryptoHashP.h"
+#include "BRCryptoFileService.h"
 #include "BRCryptoTransferP.h"
 #include "BRCryptoNetworkP.h"
 #include "BRCryptoWalletP.h"
@@ -701,8 +702,11 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
 #endif
 
                 // Recover transfers from each bundle
-                for (size_t index = 0; index < bundlesCount; index++)
+                for (size_t index = 0; index < bundlesCount; index++) {
+                    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION))
+                        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, bundles[index]);
                     cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
+                }
 
                 BRCryptoWallet wallet = cryptoWalletManagerGetWallet(manager);
 
@@ -763,8 +767,11 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                            (int (*) (const void *, const void *)) cryptoClientTransferBundleCompare);
 #endif
                 // Recover transfers from each bundle
-                for (size_t index = 0; index < bundlesCount; index++)
+                for (size_t index = 0; index < bundlesCount; index++) {
+                    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER))
+                        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, bundles[index]);
                     cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
+                }
 
                 BRCryptoWallet wallet = cryptoWalletManagerGetWallet(manager);
 
@@ -1169,7 +1176,7 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
                                       to,
                                       amount,
                                       currency,
-                                      fee,
+                                      (0 == strcmp(fee,"") ? NULL : fee),
                                       rlpDecodeUInt64 (coder, items[ 8], 0),
                                       rlpDecodeUInt64 (coder, items[ 9], 0),
                                       rlpDecodeUInt64 (coder, items[10], 0),
@@ -1245,6 +1252,13 @@ cryptoClientTransactionBundleCompare (const BRCryptoClientTransactionBundle b1,
             : (b1->blockHeight > b2->blockHeight
                ? +1
                :  0));
+}
+
+private_extern OwnershipKept uint8_t *
+cryptoClientTransactionBundleGetSerialization (BRCryptoClientTransactionBundle bundle,
+                                               size_t *serializationCount) {
+    *serializationCount = bundle->serializationCount;
+    return bundle->serialization;
 }
 
 private_extern BRRlpItem

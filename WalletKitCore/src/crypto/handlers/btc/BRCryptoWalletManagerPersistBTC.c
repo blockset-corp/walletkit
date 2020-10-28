@@ -285,7 +285,7 @@ initialPeersLoadBTC (BRCryptoWalletManager manager) {
     return peers;
 }
 
-static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
+static BRFileServiceTypeSpecification fileServiceSpecificationsArrayBTC[] = {
     {
         CRYPTO_FILE_SERVICE_TYPE_TRANSACTION,
         CRYPTO_FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
@@ -347,6 +347,6 @@ const char *fileServiceTypeTransactionsBTC = FILE_SERVICE_TYPE_TRANSACTION;
 const char *fileServiceTypeBlocksBTC       = FILE_SERVICE_TYPE_BLOCK;
 const char *fileServiceTypePeersBTC        = FILE_SERVICE_TYPE_PEER;
 
-size_t fileServiceSpecificationsCountBTC = sizeof(fileServiceSpecifications)/sizeof(BRFileServiceTypeSpecification);
-BRFileServiceTypeSpecification *fileServiceSpecificationsBTC = fileServiceSpecifications;
+size_t fileServiceSpecificationsCountBTC = sizeof(fileServiceSpecificationsArrayBTC)/sizeof(BRFileServiceTypeSpecification);
+BRFileServiceTypeSpecification *fileServiceSpecificationsBTC = fileServiceSpecificationsArrayBTC;
 

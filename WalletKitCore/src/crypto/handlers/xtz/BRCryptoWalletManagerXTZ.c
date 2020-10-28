@@ -324,7 +324,9 @@ cryptoWalletManagerCreateWalletSweeperXTZ (BRCryptoWalletManager manager,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletXTZ (BRCryptoWalletManager manager,
-                                    BRCryptoCurrency currency) {
+                                    BRCryptoCurrency currency,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers) {
     BRTezosAccount xtzAccount = cryptoAccountAsXTZ(manager->account);
 
     // Create the primary BRCryptoWallet
