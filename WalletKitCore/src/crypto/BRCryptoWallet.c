@@ -881,7 +881,10 @@ cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
             return cryptoFeeBasisCreateAsGEN (wallet->unitForFee,
                                               (BRGenericFeeBasis) {
                 value,
-                costFactor
+                costFactor,
+                0,
+                0,
+                0
             });
         }
     }

@@ -187,7 +187,10 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRHederaUnitTinyBar hederaFee = hederaTransactionGetFee ((BRHederaTransaction) transfer);
     return (BRGenericFeeBasis) {
         uint256Create (hederaTinyBarCoerceToUInt64 (hederaFee)),
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 

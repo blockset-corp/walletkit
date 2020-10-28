@@ -147,11 +147,26 @@ genericTezosTransferGetAmount (BRGenericTransferRef transfer) {
 
 static BRGenericFeeBasis
 genericTezosTransferGetFeeBasis (BRGenericTransferRef transfer) {
-    BRTezosUnitMutez tezosFee = tezosTransferGetFee ((BRTezosTransfer) transfer);
-    return (BRGenericFeeBasis) {
-        uint256Create ((uint64_t) tezosFee),
-        1
-    };
+    if (NULL == tezosTransferGetTransaction ((BRTezosTransfer) transfer)) {
+        BRTezosUnitMutez tezosFee = tezosTransferGetFee ((BRTezosTransfer) transfer);
+        return (BRGenericFeeBasis) {
+            uint256Create ((uint64_t) tezosFee),
+            1,
+            0,
+            0,
+            0
+        };
+    } else {
+        BRTezosFeeBasis feeBasis = tezosTransferGetFeeBasis ((BRTezosTransfer) transfer);
+        assert(FEE_BASIS_ESTIMATE == feeBasis.type);
+        return (BRGenericFeeBasis) {
+            uint256Create ((uint64_t) feeBasis.u.estimate.mutezPerByte),
+            (double) feeBasis.u.estimate.sizeInBytes,
+            feeBasis.u.estimate.gasLimit,
+            feeBasis.u.estimate.storageLimit,
+            feeBasis.u.estimate.counter
+        };
+    }
 }
 
 static BRGenericHash
@@ -281,10 +296,17 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
     BRTezosUnitMutez mutez = (BRTezosUnitMutez) amount.u64[0];
     int64_t counter = tezosWalletGetCounter ((BRTezosWallet) wallet);
     
-    //TODO:TEZOS BRGenericFeeBasis fields are insufficient to populate Tezos fields
     BRTezosFeeBasis feeBasis;
-    feeBasis.type = FEE_BASIS_ESTIMATE;
-    feeBasis.u.estimate.mutezPerByte = (int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0];
+    if (0 == estimatedFeeBasis.counter) { // default fee for estimation
+        feeBasis = tezosDefaultFeeBasis ((int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0]);
+    } else {
+        feeBasis.type = FEE_BASIS_ESTIMATE;
+        feeBasis.u.estimate.mutezPerByte = (int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0];
+        feeBasis.u.estimate.sizeInBytes = (size_t)estimatedFeeBasis.costFactor;
+        feeBasis.u.estimate.gasLimit = estimatedFeeBasis.gasLimit;
+        feeBasis.u.estimate.storageLimit = estimatedFeeBasis.storageLimit;
+        feeBasis.u.estimate.counter = estimatedFeeBasis.counter;
+    }
     
     bool delegationOp = false;
     
@@ -317,9 +339,13 @@ genericTezosWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                     UInt256 pricePerCostFactor) {
     BRTezosUnitMutez mutezPerByte = (BRTezosUnitMutez) pricePerCostFactor.u64[0];
     BRTezosFeeBasis defaultFeeBasis = tezosDefaultFeeBasis(mutezPerByte);
+    BRTezosUnitMutez defaultFee = tezosFeeBasisGetFee (&defaultFeeBasis);
     return (BRGenericFeeBasis) {
-        tezosFeeBasisGetFee (&defaultFeeBasis),
-        1
+        uint256Create ((uint64_t) defaultFee),
+        1,
+        0,
+        0,
+        0
     };
 }
 
@@ -444,13 +470,13 @@ genericTezosWalletManagerRecoverFeeBasisFromEstimate (BRGenericManager gwm,
     // get the serialized txn size from the estimation payload
     size_t sizeInBytes = (size_t) initialFeeBasis.costFactor;
     
-    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte,
-                                                            sizeInBytes,
-                                                            gasUsed,
-                                                            storageUsed,
-                                                            counter);
-    //TODO:TEZOSREBASE need a way to propagate full BRTezosFeeBasis back to submit
-    return genFeeBasisCreate (uint256Create((uint64_t)tezosFeeBasisGetFee(&feeBasis)), 1.0);
+    return (BRGenericFeeBasis) {
+        uint256Create((uint64_t) mutezPerByte),
+        (double) sizeInBytes,
+        gasUsed,
+        storageUsed,
+        counter
+    };
 }
 
 // MARK: - Generic Handlers

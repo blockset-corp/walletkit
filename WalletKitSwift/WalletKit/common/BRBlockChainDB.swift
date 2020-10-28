@@ -1766,6 +1766,10 @@ public class BlockChainDB {
             }
 
             guard responseSuccess.contains(res.statusCode) else {
+                print ("SYS: BDB:API: ERROR RESPONSE: \(res)")
+                if let data = data, let string = String(data: data, encoding: .utf8) {
+                    print(string)
+                }
                 completion (Result.failure (QueryError.response(res.statusCode)))
                 return
             }

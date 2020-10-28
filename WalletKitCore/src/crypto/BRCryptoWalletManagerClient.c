@@ -2465,7 +2465,7 @@ cwmAnnounceEstimateFeeSuccess (OwnershipKept BRCryptoWalletManager cwm,
         { .feeBasisEstimated = {
             CRYPTO_SUCCESS,
             cookie,
-            feeBasis
+            cryptoFeeBasisTake (feeBasis)
         }}
     });
 
