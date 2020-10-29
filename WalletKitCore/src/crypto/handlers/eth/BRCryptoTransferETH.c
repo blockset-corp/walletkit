@@ -185,10 +185,18 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
     BREthereumEther ethAmount = transactionGetAmount(ethTransaction);
     BRCryptoAmount  amount    = cryptoAmountCreate (unit, CRYPTO_FALSE, ethEtherGetValue (ethAmount, WEI));
 
+    BREthereumFeeBasis ethFeeBasisIfReceived = { FEE_BASIS_GAS, { .gas = { ethGasCreate(0), ethGasPriceCreate(ethEtherCreateZero())}} };
+    BREthereumFeeBasis ethFeeBasisEstimated  = (CRYPTO_TRANSFER_RECEIVED == direction
+                                                ? ethFeeBasisIfReceived
+                                                : transactionGetFeeBasisEstimated (ethTransaction));
+    BREthereumFeeBasis ethFeeBasisConfirmed  = (CRYPTO_TRANSFER_RECEIVED == direction
+                                                ? ethFeeBasisIfReceived
+                                                : transactionGetFeeBasis(ethTransaction));
+
     // Get the estimated and confirmed feeBasis'.  If ethTransaction is not INCLUDDED, then the
     // confirmedFeeBasis will be the estimate.
-    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasisEstimated (ethTransaction));
-    BRCryptoFeeBasis confirmedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, transactionGetFeeBasis(ethTransaction));
+    BRCryptoFeeBasis estimatedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, ethFeeBasisEstimated);
+    BRCryptoFeeBasis confirmedFeeBasis = cryptoFeeBasisCreateAsETH (unitForFee, ethFeeBasisConfirmed);
 
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
     BRCryptoAddress  target = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));

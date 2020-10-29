@@ -51,7 +51,7 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      tezosTransferGetAmount (xtzTransfer));
     
-    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (tezosTransferGetFee(xtzTransfer));
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (CRYPTO_TRANSFER_RECEIVED == direction ? 0 : tezosTransferGetFee(xtzTransfer));
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsXTZ (unitForFee,
                                                            xtzFeeBasis);
     
