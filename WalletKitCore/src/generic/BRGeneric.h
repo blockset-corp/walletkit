@@ -20,6 +20,8 @@
 
 #include "BRCryptoSync.h"
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -88,6 +90,7 @@ extern "C" {
     extern void
     genAccountSignTransferWithSeed (BRGenericAccount account,
                                     BRGenericWallet wallet,
+                                    BRGenericHash lastBlockHash,
                                     BRGenericTransfer transfer,
                                     UInt512 seed);
 
@@ -164,6 +167,12 @@ extern "C" {
 
     extern uint8_t *
     genTransferSerialize (BRGenericTransfer transfer, size_t *bytesCount);
+
+    extern uint8_t *
+    genTransferSerializeForFeeEstimation (BRGenericTransfer transfer,
+                                          BRGenericWallet wallet,
+                                          BRGenericAccount account,
+                                          size_t *bytesCount);
 
     extern BRSetOf (BRGenericTransfer)
     genTransferSetCreate (size_t capacity);
@@ -316,6 +325,25 @@ extern "C" {
     extern BRGenericAddress
     genManagerGetAccountAddress (BRGenericManager gwm);
 
+    extern bool
+    genManagerSupportsLocalFeeEstimation (BRGenericManager gwm);
+
+    extern void
+    genManagerEstimateFeeForTransfer (BRGenericManager gwm,
+                                      BRGenericWallet wallet,
+                                      BRCryptoCookie cookie,
+                                      BRGenericAddress address,
+                                      UInt256 amount,
+                                      UInt256 pricePerCostFactor,
+                                      OwnershipKept BRArrayOf(BRGenericTransferAttribute) attributes);
+
+    extern BRGenericFeeBasis
+    genManagerRecoverFeeBasisFromFeeEstimate (BRGenericManager gwm,
+                                              BRGenericFeeBasis initialFeeBasis,
+                                              size_t attributesCount,
+                                              OwnershipKept const char **attributeKeys,
+                                              OwnershipKept const char **attributeVals);
+
     extern BRGenericWallet
     genManagerGetPrimaryWallet (BRGenericManager gwm);
 
@@ -357,6 +385,7 @@ extern "C" {
     extern int
     genManagerSignTransfer (BRGenericManager gwm,
                             BRGenericWallet wid,
+                            BRGenericHash lastBlockHash,
                             BRGenericTransfer transfer,
                             UInt512 seed);
 

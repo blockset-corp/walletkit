@@ -1680,6 +1680,39 @@ extension System {
                     }
 
                 }},
+            
+            funcEstimateFee: { (context, cwm, sid, transactionBytes, transactionBytesLength) in
+                precondition (nil != context  && nil != cwm)
+                
+                guard let (_, manager) = System.systemExtract (context, cwm)
+                else { System.cleanup  ("SYS: EstimateFee: Missed {cwm}", cwm: cwm); return }
+                print ("SYS: EstimateFee")
+                
+                let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
+                
+                manager.query.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: "", transaction: data) {
+                    (res: Result<BlockChainDB.Model.TransactionFee, BlockChainDB.QueryError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve(
+                        success: {
+                            let properties = $0.properties ?? [:]
+                            var metaKeysPtr = Array(properties.keys)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                            var metaValsPtr = Array(properties.values)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                            cwmAnnounceEstimateFeeSuccess (cwm,
+                                                           sid,
+                                                           metaKeysPtr.count,
+                                                           &metaKeysPtr,
+                                                           &metaValsPtr);
+                        },
+                        failure: { (e) in
+                            print ("SYS: EstimateFee: Error: \(e)")
+                            cwmAnnounceEstimateFeeFailure (cwm, sid) })
+                }},
 
             funcGetGasPriceETH: { (context, cwm, sid, network) in
                 precondition (nil != context  && nil != cwm)

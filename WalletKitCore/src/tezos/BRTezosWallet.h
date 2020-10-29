@@ -129,9 +129,6 @@ tezosWalletGetDefaultFeeBasis (BRTezosWallet wallet);
 extern int64_t
 tezosWalletGetCounter (BRTezosWallet wallet);
 
-extern BRTezosHash
-tezosWalletGetLastBlockHash (BRTezosWallet wallet);
-
 extern bool
 tezosWalletNeedsReveal (BRTezosWallet wallet);
 

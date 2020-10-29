@@ -101,6 +101,7 @@ genericHederaAccountGetSerialization (BRGenericAccountRef account,
 static void
 genericHederaAccountSignTransferWithSeed (BRGenericAccountRef account,
                                           BRGenericWalletRef wallet,
+                                          BRGenericHash lastBlockHash,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {
@@ -187,7 +188,10 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRHederaUnitTinyBar hederaFee = hederaTransactionGetFee ((BRHederaTransaction) transfer);
     return (BRGenericFeeBasis) {
         uint256Create (hederaTinyBarCoerceToUInt64 (hederaFee)),
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
@@ -499,6 +503,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetFeeBasis,
         genericHederaTransferGetHash,
         genericHederaTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -525,6 +530,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletManagerRecoverTransfer,
         genericHederaWalletManagerRecoverTransfersFromRawTransaction,
         genericHederaWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

@@ -86,6 +86,7 @@ genericRippleAccountGetSerialization (BRGenericAccountRef account,
 static void
 genericRippleAccountSignTransferWithSeed (BRGenericAccountRef account,
                                           BRGenericWalletRef wallet,
+                                          BRGenericHash lastBlockHash,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {
@@ -178,7 +179,10 @@ genericRippleTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRRippleUnitDrops rippleFee = rippleTransferGetFee ((BRRippleTransfer) transfer);
     return (BRGenericFeeBasis) {
         uint256Create (rippleFee),
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
@@ -320,7 +324,10 @@ genericRippleWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                      UInt256 pricePerCostFactor) {
     return (BRGenericFeeBasis) {
         pricePerCostFactor,
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
@@ -505,6 +512,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleTransferGetFeeBasis,
         genericRippleTransferGetHash,
         genericRippleTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -531,6 +539,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleWalletManagerRecoverTransfer,
         genericRippleWalletManagerRecoverTransfersFromRawTransaction,
         genericRippleWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

@@ -129,9 +129,10 @@ genAccountGetSerialization (BRGenericAccount account, size_t *bytesCount) {
 extern void
 genAccountSignTransferWithSeed (BRGenericAccount account,
                                 BRGenericWallet wallet,
+                                BRGenericHash lastBlockHash,
                                 BRGenericTransfer transfer,
                                 UInt512 seed) {
-    account->handlers.signTransferWithSeed (account->ref, wallet->ref, transfer->ref, seed);
+    account->handlers.signTransferWithSeed (account->ref, wallet->ref, lastBlockHash, transfer->ref, seed);
 }
 
 extern void
@@ -353,6 +354,17 @@ genTransferEqual (BRGenericTransfer t1,
 extern uint8_t *
 genTransferSerialize (BRGenericTransfer transfer, size_t *bytesCount) {
     return transfer->handlers.getSerialization (transfer->ref, bytesCount);
+}
+
+extern uint8_t *
+genTransferSerializeForFeeEstimation (BRGenericTransfer transfer,
+                                      BRGenericWallet wallet,
+                                      BRGenericAccount account,
+                                      size_t *bytesCount) {
+    return transfer->handlers.getSerializationForFeeEstimation (transfer->ref,
+                                                                wallet->ref,
+                                                                account->ref,
+                                                                bytesCount);
 }
 
 static size_t

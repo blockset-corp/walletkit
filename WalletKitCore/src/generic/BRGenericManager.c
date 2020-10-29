@@ -469,12 +469,66 @@ genManagerGetAccountAddress (BRGenericManager gwm) {
     return genAccountGetAddress (gwm->account);
 }
 
+extern bool
+genManagerSupportsLocalFeeEstimation (BRGenericManager gwm) {
+    return (NULL == gwm->handlers->manager.recoverFeeBasisFromEstimate);
+}
+
+extern void
+genManagerEstimateFeeForTransfer (BRGenericManager gwm,
+                                  BRGenericWallet wallet,
+                                  BRCryptoCookie cookie,
+                                  BRGenericAddress target,
+                                  UInt256 amount,
+                                  UInt256 pricePerCostFactor,
+                                  OwnershipKept BRArrayOf(BRGenericTransferAttribute) attributes) {
+    // create transfer for fee estimation request
+    BRGenericFeeBasis feeBasis = wallet->defaultFeeBasis;
+    feeBasis.pricePerCostFactor = pricePerCostFactor;
+    BRGenericTransfer transfer = genWalletCreateTransferWithAttributes(wallet,
+                                                                       target,
+                                                                       amount,
+                                                                       feeBasis,
+                                                                       attributes);
+    
+    size_t txSize = 0;
+    uint8_t *tx = genTransferSerializeForFeeEstimation(transfer, wallet, gwm->account, &txSize);
+    assert (NULL != tx);
+    
+    BRGenericFeeBasis initialFeeBasis = genTransferGetFeeBasis (transfer);
+    
+    BRGenericClient client = genManagerGetClient(gwm);
+    client.estimateFee (client.context,
+                        gwm,
+                        wallet,
+                        cookie,
+                        initialFeeBasis,
+                        tx,
+                        txSize,
+                        0);
+    free(tx);
+}
+
+extern BRGenericFeeBasis
+genManagerRecoverFeeBasisFromFeeEstimate (BRGenericManager gwm,
+                                          BRGenericFeeBasis initialFeeBasis,
+                                          size_t attributesCount,
+                                          OwnershipKept const char **attributeKeys,
+                                          OwnershipKept const char **attributeVals) {
+    return gwm->handlers->manager.recoverFeeBasisFromEstimate (gwm,
+                                                               initialFeeBasis,
+                                                               attributesCount,
+                                                               attributeKeys,
+                                                               attributeVals);
+}
+
 extern int
 genManagerSignTransfer (BRGenericManager gwm,
                         BRGenericWallet wid,
+                        BRGenericHash lastBlockHash,
                         BRGenericTransfer transfer,
                         UInt512 seed) {
-    genAccountSignTransferWithSeed (gwm->account, wid, transfer, seed);
+    genAccountSignTransferWithSeed (gwm->account, wid, lastBlockHash, transfer, seed);
     return 1;
 }
 
@@ -766,7 +820,10 @@ genFeeBasisDecode (BRRlpItem item,
 
     return (BRGenericFeeBasis) {
         rlpDecodeUInt256 (coder, items[0], 0),
-        rlpDecodeDouble  (coder, items[1])
+        rlpDecodeDouble  (coder, items[1]),
+        0,
+        0,
+        0
     };
 }
 

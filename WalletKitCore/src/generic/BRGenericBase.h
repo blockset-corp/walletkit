@@ -102,13 +102,19 @@ extern "C" {
     typedef struct {
         UInt256 pricePerCostFactor;
         double  costFactor;
+        int64_t gasLimit;
+        int64_t storageLimit;
+        int64_t counter;
     } BRGenericFeeBasis;
 
     static inline BRGenericFeeBasis
     genFeeBasisCreate (UInt256 pricePerCostFactor, double costFactor) {
         return (BRGenericFeeBasis) {
             pricePerCostFactor,
-            fabs (costFactor)
+            fabs (costFactor),
+            0,
+            0,
+            0
         };
     }
 
@@ -137,7 +143,10 @@ extern "C" {
     static inline int genFeeBasisIsEqual (const BRGenericFeeBasis *fb1,
                                           const BRGenericFeeBasis *fb2) {
         return (uint256EQL (fb1->pricePerCostFactor, fb2->pricePerCostFactor) &&
-                fb1->costFactor == fb2->costFactor);
+                fb1->costFactor == fb2->costFactor &&
+                fb1->gasLimit == fb2->gasLimit &&
+                fb1->storageLimit == fb2->storageLimit &&
+                fb1->counter == fb2->counter);
     }
 
     // MARK: Generic API Sync Type

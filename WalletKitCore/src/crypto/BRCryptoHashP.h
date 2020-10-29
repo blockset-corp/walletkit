@@ -31,6 +31,9 @@ cryptoHashCreateAsETH (BREthereumHash eth);
 private_extern BRCryptoHash
 cryptoHashCreateAsGEN (BRGenericHash gen);
 
+private_extern BRGenericHash
+cryptoHashAsGEN (BRCryptoHash hash);
+
 #ifdef __cplusplus
 }
 #endif

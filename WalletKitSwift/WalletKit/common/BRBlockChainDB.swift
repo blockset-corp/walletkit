@@ -440,6 +440,22 @@ public class BlockChainDB {
                      transfers: transfers,
                      acknowledgements: acks)
         }
+        
+        // Transaction Fee
+        
+        public typealias TransactionFee = (
+            costUnits: UInt64,
+            properties: Dictionary<String,String>?
+        )
+        
+        static internal func asTransactionFee (json: JSON) -> Model.TransactionFee? {
+            guard let costUnits = json.asUInt64(name: "cost_units")
+                else { return nil }
+            
+            let properties = json.asDict(name: "properties")?.mapValues { return $0 as! String }
+
+            return (costUnits: costUnits, properties: properties)
+        }
 
         /// Block
 
@@ -962,6 +978,34 @@ public class BlockChainDB {
                      httpMethod: "POST",
                      deserializer: { (_) in Result.success(()) },
                      completion: completion)
+    }
+    
+    public func estimateTransactionFee (blockchainId: String,
+                                        hashAsHex: String,
+                                        transaction: Data,
+                                        completion: @escaping (Result<Model.TransactionFee, QueryError>) -> Void) {
+        let json: JSON.Dict = [
+            "blockchain_id": blockchainId,
+            // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
+            "transaction_id": (hashAsHex.isEmpty ? "0x0000000000000000000000000000000000000000000000000000000000000000" : hashAsHex),
+            "data" : transaction.base64EncodedString()
+        ]
+        
+        makeRequest (bdbDataTaskFunc, bdbBaseURL,
+                     path: "/transactions",
+                     query: zip(["estimate_fee"], ["true"]),
+                     data: json,
+                     httpMethod: "POST") {
+            self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                (more: URL?, res: Result<[JSON], QueryError>) in
+                precondition (nil == more)
+                completion (res.flatMap {
+                    BlockChainDB.getOneExpected (id: "POST /transactions?estimate_fee",
+                                                 data: $0,
+                                                 transform: Model.asTransactionFee)
+                })
+            }
+        }
     }
 
     // Blocks
@@ -1722,6 +1766,10 @@ public class BlockChainDB {
             }
 
             guard responseSuccess.contains(res.statusCode) else {
+                print ("SYS: BDB:API: ERROR RESPONSE: \(res)")
+                if let data = data, let string = String(data: data, encoding: .utf8) {
+                    print(string)
+                }
                 completion (Result.failure (QueryError.response(res.statusCode)))
                 return
             }
