@@ -63,6 +63,12 @@ cryptoHashCreateAsGEN (BRGenericHash gen) {
     return hash;
 }
 
+private_extern BRGenericHash
+cryptoHashAsGEN (BRCryptoHash hash) {
+    assert (BLOCK_CHAIN_TYPE_GEN == hash->type);
+    return hash->u.gen;
+}
+
 static void
 cryptoHashRelease (BRCryptoHash hash) {
     memset (hash, 0, sizeof(*hash));

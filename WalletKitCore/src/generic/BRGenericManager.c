@@ -525,9 +525,10 @@ genManagerRecoverFeeBasisFromFeeEstimate (BRGenericManager gwm,
 extern int
 genManagerSignTransfer (BRGenericManager gwm,
                         BRGenericWallet wid,
+                        BRGenericHash lastBlockHash,
                         BRGenericTransfer transfer,
                         UInt512 seed) {
-    genAccountSignTransferWithSeed (gwm->account, wid, transfer, seed);
+    genAccountSignTransferWithSeed (gwm->account, wid, lastBlockHash, transfer, seed);
     return 1;
 }
 

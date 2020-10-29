@@ -90,6 +90,7 @@ extern "C" {
     extern void
     genAccountSignTransferWithSeed (BRGenericAccount account,
                                     BRGenericWallet wallet,
+                                    BRGenericHash lastBlockHash,
                                     BRGenericTransfer transfer,
                                     UInt512 seed);
 
@@ -384,6 +385,7 @@ extern "C" {
     extern int
     genManagerSignTransfer (BRGenericManager gwm,
                             BRGenericWallet wid,
+                            BRGenericHash lastBlockHash,
                             BRGenericTransfer transfer,
                             UInt512 seed);
 

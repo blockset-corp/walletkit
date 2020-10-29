@@ -101,6 +101,7 @@ genericHederaAccountGetSerialization (BRGenericAccountRef account,
 static void
 genericHederaAccountSignTransferWithSeed (BRGenericAccountRef account,
                                           BRGenericWalletRef wallet,
+                                          BRGenericHash lastBlockHash,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {

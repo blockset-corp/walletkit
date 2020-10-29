@@ -34,6 +34,14 @@ genericTezosNetworkEncodeHash (BRGenericHash hash) {
     return string;
 }
 
+static BRTezosHash
+genericTezosHashFromGEN (BRGenericHash genHash) {
+    assert(genHash.bytesCount == TEZOS_HASH_BYTES);
+    BRTezosHash hash;
+    memcpy (hash.bytes, genHash.bytes, TEZOS_HASH_BYTES);
+    return hash;
+}
+
 // MARK: - Generic Account
 
 static BRGenericAccountRef
@@ -81,15 +89,19 @@ genericTezosAccountGetSerialization (BRGenericAccountRef account,
 static void
 genericTezosAccountSignTransferWithSeed (BRGenericAccountRef account,
                                          BRGenericWalletRef wallet,
+                                         BRGenericHash lastBlockHash,
                                          BRGenericTransferRef transfer,
                                          UInt512 seed)
 {
-    BRTezosHash lastBlockHash = tezosWalletGetLastBlockHash ((BRTezosWallet) wallet);
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
     assert(transaction);
     if (transaction) {
         bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal((BRTezosWallet) wallet);
-        tezosTransactionSerializeAndSign (transaction, (BRTezosAccount) account, seed, lastBlockHash, needsReveal);
+        tezosTransactionSerializeAndSign (transaction,
+                                          (BRTezosAccount) account,
+                                          seed,
+                                          genericTezosHashFromGEN (lastBlockHash),
+                                          needsReveal);
     }
 }
 
@@ -193,7 +205,9 @@ genericTezosTransferGetSerializationForFeeEstimation (BRGenericTransferRef trans
                                                       BRGenericAccountRef account,
                                                       size_t *bytesCount)
 {
-    BRTezosHash lastBlockHash = tezosWalletGetLastBlockHash ((BRTezosWallet) wallet);
+    BRTezosHash lastBlockHash;
+    // hash value does not affect fee estimation
+    memset (lastBlockHash.bytes, 0, TEZOS_HASH_BYTES);
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
     assert(transaction);
     bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal((BRTezosWallet) wallet);
@@ -294,7 +308,6 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
                                   BRGenericTransferAttribute *attributes) {
     BRTezosAddress source  = tezosWalletGetSourceAddress ((BRTezosWallet) wallet);
     BRTezosUnitMutez mutez = (BRTezosUnitMutez) amount.u64[0];
-    int64_t counter = tezosWalletGetCounter ((BRTezosWallet) wallet);
     
     BRTezosFeeBasis feeBasis;
     if (0 == estimatedFeeBasis.counter) { // default fee for estimation
@@ -325,7 +338,7 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
                                                        (BRTezosAddress) target,
                                                        mutez,
                                                        feeBasis,
-                                                       counter,
+                                                       feeBasis.u.estimate.counter,
                                                        delegationOp);
     tezosAddressFree(source);
     

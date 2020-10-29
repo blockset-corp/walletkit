@@ -22,6 +22,7 @@
 #include "BRCryptoTransferP.h"
 #include "BRCryptoWalletP.h"
 #include "BRCryptoPaymentP.h"
+#include "BRCryptoHashP.h"
 
 #include "BRCryptoWalletManager.h"
 #include "BRCryptoWalletManagerClient.h"
@@ -943,15 +944,18 @@ cryptoWalletManagerSign (BRCryptoWalletManager cwm,
             // TODO(fix): ewmWalletSignTransferWithPaperKey() doesn't return a status
             break;
 
-        case BLOCK_CHAIN_TYPE_GEN:
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericHash lastBlockHash = cryptoHashAsGEN (cryptoNetworkGetVerifiedBlockHash (cwm->network));
             success = AS_CRYPTO_BOOLEAN (genManagerSignTransfer (cwm->u.gen,
                                                                  cryptoWalletAsGEN (wallet),
+                                                                 lastBlockHash,
                                                                  cryptoTransferAsGEN (transfer),
                                                                  seed));
             if (CRYPTO_TRUE == success)
                 cryptoWalletManagerSetTransferStateGEN (cwm, wallet, transfer,
                                                         genTransferStateCreateOther (GENERIC_TRANSFER_STATE_SIGNED));
             break;
+        }
     }
 
     // Zero-out the seed.
@@ -995,9 +999,10 @@ cryptoWalletManagerSubmit (BRCryptoWalletManager cwm,
         case BLOCK_CHAIN_TYPE_GEN: {
             BRGenericWallet genWallet = cryptoWalletAsGEN (wallet);
             BRGenericTransfer genTransfer = cryptoTransferAsGEN (transfer);
+            BRGenericHash lastBlockHash = cryptoHashAsGEN (cryptoNetworkGetVerifiedBlockHash (cwm->network));
 
             // Sign the transfer
-            if (genManagerSignTransfer (cwm->u.gen, genWallet, genTransfer, seed)) {
+            if (genManagerSignTransfer (cwm->u.gen, genWallet, lastBlockHash, genTransfer, seed)) {
                 cryptoWalletManagerSetTransferStateGEN (cwm, wallet, transfer,
                                                         genTransferStateCreateOther (GENERIC_TRANSFER_STATE_SIGNED));
                 // Submit the transfer
