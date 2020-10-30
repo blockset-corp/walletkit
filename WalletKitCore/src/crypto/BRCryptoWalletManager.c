@@ -131,14 +131,14 @@ cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
     if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER) &&
         1 != fileServiceLoad (manager->fileService, bundles, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, 1)) {
         cryptoClientTransferBundleSetRelease (bundles);
-        printf ("CRY: %4s: failed to load transfers",
+        printf ("CRY: %4s: failed to load transfer bundles",
                 cryptoBlockChainTypeGetCurrencyCode (manager->type));
         cryptoClientTransferBundleSetRelease(bundles);
         return;
     }
     size_t sortedBundlesCount = BRSetCount(bundles);
 
-    printf ("CRY: %4s: loaded %4zu transfers\n",
+    printf ("CRY: %4s: loaded %4zu transfer bundles\n",
             cryptoBlockChainTypeGetCurrencyCode (manager->type),
             sortedBundlesCount);
 
@@ -188,14 +188,14 @@ cryptoWalletManagerInitialTransactionBundlesLoad (BRCryptoWalletManager manager)
     if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION) &&
         1 != fileServiceLoad (manager->fileService, bundles, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, 1)) {
         cryptoClientTransactionBundleSetRelease (bundles);
-        printf ("CRY: %4s: failed to load transactions",
+        printf ("CRY: %4s: failed to load transaction bundles",
                 cryptoBlockChainTypeGetCurrencyCode (manager->type));
         cryptoClientTransactionBundleSetRelease(bundles);
         return;
     }
     size_t sortedBundlesCount = BRSetCount(bundles);
 
-    printf ("CRY: %4s: loaded %4zu transactions\n",
+    printf ("CRY: %4s: loaded %4zu transaction bundles\n",
             cryptoBlockChainTypeGetCurrencyCode (manager->type),
             sortedBundlesCount);
 
@@ -1644,6 +1644,24 @@ cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
 }
 
 // MARK: - Transaction/Transfer Bundle
+
+private_extern void
+cryptoWalletManagerSaveTransactionBundle (BRCryptoWalletManager manager,
+                                          OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    if (NULL != manager->handlers->saveTransactionBundle)
+        manager->handlers->saveTransactionBundle (manager, bundle);
+    else if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION))
+        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, bundle);
+}
+
+private_extern void
+cryptoWalletManagerSaveTransferBundle (BRCryptoWalletManager manager,
+                                       OwnershipKept BRCryptoClientTransferBundle bundle) {
+    if (NULL != manager->handlers->saveTransferBundle)
+        manager->handlers->saveTransferBundle (manager, bundle);
+    else if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER))
+        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, bundle);
+}
 
 private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,

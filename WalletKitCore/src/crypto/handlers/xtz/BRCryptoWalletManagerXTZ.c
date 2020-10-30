@@ -359,6 +359,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ = {
     cryptoWalletManagerSignTransactionWithKeyXTZ,
     cryptoWalletManagerEstimateLimitXTZ,
     cryptoWalletManagerEstimateFeeBasisXTZ,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXTZ,
     cryptoWalletManagerRecoverTransferFromTransferBundleXTZ,
     cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ,

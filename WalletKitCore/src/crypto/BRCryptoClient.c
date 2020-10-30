@@ -679,6 +679,13 @@ cryptoClientQRYRequestTransactionsOrTransfers (BRCryptoClientQRYManager qry,
     return needRequest;
 }
 
+static int
+cryptoClientTransactionBundleCompareForSort (const void *v1, const void *v2) {
+    const BRCryptoClientTransactionBundle *b1 = v1;
+    const BRCryptoClientTransactionBundle *b2 = v2;
+    return cryptoClientTransactionBundleCompare (*b1, *b2);
+}
+
 extern void
 cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
                          OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -695,16 +702,15 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
                 // Sort bundles to have the lowest blocknumber first.  Use of `mergesort` is
                 // appropriate given that the bundles are likely already ordered.  This minimizes
                 // dependency resolution between later transactions depending on prior transactions.
-#if 0
-                // TODO: Somehow sorts descending?
+                //
+                // Seems that there may be duplicates in `bundles`; will be dealt with later
+
                 mergesort (bundles, bundlesCount, sizeof (BRCryptoClientTransactionBundle),
-                           (int (*) (const void *, const void *)) cryptoClientTransactionBundleCompare);
-#endif
+                           cryptoClientTransactionBundleCompareForSort);
 
                 // Recover transfers from each bundle
                 for (size_t index = 0; index < bundlesCount; index++) {
-                    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION))
-                        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, bundles[index]);
+                    cryptoWalletManagerSaveTransactionBundle(manager, bundles[index]);
                     cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
                 }
 
@@ -745,6 +751,12 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
 
 // MARK: - Announce Transfer
 
+static int
+cryptoClientTransferBundleCompareForSort (const void *v1, const void *v2) {
+    const BRCryptoClientTransferBundle *b1 = v1;
+    const BRCryptoClientTransferBundle *b2 = v2;
+    return cryptoClientTransferBundleCompare (*b1, *b2);
+}
 
 extern void
 cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
@@ -761,15 +773,13 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                 // Sort bundles to have the lowest blocknumber first.  Use of `mergesort` is
                 // appropriate given that the bundles are likely already ordered.  This minimizes
                 // dependency resolution between later transfers depending on prior transfers.
-#if 0
-                // TODO: Somehow sorts descending?
+
                 mergesort (bundles, bundlesCount, sizeof (BRCryptoClientTransferBundle),
-                           (int (*) (const void *, const void *)) cryptoClientTransferBundleCompare);
-#endif
+                           cryptoClientTransferBundleCompareForSort);
+
                 // Recover transfers from each bundle
                 for (size_t index = 0; index < bundlesCount; index++) {
-                    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER))
-                        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, bundles[index]);
+                    cryptoWalletManagerSaveTransferBundle(manager, bundles[index]);
                     cryptoWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
                 }
 

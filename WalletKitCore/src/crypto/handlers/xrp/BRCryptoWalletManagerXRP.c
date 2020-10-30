@@ -305,6 +305,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP = {
     cryptoWalletManagerSignTransactionWithKeyXRP,
     cryptoWalletManagerEstimateLimitXRP,
     cryptoWalletManagerEstimateFeeBasisXRP,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleXRP,
     cryptoWalletManagerRecoverTransferFromTransferBundleXRP,
     NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported

@@ -828,6 +828,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerSignTransactionWithKeyETH,
     cryptoWalletManagerEstimateLimitETH,
     cryptoWalletManagerEstimateFeeBasisETH,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleETH,
     cryptoWalletManagerRecoverTransferFromTransferBundleETH,
     cryptoWalletManagerRecoverFeeBasisFromFeeEstimateETH,

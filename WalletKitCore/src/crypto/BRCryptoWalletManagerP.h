@@ -99,6 +99,14 @@ typedef BRCryptoWallet
                                              Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers);
 
 typedef void
+(*BRCryptoWalletManagerSaveTransactionBundleHandler) (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+typedef void
+(*BRCryptoWalletManagerSaveTransferBundleHandler) (BRCryptoWalletManager cwm,
+                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
+
+typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
                                                                       OwnershipKept BRCryptoClientTransactionBundle bundle);
 
@@ -136,9 +144,11 @@ typedef struct {
     BRCryptoWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
     BRCryptoWalletManagerEstimateLimitHandler estimateLimit;
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
+    BRCryptoWalletManagerSaveTransactionBundleHandler saveTransactionBundle;
+    BRCryptoWalletManagerSaveTransferBundleHandler    saveTransferBundle;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
-    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
-    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler recoverFeeBasisFromFeeEstimate;
+    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler     recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler        recoverFeeBasisFromFeeEstimate;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
@@ -230,6 +240,14 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
 private_extern void
 cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet);
+
+private_extern void
+cryptoWalletManagerSaveTransactionBundle (BRCryptoWalletManager manager,
+                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+private_extern void
+cryptoWalletManagerSaveTransferBundle (BRCryptoWalletManager manager,
+                                       OwnershipKept BRCryptoClientTransferBundle bundle);
 
 private_extern BRCryptoWallet
 cryptoWalletManagerCreateWalletInitialized (BRCryptoWalletManager cwm,

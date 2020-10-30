@@ -1566,7 +1566,7 @@ BRPeerManager *BRPeerManagerNew(const BRChainParams *params, BRWallet *wallet, u
         block = BRSetGet(manager->orphans, &orphan);
     }
 
-    _peer_log("BPM: initialized with %u last block height", manager->lastBlock->height);
+    _peer_log("BPM: initialized with %u last block height\n", manager->lastBlock->height);
 
     array_new(manager->txRelays, 10);
     array_new(manager->txRequests, 10);

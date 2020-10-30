@@ -309,6 +309,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR = {
     cryptoWalletManagerSignTransactionWithKeyHBAR,
     cryptoWalletManagerEstimateLimitHBAR,
     cryptoWalletManagerEstimateFeeBasisHBAR,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleHBAR,
     cryptoWalletManagerRecoverTransferFromTransferBundleHBAR,
     NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported

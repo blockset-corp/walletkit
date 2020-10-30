@@ -80,7 +80,7 @@ fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
 extern BRArrayOf(BRTransaction*)
 initialTransactionsLoadBTC (BRCryptoWalletManager manager) {
     BRSetOf(BRTransaction*) transactionSet = BRSetNew(BRTransactionHash, BRTransactionEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, transactionSet, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, 1)) {
+    if (1 != fileServiceLoad (manager->fileService, transactionSet, FILE_SERVICE_TYPE_TRANSACTION, 1)) {
         BRSetFreeAll(transactionSet, (void (*) (void*)) BRTransactionFree);
         _peer_log ("BWM: failed to load transactions");
         return NULL;
@@ -95,10 +95,12 @@ initialTransactionsLoadBTC (BRCryptoWalletManager manager) {
     BRSetAll(transactionSet, (void**) transactions, transactionsCount);
     BRSetFree(transactionSet);
 
-    _peer_log ("BWM: loaded %zu transactions\n", transactionsCount);
+    _peer_log ("BWM: %4s: loaded %4zu transactions\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               transactionsCount);
     return transactions;
 }
-#
+
 /// MARK: - Block File Service
 
 #define FILE_SERVICE_TYPE_BLOCK         "blocks"
@@ -168,7 +170,8 @@ initialBlocksLoadBTC (BRCryptoWalletManager manager) {
     BRSetOf(BRMerkleBlock*) blockSet = BRSetNew(BRMerkleBlockHash, BRMerkleBlockEq, 100);
     if (1 != fileServiceLoad (manager->fileService, blockSet, fileServiceTypeBlocksBTC, 1)) {
         BRSetFreeAll(blockSet, (void (*) (void*)) BRMerkleBlockFree);
-        _peer_log ("BWM: failed to load blocks");
+        _peer_log ("BWM: %4s: failed to load blocks",
+                   cryptoBlockChainTypeGetCurrencyCode (manager->type));
         return NULL;
     }
 
@@ -181,7 +184,9 @@ initialBlocksLoadBTC (BRCryptoWalletManager manager) {
     BRSetAll(blockSet, (void**) blocks, blocksCount);
     BRSetFree(blockSet);
 
-    _peer_log ("BWM: loaded %zu blocks\n", blocksCount);
+    _peer_log ("BWM: %4s: loaded %4zu blocks\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               blocksCount);
     return blocks;
 }
 
@@ -269,7 +274,8 @@ initialPeersLoadBTC (BRCryptoWalletManager manager) {
     BRSetOf(BRPeer*) peerSet = BRSetNew(BRPeerHash, BRPeerEq, 100);
     if (1 != fileServiceLoad (manager->fileService, peerSet, fileServiceTypePeersBTC, 1)) {
         BRSetFreeAll(peerSet, free);
-        _peer_log ("BWM: failed to load peers");
+        _peer_log ("BWM: %4s: failed to load peers",
+                   cryptoBlockChainTypeGetCurrencyCode (manager->type));
         return NULL;
     }
 
@@ -281,25 +287,21 @@ initialPeersLoadBTC (BRCryptoWalletManager manager) {
     FOR_SET (BRPeer*, peer, peerSet) array_add (peers, *peer);
     BRSetFreeAll(peerSet, free);
 
-    _peer_log ("BWM: loaded %zu peers\n", peersCount);
+    _peer_log ("BWM: %4s: loaded %4zu peers\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               peersCount);
     return peers;
 }
 
+///
+/// For BTC, the FileService DOES NOT save BRCryptoClientTransactionBundles; instead BTC saves
+/// BRTransaction.  This allows the P2P mode to work seamlessly as P2P mode has zero knowledge of
+/// a transaction bundle.
+///
+/// Given the above, when BRCryptoWalletManager attempts to save a transaction bundle, we process
+/// the bundle, extract the BRTransaction, and then save that.
+///
 static BRFileServiceTypeSpecification fileServiceSpecificationsArrayBTC[] = {
-    {
-        CRYPTO_FILE_SERVICE_TYPE_TRANSACTION,
-        CRYPTO_FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
-        1,
-        {
-            {
-                CRYPTO_FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
-                cryptoFileServiceTypeTransactionV1Identifier,
-                cryptoFileServiceTypeTransactionV1Reader,
-                cryptoFileServiceTypeTransactionV1Writer
-            }
-        }
-    },
-
     {
         FILE_SERVICE_TYPE_TRANSACTION,
         FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
