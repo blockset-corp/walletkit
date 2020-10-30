@@ -190,6 +190,7 @@ final class Utilities {
             case ETH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_ETH;
             case XRP: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_XRP;
             case HBAR:return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_HBAR;
+            case XTZ: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -202,6 +203,7 @@ final class Utilities {
             case CRYPTO_NETWORK_TYPE_ETH: return NetworkType.ETH;
             case CRYPTO_NETWORK_TYPE_XRP: return NetworkType.XRP;
             case CRYPTO_NETWORK_TYPE_HBAR:return NetworkType.HBAR;
+            case CRYPTO_NETWORK_TYPE_XTZ: return NetworkType.XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

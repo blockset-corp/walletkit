@@ -222,7 +222,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         }
 
         Amount amount = calculateValue(amountView.getProgress());
-        wallet.estimateFee(target.get(), amount, fee, new CompletionHandler<TransferFeeBasis,
+        wallet.estimateFee(target.get(), amount, fee, null, new CompletionHandler<TransferFeeBasis,
                 FeeEstimationError>() {
             @Override
             public void handleData(TransferFeeBasis data) {
