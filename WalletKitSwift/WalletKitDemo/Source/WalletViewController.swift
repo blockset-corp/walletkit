@@ -143,7 +143,7 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
            alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, networkTypes: [.btc, .bch], UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Sweep")
             self.showCreateTransferController(named: "createTransferSweepNC")
            alert.dismiss(animated: true) {}
