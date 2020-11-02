@@ -16,12 +16,18 @@
 #include "crypto/BRCryptoClientP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
 
+#include <ctype.h>
+
 // MARK: - Forward Declarations
 
 static void
 cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH manager,
                                            BRCryptoCurrency currency,
                                            BRCryptoUnit     unitDefault);
+
+static void
+cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
+                                           BREthereumToken token);
 
 extern BRCryptoWalletManagerETH
 cryptoWalletManagerCoerceETH (BRCryptoWalletManager manager) {
@@ -91,6 +97,11 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
             cryptoUnitGive (unitDefault);
         }
         cryptoCurrencyGive (c);
+    }
+
+    // Ensure a currency for each token
+    FOR_SET (BREthereumToken, token, managerETH->tokens) {
+        cryptoWalletManagerCreateCurrencyForToken (managerETH, token);
     }
 
     // Announce all the provided transactions...
@@ -326,25 +337,89 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
 
     if (NULL == token) {
         token = ethTokenCreate (address,
-                             code,
-                             name,
-                             desc,
-                             decimals,
-                             defaultGasLimit,
-                             defaultGasPrice);
+                                code,
+                                name,
+                                desc,
+                                decimals,
+                                defaultGasLimit,
+                                defaultGasPrice);
         BRSetAdd (managerETH->tokens, token);
     }
     else {
         ethTokenUpdate (token,
-                     code,
-                     name,
-                     desc,
-                     decimals,
-                     defaultGasLimit,
-                     defaultGasPrice);
+                        code,
+                        name,
+                        desc,
+                        decimals,
+                        defaultGasLimit,
+                        defaultGasPrice);
     }
 
     fileServiceSave (managerETH->base.fileService, fileServiceTypeTokensETH, token);
+}
+
+static void
+cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
+                                           BREthereumToken token) {
+    BRCryptoNetwork network = managerETH->base.network;
+
+    const char *issuer = ethTokenGetAddress (token);
+
+    BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer(network, issuer);
+    if (NULL == currency) {
+        const char *tokenName = ethTokenGetName (token);
+        const char *tokenDesc = ethTokenGetDescription (token);
+        const char *tokenSymb = ethTokenGetSymbol (token);
+        const char *tokenAddr = ethTokenGetAddress (token);
+
+        const char *networkUids = cryptoNetworkGetUids(network);
+
+        size_t uidsCount = strlen(networkUids) + 1 + strlen(tokenAddr) + 1;
+        char   uids [uidsCount];
+        sprintf (uids, "%s:%s", networkUids, tokenAddr);
+
+        currency = cryptoCurrencyCreate (uids,
+                                         tokenName,
+                                         tokenSymb,
+                                         "erc20",
+                                         issuer);
+
+        const char *code = tokenSymb;
+        char codeBase[strlen(code) + strlen("i") + 1];
+        sprintf (codeBase, "%si", code);
+
+        const char *name = tokenName;
+        char nameBase[strlen(tokenName) + strlen(" INT") + 1];
+        sprintf (nameBase, "%s INT", tokenName);
+
+        size_t symbolCount = strlen(tokenSymb);
+        char symbol[symbolCount + 1];
+        sprintf (symbol, "%s", tokenSymb);
+        // Uppercase
+        for (size_t index = 0; index < symbolCount; index++) symbol[index] = toupper (symbol[index]);
+
+        char symbolBase[strlen(symbol) + strlen("I") + 1];
+        sprintf (symbolBase, "%sI", symbol);
+
+        BRCryptoUnit baseUnit = cryptoUnitCreateAsBase (currency,
+                                                        codeBase,
+                                                        nameBase,
+                                                        symbolBase);
+
+        BRCryptoUnit defaultUnit = cryptoUnitCreate (currency,
+                                                     code,
+                                                     name,
+                                                     symbol,
+                                                     baseUnit,
+                                                     ethTokenGetDecimals(token));
+
+        cryptoNetworkAddCurrency (network, currency, baseUnit, defaultUnit);
+
+        cryptoUnitGive(defaultUnit);
+        cryptoUnitGive(baseUnit);
+    }
+
+    cryptoCurrencyGive (currency);
 }
 
 static BRCryptoWallet
