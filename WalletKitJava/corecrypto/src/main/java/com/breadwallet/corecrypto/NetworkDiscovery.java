@@ -121,6 +121,9 @@ final class NetworkDiscovery {
                         if (blockchainModel.getBlockHeight().isPresent())
                             network.setHeight(blockchainModel.getBlockHeightValue());
 
+                        if (!blockchainModel.getVerifiedBlockHash().isEmpty())
+                            network.setVerifiedBlockHashAsString(blockchainModel.getVerifiedBlockHash());
+
                         // Extract the network fees
                         List<NetworkFee> fees = new ArrayList<>();
                         for (BlockchainFee bdbFee : blockchainModel.getFeeEstimates()) {

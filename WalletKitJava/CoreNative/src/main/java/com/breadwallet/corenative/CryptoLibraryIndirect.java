@@ -40,10 +40,15 @@ public final class CryptoLibraryIndirect {
         return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, countOfAttributes, attributes, validates);
     }
 
+    public static void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee, SizeT attributesCount, BRCryptoTransferAttribute[] attributes) {
+        attributes = attributes.length == 0 ? null : attributes;
+        INSTANCE.cryptoWalletManagerEstimateFeeBasis(cwm, wid, cookie, target, amount, fee, attributesCount, attributes);
+    }
+
     public static void cwmAnnounceGetTransferItemGEN(Pointer cwm, Pointer callbackState, int status,
                                                      String hash, String uids, String sourceAddr, String targetAddr,
                                                      String amount, String currency, String fee,
-                                                     long timestamp, long blockHeight,
+                                                     long timestamp, long blockHeight, String blockHash,
                                                      SizeT attributesCount,
                                                      String[] attributeKeys,
                                                      String[] attributeVals) {
@@ -52,8 +57,17 @@ public final class CryptoLibraryIndirect {
         INSTANCE.cwmAnnounceGetTransferItemGEN(cwm, callbackState, status,
                 hash, uids, sourceAddr, targetAddr,
                 amount, currency, fee,
-                timestamp, blockHeight,
+                timestamp, blockHeight, blockHash,
                 attributesCount, attributeKeys, attributeVals);
+    }
+
+    public static void cwmAnnounceEstimateFeeSuccess(Pointer cwm, Pointer callbackState,
+                                                     SizeT attributesCount,
+                                                     String[] attributeKeys,
+                                                     String[] attributeVals) {
+        attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
+        attributeVals = attributeVals.length == 0 ? null : attributeVals;
+        INSTANCE.cwmAnnounceEstimateFeeSuccess(cwm, callbackState, attributesCount, attributeKeys, attributeVals);
     }
 
     public interface LibraryInterface extends Library {
@@ -65,10 +79,18 @@ public final class CryptoLibraryIndirect {
         Pointer cryptoWalletCreateTransfer(Pointer wallet, Pointer target, Pointer amount, Pointer feeBasis, SizeT attributesCount, BRCryptoTransferAttribute[] attributes);
         int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates);
 
+        // crypto/BRCryptoWalletManager.h
+        void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wallet, Pointer cookie, Pointer target, Pointer amount, Pointer fee, SizeT attributesCount, BRCryptoTransferAttribute[] attributes);
+
         void cwmAnnounceGetTransferItemGEN(Pointer cwm, Pointer callbackState, int status,
                                            String hash, String uids, String sourceAddr, String targetAddr,
                                            String amount, String currency, String fee,
-                                           long timestamp, long blockHeight,
+                                           long timestamp, long blockHeight, String blockHash,
+                                           SizeT attributesCount,
+                                           String[] attributeKeys,
+                                           String[] attributeVals);
+
+        void cwmAnnounceEstimateFeeSuccess(Pointer cwm, Pointer callbackState,
                                            SizeT attributesCount,
                                            String[] attributeKeys,
                                            String[] attributeVals);
