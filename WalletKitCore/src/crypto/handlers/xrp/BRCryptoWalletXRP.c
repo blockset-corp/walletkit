@@ -217,21 +217,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
 
     rippleAddressFree(source);
 
-    uint64_t xrpBlockheight = rippleTransactionGetBlockHeight (xrpTransaction);
-    uint64_t xrpTimestamp   = rippleTransactionGetTimestamp   (xrpTransaction);
-    bool     xrpSuccess     = rippleTransactionHasError (xrpTransaction);
-
-    BRCryptoTransferState state =
-    (0 != xrpBlockheight
-     ? cryptoTransferStateIncludedInit (xrpBlockheight,
-                                        0,
-                                        xrpTimestamp,
-                                        estimatedFeeBasis,
-                                        AS_CRYPTO_BOOLEAN(xrpSuccess),
-                                        (xrpSuccess ? NULL : "unknown error"))
-     : (xrpSuccess
-        ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED)
-        : cryptoTransferStateErroredInit(cryptoTransferSubmitErrorUnknown())));
+    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
 
     BRCryptoTransfer transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                            unit,
@@ -239,12 +225,9 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
                                                            state,
                                                            walletXRP->xrpAccount,
                                                            xrpTransaction);
-
-    cryptoTransferStateRelease (&state);
-    
-    // Take all the attributes, even if there aren't for XRP.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    
+    cryptoTransferStateRelease (&state);
+
     return transfer;
 }
 

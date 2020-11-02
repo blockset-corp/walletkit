@@ -172,7 +172,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                         feeBasisEstimated,
                                         CRYPTO_TRUE,
                                         NULL)
-     : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED));
+     : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED));
 
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                             type,

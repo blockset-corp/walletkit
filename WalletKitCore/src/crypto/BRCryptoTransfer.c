@@ -84,7 +84,6 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->sizeInBytes = sizeInBytes;
 
     transfer->listener   = listener;
-    transfer->state      = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = cryptoFeeBasisTake (feeBasisEstimated);
