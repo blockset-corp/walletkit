@@ -388,7 +388,7 @@ public final class WalletSweeper {
         }
 
         switch cryptoNetworkGetCanonicalType (wallet.manager.network.core) {
-        case CRYPTO_NETWORK_TYPE_BTC:
+        case CRYPTO_NETWORK_TYPE_BTC, CRYPTO_NETWORK_TYPE_BCH:
             // handle as BTC, creating the underlying BRCryptoWalletSweeper and initializing it
             // using the BlockchainDB
             createAsBtc(wallet: wallet,
