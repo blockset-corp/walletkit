@@ -33,6 +33,7 @@
 		3CD5B26523EB7C2600CC8A56 /* WalletManagersTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25023EB7C2600CC8A56 /* WalletManagersTableViewController.swift */; };
 		3CD5B26723EB7C2600CC8A56 /* CoreDemoAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25223EB7C2600CC8A56 /* CoreDemoAppDelegate.swift */; };
 		3CD5B26823EB7C2600CC8A56 /* TransferCreateSendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25323EB7C2600CC8A56 /* TransferCreateSendController.swift */; };
+		7CB1F6772530D87700B0121C /* TransferCreateDelegateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB1F6762530D87700B0121C /* TransferCreateDelegateController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		3CD5B25023EB7C2600CC8A56 /* WalletManagersTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletManagersTableViewController.swift; sourceTree = "<group>"; };
 		3CD5B25223EB7C2600CC8A56 /* CoreDemoAppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDemoAppDelegate.swift; sourceTree = "<group>"; };
 		3CD5B25323EB7C2600CC8A56 /* TransferCreateSendController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferCreateSendController.swift; sourceTree = "<group>"; };
+		7CB1F6762530D87700B0121C /* TransferCreateDelegateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferCreateDelegateController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,6 +118,7 @@
 				3CD5B24923EB7C2600CC8A56 /* TransferCreateRecvController.swift */,
 				3CD5B24323EB7C2500CC8A56 /* TransferCreatePaymentController.swift */,
 				3CD5B23C23EB7C2500CC8A56 /* TransferCreateSweepController.swift */,
+				7CB1F6762530D87700B0121C /* TransferCreateDelegateController.swift */,
 				3CD5B23E23EB7C2500CC8A56 /* WalletManagerViewController.swift */,
 				3CD5B25023EB7C2600CC8A56 /* WalletManagersTableViewController.swift */,
 				3CD5B24123EB7C2500CC8A56 /* Assets.xcassets */,
@@ -250,6 +253,7 @@
 				3CD5B26223EB7C2600CC8A56 /* Support.swift in Sources */,
 				3CD5B26123EB7C2600CC8A56 /* TransferTableViewCell.swift in Sources */,
 				3CD5B25823EB7C2600CC8A56 /* WalletViewController.swift in Sources */,
+				7CB1F6772530D87700B0121C /* TransferCreateDelegateController.swift in Sources */,
 				3CD5B25B23EB7C2600CC8A56 /* WalletTableViewCell.swift in Sources */,
 				3CD5B25C23EB7C2600CC8A56 /* TransferCreatePaymentController.swift in Sources */,
 				3CD5B26823EB7C2600CC8A56 /* TransferCreateSendController.swift in Sources */,
