@@ -50,7 +50,7 @@ cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                                                       CRYPTO_FALSE,
                                                       hederaTransactionGetAmount (hbarTransaction));
     
-    BRHederaFeeBasis hbarFeeBasis = { hederaTransactionGetFee (hbarTransaction), 1 };
+    BRHederaFeeBasis hbarFeeBasis = { (CRYPTO_TRANSFER_RECEIVED == direction ? 0 : hederaTransactionGetFee (hbarTransaction)), 1 };
     BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsHBAR (unitForFee, hbarFeeBasis);
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsHBAR (hederaTransactionGetSource (hbarTransaction));

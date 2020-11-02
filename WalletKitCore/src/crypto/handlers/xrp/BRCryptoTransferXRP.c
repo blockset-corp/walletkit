@@ -56,7 +56,7 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                      CRYPTO_FALSE,
                                                      rippleTransactionGetAmount(xrpTransfer));
 
-    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, rippleTransactionGetFee(xrpTransfer));
+    BRCryptoFeeBasis feeBasisEstimated = cryptoFeeBasisCreateAsXRP (unitForFee, (CRYPTO_TRANSFER_RECEIVED == direction ? 0 : rippleTransactionGetFee(xrpTransfer)));
     
     BRCryptoAddress sourceAddress = cryptoAddressCreateAsXRP (rippleTransactionGetSource(xrpTransfer));
     BRCryptoAddress targetAddress = cryptoAddressCreateAsXRP (rippleTransactionGetTarget(xrpTransfer));
