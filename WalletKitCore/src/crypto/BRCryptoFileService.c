@@ -32,6 +32,7 @@ cryptoFileServiceTypeTransferV1Identifier (BRFileServiceContext context,
     UInt256 identifier = UINT256_ZERO;
     memcpy (identifier.u8, hash->bytes, MIN (32, hash->bytesCount));
 
+    cryptoHashGive (hash);
     return identifier;
 }
 
