@@ -219,7 +219,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
 
     BRCryptoAddress  source   = cryptoAddressCreateAsETH  (ethSourceAddress);
 
-    BRCryptoTransferState transferState = { CRYPTO_TRANSFER_STATE_CREATED };
+    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
 
     // We don't/can't create TRANSFER_BASIS_EXCHANGE.
     BREthereumTransferBasis basis = (NULL == ethToken
@@ -234,13 +234,12 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                                            direction,
                                                            source,
                                                            target,
-                                                           transferState,
+                                                           state,
                                                            walletETH->ethAccount,
                                                            basis,
                                                            ethTransaction);
-
-    if (NULL != transfer && attributesCount > 0)
-        cryptoTransferSetAttributes (transfer, attributesCount, attributes);
+    cryptoTransferSetAttributes (transfer, attributesCount, attributes);
+    cryptoTransferStateRelease (&state);
 
     cryptoAddressGive(source);
 

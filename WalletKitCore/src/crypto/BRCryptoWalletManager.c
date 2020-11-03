@@ -24,6 +24,7 @@
 #include "BRCryptoWalletP.h"
 #include "BRCryptoPaymentP.h"
 #include "BRCryptoClientP.h"
+#include "BRCryptoFileService.h"
 
 #include "BRCryptoWalletManager.h"
 #include "BRCryptoWalletManagerP.h"
@@ -32,7 +33,6 @@
 
 #include "bitcoin/BRMerkleBlock.h"
 #include "bitcoin/BRPeer.h"
-#include "support/BRFileService.h"
 #include "support/event/BREventAlarm.h"
 
 // We'll do a period QRY 'tick-tock' CWM_CONFIRMATION_PERIOD_FACTOR times in
@@ -111,6 +111,121 @@ cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
+static int
+cryptoClientTransferBundleCompareByBlockheight (const void *tb1, const void *tb2) {
+    BRCryptoClientTransferBundle b1 = * (BRCryptoClientTransferBundle *) tb1;
+    BRCryptoClientTransferBundle b2 = * (BRCryptoClientTransferBundle *) tb2;
+    return (b1->blockNumber < b2-> blockNumber
+            ? -1
+            : (b1->blockNumber > b2->blockNumber
+               ? +1
+               :  0));
+}
+
+static void
+cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
+    assert (NULL == manager->bundleTransfers);
+
+    BRSetOf(BRCryptoClientTransferBundle) bundles = cryptoClientTransferBundleSetCreate (25);
+
+    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER) &&
+        1 != fileServiceLoad (manager->fileService, bundles, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, 1)) {
+        cryptoClientTransferBundleSetRelease (bundles);
+        printf ("CRY: %4s: failed to load transfer bundles",
+                cryptoBlockChainTypeGetCurrencyCode (manager->type));
+        cryptoClientTransferBundleSetRelease(bundles);
+        return;
+    }
+    size_t sortedBundlesCount = BRSetCount(bundles);
+
+    printf ("CRY: %4s: loaded %4zu transfer bundles\n",
+            cryptoBlockChainTypeGetCurrencyCode (manager->type),
+            sortedBundlesCount);
+
+    if (0 != sortedBundlesCount) {
+        BRArrayOf(BRCryptoClientTransferBundle) sortedBundles;
+        array_new (sortedBundles, sortedBundlesCount);
+        BRSetAll (bundles, (void**) sortedBundles, sortedBundlesCount);
+        array_set_count(sortedBundles, sortedBundlesCount);
+
+        qsort (sortedBundles, sortedBundlesCount, sizeof (BRCryptoClientTransferBundle), cryptoClientTransferBundleCompareByBlockheight);
+
+        manager->bundleTransfers = sortedBundles;
+    }
+
+    // Don't release the set's bundles
+    BRSetFree(bundles);
+}
+
+static void
+cryptoWalletManagerInitialTransferBundlesRecover (BRCryptoWalletManager manager) {
+    if (NULL != manager->bundleTransfers) {
+        for (size_t index = 0; index < array_count(manager->bundleTransfers); index++) {
+            cryptoWalletManagerRecoverTransferFromTransferBundle (manager, manager->bundleTransfers[index]);
+        }
+
+        array_free_all (manager->bundleTransfers, cryptoClientTransferBundleRelease);
+        manager->bundleTransfers = NULL;
+    }
+}
+
+static int
+cryptoClientTransactionBundleCompareByBlockheight (const void *tb1, const void *tb2) {
+    BRCryptoClientTransactionBundle b1 = * (BRCryptoClientTransactionBundle *) tb1;
+    BRCryptoClientTransactionBundle b2 = * (BRCryptoClientTransactionBundle *) tb2;
+    return (b1->blockHeight < b2-> blockHeight
+            ? -1
+            : (b1->blockHeight > b2->blockHeight
+               ? +1
+               :  0));
+}
+
+static void
+cryptoWalletManagerInitialTransactionBundlesLoad (BRCryptoWalletManager manager) {
+    assert (NULL == manager->bundleTransactions);
+
+    BRSetOf(BRCryptoClientTransactionBundle) bundles = cryptoClientTransactionBundleSetCreate (25);
+    if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION) &&
+        1 != fileServiceLoad (manager->fileService, bundles, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, 1)) {
+        cryptoClientTransactionBundleSetRelease (bundles);
+        printf ("CRY: %4s: failed to load transaction bundles",
+                cryptoBlockChainTypeGetCurrencyCode (manager->type));
+        cryptoClientTransactionBundleSetRelease(bundles);
+        return;
+    }
+    size_t sortedBundlesCount = BRSetCount(bundles);
+
+    printf ("CRY: %4s: loaded %4zu transaction bundles\n",
+            cryptoBlockChainTypeGetCurrencyCode (manager->type),
+            sortedBundlesCount);
+
+    if (0 != sortedBundlesCount) {
+        BRArrayOf(BRCryptoClientTransactionBundle) sortedBundles;
+        array_new (sortedBundles, sortedBundlesCount);
+        BRSetAll (bundles, (void**) sortedBundles, sortedBundlesCount);
+        array_set_count(sortedBundles, sortedBundlesCount);
+
+        qsort (sortedBundles, sortedBundlesCount, sizeof (BRCryptoClientTransactionBundle), cryptoClientTransactionBundleCompareByBlockheight);
+
+        manager->bundleTransactions = sortedBundles;
+    }
+
+    // Don't release the set's bundles
+    BRSetFree(bundles);
+}
+
+static void
+cryptoWalletManagerInitialTransactionBundlesRecover (BRCryptoWalletManager manager) {
+    if (NULL != manager->bundleTransactions) {
+        for (size_t index = 0; index < array_count(manager->bundleTransactions); index++) {
+            cryptoWalletManagerRecoverTransfersFromTransactionBundle (manager, manager->bundleTransactions[index]);
+        }
+
+        array_free_all (manager->bundleTransactions, cryptoClientTransactionBundleRelease);
+        manager->bundleTransactions = NULL;
+    }
+}
+
 //static void
 //cryptoWalletMangerSignalWalletCreated (BRCryptoWalletManager manager,
 //                                       BRCryptoWallet wallet) {
@@ -162,18 +277,24 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
     manager->path = strdup (path);
 
     manager->byType = byType;
-    
+
+    // Initialize to NULL, for now.
+    manager->qryManager = NULL;
+    manager->p2pManager = NULL;
+    manager->wallet     = NULL;
+    array_new (manager->wallets, 1);
+
     // File Service
     const char *currencyName = cryptoBlockChainTypeGetCurrencyCode (manager->type);
     const char *networkName  = cryptoNetworkGetDesc(network);
 
     // TODO: Replace `createFileService` with `getFileServiceSpecifications`
     manager->fileService = manager->handlers->createFileService (manager,
-                                                         manager->path,
-                                                         currencyName,
-                                                         networkName,
-                                                         manager,
-                                                         cryptoWalletManagerFileServiceErrorHandler);
+                                                                 manager->path,
+                                                                 currencyName,
+                                                                 networkName,
+                                                                 manager,
+                                                                 cryptoWalletManagerFileServiceErrorHandler);
 
     // Create the alarm clock, but don't start it.
     alarmClockCreateIfNecessary(0);
@@ -198,18 +319,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
                                       (void*) manager);
 
-//    manager->listenerTrampoline = (BRCryptoListener) {
-//        listener.context,
-//        cryptoWalletManagerListenerCallbackTrampoline,
-//        cryptoWalletListenerCallbackTrampoline,
-//        cryptoTransferListenerCallbackTrampoline
-//    };
-
     manager->listenerWallet = cryptoListenerCreateWalletListener (&manager->listener, manager);
-
-    // Setup `wallet` and `wallets.
-    manager->wallet = NULL;
-    array_new (manager->wallets, 1);
 
     manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
     pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
@@ -225,9 +335,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                                         earliestBlockNumber,
                                                         latestBlockNumber);
 
-    // Setup the P2P Manager.
-    manager->p2pManager = NULL; // manager->handlers->createP2PManager (manager);
-
     if (createCallback) createCallback (createContext, manager);
     
     // Announce the created manager; this must preceed any wallet created/added events
@@ -235,12 +342,19 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
         CRYPTO_WALLET_MANAGER_EVENT_CREATED
     });
 
+    cryptoWalletManagerInitialTransferBundlesLoad (manager);
+    cryptoWalletManagerInitialTransactionBundlesLoad (manager);
+
     // Create the primary wallet
-    manager->wallet = cryptoWalletManagerCreateWallet (manager, network->currency);
+    manager->wallet = cryptoWalletManagerCreateWalletInitialized (manager,
+                                                                  network->currency,
+                                                                  manager->bundleTransactions,
+                                                                  manager->bundleTransfers);
 
     // Create the P2P manager
     manager->p2pManager = manager->handlers->createP2PManager (manager);
 
+    // Allow callers to be in an atomic region.
     pthread_mutex_lock (&manager->lock);
     return manager;
 }
@@ -270,6 +384,10 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
                                                       scheme,
                                                       path);
     if (NULL == manager) return NULL;
+
+    // Recover transfers and transactions
+    cryptoWalletManagerInitialTransferBundlesRecover (manager);
+    cryptoWalletManagerInitialTransactionBundlesRecover (manager);
 
     // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
@@ -499,12 +617,21 @@ cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
 //}
 
 extern BRCryptoWallet
-cryptoWalletManagerCreateWallet (BRCryptoWalletManager cwm,
-                                 BRCryptoCurrency currency) {
+cryptoWalletManagerCreateWalletInitialized (BRCryptoWalletManager cwm,
+                                            BRCryptoCurrency currency,
+                                            Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                            Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers) {
     BRCryptoWallet wallet = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
     return (NULL == wallet
-            ? cwm->handlers->createWallet (cwm, currency)
+            ? cwm->handlers->createWallet (cwm, currency, transactions, transfers)
             : wallet);
+}
+
+
+extern BRCryptoWallet
+cryptoWalletManagerCreateWallet (BRCryptoWalletManager cwm,
+                                 BRCryptoCurrency currency) {
+    return cryptoWalletManagerCreateWalletInitialized (cwm, currency, NULL, NULL);
 }
 
 
@@ -1517,6 +1644,24 @@ cryptoWalletManagerPeriodicDispatcher (BREventHandler handler,
 }
 
 // MARK: - Transaction/Transfer Bundle
+
+private_extern void
+cryptoWalletManagerSaveTransactionBundle (BRCryptoWalletManager manager,
+                                          OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    if (NULL != manager->handlers->saveTransactionBundle)
+        manager->handlers->saveTransactionBundle (manager, bundle);
+    else if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION))
+        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSACTION, bundle);
+}
+
+private_extern void
+cryptoWalletManagerSaveTransferBundle (BRCryptoWalletManager manager,
+                                       OwnershipKept BRCryptoClientTransferBundle bundle) {
+    if (NULL != manager->handlers->saveTransferBundle)
+        manager->handlers->saveTransferBundle (manager, bundle);
+    else if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER))
+        fileServiceSave (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, bundle);
+}
 
 private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,

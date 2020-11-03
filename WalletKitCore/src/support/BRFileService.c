@@ -776,7 +776,16 @@ fileServiceLoad (BRFileService fs,
 extern int
 fileServiceRemove (BRFileService fs,
                    const char *type,
-                   UInt256 identifier) {
+                   const void *entity) {
+    UInt256 identiifer = fileServiceGetIdentifier (fs, type, entity);
+
+    return !UInt256Eq (identiifer, UINT256_ZERO) && fileServiceRemoveByIdentifier (fs, type, identiifer);
+}
+
+extern int
+fileServiceRemoveByIdentifier (BRFileService fs,
+                               const char *type,
+                               UInt256 identifier) {
     BRFileServiceEntityType *entityType = fileServiceLookupType (fs, type);
     if (NULL == entityType)
         return fileServiceFailedImpl (fs, 0, NULL, NULL, "missed type");
@@ -926,6 +935,12 @@ fileServiceWipe (const char *basePath,
 #endif
 
     return result;
+}
+
+extern bool
+fileServiceHasType (BRFileService fs,
+                    const char *type) {
+    return NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256

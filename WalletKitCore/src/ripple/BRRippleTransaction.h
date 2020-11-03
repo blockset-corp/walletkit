@@ -143,6 +143,7 @@ extern int rippleTransactionHasError(BRRippleTransaction transaction);
 
 extern int rippleTransactionIsInBlock (BRRippleTransaction transaction);
 extern uint64_t rippleTransactionGetBlockHeight (BRRippleTransaction transaction);
+extern uint64_t rippleTransactionGetTimestamp (BRRippleTransaction transaction);
 
 extern BRSetOf(BRRippleTransaction) rippleTransactionSetCreate (size_t initialSize);
 

@@ -29,6 +29,10 @@
 #define OwnershipKept
 #endif
 
+#if !defined (Nullable)
+#define Nullable
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

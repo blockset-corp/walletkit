@@ -47,6 +47,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoTransferState state,
                            OwnershipKept BRRippleAccount xrpAccount,
                            OwnershipGiven BRRippleTransaction xrpTransfer) {
     
@@ -65,12 +66,6 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
         xrpTransfer
     };
 
-#if EXAMPLE
-    // Set the state from `transferGeneric`.  This is where we move from 'submitted' to 'included'
-    BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-    BRCryptoTransferState newState = cryptoTransferStateCreateGEN (genTransferGetState(transferGeneric), unitForFee);
-    cryptoTransferSetState (transfer, newState);
-#endif
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferXRPRecord),
                                                             CRYPTO_NETWORK_TYPE_XRP,
                                                             listener,
@@ -81,6 +76,7 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                             direction,
                                                             sourceAddress,
                                                             targetAddress,
+                                                            state,
                                                             &contextXRP,
                                                             cryptoTransferCreateCallbackXRP);
     

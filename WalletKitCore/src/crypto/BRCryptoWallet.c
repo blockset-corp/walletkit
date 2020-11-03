@@ -219,8 +219,8 @@ cryptoWalletDecBalance (BRCryptoWallet wallet,
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma GCC   diagnostic ignored "-Wunused-function"
 static void
-cryptoWalletUpdBalance (BRCryptoWallet wallet) {
-    pthread_mutex_lock (&wallet->lock);
+cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
+    if (needLock) pthread_mutex_lock (&wallet->lock);
     BRCryptoAmount balance = cryptoAmountCreateInteger (0, wallet->unit);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
@@ -232,9 +232,9 @@ cryptoWalletUpdBalance (BRCryptoWallet wallet) {
 
         balance = newBalance;
     }
-    pthread_mutex_unlock (&wallet->lock);
-
     cryptoWalletSetBalance (wallet, balance);
+
+    if (needLock) pthread_mutex_unlock (&wallet->lock);
 }
 #pragma clang diagnostic pop
 #pragma GCC   diagnostic pop
@@ -273,7 +273,7 @@ cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
         change = cryptoAmountNegate (feeEstimated);
 
     if (NULL != change && CRYPTO_FALSE == cryptoAmountIsZero(change))
-        cryptoWalletIncBalance (wallet, change);
+        cryptoWalletIncBalance (wallet, cryptoAmountTake(change));
 
     cryptoAmountGive (change);
     cryptoAmountGive (feeEstimated);
@@ -332,6 +332,35 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
         });
         cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
      }
+    pthread_mutex_unlock (&wallet->lock);
+}
+
+extern void
+cryptoWalletAddTransfers (BRCryptoWallet wallet,
+                          OwnershipGiven BRArrayOf(BRCryptoTransfer) transfers) {
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; index < array_count(transfers); index++) {
+        BRCryptoTransfer transfer = transfers[index];
+        if (CRYPTO_FALSE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
+            array_add (wallet->transfers, cryptoTransferTake(transfer));
+            cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
+            // Must announce
+
+            // TODO: replace w/ bulk announcement
+            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+                CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
+                { .transfer = cryptoTransferTake (transfer) }
+            });
+//            cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
+        }
+    }
+
+    // generate event
+
+    // new balance
+    cryptoWalletUpdBalance(wallet, false);
+
+    array_free_all (transfers, cryptoTransferGive);
     pthread_mutex_unlock (&wallet->lock);
 }
 

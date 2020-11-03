@@ -61,6 +61,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
+                            BRCryptoTransferState state,
                             BRHederaAccount hbarAccount,
                             BRHederaTransaction hbarTransaction);
 
@@ -103,6 +104,9 @@ typedef struct BRCryptoFeeBasisHBARRecord {
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsHBAR (BRCryptoUnit unit,
                             BRHederaFeeBasis hbarFeeBasis);
+
+private_extern BRHederaFeeBasis
+cryptoFeeBasisAsHBAR (BRCryptoFeeBasis feeBasis);
 
 private_extern BRCryptoFeeBasisHBAR
 cryptoFeeBasisCoerceHBAR (BRCryptoFeeBasis feeBasis);

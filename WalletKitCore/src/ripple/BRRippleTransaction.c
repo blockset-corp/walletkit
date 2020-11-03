@@ -744,3 +744,8 @@ extern uint64_t rippleTransactionGetBlockHeight (BRRippleTransaction transaction
     assert(transaction);
     return transaction->blockHeight;
 }
+
+extern uint64_t rippleTransactionGetTimestamp (BRRippleTransaction transaction) {
+    assert(transaction);
+    return transaction->timestamp;
+}

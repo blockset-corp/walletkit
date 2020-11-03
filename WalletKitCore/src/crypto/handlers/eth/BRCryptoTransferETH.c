@@ -115,7 +115,6 @@ cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
 }
 
 typedef struct {
-    BRCryptoTransferState state;
     BREthereumAccount account;
     BREthereumTransferBasis basis;
     BREthereumTransaction originatingTransaction;
@@ -130,8 +129,6 @@ cryptoTransferCreateCallbackETH (BRCryptoTransferCreateContext context,
     transferETH->account = contextETH->account;
     transferETH->basis   = contextETH->basis;
     transferETH->originatingTransaction = contextETH->originatingTransaction;
-
-    cryptoTransferSetState (transfer, contextETH->state);
 }
 
 extern BRCryptoTransfer
@@ -148,7 +145,6 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                            BREthereumTransferBasis basis,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
     BRCryptoTransferCreateContextETH contextETH = {
-        transferState,
         account,
         basis,
         originatingTransaction
@@ -164,6 +160,7 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                                                             direction,
                                                             sourceAddress,
                                                             targetAddress,
+                                                            transferState,
                                                             &contextETH,
                                                             cryptoTransferCreateCallbackETH);
 

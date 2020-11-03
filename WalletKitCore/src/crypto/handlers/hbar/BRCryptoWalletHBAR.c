@@ -70,12 +70,6 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
     return wallet;
 }
 
-//private_extern BRHederaWallet
-//cryptoWalletAsHBAR (BRCryptoWallet wallet) {
-//    BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce(wallet);
-//    return walletHBAR->wid;
-//}
-
 static void
 cryptoWalletReleaseHBAR (BRCryptoWallet wallet) {
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
@@ -202,16 +196,18 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     
     hederaAddressFree (source);
     hederaAddressFree (nodeAddress);
-    
+
+    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
+
     BRCryptoTransfer transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
                                                             unit,
                                                             unitForFee,
+                                                            state,
                                                             walletHBAR->hbarAccount,
                                                             hbarTransaction);
-
-    // Take all the attributes, even if there aren't for HBAR.
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    
+    cryptoTransferStateRelease (&state);
+
     return transfer;
 }
 

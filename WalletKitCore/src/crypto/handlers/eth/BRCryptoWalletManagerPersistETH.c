@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 #include "BRCryptoETH.h"
+#include "crypto/BRCryptoFileService.h"
 
 #include "ethereum/blockchain/BREthereumBlock.h"
 #include "ethereum/blockchain/BREthereumTransaction.h"
@@ -449,7 +450,21 @@ initialWalletsLoadETH (BRCryptoWalletManager manager) {
 }
 #endif
 
-static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
+static BRFileServiceTypeSpecification fileServiceSpecificationsArrayETH[] = {
+    {
+        CRYPTO_FILE_SERVICE_TYPE_TRANSFER,
+        CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
+        1,
+        {
+            {
+                CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
+                cryptoFileServiceTypeTransferV1Identifier,
+                cryptoFileServiceTypeTransferV1Reader,
+                cryptoFileServiceTypeTransferV1Writer
+            }
+        }
+    },
+
     {
         fileServiceTypeTransactions,
         EWM_TRANSACTION_VERSION_1,
@@ -558,5 +573,5 @@ const char *fileServiceTypeNodesETH        = fileServiceTypeNodes;
 const char *fileServiceTypeTokensETH       = fileServiceTypeTokens;
 //const char *ewmFileServiceTypeWallets      = fileServiceTypeWallets;
 
-size_t fileServiceSpecificationsCountETH = sizeof(fileServiceSpecifications)/sizeof(BRFileServiceTypeSpecification);
-BRFileServiceTypeSpecification *fileServiceSpecificationsETH = fileServiceSpecifications;
+size_t fileServiceSpecificationsCountETH = sizeof(fileServiceSpecificationsArrayETH)/sizeof(BRFileServiceTypeSpecification);
+BRFileServiceTypeSpecification *fileServiceSpecificationsETH = fileServiceSpecificationsArrayETH;

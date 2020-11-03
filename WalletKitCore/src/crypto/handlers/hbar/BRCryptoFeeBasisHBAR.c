@@ -31,6 +31,12 @@ cryptoFeeBasisCreateCallbackHBAR (BRCryptoFeeBasisCreateContext context,
     feeBasisHBAR->hbarFeeBasis = contextHBAR->hbarFeeBasis;
 }
 
+private_extern BRHederaFeeBasis
+cryptoFeeBasisAsHBAR (BRCryptoFeeBasis feeBasis) {
+    BRCryptoFeeBasisHBAR feeBasisHBAR = cryptoFeeBasisCoerceHBAR (feeBasis);
+    return feeBasisHBAR->hbarFeeBasis;
+}
+
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisCreateAsHBAR (BRCryptoUnit unit,
                             BRHederaFeeBasis hbarFeeBasis) {

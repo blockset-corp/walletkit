@@ -12,6 +12,7 @@
 #define BRCryptoClientP_h
 
 #include "support/BRSet.h"
+#include "support/rlp/BRRlp.h"
 
 #include "BRCryptoClient.h"
 #include "BRCryptoSync.h"
@@ -22,7 +23,7 @@
 extern "C" {
 #endif
 
-// MARK: - Transaction/Transfer Bundle
+// MARK: - Transaction Bundle
 
 struct BRCryptoClientTransactionBundleRecord {
     BRCryptoTransferStateType status;
@@ -31,6 +32,42 @@ struct BRCryptoClientTransactionBundleRecord {
     BRCryptoTimestamp timestamp;
     BRCryptoBlockNumber blockHeight;
 };
+
+private_extern OwnershipKept uint8_t *
+cryptoClientTransactionBundleGetSerialization (BRCryptoClientTransactionBundle bundle,
+                                               size_t *serializationCount);
+
+private_extern BRRlpItem
+cryptoClientTransactionBundleRlpEncode (BRCryptoClientTransactionBundle bundle,
+                                        BRRlpCoder coder);
+
+private_extern BRCryptoClientTransactionBundle
+cryptoClientTransactionBundleRlpDecode (BRRlpItem item,
+                                        BRRlpCoder coder);
+
+// For BRSet
+private_extern size_t
+cryptoClientTransactionBundleGetHashValue (BRCryptoClientTransactionBundle bundle);
+
+// For BRSet
+private_extern bool
+cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
+                                      BRCryptoClientTransactionBundle bundle2);
+
+static inline BRSetOf(BRCryptoClientTransactionBundle)
+cryptoClientTransactionBundleSetCreate (size_t capacity) {
+    return BRSetNew ((size_t (*) (const void *)) cryptoClientTransactionBundleGetHashValue,
+                     (int (*) (const void *, const void *)) cryptoClientTransactionBundleIsEqual,
+                    capacity);
+}
+
+static inline void
+cryptoClientTransactionBundleSetRelease (BRSetOf(BRCryptoClientTransactionBundle) bundles) {
+    BRSetFreeAll(bundles, (void (*) (void *))  cryptoClientTransactionBundleRelease);
+}
+
+
+// MARK: - Transfer Bundle
 
 struct BRCryptoClientTransferBundleRecord {
     BRCryptoTransferStateType status;
@@ -51,6 +88,35 @@ struct BRCryptoClientTransferBundleRecord {
     char **attributeKeys;
     char **attributeVals;
 };
+
+private_extern BRRlpItem
+cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
+                                     BRRlpCoder coder);
+
+private_extern BRCryptoClientTransferBundle
+cryptoClientTransferBundleRlpDecode (BRRlpItem item,
+                                     BRRlpCoder coder);
+
+// For BRSet
+private_extern size_t
+cryptoClientTransferBundleGetHashValue (BRCryptoClientTransferBundle bundle);
+
+// For BRSet
+private_extern bool
+cryptoClientTransferBundleIsEqual (BRCryptoClientTransferBundle bundle1,
+                                   BRCryptoClientTransferBundle bundle2);
+
+static inline BRSetOf(BRCryptoClientTransferBundle)
+cryptoClientTransferBundleSetCreate (size_t capacity) {
+    return BRSetNew ((size_t (*) (const void *)) cryptoClientTransferBundleGetHashValue,
+                     (int (*) (const void *, const void *)) cryptoClientTransferBundleIsEqual,
+                     capacity);
+}
+
+static inline void
+cryptoClientTransferBundleSetRelease (BRSetOf(BRCryptoClientTransferBundle) bundles) {
+    BRSetFreeAll(bundles, (void (*) (void *)) cryptoClientTransferBundleRelease);
+}
 
 // MARK: - Client Callback
 
@@ -222,6 +288,7 @@ struct BRCryptoClientQRYManagerRecord {
         size_t rid;
     } sync;
 
+    bool connected;
     size_t requestId;
 };
 

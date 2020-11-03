@@ -9,13 +9,15 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 #include "BRCryptoBTC.h"
+#include "crypto/BRCryptoFileService.h"
+
 
 /// MARK: - Transaction File Service
 
-#define fileServiceTypeTransactions     "transactions"
+#define FILE_SERVICE_TYPE_TRANSACTION     "transactions"
 
 enum {
-    WALLET_MANAGER_TRANSACTION_VERSION_1
+    FILE_SERVICE_TYPE_TRANSACTION_VERSION_1
 };
 
 static UInt256
@@ -78,7 +80,7 @@ fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
 extern BRArrayOf(BRTransaction*)
 initialTransactionsLoadBTC (BRCryptoWalletManager manager) {
     BRSetOf(BRTransaction*) transactionSet = BRSetNew(BRTransactionHash, BRTransactionEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, transactionSet, fileServiceTypeTransactions, 1)) {
+    if (1 != fileServiceLoad (manager->fileService, transactionSet, FILE_SERVICE_TYPE_TRANSACTION, 1)) {
         BRSetFreeAll(transactionSet, (void (*) (void*)) BRTransactionFree);
         _peer_log ("BWM: failed to load transactions");
         return NULL;
@@ -93,15 +95,18 @@ initialTransactionsLoadBTC (BRCryptoWalletManager manager) {
     BRSetAll(transactionSet, (void**) transactions, transactionsCount);
     BRSetFree(transactionSet);
 
-    _peer_log ("BWM: loaded %zu transactions\n", transactionsCount);
+    _peer_log ("BWM: %4s: loaded %4zu transactions\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               transactionsCount);
     return transactions;
 }
 
 /// MARK: - Block File Service
 
-#define fileServiceTypeBlocks       "blocks"
+#define FILE_SERVICE_TYPE_BLOCK         "blocks"
+
 enum {
-    WALLET_MANAGER_BLOCK_VERSION_1
+    FILE_SERVICE_TYPE_BLOCK_VERSION_1
 };
 
 static UInt256
@@ -163,9 +168,10 @@ fileServiceTypeBlockV1Reader (BRFileServiceContext context,
 extern BRArrayOf(BRMerkleBlock*)
 initialBlocksLoadBTC (BRCryptoWalletManager manager) {
     BRSetOf(BRMerkleBlock*) blockSet = BRSetNew(BRMerkleBlockHash, BRMerkleBlockEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, blockSet, fileServiceTypeBlocks, 1)) {
+    if (1 != fileServiceLoad (manager->fileService, blockSet, fileServiceTypeBlocksBTC, 1)) {
         BRSetFreeAll(blockSet, (void (*) (void*)) BRMerkleBlockFree);
-        _peer_log ("BWM: failed to load blocks");
+        _peer_log ("BWM: %4s: failed to load blocks",
+                   cryptoBlockChainTypeGetCurrencyCode (manager->type));
         return NULL;
     }
 
@@ -178,15 +184,18 @@ initialBlocksLoadBTC (BRCryptoWalletManager manager) {
     BRSetAll(blockSet, (void**) blocks, blocksCount);
     BRSetFree(blockSet);
 
-    _peer_log ("BWM: loaded %zu blocks\n", blocksCount);
+    _peer_log ("BWM: %4s: loaded %4zu blocks\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               blocksCount);
     return blocks;
 }
 
 /// MARK: - Peer File Service
 
-#define fileServiceTypePeers        "peers"
+#define FILE_SERVICE_TYPE_PEER        "peers"
+
 enum {
-    WALLET_MANAGER_PEER_VERSION_1
+    FILE_SERVICE_TYPE_PEER_VERSION_1
 };
 
 static UInt256
@@ -263,9 +272,10 @@ extern BRArrayOf(BRPeer)
 initialPeersLoadBTC (BRCryptoWalletManager manager) {
     /// Load peers for the wallet manager.
     BRSetOf(BRPeer*) peerSet = BRSetNew(BRPeerHash, BRPeerEq, 100);
-    if (1 != fileServiceLoad (manager->fileService, peerSet, fileServiceTypePeers, 1)) {
+    if (1 != fileServiceLoad (manager->fileService, peerSet, fileServiceTypePeersBTC, 1)) {
         BRSetFreeAll(peerSet, free);
-        _peer_log ("BWM: failed to load peers");
+        _peer_log ("BWM: %4s: failed to load peers",
+                   cryptoBlockChainTypeGetCurrencyCode (manager->type));
         return NULL;
     }
 
@@ -277,18 +287,28 @@ initialPeersLoadBTC (BRCryptoWalletManager manager) {
     FOR_SET (BRPeer*, peer, peerSet) array_add (peers, *peer);
     BRSetFreeAll(peerSet, free);
 
-    _peer_log ("BWM: loaded %zu peers\n", peersCount);
+    _peer_log ("BWM: %4s: loaded %4zu peers\n",
+               cryptoBlockChainTypeGetCurrencyCode (manager->type),
+               peersCount);
     return peers;
 }
 
-static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
+///
+/// For BTC, the FileService DOES NOT save BRCryptoClientTransactionBundles; instead BTC saves
+/// BRTransaction.  This allows the P2P mode to work seamlessly as P2P mode has zero knowledge of
+/// a transaction bundle.
+///
+/// Given the above, when BRCryptoWalletManager attempts to save a transaction bundle, we process
+/// the bundle, extract the BRTransaction, and then save that.
+///
+static BRFileServiceTypeSpecification fileServiceSpecificationsArrayBTC[] = {
     {
-        fileServiceTypeTransactions,
-        WALLET_MANAGER_TRANSACTION_VERSION_1,
+        FILE_SERVICE_TYPE_TRANSACTION,
+        FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
         1,
         {
             {
-                WALLET_MANAGER_TRANSACTION_VERSION_1,
+                FILE_SERVICE_TYPE_TRANSACTION_VERSION_1,
                 fileServiceTypeTransactionV1Identifier,
                 fileServiceTypeTransactionV1Reader,
                 fileServiceTypeTransactionV1Writer
@@ -297,12 +317,12 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
     },
 
     {
-        fileServiceTypeBlocks,
-        WALLET_MANAGER_BLOCK_VERSION_1,
+        FILE_SERVICE_TYPE_BLOCK,
+        FILE_SERVICE_TYPE_BLOCK_VERSION_1,
         1,
         {
             {
-                WALLET_MANAGER_BLOCK_VERSION_1,
+                FILE_SERVICE_TYPE_BLOCK_VERSION_1,
                 fileServiceTypeBlockV1Identifier,
                 fileServiceTypeBlockV1Reader,
                 fileServiceTypeBlockV1Writer
@@ -311,12 +331,12 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
     },
 
     {
-        fileServiceTypePeers,
-        WALLET_MANAGER_PEER_VERSION_1,
+        FILE_SERVICE_TYPE_PEER,
+        FILE_SERVICE_TYPE_PEER_VERSION_1,
         1,
         {
             {
-                WALLET_MANAGER_PEER_VERSION_1,
+                FILE_SERVICE_TYPE_PEER_VERSION_1,
                 fileServiceTypePeerV1Identifier,
                 fileServiceTypePeerV1Reader,
                 fileServiceTypePeerV1Writer
@@ -325,10 +345,10 @@ static BRFileServiceTypeSpecification fileServiceSpecifications[] = {
     }
 };
 
-const char *fileServiceTypeTransactionsBTC = fileServiceTypeTransactions;
-const char *fileServiceTypeBlocksBTC       = fileServiceTypeBlocks;
-const char *fileServiceTypePeersBTC        = fileServiceTypePeers;
+const char *fileServiceTypeTransactionsBTC = FILE_SERVICE_TYPE_TRANSACTION;
+const char *fileServiceTypeBlocksBTC       = FILE_SERVICE_TYPE_BLOCK;
+const char *fileServiceTypePeersBTC        = FILE_SERVICE_TYPE_PEER;
 
-size_t fileServiceSpecificationsCountBTC = sizeof(fileServiceSpecifications)/sizeof(BRFileServiceTypeSpecification);
-BRFileServiceTypeSpecification *fileServiceSpecificationsBTC = fileServiceSpecifications;
+size_t fileServiceSpecificationsCountBTC = sizeof(fileServiceSpecificationsArrayBTC)/sizeof(BRFileServiceTypeSpecification);
+BRFileServiceTypeSpecification *fileServiceSpecificationsBTC = fileServiceSpecificationsArrayBTC;
 

@@ -50,6 +50,8 @@ extern void
 cryptoListenerGenerateTransferEvent (const BRCryptoTransferListener *listener,
                                      BRCryptoTransfer transfer,
                                      BRCryptoTransferEvent event) {
+    if (NULL == listener || NULL == listener->listener) return;
+
     BRListenerSignalTransferEvent listenerEvent =
     { { NULL, &handleListenerSignalTransferEventType},
         listener->listener,
@@ -90,6 +92,8 @@ extern void
 cryptoListenerGenerateWalletEvent (const BRCryptoWalletListener *listener,
                                    BRCryptoWallet wallet,
                                    BRCryptoWalletEvent event) {
+    if (NULL == listener || NULL == listener->listener) return;
+
     BRListenerSignalWalletEvent listenerEvent =
     { { NULL, &handleListenerSignalWalletEventType},
         listener->listener,
@@ -127,6 +131,8 @@ extern void
 cryptoListenerGenerateManagerEvent (const BRCryptoWalletManagerListener *listener,
                                     BRCryptoWalletManager manager,
                                     BRCryptoWalletManagerEvent event) {
+    if (NULL == listener || NULL == listener->listener) return;
+
     BRListenerSignalManagerEvent listenerEvent =
     { { NULL, &handleListenerSignalManagerEventType},
         listener->listener,
@@ -163,6 +169,8 @@ extern void
 cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
                                     BRCryptoNetwork network,
                                     BRCryptoNetworkEvent event) {
+    if (NULL == listener || NULL == listener->listener) return;
+
     BRListenerSignalNetworkEvent listenerEvent =
     { { NULL, &handleListenerSignalNetworkEventType},
         listener->listener,
@@ -199,6 +207,8 @@ extern void
 cryptoListenerGenerateSystemEvent (BRCryptoListener listener,
                                    BRCryptoSystem system,
                                    BRCryptoSystemEvent event) {
+    if (NULL == listener) return;
+
     BRListenerSignalSystemEvent listenerEvent =
     { { NULL, &handleListenerSignalSystemEventType},
         listener,

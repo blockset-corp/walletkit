@@ -71,12 +71,6 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     return wallet;
 }
 
-//private_extern BRRippleWallet
-//cryptoWalletAsXRP (BRCryptoWallet wallet) {
-//    BRCryptoWalletXRP walletXRP = cryptoWalletCoerce(wallet);
-//    return walletXRP->wid;
-//}
-
 static void
 cryptoWalletReleaseXRP (BRCryptoWallet wallet) {
     BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
@@ -196,12 +190,12 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
     BRRippleAddress source  = rippleAccountGetAddress(walletXRP->xrpAccount);
     BRRippleUnitDrops drops = value.u64[0];
 
-    BRRippleTransaction xrpTransactoin = rippleTransactionCreate (source,
+    BRRippleTransaction xrpTransaction = rippleTransactionCreate (source,
                                                                   cryptoAddressAsXRP(target),
                                                                   drops,
                                                                   cryptoFeeBasisAsXRP(estimatedFeeBasis));
 
-    if (NULL == xrpTransactoin)
+    if (NULL == xrpTransaction)
         return NULL;
 
     for (size_t index = 0; index < attributesCount; index++) {
@@ -210,7 +204,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
             if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
                 BRCoreParseStatus tag;
                 sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &tag);
-                rippleTransactionSetDestinationTag (xrpTransactoin, tag);
+                rippleTransactionSetDestinationTag (xrpTransaction, tag);
             }
             else if (rippleCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
                 // TODO: Handle INVOICE_ID (note: not used in BRD App)
@@ -222,16 +216,18 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
     }
 
     rippleAddressFree(source);
-    
+
+    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
+
     BRCryptoTransfer transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
                                                            unit,
                                                            unitForFee,
+                                                           state,
                                                            walletXRP->xrpAccount,
-                                                           xrpTransactoin);
-
-    // Take all the attributes, even if there aren't for XRP.
+                                                           xrpTransaction);
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    
+    cryptoTransferStateRelease (&state);
+
     return transfer;
 }
 

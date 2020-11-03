@@ -57,6 +57,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoTransferState state,
                            BRTezosAccount xtzAccount,
                            BRTezosTransfer xtzTransfer);
 
@@ -116,6 +117,8 @@ cryptoFeeBasisCreateAsXTZ (BRCryptoUnit unit,
 private_extern BRCryptoFeeBasisXTZ
 cryptoFeeBasisCoerceXTZ (BRCryptoFeeBasis feeBasis);
 
+private_extern BRTezosFeeBasis
+cryptoFeeBasisAsXTZ (BRCryptoFeeBasis feeBasis);
 
 // MARK: - Support
 

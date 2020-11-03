@@ -109,6 +109,10 @@ extern int
 cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
                                    const BRCryptoClientTransferBundle b2);
 
+extern BRCryptoTransferState
+cryptoClientTransferBundleGetTransferState (const BRCryptoClientTransferBundle bundle,
+                                            BRCryptoFeeBasis confirmedFeeBasis);
+
 extern void
 cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager cwm,
                       OwnershipGiven BRCryptoClientCallbackState callbackState,

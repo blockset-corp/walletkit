@@ -164,6 +164,16 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
         send
     };
 
+    BRCryptoTransferState state =
+    (TX_UNCONFIRMED != tid->blockHeight
+     ? cryptoTransferStateIncludedInit (tid->blockHeight,
+                                        0,
+                                        tid->timestamp,
+                                        feeBasisEstimated,
+                                        CRYPTO_TRUE,
+                                        NULL)
+     : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED));
+
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                             type,
                                                             listener,
@@ -174,6 +184,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                             direction,
                                                             sourceAddress,
                                                             targetAddress,
+                                                            state,
                                                             &contextBTC,
                                                             cryptoTransferCreateCallbackBTC);
 

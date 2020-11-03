@@ -73,6 +73,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoTransferDirection direction,
                             BRCryptoAddress sourceAddress,
                             BRCryptoAddress targetAddress,
+                            BRCryptoTransferState state,
                             BRCryptoTransferCreateContext  createContext,
                             BRCryptoTransferCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoTransferRecord));
@@ -83,7 +84,6 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->sizeInBytes = sizeInBytes;
 
     transfer->listener   = listener;
-    transfer->state      = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = cryptoFeeBasisTake (feeBasisEstimated);
@@ -93,6 +93,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     
     transfer->sourceAddress = cryptoAddressTake (sourceAddress);
     transfer->targetAddress = cryptoAddressTake (targetAddress);
+    transfer->state         = cryptoTransferStateCopy (&state);
 
     array_new (transfer->attributes, 1);
 

@@ -225,7 +225,9 @@ cryptoWalletManagerEstimateFeeBasisBTC (BRCryptoWalletManager cwm,
 
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
-                                    BRCryptoCurrency currency) {
+                                    BRCryptoCurrency currency,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) initialTransactionsBundles,
+                                    Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) initialTransferBundles) {
     assert (NULL == manager->wallet);
     
     // Get the btcMasterPublicKey
@@ -234,9 +236,10 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     // Get the btcChainParams
     const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
 
-    // Load the BTC transactions from the fileService
-    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC (manager);
-    if (NULL == transactions) array_new (transactions, 1);
+    assert (NULL == initialTransactionsBundles || 0 == array_count (initialTransactionsBundles));
+    assert (NULL == initialTransferBundles     || 0 == array_count (initialTransferBundles));
+
+    BRArrayOf(BRTransaction*) transactions = initialTransactionsLoadBTC(manager);
 
     // Create the BTC wallet
     //
@@ -274,20 +277,42 @@ cryptoWalletManagerCreateWalletBTC (BRCryptoWalletManager manager,
     BRTransaction *btcTransactions[btcTransactionsCount > 0 ? btcTransactionsCount : 1]; // avoid a static analysis error
     BRWalletTransactions (btcWallet, btcTransactions, btcTransactionsCount);
 
+    BRArrayOf(BRCryptoTransfer) transfers;
+    array_new (transfers, btcTransactionsCount);
+
     for (size_t index = 0; index < btcTransactionsCount; index++) {
-        BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (wallet->listenerTransfer,
-                                                               unitAsDefault,
-                                                               unitAsBase,
-                                                               btcWallet,
-                                                               BRTransactionCopy(btcTransactions[index]),
-                                                               manager->type);
-        cryptoWalletAddTransfer (wallet, transfer);
+        array_add (transfers,
+                   cryptoTransferCreateAsBTC (wallet->listenerTransfer,
+                                              unitAsDefault,
+                                              unitAsBase,
+                                              btcWallet,
+                                              BRTransactionCopy(btcTransactions[index]),
+                                              manager->type));
     }
+    cryptoWalletAddTransfers (wallet, transfers); // OwnershipGiven transfers
 
     cryptoUnitGive (unitAsDefault);
     cryptoUnitGive (unitAsBase);
 
     return wallet;
+}
+
+private_extern void
+cryptoWalletManagerSaveTransactionBundleBTC (BRCryptoWalletManager manager,
+                                             OwnershipKept BRCryptoClientTransactionBundle bundle) {
+    size_t   serializationCount = 0;
+    uint8_t *serialization = cryptoClientTransactionBundleGetSerialization (bundle, &serializationCount);
+
+    BRTransaction *transaction = BRTransactionParse (serialization, serializationCount);
+    if (NULL == transaction)
+        printf ("BTC: SaveTransactionBundle: Missed @ Height %"PRIu64"\n", bundle->blockHeight);
+    else {
+        transaction->blockHeight = (uint32_t) bundle->blockHeight;
+        transaction->timestamp   = bundle->timestamp;
+
+        fileServiceSave (manager->fileService, fileServiceTypeTransactionsBTC, transaction);
+        BRTransactionFree(transaction);
+    }
 }
 
 static void
@@ -360,7 +385,7 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
 
 static void
 cryptoWalletManagerRecoverTransferFromTransferBundleBTC (BRCryptoWalletManager cwm,
-                                                                OwnershipKept BRCryptoClientTransferBundle bundle) {
+                                                         OwnershipKept BRCryptoClientTransferBundle bundle) {
     // Not BTC functionality
     assert (0);
 }
@@ -448,15 +473,21 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     BRCryptoWallet wallet = manager->base.wallet;
     BRWallet      *wid    = cryptoWalletAsBTC(wallet);
 
+    BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+    printf ("BTC: TxAdded  : %zu (Unresolved Count)\n", array_count (walletBTC->tidsUnresolved));
+
+    // Save `tid` to the fileService.
+    fileServiceSave (manager->base.fileService, fileServiceTypeTransactionsBTC, tid);
+
     // If `tid` is not resolved in `wid`, then add it as unresolved to `wid` and skip out.
     if (!BRWalletTransactionIsResolved (wid, tid)) {
-        printf ("BTC: TxAdded (Not Resolved)\n");
+        printf ("BTC: TxAdded  : %s (Not Resolved)\n", u256hex(UInt256Reverse(tid->txHash)));
         cryptoWalletAddUnresolvedAsBTC (wallet, tid);
         pthread_mutex_unlock (&manager->base.lock);
         return;
     }
 
-    printf ("BTC: TxAdded\n");
+    printf ("BTC: TxAdded  : %s\n", u256hex(UInt256Reverse(tid->txHash)));
 
     bool wasDeleted = false;
     bool wasCreated = false;
@@ -517,6 +548,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     for (size_t index = 0; index < resolvedTransactionsCount; index++) {
         BRTransaction *tid = resolvedTransactions[index];
+        printf ("BTC: TxAdded  : %s (Resolved)\n", u256hex(UInt256Reverse(tid->txHash)));
         cryptoWalletManagerBTCTxAdded   (info, tid);
         cryptoWalletManagerBTCTxUpdated (info,
                                          &tid->txHash, 1,
@@ -540,7 +572,6 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
 
     BRCryptoWallet wallet = manager->base.wallet;
 
-    printf ("BTC: TxUpdated\n");
     for (size_t index = 0; index < count; index++) {
         // TODO: This is here to allow events to flow; otherwise we'd block for too long??
         pthread_mutex_lock (&manager->base.lock);
@@ -553,9 +584,14 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
         else {
             assert (BRTransactionIsSigned (transfer->tid));
 
+            printf ("BTC: TxUpdated: %s\n",u256hex(UInt256Reverse(transfer->tid->txHash)));
+
             if (!transfer->isDeleted) {
                 transfer->tid->blockHeight = blockHeight;
                 transfer->tid->timestamp   = timestamp;
+
+                // Save the modified `tid` to the fileService.
+                fileServiceSave (manager->base.fileService, fileServiceTypeTransactionsBTC, transfer->tid);
             }
 
             if (TX_UNCONFIRMED != blockHeight) {
@@ -591,12 +627,13 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
     BRCryptoTransferBTC transfer = cryptoWalletFindTransferByHashAsBTC (wallet, hash);
 
     if (NULL != transfer) {
-        printf ("BTC: TxDeleted\n");
+        printf ("BTC: TxDeleted: %s\n",u256hex(UInt256Reverse(transfer->tid->txHash)));
 
         if (transfer->isDeleted) needEvents = false;
         else {
             transfer->isDeleted = true;
             cryptoTransferSetState (&transfer->base, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_DELETED));
+            fileServiceRemove (manager->base.fileService, fileServiceTypeTransactionsBTC, transfer->tid);
         }
 
         pthread_mutex_unlock (&manager->base.lock);
@@ -646,6 +683,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
+    cryptoWalletManagerSaveTransactionBundleBTC,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
@@ -664,6 +703,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH = {
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
+    cryptoWalletManagerSaveTransactionBundleBTC,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
@@ -682,6 +723,8 @@ BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV = {
     cryptoWalletManagerSignTransactionWithKeyBTC,
     cryptoWalletManagerEstimateLimitBTC,
     cryptoWalletManagerEstimateFeeBasisBTC,
+    cryptoWalletManagerSaveTransactionBundleBTC,
+    NULL, // BRCryptoWalletManagerSaveTransactionBundleHandler
     cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC,
     cryptoWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported

@@ -42,6 +42,7 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
+                           BRCryptoTransferState state,
                            OwnershipKept BRTezosAccount xtzAccount,
                            OwnershipGiven BRTezosTransfer xtzTransfer) {
     
@@ -72,6 +73,7 @@ cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
                                                             direction,
                                                             sourceAddress,
                                                             targetAddress,
+                                                            state,
                                                             &contextXTZ,
                                                             cryptoTransferCreateCallbackXTZ);
     

@@ -94,7 +94,17 @@ typedef BRCryptoClientP2PManager
 
 typedef BRCryptoWallet
 (*BRCryptoWalletManagerCreateWalletHandler) (BRCryptoWalletManager cwm,
-                                             BRCryptoCurrency currency);
+                                             BRCryptoCurrency currency,
+                                             Nullable OwnershipKept BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                             Nullable OwnershipKept BRArrayOf(BRCryptoClientTransferBundle) transfers);
+
+typedef void
+(*BRCryptoWalletManagerSaveTransactionBundleHandler) (BRCryptoWalletManager cwm,
+                                                      OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+typedef void
+(*BRCryptoWalletManagerSaveTransferBundleHandler) (BRCryptoWalletManager cwm,
+                                                   OwnershipKept BRCryptoClientTransferBundle bundle);
 
 typedef void
 (*BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler) (BRCryptoWalletManager cwm,
@@ -134,9 +144,11 @@ typedef struct {
     BRCryptoWalletManagerSignTransactionWithKeyHandler signTransactionWithKey;
     BRCryptoWalletManagerEstimateLimitHandler estimateLimit;
     BRCryptoWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
+    BRCryptoWalletManagerSaveTransactionBundleHandler saveTransactionBundle;
+    BRCryptoWalletManagerSaveTransferBundleHandler    saveTransferBundle;
     BRCryptoWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
-    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler recoverTransferFromTransferBundle;
-    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler recoverFeeBasisFromFeeEstimate;
+    BRCryptoWalletManagerRecoverTransferFromTransferBundleHandler     recoverTransferFromTransferBundle;
+    BRCryptoWalletManagerRecoverFeeBasisFromFeeEstimateHandler        recoverFeeBasisFromFeeEstimate;
     BRCryptoWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     BRCryptoWalletManagerCreateWalletSweeperHandler createSweeper;
 } BRCryptoWalletManagerHandlers;
@@ -189,6 +201,9 @@ struct BRCryptoWalletManagerRecord {
     BRCryptoWalletManagerListener listener;
     BRCryptoWalletListener listenerWallet;
 //    BRCryptoListener listenerTrampoline;
+
+    Nullable BRArrayOf(BRCryptoClientTransferBundle) bundleTransfers;
+    Nullable BRArrayOf(BRCryptoClientTransactionBundle) bundleTransactions;
 };
 
 typedef void *BRCryptoWalletManagerCreateContext;
@@ -225,6 +240,20 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
 private_extern void
 cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet);
+
+private_extern void
+cryptoWalletManagerSaveTransactionBundle (BRCryptoWalletManager manager,
+                                          OwnershipKept BRCryptoClientTransactionBundle bundle);
+
+private_extern void
+cryptoWalletManagerSaveTransferBundle (BRCryptoWalletManager manager,
+                                       OwnershipKept BRCryptoClientTransferBundle bundle);
+
+private_extern BRCryptoWallet
+cryptoWalletManagerCreateWalletInitialized (BRCryptoWalletManager cwm,
+                                            BRCryptoCurrency currency,
+                                            Nullable BRArrayOf(BRCryptoClientTransactionBundle) transactions,
+                                            Nullable BRArrayOf(BRCryptoClientTransferBundle) transfers);
 
 private_extern void
 cryptoWalletManagerRecoverTransfersFromTransactionBundle (BRCryptoWalletManager cwm,

@@ -35,6 +35,8 @@ extern "C" {
 #define OwnershipGiven
 #define OwnershipKept
 
+#define Nullable
+
 /**
  * A Block Height in a block chain.  Note: uint32_t is perhaps enough; conservatively use
  * uint64_t.
