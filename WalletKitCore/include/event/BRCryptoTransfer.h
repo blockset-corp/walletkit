@@ -89,10 +89,10 @@ extern "C" {
         } u;
     } BRCryptoTransferState;
 
-    extern BRCryptoTransferState
+    extern BRCryptoTransferState // Does not require cryptoTransferStateRelease
     cryptoTransferStateInit (BRCryptoTransferStateType type);
 
-    extern BRCryptoTransferState
+    extern BRCryptoTransferState // Requires cryptoTransferStateRelease
     cryptoTransferStateIncludedInit (uint64_t blockNumber,
                                      uint64_t transactionIndex,
                                      uint64_t timestamp,
@@ -100,10 +100,10 @@ extern "C" {
                                      BRCryptoBoolean success,
                                      const char *error);
 
-    extern BRCryptoTransferState
+    extern BRCryptoTransferState  // Does not require cryptoTransferStateRelease
     cryptoTransferStateErroredInit (BRCryptoTransferSubmitError error);
 
-    extern BRCryptoTransferState
+    extern BRCryptoTransferState  // Requires cryptoTransferStateRelease
     cryptoTransferStateCopy (BRCryptoTransferState *state);
 
     extern void

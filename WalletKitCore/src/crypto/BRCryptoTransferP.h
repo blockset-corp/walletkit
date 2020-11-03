@@ -110,7 +110,7 @@ typedef void *BRCryptoTransferCreateContext;
 typedef void (*BRCryptoTransferCreateCallback) (BRCryptoTransferCreateContext context,
                                                 BRCryptoTransfer transfer);
 
-extern BRCryptoTransfer
+extern BRCryptoTransfer // OwnershipKept, all arguments
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoTransferListener listener,

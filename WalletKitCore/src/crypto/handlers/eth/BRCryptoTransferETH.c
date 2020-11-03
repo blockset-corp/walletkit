@@ -198,8 +198,8 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (transactionGetSourceAddress (ethTransaction));
     BRCryptoAddress  target = cryptoAddressCreateAsETH (transactionGetTargetAddress (ethTransaction));
 
-    BRCryptoTransferState transferState = cryptoTransferDeriveStateETH (transactionGetStatus(ethTransaction),
-                                                                        confirmedFeeBasis);
+    BRCryptoTransferState state = cryptoTransferDeriveStateETH (transactionGetStatus(ethTransaction),
+                                                                confirmedFeeBasis);
 
     BREthereumTransferBasis basis = {
         TRANSFER_BASIS_TRANSACTION,
@@ -214,11 +214,12 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
                                                            direction,
                                                            source,
                                                            target,
-                                                           transferState,
+                                                           state,
                                                            account,
                                                            basis,
                                                            NULL);
 
+    cryptoTransferStateRelease (&state);
     cryptoFeeBasisGive(confirmedFeeBasis);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
@@ -248,8 +249,8 @@ cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransferState transferState = cryptoTransferDeriveStateETH (logGetStatus(ethLog),
-                                                                        estimatedFeeBasis);
+    BRCryptoTransferState state = cryptoTransferDeriveStateETH (logGetStatus(ethLog),
+                                                                estimatedFeeBasis);
 
     BREthereumTransferBasis basis = {
         TRANSFER_BASIS_LOG,
@@ -264,11 +265,12 @@ cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
                                                            direction,
                                                            source,
                                                            target,
-                                                           transferState,
+                                                           state,
                                                            account,
                                                            basis,
                                                            NULL);
 
+    cryptoTransferStateRelease (&state);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
     cryptoAddressGive(target);
@@ -297,8 +299,8 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
     BRCryptoAddress  source = cryptoAddressCreateAsETH (ethSource);
     BRCryptoAddress  target = cryptoAddressCreateAsETH (ethTarget);
 
-    BRCryptoTransferState transferState = cryptoTransferDeriveStateETH (ethExchangeGetStatus(ethExchange),
-                                                                        estimatedFeeBasis);
+    BRCryptoTransferState state = cryptoTransferDeriveStateETH (ethExchangeGetStatus(ethExchange),
+                                                                estimatedFeeBasis);
 
     BREthereumTransferBasis basis = {
         TRANSFER_BASIS_EXCHANGE,
@@ -312,11 +314,12 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
                                                            direction,
                                                            source,
                                                            target,
-                                                           transferState,
+                                                           state,
                                                            account,
                                                            basis,
                                                            NULL);
 
+    cryptoTransferStateRelease (&state);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
     cryptoAddressGive(target);
