@@ -50,20 +50,17 @@ cryptoWalletManagerCreateXTZ (BRCryptoWalletManagerListener listener,
                               BRCryptoSyncMode mode,
                               BRCryptoAddressScheme scheme,
                               const char *path) {
-    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXTZRecord),
-                                                                     cryptoNetworkGetType(network),
-                                                                     listener,
-                                                                     client,
-                                                                     account,
-                                                                     network,
-                                                                     scheme,
-                                                                     path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
-                                                                     NULL,
-                                                                     NULL);
-
-    pthread_mutex_unlock (&manager->lock);
-    return manager;
+    return cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerXTZRecord),
+                                            cryptoNetworkGetType(network),
+                                            listener,
+                                            client,
+                                            account,
+                                            network,
+                                            scheme,
+                                            path,
+                                            CRYPTO_CLIENT_REQUEST_USE_TRANSFERS,
+                                            NULL,
+                                            NULL);
 }
 
 static void

@@ -119,7 +119,6 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
         ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
     BRSetFree(exchanges);
 
-    pthread_mutex_unlock (&manager->lock);
     return manager;
 }
 
