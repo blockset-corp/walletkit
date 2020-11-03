@@ -592,14 +592,6 @@ cryptoNetworkInitializeAccount (BRCryptoNetwork network,
     network->handlers->initializeAccount (network, account, bytes, bytesCount);
 }
 
-#ifdef REFACTOR
-extern const char *
-cryptoNetworkGetETHNetworkName (BRCryptoNetwork network) {
-    BREthereumNetwork ethNetwork = cryptoNetworkAsETH(network);
-    return ethNetworkGetName (ethNetwork);
-}
-#endif
-
 private_extern BRCryptoBlockChainType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
     return network->type;

@@ -290,33 +290,6 @@ extension Network: Hashable {
     }
 }
 
-#if false
-extension Network {
-    internal var ethNetworkName: String? {
-        if case .eth = type {
-            return cryptoNetworkGetETHNetworkName (core)
-                .map { asUTF8String($0) }
-        }
-        else {
-            return nil
-        }
-    }
-}
-#endif
-
-//extension BRCryptoBlockChainType: BinaryInteger {
-//    public typealias Words = <#type#>
-//
-//    public typealias Magnitude = <#type#>
-//
-//    public static func + (lhs: BRCryptoBlockChainType, rhs: BRCryptoBlockChainType) -> BRCryptoBlockChainType {
-//        <#code#>
-//    }
-//
-//    public typealias IntegerLiteralType = <#type#>
-//
-//
-//}
 ///
 /// Try as we might, certain functionality outside of WalletKit will require knowing the
 /// canonical network type as: BTC, BCH, ETH, etc.  The NetworkType provides this information.
