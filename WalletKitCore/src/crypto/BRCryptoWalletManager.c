@@ -832,51 +832,6 @@ cryptoWalletManagerWipe (BRCryptoNetwork network,
 
 // MARK: - Create Transfer
 
-private_extern void
-cryptoWalletManagerSetTransferState (BRCryptoWalletManager cwm,
-                                     BRCryptoWallet wallet,
-                                     BRCryptoTransfer transfer,
-                                     BRCryptoTransferState newState) {
-    pthread_mutex_lock (&cwm->lock);
-
-    BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-
-    cryptoTransferSetState (transfer, newState);
-
-    cryptoTransferStateRelease (&oldState);
-    cryptoTransferStateRelease (&newState);
-
-#ifdef REFACTOR
-    //
-    // If this is an error case, then we must remove the genericTransfer from the
-    // genericWallet; otherwise the GEN balance and sequence number will be off.
-    //
-    // However, we leave the `transfer` in `wallet`.  And trouble is forecasted...
-    //
-    if (GENERIC_TRANSFER_STATE_ERRORED == newGenericState.type) {
-        genWalletRemTransfer(cryptoWalletAsGEN(wallet), genericTransfer);
-
-        BRCryptoAmount balance = cryptoWalletGetBalance(wallet);
-        cwm->listener.walletEventCallback (cwm->listener.context,
-                                           cryptoWalletManagerTake (cwm),
-                                           cryptoWalletTake (cwm->wallet),
-                                           (BRCryptoWalletEvent) {
-                                               CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                               { .balanceUpdated = { balance }}
-                                           });
-
-        cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                  cryptoWalletManagerTake (cwm),
-                                                  (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
-            { .wallet = cryptoWalletTake (cwm->wallet) }
-        });
-    }
-#endif
-
-    pthread_mutex_unlock (&cwm->lock);
-}
-
 extern BRCryptoTransfer
 cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
                                    BRCryptoWallet wallet,
@@ -915,8 +870,7 @@ cryptoWalletManagerSign (BRCryptoWalletManager manager,
                                                                           transfer,
                                                                           seed);
     if (CRYPTO_TRUE == success)
-        cryptoWalletManagerSetTransferState (manager, wallet, transfer,
-                                             cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SIGNED));
+        cryptoTransferSetState (transfer, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SIGNED));
 
     // Zero-out the seed.
     seed = UINT512_ZERO;
@@ -934,8 +888,7 @@ cryptoWalletManagerSignWithKey (BRCryptoWalletManager manager,
                                                                           transfer,
                                                                           key);
     if (CRYPTO_TRUE == success)
-        cryptoWalletManagerSetTransferState (manager, wallet, transfer,
-                                             cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SIGNED));
+        cryptoTransferSetState (transfer, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SIGNED));
 
     return success;
 }

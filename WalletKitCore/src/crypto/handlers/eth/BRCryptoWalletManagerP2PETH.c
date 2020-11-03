@@ -391,6 +391,8 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
         needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
+        cryptoTransferStateRelease (&oldState);
+        cryptoTransferStateRelease (&newState);
     }
 
     // If this transfer is referenced, fill out the referencer's fee basis.
@@ -496,6 +498,8 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
+        cryptoTransferStateRelease (&oldState);
+        cryptoTransferStateRelease (&newState);
     }
 
     if (needStatusReport) {
@@ -586,6 +590,8 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
         needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
+        cryptoTransferStateRelease (&oldState);
+        cryptoTransferStateRelease (&newState);
     }
 
     if (needStatusReport) {

@@ -865,12 +865,11 @@ cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
         // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
         // a possible race condition, whereby the transfer can already be INCLUDED by the time this
         // `announce` is called.  That has got to be impossible right?
-        BRCryptoTransferState state = (CRYPTO_TRUE == success
-                                       ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)
-                                       : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown()));
-
+        //
         // Assign the state; generate events in the process.
-        cryptoTransferSetState(transfer, state);
+        cryptoTransferSetState (transfer, (CRYPTO_TRUE == success
+                                           ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)
+                                           : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown())));
     }
 
     cryptoClientCallbackStateRelease(callbackState);

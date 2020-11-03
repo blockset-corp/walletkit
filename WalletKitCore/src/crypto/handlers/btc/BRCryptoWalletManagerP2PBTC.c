@@ -403,18 +403,12 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
 
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
     assert (CRYPTO_TRANSFER_STATE_SUBMITTED != oldState.type);
+    cryptoTransferStateRelease (&oldState);
 
-    BRCryptoTransferState newState = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED);
-    cryptoTransferSetState (transfer, newState);
+    cryptoTransferSetState (transfer, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED));
 
     pthread_mutex_unlock (&manager->lock);
-#if 0
-    cryptoWalletManagerGenerateTransferEvent (manager, wallet, transfer,
-                                              (BRCryptoTransferEvent) {
-        CRYPTO_TRANSFER_EVENT_CHANGED,
-        { .state = { oldState, newState }}
-    });
-#endif
+
     cryptoWalletManagerGive(manager);
     cryptoTransferGive (transfer);
     free (info);

@@ -79,7 +79,7 @@ cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
                                                             state,
                                                             &contextXRP,
                                                             cryptoTransferCreateCallbackXRP);
-    
+
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAddressGive (sourceAddress);
     cryptoAddressGive (targetAddress);

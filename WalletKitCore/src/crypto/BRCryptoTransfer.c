@@ -62,7 +62,7 @@ cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoTransfer, cryptoTransfer)
 
-extern BRCryptoTransfer
+extern BRCryptoTransfer // OwnershipKept, all arguments
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoTransferListener listener,
