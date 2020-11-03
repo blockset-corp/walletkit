@@ -319,10 +319,6 @@ extern "C" {
     extern BRCryptoBoolean
     cryptoNetworkRequiresMigration (BRCryptoNetwork network);
 
-    //  TODO: Remove this once ETH uses the BlockSet API
-    extern const char *
-    cryptoNetworkGetETHNetworkName (BRCryptoNetwork network);
-
     // MARK: - Account Initialization
 
     extern BRCryptoBoolean
