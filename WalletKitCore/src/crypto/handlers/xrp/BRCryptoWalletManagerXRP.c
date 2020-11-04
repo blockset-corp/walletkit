@@ -240,12 +240,11 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     else {
         cryptoTransferSetState (baseTransfer, state);
     }
+    
+    cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
 
     cryptoFeeBasisGive (feeBasis);
     cryptoTransferStateRelease (&state);
-
-    //TODO:XRP attributes
-    //TODO:XRP save to fileService
 
     if (xrpTransactionNeedFree)
         rippleTransactionFree (xrpTransaction);

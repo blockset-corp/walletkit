@@ -88,14 +88,26 @@ cryptoClientP2PManagerSendETH (BRCryptoClientP2PManager manager,
     bcsSendTransaction (managerETH->bcs, transferETH->originatingTransaction);
 }
 
+static void
+cryptoClientP2PManagerSetNetworkReachableETH (BRCryptoClientP2PManager manager,
+                                              int isNetworkReachable) {
+    BRCryptoClientP2PManagerETH managerETH = cryptoClientP2PManagerCoerce (manager);
+
+    // If the network has gone unreachable, stop BCS.  If the network is reachable, then don't start
+    // BCS. Higher-level functionality will connect/disconnect as appropriate.
+    if (!isNetworkReachable)
+        bcsStop (managerETH->bcs);
+}
+
+
 static BRCryptoClientP2PHandlers p2pHandlersETH = {
     cryptoClientP2PManagerReleaseETH,
     cryptoClientP2PManagerConnectETH,
     cryptoClientP2PManagerDisconnectETH,
     cryptoClientP2PManagerSyncETH,
-    cryptoClientP2PManagerSendETH
+    cryptoClientP2PManagerSendETH,
+    cryptoClientP2PManagerSetNetworkReachableETH
 };
-
 
 /**
  * Handle the BCS BlockChain callback.  This should result in a 'client block event' callback.

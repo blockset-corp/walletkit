@@ -265,6 +265,11 @@ private_extern void
 cryptoWalletManagerRecoverTransferFromTransferBundle (BRCryptoWalletManager cwm,
                                                       OwnershipKept BRCryptoClientTransferBundle bundle);
 
+private_extern void
+cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (BRCryptoWallet wallet,
+                                                                BRCryptoTransfer transfer,
+                                                                OwnershipKept BRCryptoClientTransferBundle bundle);
+
 //private_extern void
 //cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
 //                                          BRCryptoWallet wallet,

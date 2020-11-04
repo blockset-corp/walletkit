@@ -492,12 +492,33 @@ cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
     *validates = CRYPTO_TRUE;
 
     for (size_t index = 0; index <attributesCount; index++) {
-        cryptoWalletValidateTransferAttribute (wallet, attributes[index], validates);
+        BRCryptoTransferAttributeValidationError error = cryptoWalletValidateTransferAttribute (wallet, attributes[index], validates);
         if (CRYPTO_FALSE == *validates)
-            return CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
+            return error;
     }
 
     return (BRCryptoTransferAttributeValidationError) 0;
+}
+
+extern BRCryptoBoolean
+cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
+                                        BRCryptoAddress target,
+                                        const char *key,
+                                        BRCryptoBoolean *isRequired) {
+    assert(NULL != isRequired);
+    
+    size_t count = cryptoWalletGetTransferAttributeCount (wallet, target);
+    for (size_t index = 0; index < count; index++) {
+        BRCryptoTransferAttribute attribute = cryptoWalletGetTransferAttributeAt (wallet, target, index);
+        if (0 == strcasecmp(key, cryptoTransferAttributeGetKey (attribute))) {
+            *isRequired = cryptoTransferAttributeIsRequired (attribute);
+            return CRYPTO_TRUE;
+        }
+        cryptoTransferAttributeGive (attribute);
+    }
+    
+    *isRequired = CRYPTO_FALSE;
+    return CRYPTO_FALSE;
 }
 
 extern BRCryptoTransfer

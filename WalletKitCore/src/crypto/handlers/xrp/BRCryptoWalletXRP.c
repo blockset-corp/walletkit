@@ -97,7 +97,7 @@ cryptoWalletHasAddressXRP (BRCryptoWallet wallet,
 extern size_t
 cryptoWalletGetTransferAttributeCountXRP (BRCryptoWallet wallet,
                                           BRCryptoAddress target) {
-    BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
+    BRRippleAddress xrpTarget = (NULL == target) ? NULL : cryptoAddressAsXRP (target);
     
     size_t countRequired, countOptional;
     rippleAddressGetTransactionAttributeKeys (xrpTarget, 1, &countRequired);
@@ -109,7 +109,7 @@ extern BRCryptoTransferAttribute
 cryptoWalletGetTransferAttributeAtXRP (BRCryptoWallet wallet,
                                        BRCryptoAddress target,
                                        size_t index) {
-    BRRippleAddress xrpTarget = cryptoAddressAsXRP (target);
+    BRRippleAddress xrpTarget = (NULL == target) ? NULL : cryptoAddressAsXRP (target);
     
     size_t countRequired, countOptional;
     const char **keysRequired = rippleAddressGetTransactionAttributeKeys (xrpTarget, 1, &countRequired);
