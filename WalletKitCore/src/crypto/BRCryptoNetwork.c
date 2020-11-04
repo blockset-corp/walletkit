@@ -150,6 +150,8 @@ static void
 cryptoNetworkRelease (BRCryptoNetwork network) {
     network->handlers->release (network);
 
+    cryptoHashGive (network->verifiedBlockHash);
+
     for (size_t index = 0; index < array_count (network->associations); index++) {
         BRCryptoCurrencyAssociation *association = &network->associations[index];
         cryptoCurrencyGive (association->currency);
@@ -226,19 +228,24 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
 
 extern BRCryptoHash
 cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
-    return network->verifiedBlockHash;
+    return cryptoHashTake (network->verifiedBlockHash);
 }
 
 extern void
 cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
                                    BRCryptoHash verifiedBlockHash) {
-    network->verifiedBlockHash = verifiedBlockHash;
+    pthread_mutex_lock (&network->lock);
+    cryptoHashGive (network->verifiedBlockHash);
+    network->verifiedBlockHash = cryptoHashTake (verifiedBlockHash);
+    pthread_mutex_unlock (&network->lock);
 }
 
 extern void
 cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
                                            const char * blockHashString) {
-    network->verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+    BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+    cryptoNetworkSetVerifiedBlockHash (network, verifiedBlockHash);
+    cryptoHashGive (verifiedBlockHash);
 }
 
 extern uint32_t

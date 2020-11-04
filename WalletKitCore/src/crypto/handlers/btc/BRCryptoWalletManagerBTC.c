@@ -42,20 +42,18 @@ cryptoWalletManagerCreateBTC (BRCryptoWalletManagerListener listener,
                               BRCryptoSyncMode mode,
                               BRCryptoAddressScheme scheme,
                               const char *path) {
-    BRCryptoWalletManager manager = cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
-                                                                     cryptoNetworkGetType(network),
-                                                                     listener,
-                                                                     client,
-                                                                     account,
-                                                                     network,
-                                                                     scheme,
-                                                                     path,
-                                                                     CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
-                                                                     NULL,
-                                                                     NULL);
-
-    pthread_mutex_unlock (&manager->lock);
-    return manager;
+    return cryptoWalletManagerAllocAndInit (sizeof (struct BRCryptoWalletManagerBTCRecord),
+                                            cryptoNetworkGetType(network),
+                                            listener,
+                                            client,
+                                            account,
+                                            network,
+                                            scheme,
+                                            path,
+                                            CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS,
+                                            NULL,
+                                            NULL);
+    
 }
 
 static void

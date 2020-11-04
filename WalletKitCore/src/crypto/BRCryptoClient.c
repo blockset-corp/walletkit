@@ -570,6 +570,7 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
         if (NULL != blockHashString) {
             BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
             cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+            cryptoHashGive (verifiedBlockHash);
         }
 
         cryptoWalletManagerGenerateEvent (cwm, (BRCryptoWalletManagerEvent) {

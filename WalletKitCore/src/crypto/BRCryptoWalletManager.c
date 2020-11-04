@@ -389,6 +389,8 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
     cryptoWalletManagerInitialTransferBundlesRecover (manager);
     cryptoWalletManagerInitialTransactionBundlesRecover (manager);
 
+    pthread_mutex_unlock (&manager->lock);
+
     // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
 
