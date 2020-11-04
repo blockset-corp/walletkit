@@ -54,6 +54,9 @@ private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
                     BRCryptoBlockChainType *type);
 
+private_extern BRCryptoAddress
+cryptoAddressCreateFromLegacyStringAsBCH (BRAddressParams params, const char *btcAddr);
+
 // MARK: - Network
 
 typedef struct BRCryptoNetworkBTCRecord {

@@ -75,6 +75,16 @@ cryptoAddressCreateFromStringAsBCH (BRAddressParams params, const char *bchAddre
             : NULL);
 }
 
+private_extern BRCryptoAddress
+cryptoAddressCreateFromLegacyStringAsBCH (BRAddressParams params, const char *btcAddr) {
+    assert (btcAddr);
+
+    return (BRAddressIsValid (params, btcAddr)
+            ? cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH,
+                                        BRAddressFill(params, btcAddr))
+            : NULL);
+}
+
 extern BRCryptoAddress
 cryptoAddressCreateFromStringAsBSV (BRAddressParams params, const char *bsvAddress) {
     assert (bsvAddress);
