@@ -1276,7 +1276,8 @@ uint64_t BRWalletMinOutputAmountWithFeePerKb(BRWallet *wallet, uint64_t feePerKb
     assert(wallet != NULL);
     pthread_mutex_lock(&wallet->lock);
     feePerKb = UINT64_MAX == feePerKb ? wallet->feePerKb : feePerKb;
-    amount = (TX_MIN_OUTPUT_AMOUNT*feePerKb + MIN_FEE_PER_KB - 1)/MIN_FEE_PER_KB;
+    //amount = (TX_MIN_OUTPUT_AMOUNT*feePerKb + MIN_FEE_PER_KB - 1)/MIN_FEE_PER_KB;
+    amount = _txFee(feePerKb, TX_OUTPUT_SIZE + TX_INPUT_SIZE);
     pthread_mutex_unlock(&wallet->lock);
     return (amount > TX_MIN_OUTPUT_AMOUNT) ? amount : TX_MIN_OUTPUT_AMOUNT;
 }
