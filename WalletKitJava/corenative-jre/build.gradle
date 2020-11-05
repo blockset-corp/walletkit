@@ -1,6 +1,5 @@
 apply plugin: 'c'
 apply plugin: 'java-library'
-apply plugin: 'maven-publish'
 apply from: '../gradle/publish.gradle'
 
 import java.nio.file.Paths
@@ -222,12 +221,4 @@ dependencies {
     implementation deps.guavaJre
 
     testImplementation deps.junit
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-        }
-    }
 }

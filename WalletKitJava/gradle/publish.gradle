@@ -1,5 +1,36 @@
 apply plugin: 'com.jfrog.bintray'
 
+def isAndroidLibrary = plugins.hasPlugin('com.android.library')
+if (isAndroidLibrary) {
+    plugins.apply('digital.wup.android-maven-publish')
+} else {
+    plugins.apply('maven-publish')
+}
+
+task sourcesJar(type: Jar) {
+    classifier 'sources'
+    afterEvaluate {
+        if (isAndroidLibrary) {
+            from android.sourceSets.main.java.srcDirs
+        } else {
+            from sourceSets.main.allSource
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact sourcesJar
+            if (isAndroidLibrary) {
+                from components.android
+            } else {
+                from components.java
+            }
+        }
+    }
+}
+
 bintray {
     user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
     key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
@@ -14,7 +45,7 @@ bintray {
         githubReleaseNotesFile = 'README.md'
         version {
             name = project.property('version')
-            released  = new Date()
+            released = new Date()
             vcsTag = project.property('version')
         }
     }
