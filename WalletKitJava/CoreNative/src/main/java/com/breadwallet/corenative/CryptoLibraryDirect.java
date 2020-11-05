@@ -338,13 +338,6 @@ public final class CryptoLibraryDirect {
     // crypto/BRCryptoSync.h
     public static native Pointer cryptoSyncStoppedReasonGetMessage(BRCryptoSyncStoppedReason reason);
 
-    // crypto/BRCryptoWalletManager.h (BRCryptoWalletMigrator)
-    public static native Pointer cryptoWalletMigratorCreate(Pointer network, String storagePath);
-    public static native BRCryptoWalletMigratorStatus.ByValue cryptoWalletMigratorHandleTransactionAsBTC (Pointer migrator, byte[] bytes, SizeT bytesCount, int blockHeight, int timestamp);
-    public static native BRCryptoWalletMigratorStatus.ByValue cryptoWalletMigratorHandleBlockBytesAsBTC(Pointer migrator, byte[] buffer, SizeT bufferLen, int height);
-    public static native BRCryptoWalletMigratorStatus.ByValue cryptoWalletMigratorHandlePeerAsBTC (Pointer migrator, int address, short port, long services, int timestamp);
-    public static native void cryptoWalletMigratorRelease(Pointer migrator);
-
     // crypto/BRCryptoWalletManager.h (BRCryptoWalletSweeper)
     public static native int cryptoWalletManagerWalletSweeperValidateSupported(Pointer cwm, Pointer wallet, Pointer key);
     public static native Pointer cryptoWalletManagerCreateWalletSweeper(Pointer cwm, Pointer wallet, Pointer key);
