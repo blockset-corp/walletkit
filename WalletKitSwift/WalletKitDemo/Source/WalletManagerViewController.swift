@@ -64,7 +64,7 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
     func connectStateIsEnabled (_ index: Int, _ state: WalletManagerState? = nil) -> Bool {
         switch state ?? manager.state {
         case .created:      return 1 == index
-        case .disconnected: return 1 == index
+        case .disconnected: return 1 == index || 2 == index
         case .connected:    return 0 == index || 2 == index
         case .syncing:      return 1 == index
         default: return false
