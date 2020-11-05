@@ -756,17 +756,13 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
             BRCryptoWalletManagerState oldState = cwm->state;
             BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
+            cryptoWalletManagerSetState (cwm, newState);
+
             cryptoClientQRYManagerConnect (cwm->qryManager);
             if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
                 CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
                 cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
 
-            cryptoWalletManagerSetState (cwm, newState);
-
-            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                { .state = { oldState, newState }}
-            });
             break;
         }
         case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
@@ -791,11 +787,6 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
             cryptoClientQRYManagerDisconnect (cwm->qryManager);
 
             cryptoWalletManagerSetState (cwm, newState);
-
-            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                { .state = { oldState, newState }}
-            });
             break;
         }
 

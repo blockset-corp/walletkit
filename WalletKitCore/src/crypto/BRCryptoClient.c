@@ -17,6 +17,7 @@
 
 #include "support/BRArray.h"
 #include "support/BRCrypto.h"
+#include "support/BROSCompat.h"
 
 #include "BRCryptoAddressP.h"
 #include "BRCryptoHashP.h"
@@ -99,6 +100,8 @@ cryptoClientP2PManagerCreate (size_t sizeInBytes,
     p2pManager->type        = type;
     p2pManager->handlers    = handlers;
     p2pManager->sizeInBytes = sizeInBytes;
+
+    pthread_mutex_init_brd (&p2pManager->lock, PTHREAD_MUTEX_NORMAL);
 
     return p2pManager;
 }
