@@ -76,7 +76,7 @@ cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
                                   BRCryptoPeer peer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
-    // This can while disconnected or syncing.
+    // This can occur while disconnected or syncing.
 
     bool syncInProgress = cryptoClientP2PManagerSyncInProgress (manager);
 
@@ -233,21 +233,6 @@ static void cryptoWalletManagerBTCSyncStarted (void *info) {
     bool needStart = true;
 
     pthread_mutex_unlock (&p2p->base.lock);
-
-#if 0
-    uint32_t startBlockHeight = BRPeerManagerLastBlockHeight (manager->peerManager);
-
-    uint8_t needConnectionEvent = !manager->isConnected;
-    uint8_t needSyncStartedEvent = 1; // syncStarted callback always indicates a full scan
-    uint8_t needSyncStoppedEvent = manager->isFullScan;
-
-    manager->isConnected = needConnectionEvent ? 1 : manager->isConnected;
-    manager->isFullScan = needSyncStartedEvent ? 1 : manager->isFullScan;
-    manager->successfulScanBlockHeight = MIN (startBlockHeight, manager->successfulScanBlockHeight);
-
-    _peer_log ("BSM: syncStarted needConnect:%"PRIu8", needStart:%"PRIu8", needStop:%"PRIu8"\n",
-               needConnectionEvent, needSyncStartedEvent, needSyncStoppedEvent);
-#endif
 
     // Stop if already running
     if (needStop) {
