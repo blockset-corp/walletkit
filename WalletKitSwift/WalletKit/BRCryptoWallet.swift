@@ -579,6 +579,11 @@ public final class Wallet: Equatable {
         }
     }
     
+    internal func defaultFeeBasis () -> TransferFeeBasis? {
+        return cryptoWalletGetDefaultFeeBasis (core)
+            .map { TransferFeeBasis (core: $0, take: false) }
+    }
+    
     ///
     /// Create a wallet
     ///

@@ -137,9 +137,13 @@ cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              size_t attributesCount,
                              OwnershipKept BRCryptoTransferAttribute *attributes);
 
+private_extern void
+cryptoTransferAttributeArrayRelease (BRArrayOf(BRCryptoTransferAttribute) attributes);
+
 static inline void
 cryptoTransferGenerateEvent (BRCryptoTransfer transfer,
                              BRCryptoTransferEvent event) {
+    if (NULL == transfer->listener.listener) return;
     cryptoListenerGenerateTransferEvent(&transfer->listener, transfer, event);
 }
 

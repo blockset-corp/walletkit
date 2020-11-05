@@ -42,6 +42,14 @@ typedef struct BRCryptoClientP2PManagerRecordBTC {
 
     // The blockHeight upon completion of a successful sync.
     BRCryptoBlockNumber blockHeight;
+    
+    /**
+     * Flag for whether or not the blockchain network is reachable. This is an atomic
+     * int and is NOT protected by the mutable state lock as it is accessed by a
+     * BRPeerManager callback that is done while holding a BRPeer's lock. To avoid a
+     * deadlock, use an atomic here instead.
+     */
+    atomic_int isNetworkReachable;
 } *BRCryptoClientP2PManagerBTC;
 
 static BRCryptoClientP2PManagerBTC
@@ -178,12 +186,20 @@ cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager,
                             cryptoWalletManagerBTCTxPublished);
 }
 
+static void
+cryptoClientP2PManagerSetNetworkReachableBTC (BRCryptoClientP2PManager baseManager,
+                                              int isNetworkReachable) {
+    BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
+    atomic_store (&manager->isNetworkReachable, isNetworkReachable);
+}
+
 static BRCryptoClientP2PHandlers p2pHandlersBTC = {
     cryptoClientP2PManagerReleaseBTC,
     cryptoClientP2PManagerConnectBTC,
     cryptoClientP2PManagerDisconnectBTC,
     cryptoClientP2PManagerSyncBTC,
-    cryptoClientP2PManagerSendBTC
+    cryptoClientP2PManagerSendBTC,
+    cryptoClientP2PManagerSetNetworkReachableBTC
 };
 
 // MARK: BRPeerManager Callbacks
@@ -386,9 +402,13 @@ static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRP
     }
 }
 
-static int  cryptoWalletManagerBTCNetworkIsReachable (void *info) {
+static int cryptoWalletManagerBTCNetworkIsReachable (void *info) {
     BRCryptoWalletManagerBTC manager = info;
-    return CRYPTO_TRUE == cryptoNetworkIsReachable (manager->base.network);
+    BRCryptoClientP2PManager baseP2P = manager->base.p2pManager;
+    if (NULL == baseP2P) return 1;
+    
+    BRCryptoClientP2PManagerBTC btcP2P = cryptoClientP2PManagerCoerce (baseP2P);
+    return atomic_load (&btcP2P->isNetworkReachable);
 }
 
 static void cryptoWalletManagerBTCThreadCleanup (void *info) {

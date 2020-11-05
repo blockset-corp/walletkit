@@ -266,6 +266,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
         cryptoTransferSetState (baseTransfer, state);
     }
     
+    cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
+    
     cryptoFeeBasisGive (feeBasis);
     cryptoTransferStateRelease (&state);
     

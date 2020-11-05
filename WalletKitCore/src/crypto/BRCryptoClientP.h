@@ -221,12 +221,17 @@ typedef void
                                         BRCryptoWallet   wallet,
                                         BRCryptoTransfer transfer);
 
+typedef void
+(*BRCryptoClientP2PManagerSetNetworkReachableHandler) (BRCryptoClientP2PManager p2p,
+                                                       int isNetworkReachable);
+
 typedef struct {
     BRCryptoClientP2PManagerReleaseHandler release;
     BRCryptoClientP2PManagerConnectHandler connect;
     BRCryptoClientP2PManagerDisconnectHandler disconnect;
     BRCryptoClientP2PManagerSyncHandler sync;
     BRCryptoClientP2PManagerSendHandler send;
+    BRCryptoClientP2PManagerSetNetworkReachableHandler setNetworkReachable;
 } BRCryptoClientP2PHandlers;
 
 struct BRCryptoClientP2PManagerRecord {
@@ -253,6 +258,10 @@ cryptoClientP2PManagerConnect (BRCryptoClientP2PManager p2p,
 
 extern void
 cryptoClientP2PManagerDisconnect (BRCryptoClientP2PManager p2p);
+
+extern void
+cryptoClientP2PManagerSetNetworkReachable (BRCryptoClientP2PManager p2p,
+                                           BRCryptoBoolean isNetworkReachable);
 
 static inline BRCryptoClientSync
 cryptoClientP2PManagerAsSync (BRCryptoClientP2PManager p2p) {

@@ -138,6 +138,14 @@ cryptoClientP2PManagerSend (BRCryptoClientP2PManager p2p,
     p2p->handlers->send (p2p, wallet, transfer);
 }
 
+extern void
+cryptoClientP2PManagerSetNetworkReachable (BRCryptoClientP2PManager p2p,
+                                           BRCryptoBoolean isNetworkReachable) {
+    if (NULL != p2p->handlers->setNetworkReachable) {
+        p2p->handlers->setNetworkReachable (p2p, CRYPTO_TRUE == isNetworkReachable);
+    }
+}
+
 // MARK: Client QRY (QueRY)
 
 static void cryptoClientQRYRequestBlockNumber  (BRCryptoClientQRYManager qry);

@@ -77,7 +77,7 @@ rippleAddressGetTransactionAttributeKeys (BRRippleAddress address,
                                           int asRequired,
                                           size_t *count) {
     
-    if (rippleRequiresDestinationTag ((BRRippleAddress) address)) {
+    if (rippleRequiresDestinationTag (address)) {
         static size_t requiredCount = 1;
         static const char *requiredNames[] = {
             FIELD_OPTION_DESTINATION_TAG,
