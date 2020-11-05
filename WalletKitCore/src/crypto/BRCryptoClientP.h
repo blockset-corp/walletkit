@@ -299,6 +299,8 @@ struct BRCryptoClientQRYManagerRecord {
 
     bool connected;
     size_t requestId;
+
+    pthread_mutex_t lock;
 };
 
 #define CRYPTO_CLIENT_QRY_IS_UNBOUNDED            (true)

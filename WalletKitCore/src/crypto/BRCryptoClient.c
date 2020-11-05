@@ -17,6 +17,7 @@
 
 #include "support/BRArray.h"
 #include "support/BRCrypto.h"
+#include "support/BROSCompat.h"
 
 #include "BRCryptoAddressP.h"
 #include "BRCryptoHashP.h"
@@ -184,23 +185,35 @@ cryptoClientQRYManagerCreate (BRCryptoClient client,
     qry->sync.unbounded = CRYPTO_CLIENT_QRY_IS_UNBOUNDED;
 
     qry->connected = true;
+
+    pthread_mutex_init_brd (&qry->lock, PTHREAD_MUTEX_NORMAL);
     return qry;
 }
 
 extern void
 cryptoClientQRYManagerRelease (BRCryptoClientQRYManager qry) {
+    // Try to ensure that `qry->lock` is unlocked prior to destroy.
+    pthread_mutex_lock (&qry->lock);
+    pthread_mutex_unlock (&qry->lock);
+    // Tiny race
+    pthread_mutex_destroy (&qry->lock);
+
     memset (qry, 0, sizeof(*qry));
     free (qry);
 }
 
 extern void
 cryptoClientQRYManagerConnect (BRCryptoClientQRYManager qry) {
+    pthread_mutex_lock (&qry->lock);
     qry->connected = true;
+    pthread_mutex_unlock (&qry->lock);
 }
 
 extern void
 cryptoClientQRYManagerDisconnect (BRCryptoClientQRYManager qry) {
+    pthread_mutex_lock (&qry->lock);
     qry->connected = false;
+    pthread_mutex_unlock (&qry->lock);
 }
 
 
@@ -225,8 +238,13 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry,
 
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
+    pthread_mutex_lock (&qry->lock);
+
     // Skip out if not connected.
-    if (!qry->connected) return;
+    if (!qry->connected) {
+        pthread_mutex_unlock (&qry->lock);
+        return;
+    }
 
     // Skip out if not an API sync.
     if (CRYPTO_SYNC_MODE_API_ONLY          != qry->manager->syncMode &&
@@ -273,179 +291,8 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
 
         cryptoWalletGive (wallet);
     }
+    pthread_mutex_unlock (&qry->lock);
 }
-
-#ifdef REFACTOR /* BTC */
-static void
-BRClientSyncManagerUpdateBlockNumber(BRClientSyncManager manager) {
-    uint8_t needClientCall = 0;
-    int rid                = -1;
-
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        needClientCall = manager->isConnected;
-        rid = needClientCall ? BRClientSyncManagerGenerateRid (manager) : rid;
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
-    }
-
-    if (needClientCall) {
-        manager->clientCallbacks.funcGetBlockNumber (manager->clientContext,
-                                                     BRClientSyncManagerAsSyncManager (manager),
-                                                     rid);
-    }
-}
-
-static void
-BRClientSyncManagerUpdateTransactions (BRClientSyncManager manager) {
-    int rid                      = 0;
-    uint8_t needSyncEvent        = 0;
-    uint8_t needClientCall       = 0;
-    uint64_t begBlockNumber      = 0;
-    uint64_t endBlockNumber      = 0;
-    size_t addressCount          = 0;
-    BRArrayOf(char *) addresses  = NULL;
-
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        // check if we are connect and the prior sync has completed.
-        if (!BRClientSyncManagerScanStateIsInProgress (&manager->scanState) &&
-            manager->isConnected) {
-
-            BRClientSyncManagerScanStateInit (&manager->scanState,
-                                              manager->wallet,
-                                              BRChainParamsIsBitcoin (manager->chainParams),
-                                              manager->syncedBlockHeight,
-                                              manager->networkBlockHeight,
-                                              BRClientSyncManagerGenerateRid (manager));
-
-            // get the addresses to query the BDB with
-            addresses = BRClientSyncManagerConvertAddressToString
-            (manager, BRClientSyncManagerScanStateGetAddresses (&manager->scanState));
-
-            assert (NULL != addresses);
-            addressCount = array_count (addresses);
-            assert (0 != addressCount);
-
-            // store sync data for callback outside of lock
-            rid = BRClientSyncManagerScanStateGetRequestId (&manager->scanState);
-            begBlockNumber = BRClientSyncManagerScanStateGetStartBlockNumber (&manager->scanState);
-            endBlockNumber = BRClientSyncManagerScanStateGetEndBlockNumber (&manager->scanState);
-
-            // store control flow flags
-            needSyncEvent = BRClientSyncManagerScanStateIsFullScan (&manager->scanState);
-            needClientCall = 1;
-        }
-
-        // Send event while holding the state lock so that event
-        // callbacks are ordered to reflect state transitions.
-
-        if (needSyncEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRClientSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                                        SYNC_MANAGER_SYNC_STARTED,
-                                    });
-        }
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
-    }
-
-    if (needClientCall) {
-        // Callback to 'client' to get all transactions (for all wallet addresses) between
-        // a {beg,end}BlockNumber.  The client will gather the transactions and then call
-        // bwmAnnounceTransaction()  (for each one or with all of them).
-        manager->clientCallbacks.funcGetTransactions (manager->clientContext,
-                                                      BRClientSyncManagerAsSyncManager (manager),
-                                                      (const char **) addresses,
-                                                      addressCount,
-                                                      begBlockNumber,
-                                                      endBlockNumber,
-                                                      rid);
-    }
-
-    if (NULL != addresses) {
-        for (size_t index = 0; index < addressCount; index++) {
-            free (addresses[index]);
-        }
-        array_free (addresses);
-    }
-}
-#endif
-
-#ifdef REFACTOR /* GEN */
-{
-    BRGenericManager gwm = (BRGenericManager) event->context;
-
-     gwm->client.getBlockNumber (gwm->client.context,
-                                 gwm,
-                                 gwm->requestId++);
-
-     // Handle a BRD Sync:
-
-     // 1) check if the prior sync has completed successfully
-     if (gwm->brdSync.completed && gwm->brdSync.success) {
-         // 1a) if so, advance the sync range by updating `begBlockNumber`
-         gwm->brdSync.begBlockNumber = (gwm->brdSync.endBlockNumber >=  GWM_BRD_SYNC_START_BLOCK_OFFSET
-                                        ? gwm->brdSync.endBlockNumber - GWM_BRD_SYNC_START_BLOCK_OFFSET
-                                        : 0);
-     }
-
-     // 2) completed or not, update the `endBlockNumber` to the current block height.
-     gwm->brdSync.endBlockNumber = MAX (gwm->blockHeight, gwm->brdSync.begBlockNumber);
-
-     // 3) we'll update transactions if there are more blocks to examine
-     if (gwm->brdSync.begBlockNumber != gwm->brdSync.endBlockNumber) {
-         BRGenericAddress accountAddress = genManagerGetAccountAddress(gwm);
-         char *address = genAddressAsString (accountAddress);
-
-         // 3a) Save the current requestId and mark as not completed.
-         gwm->brdSync.rid = gwm->requestId;
-         gwm->brdSync.completed = false;
-         gwm->brdSync.success = false;
-
-         // 3b) Query all transactions; each one found will have bwmAnnounceTransaction() invoked
-         // which will process the transaction into the wallet.
-
-         // Callback to 'client' to get all transactions (for all wallet addresses) between
-         // a {beg,end}BlockNumber.  The client will gather the transactions and then call
-         // bwmAnnounceTransaction()  (for each one or with all of them).
-         if (gwm->handlers->manager.apiSyncType() == GENERIC_SYNC_TYPE_TRANSFER) {
-             gwm->client.getTransfers (gwm->client.context,
-                                       gwm,
-                                       address,
-                                       gwm->brdSync.begBlockNumber,
-                                       gwm->brdSync.endBlockNumber,
-                                       gwm->brdSync.rid);
-         } else {
-             gwm->client.getTransactions (gwm->client.context,
-                                          gwm,
-                                          address,
-                                          gwm->brdSync.begBlockNumber,
-                                          gwm->brdSync.endBlockNumber,
-                                          gwm->brdSync.rid);
-         }
-
-         // 3c) On to the next rid
-         gwm->requestId += 1;
-
-         free (address);
-         genAddressRelease(accountAddress);
-     }
-
-     if (NULL != gwm->syncCallback)
-         gwm->syncCallback (gwm->syncContext,
-                            gwm,
-                            gwm->brdSync.begBlockNumber,
-                            gwm->brdSync.endBlockNumber,
-                            // lots of incremental sync 'slop'
-                            2 * GWM_BRD_SYNC_START_BLOCK_OFFSET);
-
-     // End handling a BRD Sync
-         }
-#endif
 
 // MARK: - Client Callback State
 
@@ -704,8 +551,15 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
 
     BRCryptoClientQRYManager qry = manager->qryManager;
 
+    pthread_mutex_lock (&qry->lock);
+    bool matchedRids = (callbackState->rid == qry->sync.rid);
+    pthread_mutex_unlock (&qry->lock);
+
+    bool syncCompleted = false;
+    bool syncSuccess   = false;
+
     // Process the results if the bundles are for our rid; otherwise simply discard;
-    if (callbackState->rid == qry->sync.rid) {
+    if (matchedRids) {
         switch (success) {
             case CRYPTO_TRUE: {
                 // Sort bundles to have the lowest blocknumber first.  Use of `mergesort` is
@@ -737,20 +591,25 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
                                                                     oldAddresses,
                                                                     newAddresses,
                                                                     callbackState->rid)) {
-                    qry->sync.completed = true;
-                    qry->sync.success   = true;
+                    syncCompleted = true;
+                    syncSuccess   = true;
                 }
 
                 cryptoWalletGive (wallet);
                 break;
 
             case CRYPTO_FALSE:
-                qry->sync.completed = true;
-                qry->sync.success   = false;
+                syncCompleted = true;
+                syncSuccess   = false;
                 break;
             }
         }
     }
+
+    pthread_mutex_lock (&qry->lock);
+    qry->sync.completed = syncCompleted;
+    qry->sync.success   = syncSuccess;
+    pthread_mutex_unlock (&qry->lock);
 
     for (size_t index = 0; index < bundlesCount; index++)
         cryptoClientTransactionBundleRelease (bundles[index]);
@@ -775,8 +634,15 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                       size_t bundlesCount) {
     BRCryptoClientQRYManager qry = manager->qryManager;
 
+    pthread_mutex_lock (&qry->lock);
+    bool matchedRids = (callbackState->rid == qry->sync.rid);
+    pthread_mutex_unlock (&qry->lock);
+
+    bool syncCompleted = false;
+    bool syncSuccess   = false;
+
     // Process the results if the bundles are for our rid; otherwise simply discard;
-    if (callbackState->rid == qry->sync.rid) {
+    if (matchedRids) {
         switch (success) {
             case CRYPTO_TRUE: {
                 // Sort bundles to have the lowest blocknumber first.  Use of `mergesort` is
@@ -807,20 +673,25 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                                                                     oldAddresses,
                                                                     newAddresses,
                                                                     callbackState->rid)) {
-                    qry->sync.completed = true;
-                    qry->sync.success   = true;
+                    syncCompleted = true;
+                    syncSuccess   = true;
                 }
 
                 cryptoWalletGive (wallet);
                 break;
 
             case CRYPTO_FALSE:
-                qry->sync.completed = true;
-                qry->sync.success   = false;
+                syncCompleted = true;
+                syncSuccess   = false;
                 break;
             }
         }
     }
+
+    pthread_mutex_lock (&qry->lock);
+    qry->sync.completed = syncCompleted;
+    qry->sync.success   = syncSuccess;
+    pthread_mutex_unlock (&qry->lock);
 
     for (size_t index = 0; index < bundlesCount; index++)
         cryptoClientTransferBundleRelease (bundles[index]);
@@ -902,11 +773,15 @@ cryptoClientQRYEstimateTransferFee (BRCryptoClientQRYManager qry,
     BRCryptoHash hash      = NULL;
     const char  *hashAsHex = "";
 
+    pthread_mutex_lock (&qry->lock);
+    size_t rid = qry->requestId++;
+    pthread_mutex_unlock (&qry->lock);
+
     BRCryptoClientCallbackState callbackState = cryptoClientCallbackStateCreateEstimateTransactionFee (hash,
                                                                                                        cookie,
                                                                                                        networkFee,
                                                                                                        initialFeeBasis,
-                                                                                                       qry->requestId++);
+                                                                                                       rid);
 
     qry->client.funcEstimateTransactionFee (qry->client.context,
                                             cryptoWalletManagerTake(cwm),
@@ -937,13 +812,13 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     double costFactor = (double) costUnits;
     BRCryptoFeeBasis feeBasis = NULL;
     if (CRYPTO_TRUE == success)
-        feeBasis = cryptoWalletManagerRecoverFeeBasisFromFeeEstimate(cwm,
-                                                                     networkFee,
-                                                                     initialFeeBasis,
-                                                                     costFactor,
-                                                                     attributesCount,
-                                                                     attributeKeys,
-                                                                     attributeVals);
+        feeBasis = cryptoWalletManagerRecoverFeeBasisFromFeeEstimate (cwm,
+                                                                      networkFee,
+                                                                      initialFeeBasis,
+                                                                      costFactor,
+                                                                      attributesCount,
+                                                                      attributeKeys,
+                                                                      attributeVals);
 
     cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
         CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
@@ -953,39 +828,6 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
     cryptoAmountGive (pricePerCostFactor);
     cryptoClientCallbackStateRelease (callbackState);
 }
-
-#if 0
-    const char *addresses[] = {
-        "35qSFN1ktQBsrbK4bFUJfvFtzgrHDTSY4M"
-    };
-    size_t addressesCount = sizeof (addresses) / sizeof (char *);
-
-    uint64_t begBlockNumber = 629535;
-    uint64_t endBlockNumber = 629543; // BLOCK_HEIGHT_UNBOUND;
-
-    switch (qry->byType) {
-        case CRYPTO_CLIENT_REQUEST_USE_TRANSFERS:
-            qry->client.funcGetTransfers (qry->client.context,
-                                          cryptoWalletManagerTake (qry->manager),
-                                          qryState,
-                                          addresses,
-                                          addressesCount,
-                                          begBlockNumber,
-                                          endBlockNumber);
-            break;
-
-        case CRYPTO_CLIENT_REQUEST_USE_TRANSACTIONS:
-            qry->client.funcGetTransactions (qry->client.context,
-                                             cryptoWalletManagerTake (qry->manager),
-                                             qryState,
-                                             addresses,
-                                             addressesCount,
-                                             begBlockNumber,
-                                             endBlockNumber);
-
-            break;
-    }
-#endif
 
 // MARK: - Transfer Bundle
 
