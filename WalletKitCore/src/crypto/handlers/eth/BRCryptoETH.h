@@ -259,7 +259,7 @@ extern BRSetOf(BREthereumExchange)    initialExchangesLoadETH    (BRCryptoWallet
 extern BRSetOf(BREthereumBlock)       initialBlocksLoadETH       (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumNodeConfig)  initialNodesLoadETH        (BRCryptoWalletManager manager);
 extern BRSetOf(BREthereumToken)       initialTokensLoadETH       (BRCryptoWalletManager manager);
-#if 0
+#if defined(NEED_ETH_WALLET_IN_FILE_SERVICE)
 extern BRSetOf(BREthereumWalletState) initialWalletsLoadETH      (BRCryptoWalletManager manager);
 #endif
 
