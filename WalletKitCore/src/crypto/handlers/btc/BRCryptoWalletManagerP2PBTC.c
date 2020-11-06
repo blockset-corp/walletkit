@@ -29,11 +29,20 @@ static int  cryptoWalletManagerBTCNetworkIsReachable (void *info);
 static void cryptoWalletManagerBTCThreadCleanup (void *info);
 static void cryptoWalletManagerBTCTxPublished (void *info, int error);
 
-
 typedef struct BRCryptoClientP2PManagerRecordBTC {
     struct BRCryptoClientP2PManagerRecord base;
     BRCryptoWalletManagerBTC manager;
     BRPeerManager *btcPeerManager;
+
+    // The begining and end blockheight for an ongoing sync.  The end block height will be increased
+    // a the blockchain is extended.  The begining block height is used to compute the completion
+    // percentage.  These will have values of BLOCK_HEIGHT_UNBOUND when a sync is inactive.
+    BRCryptoBlockNumber begBlockHeight;
+    BRCryptoBlockNumber endBlockHeight;
+
+    // The blockHeight upon completion of a successful sync.
+    BRCryptoBlockNumber blockHeight;
+    
     /**
      * Flag for whether or not the blockchain network is reachable. This is an atomic
      * int and is NOT protected by the mutable state lock as it is accessed by a
@@ -51,6 +60,11 @@ cryptoClientP2PManagerCoerce (BRCryptoClientP2PManager manager) {
     return (BRCryptoClientP2PManagerBTC) manager;
 }
 
+static bool cryptoClientP2PManagerSyncInProgress (BRCryptoClientP2PManagerBTC p2p) {
+    return (BLOCK_HEIGHT_UNBOUND != p2p->begBlockHeight ||
+            BLOCK_HEIGHT_UNBOUND != p2p->endBlockHeight);
+}
+
 static void
 cryptoClientP2PManagerReleaseBTC (BRCryptoClientP2PManager baseManager) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
@@ -59,22 +73,41 @@ cryptoClientP2PManagerReleaseBTC (BRCryptoClientP2PManager baseManager) {
 
 static void
 cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
-                                         BRCryptoPeer peer) {
+                                  BRCryptoPeer peer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
-    // Assume `peer` is NULL; UINT128_ZERO will restore BRPeerManager peer discovery
-    UInt128  address = UINT128_ZERO;
-    uint16_t port    = 0;
+    // This can occur while disconnected or syncing.
 
-    if (NULL != peer) {
-        BRCryptoData16 addrAsInt = cryptoPeerGetAddrAsInt(peer);
-        memcpy (address.u8, addrAsInt.data, sizeof (addrAsInt.data));
-        port = cryptoPeerGetPort (peer);
+    bool syncInProgress = cryptoClientP2PManagerSyncInProgress (manager);
+
+    // If we are syncing, then we'll stop the sync; the only way to stop a sync is to disconnect
+    if (syncInProgress) {
+        BRPeerManagerDisconnect (manager->btcPeerManager);
+    }
+    cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
+
+    // Handle a Peer
+    {
+        // Assume `peer` is NULL; UINT128_ZERO will restore BRPeerManager peer discovery
+        UInt128  address = UINT128_ZERO;
+        uint16_t port    = 0;
+
+        if (NULL != peer) {
+            BRCryptoData16 addrAsInt = cryptoPeerGetAddrAsInt(peer);
+            memcpy (address.u8, addrAsInt.data, sizeof (addrAsInt.data));
+            port = cryptoPeerGetPort (peer);
+        }
+
+        // Calling `SetFixedPeer` will 100% disconnect.  We could avoid calling SetFixedPeer
+        // if we kept a reference to `peer` and checked if it differs.
+        BRPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
     }
 
-    // Calling `SetFixedPeer` will 100% disconnect.  We could avoid calling SetFixedPeer
-    // if we kept a reference to `peer` and checked if it differs.
-    BRPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
+//    if (!syncInProgress)
+        // Change state here; before connecting to the `btcPeerManager` produces start/stop/updates.
+        cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_SYNCING));
+
+    // Start periodic updates, sync if required.
     BRPeerManagerConnect(manager->btcPeerManager);
 }
 
@@ -173,178 +206,143 @@ static BRCryptoClientP2PHandlers p2pHandlersBTC = {
 
 static void cryptoWalletManagerBTCSyncStarted (void *info) {
     BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
+    BRCryptoClientP2PManagerBTC p2p = cryptoClientP2PManagerCoerce (manager->base.p2pManager);
 
-    // This callback occurs when a sync has started. The behaviour of this function is
-    // defined as:
-    //   - If we are not in a connected state, signal that we are now connected.
-    //   - If we were already in a (full scan) syncing state, signal the termination of that
-    //     sync
-    //   - Always signal the start of a sync
+    if (NULL == p2p) return;
 
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint32_t startBlockHeight = BRPeerManagerLastBlockHeight (manager->peerManager);
+    pthread_mutex_lock (&p2p->base.lock);
 
-        uint8_t needConnectionEvent = !manager->isConnected;
-        uint8_t needSyncStartedEvent = 1; // syncStarted callback always indicates a full scan
-        uint8_t needSyncStoppedEvent = manager->isFullScan;
+    //
+    // This callback occurs when a sync has started.
+    //   - if not connected, then stop the sync (?
+    //   - if already syncing, stop the prior sync (REQUESTED) and start the new one
+    //   - otherwise simply start the sync;
+    //
+    // In fact, other than a few minimal `p2p` state changes, we are just generating events.
+    //
 
-        manager->isConnected = needConnectionEvent ? 1 : manager->isConnected;
-        manager->isFullScan = needSyncStartedEvent ? 1 : manager->isFullScan;
-        manager->successfulScanBlockHeight = MIN (startBlockHeight, manager->successfulScanBlockHeight);
+    // TODO: Does anything here imply 'connected vs not-connected'
 
-        _peer_log ("BSM: syncStarted needConnect:%"PRIu8", needStart:%"PRIu8", needStop:%"PRIu8"\n",
-                   needConnectionEvent, needSyncStartedEvent, needSyncStoppedEvent);
+    // This `SyncStarted` callback implies a prior sync stopped, if one was active
+    bool needStop  = cryptoClientP2PManagerSyncInProgress (p2p);
 
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
+    // record the starting block
+    p2p->begBlockHeight = BRPeerManagerLastBlockHeight (p2p->btcPeerManager);
 
-        if (needSyncStoppedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STOPPED,
-                { .syncStopped = { cryptoSyncStoppedReasonRequested() } }
-            });
-        }
+    // We'll always start anew.
+    bool needStart = true;
 
-        if (needConnectionEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_CONNECTED,
-            });
-        }
+    pthread_mutex_unlock (&p2p->base.lock);
 
-        if (needSyncStartedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STARTED,
-            });
-        }
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
+    // Stop if already running
+    if (needStop) {
+        cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
+            { .syncStopped = { CRYPTO_SYNC_STOPPED_REASON_REQUESTED }}
+        });
     }
-#endif
+
+    if (needStart) {
+        cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
+        });
+    }
+
 }
 
 static void cryptoWalletManagerBTCSyncStopped (void *info, int reason) {
     BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
+    BRCryptoClientP2PManagerBTC p2p = cryptoClientP2PManagerCoerce (manager->base.p2pManager);
 
-    // This callback occurs when a sync has stopped. This MAY mean we have disconnected or it
-    // may mean that we have "caught up" to the blockchain. So, we need to first get the connectivity
-    // state of the `BRPeerManager`. The behaviour of this function is defined as:
-    //   - If we were in a (full scan) syncing state, signal the termination of that
-    //     sync
-    //   - If we were connected and are now disconnected, signal that we are now disconnected.
+    if (NULL == p2p) return;
 
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint8_t isConnected = BRPeerStatusDisconnected != BRPeerManagerConnectStatus (manager->peerManager);
+    pthread_mutex_lock (&p2p->base.lock);
 
-        uint8_t needSyncStoppedEvent = manager->isFullScan;
-        uint8_t needDisconnectionEvent = !isConnected && manager->isConnected;
-        uint8_t needSuccessfulScanBlockHeightUpdate = manager->isFullScan && isConnected && !reason;
+    // This callback occurs when a sync has stopped.  A sync stops if a) if it has lost contact
+    // with peers (been 'disconnected') or b) it has completed (caught up with the blockchain's
+    // head).
 
-        manager->isConnected = needDisconnectionEvent ? 0 : isConnected;
-        manager->isFullScan = needSyncStoppedEvent ? 0 : manager->isFullScan;
-        manager->successfulScanBlockHeight =  needSuccessfulScanBlockHeightUpdate ? BRPeerManagerLastBlockHeight (manager->peerManager) : manager->successfulScanBlockHeight;
+    // TODO: Does anything here imply 'connected vs not-connected'
 
-        _peer_log ("BSM: syncStopped needStop:%"PRIu8", needDisconnect:%"PRIu8"\n",
-                   needSyncStoppedEvent, needDisconnectionEvent);
+    // We'll always stop iff we've started.
+    bool needStop  = cryptoClientP2PManagerSyncInProgress (p2p);
 
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
+    // If the btcPeerManager is not disconnected, then the sync stopped upon completion.  Otherwise
+    // the sync stopped upon request.
+    bool syncCompleted = (BRPeerStatusDisconnected != BRPeerManagerConnectStatus (p2p->btcPeerManager));
 
-        if (needSyncStoppedEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_SYNC_STOPPED,
-                { .syncStopped = {
-                    (reason ?
-                     cryptoSyncStoppedReasonPosix(reason) :
-                     (isConnected ?
-                      cryptoSyncStoppedReasonComplete() :
-                      cryptoSyncStoppedReasonRequested()))
-                }
-                }
-            });
-        }
+    // With this, we've stopped.
+    p2p->begBlockHeight = BLOCK_HEIGHT_UNBOUND;
+    p2p->endBlockHeight = BLOCK_HEIGHT_UNBOUND;
 
-        if (needDisconnectionEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_DISCONNECTED,
-                { .disconnected = {
-                    (reason ?
-                     cryptoWalletManagerDisconnectReasonPosix(reason) :
-                     cryptoWalletManagerDisconnectReasonRequested())
-                }
-                }
-            });
-        }
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
+    // Update the block height through which we've synced successfully.
+    p2p->blockHeight = (syncCompleted && 0 == reason
+                        ? BRPeerManagerLastBlockHeight (p2p->btcPeerManager)
+                        : BLOCK_HEIGHT_UNBOUND);
+
+    pthread_mutex_unlock (&p2p->base.lock);
+
+    if (needStop) {
+        BRCryptoSyncStoppedReason stopReason = (reason
+                                                ? cryptoSyncStoppedReasonPosix(reason)
+                                                : (syncCompleted
+                                                   ? cryptoSyncStoppedReasonComplete()
+                                                   : cryptoSyncStoppedReasonRequested()));
+
+        cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
+            { .syncStopped = { stopReason }}
+        });
     }
-#endif
 }
 
 static void cryptoWalletManagerBTCTxStatusUpdate (void *info) {
     BRCryptoWalletManagerBTC manager = info;
-    (void) manager;
-#ifdef REFACTOR
-    BRPeerSyncManager manager = (BRPeerSyncManager) info;
+    BRCryptoClientP2PManagerBTC p2p = cryptoClientP2PManagerCoerce (manager->base.p2pManager);
 
-    // This callback occurs under a number of scenarios.
+    if (NULL == p2p) return;
+
+    pthread_mutex_lock (&p2p->base.lock);
+
     //
-    // One of those scenario is when a block has been relayed by the P2P network. Thus, it provides an
-    // opportunity to get the current block height and update accordingly.
-    //
-    // The behaviour of this function is defined as:
+    // This callback occurs under a number of scenarios.  One of those scenario is when a block has
+    // been relayed by the P2P network. Thus, it provides an opportunity to get the current block
+    // height and update accordingly.
     //   - If the block height has changed, signal the new value
+    //
 
-    if (0 == pthread_mutex_lock (&manager->lock)) {
-        uint64_t blockHeight = BRPeerManagerLastBlockHeight (manager->peerManager);
+    BRCryptoBlockNumber blockHeight = BRPeerManagerLastBlockHeight (p2p->btcPeerManager);
+    bool needBlockHeight = (blockHeight > p2p->endBlockHeight);
 
-        uint8_t needBlockHeightEvent = blockHeight > manager->networkBlockHeight;
+    // If we are syncing, then we'll make progress
 
-        // Never move the block height "backwards"; always maintain our knowledge
-        // of the maximum height observed
-        manager->networkBlockHeight = MAX (blockHeight, manager->networkBlockHeight);
+    bool needProgress = BLOCK_HEIGHT_UNBOUND != p2p->begBlockHeight;
+    BRCryptoTimestamp timestamp = NO_CRYPTO_TIMESTAMP;
+    BRCryptoSyncPercentComplete percentComplete = 0.0;
 
-        // Send event while holding the state lock so that we
-        // don't broadcast a events out of order.
+    if (needProgress) {
+        // Update the goal; always forward.
+        p2p->endBlockHeight = MAX (blockHeight, p2p->endBlockHeight);
 
-        if (needBlockHeightEvent) {
-            manager->eventCallback (manager->eventContext,
-                                    BRPeerSyncManagerAsSyncManager (manager),
-                                    (BRSyncManagerEvent) {
-                SYNC_MANAGER_BLOCK_HEIGHT_UPDATED,
-                { .blockHeightUpdated = { blockHeight }}
-            });
-        }
-
-        manager->eventCallback (manager->eventContext,
-                                BRPeerSyncManagerAsSyncManager (manager),
-                                (BRSyncManagerEvent) {
-            SYNC_MANAGER_TXNS_UPDATED
-        });
-
-        pthread_mutex_unlock (&manager->lock);
-    } else {
-        assert (0);
+        timestamp = BRPeerManagerLastBlockTimestamp (p2p->btcPeerManager);
+        percentComplete = (BRCryptoSyncPercentComplete) (100.0 * BRPeerManagerSyncProgress (p2p->btcPeerManager, (uint32_t) p2p->begBlockHeight));
     }
-#endif
+
+    pthread_mutex_unlock (&p2p->base.lock);
+
+    if (needBlockHeight) {
+        cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
+            { .blockHeight = blockHeight }
+        });
+    }
+
+    if (needProgress) {
+        cryptoWalletManagerGenerateEvent (&manager->base, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
+            { .syncContinues = { timestamp, percentComplete }}
+        });
+    }
 }
 
 static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleBlock **blocks, size_t count) {
@@ -401,8 +399,7 @@ static int cryptoWalletManagerBTCNetworkIsReachable (void *info) {
 static void cryptoWalletManagerBTCThreadCleanup (void *info) {
     BRCryptoWalletManagerBTC manager = info;
     (void) manager;
-#ifdef REFACTOR
-#endif
+    // Nothing, ever (?)
 }
 
 static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
@@ -444,6 +441,10 @@ cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager manager) {
 
     BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoadBTC (manager);
     BRArrayOf(BRPeer)         peers  = initialPeersLoadBTC  (manager);
+
+    p2pManagerBTC->begBlockHeight = BLOCK_HEIGHT_UNBOUND;
+    p2pManagerBTC->endBlockHeight = BLOCK_HEIGHT_UNBOUND;
+    p2pManagerBTC->blockHeight    = BLOCK_HEIGHT_UNBOUND;
 
     p2pManagerBTC->btcPeerManager = BRPeerManagerNew (btcChainParams,
                                                 btcWallet,

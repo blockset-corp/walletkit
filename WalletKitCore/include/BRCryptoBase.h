@@ -75,7 +75,7 @@ extern "C" {
 #endif
 extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 
-#define BLOCK_NUMBER_UNKNWON        (BLOCK_HEIGHT_UNBOUND)
+#define BLOCK_NUMBER_UNKNOWN        (BLOCK_HEIGHT_UNBOUND)
 
     /// The Timestamp (in the Unix epoch) of the last block processed in a sync.
     typedef uint32_t BRCryptoTimestamp;

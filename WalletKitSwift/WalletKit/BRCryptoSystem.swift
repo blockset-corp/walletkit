@@ -1291,7 +1291,8 @@ extension System {
                 guard let (system, manager) = System.systemExtract (context, cwm)
                 else { print ("SYS: Event: \(event.type): Missed {cwm}"); return }
 
-                if event.type != CRYPTO_WALLET_MANAGER_EVENT_CHANGED {
+                if event.type != CRYPTO_WALLET_MANAGER_EVENT_CHANGED &&
+                        event.type != CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES {
                     print ("SYS: Event: Manager (\(manager.name)): \(event.type)")
                 }
                 var walletManagerEvent: WalletManagerEvent? = nil
@@ -1333,6 +1334,8 @@ extension System {
                     let timestamp: Date? = (0 == event.u.syncContinues.timestamp // NO_CRYPTO_TIMESTAMP
                                                 ? nil
                                                 : Date (timeIntervalSince1970: TimeInterval(event.u.syncContinues.timestamp)))
+
+                    print ("SYS: Event: Manager (\(manager.name)): \(event.type) @ { \(event.u.syncContinues.timestamp) \(event.u.syncContinues.percentComplete)% }")
 
                     walletManagerEvent = WalletManagerEvent.syncProgress (
                         timestamp: timestamp,

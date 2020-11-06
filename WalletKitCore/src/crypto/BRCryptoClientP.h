@@ -238,6 +238,10 @@ struct BRCryptoClientP2PManagerRecord {
     BRCryptoBlockChainType type;
     const BRCryptoClientP2PHandlers *handlers;
     size_t sizeInBytes;
+
+    // State
+
+    pthread_mutex_t lock;
 };
 
 extern BRCryptoClientP2PManager

@@ -101,6 +101,8 @@ cryptoClientP2PManagerCreate (size_t sizeInBytes,
     p2pManager->handlers    = handlers;
     p2pManager->sizeInBytes = sizeInBytes;
 
+    pthread_mutex_init_brd (&p2pManager->lock, PTHREAD_MUTEX_NORMAL);
+
     return p2pManager;
 }
 

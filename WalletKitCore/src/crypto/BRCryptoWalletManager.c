@@ -747,24 +747,29 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
     switch (cwm->state.type) {
         case CRYPTO_WALLET_MANAGER_STATE_CREATED:
         case CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED: {
-            BRCryptoWalletManagerState oldState = cwm->state;
-            BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
 
             cryptoClientQRYManagerConnect (cwm->qryManager);
             if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
                 CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
                 cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
+            else
+                // TODO: CORE-1059 - Do we require cryptoClientP2PManagerConnect to set BRCryptoWalletManager state?
+                cryptoWalletManagerSetState (cwm, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
 
-            cryptoWalletManagerSetState (cwm, newState);
-
-            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                { .state = { oldState, newState }}
-            });
             break;
         }
+            
         case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
+            break;
+
         case CRYPTO_WALLET_MANAGER_STATE_SYNCING:
+            if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
+                CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
+                cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
+            else
+                // TODO: CORE-1059 - Do we require cryptoClientP2PManagerConnect to set BRCryptoWalletManager state?
+                cryptoWalletManagerSetState (cwm, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
+
             break;
 
         case CRYPTO_WALLET_MANAGER_STATE_DELETED:
@@ -777,21 +782,13 @@ cryptoWalletManagerDisconnect (BRCryptoWalletManager cwm) {
     switch (cwm->state.type) {
         case CRYPTO_WALLET_MANAGER_STATE_CREATED:
         case CRYPTO_WALLET_MANAGER_STATE_CONNECTED:
-        case CRYPTO_WALLET_MANAGER_STATE_SYNCING: {
-            BRCryptoWalletManagerState oldState = cwm->state;
-            BRCryptoWalletManagerState newState = cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested());
-
+        case CRYPTO_WALLET_MANAGER_STATE_SYNCING:
+            // TODO: CORE-1059 - De we require cryptoClientP2PManagerDisconnect to set BRCryptoWalletManager state?
             if (NULL != cwm->p2pManager) cryptoClientP2PManagerDisconnect (cwm->p2pManager);
             cryptoClientQRYManagerDisconnect (cwm->qryManager);
 
-            cryptoWalletManagerSetState (cwm, newState);
-
-            cryptoWalletManagerGenerateEvent(cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-                { .state = { oldState, newState }}
-            });
+            cryptoWalletManagerSetState (cwm, cryptoWalletManagerStateDisconnectedInit (cryptoWalletManagerDisconnectReasonRequested()));
             break;
-        }
 
         case CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED:
             break;
