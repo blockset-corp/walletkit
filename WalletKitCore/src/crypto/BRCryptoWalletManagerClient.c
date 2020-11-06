@@ -1938,6 +1938,7 @@ cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager c
             if (NULL != blockHashString) {
                 BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
                 cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+                cryptoHashGive (verifiedBlockHash);
             }
 
             cwm->listener.walletManagerEventCallback (cwm->listener.context,

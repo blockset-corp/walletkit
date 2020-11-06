@@ -285,19 +285,24 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
 
 extern BRCryptoHash
 cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
-    return network->verifiedBlockHash;
+    return cryptoHashTake (network->verifiedBlockHash);
 }
 
 extern void
 cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
                                    BRCryptoHash verifiedBlockHash) {
-    network->verifiedBlockHash = verifiedBlockHash;
+    pthread_mutex_lock (&network->lock);
+    if (NULL != network->verifiedBlockHash) cryptoHashGive (network->verifiedBlockHash);
+    network->verifiedBlockHash = cryptoHashTake (verifiedBlockHash);
+    pthread_mutex_unlock (&network->lock);
 }
 
 extern void
 cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
                                            const char * blockHashString) {
-    network->verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+    BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+    cryptoNetworkSetVerifiedBlockHash (network, verifiedBlockHash);
+    cryptoHashGive (verifiedBlockHash);
 }
 
 extern uint32_t
