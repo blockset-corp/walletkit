@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion androidConfig.compileSdkVersion
@@ -6,6 +7,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
 
     defaultConfig {
@@ -47,6 +52,9 @@ android {
 
 dependencies {
     implementation project(':corecrypto-android')
+    implementation deps.kotlinStdlib
+    implementation deps.kotlinCoroutines
+    implementation deps.kotlinCoroutinesAndroid
     implementation deps.androidAppCompatV7
     implementation deps.androidRecyclerView
     implementation deps.androidConstraintLayout

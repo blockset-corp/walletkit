@@ -15,6 +15,8 @@ buildscript {
         'jackson':                  '2.10.1',
         'jna':                      '5.4.0',
         'junit':                    '4.12',
+        'kotlin':                   '1.4.10',
+        'coroutines':               '1.4.1',
     ]
     ext.deps = [
         'androidAppCompatV7':       "com.android.support:appcompat-v7:${versions.androidAppCompatV7}",
@@ -32,13 +34,18 @@ buildscript {
         'jnaAndroid':               "net.java.dev.jna:jna:${versions.jna}@aar",
         'jnaJre':                   "net.java.dev.jna:jna:${versions.jna}",
         'junit':                    "junit:junit:${versions.junit}",
+        'kotlinStdlib':             "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}",
+        'kotlinCoroutines':         "org.jetbrains.kotlinx:kotlinx-coroutines-core:${versions.coroutines}",
+        'kotlinCoroutinesAndroid':  "org.jetbrains.kotlinx:kotlinx-coroutines-android:${versions.coroutines}",
     ]
     repositories {
         google()
+        mavenCentral()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
+        classpath 'com.android.tools.build:gradle:4.1.0'
         classpath 'digital.wup:android-maven-publish:3.6.2'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
     }
