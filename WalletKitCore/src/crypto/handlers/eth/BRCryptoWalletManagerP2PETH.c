@@ -13,23 +13,6 @@
 #include "ethereum/les/BREthereumLES.h"
 #include "ethereum/bcs/BREthereumBCS.h"
 
-// MARK: - Forward Declarations
-
-#if 0
-static void
-cryptoWalletManagerEstimateFeeBasisHandlerETH (BRCryptoWalletManager manager,
-                                               BRCryptoWallet  wallet,
-                                               BRCryptoCookie cookie,
-                                               BRCryptoAddress target,
-                                               BRCryptoAmount amount,
-                                               BRCryptoNetworkFee networkFee) {
-    BRCryptoTransfer transfer = ...;
-
-    cryptoClientQRYEstimateTransferFee (cwm->qryManager, cookie, transfer, networkFee);
-    return;
-}
-#endif
-
 // MARK: - Client P2P
 
 typedef struct BRCryptoClientP2PManagerRecordETH {
@@ -173,7 +156,7 @@ ewmHandleAccountState (BREthereumBCSCallbackContext context,
     BRCryptoWalletManagerETH manager = context;
     (void) manager;
     eth_log("EWM", "AccountState: Nonce: %" PRIu64, accountState.nonce);
-#if 0
+#if defined (NEVER_DEFINED) // keep as example
     ewmHandleAnnounceNonce (ewm, ethAccountGetPrimaryAddress(ewm->account), accountState.nonce, 0);
     ewmSignalBalance(ewm, ethAmountCreateEther(accountState.balance));
 #endif
@@ -793,7 +776,7 @@ ewmHandleGetBlocks (BREthereumBCSCallbackContext context,
                     uint64_t blockStop) {
     BRCryptoWalletManagerETH manager = context;
     (void) manager;
-#if 0
+#if defined (NEVER_DEFINED) // keep as example
     char *strAddress = ethAddressGetEncodedString(address, 0);
 
     ewm->client.funcGetBlocks (ewm->client.context,

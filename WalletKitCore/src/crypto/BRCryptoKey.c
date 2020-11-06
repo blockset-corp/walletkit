@@ -221,7 +221,7 @@ cryptoKeyCreateForBIP32BitID (const char *phrase, int index, const char *uri,  c
     return result;
 }
 
-#if 0
+#if defined (NEVER_DEFINED) // keep as example
 typedef enum {
     SERIALIZE_PUBLIC_IDENTIFIER = 1,
     SERIALIZE_PRIVATE_IDENTIFIER = 2
