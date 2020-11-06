@@ -108,7 +108,7 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     BRTezosFeeBasis feeBasis = tezosTransactionGetFeeBasis(tx);
     assert(FEE_BASIS_ESTIMATE == feeBasis.type);
     
-    size_t maxFields = 9;
+    size_t maxFields = 10;
     BRCryptoData fields[maxFields];
     size_t numFields = 0;
     fields[numFields++] = encodeOperationKind(opData.kind);
