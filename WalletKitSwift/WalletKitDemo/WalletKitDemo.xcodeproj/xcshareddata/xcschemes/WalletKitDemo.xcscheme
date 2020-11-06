@@ -52,7 +52,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "loan"
+            argument = "loan(C)"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "boring(C)"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
