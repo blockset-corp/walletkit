@@ -289,41 +289,6 @@ public class SystemAIT {
         testSystemForCurrency("xrp", WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 20);
     }
 
-    @Test
-    public void testSystemEthMigrationNotRequired() {
-        testSystemMigrationNotRequiredForCurrency("eth");
-    }
-
-    @Test
-    public void testSystemBtcMigrationSuccess() {
-        testSystemMigrationSuccessForBitcoinCurrency("btc");
-    }
-
-    @Test
-    public void testSystemBchMigrationSuccess() {
-        testSystemMigrationSuccessForBitcoinCurrency("bch");
-    }
-
-    @Test
-    public void testSystemBtcMigrationFailureOnTransaction() {
-        testSystemMigrationFailureOnTransactionForBitcoinCurrency("btc");
-    }
-
-    @Test
-    public void testSystemBchMigrationFailureOnTransaction() {
-        testSystemMigrationFailureOnTransactionForBitcoinCurrency("bch");
-    }
-
-    @Test
-    public void testSystemBtcMigrationFailureOnBlock() {
-        testSystemMigrationFailureOnBlockForBitcoinCurrency("btc");
-    }
-
-    @Test
-    public void testSystemBchMigrationFailureOnBlock() {
-        testSystemMigrationFailureOnBlockForBitcoinCurrency("bch");
-    }
-
     private void testSystemForCurrency(String currencyCode, WalletManagerMode mode, AddressScheme scheme, long balanceMinimum) {
         RecordingSystemListener recorder = HelpersAIT.createRecordingListener();
         System system = HelpersAIT.createAndConfigureSystemWithListener(coreDataDir, recorder);
