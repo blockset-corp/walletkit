@@ -27,67 +27,6 @@ cryptoTransferCoerceETH (BRCryptoTransfer transfer) {
     return (BRCryptoTransferETH) transfer;
 }
 
-#if 0
-private_extern BRCryptoTransfer
-cryptoTransferCreateAsETHX (BRCryptoUnit unit,
-                           BRCryptoUnit unitForFee,
-//                           BREthereumEWM ewm,
-//                           BREthereumTransfer tid,
-                           BRCryptoFeeBasis feeBasisEstimated) {
-    BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferETHRecord),
-                                                                CRYPTO_NETWORK_TYPE_ETH,
-                                                                unit,
-                                                                unitForFee);
-    BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (transfer);
-
-//    transfer->ewm = ewm;
-//    transfer->tid = tid;
-//
-//    transfer->sourceAddress = cryptoAddressCreateAsETH (ewmTransferGetSource (ewm, tid));
-//    transfer->targetAddress = cryptoAddressCreateAsETH (ewmTransferGetTarget (ewm, tid));
-
-    // cache the values that require the ewm
-    BREthereumAccount account = ewmGetAccount (ewm);
-    transfer->accountAddress = ethAccountGetPrimaryAddress (account);
-
-    // This function `cryptoTransferCreateAsETH()` includes an argument as
-    // `BRCryptoFeeBasis feeBasisEstimated` whereas the analogous function
-    // `cryptoTransferCreateAsBTC` does not.  Why is that?  For BTC the fee basis can be derived
-    // 100% reliably from the BRTransaction; both the 'estimated' and 'confirmed' fee basises are
-    // identical.  For ETH, the 'estimated' and the 'confirmed' basises may differ.  The difference
-    // being the distinction between ETH `gasLimit` (the 'estimate') and `gasUsed` (the
-    // 'confirmed').
-    //
-    // The EWM interface does not make this distinction clear.  It should.
-    // TODO: In EWM expose 'getEstimatedFeeBasis' and 'getConfirmedFeeBasis' functions.
-    //
-    // Turns out that this function is called in two contexts - when Crypto creates a transfer (in
-    // response to User input) and when EWM has a transfer announced (like when found in a
-    // blockchain).  When Crypto creates the transfer we have the `feeBasisEstimated` and it is used
-    // to create the EWM transfer.  Then EWM finds the transfer (see `cwmTransactionEventAsETH()`)
-    // we don't have the estimated fee - if we did nothing the `transfer->feeBasisEstimated` field
-    // would be NULL.
-    //
-    // Problem is we *require* one of 'estimated' or 'confirmed'.  See Transfer.swift at
-    // `public var fee: Amount { ... guard let feeBasis = confirmedFeeBasis ?? estimatedFeeBasis }`
-    // The 'confirmed' value is *ONLY SET* when a transfer is actually included in the blockchain;
-    // therefore we need an estimated fee basis.
-    //
-    // Thus: if `feeBasisEstimated` is NULL, we'll take the ETH fee basis (as the best we have).
-
-    // Get the ETH feeBasis, in the event that we need it.
-    BREthereumFeeBasis ethFeeBasis = ewmTransferGetFeeBasis (ewm, tid);
-
-    transfer->feeBasisEstimated = (NULL == feeBasisEstimated
-                                   ? cryptoFeeBasisCreateAsETH (unitForFee,
-                                                                ethFeeBasis.u.gas.limit,
-                                                                ethFeeBasis.u.gas.price)
-                                   : cryptoFeeBasisTake(feeBasisEstimated));
-
-    return transfer;
-}
-#endif
-
 extern BRCryptoTransferState
 cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
                               BRCryptoFeeBasis feeBasis) {
@@ -405,7 +344,7 @@ cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer) {
     }
 }
 
-#if 0
+#if defined (NEVER_DEFINED) // keep as example
 static BREthereumHash
 transferBasisGetHash (BREthereumTransferBasis *basis) {
     switch (basis->type) {
@@ -432,6 +371,14 @@ transferBasisGetHash (BREthereumTransferBasis *basis) {
         }
     }
 }
+extern uint64_t
+transferGetNonce (BREthereumTransfer transfer) {
+    return (NULL != transfer->originatingTransaction
+            ? transactionGetNonce (transfer->originatingTransaction)
+            : (TRANSFER_BASIS_TRANSACTION == transfer->basis.type && NULL != transfer->basis.u.transaction
+               ? transactionGetNonce(transfer->basis.u.transaction)
+               : TRANSACTION_NONCE_IS_NOT_ASSIGNED));
+}
 #endif
 
 extern const BREthereumHash
@@ -444,17 +391,6 @@ cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer) {
                  ? (NULL == transfer->basis.u.transaction ? EMPTY_HASH_INIT : transactionGetHash (transfer->basis.u.transaction))
                  : (NULL == transfer->basis.u.log         ? EMPTY_HASH_INIT : logGetIdentifier   (transfer->basis.u.log))));
 }
-
-#if 0
-extern uint64_t
-transferGetNonce (BREthereumTransfer transfer) {
-    return (NULL != transfer->originatingTransaction
-            ? transactionGetNonce (transfer->originatingTransaction)
-            : (TRANSFER_BASIS_TRANSACTION == transfer->basis.type && NULL != transfer->basis.u.transaction
-               ? transactionGetNonce(transfer->basis.u.transaction)
-               : TRANSACTION_NONCE_IS_NOT_ASSIGNED));
-}
-#endif
 
 extern uint8_t *
 cryptoTransferSerializeETH (BRCryptoTransfer transfer,

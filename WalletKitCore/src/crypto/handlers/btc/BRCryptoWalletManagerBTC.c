@@ -82,66 +82,6 @@ cryptoWalletManagerGetEventTypesBTC (BRCryptoWalletManager manager,
     return eventTypesBTC;
 }
 
-#if 0
-static BRArrayOf(BRCryptoWallet)
-cryptoWalletManagerCreateWalletsBTC (BRCryptoWalletManager manager,
-                                            BRArrayOf(BRCryptoTransfer) transfers,
-                                            BRCryptoWallet *primaryWallet) {
-    assert (NULL != primaryWallet);
-    *primaryWallet = NULL;
-
-    BRArrayOf(BRCryptoWallet) wallets;
-    array_new (wallets, 1);
-
-    // Get the btcMasterPublicKey
-    BRCryptoAccount account = cryptoWalletManagerGetAccount(manager);
-    BRMasterPubKey btcMPK = cryptoAccountAsBTC(account);
-    
-    // Get the btcChainParams
-    BRCryptoNetwork network = cryptoWalletManagerGetNetwork(manager);
-    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(network);
-
-    // Get the btcTransactions
-    BRArrayOf(BRTransaction*) transactions;
-    array_new (transactions, array_count(transfers));
-    for (size_t index = 0; index < array_count(transfers); index++) {
-        array_add (transactions, cryptoTransferAsBTC(transfers[index]));
-    }
-
-    // Since the BRWallet callbacks are not set, none of these transactions generate callbacks.
-    // And, in fact, looking at BRWalletNew(), there is not even an attempt to generate callbacks
-    // even if they could have been specified.
-    BRWallet *btcWallet = BRWalletNew (btcChainParams->addrParams, transactions, array_count(transactions), btcMPK);
-
-    // Free `transactions` before any non-local exists.
-    array_free (transactions);
-
-    if (NULL == btcWallet) {
-        return wallets;  // bwmCreateErrorHandler (bwm, 0, "wallet");
-    }
-
-    // Set the callbacks if the wallet has been created successfully
-    BRWalletSetCallbacks (btcWallet,
-                          cryptoWalletManagerCoerce(manager),
-                          cryptoWalletManagerBTCBalanceChanged,
-                          cryptoWalletManagerBTCTxAdded,
-                          cryptoWalletManagerBTCTxUpdated,
-                          cryptoWalletManagerBTCTxDeleted);
-
-    BRCryptoUnit     unitAsBase    = cryptoNetworkGetUnitAsBase    (network, NULL);
-    BRCryptoUnit     unitAsDefault = cryptoNetworkGetUnitAsDefault (network, NULL);
-
-    *primaryWallet = cryptoWalletCreateAsBTC (unitAsDefault, unitAsBase, btcWallet);
-    array_add (wallets, *primaryWallet);
-
-    cryptoUnitGive (unitAsDefault);
-    cryptoUnitGive (unitAsBase);
-    cryptoNetworkGive (network);
-
-    return wallets;
-}
-#endif
-
 static BRCryptoBoolean
 cryptoWalletManagerSignTransactionWithSeedBTC (BRCryptoWalletManager manager,
                                                       BRCryptoWallet wallet,
@@ -651,20 +591,6 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
 }
 
 const BREventType *eventTypesBTC[] = {
-#if 0
-    &bwmSignalTxAddedEventType,
-    &bwmSignalTxUpdatedEventType,
-    &bwmSignalTxDeletedEventType,
-
-    &bwmWalletManagerEventType,
-    &bwmWalletEventType,
-    &bwmTransactionEventType,
-
-    &bwmClientAnnounceBlockNumberEventType,
-    &bwmClientAnnounceTransactionEventType,
-    &bwmClientAnnounceTransactionCompleteEventType,
-    &bwmClientAnnounceSubmitEventType,
-#endif
 };
 
 const unsigned int

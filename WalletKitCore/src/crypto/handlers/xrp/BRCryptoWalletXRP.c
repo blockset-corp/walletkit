@@ -316,7 +316,7 @@ BRCryptoWalletHandlers cryptoWalletHandlersXRP = {
 };
 
 
-#if 0
+#if defined (NEVER_DEFINED)  // Keep as an example
 static void rippleWalletUpdateSequence (BRRippleWallet wallet,
                                         OwnershipKept BRRippleAddress accountAddress) {
     // Now update the account's sequence id

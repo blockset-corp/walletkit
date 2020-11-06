@@ -388,7 +388,7 @@ initialTokensLoadETH (BRCryptoWalletManager manager) {
 }
 
 /// MARK: - Wallet File Service
-#if 0
+#if defined(NEED_ETH_WALLET_IN_FILE_SERVICE)
 #define fileServiceTypeWallets "wallets"
 
 enum {
@@ -548,7 +548,7 @@ static BRFileServiceTypeSpecification fileServiceSpecificationsArrayETH[] = {
             }
         }
     },
-#if 0
+#if defined(NEED_ETH_WALLET_IN_FILE_SERVICE)
     {
         fileServiceTypeWallets,
         EWM_WALLET_VERSION_1,
@@ -571,7 +571,9 @@ const char *fileServiceTypeExchangesETH    = fileServiceTypeExchanges;
 const char *fileServiceTypeBlocksETH       = fileServiceTypeBlocks;
 const char *fileServiceTypeNodesETH        = fileServiceTypeNodes;
 const char *fileServiceTypeTokensETH       = fileServiceTypeTokens;
-//const char *ewmFileServiceTypeWallets      = fileServiceTypeWallets;
+#if defined(NEED_ETH_WALLET_IN_FILE_SERVICE)
+const char *ewmFileServiceTypeWallets      = fileServiceTypeWallets;
+#endif
 
 size_t fileServiceSpecificationsCountETH = sizeof(fileServiceSpecificationsArrayETH)/sizeof(BRFileServiceTypeSpecification);
 BRFileServiceTypeSpecification *fileServiceSpecificationsETH = fileServiceSpecificationsArrayETH;
