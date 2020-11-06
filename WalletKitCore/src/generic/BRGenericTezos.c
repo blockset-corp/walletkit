@@ -220,7 +220,12 @@ genericTezosTransferGetSerializationForFeeEstimation (BRGenericTransferRef trans
     uint8_t * result = NULL;
     *bytesCount = 0;
     if (transaction) {
-        result = tezosTransactionGetSignedBytes (transaction, bytesCount);
+        // Returns `bytes` held in `transfer`... but we don't own `transfer` so copy the bytes.
+        uint8_t *bytes = tezosTransactionGetSignedBytes (transaction, bytesCount);
+        if (*bytesCount > 0) {
+            result = malloc (*bytesCount);
+            memcpy (result, bytes, *bytesCount);
+        }
     }
     return result;
 }

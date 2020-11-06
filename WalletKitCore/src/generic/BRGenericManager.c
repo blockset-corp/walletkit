@@ -497,6 +497,7 @@ genManagerEstimateFeeForTransfer (BRGenericManager gwm,
     assert (NULL != tx);
     
     BRGenericFeeBasis initialFeeBasis = genTransferGetFeeBasis (transfer);
+    genTransferRelease (transfer);
     
     BRGenericClient client = genManagerGetClient(gwm);
     client.estimateFee (client.context,
