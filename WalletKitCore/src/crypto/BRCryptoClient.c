@@ -570,8 +570,8 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
                 //
                 // Seems that there may be duplicates in `bundles`; will be dealt with later
 
-                mergesort (bundles, bundlesCount, sizeof (BRCryptoClientTransactionBundle),
-                           cryptoClientTransactionBundleCompareForSort);
+                mergesort_brd (bundles, bundlesCount, sizeof (BRCryptoClientTransactionBundle),
+                               cryptoClientTransactionBundleCompareForSort);
 
                 // Recover transfers from each bundle
                 for (size_t index = 0; index < bundlesCount; index++) {
@@ -651,8 +651,8 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
                 // appropriate given that the bundles are likely already ordered.  This minimizes
                 // dependency resolution between later transfers depending on prior transfers.
 
-                mergesort (bundles, bundlesCount, sizeof (BRCryptoClientTransferBundle),
-                           cryptoClientTransferBundleCompareForSort);
+                mergesort_brd (bundles, bundlesCount, sizeof (BRCryptoClientTransferBundle),
+                               cryptoClientTransferBundleCompareForSort);
 
                 // Recover transfers from each bundle
                 for (size_t index = 0; index < bundlesCount; index++) {

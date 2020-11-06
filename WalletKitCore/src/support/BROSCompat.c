@@ -104,3 +104,16 @@ extern uint32_t
 arc4random_uniform_brd(uint32_t upperBbound) {
     return arc4random_uniform(upperBbound);
 }
+
+extern int
+mergesort_brd (void *__base, size_t __nel, size_t __width,
+               int (*__compar)(const void *, const void *)) {
+#if defined (__ANDROID__)
+    qsort (__base, __nel, __width, __compar);
+    return 0;
+#elif defined (__APPLE__) || defined (__linux__) // IOS, MacOS
+    return mergesort (__base, __nel, __width, __compar);
+#else
+#  error Undefined mergesort_brd()
+#endif
+}
