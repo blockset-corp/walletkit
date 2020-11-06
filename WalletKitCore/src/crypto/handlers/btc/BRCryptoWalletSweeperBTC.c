@@ -43,8 +43,19 @@ cryptoWalletSweeperCoerce (BRCryptoWalletSweeper sweeper) {
 private_extern BRCryptoAddress
 cryptoWalletSweeperGetAddressBTC (BRCryptoWalletSweeper sweeper) {
     BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
-    return cryptoAddressCreateFromStringAsBTC (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
-    //return BRWalletSweeperGetLegacyAddress (sweeper);
+    switch (sweeper->type) {
+        case CRYPTO_NETWORK_TYPE_BTC:
+            return cryptoAddressCreateFromStringAsBTC (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
+        case CRYPTO_NETWORK_TYPE_BSV:
+            return cryptoAddressCreateFromStringAsBSV (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
+            
+        case CRYPTO_NETWORK_TYPE_BCH:
+            return cryptoAddressCreateFromLegacyStringAsBCH (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
+            
+        default:
+            assert (0);
+            return NULL;
+    }
 }
 
 private_extern BRCryptoAmount
