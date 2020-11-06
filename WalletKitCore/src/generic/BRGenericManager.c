@@ -201,6 +201,7 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     free (strSource);
     free (strUids);
 
+    rlpDataRelease (hashData);
     rlpItemRelease (coder, item);
     rlpCoderRelease(coder);
 
