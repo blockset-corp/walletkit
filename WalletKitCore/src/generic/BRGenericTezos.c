@@ -488,12 +488,19 @@ genericTezosWalletManagerRecoverFeeBasisFromEstimate (BRGenericManager gwm,
     // get the serialized txn size from the estimation payload
     size_t sizeInBytes = (size_t) initialFeeBasis.costFactor;
     
+    // this may alter input values to keep within required ranges
+    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte,
+                                                            sizeInBytes,
+                                                            gasUsed,
+                                                            storageUsed,
+                                                            counter);
+    
     return (BRGenericFeeBasis) {
-        uint256Create((uint64_t) mutezPerByte),
-        (double) sizeInBytes,
-        gasUsed,
-        storageUsed,
-        counter
+        uint256Create((uint64_t) feeBasis.u.estimate.mutezPerByte),
+        (double) feeBasis.u.estimate.sizeInBytes,
+        feeBasis.u.estimate.gasLimit,
+        feeBasis.u.estimate.storageLimit,
+        feeBasis.u.estimate.counter
     };
 }
 
