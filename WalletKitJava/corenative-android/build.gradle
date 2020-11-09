@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'digital.wup.android-maven-publish'
 apply from: '../gradle/publish.gradle'
 
 android {
@@ -70,12 +69,4 @@ dependencies {
 
     androidTestImplementation deps.androidTestRunner
     androidTestImplementation deps.androidTestEspresso
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.android
-        }
-    }
 }
