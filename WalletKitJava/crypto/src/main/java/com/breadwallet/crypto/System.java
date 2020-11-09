@@ -208,26 +208,6 @@ public interface System {
 
     List<? extends Wallet> getWallets();
 
-    /**
-     * If migration is required, return the currency code; otherwise, return nil.
-     *
-     * Note: it is not an error not to migrate.
-     */
-    boolean migrateRequired(Network network);
-
-    /**
-     * Migrate the storage for a network given transaction, block and peer blobs.
-     *
-     * Support for persistent storage migration to allow prior App versions to migrate their SQLite
-     * database representations of BTC/BTC transations, blocks and peers into 'Generic Crypto' - where
-     * these entities are persistently
-     *
-     * The provided blobs must be consistent with `network`.  For exmaple, if `network` represents BTC or BCH
-     * then the blobs must be of type {@link TransactionBlob.Btc}; otherwise a MigrateError is thrown.
-     */
-    void migrateStorage (Network network, List<TransactionBlob> transactionBlobs, List<BlockBlob> blockBlobs,
-                         List<PeerBlob> peerBlobs) throws MigrateError;
-
 
     boolean accountIsInitialized (Account account, Network nework);
 
