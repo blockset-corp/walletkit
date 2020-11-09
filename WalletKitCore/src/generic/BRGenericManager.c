@@ -201,6 +201,7 @@ fileServiceTypeTransferV1Reader (BRFileServiceContext context,
     free (strSource);
     free (strUids);
 
+    rlpDataRelease (hashData);
     rlpItemRelease (coder, item);
     rlpCoderRelease(coder);
 
@@ -496,6 +497,7 @@ genManagerEstimateFeeForTransfer (BRGenericManager gwm,
     assert (NULL != tx);
     
     BRGenericFeeBasis initialFeeBasis = genTransferGetFeeBasis (transfer);
+    genTransferRelease (transfer);
     
     BRGenericClient client = genManagerGetClient(gwm);
     client.estimateFee (client.context,

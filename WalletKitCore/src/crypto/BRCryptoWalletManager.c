@@ -1303,19 +1303,6 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
             UInt256 genValue = cryptoAmountGetValue(amount);
             UInt256 genPricePerCostFactor = uint256Create (cryptoNetworkFeeAsGEN(fee));
             
-            BRArrayOf(BRGenericTransferAttribute) genAttributes;
-            array_new (genAttributes, attributesCount);
-            for (size_t index = 0; index < attributesCount; index++) {
-                // There is no need to give/take this attribute.  It is OwnershipKept
-                // (by the caller) and we only extract info.
-                BRCryptoTransferAttribute attribute = attributes[index];
-                BRGenericTransferAttribute genAttribute =
-                genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
-                                            cryptoTransferAttributeGetValue(attribute),
-                                            CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
-                array_add (genAttributes, genAttribute);
-            }
-            
             if (genManagerSupportsLocalFeeEstimation(cwm->u.gen)) {
                 BRGenericFeeBasis genFeeBasis = genWalletEstimateTransferFee (genWallet,
                                                                               genAddress,
@@ -1340,6 +1327,19 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
                 cryptoFeeBasisGive (feeBasis);
                 cryptoUnitGive(unitForFee);
             } else {
+                BRArrayOf(BRGenericTransferAttribute) genAttributes;
+                array_new (genAttributes, attributesCount);
+                for (size_t index = 0; index < attributesCount; index++) {
+                    // There is no need to give/take this attribute.  It is OwnershipKept
+                    // (by the caller) and we only extract info.
+                    BRCryptoTransferAttribute attribute = attributes[index];
+                    BRGenericTransferAttribute genAttribute =
+                    genTransferAttributeCreate (cryptoTransferAttributeGetKey(attribute),
+                                                cryptoTransferAttributeGetValue(attribute),
+                                                CRYPTO_TRUE == cryptoTransferAttributeIsRequired(attribute));
+                    array_add (genAttributes, genAttribute);
+                }
+
                 genManagerEstimateFeeForTransfer (cwm->u.gen,
                                                   genWallet,
                                                   cookie,
@@ -1347,6 +1347,8 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager cwm,
                                                   genValue,
                                                   genPricePerCostFactor,
                                                   genAttributes);
+
+                array_free_all (genAttributes, genTransferAttributeRelease);
             }
         }
     }

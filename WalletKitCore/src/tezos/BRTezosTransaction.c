@@ -184,6 +184,9 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
     BRCryptoData serializedBytes = cryptoDataNew(unsignedBytes.size + signature.size);
     memcpy(serializedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
     memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
+
+    cryptoDataFree (unsignedBytes);
+    cryptoDataFree (signature);
     
     transaction->signedBytes = serializedBytes;
     transaction->feeBasis.u.estimate.sizeInBytes = serializedBytes.size;
