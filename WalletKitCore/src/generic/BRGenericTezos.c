@@ -333,7 +333,7 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
         BRGenericTransferAttribute attribute = attributes[index];
         if (NULL != genTransferAttributeGetVal(attribute)) {
             if (genericTezosCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
-                uint op;
+                uint8_t op;
                 sscanf (genTransferAttributeGetVal(attribute), "%u", &op);
                 delegationOp = (op == 1);
             }

@@ -95,6 +95,17 @@ model {
             }
         }
 
+        blake2(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir project(':corenative').cppCryptoVendorSrcDir + "/blake2"
+                        include "*.c"
+                    }
+                }
+            }
+        }
+
         corecrypto(NativeLibrarySpec) {
             sources {
                 c {
@@ -112,6 +123,7 @@ model {
 
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
+                    lib library: 'blake2',  linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -163,6 +175,7 @@ model {
 
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
+                    lib library: 'blake2',  linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
