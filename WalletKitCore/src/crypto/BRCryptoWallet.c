@@ -955,6 +955,7 @@ cryptoWalletEventTypeString (BRCryptoWalletEventType t) {
 
 struct BRCryptoWalletSweeperRecord {
     BRCryptoBlockChainType type;
+    BRCryptoNetworkCanonicalType networkType;
     BRCryptoKey key;
     BRCryptoUnit unit;
     union {
@@ -1027,6 +1028,7 @@ cryptoWalletSweeperCreateAsBtc (BRCryptoNetwork network,
     assert (cryptoKeyHasSecret (key));
     BRCryptoWalletSweeper sweeper = calloc (1, sizeof(struct BRCryptoWalletSweeperRecord));
     sweeper->type = BLOCK_CHAIN_TYPE_BTC;
+    sweeper->networkType = network->canonicalType;
     sweeper->key = cryptoKeyTake (key);
     sweeper->unit = cryptoNetworkGetUnitAsBase (network, currency);
     sweeper->u.btc.sweeper = BRWalletSweeperNew(cryptoKeyGetCore (key),
@@ -1082,10 +1084,18 @@ cryptoWalletSweeperGetKey (BRCryptoWalletSweeper sweeper) {
 extern char *
 cryptoWalletSweeperGetAddress (BRCryptoWalletSweeper sweeper) {
     char * address = NULL;
-
-    switch (sweeper->type) {
-        case BLOCK_CHAIN_TYPE_BTC: {
+    
+    assert (BLOCK_CHAIN_TYPE_BTC == sweeper->type);
+    
+    switch (sweeper->networkType) {
+        case CRYPTO_NETWORK_TYPE_BTC:
             address = BRWalletSweeperGetLegacyAddress (sweeper->u.btc.sweeper);
+            break;
+            
+        case CRYPTO_NETWORK_TYPE_BCH: {
+            char * legacyAddr = BRWalletSweeperGetLegacyAddress (sweeper->u.btc.sweeper);
+            address = malloc (55);
+            BRBCashAddrEncode(address, legacyAddr);
             break;
         }
         default:
