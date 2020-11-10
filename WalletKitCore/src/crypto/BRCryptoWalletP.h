@@ -171,6 +171,11 @@ cryptoWalletAddTransfers (BRCryptoWallet wallet,
 private_extern void
 cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 
+private_extern void
+cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
+                             OwnershipKept  BRCryptoTransfer oldTransfer,
+                             OwnershipGiven BRCryptoTransfer newTransfer);
+
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 

@@ -15,9 +15,8 @@
 static BRCryptoTransferDirection
 cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee);
 
-static BRCryptoAmount
-cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,
-                             BRCryptoUnit unit,
+static uint64_t
+cryptoTransferComputeAmountBTC (BRCryptoTransferDirection direction,
                              uint64_t send,
                              uint64_t recv,
                              uint64_t fee);
@@ -66,8 +65,8 @@ cryptoTransferCreateCallbackBTC (BRCryptoTransferCreateContext context,
 
     // cache the values that require the wallet
     transferBTC->fee  = contextBTC->fee;
-    transferBTC->recv = contextBTC->recv;
     transferBTC->send = contextBTC->send;
+    transferBTC->recv = contextBTC->recv;
 }
 
 extern BRCryptoTransfer
@@ -85,8 +84,10 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
 
     BRCryptoTransferDirection direction = cryptoTransferDirectionFromBTC (send, recv, fee);
     
-    BRCryptoAmount amount = cryptoTransferAmountFromBTC (direction, unit, send, recv, fee);
-    
+    BRCryptoAmount amount = cryptoAmountCreate (unit,
+                                                CRYPTO_FALSE,
+                                                uint256Create (cryptoTransferComputeAmountBTC (direction, send, recv, fee)));
+
     BRCryptoAddress sourceAddress = NULL;
     {
         size_t     inputsCount = tid->inCount;
@@ -160,8 +161,8 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
         tid,
         false,
         fee,
-        recv,
-        send
+        send,
+        recv
     };
 
     BRCryptoTransferState state =
@@ -203,6 +204,23 @@ cryptoTransferReleaseBTC (BRCryptoTransfer transfer) {
     BRTransactionFree (transferBTC->tid);
 }
 
+private_extern BRCryptoBoolean
+cryptoTransferChangedAmountBTC (BRCryptoTransfer transfer,
+                                BRWallet *wid) {
+    BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
+    BRTransaction *tid = transferBTC->tid;
+
+    uint64_t fee  = BRWalletFeeForTx (wid, tid);
+    uint64_t send = BRWalletAmountSentByTx (wid, tid);
+    uint64_t recv = BRWalletAmountReceivedFromTx (wid, tid);
+
+    // amount (and direction) are 100% determined by { fee, recv, send}.  See
+    // cryptoTransferDirectionFromBTC() and cryptoTransferComputeAmountBTC()
+    return AS_CRYPTO_BOOLEAN (fee  != transferBTC->fee  ||
+                              send != transferBTC->send ||
+                              recv != transferBTC->recv) ;
+}
+
 static BRCryptoHash
 cryptoTransferGetHashBTC (BRCryptoTransfer transfer) {
     BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
@@ -241,36 +259,26 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     return t1 == t2 || BRTransactionEq (t1->tid, t2->tid);
 }
 
-static BRCryptoAmount
-cryptoTransferAmountFromBTC (BRCryptoTransferDirection direction,
-                             BRCryptoUnit unit,
+static uint64_t
+cryptoTransferComputeAmountBTC (BRCryptoTransferDirection direction,
                              uint64_t send,
                              uint64_t recv,
                              uint64_t fee) {
     if (UINT64_MAX == fee) fee = 0;
-    
+
     switch (direction) {
         case CRYPTO_TRANSFER_RECOVERED:
-            return cryptoAmountCreate (unit,
-                                       CRYPTO_FALSE,
-                                       uint256Create(send));
-            
+            return send;
+
         case CRYPTO_TRANSFER_SENT:
-            return cryptoAmountCreate (unit,
-                                       CRYPTO_FALSE,
-                                       uint256Create(send - fee - recv));
-            
+            return send - fee - recv;
+
         case CRYPTO_TRANSFER_RECEIVED:
-            return cryptoAmountCreate (unit,
-                                       CRYPTO_FALSE,
-                                       uint256Create(recv));
-            break;
-            
+            return recv;
+
         default:
             assert(0);
-            return cryptoAmountCreate (unit,
-                                       CRYPTO_FALSE,
-                                       UINT256_ZERO);
+            return 0;
     }
 }
 
