@@ -299,6 +299,7 @@ genericTezosWalletUpdTransfer (BRGenericWalletRef wallet,
 
 #define FIELD_OPTION_DELEGATION_OP          "DelegationOp"
 #define FIELD_OPTION_DELEGATE               "delegate"
+#define FIELD_OPTION_OPERATION_TYPE         "type"
 
 static int // 1 if equal, 0 if not.
 genericTezosCompareFieldOption (const char *t1, const char *t2) {
@@ -377,10 +378,11 @@ genericTezosWalletGetTransactionAttributeKeys (BRGenericWalletRef wallet,
     static size_t requiredCount = 0;
     static const char **requiredNames = NULL;
     
-    static size_t optionalCount = 2;
+    static size_t optionalCount = 3;
     static const char *optionalNames[] = {
         FIELD_OPTION_DELEGATION_OP,
-        FIELD_OPTION_DELEGATE
+        FIELD_OPTION_DELEGATE,
+        FIELD_OPTION_OPERATION_TYPE
     };
     
     if (asRequired) { *count = requiredCount; return requiredNames; }
@@ -403,6 +405,9 @@ genericTezosWalletValidateTransactionAttribute (BRGenericWalletRef wallet,
         uintmax_t tag = strtoumax (val, &end, 10);
         return (ERANGE != errno && EINVAL != errno && '\0' == end[0] && tag >= 0 && tag <= 1);
     } else if (genericTezosCompareFieldOption (key, FIELD_OPTION_DELEGATE)) {
+        // expect string
+        return 1;
+    } else if (genericTezosCompareFieldOption (key, FIELD_OPTION_OPERATION_TYPE)) {
         // expect string
         return 1;
     }
