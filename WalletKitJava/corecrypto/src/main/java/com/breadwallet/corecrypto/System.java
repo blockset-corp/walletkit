@@ -1702,9 +1702,10 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(Blockchain blockchain) {
                                         Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                                        if (maybeBlockHeight.isPresent()) {
+                                        Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                        if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
                                             UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                                            String verifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                            String verifiedBlockHash = maybeVerifiedBlockHash.get();
                                             Log.log(Level.FINE, String.format("BRCryptoCWMBtcGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
                                             walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberSuccess(callbackState, blockchainHeight, verifiedBlockHash);
                                         } else {
