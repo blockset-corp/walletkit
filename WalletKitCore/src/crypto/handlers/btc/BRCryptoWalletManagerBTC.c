@@ -319,6 +319,33 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
     if (needFree) {
         BRTransactionFree (btcTransaction);
     }
+
+    // The transaction is in the wallet, this has generated more BRWallet EXTERNAL and INTERNAL
+    // addresses.  Because the order of bundle arrival is not guaranteed to be by block number,
+    // it is possible that some other transaction in the wallet now has inputs or outputs that are
+    // now in BRWallet.  This changes the amount and fee, possibly.  Find those and replace them.
+    else if (TX_UNCONFIRMED != btcBlockHeight) {
+        for (size_t index = 0; index < array_count (manager->wallet->transfers); index++) {
+            BRCryptoTransfer oldTransfer = manager->wallet->transfers[index];
+            BRTransaction *tid = cryptoTransferCoerceBTC(oldTransfer)->tid;
+
+            if (TX_UNCONFIRMED   != tid->blockHeight &&
+                tid->blockHeight >= btcBlockHeight   &&
+                CRYPTO_TRUE == cryptoTransferChangedAmountBTC (oldTransfer, btcWallet)) {
+                cryptoTransferTake (oldTransfer);
+
+                BRCryptoTransfer newTransfer  = cryptoTransferCreateAsBTC (oldTransfer->listener,
+                                                                           oldTransfer->unit,
+                                                                           oldTransfer->unitForFee,
+                                                                           btcWallet,
+                                                                           BRTransactionCopy (tid),
+                                                                           oldTransfer->type);
+
+                cryptoWalletReplaceTransfer (manager->wallet, oldTransfer, newTransfer);
+                cryptoTransferGive (oldTransfer);
+            }
+        }
+    }
 }
 
 static void
@@ -432,6 +459,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     BRCryptoTransferBTC transferBTC = cryptoWalletFindTransferByHashAsBTC (wallet, tid->txHash);
     BRCryptoTransfer    transfer    = (BRCryptoTransfer) transferBTC;
+    cryptoTransferTake(transfer);
 
     if (NULL == transfer) {
         // first we've seen it, so it came from the network; add it to our list
@@ -465,6 +493,7 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
         tid = oldTid;
     }
     assert (NULL != transfer);
+    cryptoTransferGive(transfer);
 
     // Find other transations in `wallet` that are now resolved.
     size_t resolvedTransactionsCount = cryptoWalletRemResolvedAsBTC (wallet, NULL, 0);
@@ -551,6 +580,28 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
 
         pthread_mutex_unlock (&manager->base.lock);
     }
+
+    pthread_mutex_lock (&manager->base.lock);
+    // Find other transations in `wallet` that are now resolved.
+    size_t resolvedTransactionsCount = cryptoWalletRemResolvedAsBTC (wallet, NULL, 0);
+    BRTransaction **resolvedTransactions = calloc (resolvedTransactionsCount, sizeof (BRTransaction*));
+    resolvedTransactionsCount = cryptoWalletRemResolvedAsBTC (wallet, resolvedTransactions, resolvedTransactionsCount);
+    // We now own `resolvedTransactions`
+    pthread_mutex_unlock (&manager->base.lock);
+
+    for (size_t index = 0; index < resolvedTransactionsCount; index++) {
+        BRTransaction *tid = resolvedTransactions[index];
+        cryptoWalletManagerBTCTxAdded   (info, tid);
+        cryptoWalletManagerBTCTxUpdated (info,
+                                         &tid->txHash, 1,
+                                         tid->blockHeight,
+                                         tid->timestamp);
+        BRTransactionFree(tid);
+    }
+    // Only one UPDATE BALANCE?
+
+    free (resolvedTransactions);
+
 }
 
 // MARK: - BRWallet Callback TX Deleted

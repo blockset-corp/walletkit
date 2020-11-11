@@ -384,7 +384,43 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
     pthread_mutex_unlock (&wallet->lock);
 
     // drop reference outside of lock to avoid potential case where release function runs
-    if (NULL != walletTransfer) cryptoTransferGive (transfer);
+    if (NULL != walletTransfer) cryptoTransferGive (walletTransfer);
+}
+
+private_extern void
+cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
+                             OwnershipKept  BRCryptoTransfer oldTransfer,
+                             OwnershipGiven BRCryptoTransfer newTransfer) {
+    BRCryptoTransfer walletTransfer = NULL;
+    
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        if (CRYPTO_TRUE == cryptoTransferEqual (wallet->transfers[index], oldTransfer)) {
+            walletTransfer = wallet->transfers[index];
+            wallet->transfers[index] = cryptoTransferTake (newTransfer);
+
+            cryptoWalletAnnounceTransfer (wallet, oldTransfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
+            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+                CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
+                { .transfer = cryptoTransferTake (oldTransfer) }
+            });
+            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(oldTransfer));
+
+            cryptoWalletAnnounceTransfer (wallet, newTransfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
+            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
+                CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
+                { .transfer = cryptoTransferTake (newTransfer) }
+            });
+            cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(newTransfer));
+
+            break;
+        }
+    }
+    pthread_mutex_unlock (&wallet->lock);
+
+    // drop reference outside of lock to avoid potential case where release function runs
+    cryptoTransferGive (walletTransfer);
+    cryptoTransferGive (newTransfer);
 }
 
 static void

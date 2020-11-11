@@ -107,6 +107,10 @@ private_extern BRCryptoBoolean
 cryptoTransferHasBTC (BRCryptoTransfer transfer,
                       BRTransaction *btc);
 
+private_extern BRCryptoBoolean
+cryptoTransferChangedAmountBTC (BRCryptoTransfer transfer,
+                                BRWallet *wid);
+
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletBTCRecord {
