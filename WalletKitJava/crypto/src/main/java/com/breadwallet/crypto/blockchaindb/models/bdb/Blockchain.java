@@ -7,6 +7,8 @@
  */
 package com.breadwallet.crypto.blockchaindb.models.bdb;
 
+import android.support.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,7 +35,7 @@ public class Blockchain {
                                     @JsonProperty("block_height") UnsignedLong blockHeight,
                                     @JsonProperty("fee_estimates") List<BlockchainFee> feeEstimates,
                                     @JsonProperty("confirmations_until_final") UnsignedInteger confirmationsUntilFinal,
-                                    @JsonProperty("verified_block_hash") String verifiedBlockHash) {
+                                    @JsonProperty("verified_block_hash") @Nullable String verifiedBlockHash) {
         return new Blockchain(
                 checkNotNull(id),
                 checkNotNull(name),
@@ -43,7 +45,7 @@ public class Blockchain {
                 checkNotNull(blockHeight),
                 checkNotNull(feeEstimates),
                 checkNotNull(confirmationsUntilFinal),
-                checkNotNull(verifiedBlockHash)
+                verifiedBlockHash
         );
     }
 
@@ -57,7 +59,7 @@ public class Blockchain {
     private final String network;
     private final UnsignedLong blockHeight;
     private final UnsignedInteger confirmationsUntilFinal;
-    private final String verifiedBlockHash;
+    private final @Nullable String verifiedBlockHash;
 
     private Blockchain(String id,
                        String name,
@@ -67,7 +69,7 @@ public class Blockchain {
                        UnsignedLong blockHeight,
                        List<BlockchainFee> feeEstimates,
                        UnsignedInteger confirmationsUntilFinal,
-                       String verifiedBlockHash) {
+                       @Nullable String verifiedBlockHash) {
         this.id = id;
         this.name = name;
         this.network = network;
@@ -122,7 +124,9 @@ public class Blockchain {
     }
 
     @JsonProperty("verified_block_hash")
-    public String getVerifiedBlockHash() { return verifiedBlockHash; }
+    public Optional<String> getVerifiedBlockHash() {
+        return Optional.fromNullable(verifiedBlockHash);
+    }
 
     @JsonIgnore
     public Optional<UnsignedLong> getBlockHeight() {

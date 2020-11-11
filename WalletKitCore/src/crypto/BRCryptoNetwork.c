@@ -139,6 +139,7 @@ cryptoNetworkCreate (const char *uids,
 
     network->addressSchemes = NULL;
     network->syncModes = NULL;
+    network->verifiedBlockHash = NULL;
 
     network->ref = CRYPTO_REF_ASSIGN(cryptoNetworkRelease);
 
@@ -285,7 +286,9 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
 
 extern BRCryptoHash
 cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
-    return cryptoHashTake (network->verifiedBlockHash);
+    return (NULL != network->verifiedBlockHash)
+    ? cryptoHashTake (network->verifiedBlockHash)
+    : NULL;
 }
 
 extern void
