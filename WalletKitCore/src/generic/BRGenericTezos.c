@@ -172,8 +172,8 @@ genericTezosTransferGetFeeBasis (BRGenericTransferRef transfer) {
         BRTezosFeeBasis feeBasis = tezosTransferGetFeeBasis ((BRTezosTransfer) transfer);
         assert(FEE_BASIS_ESTIMATE == feeBasis.type);
         return (BRGenericFeeBasis) {
-            uint256Create ((uint64_t) feeBasis.u.estimate.mutezPerByte),
-            (double) feeBasis.u.estimate.sizeInBytes,
+            uint256Create ((uint64_t) feeBasis.u.estimate.mutezPerKByte),
+            (double) feeBasis.u.estimate.sizeInKBytes,
             feeBasis.u.estimate.gasLimit,
             feeBasis.u.estimate.storageLimit,
             feeBasis.u.estimate.counter
@@ -321,8 +321,8 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
         feeBasis = tezosDefaultFeeBasis ((int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0]);
     } else {
         feeBasis.type = FEE_BASIS_ESTIMATE;
-        feeBasis.u.estimate.mutezPerByte = (int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0];
-        feeBasis.u.estimate.sizeInBytes = (size_t)estimatedFeeBasis.costFactor;
+        feeBasis.u.estimate.mutezPerKByte = (int64_t)estimatedFeeBasis.pricePerCostFactor.u64[0];
+        feeBasis.u.estimate.sizeInKBytes = estimatedFeeBasis.costFactor;
         feeBasis.u.estimate.gasLimit = estimatedFeeBasis.gasLimit;
         feeBasis.u.estimate.storageLimit = estimatedFeeBasis.storageLimit;
         feeBasis.u.estimate.counter = estimatedFeeBasis.counter;
@@ -357,8 +357,8 @@ genericTezosWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                     BRGenericAddressRef address,
                                     UInt256 amount,
                                     UInt256 pricePerCostFactor) {
-    BRTezosUnitMutez mutezPerByte = (BRTezosUnitMutez) pricePerCostFactor.u64[0];
-    BRTezosFeeBasis defaultFeeBasis = tezosDefaultFeeBasis(mutezPerByte);
+    BRTezosUnitMutez mutezPerKByte = (BRTezosUnitMutez) pricePerCostFactor.u64[0];
+    BRTezosFeeBasis defaultFeeBasis = tezosDefaultFeeBasis(mutezPerKByte);
     BRTezosUnitMutez defaultFee = tezosFeeBasisGetFee (&defaultFeeBasis);
     return (BRGenericFeeBasis) {
         uint256Create ((uint64_t) defaultFee),
@@ -494,20 +494,20 @@ genericTezosWalletManagerRecoverFeeBasisFromEstimate (BRGenericManager gwm,
     // add 10% padding to gas/storage limits
     gasUsed = (int64_t)(gasUsed * 1.1);
     storageUsed = (int64_t)(storageUsed * 1.1);
-    BRTezosUnitMutez mutezPerByte = (BRTezosUnitMutez) (initialFeeBasis.pricePerCostFactor.u64[0]) / 1000; // given as nanotez/byte
+    BRTezosUnitMutez mutezPerKByte = (int64_t) (initialFeeBasis.pricePerCostFactor.u64[0]); // given as nanotez/byte (mutez/kb)
     // get the serialized txn size from the estimation payload
-    size_t sizeInBytes = (size_t) initialFeeBasis.costFactor;
+    double sizeInKBytes = initialFeeBasis.costFactor;
     
     // this may alter input values to keep within required ranges
-    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerByte,
-                                                            sizeInBytes,
+    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerKByte,
+                                                            sizeInKBytes,
                                                             gasUsed,
                                                             storageUsed,
                                                             counter);
     
     return (BRGenericFeeBasis) {
-        uint256Create((uint64_t) feeBasis.u.estimate.mutezPerByte),
-        (double) feeBasis.u.estimate.sizeInBytes,
+        uint256Create((uint64_t) feeBasis.u.estimate.mutezPerKByte),
+        (double) feeBasis.u.estimate.sizeInKBytes,
         feeBasis.u.estimate.gasLimit,
         feeBasis.u.estimate.storageLimit,
         feeBasis.u.estimate.counter
