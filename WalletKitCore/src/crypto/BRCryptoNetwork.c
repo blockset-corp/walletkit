@@ -130,6 +130,7 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
 
     network->addressSchemes = NULL;
     network->syncModes = NULL;
+    network->verifiedBlockHash = NULL;
 
     network->isMainnet = isMainnet;
 

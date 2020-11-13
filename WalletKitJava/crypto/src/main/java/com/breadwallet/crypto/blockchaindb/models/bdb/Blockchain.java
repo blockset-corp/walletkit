@@ -32,7 +32,8 @@ public class Blockchain {
                                     @JsonProperty("native_currency_id") String currencyId,
                                     @JsonProperty("block_height") UnsignedLong blockHeight,
                                     @JsonProperty("fee_estimates") List<BlockchainFee> feeEstimates,
-                                    @JsonProperty("confirmations_until_final") UnsignedInteger confirmationsUntilFinal) {
+                                    @JsonProperty("confirmations_until_final") UnsignedInteger confirmationsUntilFinal,
+                                    @JsonProperty("verified_block_hash") Optional<String> verifiedBlockHash) {
         return new Blockchain(
                 checkNotNull(id),
                 checkNotNull(name),
@@ -41,7 +42,8 @@ public class Blockchain {
                 checkNotNull(currencyId),
                 checkNotNull(blockHeight),
                 checkNotNull(feeEstimates),
-                checkNotNull(confirmationsUntilFinal)
+                checkNotNull(confirmationsUntilFinal),
+                verifiedBlockHash
         );
     }
 
@@ -55,6 +57,7 @@ public class Blockchain {
     private final String network;
     private final UnsignedLong blockHeight;
     private final UnsignedInteger confirmationsUntilFinal;
+    private final Optional<String> verifiedBlockHash;
 
     private Blockchain(String id,
                        String name,
@@ -63,7 +66,8 @@ public class Blockchain {
                        String currencyId,
                        UnsignedLong blockHeight,
                        List<BlockchainFee> feeEstimates,
-                       UnsignedInteger confirmationsUntilFinal) {
+                       UnsignedInteger confirmationsUntilFinal,
+                       Optional<String> verifiedBlockHash) {
         this.id = id;
         this.name = name;
         this.network = network;
@@ -114,6 +118,11 @@ public class Blockchain {
     @JsonProperty("block_height")
     public UnsignedLong getBlockHeightValue() {
         return blockHeight;
+    }
+
+    @JsonProperty("verified_block_hash")
+    public Optional<String> getVerifiedBlockHash() {
+        return verifiedBlockHash;
     }
 
     @JsonIgnore

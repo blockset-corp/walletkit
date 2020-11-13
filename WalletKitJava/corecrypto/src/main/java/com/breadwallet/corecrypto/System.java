@@ -1651,8 +1651,9 @@ final class System implements com.breadwallet.crypto.System {
                                 Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
                                 if (maybeBlockHeight.isPresent()) {
                                     UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s)", blockchainHeight));
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight);
+                                    String verifiedBlockHash = maybeVerifiedBlockHash.get();
+                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
+                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
                                 } else {
                                     Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
                                     walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO);
