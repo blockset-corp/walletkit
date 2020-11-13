@@ -188,6 +188,15 @@ cryptoWalletValidateTransferAttributeXTZ (BRCryptoWallet wallet,
             error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
         }
     }
+    else if (tezosCompareFieldOption (key, FIELD_OPTION_DELEGATE)) {
+        // expect string
+        *validates = CRYPTO_TRUE;
+    }
+    else if (tezosCompareFieldOption (key, FIELD_OPTION_OPERATION_TYPE)) {
+        // expect string
+        *validates = CRYPTO_TRUE;
+    }
+
     else {
         error = CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
         *validates = CRYPTO_FALSE;
@@ -222,8 +231,8 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
         BRCryptoTransferAttribute attribute = attributes[index];
         if (NULL != cryptoTransferAttributeGetValue(attribute)) {
             if (tezosCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
-                uint op;
-                sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &op);
+                int op;
+                sscanf (cryptoTransferAttributeGetValue(attribute), "%d", &op);
                 delegationOp = (op == 1);
             }
         }
