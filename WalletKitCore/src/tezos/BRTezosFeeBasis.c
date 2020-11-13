@@ -43,7 +43,7 @@ tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerKByte) {
 }
 
 extern BRTezosFeeBasis
-tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
+tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerKByte,
                             double sizeInKBytes,
                             int64_t gasLimit,
                             int64_t storageLimit,
@@ -51,7 +51,7 @@ tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
     return (BRTezosFeeBasis) {
         FEE_BASIS_ESTIMATE,
         { .estimate = {
-            mutezPerByte,
+            mutezPerKByte,
             sizeInKBytes,
             gasLimit,
             MAX(storageLimit, TEZOS_MINIMAL_STORAGE_LIMIT),
@@ -80,7 +80,7 @@ tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis) {
             // storage is burned and not part of the fee
             BRTezosUnitMutez minimalFee = TEZOS_MINIMAL_FEE_MUTEZ
                                           + (int64_t)(TEZOS_MUTEZ_PER_GAS_UNIT * feeBasis->u.estimate.gasLimit)
-                                          + (int64_t)(feeBasis->u.estimate.mutezPerKByte * feeBasis->u.estimate.sizeInKBytes * 4);
+                                          + (int64_t)(feeBasis->u.estimate.mutezPerKByte * feeBasis->u.estimate.sizeInKBytes);
             // add a 5% padding to the estimated minimum to improve chance of acceptance by network
             return  (BRTezosUnitMutez)(minimalFee * 1.05);
         }
