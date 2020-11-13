@@ -40,7 +40,7 @@ tezosWalletCreate (BRTezosAccount account) {
     // Putting a '1' here avoids a 'false positive' in the Xcode leak instrument.
     array_new(wallet->transfers, 1);
 
-    wallet->feeBasis = tezosDefaultFeeBasis(1);
+    wallet->feeBasis = tezosDefaultFeeBasis(250);
     
     {
         pthread_mutexattr_t attr;

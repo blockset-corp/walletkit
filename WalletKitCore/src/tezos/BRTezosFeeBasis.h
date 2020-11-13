@@ -30,8 +30,8 @@ typedef struct
     BRTezosFeeBasisType type;
     union {
         struct {
-            BRTezosUnitMutez    mutezPerByte;
-            size_t              sizeInBytes;
+            BRTezosUnitMutez    mutezPerKByte; // cost per byte is given as nanotez and can be less than one mutez
+            double              sizeInKBytes;
             int64_t             gasLimit;
             int64_t             storageLimit;
             int64_t             counter;
@@ -45,11 +45,11 @@ typedef struct
 
 
 extern BRTezosFeeBasis
-tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerByte);
+tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerKByte);
 
 extern BRTezosFeeBasis
-tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerByte,
-                            size_t sizeInBytes,
+tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerKByte,
+                            double sizeInBytes,
                             int64_t gasLimit,
                             int64_t storageLimit,
                             int64_t counter);
