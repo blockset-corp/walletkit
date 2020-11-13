@@ -222,7 +222,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
         BRCryptoTransferAttribute attribute = attributes[index];
         if (NULL != cryptoTransferAttributeGetValue(attribute)) {
             if (tezosCompareFieldOption (cryptoTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
-                uint op;
+                uint8_t op;
                 sscanf (cryptoTransferAttributeGetValue(attribute), "%u", &op);
                 delegationOp = (op == 1);
             }

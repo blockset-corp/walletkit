@@ -333,4 +333,8 @@ final class Network implements com.breadwallet.crypto.Network {
     BRCryptoNetwork getCoreBRCryptoNetwork() {
         return core;
     }
+
+    public static Optional<Network> findBuiltin (String name) {
+        return Optional.absent();
+    }
 }

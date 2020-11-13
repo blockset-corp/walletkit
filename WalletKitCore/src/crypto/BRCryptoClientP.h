@@ -11,6 +11,8 @@
 #ifndef BRCryptoClientP_h
 #define BRCryptoClientP_h
 
+#include <pthread.h>
+
 #include "support/BRSet.h"
 #include "support/rlp/BRRlp.h"
 

@@ -101,10 +101,11 @@ class BRBlockChainDBTest: XCTestCase {
         //
         //
         //
+        let blockchainId = "bitcoin-testnet"
 
+        #if false
         expectation = XCTestExpectation (description: "transfers")
 
-        let blockchainId = "bitcoin-testnet"
         client.getTransfers (blockchainId: blockchainId,
                              addresses: [],
                              begBlockNumber: 0,
@@ -119,6 +120,7 @@ class BRBlockChainDBTest: XCTestCase {
         }
 
         wait (for: [expectation], timeout: 60)
+        #endif
 
         ///
         ///
@@ -223,9 +225,11 @@ class BRBlockChainDBTest: XCTestCase {
         ///
         ///
         ///
+        let blockchainId = "bitcoin-testnet"
+
+        #if false
         expectation = XCTestExpectation (description: "transactions")
 
-        let blockchainId = "bitcoin-testnet"
         client.getTransactions (blockchainId: blockchainId,
                                 addresses: [],
                                 begBlockNumber: 0,
@@ -241,6 +245,7 @@ class BRBlockChainDBTest: XCTestCase {
         }
 
         wait (for: [expectation], timeout: 60)
+        #endif
 
         ///
         ///

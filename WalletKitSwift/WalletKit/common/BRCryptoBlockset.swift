@@ -255,7 +255,6 @@ public class BlocksetSystemClient: SystemClient {
                 let isMainnet = json.asBool (name: "is_mainnet"),
                 let currency = json.asString (name: "native_currency_id"),
                 let blockHeight = json.asInt64 (name: "block_height"),
-                let verifiedBlockHash = json.asString(name: "verified_block_hash"), 
                 let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
                 else { return nil }
 
@@ -263,6 +262,8 @@ public class BlocksetSystemClient: SystemClient {
                 .map ({ JSON (dict: $0) })
                 .map ({ asBlockchainFee (json: $0) }) as? [SystemClient.BlockchainFee]
             else { return nil }
+
+            let verifiedBlockHash = json.asString(name: "verified_block_hash")
 
             return (id: id, name: name, network: network, isMainnet: isMainnet, currency: currency,
                     blockHeight: (-1 == blockHeight ? nil : UInt64 (blockHeight)),
