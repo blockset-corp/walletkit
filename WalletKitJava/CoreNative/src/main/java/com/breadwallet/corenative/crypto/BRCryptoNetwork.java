@@ -160,6 +160,19 @@ public class BRCryptoNetwork extends PointerType {
         CryptoLibraryDirect.cryptoNetworkSetHeight(thisPtr, height.longValue());
     }
 
+    public Optional<BRCryptoHash> getVerifiedBlockHash() {
+        return Optional.fromNullable(
+                CryptoLibraryDirect.cryptoNetworkGetVerifiedBlockHash(
+                        this.getPointer())
+        ).transform(BRCryptoHash::new);
+    }
+
+    public void setVerifiedBlockHashAsString(String hash) {
+        Pointer thisPtr = this.getPointer();
+
+        CryptoLibraryDirect.cryptoNetworkSetVerifiedBlockHashAsString(thisPtr, hash);
+    }
+
     public UnsignedInteger getConfirmationsUntilFinal() {
         Pointer thisPtr = this.getPointer();
 

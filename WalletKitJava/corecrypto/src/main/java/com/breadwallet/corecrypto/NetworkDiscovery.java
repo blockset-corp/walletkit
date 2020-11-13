@@ -123,7 +123,7 @@ final class NetworkDiscovery {
                         if (blockchainModel.getBlockHeight().isPresent())
                             coreNetwork.setHeight(blockchainModel.getBlockHeightValue());
 
-                        if (!blockchainModel.getVerifiedBlockHash().isPresent())
+                        if (blockchainModel.getVerifiedBlockHash().isPresent())
                             coreNetwork.setVerifiedBlockHashAsString(blockchainModel.getVerifiedBlockHash().get());
 
                         // Extract the network fees

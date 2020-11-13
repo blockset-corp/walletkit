@@ -78,6 +78,7 @@ public class Blockchain {
         this.blockHeight = blockHeight;
         this.feeEstimates = feeEstimates;
         this.confirmationsUntilFinal = confirmationsUntilFinal;
+        this.verifiedBlockHash = verifiedBlockHash;
     }
 
     // getters

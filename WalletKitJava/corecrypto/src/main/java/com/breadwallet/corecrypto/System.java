@@ -1649,21 +1649,22 @@ final class System implements com.breadwallet.crypto.System {
                             @Override
                             public void handleData(Blockchain blockchain) {
                                 Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                                if (maybeBlockHeight.isPresent()) {
+                                Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
                                     UnsignedLong blockchainHeight = maybeBlockHeight.get();
                                     String verifiedBlockHash = maybeVerifiedBlockHash.get();
                                     Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
                                     walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
                                 } else {
                                     Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO);
+                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
                                 }
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO);
+                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
                             }
                         });
                     } else {
@@ -1675,7 +1676,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO);
+                coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
             } finally {
                 coreWalletManager.give();
             }
