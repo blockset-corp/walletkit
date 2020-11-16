@@ -70,9 +70,11 @@ tezosGetTransactionAttributeKeys (int asRequired,
     static size_t requiredCount = 0;
     static const char **requiredNames = NULL;
     
-    static size_t optionalCount = 1;
+    static size_t optionalCount = 3;
     static const char *optionalNames[] = {
-        FIELD_OPTION_DELEGATION_OP
+        FIELD_OPTION_DELEGATION_OP,
+        FIELD_OPTION_DELEGATE,
+        FIELD_OPTION_OPERATION_TYPE
     };
     
     if (asRequired) { *count = requiredCount; return requiredNames; }

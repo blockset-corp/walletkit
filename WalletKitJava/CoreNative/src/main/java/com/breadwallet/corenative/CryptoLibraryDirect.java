@@ -127,6 +127,9 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoNetworkGetUnitAsDefault(Pointer network, Pointer currency);
     public static native Pointer cryptoNetworkGetUnitAsBase(Pointer network, Pointer currency);
     public static native long cryptoNetworkGetHeight(Pointer network);
+    public static native Pointer cryptoNetworkGetVerifiedBlockHash (Pointer network);
+    public static native void cryptoNetworkSetVerifiedBlockHash (Pointer network, Pointer verifiedBlockHash);
+    public static native void cryptoNetworkSetVerifiedBlockHashAsString (Pointer network, String verifiedBlockHashString);
     public static native int cryptoNetworkGetConfirmationsUntilFinal(Pointer network);
     public static native void cryptoNetworkSetConfirmationsUntilFinal(Pointer network, int confirmationsUntilFinal);
     public static native SizeT cryptoNetworkGetCurrencyCount(Pointer network);
@@ -358,7 +361,7 @@ public final class CryptoLibraryDirect {
                                                                       long blockHeight);
     // See 'Indirect': void cryptoClientTransferBundleCreate (int status, ...)
 
-    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, boolean success, long blockNumber);
+    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, boolean success, long blockNumber, String verifiedBlockHash);
     public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, boolean success);
 
     //

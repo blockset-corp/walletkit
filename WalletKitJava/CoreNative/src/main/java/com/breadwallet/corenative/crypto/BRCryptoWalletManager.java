@@ -321,10 +321,10 @@ public class BRCryptoWalletManager extends PointerType {
                 fee.getPointer());
     }
 
-    public void announceGetBlockNumber(BRCryptoClientCallbackState callbackState, boolean success, UnsignedLong blockNumber) {
+    public void announceGetBlockNumber(BRCryptoClientCallbackState callbackState, boolean success, UnsignedLong blockNumber, String verifiedBlockHash) {
         Pointer thisPtr = this.getPointer();
 
-        CryptoLibraryDirect.cwmAnnounceBlockNumber(thisPtr, callbackState.getPointer(), success, blockNumber.longValue());
+        CryptoLibraryDirect.cwmAnnounceBlockNumber(thisPtr, callbackState.getPointer(), success, blockNumber.longValue(), verifiedBlockHash);
     }
 
     public void announceTransactions(BRCryptoClientCallbackState callbackState, boolean success, List<BRCryptoClientTransactionBundle> bundles) {
