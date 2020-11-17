@@ -40,4 +40,4 @@
 .build/
 .git-re*
 .swiftpm/
-CoreTestsConfig.json
+*TestsConfig.*

@@ -1,0 +1,50 @@
+
+afterEvaluate {
+    def target = "WalletKitTestsConfig.json"
+    def source = ".brdWalletKitTestsConfig.json"
+
+    def isLibrary     = plugins.hasPlugin("com.android.library")
+    def isApplication = plugins.hasPlugin("com.android.application")
+
+    if (isLibrary || isApplication) {
+        def assetDir
+        if (isLibrary) {
+            assetDir = project.file("src/androidTest/assets")
+        } else {
+            assetDir = project.file("src/main/assets")
+        }
+        if (!assetDir.exists()) assetDir.mkdirs()
+
+        def hasTestConfig = assetDir.listFiles().any {
+            it.name == target
+        }
+
+        if (!hasTestConfig) {
+            def variants
+            if (isLibrary) {
+		task copyTestConfigLib(type: Copy) {
+                    from System.getProperty("user.home")
+                    include source
+                    into assetDir
+                    rename source, target
+                }
+                extensions.getByName("android").testVariants.forEach { variant ->
+                    variant.preBuildProvider.get().dependsOn(copyTestConfigLib)
+		}
+	    }
+	    else if (isApplication) {
+	        task copyTestConfigApp(type: Copy) {
+		    from System.getProperty("user.home")
+                    include source
+                    into assetDir
+                    rename source, target
+                }
+
+
+		extensions.getByName("android").applicationVariants.forEach { variant ->
+		    variant.preBuildProvider.get().dependsOn(copyTestConfigApp)
+		}
+	    }
+        }
+    }
+}
