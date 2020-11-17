@@ -428,7 +428,10 @@ class BRCryptoSystemBaseTests: BRCryptoBaseTests {
     }
 
     func createDefaultClient () -> SystemClient {
-        return BlocksetSystemClient.createForTest()
+        guard let testConfiguration = TestConfiguration.loadFrom (bundle: Bundle.module)
+        else { preconditionFailure("No TestConfiguration") }
+
+        return BlocksetSystemClient.createForTest(blocksetAccess: testConfiguration.blocksetAccess)
     }
 
     func prepareSystem (listener: CryptoTestSystemListener? = nil, client: SystemClient? = nil) {

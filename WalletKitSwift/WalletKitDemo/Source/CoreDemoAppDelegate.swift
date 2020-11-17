@@ -39,6 +39,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var accountSerialization: Data!
     var accountUids: String!
 
+    var blocksetAccess: BlocksetAccess!
+
     var client: SystemClient!
 
     var currencyCodesToMode: [String:WalletManagerMode]!
@@ -61,17 +63,20 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
         let summaryNavigationController = splitViewController.viewControllers[0] as! UINavigationController
         summaryController = (summaryNavigationController.topViewController as! SummaryViewController)
 
-        print ("APP: Bundle Path       : \(Bundle(for: CoreDemoAppDelegate.self).bundlePath)")
+        let appBundle = Bundle(for: CoreDemoAppDelegate.self)
 
-        let accountSpecificationsPath = Bundle(for: CoreDemoAppDelegate.self).path(forResource: "CoreTestsConfig", ofType: "json")!
-        let accountSpecifications     = AccountSpecification.loadFrom(configPath: accountSpecificationsPath)
-        let accountIdentifier         = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
+        print ("APP: Bundle Path       : \(appBundle.bundlePath)")
+
+        let testConfiguration     = TestConfiguration.loadFrom (bundle: appBundle, resource: "WalletKitTestsConfig")!
+        let accountSpecifications = testConfiguration.accountSpecifications
+        let accountIdentifier     = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
 
         guard let accountSpecification = accountSpecifications.first (where: { $0.identifier == accountIdentifier })
             ?? (accountSpecifications.count > 0 ? accountSpecifications[0] : nil)
             else { preconditionFailure ("APP: No AccountSpecification: \(accountIdentifier)"); }
 
         self.accountSpecification = accountSpecification
+        self.blocksetAccess = testConfiguration.blocksetAccess
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -146,7 +151,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
                                      isMainnet: mainnet)
 
         // Create the BlockChainDB
-        client = BlocksetSystemClient.createForTest ()
+        client = BlocksetSystemClient.createForTest (bdbBaseURL: self.blocksetAccess.baseURL,
+                                                    bdbToken:   self.blocksetAccess.token)
 
         // Create the system
         self.system = System.create (client: client,
@@ -284,8 +290,11 @@ extension UIApplication {
         guard let app = UIApplication.shared.delegate as? CoreDemoAppDelegate else { return }
         print ("APP: Wiping")
 
-        let accountSpecificationsPath = Bundle(for: CoreDemoAppDelegate.self).path(forResource: "CoreTestsConfig", ofType: "json")!
-        let accountSpecifications     = AccountSpecification.loadFrom(configPath: accountSpecificationsPath)
+
+        let appBundle = Bundle(for: CoreDemoAppDelegate.self)
+
+        let testConfiguration     = TestConfiguration.loadFrom (bundle: appBundle, resource: "WalletKitTestsConfig")!
+        let accountSpecifications = testConfiguration.accountSpecifications
 
         let alert = UIAlertController (title: "Select Paper Key",
                                        message: nil,

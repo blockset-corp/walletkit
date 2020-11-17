@@ -209,25 +209,21 @@ public class BlocksetSystemClient: SystemClient {
         self.apiDataTaskFunc = apiDataTaskFunc ?? BlocksetSystemClient.defaultDataTaskFunc
     }
 
-    // this token has no expiration - testing only.
-    public static let createForTestBDBBaseURL = "https://api.blockset.com"
-    public static let createForTestBDBToken   = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg"
-
-//    public static let createForTestBDBBaseURL = "http://localhost:8079"
-//    public static let createForTestBDBToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0YjJkOWNjOS04YjlhLTQ0ZTItYjg4NS0zZDliMDM2MzJjOWUiLCJicmQ6Y3QiOiJjbGkiLCJleHAiOjkyMjMzNzIwMzY4NTQ3NzUsImlhdCI6MTU4Njk2OTIxN30.c_5dl5evlQHqeAzSBrX-a22m99TXDUcTb-yc-i2pan63ndEl1bF6gYxDHXtkrp06GetlORCAGr_pU8nKdxSEjA="
-
     ///
     /// Create a BlocksetSystemClient using a specified Authorization token.  This is declared 'public'
     /// so that the Crypto Demo can use it.
     ///
-    public static func createForTest (bdbBaseURL: String = BlocksetSystemClient.createForTestBDBBaseURL,
-                                      bdbToken:   String = BlocksetSystemClient.createForTestBDBToken) -> BlocksetSystemClient {
+    public static func createForTest (bdbBaseURL: String, bdbToken: String) -> BlocksetSystemClient {
         return BlocksetSystemClient (bdbBaseURL: bdbBaseURL,
-                             bdbDataTaskFunc: { (session, request, completion) -> URLSessionDataTask in
-                                var decoratedReq = request
-                                decoratedReq.setValue ("Bearer \(bdbToken)", forHTTPHeaderField: "Authorization")
-                                return session.dataTask (with: decoratedReq, completionHandler: completion)
+                                     bdbDataTaskFunc: { (session, request, completion) -> URLSessionDataTask in
+                                         var decoratedReq = request
+                                         decoratedReq.setValue ("Bearer \(bdbToken)", forHTTPHeaderField: "Authorization")
+                                         return session.dataTask (with: decoratedReq, completionHandler: completion)
         })
+    }
+
+    public static func createForTest (blocksetAccess: BlocksetAccess) -> BlocksetSystemClient {
+        return createForTest(bdbBaseURL: blocksetAccess.baseURL, bdbToken: blocksetAccess.token)
     }
 
     public func cancelAll () {
