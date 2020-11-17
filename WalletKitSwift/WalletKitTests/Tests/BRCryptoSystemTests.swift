@@ -38,7 +38,9 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         XCTAssertTrue (network  == manager.network)
         // XCTAssertTrue (query   === manager.query)
 
+        #if false
         XCTAssertTrue (manager === system.managerBy(core: manager.core))
+        #endif
 
         let wallet = manager.primaryWallet
         XCTAssertNotNil (wallet)

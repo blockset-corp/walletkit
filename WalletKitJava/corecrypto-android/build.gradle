@@ -48,7 +48,7 @@ android {
         }
         androidTest {
             java {
-                srcDirs = [project(':corecrypto').javaTestSrcDir]
+                srcDirs += [project(':corecrypto').javaTestSrcDir]
             }
         }
     }

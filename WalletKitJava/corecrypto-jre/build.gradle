@@ -12,7 +12,7 @@ sourceSets {
     }
     test {
         java {
-            srcDirs = [project(':corecrypto').javaTestSrcDir]
+            srcDirs += [project(':corecrypto').javaTestSrcDir]
         }
     }
 }
