@@ -256,12 +256,17 @@ public class BlocksetSystemClient: SystemClient {
                 let currency = json.asString (name: "native_currency_id"),
                 let blockHeight = json.asInt64 (name: "block_height"),
                 let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
-                else { return nil }
+            else {
+                print ("SYS: BDB:API: ERROR in Blockchain JSON: '\(json)'")
+                return nil
+            }
 
             guard let feeEstimates = json.asArray(name: "fee_estimates")?
                 .map ({ JSON (dict: $0) })
                 .map ({ asBlockchainFee (json: $0) }) as? [SystemClient.BlockchainFee]
             else { return nil }
+            
+            let verifiedBlockHash = json.asString(name: "verified_block_hash")
 
             let verifiedBlockHash = json.asString(name: "verified_block_hash")
 

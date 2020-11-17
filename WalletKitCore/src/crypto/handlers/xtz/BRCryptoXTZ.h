@@ -122,7 +122,9 @@ cryptoFeeBasisAsXTZ (BRCryptoFeeBasis feeBasis);
 
 // MARK: - Support
 
-#define FIELD_OPTION_DELEGATION_OP         "DelegationOp"
+#define FIELD_OPTION_DELEGATION_OP          "DelegationOp"
+#define FIELD_OPTION_DELEGATE               "delegate"
+#define FIELD_OPTION_OPERATION_TYPE         "type"
 
 private_extern BRCryptoAmount
 cryptoAmountCreateAsXTZ (BRCryptoUnit unit,

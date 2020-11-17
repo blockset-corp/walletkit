@@ -185,8 +185,11 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
     memcpy(serializedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
     memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
+    cryptoDataFree (unsignedBytes);
+    cryptoDataFree (signature);
+
     transaction->signedBytes = serializedBytes;
-    transaction->feeBasis.u.estimate.sizeInBytes = serializedBytes.size;
+    transaction->feeBasis.u.estimate.sizeInKBytes = (double) serializedBytes.size / 1000;
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
@@ -216,7 +219,7 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
     transaction->signedBytes = signedBytes;
-    transaction->feeBasis.u.estimate.sizeInBytes = signedBytes.size;
+    transaction->feeBasis.u.estimate.sizeInKBytes = (double) signedBytes.size / 1000;
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
