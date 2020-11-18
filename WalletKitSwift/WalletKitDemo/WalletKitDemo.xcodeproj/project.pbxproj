@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C13F33724C759A0008410C8 /* libresolv.tbd */; };
+		3C7CEC2A255F1C53008C1816 /* WalletKitTestsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = 3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */; };
 		3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3C82745323ECC3770047A2D3 /* WalletKit */; };
 		3CCCFC0D24C0CDD90045FA37 /* CONTRIBUTORS in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */; };
 		3CCCFC0E24C0CDD90045FA37 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0B24C0CDD90045FA37 /* LICENSE */; };
@@ -29,7 +30,6 @@
 		3CD5B26123EB7C2600CC8A56 /* TransferTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B24A23EB7C2600CC8A56 /* TransferTableViewCell.swift */; };
 		3CD5B26223EB7C2600CC8A56 /* Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B24B23EB7C2600CC8A56 /* Support.swift */; };
 		3CD5B26323EB7C2600CC8A56 /* TransferCreateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B24C23EB7C2600CC8A56 /* TransferCreateController.swift */; };
-		3CD5B26423EB7C2600CC8A56 /* CoreTestsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = 3CD5B24D23EB7C2600CC8A56 /* CoreTestsConfig.json */; };
 		3CD5B26523EB7C2600CC8A56 /* WalletManagersTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25023EB7C2600CC8A56 /* WalletManagersTableViewController.swift */; };
 		3CD5B26723EB7C2600CC8A56 /* CoreDemoAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25223EB7C2600CC8A56 /* CoreDemoAppDelegate.swift */; };
 		3CD5B26823EB7C2600CC8A56 /* TransferCreateSendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD5B25323EB7C2600CC8A56 /* TransferCreateSendController.swift */; };
@@ -38,7 +38,9 @@
 
 /* Begin PBXFileReference section */
 		3C13F33724C759A0008410C8 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
+		3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = WalletKitTestsConfig.json; sourceTree = "<group>"; };
 		3C82745123ECBD9F0047A2D3 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3CA92FE9256481F500A4777C /* WalletKitTestsConfig.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = WalletKitTestsConfig.sh; path = ../../WalletKitTestsConfig.sh; sourceTree = "<group>"; };
 		3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CONTRIBUTORS; path = ../../CONTRIBUTORS; sourceTree = "<group>"; };
 		3CCCFC0B24C0CDD90045FA37 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../../LICENSE; sourceTree = "<group>"; };
 		3CCCFC0C24C0CDD90045FA37 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../README.md; sourceTree = "<group>"; };
@@ -60,7 +62,6 @@
 		3CD5B24A23EB7C2600CC8A56 /* TransferTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferTableViewCell.swift; sourceTree = "<group>"; };
 		3CD5B24B23EB7C2600CC8A56 /* Support.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Support.swift; sourceTree = "<group>"; };
 		3CD5B24C23EB7C2600CC8A56 /* TransferCreateController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferCreateController.swift; sourceTree = "<group>"; };
-		3CD5B24D23EB7C2600CC8A56 /* CoreTestsConfig.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = CoreTestsConfig.json; sourceTree = "<group>"; };
 		3CD5B24E23EB7C2600CC8A56 /* BaseOld */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = BaseOld; path = BaseOld.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		3CD5B24F23EB7C2600CC8A56 /* BaseOld */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = BaseOld; path = BaseOld.lproj/Main.storyboard; sourceTree = "<group>"; };
 		3CD5B25023EB7C2600CC8A56 /* WalletManagersTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletManagersTableViewController.swift; sourceTree = "<group>"; };
@@ -85,6 +86,7 @@
 		3CD5B21A23EB79D600CC8A56 = {
 			isa = PBXGroup;
 			children = (
+				3CA92FE9256481F500A4777C /* WalletKitTestsConfig.sh */,
 				3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */,
 				3CCCFC0B24C0CDD90045FA37 /* LICENSE */,
 				3CCCFC0C24C0CDD90045FA37 /* README.md */,
@@ -126,7 +128,7 @@
 				3CD5B24423EB7C2500CC8A56 /* LaunchScreen.storyboard */,
 				3CD5B24023EB7C2500CC8A56 /* Initial Screen.storyboard */,
 				3CD5B24B23EB7C2600CC8A56 /* Support.swift */,
-				3CD5B24D23EB7C2600CC8A56 /* CoreTestsConfig.json */,
+				3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */,
 				3C82745123ECBD9F0047A2D3 /* Info.plist */,
 			);
 			path = Source;
@@ -209,8 +211,8 @@
 				3CD5B25923EB7C2600CC8A56 /* Initial Screen.storyboard in Resources */,
 				3CCCFC0E24C0CDD90045FA37 /* LICENSE in Resources */,
 				3CD5B25D23EB7C2600CC8A56 /* LaunchScreen.storyboard in Resources */,
-				3CD5B26423EB7C2600CC8A56 /* CoreTestsConfig.json in Resources */,
 				3CCCFC0F24C0CDD90045FA37 /* README.md in Resources */,
+				3C7CEC2A255F1C53008C1816 /* WalletKitTestsConfig.json in Resources */,
 				3CCCFC1124C0E0310045FA37 /* CHANGELOG.md in Resources */,
 				3CD5B25A23EB7C2600CC8A56 /* Assets.xcassets in Resources */,
 			);
@@ -235,7 +237,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n${SOURCE_ROOT}/../InstallCoreTestsConfig.sh \"${HOME}/.brdCoreTestsConfig.json\" \"${SOURCE_ROOT}/Source/CoreTestsConfig.json\"\n";
+			shellScript = "# Get the WalletKit TestConfig into both the Demo App and the Test bundle\n${SOURCE_ROOT}/../../WalletKitTestsConfig.sh \"${SOURCE_ROOT}/../..\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
