@@ -2,7 +2,7 @@
 {
   "blockset": {
     "baseURL": "https://api.blockset.com",
-    "token":   "<blockset access token>"
+    "token":   "<blockset client access token>"
   },
 
   "accounts": [

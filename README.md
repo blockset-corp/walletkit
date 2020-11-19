@@ -84,7 +84,9 @@ A `BRCryptoWalletManager` ...
 
 WalletKit is delivered as a Git repository for development within Xcode and Android Studio.
 
-## GIT Access
+## Access
+
+### Git
 
 Clone WalletKit with 
 ```
@@ -94,6 +96,10 @@ If you've cloned WalletKit but without the `--recursive-submodules` flag then pe
 ```
 (cd .../WalletKit; git submodule update --init --recursive)
 ```
+
+### SwiftPM
+
+### Maven
 
 ## Setup
 
@@ -133,19 +139,19 @@ into the applications and unit tests.  That file has the following structure:
 The structure is as follows:
 
 * The `"blockset"` dictionary detemines how the `FastSync` capability is accomplisted with 
-a connection to BlockSet.  Use of `FastSync` requires a "blockset client access token", which can be
+a connection to Blockset.  Use of `FastSync` requires a "blockset client access token", which can be
 obtained from [Blockset Docs, Client Authentication](https://docs.blockset.com/getting-started/authentication#authentication-walkthrough "Blockset Docs, Client Authentication").
 
-*The `"accounts"` array of dictionaries defines 'paperKeys' to use when creating an 'account'
-for connecting to various blockchains.  You can add your own 'paperKeys', including ones for
-mainnet.  It is a good idea to get the `"timestamp"` correct so that searching for transactions
-(aka 'syncing') has a reasonable starting time.
+* The `"accounts"` array defines 'paperKeys' to use when creating an 'account' for connecting 
+to various blockchains.  You can add your own 'paperKeys', including ones for mainnet.  It is a 
+good idea to get the `"timestamp"` correct so that searching for transactions (aka 'syncing') 
+has a reasonable starting time.
 
 To specify a `WalletKitTestsConfig.json` file do the following:
 
 * Copy the file `.../WalletKit/templates/WalletKitTestsConfig_example.json` into 
 a location in your file system, generally outside of the WalletKit cloned directory.  For example,
-`${HOME}/.walletKitTestsConfig.json` is a commont location.  If you edit the file and add 
+`${HOME}/.walletKitTestsConfig.json` is a common location.  If you edit the file and add 
 your own paperKeys then you will want to ensure that those changes are kept independent of 
 the WalletKit directory.
 
