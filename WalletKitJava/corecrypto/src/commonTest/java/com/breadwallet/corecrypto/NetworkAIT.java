@@ -78,8 +78,6 @@ public class NetworkAIT {
         Currency brd = Currency.create("ethereum-mainnet:0x558ec3152e2eb2174905cd19aea4e34a23de9ad6", "BRD Token", "brd", "erc20", "0x558ec3152e2eb2174905cd19aea4e34a23de9ad6");
         Currency btc = Currency.create("bitcoin-mainnet:__native__", "Bitcoin", "btc", "native", null);
 
-        NetworkFee fee1 = NetworkFee.create(UnsignedLong.valueOf(1 * 60 * 1000), Amount.create(2.0, gwei_eth));
-
         Network network = Network.findBuiltin("ethereum-mainnet").get();
 
         assertEquals("Ethereum", network.toString());
@@ -98,7 +96,7 @@ public class NetworkAIT {
         assertTrue(network.hasUnitFor(eth, gwei_eth).or(false));
         assertTrue(network.hasUnitFor(eth, ether_eth).or(false));
 
-        assertEquals(fee1, network.getMinimumFee());
+        assertTrue(network.getFees().contains(network.getMinimumFee()));
 
         assertFalse(network.defaultUnitFor(btc).isPresent());
         assertFalse(network.baseUnitFor(btc).isPresent());

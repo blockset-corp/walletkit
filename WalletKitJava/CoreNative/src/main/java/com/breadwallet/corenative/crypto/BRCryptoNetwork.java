@@ -25,7 +25,7 @@ import java.util.List;
 public class BRCryptoNetwork extends PointerType {
 
     public static Optional<BRCryptoNetwork> findBuiltin (String uids) {
-        Pointer builtin = CryptoLibraryDirect.cryptoNetworkFindBuiltin (uids);
+        Pointer builtin = CryptoLibraryDirect.cryptoNetworkFindBuiltin (uids, uids.endsWith("mainnet") ? 1 : 0);
         return (null == builtin
                 ? Optional.absent()
                 : Optional.of (new BRCryptoNetwork(builtin)));
