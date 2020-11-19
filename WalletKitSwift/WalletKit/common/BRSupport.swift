@@ -269,8 +269,8 @@ public struct AccountSpecification {
             let configFile = URL(fileURLWithPath: configPath)
             guard let configData = try? Data.init(contentsOf: configFile)
                 else { return defaultSpecification.map {[$0] } ?? [] }
-            let json = try! JSONSerialization.jsonObject(with: configData, options: []) as! [[String:String]]
-            return json.map { AccountSpecification (dict: $0) }
+            let json = try! JSONSerialization.jsonObject(with: configData, options: []) as! [String:Any]
+            return (json["accounts"] as! [[String:String]]).map { AccountSpecification (dict: $0) }
         }
         else if let defaultSpecification = defaultSpecification {
             return [defaultSpecification]
@@ -281,3 +281,41 @@ public struct AccountSpecification {
     }
 }
 
+public struct BlocksetAccess {
+    public let baseURL: String
+    public let token: String
+
+    init (dict: [String: String]) {
+        self.baseURL = dict["baseURL"]!
+        self.token   = dict["token"]!
+    }
+
+    static public func loadFrom (configPath: String? = nil) -> BlocksetAccess? {
+        if let configPath = configPath, FileManager.default.fileExists(atPath: configPath) {
+            let configFile = URL(fileURLWithPath: configPath)
+            guard let configData = try? Data.init(contentsOf: configFile)
+                else { return nil }
+            let json = try! JSONSerialization.jsonObject(with: configData, options: []) as! [String:Any]
+            return BlocksetAccess (dict: (json["blockset"] as! [String:String]))
+        }
+        else { return nil }
+    }
+}
+
+public struct TestConfiguration {
+    public let blocksetAccess: BlocksetAccess
+    public let accountSpecifications: [AccountSpecification]
+
+    static public func loadFrom (path: String) -> TestConfiguration? {
+        guard let blocksetAccess = BlocksetAccess.loadFrom(configPath: path)
+        else { return nil }
+
+        return TestConfiguration (blocksetAccess: blocksetAccess,
+                                  accountSpecifications: AccountSpecification.loadFrom(configPath: path))
+    }
+
+    static public func loadFrom (bundle: Bundle, resource: String = "WalletKitTestsConfig") -> TestConfiguration? {
+        return bundle.path (forResource: resource, ofType: "json")
+            .flatMap { loadFrom (path: $0) }
+    }
+}

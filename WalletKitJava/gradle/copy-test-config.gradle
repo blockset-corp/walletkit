@@ -1,0 +1,31 @@
+
+afterEvaluate {
+    def source = "WalletKitTestsConfig.json"
+
+    def isLibrary     = plugins.hasPlugin("com.android.library")
+    def isApplication = plugins.hasPlugin("com.android.application")
+
+    task installTestConfig(type: Exec) {
+       // get WalletKitTestConfig.json into ".../src/main/assets"
+       workingDir = '../..'
+       commandLine './WalletKitTestsConfig.sh', project.file('../..')
+    }
+
+    if (isApplication) {
+       extensions.getByName("android").applicationVariants.forEach { variant ->
+           variant.preBuildProvider.get().dependsOn(installTestConfig)
+       }
+    }
+    else if (isLibrary) {
+        task copyTestConfigLib(type: Copy) {
+            dependsOn ':installTestConfig'
+	    // Copy .../src/main/assets/WalletKitTestConfig.json into .../src/androidTest/assets
+            from project.file("src/main/assets")
+            include source
+            into project.file("src/androidTest/assets")
+        }
+        extensions.getByName("android").testVariants.forEach { variant ->
+            variant.preBuildProvider.get().dependsOn(copyTestConfigLib)
+	}
+    }
+}

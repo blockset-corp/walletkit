@@ -13,6 +13,7 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/src/generic",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/ripple",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/tezos",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/support",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/version"]
 
@@ -29,6 +30,7 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/ethereum",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/ripple",
+                                   projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/tezos",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/support"]
 
     cppCryptoTestIncDirs        = [projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/include"]

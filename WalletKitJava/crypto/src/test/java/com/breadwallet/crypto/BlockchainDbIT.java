@@ -20,6 +20,7 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionEvent;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transfer;
 import com.breadwallet.crypto.utility.CompletionHandler;
+import com.breadwallet.crypto.utility.TestConfiguration;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
@@ -44,21 +45,20 @@ import static org.junit.Assert.*;
 public class BlockchainDbIT {
 
     private static final String API_BASE_URL = "https://api.breadwallet.com";
-    private static final String BDB_BASE_URL = "https://api.blockset.com";
-    private static final String BRD_AUTH_TOKEN = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg";
 
     private BlockchainDb blockchainDb;
 
     @Before
     public void setup() {
+        TestConfiguration configuration = TestConfigurationLoader.getTestConfiguration();
         DataTask decoratedSynchronousDataTask = (client, request, callback) -> {
             Request decoratedRequest = request.newBuilder()
-                    .header("Authorization", "Bearer " + BRD_AUTH_TOKEN)
+                    .header("Authorization", "Bearer " + configuration.getBlocksetAccess().getToken())
                     .build();
             synchronousDataTask.execute(client, decoratedRequest, callback);
         };
         blockchainDb = new BlockchainDb(new OkHttpClient(),
-                BDB_BASE_URL, decoratedSynchronousDataTask,
+                configuration.getBlocksetAccess().getBaseURL(), decoratedSynchronousDataTask,
                 API_BASE_URL, synchronousDataTask);
     }
 

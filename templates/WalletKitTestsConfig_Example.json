@@ -1,0 +1,41 @@
+
+{
+  "blockset": {
+    "baseURL": "https://api.blockset.com",
+    "token":   "<blockset client access token>"
+  },
+
+  "accounts": [
+          {
+            "identifier": "ginger",
+            "paperKey":   "ginger settle marine tissue robot crane night number ramp coast roast critic",
+            "timestamp":  "2018-01-01",
+            "network":    "testnet",
+            "content":    "BTC, BCH, ETH"
+          },
+
+          {
+            "identifier": "tape",
+            "paperKey":   "tape argue fetch truck cattle quiz wide equal inform rabbit ranch educate",
+            "timestamp":  "2018-04-02",
+            "network":    "testnet",
+            "content":    "(NO) BTC"
+          },
+
+          {
+            "identifier": "blush",
+            "paperKey":   "blush wear arctic fruit unique quantum because mammal entry country school curtain",
+            "timestamp":  "2018-01-01",
+            "network":    "testnet",
+            "content":    "BCH"
+          },
+
+          {
+            "identifier": "boring",
+            "paperKey":   "boring head harsh green empty clip fatal typical found crane dinner timber",
+            "timestamp":  "2018-04-26",
+            "network":    "mainnet",
+            "content":    "COMPROMISED - Do use as a target for any assets"
+          }
+    ]
+}

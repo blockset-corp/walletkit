@@ -3,7 +3,7 @@ import XCTest
 #if !canImport(ObjectiveC)
 public func allTests() -> [XCTestCaseEntry] {
     return [
-        testCase (BRBlockChainDBTest.allTests),
+        testCase (BRCryptoBlocksetTests.allTests),
         testCase (BRCryptoAccountTests.allTests),
         testCase (BRCryptoAmountTests.allTests),
         testCase (BRCryptoCommonTests.allTests),
