@@ -96,7 +96,7 @@ genericTezosAccountSignTransferWithSeed (BRGenericAccountRef account,
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
     assert(transaction);
     if (transaction) {
-        bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal((BRTezosWallet) wallet);
+        bool needsReveal = tezosWalletNeedsReveal((BRTezosWallet) wallet);
         tezosTransactionSerializeAndSign (transaction,
                                           (BRTezosAccount) account,
                                           seed,
@@ -210,7 +210,7 @@ genericTezosTransferGetSerializationForFeeEstimation (BRGenericTransferRef trans
     memset (lastBlockHash.bytes, 0, TEZOS_HASH_BYTES);
     BRTezosTransaction transaction = tezosTransferGetTransaction ((BRTezosTransfer) transfer);
     assert(transaction);
-    bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(transaction)) && tezosWalletNeedsReveal((BRTezosWallet) wallet);
+    bool needsReveal = tezosWalletNeedsReveal((BRTezosWallet) wallet);
     
     tezosTransactionSerializeForFeeEstimation (transaction,
                                                (BRTezosAccount) account,
