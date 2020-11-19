@@ -34,6 +34,9 @@ let package = Package(
                 "WalletKit"
             ],
             path: "WalletKitTests",
+            exclude: [
+                "README.md"
+            ],
             resources: [
                 .copy ("Resources/WalletKitTestsConfig.json")
             ]
