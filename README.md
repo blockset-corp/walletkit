@@ -9,7 +9,7 @@ WalletKit supports the following crypto-currencies: Bitcoin, Bitcoin Cash, Bitco
 Ethereum ERC20 'tokens', Ripple, Hedera and Tezos.  Other crypto-currencies are added
 regularly.  Adding another blockchain is accomplished by satisfying a WalletKit-defined API.
 
-WalletKit is the basis for the BRD IOS and Android mobile applications which currently have
+WalletKit is the basis for the BRD iOS and Android mobile applications which currently have
 combined downloads of over 6,000,000.
 
 ![badge-mit][]   ![badge-languages][]   ![badge-platforms][]  
@@ -27,7 +27,7 @@ combined downloads of over 6,000,000.
 ### C
 
 WalletKit defines a C interface, with associated C implementation, that runs on both MacOS
-and on Linux platforms.  The C interface can be access through the 'foriegn function interface'
+and on Linux platforms.  The C interface can be accessed through the 'foriegn function interface'
 offered by other languages, such as by Swift and Java.
 
 The C interface is located in `.../WalletKit/WalletKitCore/include`.
@@ -47,11 +47,11 @@ web assembly.
 
 ## Demo Mobile Applications
 
-WalletKit includes IOS and Android demo applications.  These applications illustrate 
+WalletKit includes iOS and Android demo applications.  These applications illustrate 
 basic usage of WalletKit to connect to numerous blockchains and to manage numerous wallets
 holding assets based on blockchain transactions.
 
-The IOS demo application is accessed using Xcode; the Andriod demo application is accessed
+The iOS demo application is accessed using Xcode; the Andriod demo application is accessed
 using Android Studio.
 
 # Concepts
@@ -139,8 +139,9 @@ into the applications and unit tests.  That file has the following structure:
 The structure is as follows:
 
 * The `"blockset"` dictionary detemines how the `FastSync` capability is accomplisted with 
-a connection to Blockset.  Use of `FastSync` requires a "blockset client access token", which can be
-obtained from [Blockset Docs, Client Authentication](https://docs.blockset.com/getting-started/authentication#authentication-walkthrough "Blockset Docs, Client Authentication").
+a connection to [Blockset](https://blockset.com "Blockset").  Use of `FastSync` requires a 
+"blockset client access token", which can be obtained from
+[Blockset Docs, Client Authentication](https://docs.blockset.com/getting-started/authentication#authentication-walkthrough "Blockset Docs, Client Authentication").
 
 * The `"accounts"` array defines 'paperKeys' to use when creating an 'account' for connecting 
 to various blockchains.  You can add your own 'paperKeys', including ones for mainnet.  It is a 
@@ -156,11 +157,11 @@ your own paperKeys then you will want to ensure that those changes are kept inde
 the WalletKit directory.
 
 * Copy the file `.../WalletKit/templates/WalletKitTestsConfig.env` to
-`.../WalletKit/WaleltKitTestsConfig.env` and then edit that file by changing the
+`.../WalletKit/WalletKitTestsConfig.env` and then edit that file by changing the
 assignment of `WALLET_KIT_TESTS_CONFIG_FILE` to point to your config file.
 
 With the `.env` file specified, the WalletKit build process will copy the `.json` file into the
-IOS and Android mobile apps as a resource and into locations accessible by the unit tests.
+iOS and Android mobile apps as a resource and into locations accessible by the unit tests.
 
 ## Building
 
@@ -189,7 +190,7 @@ WalletKit can be started in Android Studio using ...
 
 ## 1.0
 
-Version 1.0 is currently the basis for the BRD IOS and Android mobile applications
+Version 1.0 is currently the basis for the BRD iOS and Android mobile applications
 
 # Support
 
