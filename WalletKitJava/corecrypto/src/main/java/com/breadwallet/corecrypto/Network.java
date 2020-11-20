@@ -339,6 +339,7 @@ final class Network implements com.breadwallet.crypto.Network {
     }
 
     public static Optional<Network> findBuiltin (String name) {
-        return Optional.absent();
+        return BRCryptoNetwork.findBuiltin(name)
+                .transform(Network::new);
     }
 }

@@ -45,16 +45,12 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoAccountGetFileSystemIdentifier(Pointer account);
     public static native Pointer cryptoAccountSerialize(Pointer account, SizeTByReference count);
     public static native int cryptoAccountValidateSerialization(Pointer account, byte[] serialization, SizeT count);
-    public static native int cryptoNetworkIsAccountInitialized (Pointer network, Pointer account);
-    public static native Pointer cryptoNetworkGetAccountInitializationData (Pointer network, Pointer account, SizeTByReference bytesCount);
-    public static native void cryptoNetworkInitializeAccount (Pointer network, Pointer account, byte[] bytes, SizeT bytesCount);
     public static native int cryptoAccountValidateWordsList(SizeT count);
     public static native Pointer cryptoAccountGeneratePaperKey(StringArray words);
     public static native int cryptoAccountValidatePaperKey(ByteBuffer phraseBuffer, StringArray wordsArray);
     public static native void cryptoAccountGive(Pointer obj);
 
     // crypto/BRCryptoAddress.h
-    public static native Pointer cryptoNetworkCreateAddress(Pointer pointer, String address);
     public static native Pointer cryptoAddressAsString(Pointer address);
     public static native int cryptoAddressIsIdentical(Pointer a1, Pointer a2);
     public static native void cryptoAddressGive(Pointer obj);
@@ -151,7 +147,12 @@ public final class CryptoLibraryDirect {
     public static native int cryptoNetworkRequiresMigration(Pointer network);
 
     public static native Pointer cryptoNetworkInstallBuiltins(SizeTByReference count);
-    public static native Pointer cryptoNetworkFindBuiltin(String uids);
+    public static native Pointer cryptoNetworkFindBuiltin(String uids, int isMainnet);
+
+    public static native int cryptoNetworkIsAccountInitialized (Pointer network, Pointer account);
+    public static native Pointer cryptoNetworkGetAccountInitializationData (Pointer network, Pointer account, SizeTByReference bytesCount);
+    public static native void cryptoNetworkInitializeAccount (Pointer network, Pointer account, byte[] bytes, SizeT bytesCount);
+    public static native Pointer cryptoNetworkCreateAddress(Pointer pointer, String address);
 
     // crypto/BRCryptoNetwork.h (BRCryptoNetworkFee)
     public static native long cryptoNetworkFeeGetConfirmationTimeInMilliseconds(Pointer fee);
