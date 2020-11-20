@@ -143,6 +143,8 @@ int BRKeyRecoverPubKeyEthereum(BRKey *key, UInt256 md, const void *compactSig, s
 // Returns true (1) if the compress flag changed; false (0) otherwise
 int BRKeySetCompressed (BRKey *key, int compressed);
 
+int BRKeyGenerateRandom (BRKey *key, int compressed);
+
 #ifdef __cplusplus
 }
 #endif
