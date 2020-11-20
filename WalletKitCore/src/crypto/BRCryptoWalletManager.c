@@ -945,12 +945,13 @@ cryptoWalletManagerSign (BRCryptoWalletManager cwm,
             break;
 
         case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericHash lastBlockHash = cryptoHashAsGEN (cryptoNetworkGetVerifiedBlockHash (cwm->network));
+            BRCryptoHash lastBlockHash = cryptoNetworkGetVerifiedBlockHash (cwm->network);
             success = AS_CRYPTO_BOOLEAN (genManagerSignTransfer (cwm->u.gen,
                                                                  cryptoWalletAsGEN (wallet),
-                                                                 lastBlockHash,
+                                                                 cryptoHashAsGEN (lastBlockHash),
                                                                  cryptoTransferAsGEN (transfer),
                                                                  seed));
+            cryptoHashGive (lastBlockHash);
             if (CRYPTO_TRUE == success)
                 cryptoWalletManagerSetTransferStateGEN (cwm, wallet, transfer,
                                                         genTransferStateCreateOther (GENERIC_TRANSFER_STATE_SIGNED));
@@ -999,15 +1000,16 @@ cryptoWalletManagerSubmit (BRCryptoWalletManager cwm,
         case BLOCK_CHAIN_TYPE_GEN: {
             BRGenericWallet genWallet = cryptoWalletAsGEN (wallet);
             BRGenericTransfer genTransfer = cryptoTransferAsGEN (transfer);
-            BRGenericHash lastBlockHash = cryptoHashAsGEN (cryptoNetworkGetVerifiedBlockHash (cwm->network));
+            BRCryptoHash lastBlockHash = cryptoNetworkGetVerifiedBlockHash (cwm->network);
 
             // Sign the transfer
-            if (genManagerSignTransfer (cwm->u.gen, genWallet, lastBlockHash, genTransfer, seed)) {
+            if (genManagerSignTransfer (cwm->u.gen, genWallet, cryptoHashAsGEN (lastBlockHash), genTransfer, seed)) {
                 cryptoWalletManagerSetTransferStateGEN (cwm, wallet, transfer,
                                                         genTransferStateCreateOther (GENERIC_TRANSFER_STATE_SIGNED));
                 // Submit the transfer
                 cryptoWalletManagerSubmitSigned (cwm, wallet, transfer);
             }
+            cryptoHashGive (lastBlockHash);
             break;
         }
     }
