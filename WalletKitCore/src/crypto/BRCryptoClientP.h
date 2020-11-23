@@ -80,9 +80,9 @@ struct BRCryptoClientTransferBundleRecord {
     char *amount;
     char *currency;
     char *fee;
-    uint64_t blockTimestamp;
-    uint64_t blockNumber;
-    uint64_t blockConfirmations;
+    BRCryptoTimestamp blockTimestamp;
+    BRCryptoBlockNumber blockNumber;
+    BRCryptoBlockNumber blockConfirmations;
     uint64_t blockTransactionIndex;
     char *blockHash;
 

@@ -33,7 +33,7 @@ extern void
 cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
-                        uint64_t blockNumber,
+                        BRCryptoBlockNumber blockNumber,
                         const char *verifiedBlockHash);
 
 // MARK: - Get Transactions
@@ -44,8 +44,8 @@ typedef void
                                           OwnershipGiven BRCryptoClientCallbackState callbackState,
                                           OwnershipKept const char **addresses,
                                           size_t addressCount,
-                                          uint64_t begBlockNumber,
-                                          uint64_t endBlockNumber);
+                                          BRCryptoBlockNumber begBlockNumber,
+                                          BRCryptoBlockNumber endBlockNumber);
 
 typedef struct BRCryptoClientTransactionBundleRecord *BRCryptoClientTransactionBundle;
 
@@ -53,8 +53,8 @@ extern BRCryptoClientTransactionBundle
 cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
                                      OwnershipKept uint8_t *transaction,
                                      size_t transactionLength,
-                                     uint64_t timestamp,
-                                     uint64_t blockHeight);
+                                     BRCryptoTimestamp timestamp,
+                                     BRCryptoBlockNumber blockHeight);
 
 extern void
 cryptoClientTransactionBundleRelease (BRCryptoClientTransactionBundle bundle);
@@ -79,8 +79,8 @@ typedef void
                                        OwnershipGiven BRCryptoClientCallbackState callbackState,
                                        OwnershipKept const char **addresses,
                                        size_t addressCount,
-                                       uint64_t begBlockNumber,
-                                       uint64_t endBlockNumber);
+                                       BRCryptoBlockNumber begBlockNumber,
+                                       BRCryptoBlockNumber endBlockNumber);
 
 typedef struct BRCryptoClientTransferBundleRecord *BRCryptoClientTransferBundle;
 
@@ -93,9 +93,9 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
                                   OwnershipKept const char *amount,
                                   OwnershipKept const char *currency,
                                   OwnershipKept const char *fee,
-                                  uint64_t blockTimestamp,
-                                  uint64_t blockNumber,
-                                  uint64_t blockConfirmations,
+                                  BRCryptoTimestamp blockTimestamp,
+                                  BRCryptoBlockNumber blockNumber,
+                                  BRCryptoBlockNumber blockConfirmations,
                                   uint64_t blockTransactionIndex,
                                   OwnershipKept const char *blockHash,
                                   size_t attributesCount,

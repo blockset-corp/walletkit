@@ -30,8 +30,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class BRCryptoAccount extends PointerType {
 
     public static Optional<BRCryptoAccount> createFromPhrase(byte[] phraseUtf8, UnsignedLong timestamp, String uids) {
-        long timestampAsLong = timestamp.longValue();
-
         // ensure string is null terminated
         phraseUtf8 = Arrays.copyOf(phraseUtf8, phraseUtf8.length + 1);
         try {
@@ -43,7 +41,7 @@ public class BRCryptoAccount extends PointerType {
                 return Optional.fromNullable(
                         CryptoLibraryDirect.cryptoAccountCreate(
                                 phraseBuffer,
-                                timestampAsLong,
+                                timestamp.longValue(),
                                 uids
                         )
                 ).transform(BRCryptoAccount::new);

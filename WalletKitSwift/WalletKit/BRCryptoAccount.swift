@@ -67,7 +67,7 @@ public final class Account {
     /// - Returns: the paperKey's corresponding account, or NIL if the paperKey is invalid.
     ///
     public static func createFrom (phrase: String, timestamp: Date, uids: String) -> Account? {
-        let timestampAsInt = UInt32 (timestamp.timeIntervalSince1970)
+        let timestampAsInt = UInt64 (timestamp.timeIntervalSince1970)
         return cryptoAccountCreate (phrase, timestampAsInt, uids)
             .map { Account (core: $0, take: false) }
     }
