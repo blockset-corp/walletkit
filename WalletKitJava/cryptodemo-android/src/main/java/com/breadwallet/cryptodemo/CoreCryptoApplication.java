@@ -150,7 +150,8 @@ public class CoreCryptoApplication extends Application {
                     "bsv",
                     "eth",
                     "xrp",
-                    "hbar"
+                    "hbar",
+                    "xtz"
             );
             systemListener = new DispatchingSystemListener();
             systemListener.addSystemListener(new CoreSystemListener(mode, isMainnet, currencyCodesNeeded));
