@@ -533,19 +533,13 @@ public final class ExportablePaperWallet {
 
     private static func createAsBTC(wallet: Wallet) -> ExportablePaperWallet {
         return ExportablePaperWallet(core: cryptoExportablePaperWalletCreateAsBTC(wallet.manager.network.core,
-                                                                                  wallet.currency.core),
-                                     wallet: wallet)
+                                                                                  wallet.currency.core))
     }
     
     internal let core: BRCryptoWalletSweeper
-    private let manager: WalletManager
-    private let wallet: Wallet
 
-    private init (core: BRCryptoWalletSweeper,
-                  wallet: Wallet) {
+    private init (core: BRCryptoWalletSweeper) {
         self.core = core
-        self.manager = wallet.manager
-        self.wallet = wallet
     }
 
     public var privateKey: Key? {
