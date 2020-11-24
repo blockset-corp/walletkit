@@ -1728,7 +1728,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
      private static void getTransactions(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                        List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
+                                        List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
@@ -1833,7 +1833,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void getTransfers(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                     List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
+                                     List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);

@@ -36,7 +36,6 @@ public class BRCryptoClient extends Structure {
                       Pointer callbackState,
                       Pointer addrs,
                       SizeT addrCount,
-                      String currency,
                       long begBlockNumber,
                       long endBlockNumber);
     }
@@ -47,7 +46,6 @@ public class BRCryptoClient extends Structure {
                       Pointer callbackState,
                       Pointer addrs,
                       SizeT addrCount,
-                      String currency,
                       long begBlockNumber,
                       long endBlockNumber);
     }
@@ -96,7 +94,6 @@ public class BRCryptoClient extends Structure {
                     BRCryptoWalletManager manager,
                     BRCryptoClientCallbackState callbackState,
                     List<String> addresses,
-                    String currency,
                     long begBlockNumber,
                     long endBlockNumber);
 
@@ -106,7 +103,6 @@ public class BRCryptoClient extends Structure {
                               Pointer callbackState,
                               Pointer addrs,
                               SizeT addrCount,
-                              String currency,
                               long begBlockNumber,
                               long endBlockNumber) {
             int addressesCount = UnsignedInts.checkedCast(addrCount.longValue());
@@ -118,7 +114,6 @@ public class BRCryptoClient extends Structure {
                     new BRCryptoWalletManager(manager),
                     new BRCryptoClientCallbackState(callbackState),
                     addressesList,
-                    currency,
                     begBlockNumber,
                     endBlockNumber
             );
@@ -130,7 +125,6 @@ public class BRCryptoClient extends Structure {
                     BRCryptoWalletManager manager,
                     BRCryptoClientCallbackState callbackState,
                     List<String> addresses,
-                    String currency,
                     long begBlockNumber,
                     long endBlockNumber);
 
@@ -140,7 +134,6 @@ public class BRCryptoClient extends Structure {
                               Pointer callbackState,
                               Pointer addrs,
                               SizeT addrCount,
-                              String currency,
                               long begBlockNumber,
                               long endBlockNumber) {
             int addressesCount = UnsignedInts.checkedCast(addrCount.longValue());
@@ -152,7 +145,6 @@ public class BRCryptoClient extends Structure {
                     new BRCryptoWalletManager(manager),
                     new BRCryptoClientCallbackState(callbackState),
                     addressesList,
-                    currency,
                     begBlockNumber,
                     endBlockNumber
             );

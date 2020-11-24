@@ -345,7 +345,6 @@ public class BRCryptoWalletManager extends PointerType {
         CryptoLibraryIndirect.cwmAnnounceTransfers(thisPtr, callbackState.getPointer(), success, bundlesArr, new SizeT(bundlesCount));
     }
 
-
     public void announceSubmitTransfer(BRCryptoClientCallbackState callbackState, boolean success) {
         Pointer thisPtr = this.getPointer();
 
