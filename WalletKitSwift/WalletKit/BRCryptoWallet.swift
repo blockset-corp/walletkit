@@ -210,15 +210,17 @@ public final class Wallet: Equatable {
 
         let coreAttributesCount = attributes?.count ?? 0
         var coreAttributes: [BRCryptoTransferAttribute?] = attributes?.map { $0.core } ?? []
-
-        return cryptoWalletManagerCreateTransfer (manager.core, core, target.core, amount.core,
-                                                  estimatedFeeBasis.core,
-                                                  coreAttributesCount,
-                                                  &coreAttributes)
+        
+        return cryptoWalletCreateTransfer (core,
+                                           target.core,
+                                           amount.core,
+                                           estimatedFeeBasis.core,
+                                           coreAttributesCount,
+                                           &coreAttributes)
             .map { Transfer (core: $0,
                              wallet: self,
                              take: false)
-        }
+            }
     }
 
     public func createTransfer (outputs: [TransferOutput],
@@ -232,15 +234,15 @@ public final class Wallet: Equatable {
                                        estimatedFeeBasis: estimatedFeeBasis)
         default:
             var coreOutputs = outputs.map { $0.core }
-
-            return cryptoWalletManagerCreateTransferMultiple (manager.core, core,
-                                                              coreOutputsCount,
-                                                              &coreOutputs,
-                                                              estimatedFeeBasis.core)
+            
+            return cryptoWalletCreateTransferMultiple (core,
+                                                       coreOutputsCount,
+                                                       &coreOutputs,
+                                                       estimatedFeeBasis.core)
                 .map { Transfer (core: $0,
                                  wallet: self,
                                  take: false)
-            }
+                }
         }
     }
 

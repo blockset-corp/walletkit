@@ -146,23 +146,6 @@ extern "C" {
     cryptoWalletManagerSyncToDepth (BRCryptoWalletManager cwm,
                                     BRCryptoSyncDepth depth);
 
-    // TODO: Workaround to create a TransferEvent.created for GEN (required CWM)
-    extern BRCryptoTransfer
-    cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
-                                       BRCryptoWallet wallet,
-                                       BRCryptoAddress target,
-                                       BRCryptoAmount amount,
-                                       BRCryptoFeeBasis estimatedFeeBasis,
-                                       size_t attributesCount,
-                                       OwnershipKept BRCryptoTransferAttribute *attributes);
-
-    extern BRCryptoTransfer
-    cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet wallet,
-                                               size_t outputsCount,
-                                               BRCryptoTransferOutput *outputs,
-                                               BRCryptoFeeBasis estimatedFeeBasis);
-
     extern BRCryptoBoolean
     cryptoWalletManagerSign (BRCryptoWalletManager cwm,
                              BRCryptoWallet wallet,

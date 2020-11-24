@@ -823,32 +823,7 @@ cryptoWalletManagerWipe (BRCryptoNetwork network,
     fileServiceWipe (path, currencyName, networkName);
 }
 
-// MARK: - Create Transfer
-
-extern BRCryptoTransfer
-cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
-                                   BRCryptoWallet wallet,
-                                   BRCryptoAddress target,
-                                   BRCryptoAmount amount,
-                                   BRCryptoFeeBasis estimatedFeeBasis,
-                                   size_t attributesCount,
-                                   OwnershipKept BRCryptoTransferAttribute *attributes) {
-    return cryptoWalletCreateTransfer (wallet, target, amount,
-                                       estimatedFeeBasis,
-                                       attributesCount,
-                                       attributes);
-}
-
-extern BRCryptoTransfer
-cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
-                                           BRCryptoWallet wallet,
-                                           size_t outputsCount,
-                                           BRCryptoTransferOutput *outputs,
-                                           BRCryptoFeeBasis estimatedFeeBasis) {
-    return cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
-}
-
-// MARK: - Sign/Submit
+// MARK: - Transfer Sign/Submit
 
 extern BRCryptoBoolean
 cryptoWalletManagerSign (BRCryptoWalletManager manager,
