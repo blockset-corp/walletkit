@@ -404,6 +404,8 @@ public final class CryptoLibraryDirect {
 
     // crypto/BRCryptoListener.h
     public static native Pointer cryptoListenerCreate (Pointer context, Callback systemCB, Callback networkCB, Callback managerCB, Callback walletCB, Callback transferCB);
+    public static native Pointer cryptoListenerTake(Pointer listener);
+    public static native void cryptoListenerGive(Pointer listener);
 
     // crypto/BRCryptoSystem.h
     public static native Pointer cryptoSystemCreate(BRCryptoClient.ByValue client,
