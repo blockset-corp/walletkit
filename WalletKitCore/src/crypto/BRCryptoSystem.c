@@ -92,6 +92,7 @@ cryptoAllSystemsAdd (BRCryptoSystem system) { // , void* context)
 #endif // defined (NOT_WORKABLE_NEEDS_TO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
 
 // MARK: - System
+
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
 
 extern BRCryptoSystem
@@ -180,7 +181,7 @@ cryptoSystemIsReachable (BRCryptoSystem system) {
     return system->isReachable;
 }
 
-private_extern void
+extern void
 cryptoSystemSetReachable (BRCryptoSystem system,
                           BRCryptoBoolean isReachable) {
     system->isReachable = isReachable;

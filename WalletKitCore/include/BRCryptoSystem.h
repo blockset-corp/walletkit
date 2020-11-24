@@ -37,6 +37,10 @@ cryptoSystemOnMainnet (BRCryptoSystem system);
 extern BRCryptoBoolean
 cryptoSystemIsReachable (BRCryptoSystem system);
 
+extern void
+cryptoSystemSetReachable (BRCryptoSystem system,
+                          BRCryptoBoolean isReachable);
+
 extern const char *
 cryptoSystemGetResolvedPath (BRCryptoSystem system);
 

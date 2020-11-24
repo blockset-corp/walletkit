@@ -414,6 +414,7 @@ public final class CryptoLibraryDirect {
     public static native int cryptoSystemGetState (Pointer system);
     public static native int cryptoSystemOnMainnet (Pointer system);
     public static native int cryptoSystemIsReachable (Pointer system);
+    public static native void cryptoSystemSetReachable (Pointer system, boolean reachable);
     public static native Pointer cryptoSystemGetResolvedPath (Pointer system);
 
     public static native int cryptoSystemHasNetwork (Pointer system, Pointer network);

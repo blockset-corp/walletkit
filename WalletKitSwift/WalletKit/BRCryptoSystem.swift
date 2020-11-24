@@ -50,7 +50,9 @@ public final class System {
     public let onMainnet: Bool
 
     /// Flag indicating if the network is reachable; defaults to true
-    internal var isNetworkReachable = true
+    internal var isNetworkReachable: Bool {
+        return CRYPTO_TRUE == cryptoSystemIsReachable(core)
+    }
 
     /// The queue for asynchronous functionality.  Notably this is used in `configure()` to
     /// gather all of the `query` results as Networks are created and added.
@@ -604,8 +606,7 @@ public final class System {
     /// viability.
     ///
     public func setNetworkReachable (_ isNetworkReachable: Bool) {
-        self.isNetworkReachable = isNetworkReachable
-        managers.forEach { $0.setNetworkReachable(isNetworkReachable) }
+        cryptoSystemSetReachable (core, isNetworkReachable ? CRYPTO_TRUE : CRYPTO_FALSE);
     }
 
     // MARK: - Pause/Resume

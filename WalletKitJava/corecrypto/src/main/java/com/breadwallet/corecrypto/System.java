@@ -355,8 +355,6 @@ final class System implements com.breadwallet.crypto.System {
     private final Set<Network> networks;
     private final Set<WalletManager> walletManagers;
 
-    private boolean isNetworkReachable;
-
     private System(ScheduledExecutorService executor,
                    SystemListener listener,
                    Account account,
@@ -379,8 +377,6 @@ final class System implements com.breadwallet.crypto.System {
 
         this.networks = new CopyOnWriteArraySet<>();
         this.walletManagers = new CopyOnWriteArraySet<>();
-
-        this.isNetworkReachable = DEFAULT_IS_NETWORK_REACHABLE;
 
         this.core = BRCryptoSystem.create(
                 this.cwmClient,
@@ -540,10 +536,7 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void setNetworkReachable(boolean isNetworkReachable) {
-        this.isNetworkReachable = isNetworkReachable;
-        for (WalletManager manager: getWalletManagers()) {
-            manager.setNetworkReachable(isNetworkReachable);
-        }
+        core.setIsReachable(isNetworkReachable);
     }
 
     @Override

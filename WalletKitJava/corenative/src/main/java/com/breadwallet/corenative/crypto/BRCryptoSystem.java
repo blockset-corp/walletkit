@@ -51,6 +51,11 @@ public class BRCryptoSystem extends PointerType {
                 CryptoLibraryDirect.cryptoSystemIsReachable(thisPtr);
     }
 
+    public void setIsReachable (boolean reachable) {
+        Pointer thisPtr = this.getPointer();
+        CryptoLibraryDirect.cryptoSystemSetReachable(thisPtr, reachable);
+    }
+
     public String getResolvedPath () {
         Pointer thisPtr = this.getPointer();
         return CryptoLibraryDirect.cryptoSystemGetResolvedPath(thisPtr).getString(0, "UTF-8");
