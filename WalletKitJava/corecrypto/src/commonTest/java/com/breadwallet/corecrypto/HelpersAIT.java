@@ -102,15 +102,15 @@ class HelpersAIT {
     }
 
     /* package */
-    static System createAndConfigureSystemWithListener(File dataDir, SystemListener listener) {
+    static System createAndConfigureSystemWithListener(File dataDir, SystemListener listener, Boolean mainnet) {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
         BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithToken();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        com.breadwallet.corecrypto.System system = com.breadwallet.corecrypto.System.create(executor, listener, account, false, storagePath, query);
+        com.breadwallet.corecrypto.System system = com.breadwallet.corecrypto.System.create(executor, listener, account, mainnet, storagePath, query);
 
         system.configure(Collections.emptyList());
-        Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+        Uninterruptibles.sleepUninterruptibly(10, TimeUnit.SECONDS);
 
         return system;
     }

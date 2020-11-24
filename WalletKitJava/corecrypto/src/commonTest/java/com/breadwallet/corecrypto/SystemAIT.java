@@ -266,32 +266,42 @@ public class SystemAIT {
 
     @Test
     public void testSystemBtc() {
-        testSystemForCurrency("btc", WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("btc", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
     public void testSystemBch() {
-        testSystemForCurrency("bch", WalletManagerMode.P2P_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("bch", false, WalletManagerMode.P2P_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
     public void testSystemBsv() {
-        testSystemForCurrency("bsv", WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("bsv", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
     public void testSystemEth() {
-        testSystemForCurrency("eth", WalletManagerMode.API_ONLY, AddressScheme.ETH_DEFAULT, 0);
+        testSystemForCurrency("eth", true, WalletManagerMode.API_ONLY, AddressScheme.ETH_DEFAULT, 0);
     }
 
     @Test
     public void testSystemXrp() {
-        testSystemForCurrency("xrp", WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 20);
+        testSystemForCurrency("xrp", true, WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 20);
     }
 
-    private void testSystemForCurrency(String currencyCode, WalletManagerMode mode, AddressScheme scheme, long balanceMinimum) {
+//    @Test
+//    public void testSystemHbar() {
+//        testSystemForCurrency("hbar", true, WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 0);
+//    }
+
+    @Test
+    public void testSystemXtz() {
+        testSystemForCurrency("xtz", true, WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 0);
+    }
+
+    private void testSystemForCurrency(String currencyCode, boolean mainnet,  WalletManagerMode mode, AddressScheme scheme, long balanceMinimum) {
         RecordingSystemListener recorder = HelpersAIT.createRecordingListener();
-        System system = HelpersAIT.createAndConfigureSystemWithListener(coreDataDir, recorder);
+        System system = HelpersAIT.createAndConfigureSystemWithListener(coreDataDir, recorder, mainnet);
 
         // networks
 
