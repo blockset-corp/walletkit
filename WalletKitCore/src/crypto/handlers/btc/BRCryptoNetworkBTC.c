@@ -154,7 +154,7 @@ static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, network->type);
-    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (networkBTC->params, timestamp);
+    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (networkBTC->params, (uint32_t) timestamp);
     return (NULL == checkpoint ? 0 : checkpoint->height);
 }
 

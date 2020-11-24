@@ -182,11 +182,12 @@ class HelpersAIT {
     // BlockchainDB
 
     /* package */
-    static final TestConfiguration testConfiguration = TestConfigurationLoader.getTestConfiguration();
-    static final OkHttpClient DEFAULT_HTTP_CLIENT = new OkHttpClient();
+    private static TestConfiguration testConfiguration = null;
+    private static final OkHttpClient DEFAULT_HTTP_CLIENT = new OkHttpClient();
 
     /* package */
     static BlockchainDb createDefaultBlockchainDbWithToken() {
+        if (null == testConfiguration) testConfiguration = TestConfigurationLoader.getTestConfiguration();
         return BlockchainDb.createForTest(DEFAULT_HTTP_CLIENT,
                 testConfiguration.getBlocksetAccess().getToken(),
                 testConfiguration.getBlocksetAccess().getBaseURL(),

@@ -416,7 +416,7 @@ extern void
 cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
                         OwnershipGiven BRCryptoClientCallbackState callbackState,
                         BRCryptoBoolean success,
-                        uint64_t blockNumber,
+                        BRCryptoBlockNumber blockNumber,
                         const char *blockHashString) {
 
     BRCryptoBlockNumber oldBlockNumber = cryptoNetworkGetHeight (cwm->network);
@@ -1083,8 +1083,8 @@ extern BRCryptoClientTransactionBundle
 cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
                                      OwnershipKept uint8_t *transaction,
                                      size_t transactionLength,
-                                     uint64_t timestamp,
-                                     uint64_t blockHeight) {
+                                     BRCryptoTimestamp timestamp,
+                                     BRCryptoBlockNumber blockHeight) {
     BRCryptoClientTransactionBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransactionBundleRecord));
 
     bundle->status = status;
@@ -1093,7 +1093,7 @@ cryptoClientTransactionBundleCreate (BRCryptoTransferStateType status,
     memcpy (bundle->serialization, transaction, transactionLength);
     bundle->serializationCount = transactionLength;
 
-    bundle->timestamp   = AS_CRYPTO_TIMESTAMP(timestamp);
+    bundle->timestamp   = timestamp;
     bundle->blockHeight = (BRCryptoBlockNumber) blockHeight;
 
     return bundle;
