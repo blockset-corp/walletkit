@@ -302,7 +302,7 @@ public final class CryptoLibraryDirect {
 
     // crypto/BRCryptoWalletManager.h
     public static native Pointer cryptoWalletManagerWipe(Pointer network, String path);
-    public static native Pointer cryptoWalletManagerCreate(Pointer listener,
+    public static native Pointer cryptoWalletManagerCreate(BRCryptoWalletManager.Listener.ByValue listener,
                                                            BRCryptoClient.ByValue client,
                                                            Pointer account,
                                                            Pointer network,

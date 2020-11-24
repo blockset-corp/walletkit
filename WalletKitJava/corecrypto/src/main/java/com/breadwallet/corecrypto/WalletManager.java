@@ -49,6 +49,7 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                                           System system,
                                           SystemCallbackCoordinator callbackCoordinator) {
         return BRCryptoWalletManager.create(
+                system.getCoreBRCryptoSystem(),
                 listener,
                 client,
                 account.getCoreBRCryptoAccount(),

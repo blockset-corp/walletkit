@@ -19,6 +19,7 @@ import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
+import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
 
 import java.nio.ByteBuffer;
@@ -35,7 +36,8 @@ public class BRCryptoWalletManager extends PointerType {
         CryptoLibraryDirect.cryptoWalletManagerWipe(network.getPointer(), path);
     }
 
-    public static Optional<BRCryptoWalletManager> create(BRCryptoListener listener,
+    public static Optional<BRCryptoWalletManager> create(BRCryptoSystem system,
+                                                         BRCryptoListener listener,
                                                          BRCryptoClient client,
                                                          BRCryptoAccount account,
                                                          BRCryptoNetwork network,
@@ -44,7 +46,7 @@ public class BRCryptoWalletManager extends PointerType {
                                                          String path) {
         return Optional.fromNullable(
                 CryptoLibraryDirect.cryptoWalletManagerCreate(
-                        listener.getPointer(),
+                        new Listener (listener, system).toByValue(),
                         client.toByValue(),
                         account.getPointer(),
                         network.getPointer(),
@@ -373,4 +375,38 @@ public class BRCryptoWalletManager extends PointerType {
 
         CryptoLibraryDirect.cryptoWalletManagerGive(thisPtr);
     }
+
+    public static class Listener extends Structure {
+        public BRCryptoListener listener;
+        public BRCryptoSystem system;
+
+        public Listener() { super(); }
+        public Listener(Pointer pointer) { super(pointer); }
+
+        public Listener (BRCryptoListener listener,
+                         BRCryptoSystem system) {
+            super();
+            this.listener = listener;
+            this.system   = system;
+        }
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return Arrays.asList(
+                    "listener",
+                    "system"
+            );
+        }
+
+        public ByValue toByValue() {
+            ByValue other = new ByValue();
+
+            other.listener = this.listener;
+            other.system = this.system;
+
+            return other;
+        }
+
+        public static class ByValue extends Listener implements Structure.ByValue {}
+        }
 }

@@ -593,6 +593,11 @@ final class System implements com.breadwallet.crypto.System {
         return query;
     }
 
+    /* package */
+    BRCryptoSystem getCoreBRCryptoSystem() {
+        return core;
+    }
+
     // Event announcements
 
     private void announceSystemEvent(SystemEvent event) {
