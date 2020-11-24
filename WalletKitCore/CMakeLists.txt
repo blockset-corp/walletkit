@@ -3,7 +3,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.10.2)
 
 # now build app's shared lib
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
@@ -20,9 +20,9 @@ target_sources (sqlite3
                 ${PROJECT_SOURCE_DIR}/vendor/sqlite3/sqlite3.c
                 ${PROJECT_SOURCE_DIR}/vendor/sqlite3/sqlite3.h)
 
-target_include_directories(sqlite3
-                           INTERFACE
-                           ${PROJECT_SOURCE_DIR}/vendor/sqlite3)
+target_include_directories (sqlite3
+                            INTERFACE
+                            ${PROJECT_SOURCE_DIR}/vendor/sqlite3)
 
 target_compile_definitions (sqlite3
                             PRIVATE
@@ -51,15 +51,15 @@ target_sources (ed25519
                 ${PROJECT_SOURCE_DIR}/vendor/ed25519/sign.c
                 ${PROJECT_SOURCE_DIR}/vendor/ed25519/verify.c)
 
-target_include_directories(ed25519
-                           INTERFACE
-                           ${PROJECT_SOURCE_DIR}/vendor/ed25519)
+target_include_directories (ed25519
+                            INTERFACE
+                            ${PROJECT_SOURCE_DIR}/vendor/ed25519)
 
 #
 # blake2 build
 #
-add_library(blake2
-            STATIC)
+add_library (blake2
+             STATIC)
 
 target_sources (blake2
                 PRIVATE
