@@ -372,13 +372,11 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies) {
-        NetworkDiscovery.discoverNetworks(query, isMainnet, appCurrencies, new NetworkDiscovery.Callback() {
+        NetworkDiscovery.discoverNetworks(query, isMainnet, getNetworks(), appCurrencies, new NetworkDiscovery.Callback() {
             @Override
             public void discovered(Network network) {
-                if (addNetwork(network)) {
-                    announceNetworkEvent(network, new NetworkCreatedEvent());
-                    announceSystemEvent(new SystemNetworkAddedEvent(network));
-                }
+                announceNetworkEvent(network, new NetworkCreatedEvent());
+                announceSystemEvent(new SystemNetworkAddedEvent(network));
             }
 
             @Override
@@ -387,7 +385,7 @@ final class System implements com.breadwallet.crypto.System {
             }
 
             @Override
-            public void complete(List<com.breadwallet.crypto.Network> networks) {
+            public void complete(List<Network> networks) {
                 announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
             }
         });
