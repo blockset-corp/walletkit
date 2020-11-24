@@ -11,6 +11,7 @@ import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoPayProtReqBitPayAndBip70Callbacks;
 import com.breadwallet.corenative.crypto.BRCryptoTransferState;
+import com.breadwallet.corenative.crypto.BRCryptoWalletManager;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerState;
 import com.breadwallet.corenative.crypto.BRCryptoWalletMigratorStatus;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerDisconnectReason;
@@ -418,13 +419,13 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoSystemGetResolvedPath (Pointer system);
 
     public static native int cryptoSystemHasNetwork (Pointer system, Pointer network);
-    //extern BRCryptoNetwork *cryptoSystemGetNetworks (Pointer system, size_t *count);
+    public static native Pointer cryptoSystemGetNetworks(Pointer system, SizeTByReference count);
     public static native Pointer cryptoSystemGetNetworkAt (Pointer system, SizeT index);
     public static native Pointer cryptoSystemGetNetworkForUids (Pointer system, String uids);
     public static native SizeT   cryptoSystemGetNetworksCount (Pointer system);
 
     public static native int cryptoSystemHasWalletManager (Pointer system, Pointer manager);
-    //extern BRCryptoWalletManager *cryptoSystemGetWalletManagers (Pointer system, size_t *count);
+    public static native Pointer cryptoSystemGetWalletManagers(Pointer system, SizeTByReference count);
     public static native Pointer cryptoSystemGetWalletManagerAt (Pointer system, SizeT index);
     public static native Pointer cryptoSystemGetWalletManagerByNetwork (Pointer system, Pointer network);
     public static native SizeT cryptoSystemGetWalletManagersCount (Pointer system);

@@ -3,8 +3,11 @@ package com.breadwallet.corenative.crypto;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.utility.SizeT;
+import com.breadwallet.corenative.utility.SizeTByReference;
 import com.google.common.base.Optional;
+import com.google.common.primitives.UnsignedInts;
 import com.google.common.primitives.UnsignedLong;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 
@@ -83,8 +86,22 @@ public class BRCryptoSystem extends PointerType {
     }
 
     public List<BRCryptoNetwork> getNetworks () {
-        Pointer thisPtr = this.getPointer();
-        return new ArrayList<>();
+        List<BRCryptoNetwork> networks = new ArrayList<>();
+
+        SizeTByReference count = new SizeTByReference();
+        Pointer networksPtr = CryptoLibraryDirect.cryptoSystemGetNetworks(this.getPointer(), count);
+        if (null != networksPtr) {
+            try {
+                int networksSize = UnsignedInts.checkedCast(count.getValue().longValue());
+                for (Pointer networkPtr : networksPtr.getPointerArray(0, networksSize)) {
+                    networks.add(new BRCryptoNetwork(networkPtr));
+                }
+            } finally {
+                Native.free(Pointer.nativeValue(networksPtr));
+            }
+        }
+
+        return networks;
     }
 
     @SuppressWarnings("unused")
@@ -129,8 +146,22 @@ public class BRCryptoSystem extends PointerType {
     }
 
     public List<BRCryptoWalletManager> getManagers () {
-        Pointer thisPtr = this.getPointer();
-        return new ArrayList<>();
+        List<BRCryptoWalletManager> managers = new ArrayList<>();
+
+        SizeTByReference count = new SizeTByReference();
+        Pointer managersPtr = CryptoLibraryDirect.cryptoSystemGetWalletManagers(this.getPointer(), count);
+        if (null != managersPtr) {
+            try {
+                int managersSize = UnsignedInts.checkedCast(count.getValue().longValue());
+                for (Pointer managerPtr : managersPtr.getPointerArray(0, managersSize)) {
+                    managers.add(new BRCryptoWalletManager(managerPtr));
+                }
+            } finally {
+                Native.free(Pointer.nativeValue(managersPtr));
+            }
+        }
+
+        return managers;
     }
 
     @SuppressWarnings("unused")

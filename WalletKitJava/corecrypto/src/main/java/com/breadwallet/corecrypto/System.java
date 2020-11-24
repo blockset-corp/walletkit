@@ -109,7 +109,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -341,9 +340,6 @@ final class System implements com.breadwallet.crypto.System {
     private final BRCryptoListener cwmListener;
     private final BRCryptoClient cwmClient;
 
-    private final Set<Network> networks;
-    private final Set<WalletManager> walletManagers;
-
     private System(ScheduledExecutorService executor,
                    SystemListener listener,
                    Account account,
@@ -363,9 +359,6 @@ final class System implements com.breadwallet.crypto.System {
         this.context = context;
         this.cwmListener = cwmListener;
         this.cwmClient = cwmClient;
-
-        this.networks = new CopyOnWriteArraySet<>();
-        this.walletManagers = new CopyOnWriteArraySet<>();
 
         this.core = BRCryptoSystem.create(
                 this.cwmClient,
@@ -441,7 +434,7 @@ final class System implements com.breadwallet.crypto.System {
     @Override
     public void wipe(com.breadwallet.crypto.Network network) {
         boolean found = false;
-        for (WalletManager walletManager: walletManagers) {
+        for (WalletManager walletManager: getWalletManagers()) {
             if (walletManager.getNetwork().equals(network)) {
                 found = true;
                 break;
@@ -456,7 +449,7 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void resume () {
-        if (!networks.isEmpty()) {
+        if (UnsignedLong.ZERO != getNetworksCount()) {
             Log.log(Level.FINE, "Resume");
             for (WalletManager manager : getWalletManagers()) {
                 manager.connect(null);
@@ -466,7 +459,7 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void pause () {
-        if (!networks.isEmpty()) {
+        if (UnsignedLong.ZERO != getNetworksCount()) {
             Log.log(Level.FINE, "Pause");
             for (WalletManager manager : getWalletManagers()) {
                 manager.disconnect();
@@ -555,29 +548,36 @@ final class System implements com.breadwallet.crypto.System {
 
     // Network management
 
-    @Override
-    public List<Network> getNetworks() {
-        return new ArrayList<>(networks);
+    private UnsignedLong getNetworksCount () {
+        return core.getNetworksCount();
     }
 
-    private boolean addNetwork(Network network) {
-        return networks.add(network);
+    @Override
+    public List<Network> getNetworks() {
+        List<Network> networks = new ArrayList<>();
+        for (BRCryptoNetwork coreNetwork: core.getNetworks())
+            networks.add (Network.create(coreNetwork));
+        return networks;
     }
 
     // WalletManager management
 
+    private UnsignedLong getWalletManagersCount () {
+        return core.getManagersCount();
+    }
+
     @Override
     public List<WalletManager> getWalletManagers() {
-        return new ArrayList<>(walletManagers);
+        List<WalletManager> managers = new ArrayList<>();
+        for (BRCryptoWalletManager coreManager: core.getManagers())
+            managers.add(WalletManager.create (coreManager, this, this.callbackCoordinator ));
+        return managers;
     }
 
-    private void addWalletManager(WalletManager walletManager) {
-        walletManagers.add(walletManager);
-    }
-
-    private Optional<WalletManager> getWalletManager(BRCryptoWalletManager coreWalletManager) {
-        WalletManager walletManager = WalletManager.takeAndCreate(coreWalletManager, this, callbackCoordinator);
-        return walletManagers.contains(walletManager) ? Optional.of(walletManager) : Optional.absent();
+    private Optional<WalletManager> getWalletManager(BRCryptoWalletManager coreManager) {
+        return (core.hasManager(coreManager)
+                ? Optional.of (WalletManager.create(coreManager, this, callbackCoordinator))
+                : Optional.absent());
     }
 
     private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager) {
