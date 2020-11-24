@@ -454,7 +454,7 @@ public final class WalletSweeper {
         bdb.getTransactions(blockchainId: network.uids,
                             addresses: [address],
                             begBlockNumber: 0,
-                            endBlockNumber: network.height,
+                            endBlockNumber: nil,
                             includeRaw: true,
                             includeTransfers: false) {
                             (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
