@@ -1,6 +1,6 @@
 buildscript {
     ext.androidConfig = [
-        'compileSdkVersion':        28,
+        'compileSdkVersion':        30,
         'minSdkVersion':            23,
         'targetSdkVersion':         28,
     ]
@@ -15,6 +15,7 @@ buildscript {
         'jackson':                  '2.10.1',
         'jna':                      '5.4.0',
         'junit':                    '4.12',
+        'cmake':                    '3.10.2'        // See .../WalletKitCore/CMakeLists.txt
     ]
     ext.deps = [
         'androidAppCompatV7':       "com.android.support:appcompat-v7:${versions.androidAppCompatV7}",
@@ -38,7 +39,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:4.1.1'
         classpath 'digital.wup:android-maven-publish:3.6.2'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
     }
