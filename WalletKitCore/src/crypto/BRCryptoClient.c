@@ -424,7 +424,7 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
     if (oldBlockNumber != blockNumber) {
         cryptoNetworkSetHeight (cwm->network, blockNumber);
         
-        if (NULL != blockHashString) {
+        if (NULL != blockHashString && '\0' != blockHashString[0]) {
             BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
             cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
             cryptoHashGive (verifiedBlockHash);

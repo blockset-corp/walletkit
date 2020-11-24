@@ -10,11 +10,10 @@ package com.breadwallet.corecrypto;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 
-import com.breadwallet.corenative.CryptoLibraryDirect;
-import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoClientCallbackState;
+import com.breadwallet.corenative.crypto.BRCryptoCurrency;
 import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoClientTransactionBundle;
 import com.breadwallet.corenative.crypto.BRCryptoClientTransferBundle;
@@ -54,12 +53,6 @@ import com.breadwallet.crypto.errors.AccountInitializationError;
 import com.breadwallet.crypto.errors.AccountInitializationMultipleHederaAccountsError;
 import com.breadwallet.crypto.errors.AccountInitializationQueryError;
 import com.breadwallet.crypto.errors.FeeEstimationError;
-import com.breadwallet.crypto.errors.MigrateBlockError;
-import com.breadwallet.crypto.errors.MigrateCreateError;
-import com.breadwallet.crypto.errors.MigrateError;
-import com.breadwallet.crypto.errors.MigrateInvalidError;
-import com.breadwallet.crypto.errors.MigratePeerError;
-import com.breadwallet.crypto.errors.MigrateTransactionError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateFeesUnavailableError;
 import com.breadwallet.crypto.events.network.NetworkEvent;
@@ -72,7 +65,6 @@ import com.breadwallet.crypto.events.system.SystemDeletedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
 import com.breadwallet.crypto.events.system.SystemEvent;
 import com.breadwallet.crypto.events.system.SystemListener;
-import com.breadwallet.crypto.events.system.SystemManagerAddedEvent;
 import com.breadwallet.crypto.events.system.SystemNetworkAddedEvent;
 import com.breadwallet.crypto.events.transfer.TranferEvent;
 import com.breadwallet.crypto.events.transfer.TransferChangedEvent;
@@ -100,9 +92,6 @@ import com.breadwallet.crypto.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletDeletedEvent;
-import com.breadwallet.crypto.migration.BlockBlob;
-import com.breadwallet.crypto.migration.PeerBlob;
-import com.breadwallet.crypto.migration.TransactionBlob;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -664,9 +653,7 @@ final class System implements com.breadwallet.crypto.System {
         if (optSystem.isPresent()) {
             System system = optSystem.get();
 
-            //WalletManager walletManager = system.createWalletManager(coreWalletManager);
             system.announceSystemEvent(new SystemCreatedEvent());
-
         } else {
             Log.log(Level.SEVERE, "SystemCreated: missed system");
         }
@@ -682,16 +669,7 @@ final class System implements com.breadwallet.crypto.System {
         if (optSystem.isPresent()) {
             System system = optSystem.get();
 
-//            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-//            if (optWalletManager.isPresent()) {
-//                WalletManager walletManager = optWalletManager.get();
-//            system.announceSystemEvent(walletManager, new SystemChangedEvent(oldState, newState));
-//            } else {
-//                Log.log(Level.SEVERE, "SystemChanged: missed wallet manager");
-//            }
-
             system.announceSystemEvent(new SystemChangedEvent(oldState, newState));
-
         } else {
             Log.log(Level.SEVERE, "SystemChanged: missed system");
         }
@@ -704,7 +682,6 @@ final class System implements com.breadwallet.crypto.System {
         if (optSystem.isPresent()) {
             System system = optSystem.get();
 
-            //WalletManager walletManager = system.createWalletManager(coreWalletManager);
             system.announceSystemEvent(new SystemDeletedEvent());
 
         } else {
@@ -1765,7 +1742,7 @@ final class System implements com.breadwallet.crypto.System {
 
                                     @Override
                                     public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure", error);
+                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
                                         walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, false, new ArrayList<>());
 
                                     }
@@ -1870,7 +1847,7 @@ final class System implements com.breadwallet.crypto.System {
 
                                     @Override
                                     public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure", error);
+                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
                                         walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, false, new ArrayList<>());
                                     }
                                 });

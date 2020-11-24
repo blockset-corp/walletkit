@@ -16,7 +16,7 @@ public final class SystemDiscoveredNetworksEvent implements SystemEvent {
 
     private final List<Network> networks;
 
-    public SystemDiscoveredNetworksEvent(List<Network> networks) {
+    public <T extends Network> SystemDiscoveredNetworksEvent(List<T> networks) {
         this.networks = new ArrayList<>(networks);
     }
 

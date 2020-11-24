@@ -94,7 +94,7 @@ cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason r
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunused-function"
 static BRArrayOf(BRCryptoCurrency)
-cryptoWalletManagerGetCurrenciesOfIntereest (BRCryptoWalletManager cwm) {
+cryptoWalletManagerGetCurrenciesOfInterest (BRCryptoWalletManager cwm) {
     BRArrayOf(BRCryptoCurrency) currencies;
 
     array_new (currencies, 3);
@@ -102,8 +102,8 @@ cryptoWalletManagerGetCurrenciesOfIntereest (BRCryptoWalletManager cwm) {
 }
 
 static void
-cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
-                                                 BRArrayOf(BRCryptoCurrency) currencies) {
+cryptoWalletManagerReleaseCurrenciesOfInterest (BRCryptoWalletManager cwm,
+                                                BRArrayOf(BRCryptoCurrency) currencies) {
     for (size_t index = 0; index < array_count(currencies); index++)
         cryptoCurrencyGive (currencies[index]);
     array_free (currencies);
@@ -367,7 +367,7 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
                            BRCryptoSyncMode mode,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
-    // Only create a wallet manager for accounts that are initializedon network.
+    // Only create a wallet manager for accounts that are initialized on network.
     if (CRYPTO_FALSE == cryptoNetworkIsAccountInitialized (network, account))
         return NULL;
 
@@ -393,9 +393,6 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
 
     // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
-
-    // Start the event handler.
-    cryptoWalletManagerStart (manager);
 
     return manager;
 }

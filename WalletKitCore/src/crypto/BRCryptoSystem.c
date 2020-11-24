@@ -422,6 +422,9 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
         if (cryptoNetworkHasCurrency (network, currencies[index]))
             cryptoWalletManagerCreateWallet (manager, currencies[index]);
 
+    // Start the event handler.
+    cryptoWalletManagerStart (manager);
+
     return manager;
 }
 

@@ -92,13 +92,13 @@ public final class CryptoLibraryIndirect {
 
     public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransactions(cwm, callbackState, success,
-                bundles,
+                (0 == bundles.length ? null : bundles),
                 bundlesCount);
     }
 
     public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransfers(cwm, callbackState, success,
-                bundles,
+                (0 == bundles.length ? null : bundles),
                 bundlesCount);
     }
 
@@ -106,9 +106,15 @@ public final class CryptoLibraryIndirect {
                                                           Pointer network,
                                                           int mode,
                                                           int scheme,
-                                                          SizeT currenciesCount,
-                                                          BRCryptoCurrency[] currencies) {
-        return INSTANCE.cryptoSystemCreateWalletManager(system, network, mode, scheme, currenciesCount, currencies);
+                                                          BRCryptoCurrency[] currencies,
+                                                          SizeT currenciesCount) {
+        return INSTANCE.cryptoSystemCreateWalletManager(
+                system,
+                network,
+                mode,
+                scheme,
+                (0 == currencies.length ? null : currencies),
+                currenciesCount);
     }
 
     public interface LibraryInterface extends Library {
@@ -155,7 +161,7 @@ public final class CryptoLibraryIndirect {
                                                 Pointer network,
                                                 int mode,
                                                 int scheme,
-                                                SizeT currenciesCount,
-                                                BRCryptoCurrency[] currencies);
+                                                BRCryptoCurrency[] currencies,
+                                                SizeT currenciesCount);
     }
 }
