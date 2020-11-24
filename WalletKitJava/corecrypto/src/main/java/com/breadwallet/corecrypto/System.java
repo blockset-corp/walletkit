@@ -399,36 +399,17 @@ final class System implements com.breadwallet.crypto.System {
         checkState(network.supportsWalletManagerMode(mode));
         checkState(network.supportsAddressScheme(scheme));
 
-        if (!account.isInitialized(network)) {
-            return false;
-        }
+        List<BRCryptoCurrency> currenciesList = new ArrayList<>();
+        for (com.breadwallet.crypto.Currency currency : currencies)
+            currenciesList.add(Currency.from(currency).getCoreBRCryptoCurrency());
 
-        Optional<WalletManager> maybeWalletManager = WalletManager.create(
-                cwmListener,
-                cwmClient,
-                account,
-                Network.from(network),
-                mode,
-                scheme,
-                storagePath,
-                this,
-                callbackCoordinator);
-        if (!maybeWalletManager.isPresent()) {
-            return false;
-        }
-
-        WalletManager walletManager = maybeWalletManager.get();
-        for (com.breadwallet.crypto.Currency currency: currencies) {
-            if (network.hasCurrency(currency)) {
-                walletManager.registerWalletFor(currency);
-            }
-        }
-
-        walletManager.setNetworkReachable(isNetworkReachable);
-
-        addWalletManager(walletManager);
-        announceSystemEvent(new SystemManagerAddedEvent(walletManager));
-        return true;
+        return Optional.fromNullable(
+                core.createManager(core,
+                        Network.from(network).getCoreBRCryptoNetwork(),
+                        Utilities.walletManagerModeToCrypto(mode),
+                        Utilities.addressSchemeToCrypto(scheme),
+                        currenciesList)
+        ).isPresent();
     }
 
     @Override
