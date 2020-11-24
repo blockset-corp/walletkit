@@ -208,6 +208,8 @@ final class System implements com.breadwallet.crypto.System {
 
         SYSTEMS_ACTIVE.put(context, system);
 
+        system.core.start();
+
         return system;
     }
 
@@ -562,9 +564,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager) {
-        WalletManager walletManager = WalletManager.takeAndCreate(coreWalletManager, this, callbackCoordinator);
-        walletManagers.add(walletManager);
-        return walletManager;
+        return WalletManager.create(coreWalletManager, this, callbackCoordinator);
     }
 
     // Miscellaneous

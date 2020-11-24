@@ -278,6 +278,9 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     manager->byType = byType;
 
+    // Hold this early
+    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+
     // Initialize to NULL, for now.
     manager->qryManager = NULL;
     manager->p2pManager = NULL;
@@ -321,7 +324,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     manager->listenerWallet = cryptoListenerCreateWalletListener (&manager->listener, manager);
 
-    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
     pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
 
     BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
