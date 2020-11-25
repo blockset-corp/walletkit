@@ -551,18 +551,22 @@ final class System implements com.breadwallet.crypto.System {
     public List<WalletManager> getWalletManagers() {
         List<WalletManager> managers = new ArrayList<>();
         for (BRCryptoWalletManager coreManager: core.getManagers())
-            managers.add(WalletManager.create (coreManager, this, this.callbackCoordinator ));
+            managers.add(createWalletManager(coreManager, false));
         return managers;
     }
 
     private Optional<WalletManager> getWalletManager(BRCryptoWalletManager coreManager) {
         return (core.hasManager(coreManager)
-                ? Optional.of (WalletManager.create(coreManager, this, callbackCoordinator))
+                ? Optional.of (createWalletManager(coreManager, true))
                 : Optional.absent());
     }
 
-    private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager) {
-        return WalletManager.create(coreWalletManager, this, callbackCoordinator);
+    private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager, boolean needTake) {
+        return WalletManager.create(
+                coreWalletManager,
+                needTake,
+                this,
+                callbackCoordinator);
     }
 
     // Miscellaneous
@@ -763,7 +767,7 @@ final class System implements com.breadwallet.crypto.System {
         if (optSystem.isPresent()) {
             System system = optSystem.get();
 
-            WalletManager walletManager = system.createWalletManager(coreWalletManager);
+            WalletManager walletManager = system.createWalletManager (coreWalletManager, true);
             system.announceWalletManagerEvent(walletManager, new WalletManagerCreatedEvent());
 
         } else {

@@ -58,18 +58,16 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                 Utilities.addressSchemeToCrypto(addressScheme),
                 storagePath
         ).transform(
-                cwm -> WalletManager.create(cwm, system, callbackCoordinator)
+                cwm -> WalletManager.create(cwm, false, system, callbackCoordinator)
         );
     }
 
     /* package */
-    static WalletManager takeAndCreate(BRCryptoWalletManager core, System system, SystemCallbackCoordinator callbackCoordinator) {
-        return WalletManager.create(core.take(), system, callbackCoordinator);
-    }
-
-    /* package */
-    static WalletManager create(BRCryptoWalletManager core, System system, SystemCallbackCoordinator callbackCoordinator) {
-        WalletManager manager = new WalletManager(core, system, callbackCoordinator);
+    static WalletManager create (BRCryptoWalletManager core, boolean needTake, System system, SystemCallbackCoordinator callbackCoordinator) {
+        WalletManager manager = new WalletManager(
+                (needTake ? core.take() : core),
+                system,
+                callbackCoordinator);
         ReferenceCleaner.register(manager, core::give);
         return manager;
     }
