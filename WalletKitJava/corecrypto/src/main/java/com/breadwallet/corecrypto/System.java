@@ -32,6 +32,7 @@ import com.breadwallet.corenative.crypto.BRCryptoWalletManagerEvent;
 import com.breadwallet.corenative.support.BRConstants;
 import com.breadwallet.corenative.utility.Cookie;
 import com.breadwallet.crypto.AddressScheme;
+import com.breadwallet.crypto.NetworkType;
 import com.breadwallet.crypto.SystemState;
 import com.breadwallet.crypto.TransferState;
 import com.breadwallet.crypto.WalletManagerMode;
@@ -1657,6 +1658,20 @@ final class System implements com.breadwallet.crypto.System {
         }
     }
 
+    private static List<String> canonicalAddresses(List<String> addresses, NetworkType networkType) {
+        switch (networkType) {
+            case ETH:
+                List<String> canonicalAddresses = new ArrayList<>(addresses.size());
+                for (String address : addresses) {
+                    canonicalAddresses.add(address.toLowerCase());
+                }
+                return canonicalAddresses;
+
+            default:
+                return addresses;
+        }
+    }
+
     private static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle (Transaction transaction) {
         Optional<byte[]> optRaw = transaction.getRaw();
         if (!optRaw.isPresent()) {
@@ -1702,8 +1717,10 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
+                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+
                         system.query.getTransactions(walletManager.getNetwork().getUids(),
-                                addresses,
+                                canonicalAddresses,
                                 begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 true,
@@ -1807,7 +1824,9 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), addresses,
+                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+
+                        system.query.getTransactions(walletManager.getNetwork().getUids(), canonicalAddresses,
                                 begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 false,
@@ -1823,7 +1842,7 @@ final class System implements com.breadwallet.crypto.System {
 
                                         try {
                                             for (Transaction transaction : transactions) {
-                                                bundles.addAll(makeTransferBundles(transaction, addresses));
+                                                bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
                                              }
 
                                             success = true;
