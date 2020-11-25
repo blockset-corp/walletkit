@@ -1203,8 +1203,8 @@ cryptoExportablePaperWalletCreateAsBTC (BRCryptoNetwork network,
 
 extern void
 cryptoExportablePaperWalletRelease (BRCryptoExportablePaperWallet paperWallet) {
-    cryptoNetworkGive (paperWallet->network);
-    cryptoKeyGive (paperWallet->key);
+    if (NULL != paperWallet->network) cryptoNetworkGive (paperWallet->network);
+    if (NULL != (paperWallet->key)) cryptoKeyGive (paperWallet->key);
 
     memset (paperWallet, 0, sizeof(struct BRCryptoWalletSweeperRecord));
     free (paperWallet);
@@ -1225,13 +1225,13 @@ cryptoExportablePaperWalletGetAddress (BRCryptoExportablePaperWallet paperWallet
         case CRYPTO_NETWORK_TYPE_BTC: {
             BRAddressParams addrParams = cryptoNetworkAsBTC (paperWallet->network)->addrParams;
             BRKey *key = cryptoKeyGetCore (paperWallet->key);
-            //TODO: segwit?
             // encode using legacy format (only supported method for BTC)
             size_t addrLength = BRKeyLegacyAddr (key, NULL, 0, addrParams);
             char *addr = malloc (addrLength + 1);
             BRKeyLegacyAddr (key, addr, addrLength, addrParams);
             addr[addrLength] = '\0';
             address = cryptoAddressCreateFromString (paperWallet->network, addr);
+            free (addr);
             break;
         }
         default:
