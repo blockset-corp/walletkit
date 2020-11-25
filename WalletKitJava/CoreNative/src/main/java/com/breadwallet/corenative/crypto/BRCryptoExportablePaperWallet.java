@@ -21,13 +21,11 @@ public class BRCryptoExportablePaperWallet extends PointerType {
     }
 
     public static BRCryptoExportablePaperWalletStatus validateSupported(BRCryptoNetwork network,
-                                                                        BRCryptoCurrency currency,
-                                                                        BRCryptoWallet wallet) {
+                                                                        BRCryptoCurrency currency) {
         return BRCryptoExportablePaperWalletStatus.fromCore(
                 CryptoLibraryDirect.cryptoExportablePaperWalletValidateSupported(
                         network.getPointer(),
-                        currency.getPointer(),
-                        wallet.getPointer()
+                        currency.getPointer()
                 )
         );
     }

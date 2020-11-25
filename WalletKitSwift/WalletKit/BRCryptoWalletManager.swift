@@ -231,8 +231,8 @@ public final class WalletManager: Equatable, CustomStringConvertible {
         WalletSweeper.create(wallet: wallet, key: key, bdb: query, completion: completion)
     }
     
-    public func createExportablePaperWallet (wallet: Wallet) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
-        return ExportablePaperWallet.create(wallet: wallet)
+    public func createExportablePaperWallet () -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+        return ExportablePaperWallet.create(manager: self)
     }
 
     internal init (core: BRCryptoWalletManager,
@@ -512,17 +512,16 @@ public enum ExportablePaperWalletError: Error {
 }
 
 public final class ExportablePaperWallet {
-    internal static func create(wallet: Wallet) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+    internal static func create(manager: WalletManager) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
         // check that requested wallet supports generating exportable paper wallets
-        if let e = ExportablePaperWalletError(cryptoExportablePaperWalletValidateSupported(wallet.manager.network.core,
-                                                                                           wallet.currency.core,
-                                                                                           wallet.core)) {
+        if let e = ExportablePaperWalletError(cryptoExportablePaperWalletValidateSupported(manager.network.core,
+                                                                                           manager.currency.core)) {
             return Result.failure(e)
         }
 
-        switch cryptoNetworkGetCanonicalType (wallet.manager.network.core) {
+        switch cryptoNetworkGetCanonicalType (manager.network.core) {
         case CRYPTO_NETWORK_TYPE_BTC:
-            let paperWallet: ExportablePaperWallet = createAsBTC(wallet: wallet)
+            let paperWallet: ExportablePaperWallet = createAsBTC(manager: manager)
             return Result.success(paperWallet)
         default:
             assertionFailure()
@@ -531,9 +530,9 @@ public final class ExportablePaperWallet {
         return Result.failure(.unexpectedError)
     }
 
-    private static func createAsBTC(wallet: Wallet) -> ExportablePaperWallet {
-        return ExportablePaperWallet(core: cryptoExportablePaperWalletCreateAsBTC(wallet.manager.network.core,
-                                                                                  wallet.currency.core))
+    private static func createAsBTC(manager: WalletManager) -> ExportablePaperWallet {
+        return ExportablePaperWallet(core: cryptoExportablePaperWalletCreateAsBTC(manager.network.core,
+                                                                                  manager.currency.core))
     }
     
     internal let core: BRCryptoWalletSweeper

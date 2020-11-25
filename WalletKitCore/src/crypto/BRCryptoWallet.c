@@ -1156,24 +1156,12 @@ struct BRCryptoExportablePaperWalletRecord {
 
 extern BRCryptoExportablePaperWalletStatus
 cryptoExportablePaperWalletValidateSupported (BRCryptoNetwork network,
-                                              BRCryptoCurrency currency,
-                                              BRCryptoWallet wallet) {
+                                              BRCryptoCurrency currency) {
     if (CRYPTO_FALSE == cryptoNetworkHasCurrency (network, currency)) {
         return CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS;
     }
 
-    if (cryptoNetworkGetType (network) != cryptoWalletGetType (wallet)) {
-        return CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS;
-    }
-
-    BRCryptoCurrency walletCurrency = cryptoWalletGetCurrency (wallet);
-    if (CRYPTO_FALSE == cryptoCurrencyIsIdentical (currency, walletCurrency)) {
-        cryptoCurrencyGive (walletCurrency);
-        return CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS;
-    }
-    cryptoCurrencyGive (walletCurrency);
-
-    switch (cryptoWalletGetType (wallet)) {
+    switch (cryptoNetworkGetType (network)) {
         case BLOCK_CHAIN_TYPE_BTC:
             return CRYPTO_EXPORTABLE_PAPER_WALLET_SUCCESS;
         default:

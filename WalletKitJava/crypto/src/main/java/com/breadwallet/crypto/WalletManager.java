@@ -11,6 +11,7 @@ package com.breadwallet.crypto;
 
 import android.support.annotation.Nullable;
 
+import com.breadwallet.crypto.errors.ExportablePaperWalletError;
 import com.breadwallet.crypto.errors.WalletSweeperError;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
@@ -20,6 +21,8 @@ import java.util.List;
 public interface WalletManager {
 
     void createSweeper(Wallet wallet, Key key, CompletionHandler<WalletSweeper, WalletSweeperError> completion);
+
+    void createExportablePaperWallet(CompletionHandler<ExportablePaperWallet, ExportablePaperWalletError> completion);
 
     void connect(@Nullable NetworkPeer peer);
 

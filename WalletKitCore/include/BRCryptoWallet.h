@@ -313,8 +313,7 @@ extern "C" {
 
     extern BRCryptoExportablePaperWalletStatus
     cryptoExportablePaperWalletValidateSupported (BRCryptoNetwork network,
-                                                  BRCryptoCurrency currency,
-                                                  BRCryptoWallet wallet);
+                                                  BRCryptoCurrency currency);
 
     extern BRCryptoExportablePaperWallet
     cryptoExportablePaperWalletCreateAsBTC (BRCryptoNetwork network,

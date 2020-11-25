@@ -24,17 +24,15 @@ import com.google.common.base.Optional;
 final class ExportablePaperWallet implements com.breadwallet.crypto.ExportablePaperWallet {
     /* package */
     static void create(WalletManager manager,
-                                        Wallet wallet,
-                                        BlockchainDb bdb,
-                                        CompletionHandler<ExportablePaperWallet, ExportablePaperWalletError> completion) {
+                       CompletionHandler<com.breadwallet.crypto.ExportablePaperWallet, ExportablePaperWalletError> completion) {
         // check that the requested operation is supported
-        ExportablePaperWalletError e = ExportablePaperWallet.validateSupported(manager, wallet);
+        ExportablePaperWalletError e = ExportablePaperWallet.validateSupported(manager);
         if (null != e) {
             completion.handleError(e);
             return;
         }
 
-        ExportablePaperWallet paperWallet = ExportablePaperWallet.createAsBTC(manager, wallet);
+        ExportablePaperWallet paperWallet = ExportablePaperWallet.createAsBTC(manager);
         completion.handleData(paperWallet);
     }
 
@@ -48,31 +46,28 @@ final class ExportablePaperWallet implements com.breadwallet.crypto.ExportablePa
         return null;
     }
 
-    private static ExportablePaperWalletError validateSupported(WalletManager manager,
-                                                                Wallet wallet) {
+    private static ExportablePaperWalletError validateSupported(WalletManager manager) {
         Network network = manager.getNetwork();
-        Currency currency = wallet.getCurrency();
+        Currency currency = manager.getCurrency();
 
-        BRCryptoWallet coreWallet = wallet.getCoreBRCryptoWallet();
         BRCryptoNetwork coreNetwork = network.getCoreBRCryptoNetwork();
         BRCryptoCurrency coreCurrency = currency.getCoreBRCryptoCurrency();
 
-        return ExportablePaperWallet.statusToError(BRCryptoExportablePaperWallet.validateSupported(coreNetwork, coreCurrency, coreWallet));
+        return ExportablePaperWallet.statusToError(BRCryptoExportablePaperWallet.validateSupported(coreNetwork, coreCurrency));
     }
 
-    private static ExportablePaperWallet createAsBTC(WalletManager manager,
-                                                     Wallet wallet) {
+    private static ExportablePaperWallet createAsBTC(WalletManager manager) {
         Network network = manager.getNetwork();
-        Currency currency = wallet.getCurrency();
+        Currency currency = manager.getCurrency();
 
         BRCryptoNetwork coreNetwork = network.getCoreBRCryptoNetwork();
         BRCryptoCurrency coreCurrency = currency.getCoreBRCryptoCurrency();
 
         BRCryptoExportablePaperWallet core = BRCryptoExportablePaperWallet.createAsBTC(coreNetwork, coreCurrency);
-        return ExportablePaperWallet.create(core, manager, wallet);
+        return ExportablePaperWallet.create(core);
     }
 
-    private static ExportablePaperWallet create(BRCryptoExportablePaperWallet core, WalletManager manager, Wallet wallet) {
+    private static ExportablePaperWallet create(BRCryptoExportablePaperWallet core) {
         ExportablePaperWallet paperWallet = new ExportablePaperWallet(core);
         ReferenceCleaner.register(paperWallet, core::give);
         return paperWallet;

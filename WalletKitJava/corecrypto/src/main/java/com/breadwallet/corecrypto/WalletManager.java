@@ -18,6 +18,7 @@ import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.WalletManagerMode;
 import com.breadwallet.crypto.WalletManagerState;
 import com.breadwallet.crypto.WalletManagerSyncDepth;
+import com.breadwallet.crypto.errors.ExportablePaperWalletError;
 import com.breadwallet.crypto.errors.WalletSweeperError;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
@@ -113,6 +114,11 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                               com.breadwallet.crypto.Key key,
                               CompletionHandler<com.breadwallet.crypto.WalletSweeper, WalletSweeperError> completion) {
         WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getBlockchainDb(), completion);
+    }
+
+    @Override
+    public void createExportablePaperWallet(CompletionHandler<com.breadwallet.crypto.ExportablePaperWallet, ExportablePaperWalletError> completion) {
+        ExportablePaperWallet.create(this, completion);
     }
 
     @Override
