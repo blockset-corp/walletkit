@@ -363,8 +363,8 @@ public final class CryptoLibraryDirect {
                                                                       long blockHeight);
     // See 'Indirect': void cryptoClientTransferBundleCreate (int status, ...)
 
-    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, boolean success, long blockNumber, String verifiedBlockHash);
-    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, boolean success);
+    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, int success, long blockNumber, String verifiedBlockHash);
+    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, int success);
 
     //
     // Crypto Primitives

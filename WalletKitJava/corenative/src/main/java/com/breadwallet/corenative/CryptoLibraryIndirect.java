@@ -48,7 +48,7 @@ public final class CryptoLibraryIndirect {
 
     public static void cwmAnnounceEstimateTransactionFee(Pointer cwm,
                                                          Pointer callbackState,
-                                                         boolean success,
+                                                         int success,
                                                          String hash,
                                                          long costUnits,
                                                          SizeT attributesCount,
@@ -90,13 +90,13 @@ public final class CryptoLibraryIndirect {
                 attributesCount, attributeKeys, attributeVals);
     }
 
-    public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
+    public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransactions(cwm, callbackState, success,
                 (0 == bundles.length ? null : bundles),
                 bundlesCount);
     }
 
-    public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
+    public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransfers(cwm, callbackState, success,
                 (0 == bundles.length ? null : bundles),
                 bundlesCount);
@@ -144,12 +144,12 @@ public final class CryptoLibraryIndirect {
                                                  String[] attributeKeys,
                                                  String[] attributeVals);
 
-        void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
-        void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, boolean success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
+        void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
+        void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
 
         void cwmAnnounceEstimateTransactionFee(Pointer cwm,
                                                Pointer callbackState,
-                                               boolean success,
+                                               int success,
                                                String hash,
                                                long costUnits,
                                                SizeT attributesCount,

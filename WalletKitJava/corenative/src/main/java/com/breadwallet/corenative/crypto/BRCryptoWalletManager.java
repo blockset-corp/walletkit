@@ -265,12 +265,11 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
     public EstimateLimitResult estimateLimit(BRCryptoWallet wallet, boolean asMaximum, BRCryptoAddress coreAddress, BRCryptoNetworkFee coreFee) {
-        Pointer thisPtr = this.getPointer();
-
         IntByReference needFeeEstimateRef = new IntByReference(BRCryptoBoolean.CRYPTO_FALSE);
         IntByReference isZeroIfInsuffientFundsRef = new IntByReference(BRCryptoBoolean.CRYPTO_FALSE);
+
         Optional<BRCryptoAmount> maybeAmount = Optional.fromNullable(CryptoLibraryDirect.cryptoWalletManagerEstimateLimit(
-                thisPtr,
+                this.getPointer(),
                 wallet.getPointer(),
                 asMaximum ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE,
                 coreAddress.getPointer(),
@@ -288,10 +287,8 @@ public class BRCryptoWalletManager extends PointerType {
 
     public void estimateFeeBasis(BRCryptoWallet wallet, Cookie cookie,
                                  BRCryptoAddress target, BRCryptoAmount amount, BRCryptoNetworkFee fee) {
-        Pointer thisPtr = this.getPointer();
-
         CryptoLibraryDirect.cryptoWalletManagerEstimateFeeBasis(
-                thisPtr,
+                this.getPointer(),
                 wallet.getPointer(),
                 cookie.getPointer(),
                 target.getPointer(),
@@ -301,11 +298,9 @@ public class BRCryptoWalletManager extends PointerType {
 
     public void estimateFeeBasisForWalletSweep(BRCryptoWallet wallet, Cookie cookie,
                                                BRCryptoWalletSweeper sweeper, BRCryptoNetworkFee fee) {
-        Pointer thisPtr = this.getPointer();
-
         CryptoLibraryDirect.cryptoWalletManagerEstimateFeeBasisForWalletSweep(
                 sweeper.getPointer(),
-                thisPtr,
+                this.getPointer(),
                 wallet.getPointer(),
                 cookie.getPointer(),
                 fee.getPointer());
@@ -313,10 +308,8 @@ public class BRCryptoWalletManager extends PointerType {
 
     public void estimateFeeBasisForPaymentProtocolRequest(BRCryptoWallet wallet, Cookie cookie,
                                                           BRCryptoPaymentProtocolRequest request, BRCryptoNetworkFee fee) {
-        Pointer thisPtr = this.getPointer();
-
         CryptoLibraryDirect.cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest(
-                thisPtr,
+                this.getPointer(),
                 wallet.getPointer(),
                 cookie.getPointer(),
                 request.getPointer(),
@@ -324,44 +317,59 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
     public void announceGetBlockNumber(BRCryptoClientCallbackState callbackState, boolean success, UnsignedLong blockNumber, String verifiedBlockHash) {
-        Pointer thisPtr = this.getPointer();
-
-        CryptoLibraryDirect.cwmAnnounceBlockNumber(thisPtr, callbackState.getPointer(), success, blockNumber.longValue(), verifiedBlockHash);
+        CryptoLibraryDirect.cwmAnnounceBlockNumber (
+                this.getPointer(),
+                callbackState.getPointer(),
+                (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
+                blockNumber.longValue(),
+                verifiedBlockHash);
     }
 
     public void announceTransactions(BRCryptoClientCallbackState callbackState, boolean success, List<BRCryptoClientTransactionBundle> bundles) {
-        Pointer thisPtr = this.getPointer();
-
         int bundlesCount = bundles.size();
         BRCryptoClientTransactionBundle[] bundlesArr = bundles.toArray(new BRCryptoClientTransactionBundle[bundlesCount]);
 
-        CryptoLibraryIndirect.cwmAnnounceTransactions(thisPtr, callbackState.getPointer(), success, bundlesArr, new SizeT(bundlesCount));
+        CryptoLibraryIndirect.cwmAnnounceTransactions(
+                this.getPointer(),
+                callbackState.getPointer(),
+                (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
+                bundlesArr,
+                new SizeT(bundlesCount));
     }
 
     public void announceTransfers(BRCryptoClientCallbackState callbackState, boolean success, List<BRCryptoClientTransferBundle> bundles) {
-        Pointer thisPtr = this.getPointer();
-
         int bundlesCount = bundles.size();
         BRCryptoClientTransferBundle[] bundlesArr = bundles.toArray(new BRCryptoClientTransferBundle[bundlesCount]);
 
-        CryptoLibraryIndirect.cwmAnnounceTransfers(thisPtr, callbackState.getPointer(), success, bundlesArr, new SizeT(bundlesCount));
+        CryptoLibraryIndirect.cwmAnnounceTransfers(
+                this.getPointer(),
+                callbackState.getPointer(),
+                (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
+                bundlesArr,
+                new SizeT(bundlesCount));
     }
 
     public void announceSubmitTransfer(BRCryptoClientCallbackState callbackState, boolean success) {
-        Pointer thisPtr = this.getPointer();
-
-        CryptoLibraryDirect.cwmAnnounceSubmitTransfer(thisPtr, callbackState.getPointer(), success);
+        CryptoLibraryDirect.cwmAnnounceSubmitTransfer (
+                this.getPointer(),
+                callbackState.getPointer(),
+                (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE));
     }
 
      public void announceEstimateTransactionFee(BRCryptoClientCallbackState callbackState, boolean success, String hash, UnsignedLong costUnits, Map<String, String> meta) {
-         Pointer thisPtr = this.getPointer();
-
          int metaCount = meta.size();
          String[] metaKeys = meta.keySet().toArray(new String[metaCount]);
          String[] metaVals = meta.values().toArray(new String[metaCount]);
 
-         CryptoLibraryIndirect.cwmAnnounceEstimateTransactionFee(thisPtr, callbackState.getPointer(), success, hash, costUnits.longValue(),
-                 new SizeT(metaCount), metaKeys, metaVals);
+         CryptoLibraryIndirect.cwmAnnounceEstimateTransactionFee(
+                 this.getPointer(),
+                 callbackState.getPointer(),
+                 (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
+                 hash,
+                 costUnits.longValue(),
+                 new SizeT(metaCount),
+                 metaKeys,
+                 metaVals);
      }
 
     public BRCryptoWalletManager take() {
