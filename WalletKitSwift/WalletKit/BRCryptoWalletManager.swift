@@ -230,6 +230,10 @@ public final class WalletManager: Equatable, CustomStringConvertible {
                                completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         WalletSweeper.create(wallet: wallet, key: key, bdb: query, completion: completion)
     }
+    
+    public func createExportablePaperWallet () -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+        return ExportablePaperWallet.create(manager: self)
+    }
 
     internal init (core: BRCryptoWalletManager,
                    system: System,
@@ -450,7 +454,7 @@ public final class WalletSweeper {
         bdb.getTransactions(blockchainId: network.uids,
                             addresses: [address],
                             begBlockNumber: 0,
-                            endBlockNumber: network.height,
+                            endBlockNumber: nil,
                             includeRaw: true,
                             includeTransfers: false) {
                             (res: Result<[BlockChainDB.Model.Transaction], BlockChainDB.QueryError>) in
@@ -486,6 +490,69 @@ public final class WalletSweeper {
 
     deinit {
         cryptoWalletSweeperRelease(core)
+    }
+}
+
+///
+/// Exportable Paper Wallet
+///
+
+public enum ExportablePaperWalletError: Error {
+    case unsupportedCurrency
+    case unexpectedError
+
+    internal init? (_ core: BRCryptoExportablePaperWalletStatus) {
+        switch core {
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_SUCCESS:                 return nil
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_UNSUPPORTED_CURRENCY:    self = .unsupportedCurrency
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS:       self = .unexpectedError
+        default: self = .unexpectedError; preconditionFailure()
+        }
+    }
+}
+
+public final class ExportablePaperWallet {
+    internal static func create(manager: WalletManager) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+        // check that requested wallet supports generating exportable paper wallets
+        if let e = ExportablePaperWalletError(cryptoExportablePaperWalletValidateSupported(manager.network.core,
+                                                                                           manager.currency.core)) {
+            return Result.failure(e)
+        }
+
+        switch cryptoNetworkGetCanonicalType (manager.network.core) {
+        case CRYPTO_NETWORK_TYPE_BTC:
+            let paperWallet: ExportablePaperWallet = createAsBTC(manager: manager)
+            return Result.success(paperWallet)
+        default:
+            assertionFailure()
+        }
+        
+        return Result.failure(.unexpectedError)
+    }
+
+    private static func createAsBTC(manager: WalletManager) -> ExportablePaperWallet {
+        return ExportablePaperWallet(core: cryptoExportablePaperWalletCreateAsBTC(manager.network.core,
+                                                                                  manager.currency.core))
+    }
+    
+    internal let core: BRCryptoWalletSweeper
+
+    private init (core: BRCryptoWalletSweeper) {
+        self.core = core
+    }
+
+    public var privateKey: Key? {
+        return cryptoExportablePaperWalletGetKey (self.core)
+            .map { Key (core: $0) }
+    }
+
+    public var address: Address? {
+        return cryptoExportablePaperWalletGetAddress (self.core)
+            .map { Address (core: $0, take: false) }
+    }
+
+    deinit {
+        cryptoExportablePaperWalletRelease(core)
     }
 }
 

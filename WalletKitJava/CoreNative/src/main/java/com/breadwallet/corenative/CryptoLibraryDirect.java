@@ -294,6 +294,11 @@ public final class CryptoLibraryDirect {
     public static native int cryptoWalletValidateTransferAttribute(Pointer wallet, Pointer attribute, IntByReference validates);
     // INDIRECT: public static native int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, Pointer arrayOfAttributes, IntByReference validates);
 
+    public static native int cryptoExportablePaperWalletValidateSupported(Pointer network, Pointer currency);
+    public static native Pointer cryptoExportablePaperWalletCreateAsBTC(Pointer network, Pointer currency);
+    public static native void cryptoExportablePaperWalletRelease(Pointer paperWallet);
+    public static native Pointer cryptoExportablePaperWalletGetKey(Pointer paperWallet);
+    public static native Pointer cryptoExportablePaperWalletGetAddress (Pointer paperWallet);
 
     public static native Pointer cryptoWalletTake(Pointer wallet);
     public static native void cryptoWalletGive(Pointer obj);

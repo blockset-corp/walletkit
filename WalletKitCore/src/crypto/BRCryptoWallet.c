@@ -1145,3 +1145,87 @@ cryptoWalletSweeperAsBTC (BRCryptoWalletSweeper sweeper) {
     assert (BLOCK_CHAIN_TYPE_BTC == sweeper->type);
     return sweeper->u.btc.sweeper;
 }
+
+/// MARK: Exportable Paper Wallet
+
+struct BRCryptoExportablePaperWalletRecord {
+    BRCryptoBlockChainType type;
+    BRCryptoNetwork network;
+    BRCryptoKey key;
+};
+
+extern BRCryptoExportablePaperWalletStatus
+cryptoExportablePaperWalletValidateSupported (BRCryptoNetwork network,
+                                              BRCryptoCurrency currency) {
+    if (CRYPTO_FALSE == cryptoNetworkHasCurrency (network, currency)) {
+        return CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS;
+    }
+
+    switch (cryptoNetworkGetType (network)) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            return CRYPTO_EXPORTABLE_PAPER_WALLET_SUCCESS;
+        default:
+            break;
+    }
+
+    return CRYPTO_EXPORTABLE_PAPER_WALLET_UNSUPPORTED_CURRENCY;
+}
+
+extern BRCryptoExportablePaperWallet
+cryptoExportablePaperWalletCreateAsBTC (BRCryptoNetwork network,
+                                        BRCryptoCurrency currency) {
+    BRCryptoExportablePaperWallet paperWallet = calloc (1, sizeof(struct BRCryptoExportablePaperWalletRecord));
+    paperWallet->type = BLOCK_CHAIN_TYPE_BTC;
+    paperWallet->network = cryptoNetworkTake (network);
+    
+    BRKey key;
+    int compressed = 1;
+    if (1 == BRKeyGenerateRandom (&key, compressed)) {
+        paperWallet->key = cryptoKeyCreateFromKey (&key); // cleans key
+        return paperWallet;
+    } else {
+        cryptoExportablePaperWalletRelease (paperWallet);
+        return NULL;
+    }
+}
+
+extern void
+cryptoExportablePaperWalletRelease (BRCryptoExportablePaperWallet paperWallet) {
+    if (NULL != paperWallet->network) cryptoNetworkGive (paperWallet->network);
+    if (NULL != (paperWallet->key)) cryptoKeyGive (paperWallet->key);
+
+    memset (paperWallet, 0, sizeof(struct BRCryptoWalletSweeperRecord));
+    free (paperWallet);
+}
+
+extern BRCryptoKey
+cryptoExportablePaperWalletGetKey (BRCryptoExportablePaperWallet paperWallet) {
+    return cryptoKeyTake (paperWallet->key);
+}
+
+extern BRCryptoAddress
+cryptoExportablePaperWalletGetAddress (BRCryptoExportablePaperWallet paperWallet) {
+    BRCryptoAddress address = NULL;
+    
+    assert (BLOCK_CHAIN_TYPE_BTC == paperWallet->type);
+    
+    switch (paperWallet->network->canonicalType) {
+        case CRYPTO_NETWORK_TYPE_BTC: {
+            BRAddressParams addrParams = cryptoNetworkAsBTC (paperWallet->network)->addrParams;
+            BRKey *key = cryptoKeyGetCore (paperWallet->key);
+            // encode using legacy format (only supported method for BTC)
+            size_t addrLength = BRKeyLegacyAddr (key, NULL, 0, addrParams);
+            char *addr = malloc (addrLength + 1);
+            BRKeyLegacyAddr (key, addr, addrLength, addrParams);
+            addr[addrLength] = '\0';
+            address = cryptoAddressCreateFromString (paperWallet->network, addr);
+            free (addr);
+            break;
+        }
+        default:
+            assert (0);
+            break;
+    }
+
+    return address;
+}
