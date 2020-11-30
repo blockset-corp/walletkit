@@ -591,3 +591,11 @@ int BRKeySetCompressed (BRKey *key, int compressed) {
     }
     else return 0;
 }
+
+int BRKeyGenerateRandom (BRKey *key, int compressed) {
+    assert (NULL != key);
+    UInt256 secret;
+    arc4random_buf_brd (secret.u64, sizeof (secret));
+
+    return BRKeySetSecret(key, &secret, compressed);
+}

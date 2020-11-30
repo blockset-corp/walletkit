@@ -136,7 +136,8 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         var feeEstimateResult: Result<TransferFeeBasis, Wallet.FeeEstimationError>!
         wallet.estimateFee (target: transferTargetAddress,
                             amount: transferAmount,
-                            fee: network.minimumFee) { (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
+                            fee: network.minimumFee,
+                            attributes: nil) { (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                                 feeEstimateResult = res
                                 feeEstimateExpectation.fulfill()
         }

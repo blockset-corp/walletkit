@@ -1643,6 +1643,17 @@ int BRKeyTests()
     
     if (pkLen5 != pkLen || memcmp(pubKey, pubKey5, pkLen) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRPubKeyRecover() test 3\n", __func__);
+    
+    // paper wallet key pair
+    BRKeyGenerateRandom (&key, 1);
+    
+    BRKeyPrivKey(&key, privKey1, sizeof(privKey1), BRMainNetParams->addrParams);
+    printf("privKey:%s\n", privKey1);
+    // compressed private key
+    if (! BRPrivKeyIsValid(BRMainNetParams->addrParams, privKey1))
+        r = 0, fprintf(stderr, "***FAILED*** %s: BRPrivKeyIsValid() test 8\n", __func__);
+    BRKeyLegacyAddr(&key, addr.s, sizeof(addr), BRMainNetParams->addrParams);
+    printf("privKey:%s = %s\n", privKey1, addr.s);
 
     printf("                                    ");
     return r;
