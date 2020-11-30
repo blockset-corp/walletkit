@@ -11,6 +11,7 @@ import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoPayProtReqBitPayAndBip70Callbacks;
 import com.breadwallet.corenative.crypto.BRCryptoTransferState;
+import com.breadwallet.corenative.crypto.BRCryptoWalletManager;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerState;
 import com.breadwallet.corenative.crypto.BRCryptoWalletMigratorStatus;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerDisconnectReason;
@@ -301,7 +302,7 @@ public final class CryptoLibraryDirect {
 
     // crypto/BRCryptoWalletManager.h
     public static native Pointer cryptoWalletManagerWipe(Pointer network, String path);
-    public static native Pointer cryptoWalletManagerCreate(Pointer listener,
+    public static native Pointer cryptoWalletManagerCreate(BRCryptoWalletManager.Listener.ByValue listener,
                                                            BRCryptoClient.ByValue client,
                                                            Pointer account,
                                                            Pointer network,
@@ -362,8 +363,8 @@ public final class CryptoLibraryDirect {
                                                                       long blockHeight);
     // See 'Indirect': void cryptoClientTransferBundleCreate (int status, ...)
 
-    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, boolean success, long blockNumber, String verifiedBlockHash);
-    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, boolean success);
+    public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, int success, long blockNumber, String verifiedBlockHash);
+    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, int success);
 
     //
     // Crypto Primitives
@@ -403,6 +404,8 @@ public final class CryptoLibraryDirect {
 
     // crypto/BRCryptoListener.h
     public static native Pointer cryptoListenerCreate (Pointer context, Callback systemCB, Callback networkCB, Callback managerCB, Callback walletCB, Callback transferCB);
+    public static native Pointer cryptoListenerTake(Pointer listener);
+    public static native void cryptoListenerGive(Pointer listener);
 
     // crypto/BRCryptoSystem.h
     public static native Pointer cryptoSystemCreate(BRCryptoClient.ByValue client,
@@ -414,16 +417,17 @@ public final class CryptoLibraryDirect {
     public static native int cryptoSystemGetState (Pointer system);
     public static native int cryptoSystemOnMainnet (Pointer system);
     public static native int cryptoSystemIsReachable (Pointer system);
+    public static native void cryptoSystemSetReachable (Pointer system, boolean reachable);
     public static native Pointer cryptoSystemGetResolvedPath (Pointer system);
 
     public static native int cryptoSystemHasNetwork (Pointer system, Pointer network);
-    //extern BRCryptoNetwork *cryptoSystemGetNetworks (Pointer system, size_t *count);
+    public static native Pointer cryptoSystemGetNetworks(Pointer system, SizeTByReference count);
     public static native Pointer cryptoSystemGetNetworkAt (Pointer system, SizeT index);
     public static native Pointer cryptoSystemGetNetworkForUids (Pointer system, String uids);
     public static native SizeT   cryptoSystemGetNetworksCount (Pointer system);
 
     public static native int cryptoSystemHasWalletManager (Pointer system, Pointer manager);
-    //extern BRCryptoWalletManager *cryptoSystemGetWalletManagers (Pointer system, size_t *count);
+    public static native Pointer cryptoSystemGetWalletManagers(Pointer system, SizeTByReference count);
     public static native Pointer cryptoSystemGetWalletManagerAt (Pointer system, SizeT index);
     public static native Pointer cryptoSystemGetWalletManagerByNetwork (Pointer system, Pointer network);
     public static native SizeT cryptoSystemGetWalletManagersCount (Pointer system);

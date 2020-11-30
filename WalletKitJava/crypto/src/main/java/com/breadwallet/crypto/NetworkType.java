@@ -6,5 +6,6 @@ public enum NetworkType {
     BSV,
     ETH,
     XRP,
-    HBAR
+    HBAR,
+    XTZ
 }

@@ -3,8 +3,11 @@ package com.breadwallet.corenative.crypto;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.utility.SizeT;
+import com.breadwallet.corenative.utility.SizeTByReference;
 import com.google.common.base.Optional;
+import com.google.common.primitives.UnsignedInts;
 import com.google.common.primitives.UnsignedLong;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 
@@ -39,18 +42,26 @@ public class BRCryptoSystem extends PointerType {
         super(address);
     }
 
+    @SuppressWarnings("unused")
     public boolean onMainnet () {
         Pointer thisPtr = this.getPointer();
         return BRCryptoBoolean.CRYPTO_TRUE ==
                 CryptoLibraryDirect.cryptoSystemOnMainnet(thisPtr);
     }
 
+    @SuppressWarnings("unused")
     public boolean isReachable () {
         Pointer thisPtr = this.getPointer();
         return BRCryptoBoolean.CRYPTO_TRUE ==
                 CryptoLibraryDirect.cryptoSystemIsReachable(thisPtr);
     }
 
+    public void setIsReachable (boolean reachable) {
+        Pointer thisPtr = this.getPointer();
+        CryptoLibraryDirect.cryptoSystemSetReachable(thisPtr, reachable);
+    }
+
+    @SuppressWarnings("unused")
     public String getResolvedPath () {
         Pointer thisPtr = this.getPointer();
         return CryptoLibraryDirect.cryptoSystemGetResolvedPath(thisPtr).getString(0, "UTF-8");
@@ -65,6 +76,7 @@ public class BRCryptoSystem extends PointerType {
 
 // MARK: - System Networks
 
+    @SuppressWarnings("unused")
     public boolean hasNetwork (BRCryptoNetwork network) {
         Pointer thisPtr = this.getPointer();
         return BRCryptoBoolean.CRYPTO_TRUE ==
@@ -74,10 +86,25 @@ public class BRCryptoSystem extends PointerType {
     }
 
     public List<BRCryptoNetwork> getNetworks () {
-        Pointer thisPtr = this.getPointer();
-        return new ArrayList<>();
+        List<BRCryptoNetwork> networks = new ArrayList<>();
+
+        SizeTByReference count = new SizeTByReference();
+        Pointer networksPtr = CryptoLibraryDirect.cryptoSystemGetNetworks(this.getPointer(), count);
+        if (null != networksPtr) {
+            try {
+                int networksSize = UnsignedInts.checkedCast(count.getValue().longValue());
+                for (Pointer networkPtr : networksPtr.getPointerArray(0, networksSize)) {
+                    networks.add(new BRCryptoNetwork(networkPtr));
+                }
+            } finally {
+                Native.free(Pointer.nativeValue(networksPtr));
+            }
+        }
+
+        return networks;
     }
 
+    @SuppressWarnings("unused")
     public Optional<BRCryptoNetwork> getNetworkAt (int index) {
         Pointer thisPtr = this.getPointer();
         return Optional.fromNullable(
@@ -88,6 +115,7 @@ public class BRCryptoSystem extends PointerType {
                 .transform(BRCryptoNetwork::new);
     }
 
+    @SuppressWarnings("unused")
     public Optional<BRCryptoNetwork> getNetworkForUIDS (String uids) {
         Pointer thisPtr = this.getPointer();
         return Optional.fromNullable(
@@ -118,10 +146,25 @@ public class BRCryptoSystem extends PointerType {
     }
 
     public List<BRCryptoWalletManager> getManagers () {
-        Pointer thisPtr = this.getPointer();
-        return new ArrayList<>();
+        List<BRCryptoWalletManager> managers = new ArrayList<>();
+
+        SizeTByReference count = new SizeTByReference();
+        Pointer managersPtr = CryptoLibraryDirect.cryptoSystemGetWalletManagers(this.getPointer(), count);
+        if (null != managersPtr) {
+            try {
+                int managersSize = UnsignedInts.checkedCast(count.getValue().longValue());
+                for (Pointer managerPtr : managersPtr.getPointerArray(0, managersSize)) {
+                    managers.add(new BRCryptoWalletManager(managerPtr));
+                }
+            } finally {
+                Native.free(Pointer.nativeValue(managersPtr));
+            }
+        }
+
+        return managers;
     }
 
+    @SuppressWarnings("unused")
     public Optional<BRCryptoWalletManager> getManagerAt(int index) {
         Pointer thisPtr = this.getPointer();
         return Optional.fromNullable(
@@ -140,6 +183,7 @@ public class BRCryptoSystem extends PointerType {
                 ).longValue());
     }
 
+    @SuppressWarnings("unused")
     public Optional<BRCryptoWalletManager> getManagerForNetwork(BRCryptoNetwork network) {
         Pointer thisPtr = this.getPointer();
         return Optional.fromNullable(
@@ -167,8 +211,8 @@ public class BRCryptoSystem extends PointerType {
                         network.getPointer(),
                         mode.toCore(),
                         scheme.toCore(),
-                        new SizeT(currenciesCount),
-                        currenciesRefs)
+                        currenciesRefs,
+                        new SizeT(currenciesCount))
         ).transform(BRCryptoWalletManager::new);
     }
 

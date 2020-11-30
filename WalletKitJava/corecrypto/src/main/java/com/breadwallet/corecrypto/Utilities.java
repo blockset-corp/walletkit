@@ -8,7 +8,6 @@
 package com.breadwallet.corecrypto;
 
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
-import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoNetworkType;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolError;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolType;
@@ -203,6 +202,7 @@ final class Utilities {
             case ETH: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_ETH;
             case XRP: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_XRP;
             case HBAR:return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_HBAR;
+            case XTZ: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -216,6 +216,7 @@ final class Utilities {
             case CRYPTO_NETWORK_TYPE_ETH: return NetworkType.ETH;
             case CRYPTO_NETWORK_TYPE_XRP: return NetworkType.XRP;
             case CRYPTO_NETWORK_TYPE_HBAR:return NetworkType.HBAR;
+            case CRYPTO_NETWORK_TYPE_XTZ: return NetworkType.XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

@@ -166,4 +166,17 @@ public class BRCryptoListener extends PointerType {
                         walletEventCallback,
                         transferEventCallback));
     }
+
+    public BRCryptoListener take() {
+        Pointer thisPtr = this.getPointer();
+
+        return new BRCryptoListener(CryptoLibraryDirect.cryptoListenerTake(thisPtr));
+    }
+
+    public void give() {
+        Pointer thisPtr = this.getPointer();
+
+        CryptoLibraryDirect.cryptoListenerGive(thisPtr);
+    }
+
 }

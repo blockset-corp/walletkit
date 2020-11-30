@@ -39,23 +39,22 @@ final class NetworkDiscovery {
     interface Callback {
         void discovered(Network network);
         void updated(Network network);
-        void complete(List<com.breadwallet.crypto.Network> networks);
+        void complete(List<Network> networks);
     }
 
     /* package */
     static void discoverNetworks(BlockchainDb query,
                                  boolean isMainnet,
+                                 List<Network> networks,
                                  List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies,
                                  Callback callback) {
-        List<com.breadwallet.crypto.Network> networks = new ArrayList<>();
-
         CountUpAndDownLatch latch = new CountUpAndDownLatch(() -> callback.complete(networks));
 
         // The existing networks
-        final List<com.breadwallet.crypto.Network> existingNetworks = networks;
+        final List<Network> existingNetworks = networks;
 
         // The 'supportedNetworks' will be builtin networks matching isMainnet.
-        final List<com.breadwallet.crypto.Network> supportedNetworks = networks; // findBuiltinNetworks(isMainnet);
+        final List<Network> supportedNetworks = networks; // findBuiltinNetworks(isMainnet);
 
          getBlockChains(latch, query, isMainnet, remoteModels -> {
              // If there are no 'remoteModels' the query might have failed.
@@ -67,8 +66,8 @@ final class NetworkDiscovery {
                  // If there are no 'currencyModels' the query might have failed.
                  //
                  // Process each supportedNetwork based on the remote model
-                 for (com.breadwallet.crypto.Network network: supportedNetworks) {
-                    boolean existing = existingNetworks.contains(network);
+                 for (Network network: supportedNetworks) {
+                    boolean existing = false; // existingNetworks.contains(network);
                     String blockchainModelId = network.getUids();
 
                     Network coreNetwork = Network.from(network);
@@ -146,13 +145,13 @@ final class NetworkDiscovery {
 
                     if (!existing) {
                         // Announce the network
-                        callback.discovered(coreNetwork);
+                        callback.discovered(network);
 
                         // Keep a running total of discovered networks
-                        networks.add(network);
+//                        networks.add(network);
                     }
                     else {
-                        callback.updated(coreNetwork);
+                        callback.updated(network);
                     }
                 }
                 return null;

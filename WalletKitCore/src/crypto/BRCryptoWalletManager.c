@@ -94,7 +94,7 @@ cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason r
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunused-function"
 static BRArrayOf(BRCryptoCurrency)
-cryptoWalletManagerGetCurrenciesOfIntereest (BRCryptoWalletManager cwm) {
+cryptoWalletManagerGetCurrenciesOfInterest (BRCryptoWalletManager cwm) {
     BRArrayOf(BRCryptoCurrency) currencies;
 
     array_new (currencies, 3);
@@ -102,8 +102,8 @@ cryptoWalletManagerGetCurrenciesOfIntereest (BRCryptoWalletManager cwm) {
 }
 
 static void
-cryptoWalletManagerReleaseCurrenciesOfIntereest (BRCryptoWalletManager cwm,
-                                                 BRArrayOf(BRCryptoCurrency) currencies) {
+cryptoWalletManagerReleaseCurrenciesOfInterest (BRCryptoWalletManager cwm,
+                                                BRArrayOf(BRCryptoCurrency) currencies) {
     for (size_t index = 0; index < array_count(currencies); index++)
         cryptoCurrencyGive (currencies[index]);
     array_free (currencies);
@@ -278,6 +278,9 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     manager->byType = byType;
 
+    // Hold this early
+    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
+
     // Initialize to NULL, for now.
     manager->qryManager = NULL;
     manager->p2pManager = NULL;
@@ -321,7 +324,6 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
 
     manager->listenerWallet = cryptoListenerCreateWalletListener (&manager->listener, manager);
 
-    manager->ref = CRYPTO_REF_ASSIGN (cryptoWalletManagerRelease);
     pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
 
     BRCryptoTimestamp   earliestAccountTime = cryptoAccountGetTimestamp (account);
@@ -367,7 +369,7 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
                            BRCryptoSyncMode mode,
                            BRCryptoAddressScheme scheme,
                            const char *path) {
-    // Only create a wallet manager for accounts that are initializedon network.
+    // Only create a wallet manager for accounts that are initialized on network.
     if (CRYPTO_FALSE == cryptoNetworkIsAccountInitialized (network, account))
         return NULL;
 
@@ -393,9 +395,6 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
 
     // Set the mode for QRY or P2P syncing
     cryptoWalletManagerSetMode (manager, mode);
-
-    // Start the event handler.
-    cryptoWalletManagerStart (manager);
 
     return manager;
 }
@@ -823,32 +822,7 @@ cryptoWalletManagerWipe (BRCryptoNetwork network,
     fileServiceWipe (path, currencyName, networkName);
 }
 
-// MARK: - Create Transfer
-
-extern BRCryptoTransfer
-cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
-                                   BRCryptoWallet wallet,
-                                   BRCryptoAddress target,
-                                   BRCryptoAmount amount,
-                                   BRCryptoFeeBasis estimatedFeeBasis,
-                                   size_t attributesCount,
-                                   OwnershipKept BRCryptoTransferAttribute *attributes) {
-    return cryptoWalletCreateTransfer (wallet, target, amount,
-                                       estimatedFeeBasis,
-                                       attributesCount,
-                                       attributes);
-}
-
-extern BRCryptoTransfer
-cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
-                                           BRCryptoWallet wallet,
-                                           size_t outputsCount,
-                                           BRCryptoTransferOutput *outputs,
-                                           BRCryptoFeeBasis estimatedFeeBasis) {
-    return cryptoWalletCreateTransferMultiple (wallet, outputsCount, outputs, estimatedFeeBasis);
-}
-
-// MARK: - Sign/Submit
+// MARK: - Transfer Sign/Submit
 
 extern BRCryptoBoolean
 cryptoWalletManagerSign (BRCryptoWalletManager manager,
