@@ -106,7 +106,8 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     
     BRTezosAddress source = tezosTransactionGetSource(tx);
     BRTezosFeeBasis feeBasis = tezosTransactionGetFeeBasis(tx);
-    assert(FEE_BASIS_ESTIMATE == feeBasis.type);
+    int64_t gasLimit = tezosFeeBasisGetGasLimit(feeBasis);
+    int64_t storageLimit = tezosFeeBasisGetStorageLimit(feeBasis);
     
     size_t maxFields = 10;
     BRCryptoData fields[maxFields];
@@ -115,8 +116,8 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     fields[numFields++] = encodeAddress(source);
     fields[numFields++] = encodeZarith(tezosTransactionGetFee(tx));
     fields[numFields++] = encodeZarith(tezosTransactionGetCounter(tx));
-    fields[numFields++] = encodeZarith(feeBasis.u.estimate.gasLimit);
-    fields[numFields++] = encodeZarith(feeBasis.u.estimate.storageLimit);
+    fields[numFields++] = encodeZarith(gasLimit);
+    fields[numFields++] = encodeZarith(storageLimit);
     
     if (TEZOS_OP_TRANSACTION == opData.kind) {
         fields[numFields++] = encodeZarith(opData.u.transaction.amount);

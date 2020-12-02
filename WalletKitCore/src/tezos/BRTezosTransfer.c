@@ -164,7 +164,10 @@ extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer)
 }
 
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer) {
-    return tezosTransactionGetFeeBasis (transfer->transaction);
+    assert(transfer);
+    return (NULL == transfer->transaction)
+    ? tezosFeeBasisCreateActual (transfer->fee)
+    : tezosTransactionGetFeeBasis (transfer->transaction);
 }
 
 extern BRTezosTransaction tezosTransferGetTransaction(BRTezosTransfer transfer)
