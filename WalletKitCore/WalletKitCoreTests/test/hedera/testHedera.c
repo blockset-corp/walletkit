@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/time.h>
 #include "support/BRArray.h"
 #include "support/BRCrypto.h"
 #include "support/BRBIP32Sequence.h"
@@ -89,7 +90,8 @@ struct account_info {
 };
 
 struct account_info accounts[] = {
-    {"none", "0.0.0", "", ""} ,
+    {NULL, NULL, NULL, NULL},
+    {"none", "0.0.0", "", ""},
     {"patient", "0.0.114008", "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
         "ec7554cc83ba25a9b6ca44f491de24881af4faba8805ba518db751d62f675585"
     } ,
@@ -103,12 +105,15 @@ struct account_info accounts[] = {
 size_t num_accounts = sizeof (accounts) / sizeof (struct account_info);
 
 struct account_info find_account (const char * accountName) {
+    if (accountName == NULL) {
+        return accounts[0];
+    }
     if (strcmp(accountName, "default_account") == 0) {
         // If we get to here just return the first account
         return accounts[1];
     }
-    for (size_t i = 0; i < num_accounts; i++) {
-        if (strcmp(accounts[i].name, accountName) == 0)
+    for (size_t i = 1; i < num_accounts; i++) {
+        if (accounts[i].name != NULL && strcmp(accounts[i].name, accountName) == 0)
             return accounts[i];
     }
     return accounts[0];
@@ -166,7 +171,6 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
 
     BRHederaAddress sourceAddress = hederaAddressCreateFromString (source_account.account_string, true);
     BRHederaAddress targetAddress = hederaAddressCreateFromString (target_account.account_string, true);
-    BRHederaAddress nodeAddress = hederaAddressCreateFromString (node_account.account_string, true);
     BRHederaTimeStamp timeStamp;
     timeStamp.seconds = seconds;
     timeStamp.nano = nanos;
@@ -174,13 +178,18 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     feeBasis.costFactor = 1;
     feeBasis.pricePerCostFactor = fee;
     BRHederaTransaction transaction = hederaTransactionCreateNew(sourceAddress, targetAddress, amount,
-                                                                 feeBasis, nodeAddress, &timeStamp);
+                                                                 feeBasis, &timeStamp);
 
     if (memo) hederaTransactionSetMemo(transaction, memo);
 
     // Sign the transaction
     BRKey publicKey = hederaAccountGetPublicKey(account);
-    hederaTransactionSignTransaction (transaction, publicKey, seed);
+    BRHederaAddress nodeAddress = NULL;
+    if (node_account.account_string != NULL ) {
+        // Allow for old and new ways of serialzing/signing
+        nodeAddress = hederaAddressCreateFromString (node_account.account_string, true);
+    }
+    hederaTransactionSignTransaction (transaction, publicKey, seed, nodeAddress);
 
     // Cleaup
     hederaAddressFree (sourceAddress);
@@ -504,6 +513,35 @@ static void create_new_transactions() {
     createNewTransaction ("choose", "patient", "node3", 50000000, 1571928273, 0, 500000, NULL, testTwoOutput, false, hash2);
 }
 
+static void serialize_tests() {
+    // Serialize the same transaction both ways
+    struct timeval txtime;
+    gettimeofday (&txtime, NULL);
+    BRHederaTransaction tx1 = createSignedTransaction("patient", "choose", "node3", 500000, txtime.tv_sec, txtime.tv_usec, 500000, "Single node");
+    BRHederaTransaction tx2 = createSignedTransaction("patient", "choose", NULL, 500000, txtime.tv_sec, txtime.tv_usec, 500000, "All nodes");
+
+    size_t tx1Size = 0;
+    uint8_t * tx1Bytes = hederaTransactionSerialize(tx1, &tx1Size);
+    size_t tx2Size = 0;
+    uint8_t * tx2Bytes = hederaTransactionSerialize(tx2, &tx2Size);
+    assert(tx2Size > (tx1Size * 9));
+
+    char * transactionOutput = calloc (1, (tx1Size * 2) + 1);
+    bin2HexString (tx1Bytes, tx1Size, transactionOutput);
+    printf("V0 output\n%s\n", transactionOutput);
+    free(transactionOutput);
+    transactionOutput = calloc (1, (tx2Size * 2) + 1);
+    bin2HexString (tx2Bytes, tx2Size, transactionOutput);
+    printf("V1 output\n%s\n", transactionOutput);
+    free(transactionOutput);
+
+    free(tx1Bytes);
+    free(tx2Bytes);
+    hederaTransactionFree(tx1);
+    hederaTransactionFree(tx2);
+
+}
+
 static void address_tests() {
     addressEqualTests();
     addressValueTests();
@@ -550,6 +588,7 @@ static void transaction_tests() {
     createExistingTransaction("patient", "choose", 400);
     create_new_transactions();
     transaction_value_test("patient", "choose", "node3", 10000000, 25, 4, 500000);
+    serialize_tests();
     //create_real_transactions();
 }
 

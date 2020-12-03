@@ -18,7 +18,6 @@
 #include "ethereum/util/BRUtilMath.h"
 #include <stdio.h>
 
-
 static BRCryptoWalletHBAR
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_HBAR == wallet->type);
@@ -170,14 +169,11 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     BRHederaAddress source = hederaAccountGetAddress(walletHBAR->hbarAccount);
     UInt256 value = cryptoAmountGetValue (amount);
     BRHederaUnitTinyBar thbar = (BRHederaUnitTinyBar) value.u64[0];
-    BRHederaAddress nodeAddress = hederaAccountGetNodeAddress (walletHBAR->hbarAccount);
     BRHederaFeeBasis hbarFeeBasis = cryptoFeeBasisCoerceHBAR (estimatedFeeBasis)->hbarFeeBasis;
-    
     BRHederaTransaction hbarTransaction = hederaTransactionCreateNew (source,
                                                                       cryptoAddressAsHBAR (target),
                                                                       thbar,
                                                                       hbarFeeBasis,
-                                                                      nodeAddress,
                                                                       NULL);
     if (NULL == hbarTransaction)
         return NULL;
@@ -195,7 +191,6 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     }
     
     hederaAddressFree (source);
-    hederaAddressFree (nodeAddress);
 
     BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
 

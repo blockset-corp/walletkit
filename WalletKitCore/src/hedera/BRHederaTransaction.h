@@ -35,8 +35,7 @@ typedef struct BRHederaTransactionRecord *BRHederaTransaction;
  */
 extern BRHederaTransaction /* caller owns memory and must call "hederaTransactionFree" function */
 hederaTransactionCreateNew(BRHederaAddress source, BRHederaAddress target,
-                           BRHederaUnitTinyBar amount, BRHederaFeeBasis feeBasis,
-                           BRHederaAddress nodeAddress, BRHederaTimeStamp *timeStamp);
+                           BRHederaUnitTinyBar amount, BRHederaFeeBasis feeBasis, BRHederaTimeStamp *timeStamp);
 
 /**
  * Create a Hedera transaction recovered from the blockset server
@@ -74,17 +73,16 @@ extern void hederaTransactionFree (BRHederaTransaction transaction);
  *
  * @param transaction
  * @param public key      - of the source account
- * @param timeStamp       - used to create the transaction id - just use current
- *                          time
- * @param fee             - max number of tinybars the caller is willing to pay
  * @param seed            - seed for this account, used to create private key
+ * @param nodeAddress - use specific node (if not NULL) otherwise create a serialization for all nodes
  *
  * @return size           - number of bytes in the signed transaction
  */
 extern size_t
 hederaTransactionSignTransaction (BRHederaTransaction transaction,
                                   BRKey publicKey,
-                                  UInt512 seed);
+                                  UInt512 seed,
+                                  BRHederaAddress nodeAddress);
 
 /**
  * Get serialiezd bytes for the specified transaction

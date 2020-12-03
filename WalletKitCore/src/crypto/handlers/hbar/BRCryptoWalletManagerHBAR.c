@@ -102,7 +102,14 @@ cryptoWalletManagerSignTransactionWithSeedHBAR (BRCryptoWalletManager manager,
     BRHederaAccount account = cryptoAccountAsHBAR (manager->account);
     BRKey publicKey = hederaAccountGetPublicKey (account);
     BRHederaTransaction transaction = cryptoTransferCoerceHBAR(transfer)->hbarTransaction;
-    size_t tx_size = hederaTransactionSignTransaction (transaction, publicKey, seed);
+#if !defined(MULTI_HEDERA_SERIALIZATION)
+    BRHederaAddress nodeAddress = hederaAccountGetNodeAddress(account);
+#else
+    BRHederaAddress nodeAddress = NULL;
+#endif
+    size_t tx_size = hederaTransactionSignTransaction (transaction, publicKey, seed, nodeAddress);
+
+    if (nodeAddress) hederaAddressFree(nodeAddress);
     return AS_CRYPTO_BOOLEAN(tx_size > 0);
 }
 
