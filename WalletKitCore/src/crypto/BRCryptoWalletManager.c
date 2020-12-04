@@ -1042,6 +1042,11 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
         if (NULL == genTransferGetUIDS(transferGenericOrig))
             genTransferSetUIDS (transferGenericOrig,
                                 genTransferGetUIDS (transferGeneric));
+
+        // TODO - give the lower layer the ability to update the hash from the transaction
+        // in some cases WalletKit cannot generate the correct hash
+        // BRGenericHash hash = genTransferGetHash(transferGeneric);
+        // genTransferUpdateHash(transferGenericOrig, hash);
     }
 
     // Fill in any attributes
