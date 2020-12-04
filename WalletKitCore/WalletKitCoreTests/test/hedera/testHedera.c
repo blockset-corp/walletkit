@@ -99,8 +99,9 @@ struct account_info accounts[] = {
         "372c41776cbdb5cacc7c41ec75b17ad9bd3f242f5c4ab13a1bbeef274d454404" },
     {"node3", "0.0.3", "", ""},
     {"node2", "0.0.2", "", ""},
-    {"nodetest", "5412398.75.101101101", "", ""},
-    {"inmate", "0.0.38230", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
+    {"42725", "0.0.42725", "", ""}, // Carl's BRD Hedera account
+    {"38230", "0.0.38230", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
+    {"37664", "0.0.37664", "inmate flip alley wear offer often piece magnet surge toddler submit right radio absent pear floor belt raven price stove replace reduce plate home", "b63b3815f453cf697b53b290b1d78e88c725d39bde52c34c79fb5b4c93894673"},
 };
 size_t num_accounts = sizeof (accounts) / sizeof (struct account_info);
 
@@ -498,7 +499,7 @@ static void create_real_transactions() {
 
     // Create one with a memo
     const char * memo = "BRD Memo";
-    //createNewTransaction ("inmate", "door", "node3", 1000, now, 0, 500000, memo, NULL, true, NULL);
+    //createNewTransaction ("38230", "door", "node3", 1000, now, 0, 500000, memo, NULL, true, NULL);
 }
 
 static void create_new_transactions() {
@@ -517,8 +518,8 @@ static void serialize_tests() {
     // Serialize the same transaction both ways
     struct timeval txtime;
     gettimeofday (&txtime, NULL);
-    BRHederaTransaction tx1 = createSignedTransaction("patient", "choose", "node3", 500000, txtime.tv_sec, txtime.tv_usec, 500000, "Single node");
-    BRHederaTransaction tx2 = createSignedTransaction("patient", "choose", NULL, 500000, txtime.tv_sec, txtime.tv_usec, 500000, "All nodes");
+    BRHederaTransaction tx1 = createSignedTransaction("37664", "38230", "node3", 5000000, txtime.tv_sec, txtime.tv_usec, 500000, "Single node");
+    BRHederaTransaction tx2 = createSignedTransaction("37664", "38230", NULL, 5000000, txtime.tv_sec, txtime.tv_usec, 500000, "All nodes");
 
     size_t tx1Size = 0;
     uint8_t * tx1Bytes = hederaTransactionSerialize(tx1, &tx1Size);
@@ -539,7 +540,6 @@ static void serialize_tests() {
     free(tx2Bytes);
     hederaTransactionFree(tx1);
     hederaTransactionFree(tx2);
-
 }
 
 static void address_tests() {
@@ -550,7 +550,7 @@ static void address_tests() {
 }
 
 static void account_tests() {
-    hederaAccountCheckPublicKey("inmate");
+    hederaAccountCheckPublicKey("38230");
     hederaAccountCheckPublicKey("patient");
     hederaAccountCheckPublicKey("choose");
 
