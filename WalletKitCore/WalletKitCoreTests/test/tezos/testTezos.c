@@ -358,12 +358,7 @@ testTransactionSerialize() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.type = FEE_BASIS_ESTIMATE;
-    feeBasis.u.estimate.gasLimit = 10200;
-    feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
-//    feeBasis.u.estimate.fee = 50000;
+    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, 3);
     counter = 3;
     amount = 100000000;
     
@@ -380,7 +375,7 @@ testTransactionSerialize() {
     BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
     
     tezosTransferFree(transfer);
     cryptoDataFree(unsignedBytes);
@@ -395,7 +390,7 @@ testTransactionSerialize() {
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0000efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", serializedHex));
     
     cryptoDataFree(unsignedBytes);
     tezosTransactionFree(tx);
@@ -412,7 +407,7 @@ testTransactionSerialize() {
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f00ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac02ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
     
     tezosTransferFree(transfer);
     cryptoDataFree(unsignedBytes);
@@ -429,7 +424,7 @@ testTransactionSerialize() {
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0000", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200", serializedHex));
     
     tezosTransferFree(transfer);
     cryptoDataFree(unsignedBytes);
@@ -454,14 +449,9 @@ testBatchOperationSerialize() {
     
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.type = FEE_BASIS_ESTIMATE;
-    feeBasis.u.estimate.gasLimit = 10200;
-    feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
-    //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
+    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, counter);
     
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
@@ -483,7 +473,7 @@ testBatchOperationSerialize() {
     BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
 //    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0000efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d42946c004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d42946c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
     
     tezosTransferFree(transfer);
     tezosTransactionFree(reveal);
@@ -510,14 +500,9 @@ testTransactionSign() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
-    feeBasis.type = FEE_BASIS_ESTIMATE;
-    feeBasis.u.estimate.gasLimit = 10200;
-    feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
-    //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
+    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, counter);
     
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
@@ -535,12 +520,12 @@ testTransactionSign() {
     //printByteString(0, signedBytes, signedSize);
 
     bin2HexString(signedBytes, signedSize, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd8993405288cd0c03d84f0080c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc870002688209fbb4dcc0a1e81b4d66c74dae4432f72ff6eadf7bfc7e84817d54c3e7038a320d4438e9cd622f8ceac9e54e712f66bfb439ed055e4fecd178e769f7f03", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000333955b5c77d6c054dd9cad5359b57f7c0990932bf36e957604762e03d4a18364c88ff2785dba99e4899d3f5d84f93507f5ef60f000e9b8b84189d49dd975004", serializedHex));
     
     BRTezosHash hash = tezosTransactionGetHash(tx);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
-    assert (0 == strcmp ("onj92gjTtCUTPzQ4zbst3tndYyYGdRTtv7FxwBfBh5w95o5YLwa", hashString));
+    assert (0 == strcmp ("onwgTQgCHBPvTGFWmGrXzDMm3HQdJ4bvWwvv6LEEExmKy6CwMoo", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
@@ -565,14 +550,9 @@ testTransactionSignWithReveal() {
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1PTZ7kd7BwpB9sNuMgJrwksEiYX3fb9Bdf", true);
     targetAddress = tezosAddressCreateFromString("tz1YZpECan19MCZpubtM4zo4mgURHaLoMomy", true);
-    feeBasis.type = FEE_BASIS_ESTIMATE;
-    feeBasis.u.estimate.gasLimit = 12000;
-    feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 3700;
-    feeBasis.u.estimate.sizeInKBytes = 1;
-    //    feeBasis.u.estimate.fee = 5000;
     counter = 6307075;
     amount = 100000;
+    feeBasis = tezosFeeBasisCreateEstimate(3700, 1, 12000, 0, counter);
     
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BLcz2Y6BikLFrwnejtRgBPSiGt1RLTjizUCg15BsUZ6x6JFazJS");
@@ -591,12 +571,12 @@ testTransactionSignWithReveal() {
     //printByteString(0, signedBytes, signedSize);
 
     bin2HexString(signedBytes, signedSize, serializedHex);
-    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b589840183fa8003e05d000064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b589840184fa8003e05d00a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f6450028740967468373f7a2c11c4a1564c26751d69542e9a5baa89809586b32e26bce645d7a98f994a350a381c6f8790c67aa036f5324945f93e63957f23615b4d504", serializedHex));
+    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b5822983fa8003e05dac020064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5822984fa8003e05dac02a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f64500a728f8325f1793ec612c64cf088101dd597376c3a2ef07b19271b4f06ce104f5a9ed5175526d28f2c60e4d78dfac2e6f8fbcc35c30be46fae05100f4dca03408", serializedHex));
     
     BRTezosHash hash = tezosTransactionGetHash(tx);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
-    assert (0 == strcmp ("opEuThdvgqJpuXmi4HsjMQNFUWDvCp9UiifUuZuQxSc2zUpph43", hashString));
+    assert (0 == strcmp ("ooF3XQCjSS2S3TuNeTyxNGuhfWFBzyAwwZu3QyuJz2vNyvjEyq2", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
