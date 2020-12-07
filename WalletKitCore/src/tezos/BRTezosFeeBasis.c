@@ -21,6 +21,7 @@
 #define TEZOS_MUTEZ_PER_GAS_UNIT 0.1
 #define TEZOS_DEFAULT_FEE_MUTEZ 1420
 #define TEZOS_MINIMAL_STORAGE_LIMIT 300 // sending to inactive accounts
+#define TEZOS_MINIMAL_MUTEZ_PER_KBYTE 1000 // equivalent to 1000 nanotez per byte
 
 
 extern BRTezosFeeBasis
@@ -73,10 +74,12 @@ tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis) {
             // unserialized transaction
             return TEZOS_DEFAULT_FEE_MUTEZ;
         } else {
+            BRTezosUnitMutez mutezPerKByte = MAX(TEZOS_MINIMAL_MUTEZ_PER_KBYTE, feeBasis->u.estimate.mutezPerKByte);
             // storage is burned and not part of the fee
             BRTezosUnitMutez minimalFee = TEZOS_MINIMAL_FEE_MUTEZ
                                           + (int64_t)(TEZOS_MUTEZ_PER_GAS_UNIT * feeBasis->u.estimate.gasLimit)
-                                          + (int64_t)(feeBasis->u.estimate.mutezPerKByte * feeBasis->u.estimate.sizeInKBytes);
+                                          + (int64_t)(mutezPerKByte * feeBasis->u.estimate.sizeInKBytes);
+
             // add a 5% padding to the estimated minimum to improve chance of acceptance by network
             return  (BRTezosUnitMutez)(minimalFee * 1.05);
         }
