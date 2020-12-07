@@ -63,6 +63,16 @@ typedef void
                                        BRGenericHash hash,
                                        int rid);
 
+typedef void
+(*BRGenericEstimateFeeCallback) (BRGenericClientContext context,
+                                 BRGenericManager manager,
+                                 BRGenericWallet wallet,
+                                 BRCryptoCookie cookie,
+                                 BRGenericFeeBasis initialFeeBasis,
+                                 OwnershipKept uint8_t * txBytes,
+                                 size_t txSize,
+                                 int rid);
+
 extern void
 genManagerAnnounceSubmit (BRGenericManager manager,
                           int rid,
@@ -77,6 +87,7 @@ typedef struct {
     BRGenericGetTransactionsCallback getTransactions;
     BRGenericGetTransfersCallback getTransfers;
     BRGenericSubmitTransactionCallback submitTransaction;
+    BRGenericEstimateFeeCallback estimateFee;
 } BRGenericClient;
 
 #endif /* BRGenericClient_h */

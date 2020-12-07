@@ -36,6 +36,7 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
 import com.breadwallet.crypto.blockchaindb.models.bdb.BlockchainFee;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthLog;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthToken;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthTransaction;
@@ -189,6 +190,7 @@ final class System implements com.breadwallet.crypto.System {
                 System::getTransactions,
                 System::getTransfers,
                 System::submitTransaction,
+                System::estimateFee,
 
                 System::ethGetGasPrice,
                 System::ethEstimateGas,
@@ -1700,10 +1702,12 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(Blockchain blockchain) {
                                         Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                                        if (maybeBlockHeight.isPresent()) {
+                                        Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                        if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
                                             UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                                            Log.log(Level.FINE, String.format("BRCryptoCWMBtcGetBlockNumberCallback: succeeded (%s)", blockchainHeight));
-                                            walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberSuccess(callbackState, blockchainHeight);
+                                            String verifiedBlockHash = maybeVerifiedBlockHash.get();
+                                            Log.log(Level.FINE, String.format("BRCryptoCWMBtcGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
+                                            walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberSuccess(callbackState, blockchainHeight, verifiedBlockHash);
                                         } else {
                                             Log.log(Level.SEVERE, "BRCryptoCWMBtcGetBlockNumberCallback: failed with missing block height");
                                             walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberFailure(callbackState);
@@ -1955,6 +1959,7 @@ final class System implements com.breadwallet.crypto.System {
                                                     for (Transaction transaction : transactions) {
                                                         UnsignedLong blockHeight = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
                                                         UnsignedLong timestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
+                                                        String blockHash = transaction.getBlockHash().or("");
 
                                                         BRCryptoTransferStateType status = (transaction.getStatus().equals("confirmed")
                                                                 ? BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_INCLUDED
@@ -1978,6 +1983,7 @@ final class System implements com.breadwallet.crypto.System {
                                                                     o.o2,
                                                                     timestamp,
                                                                     blockHeight,
+                                                                    blockHash,
                                                                     o.o1.getMeta());
                                                         }
                                                     }
@@ -2074,6 +2080,49 @@ final class System implements com.breadwallet.crypto.System {
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceSubmitTransferFailure(callbackState);
+            } finally {
+                coreWalletManager.give();
+            }
+        });
+    }
+
+    private static void estimateFee(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
+                                          byte[] transaction) {
+        EXECUTOR_CLIENT.execute(() -> {
+            try {
+                Log.log(Level.FINE, "BRCryptoCWMBtcEstimateFeeCallback");
+
+                Optional<System> optSystem = getSystem(context);
+                if (optSystem.isPresent()) {
+                    System system = optSystem.get();
+
+                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
+                    if (optWalletManager.isPresent()) {
+                        WalletManager walletManager = optWalletManager.get();
+                                String hashAsHex = "0x0000000000000000000000000000000000000000000000000000000000000000";
+                                system.query.estimateFee(walletManager.getNetwork().getUids(), hashAsHex, transaction, new CompletionHandler<TransactionFee, QueryError>() {
+                                    @Override
+                                    public void handleData(TransactionFee fee) {
+                                        Log.log(Level.FINE, "BRCryptoCWMBtcEstimateFeeCallback: succeeded");
+                                        walletManager.getCoreBRCryptoWalletManager().announceEstimateFeeSuccess(callbackState, fee.getProperties());
+                                    }
+
+                                    @Override
+                                    public void handleError(QueryError error) {
+                                        Log.log(Level.SEVERE, "BRCryptoCWMBtcEstimateFeeCallback: failed", error);
+                                        walletManager.getCoreBRCryptoWalletManager().announceEstimateFeeFailure(callbackState);
+                                    }
+                                });
+                    } else {
+                        throw new IllegalStateException("BRCryptoCWMBtcEstimateFeeCallback: missing manager");
+                    }
+
+                } else {
+                    throw new IllegalStateException("BRCryptoCWMBtcEstimateFeeCallback: missing system");
+                }
+            } catch (RuntimeException e) {
+                Log.log(Level.SEVERE, e.getMessage());
+                coreWalletManager.announceEstimateFeeFailure(callbackState);
             } finally {
                 coreWalletManager.give();
             }

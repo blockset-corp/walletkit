@@ -23,6 +23,21 @@ hederaTinyBarCoerceToUInt64 (BRHederaUnitTinyBar bars) {
 
 // MARK: - Generic Network
 
+static BRGenericHash
+genericHederaNetworkCreateHashFromString (const char *string) {
+    BRHederaTransactionHash hash;
+    memset (hash.bytes, 0x00, sizeof (hash.bytes));
+    assert (96 == strlen (string));
+    hexDecode (hash.bytes, sizeof (hash.bytes), string, strlen (string));
+    
+    return genericHashCreate(48, hash.bytes, GENERIC_HASH_ENCODING_HEX);
+}
+
+static char *
+genericHederaNetworkEncodeHash (BRGenericHash hash) {
+    return hexEncodeCreate (NULL, hash.bytes, hash.bytesCount);
+}
+
 // MARK: - Generic Account
 
 static BRGenericAccountRef
@@ -85,6 +100,8 @@ genericHederaAccountGetSerialization (BRGenericAccountRef account,
 
 static void
 genericHederaAccountSignTransferWithSeed (BRGenericAccountRef account,
+                                          BRGenericWalletRef wallet,
+                                          BRGenericHash lastBlockHash,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {
@@ -171,14 +188,17 @@ genericHederaTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRHederaUnitTinyBar hederaFee = hederaTransactionGetFee ((BRHederaTransaction) transfer);
     return (BRGenericFeeBasis) {
         uint256Create (hederaTinyBarCoerceToUInt64 (hederaFee)),
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
 static BRGenericHash
 genericHederaTransferGetHash (BRGenericTransferRef transfer) {
     BRHederaTransactionHash hash = hederaTransactionGetHash ((BRHederaTransaction) transfer);
-    return genericHashCreate (sizeof(hash.bytes), hash.bytes);
+    return genericHashCreate (sizeof(hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_HEX);
 }
 
 static uint8_t *
@@ -448,6 +468,8 @@ genericHederaWalletManagerGetAPISyncType (void) {
 struct BRGenericHandersRecord genericHederaHandlersRecord = {
     CRYPTO_NETWORK_TYPE_HBAR,
     { // Network
+        genericHederaNetworkCreateHashFromString,
+        genericHederaNetworkEncodeHash
     },
 
     {    // Account
@@ -481,6 +503,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetFeeBasis,
         genericHederaTransferGetHash,
         genericHederaTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -507,6 +530,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaWalletManagerRecoverTransfer,
         genericHederaWalletManagerRecoverTransfersFromRawTransaction,
         genericHederaWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

@@ -717,6 +717,9 @@ public final class System {
                             if let blockHeight = blockchainModel.blockHeight {
                                 cryptoNetworkSetHeight (network.core, blockHeight)
                             }
+                            if let verifiedBlockHash = blockchainModel.verifiedBlockHash {
+                                cryptoNetworkSetVerifiedBlockHashAsString (network.core, verifiedBlockHash)
+                            }
 
                             self.configure (network: network, feesFrom: blockchainModel)
                         }
@@ -1360,7 +1363,8 @@ extension System {
 
             default:
                 // There is more than one "__fee__" entry
-                preconditionFailure()
+                assertionFailure()
+                return transfers.map { (transfer: $0, fee: nil) }
             }
     }
 }
@@ -1456,7 +1460,7 @@ extension System {
                         (res: Result<BlockChainDB.Model.Blockchain, BlockChainDB.QueryError>) in
                         defer { cryptoWalletManagerGive (cwm!) }
                         res.resolve (
-                            success: { cwmAnnounceGetBlockNumberSuccessAsInteger (manager.core, sid, $0.blockHeight!) },
+                            success: { cwmAnnounceGetBlockNumberSuccessAsInteger (manager.core, sid, $0.blockHeight ?? 0, $0.verifiedBlockHash) },
                             failure: { (_) in cwmAnnounceGetBlockNumberFailure (manager.core, sid) })
                     }
                 }},
@@ -1603,6 +1607,7 @@ extension System {
                                                                 let timestamp = transaction.timestamp.map { $0.asUnixTimestamp } ?? 0
                                                                 let height    = transaction.blockHeight ?? BLOCK_HEIGHT_UNBOUND
                                                                 let status    = System.getTransferStatus (transaction.status)
+                                                                let blockHash = transaction.blockHash ?? ""
 
                                                                 System.mergeTransfers (transaction.transfers, with: addresses)
                                                                     .forEach { (arg: (transfer: BlockChainDB.Model.Transfer, fee: String?)) in
@@ -1627,6 +1632,7 @@ extension System {
                                                                                                        fee,
                                                                                                        timestamp,
                                                                                                        height,
+                                                                                                       blockHash,
                                                                                                        metaKeysPtr.count,
                                                                                                        &metaKeysPtr,
                                                                                                        &metaValsPtr)
@@ -1673,6 +1679,39 @@ extension System {
                                 cwmAnnounceSubmitTransferFailure (cwm, sid) })
                     }
 
+                }},
+            
+            funcEstimateFee: { (context, cwm, sid, transactionBytes, transactionBytesLength) in
+                precondition (nil != context  && nil != cwm)
+                
+                guard let (_, manager) = System.systemExtract (context, cwm)
+                else { System.cleanup  ("SYS: EstimateFee: Missed {cwm}", cwm: cwm); return }
+                print ("SYS: EstimateFee")
+                
+                let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
+                
+                manager.query.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: "", transaction: data) {
+                    (res: Result<BlockChainDB.Model.TransactionFee, BlockChainDB.QueryError>) in
+                    defer { cryptoWalletManagerGive (cwm!) }
+                    res.resolve(
+                        success: {
+                            let properties = $0.properties ?? [:]
+                            var metaKeysPtr = Array(properties.keys)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaKeysPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+
+                            var metaValsPtr = Array(properties.values)
+                                .map { UnsafePointer<Int8>(strdup($0)) }
+                            defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
+                            cwmAnnounceEstimateFeeSuccess (cwm,
+                                                           sid,
+                                                           metaKeysPtr.count,
+                                                           &metaKeysPtr,
+                                                           &metaValsPtr);
+                        },
+                        failure: { (e) in
+                            print ("SYS: EstimateFee: Error: \(e)")
+                            cwmAnnounceEstimateFeeFailure (cwm, sid) })
                 }},
 
             funcGetGasPriceETH: { (context, cwm, sid, network) in

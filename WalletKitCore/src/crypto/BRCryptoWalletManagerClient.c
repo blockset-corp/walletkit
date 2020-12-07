@@ -47,6 +47,7 @@ typedef enum  {
     CWM_CALLBACK_TYPE_GEN_GET_TRANSACTIONS,
     CWM_CALLBACK_TYPE_GEN_GET_TRANSFERS,
     CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION,
+    CWM_CALLBACK_TYPE_GEN_ESTIMATE_FEE,
 
 } BRCryptoCWMCallbackType;
 
@@ -77,6 +78,11 @@ struct BRCryptoClientCallbackStateRecord {
             BRGenericWallet wid;
             BRGenericTransfer tid; // A copy; must be released.
         } genWithTransaction;
+        struct {
+            BRGenericWallet wid;
+            BRGenericFeeBasis initialFeeBasis;
+            BRCryptoCookie cookie;
+        } genEstimateFee;
     } u;
     int rid;
 };
@@ -91,6 +97,7 @@ cwmClientCallbackStateRelease (BRCryptoClientCallbackState state) {
         case CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION:
             genTransferRelease (state->u.genWithTransaction.tid);
             break;
+            
         default:
             break;
     }
@@ -1795,6 +1802,34 @@ cwmSubmitTransactionAsGEN (BRGenericClientContext context,
     cryptoWalletManagerGive (cwm);
 }
 
+static void
+cwmEstimateFeeBasisAsGEN (BRGenericClientContext context,
+                          BRGenericManager manager,
+                          BRGenericWallet wallet,
+                          BRCryptoCookie cookie,
+                          BRGenericFeeBasis initialFeeBasis,
+                          OwnershipKept uint8_t *tx,
+                          size_t txLength,
+                          int rid) {
+    // Extract CWM, checking to make sure it still lives
+    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak(context);
+    if (NULL == cwm) return;
+    
+    BRCryptoClientCallbackState callbackState = calloc (1, sizeof(struct BRCryptoClientCallbackStateRecord));
+    callbackState->type = CWM_CALLBACK_TYPE_GEN_ESTIMATE_FEE;
+    callbackState->u.genEstimateFee.wid = wallet;
+    callbackState->u.genEstimateFee.cookie = cookie;
+    callbackState->u.genEstimateFee.initialFeeBasis = initialFeeBasis;
+    callbackState->rid = rid;
+    
+    cwm->client.funcEstimateFee (cwm->client.context,
+                                 cryptoWalletManagerTake (cwm),
+                                 callbackState,
+                                 tx, txLength);
+    
+    cryptoWalletManagerGive (cwm);
+}
+
 // MARK: - Client Creation Functions
 
 // The below client functions pass a BRCryptoWalletManager reference to the underlying
@@ -1866,7 +1901,8 @@ cryptoWalletManagerClientCreateGENClient (BRCryptoWalletManager cwm) {
         cwmGetBlockNumberAsGEN,
         cwmGetTransactionsAsGEN,
         cwmGetTransfersAsGEN,
-        cwmSubmitTransactionAsGEN
+        cwmSubmitTransactionAsGEN,
+        cwmEstimateFeeBasisAsGEN
     };
 }
 
@@ -1875,7 +1911,8 @@ cryptoWalletManagerClientCreateGENClient (BRCryptoWalletManager cwm) {
 extern void
 cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager cwm,
                                            OwnershipGiven BRCryptoClientCallbackState callbackState,
-                                           uint64_t blockNumber) {
+                                           uint64_t blockNumber,
+                                           const char *blockHashString) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_GET_BLOCK_NUMBER == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_GET_BLOCK_NUMBER == callbackState->type);
@@ -1897,6 +1934,12 @@ cwmAnnounceGetBlockNumberSuccessAsInteger (OwnershipKept BRCryptoWalletManager c
             // GEN does not signal events; so we must do it ourselves.
             BRCryptoNetwork network = cryptoWalletManagerGetNetwork(cwm);
             cryptoNetworkSetHeight (network, blockNumber);
+            
+            if (NULL != blockHashString) {
+                BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (cwm->network, blockHashString);
+                cryptoNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+                cryptoHashGive (verifiedBlockHash);
+            }
 
             cwm->listener.walletManagerEventCallback (cwm->listener.context,
                                                       cryptoWalletManagerTake(cwm),
@@ -2172,6 +2215,7 @@ cwmAnnounceGetTransferItemGEN (BRCryptoWalletManager cwm,
                                OwnershipKept const char *fee,
                                uint64_t timestamp,
                                uint64_t blockHeight,
+                               OwnershipKept const char *blockHash,
                                size_t attributesCount,
                                OwnershipKept const char **attributeKeys,
                                OwnershipKept const char **attributeVals) {
@@ -2385,6 +2429,69 @@ cwmAnnounceSubmitTransferFailure (OwnershipKept BRCryptoWalletManager cwm,
     }
 
     cryptoWalletManagerGive (cwm);
+    cwmClientCallbackStateRelease (callbackState);
+}
+
+extern void
+cwmAnnounceEstimateFeeSuccess (OwnershipKept BRCryptoWalletManager cwm,
+                               OwnershipGiven BRCryptoClientCallbackState callbackState,
+                               size_t attributesCount,
+                               OwnershipKept const char **attributeKeys,
+                               OwnershipKept const char **attributeVals) {
+    assert (CWM_CALLBACK_TYPE_GEN_ESTIMATE_FEE == callbackState->type);
+    assert (BLOCK_CHAIN_TYPE_GEN == cwm->type);
+    
+    BRCryptoCookie cookie = callbackState->u.genEstimateFee.cookie;
+    
+    BRGenericFeeBasis initialFeeBasis = callbackState->u.genEstimateFee.initialFeeBasis;
+    BRGenericWallet wid = callbackState->u.genEstimateFee.wid;
+    BRCryptoWallet wallet = cryptoWalletManagerFindWalletAsGEN (cwm, wid);
+    assert(wallet);
+    
+    BRGenericFeeBasis genFeeBasis = genManagerRecoverFeeBasisFromFeeEstimate (cwm->u.gen,
+                                                                              initialFeeBasis,
+                                                                              attributesCount,
+                                                                              attributeKeys,
+                                                                              attributeVals);
+    
+    // send event
+    BRCryptoUnit feeUnit = cryptoWalletGetUnitForFee(wallet);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsGEN(feeUnit, genFeeBasis);
+
+    cwm->listener.walletEventCallback(cwm->listener.context,
+                                      cryptoWalletManagerTake(cwm),
+                                      wallet,
+                                      (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+        { .feeBasisEstimated = {
+            CRYPTO_SUCCESS,
+            cookie,
+            cryptoFeeBasisTake (feeBasis)
+        }}
+    });
+
+    cryptoFeeBasisGive (feeBasis);
+    cryptoUnitGive (feeUnit);
+    cwmClientCallbackStateRelease (callbackState);
+}
+
+extern void
+cwmAnnounceEstimateFeeFailure (OwnershipKept BRCryptoWalletManager cwm,
+                               OwnershipGiven BRCryptoClientCallbackState callbackState) {
+    BRGenericWallet wid = callbackState->u.genEstimateFee.wid;
+    BRCryptoWallet wallet = cryptoWalletManagerFindWalletAsGEN (cwm, wid);
+    
+    cwm->listener.walletEventCallback(cwm->listener.context,
+                                      cryptoWalletManagerTake(cwm),
+                                      wallet,
+                                      (BRCryptoWalletEvent) {
+        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
+        { .feeBasisEstimated = {
+            CRYPTO_ERROR_FAILED,
+            callbackState->u.genEstimateFee.cookie,
+        }}
+    });
+    
     cwmClientCallbackStateRelease (callbackState);
 }
 

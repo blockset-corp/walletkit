@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "BRGenericRipple.h"
+#include "BRGenericPrivate.h"
 #include "ripple/BRRippleAccount.h"
 #include "ripple/BRRippleWallet.h"
 #include "ripple/BRRippleTransaction.h"
@@ -19,6 +20,19 @@
 #include "ethereum/util/BRUtilHex.h"
 
 // MARK: - Generic Network
+
+static BRGenericHash
+genericRippleNetworkCreateHashFromString (const char *string) {
+    BRRippleTransactionHash hash;
+    hexDecode (hash.bytes, sizeof (hash.bytes), string, strlen (string));
+    
+    return genericHashCreate(sizeof (hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_HEX);
+}
+
+static char *
+genericRippleNetworkEncodeHash (BRGenericHash hash) {
+    return hexEncodeCreate (NULL, hash.bytes, hash.bytesCount);
+}
 
 // MARK: - Generic Account
 
@@ -71,6 +85,8 @@ genericRippleAccountGetSerialization (BRGenericAccountRef account,
 
 static void
 genericRippleAccountSignTransferWithSeed (BRGenericAccountRef account,
+                                          BRGenericWalletRef wallet,
+                                          BRGenericHash lastBlockHash,
                                           BRGenericTransferRef transfer,
                                           UInt512 seed)
 {
@@ -163,14 +179,17 @@ genericRippleTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRRippleUnitDrops rippleFee = rippleTransferGetFee ((BRRippleTransfer) transfer);
     return (BRGenericFeeBasis) {
         uint256Create (rippleFee),
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
 static BRGenericHash
 genericRippleTransferGetHash (BRGenericTransferRef transfer) {
     BRRippleTransactionHash hash = rippleTransferGetTransactionId ((BRRippleTransfer) transfer);
-    return genericHashCreate (sizeof (hash.bytes), hash.bytes);
+    return genericHashCreate (sizeof (hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_HEX);
 }
 
 static uint8_t *
@@ -305,7 +324,10 @@ genericRippleWalletEstimateFeeBasis (BRGenericWalletRef wallet,
                                      UInt256 pricePerCostFactor) {
     return (BRGenericFeeBasis) {
         pricePerCostFactor,
-        1
+        1,
+        0,
+        0,
+        0
     };
 }
 
@@ -441,7 +463,7 @@ genericRippleWalletManagerRecoverTransfer (const char *hash,
 
 static BRArrayOf(BRGenericTransferRef)
 genericRippleWalletManagerRecoverTransfersFromRawTransaction (uint8_t *bytes,
-                                                            size_t   bytesCount) {
+                                                              size_t   bytesCount) {
     return NULL;
 }
 
@@ -455,6 +477,8 @@ genericRippleWalletManagerGetAPISyncType (void) {
 struct BRGenericHandersRecord genericRippleHandlersRecord = {
     CRYPTO_NETWORK_TYPE_XRP,
     { // Network
+        genericRippleNetworkCreateHashFromString,
+        genericRippleNetworkEncodeHash
     },
 
     {    // Account
@@ -488,6 +512,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleTransferGetFeeBasis,
         genericRippleTransferGetHash,
         genericRippleTransferGetSerialization,
+        NULL//GetSerializationForFeeEstimation
     },
 
     {   // Wallet
@@ -514,6 +539,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleWalletManagerRecoverTransfer,
         genericRippleWalletManagerRecoverTransfersFromRawTransaction,
         genericRippleWalletManagerGetAPISyncType,
+        NULL//RecoverFeeBasisFromEstimate
     },
 };
 

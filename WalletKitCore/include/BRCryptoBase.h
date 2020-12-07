@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <memory.h>
+#include <assert.h>
 
 // temporary
 
@@ -80,6 +81,51 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         memset (data16, 0, sizeof (BRCryptoData16));
     }
 
+    /// MARK: - Variable Size Data
+
+    typedef struct {
+        uint8_t * bytes;
+        size_t size;
+    } BRCryptoData;
+
+    static inline BRCryptoData cryptoDataNew (size_t size) {
+        BRCryptoData data;
+        data.size = size;
+        if (size < 1) data.size = 1;
+        data.bytes = calloc (data.size, sizeof(uint8_t));
+        assert (data.bytes != NULL);
+        return data;
+    }
+
+    static inline BRCryptoData cryptoDataCopy (uint8_t * bytes, size_t size) {
+        BRCryptoData data;
+        data.bytes = malloc (size * sizeof(uint8_t));
+        memcpy (data.bytes, bytes, size);
+        data.size = size;
+        return data;
+    }
+
+    static inline BRCryptoData
+    cryptoDataConcat (BRCryptoData * fields, size_t numFields) {
+        size_t totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            totalSize += fields[i].size;
+        }
+        BRCryptoData concat = cryptoDataNew (totalSize);
+        totalSize = 0;
+        for (int i=0; i < numFields; i++) {
+            memcpy (&concat.bytes[totalSize], fields[i].bytes, fields[i].size);
+            totalSize += fields[i].size;
+        }
+        return concat;
+    }
+
+    static inline void cryptoDataFree (BRCryptoData data) {
+        if (data.bytes) free(data.bytes);
+        data.bytes = NULL;
+        data.size = 0;
+    }
+
     /// MARK: Network Canonical Type
 
     ///
@@ -99,10 +145,11 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_ETH,
         CRYPTO_NETWORK_TYPE_XRP,
         CRYPTO_NETWORK_TYPE_HBAR,
+        CRYPTO_NETWORK_TYPE_XTZ,
         // CRYPTO_NETWORK_TYPE_XLM,
     } BRCryptoNetworkCanonicalType;
 
-#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_HBAR)
+#    define NUMBER_OF_NETWORK_TYPES    (1 + CRYPTO_NETWORK_TYPE_XTZ)
 
     //
     // Crypto Network Base Currency
@@ -115,6 +162,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_ETH     "eth"
 #    define CRYPTO_NETWORK_CURRENCY_XRP     "xrp"
 #    define CRYPTO_NETWORK_CURRENCY_HBAR    "hbar"
+#    define CRYPTO_NETWORK_CURRENCY_XTZ     "xtz"
 
     extern const char *
     cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type);

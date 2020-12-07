@@ -55,6 +55,20 @@ target_include_directories(ed25519
                            INTERFACE
                            ${PROJECT_SOURCE_DIR}/vendor/ed25519)
 
+#
+# blake2 build
+#
+add_library(blake2
+            STATIC)
+
+target_sources (blake2
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/vendor/blake2/blake2b.c
+                ${PROJECT_SOURCE_DIR}/vendor/blake2/blake2b.h)
+
+target_include_directories (blake2
+                            INTERFACE
+                            ${PROJECT_SOURCE_DIR}/vendor/blake2)
 
 #
 # crypto build
@@ -371,6 +385,33 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/hedera/testHedera.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# Tezos
+target_sources (corecrypto
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezos.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAccount.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAccount.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosBase.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.h
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosWallet.c
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosWallet.h)
+
+# Tezos Tests
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    target_sources (corecrypto
+            PRIVATE
+            ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/tezos/testTezos.c)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
 # Generic
 target_sources (corecrypto
                 PRIVATE
@@ -385,7 +426,9 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/generic/BRGenericRipple.h
                 ${PROJECT_SOURCE_DIR}/src/generic/BRGenericRipple.c
                 ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHedera.h
-                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHedera.c)
+                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericHedera.c
+                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericTezos.h
+                ${PROJECT_SOURCE_DIR}/src/generic/BRGenericTezos.c)
 
 # Crypto
 target_sources (corecrypto
@@ -500,7 +543,8 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 # Link in the static sqlite3 library
 target_link_libraries (corecrypto
                        sqlite3
-                       ed25519)
+                       ed25519
+                       blake2)
 
 # On Android, link in the log library
 if (ANDROID)

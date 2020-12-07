@@ -43,6 +43,28 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
     var isTokCurrency: Bool {
         return !isEthCurrency && !isBitCurrency
     }
+    
+    private var transferAttributes: Set<TransferAttribute> {
+        var attributes: Set<TransferAttribute> = Set()
+
+        if let destinationTagAttribute = self.wallet.transferAttributesFor (target: target)
+            .first (where: { "DestinationTag" == $0.key }) {
+            destinationTagAttribute.value = (self.recvField.text! == "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg"
+                ? "739376465"
+                : nil)
+            attributes.insert (destinationTagAttribute)
+        }
+
+        if let memoAttribute = self.wallet.transferAttributesFor(target: target)
+            .first (where: { "Memo" == $0.key }) {
+            memoAttribute.value = (self.recvField.text! == "0.0.16952" // Binance
+                ? "1009554437"
+                : nil)
+            attributes.insert(memoAttribute)
+        }
+        
+        return attributes
+    }
 
     //
     // Can't select gasPrice, gasLimit nor SAT/KB because we can't create a TransferFeeBasis
@@ -210,7 +232,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
         let amount = Amount.create (double: Double(self.amount()), unit: wallet.unit)
 
-        wallet.estimateFee (target: target, amount: amount, fee: fee) {
+        wallet.estimateFee (target: target, amount: amount, fee: fee, attributes: transferAttributes) {
             (result: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
             guard case let .success(feeBasis) = result
                 else { return }

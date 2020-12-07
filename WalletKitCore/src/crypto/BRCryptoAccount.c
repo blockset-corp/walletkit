@@ -15,12 +15,14 @@
 #include "generic/BRGenericHandlers.h"  // genericHandlersInstall
 #include "generic/BRGenericRipple.h"    // genericRippleHandlers
 #include "generic/BRGenericHedera.h"    // genericHederaHandlers
+#include "generic/BRGenericTezos.h"     // genericTezosHandlers
 
 static pthread_once_t  _accounts_once = PTHREAD_ONCE_INIT;
 
 static void _accounts_init (void) {
     genHandlersInstall (genericRippleHandlers);
     genHandlersInstall (genericHederaHandlers);
+    genHandlersInstall (genericTezosHandlers);
     // ...
 }
 
@@ -35,7 +37,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 1: BTC (w/ BCH), ETH
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  3
+// Version 4: XTZ
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  4
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAccount, cryptoAccount);
 
@@ -81,6 +84,7 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
                              BREthereumAccount eth,
                              BRGenericAccount xrp,
                              BRGenericAccount hbar,
+                             BRGenericAccount xtz,
                              uint64_t timestamp,
                              const char * uids) {
     BRCryptoAccount account = malloc (sizeof (struct BRCryptoAccountRecord));
@@ -89,6 +93,7 @@ cryptoAccountCreateInternal (BRMasterPubKey btc,
     account->eth = eth;
     account->xrp = xrp;
     account->hbar = hbar;
+    account->xtz = xtz;
     account->uids = strdup (uids);
     account->timestamp = timestamp;
     account->ref = CRYPTO_REF_ASSIGN(cryptoAccountRelease);
@@ -104,6 +109,7 @@ cryptoAccountCreateFromSeedInternal (UInt512 seed,
                                         ethAccountCreateWithBIP32Seed(seed),
                                         genAccountCreate (genericRippleHandlers->type, seed),
                                         genAccountCreate (genericHederaHandlers->type, seed),
+                                        genAccountCreate (genericTezosHandlers->type, seed),
                                         timestamp,
                                         uids);
 }
@@ -211,8 +217,16 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     BRGenericAccount hbar = genAccountCreateWithSerialization (genericHederaHandlers->type, bytesPtr, hbarSize);
     assert (NULL != hbar);
     BYTES_PTR_INCR_AND_CHECK (hbarSize); // Move the pointer to the end of the Hedera account
+    
+    // XTZ
+    size_t xtzSize = UInt32GetBE(bytesPtr);
+    BYTES_PTR_INCR_AND_CHECK (szSize);
 
-    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, timestamp, uids);
+    BRGenericAccount xtz = genAccountCreateWithSerialization (genericTezosHandlers->type, bytesPtr, xtzSize);
+    assert (NULL != xtz);
+    BYTES_PTR_INCR_AND_CHECK (xtzSize); // Move the pointer to then end of the XRP account
+
+    return cryptoAccountCreateInternal (mpk, eth, xrp, hbar, xtz, timestamp, uids);
 #undef BYTES_PTR_INCR_AND_CHECK
 }
 
@@ -221,6 +235,7 @@ cryptoAccountRelease (BRCryptoAccount account) {
     ethAccountRelease(account->eth);
     genAccountRelease(account->xrp);
     genAccountRelease(account->hbar);
+    genAccountRelease(account->xtz);
 
     free (account->uids);
     memset (account, 0, sizeof(*account));
@@ -267,13 +282,18 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
     // HBAR
     size_t   hbarSize = 0;
     uint8_t *hbarBytes = genAccountGetSerialization (account->hbar, &hbarSize);
+    
+    // XTZ
+    size_t   xtzSize = 0;
+    uint8_t *xtzBytes = genAccountGetSerialization (account->xtz, &xtzSize);
 
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize
                    + (szSize + mpkSize)
                    + (szSize + ethSize)
                    + (szSize + xrpSize)
-                   + (szSize + hbarSize));
+                   + (szSize + hbarSize)
+                   + (szSize + xtzSize));
     uint8_t *bytes = calloc (1, *bytesCount);
     uint8_t *bytesPtr = bytes;
 
@@ -321,6 +341,13 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     memcpy (bytesPtr, hbarBytes, hbarSize);
     bytesPtr += hbarSize;
+    
+    // XTZ
+    UInt32SetBE (bytesPtr, (uint32_t) xtzSize);
+    bytesPtr += szSize;
+
+    memcpy (bytesPtr, xtzBytes, xtzSize);
+    bytesPtr += xtzSize;
 
     // Avoid static analysis warning
     (void) bytesPtr;
@@ -331,6 +358,7 @@ cryptoAccountSerialize (BRCryptoAccount account, size_t *bytesCount) {
 
     free (xrpBytes);
     free (hbarBytes);
+    free (xtzBytes);
 
     return bytes;
 }
@@ -456,6 +484,7 @@ cryptoAccountAsGEN (BRCryptoAccount account,
                     BRCryptoNetworkCanonicalType type) {
     if (genAccountHasType (account->xrp, type)) return account->xrp;
     if (genAccountHasType (account->hbar, type)) return account->hbar;
+    if (genAccountHasType (account->xtz, type)) return account->xtz;
     return NULL;
 }
 

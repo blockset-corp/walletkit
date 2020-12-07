@@ -13,6 +13,7 @@
 #include "BRCryptoAddressP.h"
 #include "BRCryptoAmountP.h"
 #include "BRCryptoAccountP.h"
+#include "BRCryptoHashP.h"
 
 #include "bitcoin/BRChainParams.h"
 #include "bcash/BRBCashParams.h"
@@ -36,6 +37,7 @@ cryptoNetworkCanonicalTypeGetCurrencyCode (BRCryptoNetworkCanonicalType type) {
         CRYPTO_NETWORK_CURRENCY_ETH,
         CRYPTO_NETWORK_CURRENCY_XRP,
         CRYPTO_NETWORK_CURRENCY_HBAR,
+        CRYPTO_NETWORK_CURRENCY_XTZ,
         // "Stellar"
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
@@ -137,6 +139,7 @@ cryptoNetworkCreate (const char *uids,
 
     network->addressSchemes = NULL;
     network->syncModes = NULL;
+    network->verifiedBlockHash = NULL;
 
     network->ref = CRYPTO_REF_ASSIGN(cryptoNetworkRelease);
 
@@ -279,6 +282,30 @@ extern void
 cryptoNetworkSetHeight (BRCryptoNetwork network,
                         BRCryptoBlockChainHeight height) {
     network->height = height;
+}
+
+extern BRCryptoHash
+cryptoNetworkGetVerifiedBlockHash (BRCryptoNetwork network) {
+    return (NULL != network->verifiedBlockHash)
+    ? cryptoHashTake (network->verifiedBlockHash)
+    : NULL;
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHash (BRCryptoNetwork network,
+                                   BRCryptoHash verifiedBlockHash) {
+    pthread_mutex_lock (&network->lock);
+    if (NULL != network->verifiedBlockHash) cryptoHashGive (network->verifiedBlockHash);
+    network->verifiedBlockHash = cryptoHashTake (verifiedBlockHash);
+    pthread_mutex_unlock (&network->lock);
+}
+
+extern void
+cryptoNetworkSetVerifiedBlockHashAsString (BRCryptoNetwork network,
+                                           const char * blockHashString) {
+    BRCryptoHash verifiedBlockHash = cryptoNetworkCreateHashFromString (network, blockHashString);
+    cryptoNetworkSetVerifiedBlockHash (network, verifiedBlockHash);
+    cryptoHashGive (verifiedBlockHash);
 }
 
 extern uint32_t
@@ -640,6 +667,25 @@ cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
     return network->type;
 }
 
+private_extern BRCryptoHash
+cryptoNetworkCreateHashFromString (BRCryptoNetwork network,
+                                   const char *string) {
+    switch (network->type) {
+        case BLOCK_CHAIN_TYPE_BTC:
+            assert(64 == strlen (string));
+            UInt256 hash = uint256(string);
+            return cryptoHashCreateAsBTC (hash);
+            
+        case BLOCK_CHAIN_TYPE_ETH:
+            return cryptoHashCreateAsETH (ethHashCreate (string));
+            
+        case BLOCK_CHAIN_TYPE_GEN: {
+            BRGenericNetwork genNetwork = cryptoNetworkAsGEN (network);
+            return cryptoHashCreateAsGEN (genNetworkHashFromString (genNetwork, string));
+        }
+    }
+}
+
 // MARK: - Network Defaults
 
 static BRCryptoNetwork
@@ -671,6 +717,10 @@ cryptoNetworkCreateBuiltin (const char *symbol,
         network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_HBAR);
     else if (0 == strcmp ("hbarTestnet", symbol))
         network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_HBAR);
+    else if (0 == strcmp ("xtzMainnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 1, CRYPTO_NETWORK_TYPE_XTZ);
+    else if (0 == strcmp ("xtzTestnet", symbol))
+        network = cryptoNetworkCreateAsGEN (uids, name, 0, CRYPTO_NETWORK_TYPE_XTZ);
 //    else if (0 == strcmp ("xlmMainnet", symbol))
 //        network = cryptoNetworkCreateAsGEN (uids, name, GEN_NETWORK_TYPE_Xlm, 1, CRYPTO_NETWORK_TYPE_XLM);
     // ...

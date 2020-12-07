@@ -13,4 +13,4 @@ git commit -m 'Update secp256k1 to <commit>'
 #
 # ed25519 - see https://github.com/orlp/ed25519
 #
-# ...
+# blake2 - see https://github.com/blockset-corp/blake2_mjosref

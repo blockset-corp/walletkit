@@ -56,8 +56,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "era(C)"
+            argument = "boring(C)"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "era(C)"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "green"

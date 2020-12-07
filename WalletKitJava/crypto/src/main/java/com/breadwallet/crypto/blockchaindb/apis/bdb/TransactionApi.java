@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 import com.breadwallet.crypto.blockchaindb.apis.PagedData;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
@@ -102,6 +103,20 @@ public class TransactionApi {
                 "data", BaseEncoding.base64().encode(tx));
 
         jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, handler);
+    }
+
+    public void estimateFee(String id,
+                                  String hashAsHex,
+                                  byte[] tx,
+                                  CompletionHandler<TransactionFee, QueryError> handler) {
+        Multimap<String, String> params = ImmutableListMultimap.of(
+                "estimate_fee", "true");
+        Map json = ImmutableMap.of(
+                "blockchain_id", id,
+                "transaction_id", hashAsHex,
+                "data", BaseEncoding.base64().encode(tx));
+
+        jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);
     }
 
     private CompletionHandler<PagedData<Transaction>, QueryError> createPagedResultsHandler(GetChunkedCoordinator<String, Transaction> coordinator,

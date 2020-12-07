@@ -44,6 +44,7 @@ let package = Package(
                 "WalletKitSQLite",
                 "WalletKitEd25519",
                 "WalletKitHederaProto",
+                "WalletKitBlake2"
             ],
             path: ".",
             sources: ["src/version"],               // Holds BRCryptoVersion.c only
@@ -128,6 +129,20 @@ let package = Package(
                 .unsafeFlags([
                     "-Xclang", "-analyzer-disable-all-checks",
                     "-Wno-shorten-64-to-32",
+                ])
+            ]
+        ),
+        
+        // Custom compilation flags for blake2 - to silence warnings
+        .target(
+            name: "WalletKitBlake2",
+            dependencies: [],
+            path: "vendor/blake2",
+            exclude: [],
+            publicHeadersPath: nil,
+            cSettings: [
+                .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks"
                 ])
             ]
         ),

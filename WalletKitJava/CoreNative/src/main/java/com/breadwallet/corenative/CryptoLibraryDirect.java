@@ -128,6 +128,9 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoNetworkGetUnitAsDefault(Pointer network, Pointer currency);
     public static native Pointer cryptoNetworkGetUnitAsBase(Pointer network, Pointer currency);
     public static native long cryptoNetworkGetHeight(Pointer network);
+    public static native Pointer cryptoNetworkGetVerifiedBlockHash (Pointer network);
+    public static native void cryptoNetworkSetVerifiedBlockHash (Pointer network, Pointer verifiedBlockHash);
+    public static native void cryptoNetworkSetVerifiedBlockHashAsString (Pointer network, String verifiedBlockHashString);
     public static native int cryptoNetworkGetConfirmationsUntilFinal(Pointer network);
     public static native void cryptoNetworkSetConfirmationsUntilFinal(Pointer network, int confirmationsUntilFinal);
     public static native SizeT cryptoNetworkGetCurrencyCount(Pointer network);
@@ -335,7 +338,7 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletManagerSubmitForKey(Pointer cwm, Pointer wid, Pointer tid, Pointer key);
     public static native void cryptoWalletManagerSubmitSigned(Pointer cwm, Pointer wid, Pointer tid);
     public static native Pointer cryptoWalletManagerEstimateLimit(Pointer cwm, Pointer wid, int asMaximum, Pointer target, Pointer fee, IntByReference needEstimate, IntByReference isZeroIfInsuffientFunds);
-    public static native void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee);
+    // INDIRECT: public static native void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee, SizeT attributesCount, Pointer arrayOfAttributes);
     public static native void cryptoWalletManagerEstimateFeeBasisForWalletSweep(Pointer cwm, Pointer wid, Pointer cookie, Pointer sweeper, Pointer fee);
     public static native void cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest(Pointer cwm, Pointer wid, Pointer cookie, Pointer request, Pointer fee);
     public static native Pointer cryptoWalletManagerTake(Pointer cwm);
@@ -365,7 +368,7 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletSweeperRelease(Pointer sweeper);
 
     // crypto/BRCryptoWalletManagerClient.h
-    public static native void cwmAnnounceGetBlockNumberSuccessAsInteger(Pointer cwm, Pointer callbackState,long blockNumber);
+    public static native void cwmAnnounceGetBlockNumberSuccessAsInteger(Pointer cwm, Pointer callbackState, long blockNumber, String verifiedBlockHash);
     public static native void cwmAnnounceGetBlockNumberSuccessAsString(Pointer cwm, Pointer callbackState, String blockNumber);
     public static native void cwmAnnounceGetBlockNumberFailure(Pointer cwm, Pointer callbackState);
     public static native void cwmAnnounceGetTransactionsItem(Pointer cwm, Pointer callbackState,
@@ -387,6 +390,10 @@ public final class CryptoLibraryDirect {
     public static native void cwmAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState);
     public static native void cwmAnnounceSubmitTransferSuccessForHash(Pointer cwm, Pointer callbackState, String hash);
     public static native void cwmAnnounceSubmitTransferFailure(Pointer cwm, Pointer callbackState);
+//  INDIRECT:   public static native void cwmAnnounceEstimateFeeSuccess(Pointer cwm, Pointer callbackState,
+//                                                            int attributesCount, Pointer arrayOfAttributeKeys, Pointer arrayOfAttributeVals);
+
+    public static native void cwmAnnounceEstimateFeeFailure(Pointer cwm, Pointer callbackState);
     public static native void cwmAnnounceGetBalanceSuccess(Pointer cwm, Pointer callbackState, String balance);
     public static native void cwmAnnounceGetBalanceFailure(Pointer cwm, Pointer callbackState);
     public static native void cwmAnnounceGetBlocksSuccess(Pointer cwm, Pointer callbackState, int length,long[] blockArray);

@@ -63,6 +63,12 @@ cryptoHashCreateAsGEN (BRGenericHash gen) {
     return hash;
 }
 
+private_extern BRGenericHash
+cryptoHashAsGEN (BRCryptoHash hash) {
+    assert (BLOCK_CHAIN_TYPE_GEN == hash->type);
+    return hash->u.gen;
+}
+
 static void
 cryptoHashRelease (BRCryptoHash hash) {
     memset (hash, 0, sizeof(*hash));
@@ -99,7 +105,10 @@ cryptoHashString (BRCryptoHash hash) {
             return ethHashAsString (hash->u.eth);
         }
         case BLOCK_CHAIN_TYPE_GEN: {
-            return _cryptoHashAddPrefix (genericHashAsString(hash->u.gen), 1);
+            char *string = genericHashAsString (hash->u.gen);
+            return (GENERIC_HASH_ENCODING_HEX == hash->u.gen.encoding)
+            ? _cryptoHashAddPrefix (string, 1)
+            : string;
         }
     }
 }

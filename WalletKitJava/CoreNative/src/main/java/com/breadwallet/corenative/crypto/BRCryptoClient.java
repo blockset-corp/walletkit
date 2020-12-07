@@ -71,6 +71,14 @@ public class BRCryptoClient extends Structure {
                       String hashAsHex);
     }
 
+    public interface BRCryptoClientEstimateFeeCallback extends Callback {
+        void callback(Pointer context,
+                      Pointer manager,
+                      Pointer callbackState,
+                      Pointer tx,
+                      SizeT txLength);
+    }
+
     // Implementation Detail (ETH)
 
     public interface BRCryptoCWMEthGetGasPriceCallback extends Callback {
@@ -259,6 +267,27 @@ public class BRCryptoClient extends Structure {
         }
     }
 
+    public interface EstimateFeeCallback extends BRCryptoClientEstimateFeeCallback {
+        void handle(Cookie context,
+                    BRCryptoWalletManager manager,
+                    BRCryptoClientCallbackState callbackState,
+                    byte[] transaction);
+
+        @Override
+        default void callback(Pointer context,
+                              Pointer manager,
+                              Pointer callbackState,
+                              Pointer tx,
+                              SizeT txLength) {
+            handle(
+                    new Cookie(context),
+                    new BRCryptoWalletManager(manager),
+                    new BRCryptoClientCallbackState(callbackState),
+                    tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue()))
+            );
+        }
+    }
+
     public interface GetGasPriceCallbackETH extends BRCryptoCWMEthGetGasPriceCallback {
         void handle(Cookie context,
                     BRCryptoWalletManager manager,
@@ -387,6 +416,7 @@ public class BRCryptoClient extends Structure {
     public BRCryptoClientGetTransactionsCallback funcGetTransactions;
     public BRCryptoClientGetTransfersCallback funcGetTransfers;
     public BRCryptoClientSubmitTransactionCallback funcSubmitTransaction;
+    public BRCryptoClientEstimateFeeCallback funcEstimateFee;
 
     public BRCryptoCWMEthGetGasPriceCallback funcGetGasPriceETH;
     public BRCryptoCWMEthEstimateGasCallback funcEstimateGasETH;
@@ -408,6 +438,7 @@ public class BRCryptoClient extends Structure {
                           GetTransactionsCallback funcGetTransactions,
                           GetTransfersCallback funcGetTransfers,
                           SubmitTransactionCallback funcSubmitTransaction,
+                          EstimateFeeCallback funcEstimateFee,
                           GetGasPriceCallbackETH funcGetGasPriceETH,
                           EstimateGasCallbackETH funcEstimateGasETH,
                           GetBlocksCallbackETH funcGetBlocksETH,
@@ -420,6 +451,7 @@ public class BRCryptoClient extends Structure {
         this.funcGetTransactions = funcGetTransactions;
         this.funcGetTransfers = funcGetTransfers;
         this.funcSubmitTransaction = funcSubmitTransaction;
+        this.funcEstimateFee = funcEstimateFee;
 
         this.funcGetGasPriceETH = funcGetGasPriceETH;
         this.funcEstimateGasETH = funcEstimateGasETH;
@@ -438,6 +470,7 @@ public class BRCryptoClient extends Structure {
                 "funcGetTransactions",
                 "funcGetTransfers",
                 "funcSubmitTransaction",
+                "funcEstimateFee",
 
                 "funcGetGasPriceETH",
                 "funcEstimateGasETH",
@@ -456,6 +489,7 @@ public class BRCryptoClient extends Structure {
         other.funcGetTransactions = this.funcGetTransactions;
         other.funcGetTransfers = this.funcGetTransfers;
         other.funcSubmitTransaction = this.funcSubmitTransaction;
+        other.funcEstimateFee = this.funcEstimateFee;
 
         other.funcGetGasPriceETH = this.funcGetGasPriceETH;
         other.funcEstimateGasETH = this.funcEstimateGasETH;

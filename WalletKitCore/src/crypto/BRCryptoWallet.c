@@ -479,10 +479,12 @@ cryptoWalletGetTransferAttributeAt (BRCryptoWallet wallet,
         case BLOCK_CHAIN_TYPE_BTC: return NULL;
         case BLOCK_CHAIN_TYPE_ETH: return NULL;
         case BLOCK_CHAIN_TYPE_GEN: {
-            BRGenericTransferAttribute attribute = genWalletGetTransferAttributeAt (wallet->u.gen, (NULL == target ? NULL : target->u.gen), index);
-            return cryptoTransferAttributeCreate (genTransferAttributeGetKey(attribute),
-                                                  genTransferAttributeGetVal(attribute),  // Expect NULL from genWalletGetTransferAttributeAt()
-                                                  AS_CRYPTO_BOOLEAN(genTransferAttributeIsRequired(attribute)));
+            BRGenericTransferAttribute genAttribute = genWalletGetTransferAttributeAt (wallet->u.gen, (NULL == target ? NULL : target->u.gen), index);
+            BRCryptoTransferAttribute  cryAttribute = cryptoTransferAttributeCreate (genTransferAttributeGetKey(genAttribute),
+                                                                                     genTransferAttributeGetVal(genAttribute),  // Expect NULL from genWalletGetTransferAttributeAt()
+                                                                                     AS_CRYPTO_BOOLEAN(genTransferAttributeIsRequired(genAttribute)));
+            genTransferAttributeRelease(genAttribute);
+            return cryAttribute;
         }
     }
 }
@@ -881,7 +883,10 @@ cryptoWalletCreateFeeBasis (BRCryptoWallet wallet,
             return cryptoFeeBasisCreateAsGEN (wallet->unitForFee,
                                               (BRGenericFeeBasis) {
                 value,
-                costFactor
+                costFactor,
+                0,
+                0,
+                0
             });
         }
     }

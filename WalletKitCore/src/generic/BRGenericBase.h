@@ -16,6 +16,7 @@
 #include "BRCryptoBase.h"
 #include "ethereum/util/BRUtil.h"
 #include "support/BRArray.h"
+#include "support/BRBase58.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,10 +31,16 @@ extern "C" {
 
     // MARK: - Generic Hash
 
+    typedef enum {
+        GENERIC_HASH_ENCODING_HEX,
+        GENERIC_HASH_ENCODING_BASE58
+    } BRGenericHashEncoding;
+
     #define GENERIC_HASH_BYTES      64
     typedef struct {
         size_t  bytesCount;
         uint8_t bytes[GENERIC_HASH_BYTES];
+        BRGenericHashEncoding encoding;
     } BRGenericHash;
 
     static inline int
@@ -50,9 +57,9 @@ extern "C" {
     }
 
     static inline BRGenericHash
-    genericHashCreate (size_t bytesCount, uint8_t* bytes) {
+    genericHashCreate (size_t bytesCount, uint8_t* bytes, BRGenericHashEncoding encoding) {
         assert (bytesCount <= GENERIC_HASH_BYTES);
-        BRGenericHash hash = { bytesCount, { 0 } };
+        BRGenericHash hash = { bytesCount, { 0 }, encoding };
         memcpy (hash.bytes, bytes, bytesCount);
         return hash;
     }
@@ -63,9 +70,23 @@ extern "C" {
         return (BRGenericHash) { bytesCount, { 0 } };
     }
 
+    static char *
+    base58EncodeCreate (const uint8_t *source, size_t sourceLen) {
+        size_t len = BRBase58CheckEncode (NULL, 0, source, sourceLen);
+        char * string = calloc (1, len);
+        BRBase58CheckEncode (string, len, source, sourceLen);
+        return string;
+    }
+
     static inline char *
     genericHashAsString (BRGenericHash gen) {
-        return hexEncodeCreate (NULL, gen.bytes, gen.bytesCount);
+        switch (gen.encoding) {
+            case GENERIC_HASH_ENCODING_HEX:
+                return hexEncodeCreate (NULL, gen.bytes, gen.bytesCount);
+                
+            case GENERIC_HASH_ENCODING_BASE58:
+                return base58EncodeCreate (gen.bytes, gen.bytesCount);
+        }
     }
 
     static inline uint32_t
@@ -81,13 +102,19 @@ extern "C" {
     typedef struct {
         UInt256 pricePerCostFactor;
         double  costFactor;
+        int64_t gasLimit;
+        int64_t storageLimit;
+        int64_t counter;
     } BRGenericFeeBasis;
 
     static inline BRGenericFeeBasis
     genFeeBasisCreate (UInt256 pricePerCostFactor, double costFactor) {
         return (BRGenericFeeBasis) {
             pricePerCostFactor,
-            fabs (costFactor)
+            fabs (costFactor),
+            0,
+            0,
+            0
         };
     }
 
@@ -116,7 +143,10 @@ extern "C" {
     static inline int genFeeBasisIsEqual (const BRGenericFeeBasis *fb1,
                                           const BRGenericFeeBasis *fb2) {
         return (uint256EQL (fb1->pricePerCostFactor, fb2->pricePerCostFactor) &&
-                fb1->costFactor == fb2->costFactor);
+                fb1->costFactor == fb2->costFactor &&
+                fb1->gasLimit == fb2->gasLimit &&
+                fb1->storageLimit == fb2->storageLimit &&
+                fb1->counter == fb2->counter);
     }
 
     // MARK: Generic API Sync Type
