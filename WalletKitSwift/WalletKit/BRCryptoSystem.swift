@@ -163,6 +163,17 @@ public final class System {
         return managers.flatMap { $0.wallets }
     }
 
+    ///
+    /// Set the network reachable flag for all managers. Setting or clearing this flag will
+    /// NOT result in a connect/disconnect operation by a manager. Callers must use the
+    /// `connect`/`disconnect` calls to change a WalletManager's connectivity state. Instead,
+    /// managers MAY consult this flag when performing network operations to determine their
+    /// viability.
+    ///
+    public func setNetworkReachable (_ isNetworkReachable: Bool) {
+        cryptoSystemSetReachable (core, isNetworkReachable ? CRYPTO_TRUE : CRYPTO_FALSE);
+    }
+
     // MARK: - Initialization, System and WalletManager
 
     ///
