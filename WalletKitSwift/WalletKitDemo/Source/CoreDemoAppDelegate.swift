@@ -376,7 +376,7 @@ extension Network {
     var scheme: String? {
         switch type {
         case .btc: return "bitcoin"
-        case .bch: return (isMainnet ? "bitcoincash" : "bchtest")
+        case .bch: return (onMainnet ? "bitcoincash" : "bchtest")
         case .bsv: return "bitcoinsv"
         case .eth: return "ethereum"
         case .xrp: return "ripple"

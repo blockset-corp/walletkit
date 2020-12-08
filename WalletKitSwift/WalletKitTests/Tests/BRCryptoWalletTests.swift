@@ -38,7 +38,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -185,7 +185,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -217,7 +217,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -259,7 +259,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
         prepareSystem(listener: listener)
 
-        let network: Network! = system.networks.first { .eth == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { .eth == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -338,7 +338,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         // Connect and wait for a number of transfers
-        let network: Network! = system.networks.first { "xrp" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { "xrp" == $0.currency.code && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }

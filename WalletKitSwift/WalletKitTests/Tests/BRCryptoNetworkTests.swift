@@ -34,7 +34,7 @@ class BRCryptoNetworkTests: XCTestCase {
 
         XCTAssertEqual (network.uids, "bitcoin-mainnet")
         XCTAssertEqual (network.name, "Bitcoin")
-        XCTAssertTrue  (network.isMainnet)
+        XCTAssertTrue  (network.onMainnet)
 
         let height = network.height;
         network.height *= 2

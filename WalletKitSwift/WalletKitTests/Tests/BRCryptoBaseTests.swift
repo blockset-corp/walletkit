@@ -191,7 +191,7 @@ class CryptoTestSystemListener: SystemListener {
             self.systemEvents.append (event)
             switch event {
             case .networkAdded (let network):
-                if self.isMainnet == network.isMainnet,
+                if self.isMainnet == network.onMainnet,
                     network.currencies.contains(where: { nil != self.networkCurrencyCodesToMode[$0.code] }),
                     let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
                     // Get a valid mode, ideally from `currencyMode`

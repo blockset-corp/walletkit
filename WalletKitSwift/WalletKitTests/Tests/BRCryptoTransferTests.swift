@@ -123,7 +123,7 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
             }
         ]
 
-        let network: Network! = system.networks.first { "btc" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { "btc" == $0.currency.code && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -218,7 +218,7 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { .bch == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { .bch == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -265,7 +265,7 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { .bsv == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { .bsv == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -294,7 +294,7 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
     /// MARK: - ETH
 
     func runTransferETHTest () {
-        let network: Network! = system.networks.first { "eth" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { "eth" == $0.currency.code && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }

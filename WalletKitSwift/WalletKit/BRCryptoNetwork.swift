@@ -25,7 +25,7 @@ public final class Network: CustomStringConvertible {
     public let name: String
 
     /// If 'mainnet' then true, otherwise false
-    public let isMainnet: Bool
+    public let onMainnet: Bool
 
     /// The type of network
     public let type: NetworkType
@@ -236,7 +236,7 @@ public final class Network: CustomStringConvertible {
         self.core = take ? cryptoNetworkTake(core) : core
         self.uids = asUTF8String (cryptoNetworkGetUids (core))
         self.name = asUTF8String (cryptoNetworkGetName (core))
-        self.isMainnet  = (CRYPTO_TRUE == cryptoNetworkIsMainnet (core))
+        self.onMainnet  = (CRYPTO_TRUE == cryptoNetworkIsMainnet (core))
         self.type       = NetworkType (core: cryptoNetworkGetType(core))
         self.currency   = Currency (core: cryptoNetworkGetCurrency(core), take: false)
     }

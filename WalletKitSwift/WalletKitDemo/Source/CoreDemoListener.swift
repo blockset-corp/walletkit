@@ -113,7 +113,7 @@ class CoreDemoListener: SystemListener {
             // specifically, test networks are announced and having a wallet manager for a
             // testnet won't happen in a deployed App.
 
-            if isMainnet == network.isMainnet,
+            if isMainnet == network.onMainnet,
                 network.currencies.contains(where: { nil != networkCurrencyCodesToMode[$0.code] }),
                 let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
                 // Get a valid mode, ideally from `currencyMode`
