@@ -190,7 +190,6 @@ cryptoWalletManagerInitialTransactionBundlesLoad (BRCryptoWalletManager manager)
         cryptoClientTransactionBundleSetRelease (bundles);
         printf ("CRY: %4s: failed to load transaction bundles",
                 cryptoBlockChainTypeGetCurrencyCode (manager->type));
-        cryptoClientTransactionBundleSetRelease(bundles);
         return;
     }
     size_t sortedBundlesCount = BRSetCount(bundles);

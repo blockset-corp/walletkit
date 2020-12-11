@@ -209,7 +209,8 @@ class SummaryViewController: UITableViewController, WalletListener {
             case .created:
                 print ("APP: SVC: WalletEvent (\(manager.name):\(wallet.name)): Created")
 
-                precondition (!self.wallets.contains (wallet))
+                guard !self.wallets.contains (wallet)
+                else { return }
 
                 self.wallets.append (wallet)
 
