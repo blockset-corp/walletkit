@@ -1,4 +1,5 @@
 include ':crypto'
+include ':crypto-ktx'
 include ':cryptodemo-android'
 include ':corenative'
 include ':corenative-android'
