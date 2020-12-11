@@ -8,6 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#include <ctype.h>
+
 #include "BRCryptoNetworkP.h"
 #include "BRCryptoUnit.h"
 #include "BRCryptoAddressP.h"
@@ -90,6 +92,16 @@ cryptoNetworkFeeRelease (BRCryptoNetworkFee networkFee) {
     free (networkFee);
 }
 
+// MARK: - Crypto Association
+
+static void
+cryptoCurrencyAssociationRelease (BRCryptoCurrencyAssociation association) {
+    cryptoCurrencyGive (association.currency);
+    cryptoUnitGive (association.baseUnit);
+    cryptoUnitGive (association.defaultUnit);
+    cryptoUnitGiveAll (association.units);
+    array_free (association.units);
+}
 /// MARK: - Network
 
 #define CRYPTO_NETWORK_DEFAULT_CURRENCY_ASSOCIATIONS        (2)
@@ -153,15 +165,7 @@ cryptoNetworkRelease (BRCryptoNetwork network) {
 
     cryptoHashGive (network->verifiedBlockHash);
 
-    for (size_t index = 0; index < array_count (network->associations); index++) {
-        BRCryptoCurrencyAssociation *association = &network->associations[index];
-        cryptoCurrencyGive (association->currency);
-        cryptoUnitGive (association->baseUnit);
-        cryptoUnitGive (association->defaultUnit);
-        cryptoUnitGiveAll (association->units);
-        array_free (association->units);
-    }
-    array_free (network->associations);
+    array_free_all (network->associations, cryptoCurrencyAssociationRelease);
 
     for (size_t index = 0; index < array_count (network->fees); index++) {
         cryptoNetworkFeeGive (network->fees[index]);
@@ -332,7 +336,7 @@ cryptoNetworkGetCurrencyForCode (BRCryptoNetwork network,
 
 extern BRCryptoCurrency
 cryptoNetworkGetCurrencyForUids (BRCryptoNetwork network,
-                                   const char *uids) {
+                                 const char *uids) {
     BRCryptoCurrency currency = NULL;
     pthread_mutex_lock (&network->lock);
     for (size_t index = 0; index < array_count(network->associations); index++) {
@@ -362,8 +366,8 @@ cryptoNetworkGetCurrencyForIssuer (BRCryptoNetwork network,
 }
 
 static BRCryptoCurrencyAssociation *
-cryptoNetworkLookupCurrency (BRCryptoNetwork network,
-                             BRCryptoCurrency currency) {
+cryptoNetworkLookupCurrencyAssociation (BRCryptoNetwork network,
+                                        BRCryptoCurrency currency) {
     // lock is not held for this static method; caller must hold it
     for (size_t index = 0; index < array_count(network->associations); index++) {
         if (CRYPTO_TRUE == cryptoCurrencyIsIdentical (currency, network->associations[index].currency)) {
@@ -373,12 +377,23 @@ cryptoNetworkLookupCurrency (BRCryptoNetwork network,
     return NULL;
 }
 
+static BRCryptoCurrencyAssociation *
+cryptoNetworkLookupCurrencyAssociationByUids (BRCryptoNetwork network,
+                                              const char *uids) {
+    // lock is not held for this static method; caller must hold it
+    for (size_t index = 0; index < array_count(network->associations); index++) {
+        if (cryptoCurrencyHasUids (network->associations[index].currency, uids))
+            return &network->associations[index];
+    }
+    return NULL;
+}
+
 extern BRCryptoUnit
 cryptoNetworkGetUnitAsBase (BRCryptoNetwork network,
                             BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
     currency = (NULL == currency ? network->currency : currency);
-    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociation (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->baseUnit);
     pthread_mutex_unlock (&network->lock);
     return unit;
@@ -389,7 +404,7 @@ cryptoNetworkGetUnitAsDefault (BRCryptoNetwork network,
                                BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
     currency = (NULL == currency ? network->currency : currency);
-    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociation (network, currency);
     BRCryptoUnit unit = NULL == association ? NULL : cryptoUnitTake (association->defaultUnit);
     pthread_mutex_unlock (&network->lock);
     return unit;
@@ -400,7 +415,7 @@ cryptoNetworkGetUnitCount (BRCryptoNetwork network,
                            BRCryptoCurrency currency) {
     pthread_mutex_lock (&network->lock);
     currency = (NULL == currency ? network->currency : currency);
-    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociation (network, currency);
     size_t count = ((NULL == association || NULL == association->units)
                     ? 0
                     : array_count (association->units));
@@ -414,7 +429,7 @@ cryptoNetworkGetUnitAt (BRCryptoNetwork network,
                         size_t index) {
     pthread_mutex_lock (&network->lock);
     currency = (NULL == currency ? network->currency : currency);
-    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociation (network, currency);
     BRCryptoUnit unit = ((NULL == association || NULL == association->units || index >= array_count(association->units))
                          ? NULL
                          : cryptoUnitTake (association->units[index]));
@@ -445,11 +460,131 @@ cryptoNetworkAddCurrencyUnit (BRCryptoNetwork network,
                               BRCryptoCurrency currency,
                               BRCryptoUnit unit) {
     pthread_mutex_lock (&network->lock);
-    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrency (network, currency);
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociation (network, currency);
     if (NULL != association) array_add (association->units, cryptoUnitTake (unit));
     pthread_mutex_unlock (&network->lock);
 }
 
+// MARK: - Currency Association
+
+private_extern void
+cryptoNetworkAddCurrencyAssociationFromBundle (BRCryptoNetwork network,
+                                               OwnershipKept BRCryptoClientCurrencyBundle bundle,
+                                               BRCryptoBoolean needEvent) {
+
+    pthread_mutex_lock (&network->lock);
+
+    // Lookup an existing association for the bundle's id
+    BRCryptoCurrencyAssociation *association = cryptoNetworkLookupCurrencyAssociationByUids (network, bundle->id);
+
+    // If one exists; do not replace
+    // TODO: Add an argument for `bool replace`
+    if (NULL != association) {
+        pthread_mutex_unlock (&network->lock);
+        return;
+    }
+
+    BRCryptoCurrency currency = cryptoCurrencyCreate (bundle->id,
+                                                      bundle->name,
+                                                      bundle->code,
+                                                      bundle->type,
+                                                      bundle->address);
+
+    BRArrayOf(BRCryptoUnit) units;
+    array_new (units, array_count(bundle->denominations));
+
+    // Find the base unit
+    BRCryptoUnit baseUnit    = NULL;
+
+    for (size_t index = 0; index < array_count (bundle->denominations); index++) {
+        BRCryptoClientCurrencyDenominationBundle demBundle = bundle->denominations[index];
+        if (0 == demBundle->decimals) {
+            baseUnit = cryptoUnitCreateAsBase (currency, demBundle->code, demBundle->name, demBundle->symbol);
+            break;
+        }
+    }
+
+    if (NULL == baseUnit) {
+        const char *code = cryptoCurrencyGetCode(currency);
+        const char *name = cryptoCurrencyGetName(currency);
+
+        char unitCode[strlen(code) + 1 + 1]; // lowecase+i
+        char unitName[strlen(name) + 4 + 1]; // +" INT"
+        char unitSymb[strlen(code) + 1 + 1]; // uppercase+I
+
+        sprintf (unitCode, "%si", code);
+        sprintf (unitName, "%s INT", name);
+        sprintf (unitSymb, "%sI", code);
+
+        for (size_t index = 0; index < strlen (unitCode); index++) {
+            unitCode[index] = _tolower (unitCode[index]);
+            unitSymb[index] = _toupper (unitSymb[index]);
+        }
+
+        baseUnit = cryptoUnitCreateAsBase (currency,
+                                           unitCode,
+                                           unitName,
+                                           unitSymb);
+    }
+    array_add (units, baseUnit);
+
+    for (size_t index = 0; index < array_count (bundle->denominations); index++) {
+        BRCryptoClientCurrencyDenominationBundle demBundle = bundle->denominations[index];
+        if (0 != demBundle->decimals) {
+            BRCryptoUnit unit = cryptoUnitCreate (currency,
+                                                  demBundle->code,
+                                                  demBundle->name,
+                                                  demBundle->symbol,
+                                                  baseUnit,
+                                                  demBundle->decimals);
+            array_add (units, unit);
+        }
+    }
+
+    // Find the default Unit - maximum decimals
+
+    BRCryptoUnit defaultUnit = NULL;
+
+    if (2 == array_count(units))
+        defaultUnit = units[1];
+    else {
+        uint8_t decimals = 0;
+        for (size_t index = 0; index < array_count(units); index++) {
+            if (cryptoUnitGetBaseDecimalOffset(units[index]) > decimals) {
+                defaultUnit = units[index];
+                decimals = cryptoUnitGetBaseDecimalOffset (defaultUnit);
+            }
+        }
+        if (NULL == defaultUnit) defaultUnit = baseUnit;
+    }
+    assert (NULL != defaultUnit);
+
+    BRCryptoCurrencyAssociation newAssociation = {
+        currency,
+        baseUnit,
+        defaultUnit,
+        units
+    };
+    array_add (network->associations, newAssociation);
+    pthread_mutex_unlock (&network->lock);
+
+    if (CRYPTO_TRUE == needEvent)
+        cryptoNetworkGenerateEvent (network, (BRCryptoNetworkEvent) {
+            CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED
+        });
+}
+
+
+private_extern void
+cryptoNetworkAddCurrencyAssociationsFromBundles (BRCryptoNetwork network,
+                                               OwnershipKept BRArrayOf(BRCryptoClientCurrencyBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        cryptoNetworkAddCurrencyAssociationFromBundle (network, bundles[index], CRYPTO_FALSE);
+
+    cryptoNetworkGenerateEvent (network, (BRCryptoNetworkEvent) {
+        CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED
+    });
+}
 
 // MARK: - Network Fees
 

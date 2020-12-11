@@ -26,6 +26,7 @@
 #include "BRCryptoNetworkP.h"
 #include "BRCryptoWalletP.h"
 #include "BRCryptoWalletManagerP.h"
+#include "BRCryptoSystemP.h"
 
 #define OFFSET_BLOCKS_IN_SECONDS       (3 * 24 * 60 * 60)  // 3 days
 
@@ -1166,3 +1167,225 @@ cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
             0 == memcmp (bundle1->serialization, bundle2->serialization, bundle1->serializationCount));
 }
 
+// MARK: - Currency, CurrencyDenomination Bundle
+
+static BRCryptoClientCurrencyDenominationBundle
+cryptoClientCurrencyDenominationBundleCreateInternal (OwnershipGiven char *name,
+                                                      OwnershipGiven char *code,
+                                                      OwnershipGiven char *symbol,
+                                                      uint8_t     decimals) {
+    BRCryptoClientCurrencyDenominationBundle bundle = malloc (sizeof (struct BRCryptoCliehtCurrencyDenominationBundleRecord));
+
+    bundle->name = name,
+    bundle->code = code;
+    bundle->symbol = symbol;
+    bundle->decimals = decimals;
+
+    return bundle;
+}
+
+extern BRCryptoClientCurrencyDenominationBundle
+cryptoClientCurrencyDenominationBundleCreate (const char *name,
+                                              const char *code,
+                                              const char *symbol,
+                                              uint8_t     decimals) {
+    return cryptoClientCurrencyDenominationBundleCreateInternal (strdup (name),
+                                                                 strdup (code),
+                                                                 strdup (symbol),
+                                                                 decimals);
+}
+
+static void
+cryptoClientCurrencyDenominationBundleRelease (BRCryptoClientCurrencyDenominationBundle bundle) {
+    free (bundle->symbol);
+    free (bundle->code);
+    free (bundle->name);
+
+    memset (bundle, 0, sizeof (struct BRCryptoCliehtCurrencyDenominationBundleRecord));
+    free (bundle);
+}
+
+private_extern BRRlpItem
+cryptoClientCurrencyDenominationBundleRlpEncode (BRCryptoClientCurrencyDenominationBundle bundle,
+                                                 BRRlpCoder coder) {
+    return rlpEncodeList (coder, 4,
+                          rlpEncodeString (coder, bundle->name),
+                          rlpEncodeString (coder, bundle->code),
+                          rlpEncodeString (coder, bundle->symbol),
+                          rlpEncodeUInt64 (coder, bundle->decimals, 0));
+}
+
+static BRRlpItem
+cryptoClientCurrencyDenominationBundlesRlpEncode (BRArrayOf (BRCryptoClientCurrencyDenominationBundle) bundles,
+                                                 BRRlpCoder coder) {
+    size_t itemsCount = array_count(bundles);
+    BRRlpItem items[itemsCount];
+
+    for (size_t index = 0; index < itemsCount; index++)
+        items[index] = cryptoClientCurrencyDenominationBundleRlpEncode (bundles[index], coder);
+
+    return rlpEncodeListItems (coder, items, itemsCount);
+}
+
+private_extern BRCryptoClientCurrencyDenominationBundle
+cryptoClientCurrencyDenominationBundleRlpDecode (BRRlpItem item,
+                                                 BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+    assert (4 == itemsCount);
+
+    return cryptoClientCurrencyDenominationBundleCreateInternal (rlpDecodeString (coder, items[0]),
+                                                                 rlpDecodeString (coder, items[1]),
+                                                                 rlpDecodeString (coder, items[2]),
+                                                                 rlpDecodeUInt64 (coder, items[3], 0));
+}
+
+static BRArrayOf (BRCryptoClientCurrencyDenominationBundle)
+cryptoClientCurrencyDenominationBundlesRlpDecode (BRRlpItem item,
+                                                 BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+
+    BRArrayOf (BRCryptoClientCurrencyDenominationBundle) bundles;
+    array_new (bundles, itemsCount);
+
+    for (size_t index = 0; index < itemsCount; index++)
+        array_add (bundles, cryptoClientCurrencyDenominationBundleRlpDecode (items[index], coder));
+
+    return bundles;
+}
+
+
+static BRCryptoClientCurrencyBundle
+cryptoClientCurrencyBundleCreateInternal (OwnershipGiven char *id,
+                                          OwnershipGiven char *name,
+                                          OwnershipGiven char *code,
+                                          OwnershipGiven char *type,
+                                          OwnershipGiven char *blockchainId,
+                                          OwnershipGiven char *address,
+                                          bool verified,
+                                          OwnershipGiven BRArrayOf(BRCryptoClientCurrencyDenominationBundle) denominations) {
+    BRCryptoClientCurrencyBundle bundle = malloc (sizeof (struct BRCryptoClientCurrencyBundleRecord));
+
+    bundle->id = id;
+    bundle->name = name;
+    bundle->code = code;
+    bundle->type = type;
+    bundle->bid  = blockchainId;
+    bundle->address   = address;
+    bundle->verfified = verified;
+    bundle->denominations = denominations;
+
+    return bundle;
+}
+
+extern BRCryptoClientCurrencyBundle
+cryptoClientCurrencyBundleCreate (const char *id,
+                                  const char *name,
+                                  const char *code,
+                                  const char *type,
+                                  const char *blockchainId,
+                                  const char *address,
+                                  bool verified,
+                                  size_t denominationsCount,
+                                  OwnershipGiven BRCryptoClientCurrencyDenominationBundle *denominations) {
+
+    BRArrayOf(BRCryptoClientCurrencyDenominationBundle) arrayOfDenominations;
+    array_new (arrayOfDenominations, denominationsCount);
+    array_add_array (arrayOfDenominations, denominations, denominationsCount);
+
+    return cryptoClientCurrencyBundleCreateInternal (strdup (id),
+                                                     strdup(name),
+                                                     strdup(code),
+                                                     strdup(type),
+                                                     strdup(blockchainId),
+                                                     (NULL == address ? NULL : strdup (address)),
+                                                     verified,
+                                                     arrayOfDenominations);
+}
+
+extern void
+cryptoClientCurrencyBundleRelease (BRCryptoClientCurrencyBundle bundle) {
+    array_free_all (bundle->denominations, cryptoClientCurrencyDenominationBundleRelease);
+
+    if (bundle->address) free (bundle->address);
+    free (bundle->bid);
+    free (bundle->type);
+    free (bundle->code);
+    free (bundle->name);
+    free (bundle->id);
+
+    memset (bundle, 0, sizeof (struct BRCryptoClientCurrencyBundleRecord));
+    free (bundle);
+}
+
+static size_t
+cryptoClientCurrencyBundleGetHashValue (BRCryptoClientCurrencyBundle bundle) {
+    UInt256 identifier;
+    BRSHA256(identifier.u8, bundle->id, strlen(bundle->id));
+    return (8 == sizeof(size_t)
+            ? identifier.u64[0]
+            : identifier.u32[0]);
+}
+
+// For BRSet
+static bool
+cryptoClientTCurrencyBundleIsEqual (BRCryptoClientCurrencyBundle bundle1,
+                                    BRCryptoClientCurrencyBundle bundle2) {
+    return 0 == strcmp (bundle1->id, bundle2->id);
+}
+
+extern OwnershipGiven BRSetOf(BRCryptoClientCurrencyBundle)
+cryptoClientCurrencyBundleSetCreate (size_t capacity) {
+    return BRSetNew ((size_t (*) (const void *)) cryptoClientCurrencyBundleGetHashValue,
+                     (int (*) (const void *, const void *)) cryptoClientTCurrencyBundleIsEqual,
+                     capacity);
+}
+
+extern void
+cryptoClientCurrencyBundleSetRelease (OwnershipGiven BRSetOf(BRCryptoClientCurrencyBundle) bundles) {
+    BRSetFreeAll (bundles, (void (*) (void *)) cryptoClientCurrencyBundleRelease);
+}
+
+private_extern BRRlpItem
+cryptoClientCurrencyBundleRlpEncode (BRCryptoClientCurrencyBundle bundle,
+                                     BRRlpCoder coder) {
+    return rlpEncodeList (coder, 8,
+                          rlpEncodeString (coder, bundle->id),
+                          rlpEncodeString (coder, bundle->name),
+                          rlpEncodeString (coder, bundle->code),
+                          rlpEncodeString (coder, bundle->type),
+                          rlpEncodeString (coder, bundle->bid),
+                          rlpEncodeString (coder, bundle->address),
+                          rlpEncodeUInt64 (coder, bundle->verfified, 0),
+                          cryptoClientCurrencyDenominationBundlesRlpEncode (bundle->denominations, coder));
+}
+
+private_extern BRCryptoClientCurrencyBundle
+cryptoClientCurrencyBundleRlpDecode (BRRlpItem item,
+                                     BRRlpCoder coder) {
+    size_t itemsCount;
+    const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
+    assert (8 == itemsCount);
+
+    return cryptoClientCurrencyBundleCreateInternal (rlpDecodeString (coder, items[0]),
+                                                     rlpDecodeString (coder, items[1]),
+                                                     rlpDecodeString (coder, items[2]),
+                                                     rlpDecodeString (coder, items[3]),
+                                                     rlpDecodeString (coder, items[4]),
+                                                     rlpDecodeString (coder, items[5]),
+                                                     rlpDecodeUInt64 (coder, items[6], 0),
+                                                     cryptoClientCurrencyDenominationBundlesRlpDecode (items[7], coder));
+}
+
+extern void
+cwmAnnounceCurrencies (BRCryptoSystem system,
+                       OwnershipGiven BRCryptoClientCurrencyBundle *bundles,
+                       size_t bundlesCount) {
+    BRArrayOf(BRCryptoClientCurrencyBundle) bundlesAsArray;
+    array_new (bundlesAsArray, bundlesCount);
+    array_add_array(bundlesAsArray, bundles, bundlesCount);
+
+    cryptoSystemHandleCurrencyBundles (system, bundlesAsArray);
+    array_free (bundlesAsArray);
+}

@@ -67,6 +67,10 @@ private_extern void
 cryptoSystemRemWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager);
 
+private_extern void
+cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
+                                   OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles);
+
 static inline void
 cryptoSystemGenerateEvent (BRCryptoSystem system,
                            BRCryptoSystemEvent event) {

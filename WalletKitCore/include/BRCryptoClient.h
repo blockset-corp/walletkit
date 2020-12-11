@@ -155,6 +155,36 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipKept const char **attributeKeys,
                                    OwnershipKept const char **attributeVals);
 
+// MARK: - Currency
+
+typedef struct BRCryptoClientCurrencyBundleRecord *BRCryptoClientCurrencyBundle;
+typedef struct BRCryptoCliehtCurrencyDenominationBundleRecord *BRCryptoClientCurrencyDenominationBundle;
+
+extern BRCryptoClientCurrencyDenominationBundle
+cryptoClientCurrencyDenominationBundleCreate (const char *name,
+                                              const char *code,
+                                              const char *symbol,
+                                              uint8_t     decimals);
+
+extern BRCryptoClientCurrencyBundle
+cryptoClientCurrencyBundleCreate (const char *id,
+                                  const char *name,
+                                  const char *code,
+                                  const char *type,
+                                  const char *blockchainId,
+                                  const char *address,
+                                  bool verified,
+                                  size_t denominationsCount,
+                                  BRCryptoClientCurrencyDenominationBundle *denominations);
+
+extern void
+cryptoClientCurrencyBundleRelease (BRCryptoClientCurrencyBundle bundle);
+
+extern void
+cwmAnnounceCurrencies (BRCryptoSystem system,
+                       OwnershipGiven BRCryptoClientCurrencyBundle *bundles,
+                       size_t bundlesCount);
+
 typedef struct {
     BRCryptoClientContext context;
     BRCryptoClientGetBlockNumberCallback  funcGetBlockNumber;

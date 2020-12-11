@@ -8,9 +8,12 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#include "BRCryptoSystemP.h"
 #include "support/BROSCompat.h"
+#include "support/BRCrypto.h"
+
+#include "crypto/BRCryptoSystemP.h"
 #include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoClientP.h"
 #include "crypto/BRCryptoListenerP.h"
 
 #include <stdio.h>                  // sprintf
@@ -452,6 +455,32 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
     cryptoWalletManagerStart (manager);
 
     return manager;
+}
+
+// MARK: - Currency
+
+private_extern void
+cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
+                                  OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
+    // Partition `bundles` by `network`
+
+    size_t networksCount = array_count(system->networks);
+    BRArrayOf (BRCryptoClientCurrencyBundle) bundlesForNetworks[networksCount];
+
+    for (size_t index = 0; index < networksCount; index++)
+        array_new (bundlesForNetworks[index], 10);
+
+    size_t networkIndex = 0;
+    for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++) {
+        BRCryptoNetwork network = cryptoSystemGetNetworkForUidsWithIndex (system, bundles[bundleIndex]->bid, &networkIndex);
+        if (NULL != network)
+            array_add (bundlesForNetworks[networkIndex], bundles[bundleIndex]);
+    }
+
+    for (size_t index = 0; index < networksCount; index++) {
+        cryptoNetworkAddCurrencyAssociationsFromBundles (system->networks[index], bundlesForNetworks[index]);
+        array_free (bundlesForNetworks[index]);
+    }
 }
 
 // MARK: - System Control
