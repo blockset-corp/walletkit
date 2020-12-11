@@ -574,7 +574,6 @@ cryptoNetworkAddCurrencyAssociationFromBundle (BRCryptoNetwork network,
         });
 }
 
-
 private_extern void
 cryptoNetworkAddCurrencyAssociationsFromBundles (BRCryptoNetwork network,
                                                OwnershipKept BRArrayOf(BRCryptoClientCurrencyBundle) bundles) {

@@ -143,14 +143,11 @@ cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
             sortedBundlesCount);
 
     if (0 != sortedBundlesCount) {
-        BRArrayOf(BRCryptoClientTransferBundle) sortedBundles;
-        array_new (sortedBundles, sortedBundlesCount);
-        BRSetAll (bundles, (void**) sortedBundles, sortedBundlesCount);
-        array_set_count(sortedBundles, sortedBundlesCount);
+        array_new (manager->bundleTransfers, sortedBundlesCount);
+        BRSetAll (bundles, (void**) manager->bundleTransfers, sortedBundlesCount);
+        array_set_count (manager->bundleTransfers, sortedBundlesCount);
 
-        qsort (sortedBundles, sortedBundlesCount, sizeof (BRCryptoClientTransferBundle), cryptoClientTransferBundleCompareByBlockheight);
-
-        manager->bundleTransfers = sortedBundles;
+        qsort (manager->bundleTransfers, sortedBundlesCount, sizeof (BRCryptoClientTransferBundle), cryptoClientTransferBundleCompareByBlockheight);
     }
 
     // Don't release the set's bundles

@@ -665,6 +665,7 @@ public final class System {
                                                                  denominationBundles.count,
                                                                  &denominationBundles);
                     }
+                    defer { bundles.forEach { cryptoClientCurrencyBundleRelease($0) }}
                     cwmAnnounceCurrencies (self.core, &bundles, bundles.count)
                     completion? (Result.success(self.networks))
                 },

@@ -548,6 +548,7 @@ cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
         BRCryptoTransferAttribute attribute = cryptoWalletGetTransferAttributeAt (wallet, target, index);
         if (0 == strcasecmp(key, cryptoTransferAttributeGetKey (attribute))) {
             *isRequired = cryptoTransferAttributeIsRequired (attribute);
+            cryptoTransferAttributeGive (attribute);
             return CRYPTO_TRUE;
         }
         cryptoTransferAttributeGive (attribute);

@@ -1071,12 +1071,11 @@ cryptoClientTransferBundleGetHashValue (BRCryptoClientTransferBundle bundle) {
     return *((size_t *) md16);
 }
 
-private_extern bool
+private_extern int
 cryptoClientTransferBundleIsEqual (BRCryptoClientTransferBundle bundle1,
                                    BRCryptoClientTransferBundle bundle2) {
     return 0 == strcmp (bundle1->uids, bundle2->uids);
 }
-
 
 // MARK: - Transaction Bundle
 
@@ -1157,7 +1156,7 @@ cryptoClientTransactionBundleGetHashValue (BRCryptoClientTransactionBundle bundl
     return *((size_t *) md16);
 }
 
-private_extern bool
+private_extern int
 cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
                                       BRCryptoClientTransactionBundle bundle2) {
     return (bundle1->status             == bundle2->status             &&
@@ -1329,8 +1328,8 @@ cryptoClientCurrencyBundleGetHashValue (BRCryptoClientCurrencyBundle bundle) {
 }
 
 // For BRSet
-static bool
-cryptoClientTCurrencyBundleIsEqual (BRCryptoClientCurrencyBundle bundle1,
+static int
+cryptoClientCurrencyBundleIsEqual (BRCryptoClientCurrencyBundle bundle1,
                                     BRCryptoClientCurrencyBundle bundle2) {
     return 0 == strcmp (bundle1->id, bundle2->id);
 }
@@ -1338,7 +1337,7 @@ cryptoClientTCurrencyBundleIsEqual (BRCryptoClientCurrencyBundle bundle1,
 extern OwnershipGiven BRSetOf(BRCryptoClientCurrencyBundle)
 cryptoClientCurrencyBundleSetCreate (size_t capacity) {
     return BRSetNew ((size_t (*) (const void *)) cryptoClientCurrencyBundleGetHashValue,
-                     (int (*) (const void *, const void *)) cryptoClientTCurrencyBundleIsEqual,
+                     (int (*) (const void *, const void *)) cryptoClientCurrencyBundleIsEqual,
                      capacity);
 }
 

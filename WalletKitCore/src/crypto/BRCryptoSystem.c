@@ -119,7 +119,7 @@ fileServiceTypeCurrencyBundleV1Identifier (BRFileServiceContext context,
 }
 
 static void *
-fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
+fileServiceTypeCurrencyBundleV1Reader (BRFileServiceContext context,
                                     BRFileService fs,
                                     uint8_t *bytes,
                                     uint32_t bytesCount) {
@@ -204,7 +204,7 @@ static BRFileServiceTypeSpecification systemFileServiceSpecifications[] = {
         {
             FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1,
             fileServiceTypeCurrencyBundleV1Identifier,
-            fileServiceTypeTransactionV1Reader,
+            fileServiceTypeCurrencyBundleV1Reader,
             fileServiceTypeCurrencyBundleV1Writer
         }
     }
@@ -253,6 +253,13 @@ cryptoSystemCreate (BRCryptoClient client,
     array_add_array (system->networks, networks, networksCount);
     free (networks);
 
+    // Start w/ no `managers`; never more than `networksCount`
+    array_new (system->managers, networksCount);
+
+    system->ref = CRYPTO_REF_ASSIGN (cryptoSystemRelease);
+
+    pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
+
     // Extract currency bundles
     BRSetOf (BRCryptoClientCurrencyBundle) currencyBundles = cryptoSystemInitialCurrencyBundlesLoad (system);
     if (NULL != currencyBundles) {
@@ -264,13 +271,6 @@ cryptoSystemCreate (BRCryptoClient client,
         }
         cryptoClientCurrencyBundleSetRelease(currencyBundles);
     }
-
-    // Start w/ no `managers`; never more than `networksCount`
-    array_new (system->managers, networksCount);
-
-    system->ref = CRYPTO_REF_ASSIGN (cryptoSystemRelease);
-
-    pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
     // The System has been created.
     cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {

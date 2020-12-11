@@ -53,7 +53,7 @@ private_extern size_t
 cryptoClientTransactionBundleGetHashValue (BRCryptoClientTransactionBundle bundle);
 
 // For BRSet
-private_extern bool
+private_extern int
 cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
                                       BRCryptoClientTransactionBundle bundle2);
 
@@ -105,7 +105,7 @@ private_extern size_t
 cryptoClientTransferBundleGetHashValue (BRCryptoClientTransferBundle bundle);
 
 // For BRSet
-private_extern bool
+private_extern int
 cryptoClientTransferBundleIsEqual (BRCryptoClientTransferBundle bundle1,
                                    BRCryptoClientTransferBundle bundle2);
 
