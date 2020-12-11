@@ -63,6 +63,10 @@ extern "C" {
     extern const char *
     cryptoCurrencyGetIssuer (BRCryptoCurrency currency);
 
+    extern bool
+    cryptoCurrencyHasUids (BRCryptoCurrency currency,
+                           const char *uids);
+
     extern BRCryptoBoolean
     cryptoCurrencyIsIdentical (BRCryptoCurrency c1,
                                BRCryptoCurrency c2);

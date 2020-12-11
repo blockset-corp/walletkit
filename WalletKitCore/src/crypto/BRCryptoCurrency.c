@@ -80,6 +80,13 @@ cryptoCurrencyGetIssuer (BRCryptoCurrency currency) {
     return currency->issuer;
 }
 
+extern bool
+cryptoCurrencyHasUids (BRCryptoCurrency currency,
+                       const char *uids) {
+    return (NULL != uids
+            && (uids == currency->uids
+                || 0 == strcmp (uids, currency->uids)));
+}
 // total supply
 // initial supply
 
