@@ -10,6 +10,7 @@
 
 #include "BRCryptoSystemP.h"
 #include "support/BROSCompat.h"
+#include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoListenerP.h"
 
 #include <stdio.h>                  // sprintf
@@ -132,8 +133,21 @@ cryptoSystemCreate (BRCryptoClient client,
 
     pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
+    // The System has been created.
     cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
         CRYPTO_SYSTEM_EVENT_CREATED
+    });
+
+    // Each Network has been added to System.
+    for (size_t index = 0; index < array_count(system->networks); index++)
+        cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
+            CRYPTO_SYSTEM_EVENT_NETWORK_ADDED,
+            { .network = cryptoNetworkTake (system->networks[index]) }
+        });
+
+    // All the available networks have been discovered
+    cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
+        CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS
     });
 
 #if defined (NOT_WORKABLE_NEEDS_RO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
@@ -227,7 +241,9 @@ cryptoSystemEventTypeString (BRCryptoSystemEventType type) {
 
         "CRYPTO_SYSTEM_EVENT_MANAGER_ADDED",
         "CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED",
-        "CRYPTO_SYSTEM_EVENT_MANAGER_DELETED"
+        "CRYPTO_SYSTEM_EVENT_MANAGER_DELETED",
+
+        "CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS",
     };
     return names [type];
 }
@@ -273,15 +289,25 @@ extern BRCryptoNetwork
      return index < array_count(system->networks) ? system->networks[index] : NULL;
 }
 
-extern BRCryptoNetwork
-cryptoSystemGetNetworkForUids (BRCryptoSystem system,
-                               const char *uids) {
+static BRCryptoNetwork
+cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
+                                        const char *uids,
+                                        size_t *indexOfNetwork) {
     for (size_t index = 0; index < array_count(system->networks); index++) {
-        if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index])))
+        if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index]))) {
+            if (NULL != indexOfNetwork) *indexOfNetwork = index;
             return cryptoNetworkTake (system->networks[index]);
+        }
     }
     return NULL;
 }
+
+extern BRCryptoNetwork
+cryptoSystemGetNetworkForUids (BRCryptoSystem system,
+                               const char *uids) {
+    return cryptoSystemGetNetworkForUidsWithIndex (system, uids, NULL);
+}
+
 
 extern size_t
 cryptoSystemGetNetworksCount (BRCryptoSystem system) {

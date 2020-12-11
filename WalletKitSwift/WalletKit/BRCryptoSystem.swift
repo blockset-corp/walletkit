@@ -548,7 +548,7 @@ public final class System {
     }
     #endif
 
-    // MARK: - Network Fees
+    // MARK: - Update Network Fees
 
     ////
     /// A NetworkFeeUpdateError
@@ -557,6 +557,8 @@ public final class System {
         /// The query endpoint for netowrk fees is unresponsive
         case feesUnavailable
     }
+
+    public typealias NetworkFeeUpdateHandler = (Result<[Network], NetworkFeeUpdateError>) -> Void
 
     ///
     /// Update the NetworkFees for all known networks.  This will query the `BlockChainDB` to
@@ -572,7 +574,8 @@ public final class System {
     ///
     /// - Parameter completion: An optional completion handler
     ///
-    public func updateNetworkFees (_ completion: ((Result<[Network],NetworkFeeUpdateError>) -> Void)? = nil) {
+
+    public func updateNetworkFees (_ completion: NetworkFeeUpdateHandler? = nil) {
         self.client.getBlockchains (mainnet: self.onMainnet) {
             (blockChainResult: Result<[SystemClient.Blockchain],SystemClientError>) in
 
@@ -584,28 +587,48 @@ public final class System {
             }
 
             let networks = blockChainModels.compactMap { (blockChainModel: SystemClient.Blockchain) -> Network? in
-                guard let network = self.networkBy (uids: blockChainModel.id)
+                guard let network = self.networkBy (uids: blockChainModel.id),
+                      // The BlockchainFee us always uses the base unit (integer)
+                      let feeUnitForParse = network.baseUnitFor (currency: network.currency),
+                      // The NetworkFee uses the default unit; we'll convert from the base unit.
+                      let feeUnit = network.defaultUnitFor(currency: network.currency)
                 else { return nil }
 
-                // We always have a feeUnit for network
-                let feeUnit = network.baseUnitFor(currency: network.currency)!
+                // Set the blockHeight
+                if let blockHeight = blockChainModel.blockHeight {
+                    cryptoNetworkSetHeight (network.core, blockHeight)
+                }
 
-                // Get the fees
+                // Set the verifiedBlockHash
+                if let verifiedBlockHash = blockChainModel.verifiedBlockHash {
+                    cryptoNetworkSetVerifiedBlockHashAsString (network.core, verifiedBlockHash)
+                }
+
+                // Extract the network fees from the blockchainModel
                 let fees = blockChainModel.feeEstimates
                     // Well, quietly ignore a fee if we can't parse the amount.
                     .compactMap { (fee: SystemClient.BlockchainFee) -> NetworkFee? in
-                        return Amount.create (string: fee.amount, unit: feeUnit)
-                            .map { NetworkFee (timeIntervalInMilliseconds: fee.confirmationTimeInMilliseconds,
+                        let timeInterval  = fee.confirmationTimeInMilliseconds
+                        return Amount.create (string: fee.amount, unit: feeUnitForParse)
+                            .map { $0.convert(to: feeUnit)! }
+                            .map { NetworkFee (timeIntervalInMilliseconds: timeInterval,
                                                pricePerCostFactor: $0) }
                     }
 
-                // The fees are unlikely to change; but we'll announce .feesUpdated anyways.
+                // We require fees
+                guard !fees.isEmpty
+                else {
+                    print ("SYS: updateNetworkFees: Missed Fees (\(blockChainModel.name)) on '\(blockChainModel.network)'");
+                    return nil
+                }
+
+                // Update the network's fees.
                 network.fees = fees
 
                 return network
             }
 
-            completion? (Result.success(networks))
+            completion? (Result.success (networks))
         }
     }
 
@@ -1159,6 +1182,9 @@ public enum SystemEvent {
             preconditionFailure()
         case CRYPTO_SYSTEM_EVENT_MANAGER_DELETED:
             preconditionFailure()
+
+        case CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS:
+            self = .discoveredNetworks (networks: system.networks)
 
         default:
             preconditionFailure()

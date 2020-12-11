@@ -450,6 +450,9 @@ cryptoNetworkAddCurrencyUnit (BRCryptoNetwork network,
     pthread_mutex_unlock (&network->lock);
 }
 
+
+// MARK: - Network Fees
+
 extern void
 cryptoNetworkAddNetworkFee (BRCryptoNetwork network,
                             BRCryptoNetworkFee fee) {
@@ -458,10 +461,11 @@ cryptoNetworkAddNetworkFee (BRCryptoNetwork network,
     pthread_mutex_unlock (&network->lock);
 }
 
-extern void
-cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
-                             const BRCryptoNetworkFee *fees,
-                             size_t count) {
+static void
+cryptoNetworkSetNetworkFeesInternal (BRCryptoNetwork network,
+                                     const BRCryptoNetworkFee *fees,
+                                     size_t count,
+                                     bool needEvent) {
     assert (0 != count);
     pthread_mutex_lock (&network->lock);
     array_apply (network->fees, cryptoNetworkFeeGive);
@@ -469,10 +473,19 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
     for (size_t idx = 0; idx < count; idx++) {
         array_add (network->fees, cryptoNetworkFeeTake (fees[idx]));
     }
-    cryptoListenerGenerateNetworkEvent (&network->listener, network, (BRCryptoNetworkEvent) {
-        CRYPTO_NETWORK_EVENT_FEES_UPDATED
-    });
+
+    if (needEvent)
+        cryptoListenerGenerateNetworkEvent (&network->listener, network, (BRCryptoNetworkEvent) {
+            CRYPTO_NETWORK_EVENT_FEES_UPDATED
+        });
     pthread_mutex_unlock (&network->lock);
+}
+
+extern void
+cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
+                             const BRCryptoNetworkFee *fees,
+                             size_t count) {
+    cryptoNetworkSetNetworkFeesInternal (network, fees, count, true);
 }
 
 extern BRCryptoNetworkFee *
@@ -838,7 +851,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
         }
         cryptoUnitGive(feeUnit);
 
-        cryptoNetworkSetNetworkFees (network, fees, array_count(fees));
+        cryptoNetworkSetNetworkFeesInternal (network, fees, array_count(fees), false);
         for (size_t index = 0; index < array_count(fees); index++)
             cryptoNetworkFeeGive (fees[index]);
         array_free(fees);
