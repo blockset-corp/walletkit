@@ -32,6 +32,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var system: System!
     var mainnet = true
 
+    var initInProgress: Bool = true
+
     var storagePath: String!
 
     var accountSpecification: AccountSpecification!
@@ -172,7 +174,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
                                                               currencies: []);
         self.system.subscribe (using: subscription)
 
-        self.system.configure(withCurrencyModels: [])
+        self.system.configure()
 
         return true
     }
@@ -188,11 +190,14 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        guard !initInProgress
+        else { initInProgress = false; return }
+
         system.resume()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        system.pause ()
     }
 
     // MARK: - Split view
@@ -280,7 +285,7 @@ extension UIApplication {
                                     path: app.storagePath)
 
         // Passing `[]`... it is a demo app...
-        app.system.configure(withCurrencyModels: [])
+        app.system.configure()
 
         // Too soon...
         app.summaryController.update()
@@ -330,7 +335,7 @@ extension UIApplication {
                                                 onMainnet: mainnet,
                                                 path: app.storagePath)
 
-                    app.system.configure(withCurrencyModels: [])
+                    app.system.configure()
                     alert.dismiss (animated: true) {
                         app.summaryController.reset()
                         app.summaryController.update()
