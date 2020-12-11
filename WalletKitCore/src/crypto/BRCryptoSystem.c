@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "support/BROSCompat.h"
+#include "support/BRFileService.h"
 #include "support/BRCrypto.h"
 
 #include "crypto/BRCryptoSystemP.h"
@@ -95,6 +96,122 @@ cryptoAllSystemsAdd (BRCryptoSystem system) { // , void* context)
 }
 #endif // defined (NOT_WORKABLE_NEEDS_TO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
 
+// MARK: - System File Service
+
+#define FILE_SERVICE_TYPE_CURRENCY_BUNDLE      "currency-bundle"
+
+enum {
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1
+};
+
+static UInt256
+fileServiceTypeCurrencyBundleV1Identifier (BRFileServiceContext context,
+                                           BRFileService fs,
+                                           const void *entity) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+    const BRCryptoClientCurrencyBundle bundle = (const BRCryptoClientCurrencyBundle) entity;
+
+    UInt256 identifier;
+
+    BRSHA256 (identifier.u8, bundle->id, strlen(bundle->id));
+
+    return identifier;
+}
+
+static void *
+fileServiceTypeTransactionV1Reader (BRFileServiceContext context,
+                                    BRFileService fs,
+                                    uint8_t *bytes,
+                                    uint32_t bytesCount) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
+    BRRlpItem  item  = rlpDataGetItem (coder, data);
+
+    BRCryptoClientCurrencyBundle bundle = cryptoClientCurrencyBundleRlpDecode(item, coder);
+
+    rlpItemRelease (coder, item);
+    rlpCoderRelease(coder);
+
+    return bundle;
+}
+
+static uint8_t *
+fileServiceTypeCurrencyBundleV1Writer (BRFileServiceContext context,
+                                       BRFileService fs,
+                                       const void* entity,
+                                       uint32_t *bytesCount) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+    const BRCryptoClientCurrencyBundle bundle = (const BRCryptoClientCurrencyBundle) entity;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpItem  item  = cryptoClientCurrencyBundleRlpEncode (bundle, coder);
+    BRRlpData  data  = rlpItemGetData (coder, item);
+
+    rlpItemRelease  (coder, item);
+    rlpCoderRelease (coder);
+
+    *bytesCount = (uint32_t) data.bytesCount;
+    return data.bytes;
+}
+
+static BRSetOf (BRCryptoClientCurrencyBundle)
+cryptoSystemInitialCurrencyBundlesLoad (BRCryptoSystem system) {
+    BRSetOf(BRCryptoClientCurrencyBundle) bundles =  cryptoClientCurrencyBundleSetCreate(100);
+
+    if (fileServiceHasType (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE) &&
+        1 != fileServiceLoad (system->fileService, bundles, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, 1)) {
+        printf ("CRY: system failed to load currency bundles\n");
+        cryptoClientCurrencyBundleSetRelease(bundles);
+        return NULL;
+    }
+
+    return bundles;
+}
+
+static void
+cryptoSystemFileServiceErrorHandler (BRFileServiceContext context,
+                                            BRFileService fs,
+                                            BRFileServiceError error) {
+    switch (error.type) {
+        case FILE_SERVICE_IMPL:
+            // This actually a FATAL - an unresolvable coding error.
+            printf ("CRY: System FileService Error: IMPL: %s\n", error.u.impl.reason);
+            break;
+        case FILE_SERVICE_UNIX:
+            printf ("CRY: System FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
+            break;
+        case FILE_SERVICE_ENTITY:
+            // This is likely a coding error too.
+            printf ("CRY: System FileService Error: ENTITY (%s): %s\n",
+                         error.u.entity.type,
+                         error.u.entity.reason);
+            break;
+        case FILE_SERVICE_SDB:
+            printf ("CRY: System FileService Error: SDB: (%d): %s\n",
+                         error.u.sdb.code,
+                         error.u.sdb.reason);
+            break;
+    }
+}
+
+static BRFileServiceTypeSpecification systemFileServiceSpecifications[] = {
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE,
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1,
+    1,
+    {
+        {
+            FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1,
+            fileServiceTypeCurrencyBundleV1Identifier,
+            fileServiceTypeTransactionV1Reader,
+            fileServiceTypeCurrencyBundleV1Writer
+        }
+    }
+};
+
+static size_t systemFileServiceSpecificationsCount = (sizeof (systemFileServiceSpecifications) / sizeof (BRFileServiceTypeSpecification));
+
 // MARK: - System
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
@@ -120,6 +237,13 @@ cryptoSystemCreate (BRCryptoClient client,
     sprintf (system->path, "%s/%s", basePath, accountFileSystemIdentifier);
     free (accountFileSystemIdentifier);
 
+    // Create the system-state file service
+    system->fileService = fileServiceCreateFromTypeSpecfications (system->path, "system", "state",
+                                                                  system,
+                                                                  cryptoSystemFileServiceErrorHandler,
+                                                                  systemFileServiceSpecificationsCount,
+                                                                  systemFileServiceSpecifications);
+
     // Fill in the builtin networks
     size_t networksCount = 0;
     BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount,
@@ -128,6 +252,18 @@ cryptoSystemCreate (BRCryptoClient client,
     array_new (system->networks, networksCount);
     array_add_array (system->networks, networks, networksCount);
     free (networks);
+
+    // Extract currency bundles
+    BRSetOf (BRCryptoClientCurrencyBundle) currencyBundles = cryptoSystemInitialCurrencyBundlesLoad (system);
+    if (NULL != currencyBundles) {
+        FOR_SET (BRCryptoClientCurrencyBundle, currencyBundle, currencyBundles) {
+            BRCryptoNetwork network = cryptoSystemGetNetworkForUids (system, currencyBundle->bid);
+            if (NULL != network) {
+                cryptoNetworkAddCurrencyAssociationFromBundle (network, currencyBundle, CRYPTO_FALSE);
+            }
+        }
+        cryptoClientCurrencyBundleSetRelease(currencyBundles);
+    }
 
     // Start w/ no `managers`; never more than `networksCount`
     array_new (system->managers, networksCount);
@@ -472,6 +608,8 @@ cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
 
     size_t networkIndex = 0;
     for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++) {
+        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
+
         BRCryptoNetwork network = cryptoSystemGetNetworkForUidsWithIndex (system, bundles[bundleIndex]->bid, &networkIndex);
         if (NULL != network)
             array_add (bundlesForNetworks[networkIndex], bundles[bundleIndex]);

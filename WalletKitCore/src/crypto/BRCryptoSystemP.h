@@ -38,6 +38,8 @@ struct BRCryptoSystemRecord {
     BRCryptoAccount account;
     char *path;
 
+    BRFileService fileService;
+    
     BRArrayOf (BRCryptoNetwork) networks;
     BRArrayOf (BRCryptoWalletManager) managers;
 };
