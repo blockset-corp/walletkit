@@ -1,5 +1,6 @@
 package com.breadwallet.corenative.crypto;
 
+import com.breadwallet.corenative.CryptoLibrary;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.utility.SizeT;
@@ -234,6 +235,16 @@ public class BRCryptoSystem extends PointerType {
     public void disconnect () {
         Pointer thisPtr = this.getPointer();
         CryptoLibraryDirect.cryptoSystemDisconnect(thisPtr);
+    }
+
+    public void announceCurrencies(List<BRCryptoClientCurrencyBundle> bundles) {
+        int bundlesCount = bundles.size();
+        BRCryptoClientCurrencyBundle[] bundlesArr = bundles.toArray(new BRCryptoClientCurrencyBundle[bundlesCount]);
+
+        CryptoLibraryIndirect.cwmAnnounceCurrencies(
+                this.getPointer(),
+                bundlesArr,
+                new SizeT(bundlesCount));
     }
 
     public BRCryptoSystem take() {

@@ -13,6 +13,8 @@ import android.support.v4.util.ArrayMap;
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoClientCallbackState;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyBundle;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyDenominationBundle;
 import com.breadwallet.corenative.crypto.BRCryptoCurrency;
 import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoClientTransactionBundle;
@@ -45,6 +47,7 @@ import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.errors.QueryNoDataError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
 import com.breadwallet.crypto.blockchaindb.models.bdb.BlockchainFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.CurrencyDenomination;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
@@ -53,19 +56,19 @@ import com.breadwallet.crypto.errors.AccountInitializationCantCreateError;
 import com.breadwallet.crypto.errors.AccountInitializationError;
 import com.breadwallet.crypto.errors.AccountInitializationMultipleHederaAccountsError;
 import com.breadwallet.crypto.errors.AccountInitializationQueryError;
+import com.breadwallet.crypto.errors.CurrencyUpdateCurrenciesUnavailableError;
+import com.breadwallet.crypto.errors.CurrencyUpdateError;
 import com.breadwallet.crypto.errors.FeeEstimationError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateFeesUnavailableError;
 import com.breadwallet.crypto.events.network.NetworkEvent;
-import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
-import com.breadwallet.crypto.events.network.NetworkUpdatedEvent;
-import com.breadwallet.crypto.events.network.NetworkFeesUpdatedEvent;
 import com.breadwallet.crypto.events.system.SystemChangedEvent;
 import com.breadwallet.crypto.events.system.SystemCreatedEvent;
 import com.breadwallet.crypto.events.system.SystemDeletedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
 import com.breadwallet.crypto.events.system.SystemEvent;
 import com.breadwallet.crypto.events.system.SystemListener;
+import com.breadwallet.crypto.events.system.SystemManagerAddedEvent;
 import com.breadwallet.crypto.events.system.SystemNetworkAddedEvent;
 import com.breadwallet.crypto.events.transfer.TranferEvent;
 import com.breadwallet.crypto.events.transfer.TransferChangedEvent;
@@ -372,24 +375,28 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
-    public void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies) {
-        NetworkDiscovery.discoverNetworks(query, isMainnet, getNetworks(), appCurrencies, new NetworkDiscovery.Callback() {
-            @Override
-            public void discovered(Network network) {
-                announceNetworkEvent(network, new NetworkCreatedEvent());
-                announceSystemEvent(new SystemNetworkAddedEvent(network));
-            }
+    public void configure() {
+        Log.log(Level.FINE, "Configure");
+        updateNetworkFees(null);
+        updateCurrencies(null);
 
-            @Override
-            public void updated(Network network) {
-                announceNetworkEvent(network, new NetworkUpdatedEvent());
-            }
-
-            @Override
-            public void complete(List<Network> networks) {
-                announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
-            }
-        });
+//        NetworkDiscovery.discoverNetworks(query, isMainnet, getNetworks(), appCurrencies, new NetworkDiscovery.Callback() {
+//            @Override
+//            public void discovered(Network network) {
+//                announceNetworkEvent(network, new NetworkCreatedEvent());
+//                announceSystemEvent(new SystemNetworkAddedEvent(network));
+//            }
+//
+//            @Override
+//            public void updated(Network network) {
+//                announceNetworkEvent(network, new NetworkUpdatedEvent());
+//            }
+//
+//            @Override
+//            public void complete(List<Network> networks) {
+//                announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
+//            }
+//        });
     }
 
     @Override
@@ -431,23 +438,23 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public void resume () {
-        if (UnsignedLong.ZERO != getNetworksCount()) {
-            Log.log(Level.FINE, "Resume");
-            for (WalletManager manager : getWalletManagers()) {
-                manager.connect(null);
-            }
+        Log.log(Level.FINE, "Resume");
+
+        updateNetworkFees(null);
+        updateCurrencies(null);
+
+        for (WalletManager manager : getWalletManagers()) {
+            manager.connect(null);
         }
     }
 
     @Override
-    public void pause () {
-        if (UnsignedLong.ZERO != getNetworksCount()) {
-            Log.log(Level.FINE, "Pause");
-            for (WalletManager manager : getWalletManagers()) {
-                manager.disconnect();
-            }
-            query.cancelAll();
+    public void pause() {
+        Log.log(Level.FINE, "Pause");
+        for (WalletManager manager : getWalletManagers()) {
+            manager.disconnect();
         }
+        query.cancelAll();
     }
 
     @Override
@@ -472,6 +479,16 @@ final class System implements com.breadwallet.crypto.System {
                     Optional<Unit> maybeFeeUnit = network.baseUnitFor(network.getCurrency());
                     checkState(maybeFeeUnit.isPresent());
 
+                    // Set the blockHeight
+                    UnsignedLong blockHeight = blockChainModel.getBlockHeight().orNull();
+                    if (null != blockHeight)
+                        network.setHeight(blockHeight);
+
+                    // Set the verifiedBlockHash
+                    String verifiedBlockHash = blockChainModel.getVerifiedBlockHash().orNull();
+                    if (null != verifiedBlockHash)
+                        network.setVerifiedBlockHashAsString(verifiedBlockHash);;
+
                     List<NetworkFee> fees = new ArrayList<>();
                     for (BlockchainFee feeEstimate: blockChainModel.getFeeEstimates()) {
                         // Well, quietly ignore a fee if we can't parse the amount.
@@ -483,7 +500,6 @@ final class System implements com.breadwallet.crypto.System {
 
                     // The fees are unlikely to change; but we'll announce feesUpdated anyways.
                     network.setFees(fees);
-                    announceNetworkEvent(network, new NetworkFeesUpdatedEvent());
                     networks.add(network);
                 }
 
@@ -494,6 +510,50 @@ final class System implements com.breadwallet.crypto.System {
             public void handleError(QueryError error) {
                 // On an error, just skip out; we'll query again later, presumably
                 if (null != handler) handler.handleError(new NetworkFeeUpdateFeesUnavailableError());
+            }
+        });
+    }
+
+    @Override
+    public <T extends com.breadwallet.crypto.Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> handler) {
+        query.getCurrencies(isMainnet, new CompletionHandler<List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency>, QueryError>() {
+            @Override
+            public void handleData(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> currencyModels) {
+                List<BRCryptoClientCurrencyBundle> bundles = new ArrayList<>();
+
+                for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
+                    List<BRCryptoClientCurrencyDenominationBundle> denominationBundles = new ArrayList<>();
+                    for (CurrencyDenomination currencyDenomination : currencyModel.getDenominations())
+                        denominationBundles.add(
+                                BRCryptoClientCurrencyDenominationBundle.create(
+                                        currencyDenomination.getName(),
+                                        currencyDenomination.getCode(),
+                                        currencyDenomination.getSymbol(),
+                                        currencyDenomination.getDecimals()));
+
+                    bundles.add(BRCryptoClientCurrencyBundle.create(
+                            currencyModel.getId(),
+                            currencyModel.getName(),
+                            currencyModel.getCode(),
+                            currencyModel.getType(),
+                            currencyModel.getBlockchainId(),
+                            currencyModel.getAddressValue(),
+                            currencyModel.getVerified(),
+                            denominationBundles));
+                }
+
+                getCoreBRCryptoSystem().announceCurrencies(bundles);
+                for (BRCryptoClientCurrencyBundle bundle : bundles) bundle.release();
+
+                if (null != handler) {
+                    handler.handleData((List<T>) getNetworks());
+                }
+            }
+
+            @Override
+            public void handleError(QueryError error) {
+                if (null != handler)
+                    handler.handleError(new CurrencyUpdateCurrenciesUnavailableError());
             }
         });
     }
@@ -535,11 +595,21 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
-    public List<Network> getNetworks() {
+    public List<? extends Network> getNetworks() {
         List<Network> networks = new ArrayList<>();
         for (BRCryptoNetwork coreNetwork: core.getNetworks())
             networks.add (Network.create(coreNetwork));
         return networks;
+    }
+
+    private Optional<Network> getNetwork(BRCryptoNetwork coreNetwork) {
+        return (core.hasNetwork(coreNetwork)
+                ? Optional.of (createNetwork(coreNetwork, true))
+                : Optional.absent());
+    }
+
+    private Network createNetwork (BRCryptoNetwork coreNetwork, boolean needTake) {
+        return Network.create(needTake ? coreNetwork.take() : coreNetwork);
     }
 
     // WalletManager management
@@ -613,7 +683,7 @@ final class System implements com.breadwallet.crypto.System {
                                             BRCryptoSystemEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
             try {
-                Log.log(Level.FINE, "NetworkEventCallback");
+                Log.log(Level.FINE, "SystemEventCallback");
 
                 switch (event.type()) {
                     case CRYPTO_SYSTEM_EVENT_CREATED:
@@ -628,6 +698,17 @@ final class System implements com.breadwallet.crypto.System {
                         handleSystemDeleted(context, coreSystem);
                         break;
 
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_ADDED:
+                        handleSystemNetworkAdded(context, coreSystem, event);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_ADDED:
+                        handleSystemManagerAdded(context, coreSystem, event);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS:
+                        handleSystemDiscoveredNetworks(context, coreSystem);
+                        break;
                 }
             } finally {
                 coreSystem.give();
@@ -677,6 +758,63 @@ final class System implements com.breadwallet.crypto.System {
             Log.log(Level.SEVERE, "SystemCreated: missed system");
         }
 
+    }
+
+    private static void handleSystemNetworkAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
+        BRCryptoNetwork coreNetwork = event.u.network;
+
+        Log.log(Level.FINE, "System Network Added");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            Optional<Network> optional = system.getNetwork(coreNetwork);
+            if (optional.isPresent()) {
+                Network network = optional.get();
+                system.announceSystemEvent(new SystemNetworkAddedEvent(network));
+            } else {
+                Log.log(Level.SEVERE, "SystemNetworkAdded: missed network");
+            }
+        } else {
+            Log.log(Level.SEVERE, "SystemNetworkAdded: missed system");
+        }
+    }
+
+    private static void handleSystemManagerAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
+        BRCryptoWalletManager coreManagar = event.u.walletManager;
+
+        Log.log(Level.FINE, "System WalletManager Added");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            Optional<WalletManager> optional = system.getWalletManager(coreManagar);
+            if (optional.isPresent()) {
+                WalletManager manager = optional.get();
+                system.announceSystemEvent(new SystemManagerAddedEvent(manager));
+            } else {
+                Log.log(Level.SEVERE, "SystemManagerAdded: missed manager");
+            }
+        } else {
+            Log.log(Level.SEVERE, "SystemManagerAdded: missed system");
+        }
+    }
+
+
+    private static void handleSystemDiscoveredNetworks(Cookie context, BRCryptoSystem coreSystem) {
+        Log.log(Level.FINE, "System Discovered Networks");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            system.announceSystemEvent(new SystemDiscoveredNetworksEvent(system.getNetworks()));
+
+        } else {
+            Log.log(Level.SEVERE, "SystemDiscoveredNetworks: missed system");
+        }
     }
 
     private static void networkEventCallback(Cookie context,

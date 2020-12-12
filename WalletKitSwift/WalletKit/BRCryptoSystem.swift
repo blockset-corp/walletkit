@@ -982,6 +982,8 @@ public enum SystemEvent {
     /// A network has been added to the system.  This event is generated during `configure` as
     /// each BlockChainDB blockchain is discovered.
     case networkAdded   (network: Network)
+    // case networkChanged
+    // case networkDeleted
 
     /// During `configure` once all networks have been discovered, this event is generated to
     /// mark the completion of network discovery.  The provided networks are the newly added ones;
@@ -991,6 +993,8 @@ public enum SystemEvent {
     /// A wallet manager has been added to the system.  WalletMangers are added by the APP
     /// generally as a subset of the Networks and through a call to System.craeteWalletManager.
     case managerAdded (manager: WalletManager)
+    // case managerChanged
+    // case managerDeleted
 
     init (system: System, core: BRCryptoSystemEvent) {
         switch core.type {

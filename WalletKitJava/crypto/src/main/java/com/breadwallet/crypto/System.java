@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import com.breadwallet.crypto.blockchaindb.BlockchainDb;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.errors.AccountInitializationError;
+import com.breadwallet.crypto.errors.CurrencyUpdateError;
 import com.breadwallet.crypto.errors.MigrateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.events.system.SystemListener;
@@ -125,7 +126,8 @@ public interface System {
      * @param appCurrencies If the BlockChainDB does not return any currencies, then
      *                      use `applicationCurrencies` merged into the defaults.
      */
-    void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies);
+    // void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies);
+    void configure();
 
     /**
      * Create a wallet manager for `network` using `mode.
@@ -187,6 +189,8 @@ public interface System {
      * @param completion An optional completion handler
      */
     void updateNetworkFees(@Nullable CompletionHandler<List<Network>, NetworkFeeUpdateError> completion);
+
+    <T extends Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> completion);
 
     /**
      * Set the network reachable flag for all managers.

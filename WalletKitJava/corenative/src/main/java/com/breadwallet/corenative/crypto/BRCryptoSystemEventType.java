@@ -62,6 +62,13 @@ public enum BRCryptoSystemEventType {
         public int toCore() {
             return CRYPTO_SYSTEM_EVENT_MANAGER_DELETED_VALUE;
         }
+    },
+
+    CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS {
+        @Override
+        public int toCore() {
+            return CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS_VALUE;
+        }
     };
 
     private static final int CRYPTO_SYSTEM_EVENT_CREATED_VALUE = 0;
@@ -75,6 +82,8 @@ public enum BRCryptoSystemEventType {
     private static final int CRYPTO_SYSTEM_EVENT_MANAGER_ADDED_VALUE   = 6;
     private static final int CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED_VALUE = 7;
     private static final int CRYPTO_SYSTEM_EVENT_MANAGER_DELETED_VALUE = 8;
+
+    private static final int CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS_VALUE = 9;
 
     public static BRCryptoSystemEventType fromCore(int nativeValue) {
         switch (nativeValue) {
@@ -90,6 +99,7 @@ public enum BRCryptoSystemEventType {
             case CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED_VALUE: return CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED;
             case CRYPTO_SYSTEM_EVENT_MANAGER_DELETED_VALUE: return CRYPTO_SYSTEM_EVENT_MANAGER_DELETED;
 
+            case CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS_VALUE: return CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS;
             default: throw new IllegalArgumentException("Invalid core value");
         }
     }
