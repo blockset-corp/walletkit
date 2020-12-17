@@ -297,7 +297,7 @@ public class BlockchainDbIT {
         assertEquals(transactionId, transaction.getId());
     }
 
-    @Test
+//    @Test
     public void testSubscriptions() {
         SynchronousCompletionHandler<Void> delHandler;
         SynchronousCompletionHandler<Subscription> subHandler;

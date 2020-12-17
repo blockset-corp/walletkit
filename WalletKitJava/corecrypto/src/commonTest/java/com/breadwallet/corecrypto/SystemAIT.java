@@ -276,7 +276,7 @@ public class SystemAIT {
 
     @Test
     public void testSystemBsv() {
-        testSystemForCurrency("bsv", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("bsv", true, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
