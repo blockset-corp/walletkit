@@ -79,7 +79,7 @@ cryptoAddressIsIdentical (BRCryptoAddress a1,
     return AS_CRYPTO_BOOLEAN(cryptoAddressIsEqual(a1, a2));
 }
 
-private_extern bool
+private_extern int
 cryptoAddressIsEqual (BRCryptoAddress a1,
                       BRCryptoAddress a2) {
     return (a1 == a2 ||

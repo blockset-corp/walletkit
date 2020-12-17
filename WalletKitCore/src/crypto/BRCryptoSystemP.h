@@ -38,6 +38,8 @@ struct BRCryptoSystemRecord {
     BRCryptoAccount account;
     char *path;
 
+    BRFileService fileService;
+    
     BRArrayOf (BRCryptoNetwork) networks;
     BRArrayOf (BRCryptoWalletManager) managers;
 };
@@ -66,6 +68,10 @@ cryptoSystemAddWalletManager (BRCryptoSystem system,
 private_extern void
 cryptoSystemRemWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager);
+
+private_extern void
+cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
+                                   OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles);
 
 static inline void
 cryptoSystemGenerateEvent (BRCryptoSystem system,

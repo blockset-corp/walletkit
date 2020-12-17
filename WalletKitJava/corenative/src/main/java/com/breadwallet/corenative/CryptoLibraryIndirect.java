@@ -8,6 +8,9 @@
 package com.breadwallet.corenative;
 
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
+import com.breadwallet.corenative.crypto.BRCryptoClient;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyBundle;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyDenominationBundle;
 import com.breadwallet.corenative.crypto.BRCryptoClientTransactionBundle;
 import com.breadwallet.corenative.crypto.BRCryptoClientTransferBundle;
 import com.breadwallet.corenative.crypto.BRCryptoCurrency;
@@ -102,6 +105,33 @@ public final class CryptoLibraryIndirect {
                 bundlesCount);
     }
 
+    public static Pointer cryptoClientCurrencyBundleCreate(String id,
+                                                           String name,
+                                                           String code,
+                                                           String type,
+                                                           String blockchainId,
+                                                           String address,
+                                                           boolean verified,
+                                                           SizeT denominationsCount,
+                                                           BRCryptoClientCurrencyDenominationBundle[] denominations) {
+        return INSTANCE.cryptoClientCurrencyBundleCreate(
+                id,
+                name,
+                code,
+                type,
+                blockchainId,
+                address,
+                verified,
+                new SizeT(denominations.length),
+                (0 == denominations.length ? null : denominations));
+    }
+
+    public static void cwmAnnounceCurrencies(Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cwmAnnounceCurrencies(system,
+                (0 == bundles.length ? null : bundles),
+                bundlesCount);
+    }
+
     public static Pointer cryptoSystemCreateWalletManager(Pointer system,
                                                           Pointer network,
                                                           int mode,
@@ -146,6 +176,18 @@ public final class CryptoLibraryIndirect {
 
         void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
         void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
+
+        Pointer cryptoClientCurrencyBundleCreate(String id,
+                                                 String name,
+                                                 String code,
+                                                 String type,
+                                                 String blockchainId,
+                                                 String address,
+                                                 boolean verified,
+                                                 SizeT denominationsCount,
+                                                 BRCryptoClientCurrencyDenominationBundle[] denominations);
+
+        void cwmAnnounceCurrencies (Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount);
 
         void cwmAnnounceEstimateTransactionFee(Pointer cwm,
                                                Pointer callbackState,

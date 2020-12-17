@@ -13,6 +13,7 @@
 
 #include <pthread.h>
 
+#include "support/BRArray.h"
 #include "support/BRSet.h"
 #include "support/rlp/BRRlp.h"
 
@@ -52,7 +53,7 @@ private_extern size_t
 cryptoClientTransactionBundleGetHashValue (BRCryptoClientTransactionBundle bundle);
 
 // For BRSet
-private_extern bool
+private_extern int
 cryptoClientTransactionBundleIsEqual (BRCryptoClientTransactionBundle bundle1,
                                       BRCryptoClientTransactionBundle bundle2);
 
@@ -104,7 +105,7 @@ private_extern size_t
 cryptoClientTransferBundleGetHashValue (BRCryptoClientTransferBundle bundle);
 
 // For BRSet
-private_extern bool
+private_extern int
 cryptoClientTransferBundleIsEqual (BRCryptoClientTransferBundle bundle1,
                                    BRCryptoClientTransferBundle bundle2);
 
@@ -119,6 +120,50 @@ static inline void
 cryptoClientTransferBundleSetRelease (BRSetOf(BRCryptoClientTransferBundle) bundles) {
     BRSetFreeAll(bundles, (void (*) (void *)) cryptoClientTransferBundleRelease);
 }
+
+// MARK: - Currency / Currency Denomination Bundle
+
+struct BRCryptoCliehtCurrencyDenominationBundleRecord {
+    char *name;
+    char *code;
+    char *symbol;
+    uint8_t decimals;
+};
+
+private_extern BRRlpItem
+cryptoClientCurrencyDenominationBundleRlpEncode (BRCryptoClientCurrencyDenominationBundle bundle,
+                                                 BRRlpCoder coder);
+
+
+private_extern BRCryptoClientCurrencyDenominationBundle
+cryptoClientCurrencyDenominationBundleRlpDecode (BRRlpItem item,
+                                                 BRRlpCoder coder);
+
+
+struct BRCryptoClientCurrencyBundleRecord {
+    char *id;
+    char *name;
+    char *code;
+    char *type;
+    char *bid;
+    char *address;
+    bool  verfified;
+    BRArrayOf(BRCryptoClientCurrencyDenominationBundle) denominations;
+};
+
+private_extern BRRlpItem
+cryptoClientCurrencyBundleRlpEncode (BRCryptoClientCurrencyBundle bundle,
+                                     BRRlpCoder coder);
+
+private_extern BRCryptoClientCurrencyBundle
+cryptoClientCurrencyBundleRlpDecode (BRRlpItem item,
+                                     BRRlpCoder coder);
+
+extern OwnershipGiven BRSetOf(BRCryptoClientCurrencyBundle)
+cryptoClientCurrencyBundleSetCreate (size_t size);
+
+extern void
+cryptoClientCurrencyBundleSetRelease (OwnershipGiven BRSetOf(BRCryptoClientCurrencyBundle) bundles);
 
 // MARK: - Client Callback
 

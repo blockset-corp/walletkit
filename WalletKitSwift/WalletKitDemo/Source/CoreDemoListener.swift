@@ -113,7 +113,7 @@ class CoreDemoListener: SystemListener {
             // specifically, test networks are announced and having a wallet manager for a
             // testnet won't happen in a deployed App.
 
-            if isMainnet == network.isMainnet,
+            if isMainnet == network.onMainnet,
                 network.currencies.contains(where: { nil != networkCurrencyCodesToMode[$0.code] }),
                 let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
                 // Get a valid mode, ideally from `currencyMode`
@@ -202,9 +202,10 @@ class CoreDemoListener: SystemListener {
             }
 
         case .discoveredNetworks (let networks):
-            let allCurrencies = networks.flatMap { $0.currencies }
-            print ("APP: System: Currencies (Added): ")
-            allCurrencies.forEach { print ("APP: System:    \($0.code)") }
+            networks.forEach {
+                print ("APP: Discovered Currencies on Netowrk: \($0.name)")
+                $0.currencies.forEach { print ("APP: System:    \($0.code)") }
+            }
         }
     }
 
@@ -246,28 +247,12 @@ class CoreDemoListener: SystemListener {
 
     func handleNetworkEvent(system: System, network: Network, event: NetworkEvent) {
         CoreDemoListener.eventQueue.async {
-            print ("APP: Network: \(event)")
-            #if false
-            switch event {
-            case .updated:
-                // On .updated, register a wallet for any new currencies.
-                network.currencies
-                    .forEach {
-                        if let manager = system.managerBy(network: network) {
-                            let _ = manager.registerWalletFor (currency: $0)
-                        }
-                }
-                break
-            default:
-                break
-            }
-            
+            print ("APP: Network: \(event) (\(network.name))")
             self.networkListeners.forEach {
                 $0.handleNetworkEvent (system: system,
                                        network: network,
                                        event: event)
             }
-            #endif
         }
     }
 }

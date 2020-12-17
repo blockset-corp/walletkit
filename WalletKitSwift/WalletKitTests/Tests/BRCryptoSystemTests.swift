@@ -26,7 +26,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         let network: Network! = system.networks.first {
             networkType == $0.type
                 && currencyCode == $0.currency.code
-                && isMainnet == $0.isMainnet
+                && isMainnet == $0.onMainnet
         }
         XCTAssertNotNil (network)
 
@@ -116,7 +116,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareSystem (client: BlocksetSystemClient())
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.eth == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.eth == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         XCTAssertNotNil (network.currencyBy(code: "eth"))
@@ -149,7 +149,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
         XCTAssertTrue (network.supportsMode(network.defaultMode))
 
@@ -167,7 +167,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
         XCTAssertTrue (network.supportsAddressScheme (network.defaultAddressScheme))
 

@@ -29,6 +29,10 @@ static void
 cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
                                            BREthereumToken token);
 
+static void
+cryptoWalletManagerCreateTokensForNetwork (BRCryptoWalletManagerETH manager,
+                                           BRCryptoNetwork network);
+
 extern BRCryptoWalletManagerETH
 cryptoWalletManagerCoerceETH (BRCryptoWalletManager manager) {
     assert (CRYPTO_NETWORK_TYPE_ETH == manager->type);
@@ -88,16 +92,7 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
     managerETH->tokens = initialTokensLoadETH (manager);
 
     // Ensure a token (but not a wallet) for each currency
-    size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
-    for (size_t index = 0; index < currencyCount; index++) {
-        BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
-        if (c != network->currency) {
-            BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
-            cryptoWalletManagerCreateTokenForCurrency (managerETH, c, unitDefault);
-            cryptoUnitGive (unitDefault);
-        }
-        cryptoCurrencyGive (c);
-    }
+    cryptoWalletManagerCreateTokensForNetwork (managerETH, network);
 
     // Ensure a currency for each token
     FOR_SET (BREthereumToken, token, managerETH->tokens) {
@@ -313,15 +308,21 @@ cryptoWalletManagerRecoverFeeBasisFromFeeEstimateETH (BRCryptoWalletManager cwm,
 }
 
 static void
-cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
-                                           BRCryptoCurrency currency,
-                                           BRCryptoUnit     unitDefault) {
+cryptoWalletManagerCreateTokenForCurrencyInternal (BRCryptoWalletManagerETH managerETH,
+                                                   BRCryptoCurrency currency,
+                                                   BRCryptoUnit     unitDefault,
+                                                   bool updateIfNeeded) {
     const char *address = cryptoCurrencyGetIssuer(currency);
 
     if (NULL == address || 0 == strlen(address)) return;
     if (ETHEREUM_BOOLEAN_FALSE == ethAddressValidateString(address)) return;
 
     BREthereumAddress addr = ethAddressCreate(address);
+
+    // Check for an existing token
+    BREthereumToken token = BRSetGet (managerETH->tokens, &addr);
+
+    if (NULL != token && !updateIfNeeded) return;
 
     const char *code = cryptoCurrencyGetCode (currency);
     const char *name = cryptoCurrencyGetName (currency);
@@ -330,9 +331,6 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
 
     BREthereumGas      defaultGasLimit = ethGasCreate(TOKEN_BRD_DEFAULT_GAS_LIMIT);
     BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
-
-    // Check for an existing token
-    BREthereumToken token = BRSetGet (managerETH->tokens, &addr);
 
     if (NULL == token) {
         token = ethTokenCreate (address,
@@ -355,6 +353,35 @@ cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
     }
 
     fileServiceSave (managerETH->base.fileService, fileServiceTypeTokensETH, token);
+}
+
+static void
+cryptoWalletManagerEnsureTokenForCurrency (BRCryptoWalletManagerETH managerETH,
+                                           BRCryptoCurrency currency,
+                                           BRCryptoUnit     unitDefault) {
+    cryptoWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, unitDefault, false);
+}
+
+static void
+cryptoWalletManagerCreateTokenForCurrency (BRCryptoWalletManagerETH managerETH,
+                                           BRCryptoCurrency currency,
+                                           BRCryptoUnit     unitDefault) {
+    cryptoWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, unitDefault, true);
+}
+
+static void
+cryptoWalletManagerCreateTokensForNetwork (BRCryptoWalletManagerETH managerETH,
+                                           BRCryptoNetwork network) {
+    size_t currencyCount = cryptoNetworkGetCurrencyCount (network);
+    for (size_t index = 0; index < currencyCount; index++) {
+        BRCryptoCurrency c = cryptoNetworkGetCurrencyAt (network, index);
+        if (c != network->currency) {
+            BRCryptoUnit unitDefault = cryptoNetworkGetUnitAsDefault (network, c);
+            cryptoWalletManagerCreateTokenForCurrency (managerETH, c, unitDefault);
+            cryptoUnitGive (unitDefault);
+        }
+        cryptoCurrencyGive (c);
+    }
 }
 
 static void
@@ -779,10 +806,21 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     // the ERC20 token we STILL MUST process the fee and the nonce.
     BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, bundle->currency);
 
+    // A token for this currency might not exist when recovering a bundle.  We've created tokens
+    // for every currency known upon wallet manager creation; but currencies might be added to
+    // the network later.  Thus we'll try to create a token for walletCurrency.
+    if (NULL != walletCurrency) {
+        BRCryptoUnit walletUnitDefault = cryptoNetworkGetUnitAsDefault (network, walletCurrency);
+        cryptoWalletManagerEnsureTokenForCurrency (managerETH, walletCurrency, walletUnitDefault);
+        cryptoUnitGive (walletUnitDefault);
+    }
+    
     // The contract is NULL or an ERC20 Smart Contract address.
     const char *contract = (NULL == walletCurrency
                             ? cryptoWalletManagerParseIssuer (bundle->currency)
                             : cryptoCurrencyGetIssuer(walletCurrency));
+
+    cryptoCurrencyGive (walletCurrency);
 
     switch (manager->syncMode) {
         case CRYPTO_SYNC_MODE_API_ONLY:

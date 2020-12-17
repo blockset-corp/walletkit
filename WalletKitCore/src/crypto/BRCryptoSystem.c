@@ -8,8 +8,13 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#include "BRCryptoSystemP.h"
 #include "support/BROSCompat.h"
+#include "support/BRFileService.h"
+#include "support/BRCrypto.h"
+
+#include "crypto/BRCryptoSystemP.h"
+#include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoClientP.h"
 #include "crypto/BRCryptoListenerP.h"
 
 #include <stdio.h>                  // sprintf
@@ -91,6 +96,122 @@ cryptoAllSystemsAdd (BRCryptoSystem system) { // , void* context)
 }
 #endif // defined (NOT_WORKABLE_NEEDS_TO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
 
+// MARK: - System File Service
+
+#define FILE_SERVICE_TYPE_CURRENCY_BUNDLE      "currency-bundle"
+
+enum {
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1
+};
+
+static UInt256
+fileServiceTypeCurrencyBundleV1Identifier (BRFileServiceContext context,
+                                           BRFileService fs,
+                                           const void *entity) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+    const BRCryptoClientCurrencyBundle bundle = (const BRCryptoClientCurrencyBundle) entity;
+
+    UInt256 identifier;
+
+    BRSHA256 (identifier.u8, bundle->id, strlen(bundle->id));
+
+    return identifier;
+}
+
+static void *
+fileServiceTypeCurrencyBundleV1Reader (BRFileServiceContext context,
+                                    BRFileService fs,
+                                    uint8_t *bytes,
+                                    uint32_t bytesCount) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
+    BRRlpItem  item  = rlpDataGetItem (coder, data);
+
+    BRCryptoClientCurrencyBundle bundle = cryptoClientCurrencyBundleRlpDecode(item, coder);
+
+    rlpItemRelease (coder, item);
+    rlpCoderRelease(coder);
+
+    return bundle;
+}
+
+static uint8_t *
+fileServiceTypeCurrencyBundleV1Writer (BRFileServiceContext context,
+                                       BRFileService fs,
+                                       const void* entity,
+                                       uint32_t *bytesCount) {
+    BRCryptoSystem system = (BRCryptoSystem) context; (void) system;
+    const BRCryptoClientCurrencyBundle bundle = (const BRCryptoClientCurrencyBundle) entity;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpItem  item  = cryptoClientCurrencyBundleRlpEncode (bundle, coder);
+    BRRlpData  data  = rlpItemGetData (coder, item);
+
+    rlpItemRelease  (coder, item);
+    rlpCoderRelease (coder);
+
+    *bytesCount = (uint32_t) data.bytesCount;
+    return data.bytes;
+}
+
+static BRSetOf (BRCryptoClientCurrencyBundle)
+cryptoSystemInitialCurrencyBundlesLoad (BRCryptoSystem system) {
+    BRSetOf(BRCryptoClientCurrencyBundle) bundles =  cryptoClientCurrencyBundleSetCreate(100);
+
+    if (fileServiceHasType (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE) &&
+        1 != fileServiceLoad (system->fileService, bundles, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, 1)) {
+        printf ("CRY: system failed to load currency bundles\n");
+        cryptoClientCurrencyBundleSetRelease(bundles);
+        return NULL;
+    }
+
+    return bundles;
+}
+
+static void
+cryptoSystemFileServiceErrorHandler (BRFileServiceContext context,
+                                            BRFileService fs,
+                                            BRFileServiceError error) {
+    switch (error.type) {
+        case FILE_SERVICE_IMPL:
+            // This actually a FATAL - an unresolvable coding error.
+            printf ("CRY: System FileService Error: IMPL: %s\n", error.u.impl.reason);
+            break;
+        case FILE_SERVICE_UNIX:
+            printf ("CRY: System FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
+            break;
+        case FILE_SERVICE_ENTITY:
+            // This is likely a coding error too.
+            printf ("CRY: System FileService Error: ENTITY (%s): %s\n",
+                         error.u.entity.type,
+                         error.u.entity.reason);
+            break;
+        case FILE_SERVICE_SDB:
+            printf ("CRY: System FileService Error: SDB: (%d): %s\n",
+                         error.u.sdb.code,
+                         error.u.sdb.reason);
+            break;
+    }
+}
+
+static BRFileServiceTypeSpecification systemFileServiceSpecifications[] = {
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE,
+    FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1,
+    1,
+    {
+        {
+            FILE_SERVICE_TYPE_CURRENCY_BUNDLE_VERSION_1,
+            fileServiceTypeCurrencyBundleV1Identifier,
+            fileServiceTypeCurrencyBundleV1Reader,
+            fileServiceTypeCurrencyBundleV1Writer
+        }
+    }
+};
+
+static size_t systemFileServiceSpecificationsCount = (sizeof (systemFileServiceSpecifications) / sizeof (BRFileServiceTypeSpecification));
+
 // MARK: - System
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
@@ -116,6 +237,13 @@ cryptoSystemCreate (BRCryptoClient client,
     sprintf (system->path, "%s/%s", basePath, accountFileSystemIdentifier);
     free (accountFileSystemIdentifier);
 
+    // Create the system-state file service
+    system->fileService = fileServiceCreateFromTypeSpecfications (system->path, "system", "state",
+                                                                  system,
+                                                                  cryptoSystemFileServiceErrorHandler,
+                                                                  systemFileServiceSpecificationsCount,
+                                                                  systemFileServiceSpecifications);
+
     // Fill in the builtin networks
     size_t networksCount = 0;
     BRCryptoNetwork *networks = cryptoNetworkInstallBuiltins (&networksCount,
@@ -132,8 +260,33 @@ cryptoSystemCreate (BRCryptoClient client,
 
     pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
+    // Extract currency bundles
+    BRSetOf (BRCryptoClientCurrencyBundle) currencyBundles = cryptoSystemInitialCurrencyBundlesLoad (system);
+    if (NULL != currencyBundles) {
+        FOR_SET (BRCryptoClientCurrencyBundle, currencyBundle, currencyBundles) {
+            BRCryptoNetwork network = cryptoSystemGetNetworkForUids (system, currencyBundle->bid);
+            if (NULL != network) {
+                cryptoNetworkAddCurrencyAssociationFromBundle (network, currencyBundle, CRYPTO_FALSE);
+            }
+        }
+        cryptoClientCurrencyBundleSetRelease(currencyBundles);
+    }
+
+    // The System has been created.
     cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
         CRYPTO_SYSTEM_EVENT_CREATED
+    });
+
+    // Each Network has been added to System.
+    for (size_t index = 0; index < array_count(system->networks); index++)
+        cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
+            CRYPTO_SYSTEM_EVENT_NETWORK_ADDED,
+            { .network = cryptoNetworkTake (system->networks[index]) }
+        });
+
+    // All the available networks have been discovered
+    cryptoSystemGenerateEvent (system, (BRCryptoSystemEvent) {
+        CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS
     });
 
 #if defined (NOT_WORKABLE_NEEDS_RO_REFERENCE_THE_SWIFT__JAVA_INSTANCE)
@@ -227,7 +380,9 @@ cryptoSystemEventTypeString (BRCryptoSystemEventType type) {
 
         "CRYPTO_SYSTEM_EVENT_MANAGER_ADDED",
         "CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED",
-        "CRYPTO_SYSTEM_EVENT_MANAGER_DELETED"
+        "CRYPTO_SYSTEM_EVENT_MANAGER_DELETED",
+
+        "CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS",
     };
     return names [type];
 }
@@ -273,15 +428,25 @@ extern BRCryptoNetwork
      return index < array_count(system->networks) ? system->networks[index] : NULL;
 }
 
-extern BRCryptoNetwork
-cryptoSystemGetNetworkForUids (BRCryptoSystem system,
-                               const char *uids) {
+static BRCryptoNetwork
+cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
+                                        const char *uids,
+                                        size_t *indexOfNetwork) {
     for (size_t index = 0; index < array_count(system->networks); index++) {
-        if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index])))
+        if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index]))) {
+            if (NULL != indexOfNetwork) *indexOfNetwork = index;
             return cryptoNetworkTake (system->networks[index]);
+        }
     }
     return NULL;
 }
+
+extern BRCryptoNetwork
+cryptoSystemGetNetworkForUids (BRCryptoSystem system,
+                               const char *uids) {
+    return cryptoSystemGetNetworkForUidsWithIndex (system, uids, NULL);
+}
+
 
 extern size_t
 cryptoSystemGetNetworksCount (BRCryptoSystem system) {
@@ -426,6 +591,34 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
     cryptoWalletManagerStart (manager);
 
     return manager;
+}
+
+// MARK: - Currency
+
+private_extern void
+cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
+                                  OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
+    // Partition `bundles` by `network`
+
+    size_t networksCount = array_count(system->networks);
+    BRArrayOf (BRCryptoClientCurrencyBundle) bundlesForNetworks[networksCount];
+
+    for (size_t index = 0; index < networksCount; index++)
+        array_new (bundlesForNetworks[index], 10);
+
+    size_t networkIndex = 0;
+    for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++) {
+        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
+
+        BRCryptoNetwork network = cryptoSystemGetNetworkForUidsWithIndex (system, bundles[bundleIndex]->bid, &networkIndex);
+        if (NULL != network)
+            array_add (bundlesForNetworks[networkIndex], bundles[bundleIndex]);
+    }
+
+    for (size_t index = 0; index < networksCount; index++) {
+        cryptoNetworkAddCurrencyAssociationsFromBundles (system->networks[index], bundlesForNetworks[index]);
+        array_free (bundlesForNetworks[index]);
+    }
 }
 
 // MARK: - System Control

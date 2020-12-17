@@ -165,7 +165,7 @@ public class CoreCryptoApplication extends Application {
                     null);
             system = System.create(systemExecutor, systemListener, account,
                     isMainnet, storageFile.getAbsolutePath(), blockchainDb);
-            system.configure(Collections.emptyList());
+            system.configure();
 
             System.wipeAll(storageFile.getAbsolutePath(), Collections.singletonList(system));
 
@@ -190,7 +190,7 @@ public class CoreCryptoApplication extends Application {
                 blockchainDb);
 
         // Passing empty list... it is a demo app...
-        system.configure(Collections.emptyList());
+        system.configure();
     }
 
     public TestConfiguration getTestConfiguration() {

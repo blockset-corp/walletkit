@@ -15,8 +15,11 @@
 #include <stdbool.h>
 
 #include "support/BRArray.h"
+
 #include "BRCryptoBaseP.h"
 #include "BRCryptoHashP.h"
+#include "BRCryptoClientP.h"
+
 #include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
@@ -191,6 +194,15 @@ private_extern void
 cryptoNetworkAddCurrencyUnit (BRCryptoNetwork network,
                               BRCryptoCurrency currency,
                               BRCryptoUnit unit);
+
+private_extern void
+cryptoNetworkAddCurrencyAssociationFromBundle (BRCryptoNetwork network,
+                                               OwnershipKept BRCryptoClientCurrencyBundle bundle,
+                                               BRCryptoBoolean needEvent);
+
+private_extern void
+cryptoNetworkAddCurrencyAssociationsFromBundles (BRCryptoNetwork network,
+                                                 OwnershipKept BRArrayOf(BRCryptoClientCurrencyBundle) bundles);
 
 private_extern void
 cryptoNetworkAddNetworkFee (BRCryptoNetwork network,

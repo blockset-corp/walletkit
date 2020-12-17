@@ -64,7 +64,7 @@ cryptoAddressGetType (BRCryptoAddress address);
 private_extern size_t
 cryptoAddressGetHashValue (BRCryptoAddress address);
 
-private_extern bool
+private_extern int
 cryptoAddressIsEqual (BRCryptoAddress a1,
                       BRCryptoAddress a2);
 

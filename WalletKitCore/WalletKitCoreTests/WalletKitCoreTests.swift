@@ -282,33 +282,33 @@ final class WalletKitCoreTests: XCTestCase {
     func testBitcoinWalletManagerSync () {
         print ("BTC: TST: Core Dir: \(storagePath!)")
         storagePathClear()
-        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0));
-        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0));
+        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (onMainnet ? 1 : 0));
+        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (onMainnet ? 1 : 0));
     }
 
     func XtestBitcoinWalletManagerSyncStressBTC() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BTC, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BTC, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
 
     func XtestBitcoinWalletManagerSyncStressBCH() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BCH, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BCH, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
     
     func XtestBitcoinWalletManagerSyncStressBSV() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BSV, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BSV, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
