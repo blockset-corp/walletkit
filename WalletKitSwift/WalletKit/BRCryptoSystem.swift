@@ -494,8 +494,12 @@ public final class System {
                                                pricePerCostFactor: $0) }
                 }
 
+                // We require fees
+                if !fees.isEmpty {
+                    network.fees = fees
+                }
+
                 // The fees are unlikely to change; but we'll announce .feesUpdated anyways.
-                network.fees = fees
                 self.listenerQueue.async {
                     self.listener?.handleNetworkEvent (system: self, network: network, event: .feesUpdated)
                 }
