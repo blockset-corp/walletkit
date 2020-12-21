@@ -20,7 +20,8 @@
 #define fileServiceTypeTransactions "transactions"
 
 enum {
-    EWM_TRANSACTION_VERSION_1
+    EWM_TRANSACTION_VERSION_1,
+    EWM_TRANSACTION_VERSION_2
 };
 
 static UInt256
@@ -467,11 +468,11 @@ static BRFileServiceTypeSpecification fileServiceSpecificationsArrayETH[] = {
 
     {
         fileServiceTypeTransactions,
-        EWM_TRANSACTION_VERSION_1,
+        EWM_TRANSACTION_VERSION_2,
         1,
         {
             {
-                EWM_TRANSACTION_VERSION_1,
+                EWM_TRANSACTION_VERSION_2,
                 fileServiceTypeTransactionV1Identifier,
                 fileServiceTypeTransactionV1Reader,
                 fileServiceTypeTransactionV1Writer

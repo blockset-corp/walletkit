@@ -1551,7 +1551,8 @@ bcsHandleBlockBody (BREthereumBCS bcs,
                                                                       blockGetNumber(block),
                                                                       i,
                                                                       blockGetTimestamp(block),
-                                                                      transactionGetGasLimit(tx)));
+                                                                      transactionGetGasLimit(tx),
+                                                                      1));
 
             if (NULL == neededTransactions) array_new (neededTransactions, 3);
             array_add(neededTransactions, tx);
@@ -1770,7 +1771,8 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
                                                                         blockGetNumber(block),
                                                                         ti,
                                                                         blockGetTimestamp(block),
-                                                                        ethGasCreate(0)));
+                                                                        ethGasCreate(0),
+                                                                        1));
                     
                     if (NULL == neededLogs) array_new(neededLogs, 3);
                     array_add(neededLogs, log);

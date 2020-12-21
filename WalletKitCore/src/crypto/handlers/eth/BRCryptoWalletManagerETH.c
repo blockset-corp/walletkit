@@ -593,7 +593,6 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     if (error) return true;
 
     bool statusError = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
-    (void) statusError; // avoid 'unused variable' warning
 
     BREthereumAddress sourceAddress = ethAddressCreate (bundle->from);
     BREthereumAddress targetAddress = ethAddressCreate (bundle->to);
@@ -630,12 +629,13 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
     transactionSetHash (tid, ethHashCreate (bundle->hash));
 
-    // TODO: Handle `errorStatus`; which means what?
+    int success = statusError ? 0 : 1;
     BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
                                                                           bundle->blockTimestamp,
-                                                                          ethGasCreate(gasUsed));
+                                                                          ethGasCreate(gasUsed),
+                                                                          success);
     transactionSetStatus (tid, status);
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
@@ -714,7 +714,8 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
                                      bundle->blockNumber,
                                      bundle->blockTransactionIndex,
                                      bundle->blockTimestamp,
-                                     ethGasCreate(gasUsed));
+                                     ethGasCreate(gasUsed),
+                                     1); // failed transactions (statusError) are skipped above
     logSetStatus (log, status);
 
     // If we had a `bcs` we might think about `bcsSignalLog(ewm->bcs, log);`
@@ -761,12 +762,14 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                      ethHashCreate(bundle->hash),
                                      exchangeIndex);
 
+    int success = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status) ? 0 : 1;
     BREthereumTransactionStatus status =
     transactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
                                      bundle->blockNumber,
                                      bundle->blockTransactionIndex,
                                      bundle->blockTimestamp,
-                                     ethGasCreate(0));
+                                     ethGasCreate(0),
+                                     success);
     ethExchangeSetStatus (exchange, status);
 
     ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_UPDATED, exchange);
