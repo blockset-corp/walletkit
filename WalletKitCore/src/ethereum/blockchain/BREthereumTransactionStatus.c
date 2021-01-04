@@ -186,9 +186,12 @@ transactionStatusRLPDecode (BRRlpItem item,
             size_t othersCount;
             const BRRlpItem *others = rlpDecodeList(coder, items[1], &othersCount);
 
-            // The 'encode' function produces '5' others; however, for consistency with delivered
-            // code with an existing archival value, we keep '3' around.
-            assert (6 == othersCount || 3 == othersCount);
+            // The 'encode' function provides '6' others.  However, the value of others has
+            // varied over time:
+            //   3: baseline
+            //   5: Add - included timestamp and included gasUsed
+            //   6: Add - included success
+            assert (6 == othersCount || 5 == othersCount || 3 == othersCount);
 
             return transactionStatusCreateIncluded (ethHashRlpDecode(others[0], coder),
                                                     rlpDecodeUInt64(coder, others[1], 0),
@@ -199,7 +202,9 @@ transactionStatusRLPDecode (BRRlpItem item,
                                                     (3 == othersCount
                                                      ? ethGasCreate(0)
                                                      : ethGasRlpDecode(others[4], coder)),
-                                                    rlpDecodeUInt64(coder, others[5], 0));
+                                                    (3 == othersCount || 5 == othersCount
+                                                     ? 1
+                                                     : rlpDecodeUInt64(coder, others[5], 0)));
         }
         
         case TRANSACTION_STATUS_ERRORED: {
