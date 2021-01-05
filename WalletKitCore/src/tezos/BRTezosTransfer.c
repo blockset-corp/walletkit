@@ -122,7 +122,9 @@ extern BRTezosUnitMutez tezosTransferGetAmount(BRTezosTransfer transfer)
 extern BRTezosUnitMutez tezosTransferGetAmountDirected (BRTezosTransfer transfer,
                                                         BRTezosAddress address,
                                                         int *negative) {
-    BRTezosUnitMutez amount = tezosTransferGetAmount(transfer);
+    BRTezosUnitMutez amount = (tezosTransferHasError(transfer)
+                               ? 0
+                               : tezosTransferGetAmount(transfer));
     BRTezosUnitMutez fee    = tezosTransferGetFee(transfer);
     
     int isSource = tezosTransferHasSource (transfer, address);
