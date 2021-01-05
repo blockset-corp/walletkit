@@ -92,6 +92,7 @@ typedef struct BREthereumTransactionStatusLESRecord {
             uint64_t transactionIndex;
             uint64_t blockTimestamp;
             BREthereumGas gasUsed;      // Internal
+            uint64_t success; // 1 = success, 0 = included w/ error
         } included;
 
         struct {
@@ -111,7 +112,8 @@ transactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t blockNumber,
                                  uint64_t transactionIndex,
                                  uint64_t blockTimestamp,
-                                 BREthereumGas gasUsed);
+                                 BREthereumGas gasUsed,
+                                 uint64_t success);
 
 extern BREthereumTransactionStatus
 transactionStatusCreateErrored (BREthereumTransactionErrorType type,

@@ -196,6 +196,9 @@ ewmHandleTransactionOriginatingLog (BRCryptoWalletManagerETH manager,
         for (size_t tid = 0; tid < array_count(wallet->transfers); tid++) {
 
             BRCryptoTransferETH thatTransferETH = cryptoTransferCoerceETH (wallet->transfers[tid]);
+            
+            // submitted transfers have the originating transaction assigned on construction
+            if (NULL != thatTransferETH->originatingTransaction) continue;
 
             BREthereumHash thatHash;
             switch (thatTransferETH->basis.type) {

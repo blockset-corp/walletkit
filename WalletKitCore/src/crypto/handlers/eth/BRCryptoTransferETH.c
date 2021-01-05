@@ -42,7 +42,7 @@ cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
                                                     status.u.included.transactionIndex,
                                                     status.u.included.blockTimestamp,
                                                     cryptoFeeBasisTake (feeBasis),
-                                                    CRYPTO_TRUE,
+                                                    AS_CRYPTO_BOOLEAN (status.u.included.success),
                                                     NULL);
             break;
 

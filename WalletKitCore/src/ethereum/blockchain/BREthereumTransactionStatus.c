@@ -55,14 +55,16 @@ transactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t blockNumber,
                                  uint64_t transactionIndex,
                                  uint64_t blockTimestamp,
-                                 BREthereumGas gasUsed) {
+                                 BREthereumGas gasUsed,
+                                 uint64_t success) {
     return (BREthereumTransactionStatus) {
         TRANSACTION_STATUS_INCLUDED,
         blockHash,
         blockNumber,
         transactionIndex,
         blockTimestamp,
-        gasUsed
+        gasUsed,
+        success
     };
 }
 
@@ -184,9 +186,12 @@ transactionStatusRLPDecode (BRRlpItem item,
             size_t othersCount;
             const BRRlpItem *others = rlpDecodeList(coder, items[1], &othersCount);
 
-            // The 'encode' function produces '5' others; however, for consistency with delivered
-            // code with an existing archival value, we keep '3' around.
-            assert (5 == othersCount || 3 == othersCount);
+            // The 'encode' function provides '6' others.  However, the value of others has
+            // varied over time:
+            //   3: baseline
+            //   5: Add - included timestamp and included gasUsed
+            //   6: Add - included success
+            assert (6 == othersCount || 5 == othersCount || 3 == othersCount);
 
             return transactionStatusCreateIncluded (ethHashRlpDecode(others[0], coder),
                                                     rlpDecodeUInt64(coder, others[1], 0),
@@ -196,7 +201,10 @@ transactionStatusRLPDecode (BRRlpItem item,
                                                      : rlpDecodeUInt64(coder, others[3], 0)),
                                                     (3 == othersCount
                                                      ? ethGasCreate(0)
-                                                     : ethGasRlpDecode(others[4], coder)));
+                                                     : ethGasRlpDecode(others[4], coder)),
+                                                    (3 == othersCount || 5 == othersCount
+                                                     ? 1
+                                                     : rlpDecodeUInt64(coder, others[5], 0)));
         }
         
         case TRANSACTION_STATUS_ERRORED: {
@@ -225,12 +233,13 @@ transactionStatusRLPEncode (BREthereumTransactionStatus status,
             break;
 
         case TRANSACTION_STATUS_INCLUDED:
-            items[1] = rlpEncodeList (coder, 5,
+            items[1] = rlpEncodeList (coder, 6,
                                       ethHashRlpEncode(status.u.included.blockHash, coder),
                                       rlpEncodeUInt64(coder, status.u.included.blockNumber, 0),
                                       rlpEncodeUInt64(coder, status.u.included.transactionIndex, 0),
                                       rlpEncodeUInt64(coder, status.u.included.blockTimestamp, 0),
-                                      ethGasRlpEncode(status.u.included.gasUsed, coder));
+                                      ethGasRlpEncode(status.u.included.gasUsed, coder),
+                                      rlpEncodeUInt64(coder, status.u.included.success, 0));
             items[2] = rlpEncodeString(coder, "");
 
             break;
