@@ -865,10 +865,7 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoClientSend (cwm->canSend, wallet, transfer);
 
-    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,
-        { .transfer = cryptoTransferTake (transfer) }
-    });
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransferSubmitted (transfer));
 }
 
 extern void
@@ -945,10 +942,9 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                                                      attributesCount,
                                                                      attributes);
     if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisEstimated (CRYPTO_SUCCESS, cookie, feeBasis));
+
+    cryptoFeeBasisGive (feeBasis);
 }
 
 extern void
@@ -967,10 +963,9 @@ cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletMana
                                                                    cookie,
                                                                    fee);
     if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisEstimated (CRYPTO_SUCCESS, cookie, feeBasis));
+
+    cryptoFeeBasisGive (feeBasis);
 }
 
 // MARK: - Sweeper
@@ -1093,10 +1088,7 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
         cwm->listener.walletEventCallback (cwm->listener.context,
                                            cryptoWalletManagerTake (cwm),
                                            cryptoWalletTake (wallet),
-                                           (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
-        });
+                                           cryptoWalletEventCreateTransfer(CRYPTO_WALLET_EVENT_TRANSFER_ADDED, cryptoTransferTake (transfer)));
 
         // Get the new balance...
         BRCryptoAmount newBalance = cryptoWalletGetBalance(wallet);
@@ -1106,10 +1098,7 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
             cwm->listener.walletEventCallback (cwm->listener.context,
                                                cryptoWalletManagerTake (cwm),
                                                cryptoWalletTake (cwm->wallet),
-                                               (BRCryptoWalletEvent) {
-                                                CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                                { .balanceUpdated = { newBalance }}
-                                            });
+                                               cryptoWalletEventCreateBalanceUpdated(newBalance));
         else cryptoAmountGive(newBalance);
         cryptoAmountGive(oldBalance);
 

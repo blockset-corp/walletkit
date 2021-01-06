@@ -687,45 +687,71 @@ public enum WalletEvent {
     case feeBasisEstimated (feeBasis: TransferFeeBasis)
 
     init (wallet: Wallet, core: BRCryptoWalletEvent) {
-        switch core.type {
+        switch cryptoWalletEventGetType(core) {
         case CRYPTO_WALLET_EVENT_CREATED:
             self = .created
             
         case CRYPTO_WALLET_EVENT_CHANGED:
-            self = .changed (oldState: WalletState (core: core.u.state.old),
-                             newState: WalletState (core: core.u.state.new))
+            var oldState: BRCryptoWalletState!
+            var newState: BRCryptoWalletState!
+
+            cryptoWalletEventExtractState(core, &oldState, &newState)
+            self = .changed (oldState: WalletState (core: oldState),
+                             newState: WalletState (core: newState))
             
         case CRYPTO_WALLET_EVENT_DELETED:
             self = .deleted
             
         case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
-            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferAdded (transfer: Transfer (core: transfer,
                                                        wallet: wallet,
                                                        take: false))
             
         case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
-            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
-                                                       wallet: wallet,
-                                                       take: false))
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferChanged (transfer: Transfer (core: transfer,
+                                                         wallet: wallet,
+                                                         take: false))
             
         case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
-            self = .transferAdded (transfer: Transfer (core: core.u.transfer,
-                                                       wallet: wallet,
-                                                       take: false))
+            var transfer: BRCryptoTransfer!
+            cryptoWalletEventExtractTransferSubmit (core, &transfer);
+
+            self = .transferSubmitted (transfer: Transfer (core: transfer,
+                                                           wallet: wallet,
+                                                           take: false),
+                                       success: true);
             
         case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-            self = .transferDeleted (transfer: Transfer (core: core.u.transfer,
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferDeleted (transfer: Transfer (core: transfer,
                                                          wallet: wallet,
                                                          take: false))
             
         case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
-            self = .balanceUpdated (amount: Amount (core: core.u.balanceUpdated.amount, take: false))
+            var balance: BRCryptoAmount!
+
+            cryptoWalletEventExtractBalanceUpdate (core, &balance);
+            self = .balanceUpdated (amount: Amount (core: balance, take: false))
             
         case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-            self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: core.u.feeBasisUpdated.basis, take: false))
+            var feeBasis: BRCryptoFeeBasis!
+
+            cryptoWalletEventExtractFeeBasisUpdate (core, &feeBasis);
+            self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
             
         case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
-            self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: core.u.feeBasisEstimated.basis, take: false))
+            var feeBasis: BRCryptoFeeBasis!
+
+            cryptoWalletEventExtractFeeBasisEstimate (core, nil, nil, &feeBasis);
+            self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
             
         default:
             preconditionFailure()

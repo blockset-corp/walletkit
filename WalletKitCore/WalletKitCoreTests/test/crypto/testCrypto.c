@@ -20,6 +20,7 @@
 #include "BRCryptoWallet.h"
 #include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoTransferP.h"
+#include "crypto/BRCryptoWalletP.h"
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoSystemP.h"
 
@@ -518,9 +519,7 @@ CWMEventForWalletType(BRCryptoWalletEventType type) {
             .w = {
                 NULL,
                 NULL,
-                (BRCryptoWalletEvent) {
-                    type
-                }
+                cryptoWalletEventCreate (type)
             }
         }
     };
@@ -562,34 +561,7 @@ CWMEventEqual (CWMEvent *e1, CWMEvent *e2) {
                 break;
             }
             case SYNC_EVENT_WALLET_TYPE: {
-                if (e1->u.w.event.type != e2->u.w.event.type) {
-                    success = 0;
-                }
-
-                switch (e1->u.w.event.type) {
-                    case CRYPTO_WALLET_EVENT_CHANGED:
-                        success = 0 == memcmp(&e1->u.w.event.u.state, &e2->u.w.event.u.state, sizeof(e1->u.w.event.u.state));
-                        break;
-                    case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
-                        success = CRYPTO_COMPARE_EQ == cryptoAmountCompare (e1->u.w.event.u.balanceUpdated.amount, e2->u.w.event.u.balanceUpdated.amount);
-                        break;
-                    case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-                        success = CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisUpdated.basis, e2->u.w.event.u.feeBasisUpdated.basis);
-                        break;
-                    case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
-                    case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
-                    case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
-                    case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-                        success = CRYPTO_TRUE == cryptoTransferEqual (e1->u.w.event.u.transfer, e2->u.w.event.u.transfer);
-                        break;
-                    case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
-                        success = (e1->u.w.event.u.feeBasisEstimated.cookie == e2->u.w.event.u.feeBasisEstimated.cookie &&
-                                   e1->u.w.event.u.feeBasisEstimated.status == e2->u.w.event.u.feeBasisEstimated.status &&
-                                   CRYPTO_TRUE == cryptoFeeBasisIsEqual (e1->u.w.event.u.feeBasisEstimated.basis, e2->u.w.event.u.feeBasisEstimated.basis));
-                        break;
-                    default:
-                        break;
-                }
+                success = CRYPTO_TRUE == cryptoWalletEventIsEqual (e1->u.w.event, e2->u.w.event);
                 break;
             }
             case SYNC_EVENT_TXN_TYPE: {
@@ -614,7 +586,7 @@ CWMEventString (CWMEvent *e) {
         subtypeString = cryptoWalletManagerEventTypeString (e->u.m.event.type);
         break;
         case SYNC_EVENT_WALLET_TYPE:
-        subtypeString = cryptoWalletEventTypeString (e->u.w.event.type);
+        subtypeString = cryptoWalletEventTypeString (cryptoWalletEventGetType (e->u.w.event));
         break;
         case SYNC_EVENT_TXN_TYPE:
         subtypeString = cryptoTransferEventTypeString (e->u.t.event.type);
@@ -707,7 +679,7 @@ _CWMEventRecordingWalletCallback (BRCryptoListenerContext context,
 
     pthread_mutex_lock (&state->lock);
     array_add (state->events, cwmEvent);
-    if (!state->silent) printf ("Added WALLET event: %s (%zu total)\n", cryptoWalletEventTypeString (event.type), array_count (state->events));
+    if (!state->silent) printf ("Added WALLET event: %s (%zu total)\n", cryptoWalletEventTypeString (cryptoWalletEventGetType (event)), array_count (state->events));
     pthread_mutex_unlock (&state->lock);
 }
 

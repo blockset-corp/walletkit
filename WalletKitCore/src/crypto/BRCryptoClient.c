@@ -823,11 +823,9 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                                                       attributeKeys,
                                                                       attributeVals);
 
-    cryptoWalletGenerateEvent (cwm->wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-        { .feeBasisEstimated = { status, cookie, feeBasis }}
-    });
+    cryptoWalletGenerateEvent (cwm->wallet, cryptoWalletEventCreateFeeBasisEstimated(status, cookie, feeBasis));
 
+    cryptoFeeBasisGive(feeBasis);
     cryptoAmountGive (pricePerCostFactor);
     cryptoClientCallbackStateRelease (callbackState);
 }

@@ -13,7 +13,6 @@
 
 #include "BRCryptoNetwork.h"
 #include "BRCryptoWalletManager.h"
-//#include "BRCryptoListener.h"
 #include "BRCryptoClient.h"
 
 #ifdef __cplusplus

@@ -8,8 +8,10 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#include "BRCryptoWalletP.h"
 #include "BRCryptoWalletSweeperP.h"
 #include "BRCryptoHandlersP.h"
+
 
 extern BRCryptoWalletSweeper
 cryptoWalletSweeperAllocAndInit (size_t sizeInBytes,
@@ -65,10 +67,9 @@ cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletSweeper sweeper
                                                                      fee);
     
     if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisEstimated (CRYPTO_SUCCESS, cookie, feeBasis));
+
+    cryptoFeeBasisGive(feeBasis);
 }
 
 extern BRCryptoTransfer

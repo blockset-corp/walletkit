@@ -17,6 +17,7 @@
 #include "support/BRArray.h"
 #include "support/BRSet.h"
 
+#include "event/BRCryptoWallet.h"
 #include "BRCryptoWallet.h"
 #include "BRCryptoBaseP.h"
 #include "BRCryptoClient.h"
@@ -25,6 +26,33 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// MARK: - Wallet Event
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreate (BRCryptoWalletEventType type);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateState (BRCryptoWalletState old,
+                              BRCryptoWalletState new);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateTransfer (BRCryptoWalletEventType type,
+                                 BRCryptoTransfer transfer);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateTransferSubmitted (BRCryptoTransfer transfer);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateBalanceUpdated (BRCryptoAmount balance);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateFeeBasisUpdated (BRCryptoFeeBasis basis);
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateFeeBasisEstimated (BRCryptoStatus status,
+                                          BRCryptoCookie cookie,
+                                          BRCryptoFeeBasis basis);
 
 // MARK: - Wallet Handlers
 
@@ -181,7 +209,7 @@ cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
 static inline void
 cryptoWalletGenerateEvent (BRCryptoWallet wallet,
-                           BRCryptoWalletEvent event) {
+                           OwnershipGiven BRCryptoWalletEvent event) {
     cryptoListenerGenerateWalletEvent (&wallet->listener, wallet, event);
 }
 
