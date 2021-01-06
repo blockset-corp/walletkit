@@ -40,7 +40,7 @@ public class BRCryptoListener extends PointerType {
         void callback(Pointer context,
                       Pointer manager,
                       Pointer wallet,
-                      BRCryptoWalletEvent.ByValue event);
+                      BRCryptoWalletEvent event);
     }
 
     public interface BRCryptoListenerTransferEvent extends Callback {
@@ -104,13 +104,13 @@ public class BRCryptoListener extends PointerType {
         void handle(Cookie context,
                     BRCryptoWalletManager manager,
                     BRCryptoWallet wallet,
-                    BRCryptoWalletEvent.ByValue event);
+                    BRCryptoWalletEvent event);
 
         @Override
         default void callback(Pointer context,
                               Pointer manager,
                               Pointer wallet,
-                              BRCryptoWalletEvent.ByValue event) {
+                              BRCryptoWalletEvent event) {
             handle(new Cookie(context),
                     new BRCryptoWalletManager(manager),
                     new BRCryptoWallet(wallet),

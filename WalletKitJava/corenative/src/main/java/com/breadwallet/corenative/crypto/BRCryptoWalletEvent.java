@@ -7,267 +7,127 @@
  */
 package com.breadwallet.corenative.crypto;
 
+import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.Union;
-import java.util.Arrays;
-import java.util.List;
+import com.sun.jna.PointerType;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 
-public class BRCryptoWalletEvent extends Structure {
-
-    public int typeEnum;
-    public u_union u;
-
-    public static class u_union extends Union {
-
-        public state_struct state;
-        public BRCryptoTransfer transfer;
-        public balanceUpdated_struct balanceUpdated;
-        public feeBasisUpdated_struct feeBasisUpdated;
-        public feeBasisEstimated_struct feeBasisEstimated;
-
-        public static class state_struct extends Structure {
-
-            public int oldStateEnum;
-            public int newStateEnum;
-
-            public state_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("oldStateEnum", "newStateEnum");
-            }
-
-            public state_struct(int oldState, int newState) {
-                super();
-                this.oldStateEnum = oldState;
-                this.newStateEnum = newState;
-            }
-
-            public state_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public BRCryptoWalletState oldState() {
-                return BRCryptoWalletState.fromCore(oldStateEnum);
-            }
-
-            public BRCryptoWalletState newState() {
-                return BRCryptoWalletState.fromCore(newStateEnum);
-            }
-
-            public static class ByReference extends state_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends state_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class balanceUpdated_struct extends Structure {
-
-            public BRCryptoAmount amount;
-
-            public balanceUpdated_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("amount");
-            }
-
-            public balanceUpdated_struct(BRCryptoAmount amount) {
-                super();
-                this.amount = amount;
-            }
-
-            public balanceUpdated_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends balanceUpdated_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends balanceUpdated_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class feeBasisUpdated_struct extends Structure {
-
-            public BRCryptoFeeBasis basis;
-
-            public feeBasisUpdated_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("basis");
-            }
-
-            public feeBasisUpdated_struct(BRCryptoFeeBasis basis) {
-                super();
-                this.basis = basis;
-            }
-
-            public feeBasisUpdated_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends feeBasisUpdated_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends feeBasisUpdated_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class feeBasisEstimated_struct extends Structure {
-
-            public int statusEnum;
-            public Pointer cookie;
-            public BRCryptoFeeBasis basis;
-
-            public feeBasisEstimated_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("statusEnum", "cookie", "basis");
-            }
-
-            public feeBasisEstimated_struct(int status, Pointer cookie, BRCryptoFeeBasis basis) {
-                super();
-                this.statusEnum = status;
-                this.cookie = cookie;
-                this.basis = basis;
-            }
-
-            public feeBasisEstimated_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public BRCryptoStatus status() {
-                return BRCryptoStatus.fromCore(statusEnum);
-            }
-
-            public static class ByReference extends feeBasisEstimated_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends feeBasisEstimated_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public u_union() {
-            super();
-        }
-
-        public u_union(state_struct state) {
-            super();
-            this.state = state;
-            setType(state_struct.class);
-        }
-
-        public u_union(BRCryptoTransfer transfer) {
-            super();
-            this.transfer = transfer;
-            setType(BRCryptoTransfer.class);
-        }
-
-        public u_union(balanceUpdated_struct balanceUpdated) {
-            super();
-            this.balanceUpdated = balanceUpdated;
-            setType(balanceUpdated_struct.class);
-        }
-
-        public u_union(feeBasisUpdated_struct feeBasisUpdated) {
-            super();
-            this.feeBasisUpdated = feeBasisUpdated;
-            setType(feeBasisUpdated_struct.class);
-        }
-
-        public u_union(feeBasisEstimated_struct feeBasisEstimated) {
-            super();
-            this.feeBasisEstimated = feeBasisEstimated;
-            setType(feeBasisEstimated_struct.class);
-        }
-
-        public u_union(Pointer peer) {
-            super(peer);
-        }
-
-        public static class ByReference extends u_union implements Structure.ByReference {
-
-        }
-
-        public static class ByValue extends u_union implements Structure.ByValue {
-
-        }
-    }
+public class BRCryptoWalletEvent extends PointerType {
 
     public BRCryptoWalletEvent() {
         super();
     }
 
+    public BRCryptoWalletEvent(Pointer address) {
+        super(address);
+    }
+
     public BRCryptoWalletEventType type() {
-        return BRCryptoWalletEventType.fromCore(typeEnum);
+        return BRCryptoWalletEventType.fromCore(
+                CryptoLibraryDirect.cryptoWalletEventGetType(
+                        this.getPointer()));
     }
 
-    protected List<String> getFieldOrder() {
-        return Arrays.asList("typeEnum", "u");
+    public class States {
+        public final BRCryptoWalletState oldState;
+        public final BRCryptoWalletState newState;
+
+        private States(BRCryptoWalletState oldState, BRCryptoWalletState newState) {
+            this.oldState = oldState;
+            this.newState = newState;
+        }
+
     }
 
-    public BRCryptoWalletEvent(int type, u_union u) {
-        super();
-        this.typeEnum = type;
-        this.u = u;
+    public States states() {
+        IntByReference oldState = new IntByReference();
+        IntByReference newState = new IntByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+            CryptoLibraryDirect.cryptoWalletEventExtractState(this.getPointer(), oldState, newState))
+            throw new IllegalStateException();
+
+        return new States (
+                BRCryptoWalletState.fromCore (oldState.getValue()),
+                BRCryptoWalletState.fromCore (newState.getValue()));
     }
 
-    @Override
-    public void read() {
-        super.read();
-        switch (type()){
-            case CRYPTO_WALLET_EVENT_CHANGED:
-                u.setType(u_union.state_struct.class);
-                u.read();
-                break;
-            case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
-                u.setType(u_union.balanceUpdated_struct.class);
-                u.read();
-                break;
-            case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
-            case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-            case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
-            case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
-                u.setType(BRCryptoTransfer.class);
-                u.read();
-                break;
-            case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-                u.setType(u_union.feeBasisUpdated_struct.class);
-                u.read();
-                break;
-            case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
-                u.setType(u_union.feeBasisEstimated_struct.class);
-                u.read();
-                break;
+    public BRCryptoTransfer transfer() {
+        PointerByReference transferPtr = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoWalletEventExtractTransfer(this.getPointer(), transferPtr))
+            throw new IllegalStateException();
+
+        return new BRCryptoTransfer (transferPtr.getValue());
+    }
+
+    public BRCryptoTransfer transferSubmit() {
+        PointerByReference transferPtr = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoWalletEventExtractTransferSubmit(this.getPointer(), transferPtr))
+            throw new IllegalStateException();
+
+        return new BRCryptoTransfer (transferPtr.getValue());
+    }
+
+    public BRCryptoAmount balance() {
+        PointerByReference balancePtr = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoWalletEventExtractBalanceUpdate(this.getPointer(), balancePtr))
+            throw new IllegalStateException();
+
+        return new BRCryptoAmount (balancePtr.getValue());
+    }
+
+    public BRCryptoFeeBasis feeBasisUpdate() {
+        PointerByReference feeBasisPtr = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoWalletEventExtractFeeBasisUpdate(this.getPointer(), feeBasisPtr))
+            throw new IllegalStateException();
+
+        return new BRCryptoFeeBasis (feeBasisPtr.getValue());
+    }
+
+    public class FeeBasisEstimate {
+        public final BRCryptoStatus status;
+        public final Pointer cookie;
+        public final BRCryptoFeeBasis basis;
+
+        public FeeBasisEstimate(BRCryptoStatus status, Pointer cookie, BRCryptoFeeBasis basis) {
+            this.status = status;
+            this.cookie = cookie;
+            this.basis = basis;
         }
     }
 
-    public BRCryptoWalletEvent(Pointer peer) {
-        super(peer);
+    public FeeBasisEstimate feeBasisEstimate() {
+        IntByReference statusPtr = new IntByReference();
+        PointerByReference cookiePtr = new PointerByReference();
+        PointerByReference feeBasisPtr = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoWalletEventExtractFeeBasisEstimate(this.getPointer(), statusPtr, cookiePtr, feeBasisPtr))
+            throw new IllegalStateException();
+
+        return new FeeBasisEstimate(
+                BRCryptoStatus.fromCore(statusPtr.getValue()),
+                cookiePtr.getValue(),
+                new BRCryptoFeeBasis (feeBasisPtr.getValue()));
     }
 
-    public static class ByReference extends BRCryptoWalletEvent implements Structure.ByReference {
-
+    public BRCryptoWallet take() {
+        return new BRCryptoWallet(
+                CryptoLibraryDirect.cryptoWalletEventTake(
+                        this.getPointer()));
     }
 
-    public static class ByValue extends BRCryptoWalletEvent implements Structure.ByValue {
-
+    public void give() {
+        CryptoLibraryDirect.cryptoWalletEventGive(
+                this.getPointer());
     }
 }

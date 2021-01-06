@@ -25,6 +25,7 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 
 import java.nio.ByteBuffer;
 
@@ -275,6 +276,17 @@ public final class CryptoLibraryDirect {
     public static native int cryptoUnitIsCompatible(Pointer u1, Pointer u2);
     public static native int cryptoUnitIsIdentical(Pointer u1, Pointer u2);
     public static native void cryptoUnitGive(Pointer obj);
+
+    // crypto/event/BRCryptoWallet.h
+    public static native int cryptoWalletEventGetType(Pointer event);
+    public static native int cryptoWalletEventExtractState(Pointer event, IntByReference oldState, IntByReference newState);
+    public static native int cryptoWalletEventExtractTransfer(Pointer event, PointerByReference transfer);
+    public static native int cryptoWalletEventExtractTransferSubmit(Pointer event, PointerByReference transfer);
+    public static native int cryptoWalletEventExtractBalanceUpdate(Pointer event, PointerByReference balance);
+    public static native int cryptoWalletEventExtractFeeBasisUpdate(Pointer event, PointerByReference feeBasis);
+    public static native int cryptoWalletEventExtractFeeBasisEstimate(Pointer event, IntByReference status, PointerByReference cookie, PointerByReference feeBasis);
+    public static native Pointer cryptoWalletEventTake(Pointer event);
+    public static native void cryptoWalletEventGive(Pointer event);
 
     // crypto/BRCryptoWallet.h
     public static native int cryptoWalletGetState(Pointer wallet);
