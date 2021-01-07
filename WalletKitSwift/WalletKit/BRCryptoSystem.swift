@@ -1246,82 +1246,48 @@ extension System {
 
             // BRCryptoListenerWalletCallback
             { (context, cwm, wid, event) in
-                precondition (nil != context  && nil != cwm && nil != wid)
-                defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid) }
+                precondition (nil != context  && nil != cwm && nil != wid && nil != event)
+                defer { cryptoWalletManagerGive(cwm); cryptoWalletGive(wid); cryptoWalletEventGive(event); }
 
+                let eventType = cryptoWalletEventGetType(event)
                 guard let (system, manager, wallet) = System.systemExtract (context, cwm, wid)
-                else { print ("SYS: Event: \(event.type): Missed {cwm, wid}"); return }
+                else { print ("SYS: Event: \(eventType): Missed {cwm, wid}"); return }
 
-                if event.type != CRYPTO_WALLET_EVENT_CHANGED {
-                    print ("SYS: Event: Wallet (\(wallet.name)): \(event.type)")
-                }
+                let walletEvent = WalletEvent (wallet: wallet, core: event!)
 
-                var walletEvent: WalletEvent? = nil
+                var needSystemEvent = true
+                var printString = "SYS: Event: Wallet (\(wallet.name)): \(eventType)"
 
-                switch event.type {
-                case CRYPTO_WALLET_EVENT_CREATED:
-                    walletEvent = WalletEvent.created
+                switch walletEvent {
+                case .changed(oldState: let oldState, newState: let newState):
+                    printString = "SYS: Event: Wallet (\(manager.name)): \(eventType): {\(oldState)) -> \(newState)}"
 
-                case CRYPTO_WALLET_EVENT_CHANGED:
-                    print ("SYS: Event: Wallet (\(manager.name)): \(event.type): {\(WalletState (core: event.u.state.old)) -> \(WalletState (core: event.u.state.new))}")
-                    walletEvent = WalletEvent.changed (oldState: WalletState (core: event.u.state.old),
-                                                       newState: WalletState (core: event.u.state.new))
+                case .feeBasisEstimated(feeBasis: let feeBasis):
+                    needSystemEvent = false;
 
-                case CRYPTO_WALLET_EVENT_DELETED:
-                    walletEvent = WalletEvent.deleted
+                    var cookie: BRCryptoCookie!
+                    var status: BRCryptoStatus!
 
-                case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
-                    defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
-                    guard let transfer = wallet.transferBy (core: event.u.transfer)
-                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
-                    walletEvent = WalletEvent.transferAdded (transfer: transfer)
+                    cryptoWalletEventExtractFeeBasisEstimate (event, &status, &cookie, nil);
 
-                case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
-                    defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
-                    guard let transfer = wallet.transferBy (core: event.u.transfer)
-                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
-                    walletEvent = WalletEvent.transferChanged (transfer: transfer)
-
-                case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
-                    defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
-                    guard let transfer = wallet.transferBy (core: event.u.transfer)
-                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
-                    walletEvent = WalletEvent.transferSubmitted (transfer: transfer, success: true)
-
-                case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
-                    defer { if let tid = event.u.transfer { cryptoTransferGive(tid) }}
-                    guard let transfer = wallet.transferBy (core: event.u.transfer)
-                    else { print ("SYS: Event: \(event.type): Missed (transfer)"); return }
-                    walletEvent = WalletEvent.transferDeleted (transfer: transfer)
-
-                case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
-                    let amount = Amount (core: event.u.balanceUpdated.amount,
-                                         take: false)
-                    walletEvent = WalletEvent.balanceUpdated(amount: amount)
-
-                case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
-                    let feeBasis = TransferFeeBasis (core: event.u.feeBasisUpdated.basis, take: false)
-                    walletEvent = WalletEvent.feeBasisUpdated(feeBasis: feeBasis)
-
-                case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
-                    let cookie = event.u.feeBasisEstimated.cookie!
-                    if CRYPTO_SUCCESS == event.u.feeBasisEstimated.status,
-                       let feeBasis = event.u.feeBasisEstimated.basis
-                        .map ({ TransferFeeBasis (core: $0, take: false) }) {
+                    if status == CRYPTO_SUCCESS {
                         system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: feeBasis)
                     }
                     else {
-                        let feeError = Wallet.FeeEstimationError.fromStatus(event.u.feeBasisEstimated.status)
+                        let feeError = Wallet.FeeEstimationError.fromStatus(status)
                         system.callbackCoordinator.handleWalletFeeEstimateFailure (cookie, error: feeError)
                     }
-                default: preconditionFailure()
+
+                default:
+                    break
                 }
 
-                walletEvent.map { (event) in
+                print (printString)
+                if needSystemEvent {
                     system.listener?.handleWalletEvent (system: manager.system,
                                                         manager: manager,
                                                         wallet: wallet,
-                                                        event: event)
+                                                        event: walletEvent)
                 }
             },
 

@@ -865,10 +865,7 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
 
     cryptoClientSend (cwm->canSend, wallet, transfer);
 
-    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED,
-        { .transfer = cryptoTransferTake (transfer) }
-    });
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransferSubmitted (transfer));
 }
 
 extern void
@@ -945,10 +942,9 @@ cryptoWalletManagerEstimateFeeBasis (BRCryptoWalletManager manager,
                                                                      attributesCount,
                                                                      attributes);
     if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisEstimated (CRYPTO_SUCCESS, cookie, feeBasis));
+
+    cryptoFeeBasisGive (feeBasis);
 }
 
 extern void
@@ -967,10 +963,9 @@ cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletMana
                                                                    cookie,
                                                                    fee);
     if (NULL != feeBasis)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED,
-            { .feeBasisEstimated = { CRYPTO_SUCCESS, cookie, feeBasis }} // feeBasis passed
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisEstimated (CRYPTO_SUCCESS, cookie, feeBasis));
+
+    cryptoFeeBasisGive (feeBasis);
 }
 
 // MARK: - Sweeper
@@ -1000,225 +995,6 @@ cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager cwm,
                                          wallet,
                                          key);
 }
-
-#ifdef REFACTOR
-extern void
-cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
-                                            OwnershipGiven BRGenericTransfer transferGeneric,
-                                            BRCryptoBoolean needBalanceEvent) {
-    int transferWasCreated = 0;
-
-    // TODO: Determine the currency from `transferGeneric`
-    BRCryptoCurrency currency   = cryptoNetworkGetCurrency   (cwm->network);
-    BRCryptoUnit     unit       = cryptoNetworkGetUnitAsBase (cwm->network, currency);
-    BRCryptoUnit     unitForFee = cryptoNetworkGetUnitAsBase (cwm->network, currency);
-    BRCryptoWallet   wallet     = cryptoWalletManagerGetWalletForCurrency (cwm, currency);
-
-    // TODO: I don't think any overall locks are needed here...
-
-    // Look for a known transfer
-    BRCryptoTransfer transfer = cryptoWalletFindTransferAsGEN (wallet, transferGeneric);
-
-    // If we don't know about `transferGeneric`, create a crypto transfer
-    if (NULL == transfer) {
-        // Create the generic transfer... `transferGeneric` owned by `transfer`
-        transfer = cryptoTransferCreateAsGEN (unit, unitForFee, transferGeneric);
-
-        transferWasCreated = 1;
-    }
-
-    // We know 'transfer'; ensure it is up to date.  This is important for the case where
-    // we created the transfer and then submitted it.  In that case `transfer` is what we
-    // created and `transferGeneric` is what we recovered.  The recovered transfer will have
-    // additional information - notably the UIDS.
-    else {
-        BRGenericTransfer transferGenericOrig = cryptoTransferAsGEN (transfer);
-
-        // Update the UIDS
-        if (NULL == genTransferGetUIDS(transferGenericOrig))
-            genTransferSetUIDS (transferGenericOrig,
-                                genTransferGetUIDS (transferGeneric));
-
-        // TODO - give the lower layer the ability to update the hash from the transaction
-        // in some cases WalletKit cannot generate the correct hash
-        // BRGenericHash hash = genTransferGetHash(transferGeneric);
-        // genTransferUpdateHash(transferGenericOrig, hash);
-    }
-
-    // Fill in any attributes
-    BRArrayOf(BRGenericTransferAttribute) genAttributes = genTransferGetAttributes(transferGeneric);
-    BRArrayOf(BRCryptoTransferAttribute)  attributes;
-    array_new(attributes, array_count(genAttributes));
-    for (size_t index = 0; index < array_count(genAttributes); index++) {
-        array_add (attributes,
-                   cryptoTransferAttributeCreate (genTransferAttributeGetKey(genAttributes[index]),
-                                                  genTransferAttributeGetVal(genAttributes[index]),
-                                                  AS_CRYPTO_BOOLEAN (genTransferAttributeIsRequired(genAttributes[index]))));
-    }
-    cryptoTransferSetAttributes (transfer, attributes);
-    array_free_all (attributes, cryptoTransferAttributeGive);
-
-    // Set the state from `transferGeneric`.  This is where we move from 'submitted' to 'included'
-    BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-    BRCryptoTransferState newState = cryptoTransferStateCreateGEN (genTransferGetState(transferGeneric), unitForFee);
-    cryptoTransferSetState (transfer, newState);
-
-    if (!transferWasCreated)
-        genTransferRelease(transferGeneric);
-
-    // Save the transfer as it is now fully updated.
-    genManagerSaveTransfer (cwm->u.gen, cryptoTransferAsGEN(transfer));
-
-    // If we created the transfer...
-    if (transferWasCreated) {
-        // ... announce the newly created transfer.
-        cwm->listener.transferEventCallback (cwm->listener.context,
-                                             cryptoWalletManagerTake (cwm),
-                                             cryptoWalletTake (wallet),
-                                             cryptoTransferTake(transfer),
-                                             (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CREATED
-        });
-
-        // ... cache the 'current' balance
-        BRCryptoAmount oldBalance = cryptoWalletGetBalance (wallet);
-
-        // ... add the transfer to its wallet...
-        cryptoWalletAddTransfer (wallet, transfer);
-
-        // ... tell 'generic wallet' about it.
-        genWalletAddTransfer (cryptoWalletAsGEN(wallet), cryptoTransferAsGEN(transfer));
-
-        // ... and announce the wallet's newly added transfer
-        cwm->listener.walletEventCallback (cwm->listener.context,
-                                           cryptoWalletManagerTake (cwm),
-                                           cryptoWalletTake (wallet),
-                                           (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = { cryptoTransferTake (transfer) }}
-        });
-
-        // Get the new balance...
-        BRCryptoAmount newBalance = cryptoWalletGetBalance(wallet);
-
-        // ... if it differs from the old balance, geneate an event.
-        if (CRYPTO_TRUE == needBalanceEvent && CRYPTO_COMPARE_EQ != cryptoAmountCompare(oldBalance, newBalance))
-            cwm->listener.walletEventCallback (cwm->listener.context,
-                                               cryptoWalletManagerTake (cwm),
-                                               cryptoWalletTake (cwm->wallet),
-                                               (BRCryptoWalletEvent) {
-                                                CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                                { .balanceUpdated = { newBalance }}
-                                            });
-        else cryptoAmountGive(newBalance);
-        cryptoAmountGive(oldBalance);
-
-        // Tell the manager that that wallet changed (added transfer, perhaps balance changed)
-        cwm->listener.walletManagerEventCallback (cwm->listener.context,
-                                                  cryptoWalletManagerTake (cwm),
-                                                  (BRCryptoWalletManagerEvent) {
-            CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
-            { .wallet = cryptoWalletTake (cwm->wallet) }
-        });
-    }
-
-    // If the state is not created and changed, announce a transfer state change.
-    if (CRYPTO_TRANSFER_STATE_CREATED != newState.type && oldState.type != newState.type) {
-        cwm->listener.transferEventCallback (cwm->listener.context,
-                                             cryptoWalletManagerTake (cwm),
-                                             cryptoWalletTake (wallet),
-                                             cryptoTransferTake(transfer),
-                                             (BRCryptoTransferEvent) {
-            CRYPTO_TRANSFER_EVENT_CHANGED,
-            { .state = {
-                cryptoTransferStateCopy (&oldState),
-                cryptoTransferStateCopy (&newState) }}
-        });
-    }
-
-    cryptoTransferStateRelease (&oldState);
-    cryptoTransferStateRelease (&newState);
-    cryptoUnitGive(unitForFee);
-    cryptoUnitGive(unit);
-    cryptoTransferGive(transfer);
-    cryptoWalletGive (wallet);
-    cryptoCurrencyGive(currency);
-}
-
-extern void
-cryptoWalletManagerHandleTransferGEN (BRCryptoWalletManager cwm,
-                                      OwnershipGiven BRGenericTransfer transferGeneric) {
-    cryptoWalletManagerHandleTransferGENFilter (cwm, transferGeneric, CRYPTO_TRUE);
-}
-
-static void
-cryptoWalletManagerSyncCallbackGEN (BRGenericManagerSyncContext context,
-                                    BRGenericManager manager,
-                                    uint64_t begBlockHeight,
-                                    uint64_t endBlockHeight,
-                                    uint64_t fullSyncIncrement) {
-    BRCryptoWalletManager cwm = cryptoWalletManagerTakeWeak ((BRCryptoWalletManager) context);
-    if (NULL == cwm) return;
-
-    // If the sync block range is larger than fullSyncIncrement, then this is a full sync.
-    // Otherwise this is an ongoing, periodic sync - which we do not report.  It is as if in
-    // P2P mode, a new block is announced.
-    int fullSync = (endBlockHeight - begBlockHeight > fullSyncIncrement);
-
-    pthread_mutex_lock (&cwm->lock);
-
-    // If an ongoing sync, we are simply CONNECTED.
-    BRCryptoWalletManagerState oldState = cwm->state;
-    BRCryptoWalletManagerState newState = cryptoWalletManagerStateInit (fullSync
-                                                                        ? CRYPTO_WALLET_MANAGER_STATE_SYNCING
-                                                                        : CRYPTO_WALLET_MANAGER_STATE_CONNECTED);
-
-    pthread_mutex_unlock (&cwm->lock);
-
-    // Callback a Wallet Manager Event, but only on state changes.  We won't announce incremental
-    // progress (with a blockHeight and timestamp.
-    if (newState.type != oldState.type) {
-
-        if (fullSync) {
-            // Update the CWM state before SYNC_STARTED.
-            cryptoWalletManagerSetState (cwm, newState);
-
-            // Generate a SYNC_STARTED...
-            cryptoWalletManagerListenerInvokeCallback (cwm->listener, cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
-            });
-
-            // ... and then a SYNC_CONTINUES at %100
-            //            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-            //                                                      cryptoWalletManagerTake (cwm),
-            //                                                      (BRCryptoWalletManagerEvent) {
-            //                CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
-            //                { .syncContinues = { NO_CRYPTO_TIMESTAMP, 0 }}
-            //            });
-        }
-        else {
-            // Generate a SYNC_CONTINUES at %100...
-            //            cwm->listener.walletManagerEventCallback (cwm->listener.context,
-            //                                                      cryptoWalletManagerTake (cwm),
-            //                                                      (BRCryptoWalletManagerEvent) {
-            //                CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
-            //                { .syncContinues = { NO_CRYPTO_TIMESTAMP, 100 }}
-            //            });
-
-            // ... and then a CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED
-            cryptoWalletManagerListenerInvokeCallback (cwm->listener, cwm, (BRCryptoWalletManagerEvent) {
-                CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
-                { .syncStopped = { CRYPTO_SYNC_STOPPED_REASON_COMPLETE }}
-            });
-
-            // Update the CWM state after SYNC_STOPPED.
-             cryptoWalletManagerSetState (cwm, newState);
-        }
-    }
-
-    cryptoWalletManagerGive (cwm);
-}
-#endif
 
 extern const char *
 cryptoWalletManagerEventTypeString (BRCryptoWalletManagerEventType t) {

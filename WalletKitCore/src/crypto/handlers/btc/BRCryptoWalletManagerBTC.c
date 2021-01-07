@@ -507,11 +507,11 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     // WALLET_ADDED_TRANSFER, WALLET_BALANCE_UPDATED.  If not created and not deleted and
     // now resolved, we'll generate a balance event.  This later case occurs if we've submitted
     // a transaction (I think); this event might be extaneous.
-    if (!wasCreated && !wasDeleted)
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-            { .balanceUpdated = { cryptoWalletGetBalance (wallet) }}
-        });
+    if (!wasCreated && !wasDeleted) {
+        BRCryptoAmount balance = cryptoWalletGetBalance (wallet);
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateBalanceUpdated (balance));
+        cryptoAmountGive (balance);
+    }
 
     for (size_t index = 0; index < resolvedTransactionsCount; index++) {
         BRTransaction *tid = resolvedTransactions[index];

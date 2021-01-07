@@ -91,7 +91,7 @@ static BREventType handleListenerSignalWalletEventType = {
 extern void
 cryptoListenerGenerateWalletEvent (const BRCryptoWalletListener *listener,
                                    BRCryptoWallet wallet,
-                                   BRCryptoWalletEvent event) {
+                                   OwnershipGiven BRCryptoWalletEvent event) {
     if (NULL == listener || NULL == listener->listener) return;
 
     BRListenerSignalWalletEvent listenerEvent =

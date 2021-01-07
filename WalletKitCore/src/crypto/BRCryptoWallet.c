@@ -20,7 +20,6 @@
 
 #include "BRCryptoHandlersP.h"
 
-
 static void
 cryptoWalletUpdTransfer (BRCryptoWallet wallet,
                                   BRCryptoTransfer transfer,
@@ -29,6 +28,273 @@ cryptoWalletUpdTransfer (BRCryptoWallet wallet,
 static void
 cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
                                               BRCryptoTransfer transfer);
+
+// MARK: - Wallet Event
+
+struct BRCryptoWalletEventRecord {
+    BRCryptoWalletEventType type;
+    union {
+        struct {
+            BRCryptoWalletState old;
+            BRCryptoWalletState new;
+        } state;
+
+        BRCryptoTransfer transfer;
+
+        struct {
+            /// Handler must 'give'
+            BRCryptoAmount amount;
+        } balanceUpdated;
+
+        struct {
+            /// Handler must 'give'
+            BRCryptoFeeBasis basis;
+        } feeBasisUpdated;
+
+        struct {
+            /// Handler must 'give' basis
+            BRCryptoStatus status;
+            BRCryptoCookie cookie;
+            BRCryptoFeeBasis basis;
+        } feeBasisEstimated;
+    } u;
+
+    BRCryptoRef ref;
+};
+
+IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWalletEvent, cryptoWalletEvent)
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreate (BRCryptoWalletEventType type) {
+    BRCryptoWalletEvent event = calloc (1, sizeof (struct BRCryptoWalletEventRecord));
+
+    event->type = type;
+    event->ref  = CRYPTO_REF_ASSIGN (cryptoWalletEventRelease);
+
+    return event;
+}
+
+static void
+cryptoWalletEventRelease (BRCryptoWalletEvent event) {
+    switch (event->type) {
+        case CRYPTO_WALLET_EVENT_CREATED:
+        case CRYPTO_WALLET_EVENT_DELETED:
+            break;
+
+        case CRYPTO_WALLET_EVENT_CHANGED:
+            // BRCryptoWalletState old, new
+            break;
+
+        case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
+        case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
+        case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
+            cryptoTransferGive (event->u.transfer);
+            break;
+
+        case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
+            cryptoTransferGive (event->u.transfer);
+            break;
+
+        case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
+            cryptoAmountGive (event->u.balanceUpdated.amount);
+            break;
+
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
+            cryptoFeeBasisGive (event->u.feeBasisUpdated.basis);
+            break;
+
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
+            // BRCryptoStatus status
+            // BRCryptoCookie cookie
+            cryptoFeeBasisGive (event->u.feeBasisEstimated.basis);
+            break;
+    }
+
+    memset (event, 0, sizeof(*event));
+    free (event);
+}
+
+extern BRCryptoWalletEventType
+cryptoWalletEventGetType (BRCryptoWalletEvent event) {
+    return event->type;
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateState (BRCryptoWalletState old,
+                              BRCryptoWalletState new) {
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (CRYPTO_WALLET_EVENT_CHANGED);
+
+    
+    event->u.state.old = old;
+    event->u.state.new = new;
+
+    return event;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractState (BRCryptoWalletEvent event,
+                               BRCryptoWalletState *old,
+                               BRCryptoWalletState *new) {
+    if (CRYPTO_WALLET_EVENT_CHANGED != event->type) return CRYPTO_FALSE;
+
+    if (NULL != old) *old = event->u.state.old;
+    if (NULL != new) *new = event->u.state.new;
+
+    return CRYPTO_TRUE;
+}
+
+static bool
+cryptoWalletEventTypeIsTransfer (BRCryptoWalletEventType type) {
+    return (CRYPTO_WALLET_EVENT_TRANSFER_ADDED   == type ||
+            CRYPTO_WALLET_EVENT_TRANSFER_CHANGED == type ||
+            CRYPTO_WALLET_EVENT_TRANSFER_DELETED == type);
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateTransfer (BRCryptoWalletEventType type,
+                                 BRCryptoTransfer transfer) {
+    assert (cryptoWalletEventTypeIsTransfer(type));
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (type);
+
+    event->u.transfer = cryptoTransferTake (transfer);
+
+    return event;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractTransfer (BRCryptoWalletEvent event,
+                                  BRCryptoTransfer *transfer) {
+
+    if (!cryptoWalletEventTypeIsTransfer (event->type)) return CRYPTO_FALSE;
+
+    if (NULL != transfer) *transfer = cryptoTransferTake (event->u.transfer);
+
+    return CRYPTO_TRUE;
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateTransferSubmitted (BRCryptoTransfer transfer) {
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED);
+
+    event->u.transfer = cryptoTransferTake (transfer);
+
+    return event;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractTransferSubmit (BRCryptoWalletEvent event,
+                                        BRCryptoTransfer *transfer) {
+
+    if (CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED != event->type) return CRYPTO_FALSE;
+
+    if (NULL != transfer) *transfer = cryptoTransferTake (event->u.transfer);
+
+    return CRYPTO_TRUE;
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateBalanceUpdated (OwnershipGiven BRCryptoAmount balance) {
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (CRYPTO_WALLET_EVENT_BALANCE_UPDATED);
+
+    event->u.balanceUpdated.amount = cryptoAmountTake (balance);
+
+    return event;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractBalanceUpdate (BRCryptoWalletEvent event,
+                                       BRCryptoAmount *balance) {
+    if (CRYPTO_WALLET_EVENT_BALANCE_UPDATED != event->type) return CRYPTO_FALSE;
+
+    if (NULL != balance) *balance = cryptoAmountTake (event->u.balanceUpdated.amount);
+
+    return CRYPTO_TRUE;
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateFeeBasisUpdated (BRCryptoFeeBasis basis) {
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED);
+
+    event->u.feeBasisUpdated.basis = cryptoFeeBasisTake (basis);
+
+    return event;
+}
+
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractFeeBasisUpdate (BRCryptoWalletEvent event,
+                                        BRCryptoFeeBasis *basis) {
+    if (CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED != event->type) return CRYPTO_FALSE;
+
+    if (NULL != basis) *basis = cryptoFeeBasisTake (event->u.feeBasisUpdated.basis);
+
+    return CRYPTO_TRUE;
+}
+
+private_extern BRCryptoWalletEvent
+cryptoWalletEventCreateFeeBasisEstimated (BRCryptoStatus status,
+                                          BRCryptoCookie cookie,
+                                          OwnershipGiven BRCryptoFeeBasis basis) {
+    BRCryptoWalletEvent event = cryptoWalletEventCreate (CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED);
+
+    event->u.feeBasisEstimated.status = status;
+    event->u.feeBasisEstimated.cookie = cookie;
+    event->u.feeBasisEstimated.basis  = cryptoFeeBasisTake (basis);
+
+    return event;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventExtractFeeBasisEstimate (BRCryptoWalletEvent event,
+                                          BRCryptoStatus *status,
+                                          BRCryptoCookie *cookie,
+                                          BRCryptoFeeBasis *basis) {
+    if (CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED != event->type) return CRYPTO_FALSE;
+
+    if (NULL != status) *status = event->u.feeBasisEstimated.status;
+    if (NULL != cookie) *cookie = event->u.feeBasisEstimated.cookie;
+    if (NULL != basis ) *basis  = cryptoFeeBasisTake (event->u.feeBasisEstimated.basis);
+
+    return CRYPTO_TRUE;
+}
+
+extern BRCryptoBoolean
+cryptoWalletEventIsEqual (BRCryptoWalletEvent event1,
+                          BRCryptoWalletEvent event2) {
+    if (event1->type != event2->type) return CRYPTO_FALSE;
+
+    switch (event1->type) {
+        case CRYPTO_WALLET_EVENT_CREATED:
+        case CRYPTO_WALLET_EVENT_DELETED:
+            return CRYPTO_TRUE;
+
+        case CRYPTO_WALLET_EVENT_CHANGED:
+            return AS_CRYPTO_BOOLEAN (event1->u.state.old == event2->u.state.new &&
+                                      event1->u.state.new == event2->u.state.new);
+
+        case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
+        case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
+        case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
+            return cryptoTransferEqual(event1->u.transfer, event2->u.transfer);
+
+        case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
+            return cryptoTransferEqual(event1->u.transfer, event2->u.transfer);
+
+        case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
+            return CRYPTO_COMPARE_EQ == cryptoAmountCompare (event1->u.balanceUpdated.amount, event2->u.balanceUpdated.amount);
+
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
+            return cryptoFeeBasisIsEqual (event1->u.feeBasisUpdated.basis, event2->u.feeBasisUpdated.basis);
+
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
+            return AS_CRYPTO_BOOLEAN (event1->u.feeBasisEstimated.status == event2->u.feeBasisEstimated.status &&
+                                      event1->u.feeBasisEstimated.cookie == event2->u.feeBasisEstimated.cookie &&
+                                      CRYPTO_TRUE == cryptoFeeBasisIsEqual (event1->u.feeBasisEstimated.basis,
+                                                                            event2->u.feeBasisEstimated.basis));
+    }
+}
+
+// MARK: - Wallet
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet)
 
@@ -77,9 +343,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
 
     if (NULL != createCallback) createCallback (createContext, wallet);
 
-    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_CREATED
-    });
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreate(CRYPTO_WALLET_EVENT_CREATED));
 
     return wallet;
 }
@@ -107,9 +371,7 @@ cryptoWalletRelease (BRCryptoWallet wallet) {
     pthread_mutex_unlock  (&wallet->lock);
     pthread_mutex_destroy (&wallet->lock);
 
-    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_DELETED
-    });
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreate(CRYPTO_WALLET_EVENT_DELETED));
 
     memset (wallet, 0, sizeof(*wallet));
     free (wallet);
@@ -150,10 +412,7 @@ cryptoWalletSetState (BRCryptoWallet wallet,
     wallet->state = state;
 
     if (oldState != newState)
-         cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-             CRYPTO_WALLET_EVENT_CHANGED,
-             { .state = { oldState, newState }}
-         });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateState (oldState, newState));
 }
 
 extern BRCryptoCurrency
@@ -185,10 +444,7 @@ cryptoWalletSetBalance (BRCryptoWallet wallet,
     wallet->balance = newBalance;
 
     if (CRYPTO_COMPARE_EQ != cryptoAmountCompare (oldBalance, newBalance)) {
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-            { .balanceUpdated = { cryptoAmountTake (newBalance) }}
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateBalanceUpdated (newBalance));
     }
 
     cryptoAmountGive(oldBalance);
@@ -326,10 +582,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
     if (CRYPTO_FALSE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
         array_add (wallet->transfers, cryptoTransferTake(transfer));
         cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
-        cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-            CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-            { .transfer = cryptoTransferTake (transfer) }
-        });
+        cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_ADDED, transfer));
         cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
      }
     pthread_mutex_unlock (&wallet->lock);
@@ -347,10 +600,8 @@ cryptoWalletAddTransfers (BRCryptoWallet wallet,
             // Must announce
 
             // TODO: replace w/ bulk announcement
-            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-                { .transfer = cryptoTransferTake (transfer) }
-            });
+            cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_ADDED, transfer));
+
 //            cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
         }
     }
@@ -373,10 +624,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
             walletTransfer = wallet->transfers[index];
             array_rm (wallet->transfers, index);
             cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
-            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
-                { .transfer = cryptoTransferTake (transfer) }
-            });
+            cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_DELETED, transfer));
             cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
             break;
         }
@@ -400,17 +648,11 @@ cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
             wallet->transfers[index] = cryptoTransferTake (newTransfer);
 
             cryptoWalletAnnounceTransfer (wallet, oldTransfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
-            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_TRANSFER_DELETED,
-                { .transfer = cryptoTransferTake (oldTransfer) }
-            });
+            cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_DELETED, oldTransfer));
             cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(oldTransfer));
 
             cryptoWalletAnnounceTransfer (wallet, newTransfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
-            cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-                CRYPTO_WALLET_EVENT_TRANSFER_ADDED,
-                { .transfer = cryptoTransferTake (newTransfer) }
-            });
+            cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_ADDED, newTransfer));
             cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(newTransfer));
 
             break;
@@ -494,10 +736,7 @@ cryptoWalletSetDefaultFeeBasis (BRCryptoWallet wallet,
                                 BRCryptoFeeBasis feeBasis) {
     if (NULL != wallet->defaultFeeBasis) cryptoFeeBasisGive (wallet->defaultFeeBasis);
     wallet->defaultFeeBasis = cryptoFeeBasisTake(feeBasis);
-    cryptoWalletGenerateEvent (wallet, (BRCryptoWalletEvent) {
-        CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED,
-        { .feeBasisUpdated = { cryptoFeeBasisTake (wallet->defaultFeeBasis) }}
-    });
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisUpdated (wallet->defaultFeeBasis));
 }
 
 extern size_t
