@@ -236,7 +236,7 @@ typedef struct {
 } BRFileServiceTypeSpecification;
 
 extern BRFileService
-fileServiceCreateFromTypeSpecfications (const char *basePath,
+fileServiceCreateFromTypeSpecifications(const char *basePath,
                                         const char *currency,
                                         const char *network,
                                         BRFileServiceContext context,

@@ -116,18 +116,18 @@ class HelpersAIT {
     }
 
     /* package */
-//    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlockchainDb query, List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> currencies) {
-//        String storagePath = dataDir.getAbsolutePath();
-//        Account account = HelpersAIT.createDefaultAccount();
-//        SystemListener listener = new DefaultSystemListener() {};
-//        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-//        com.breadwallet.corecrypto.System system = com.breadwallet.corecrypto.System.create(executor, listener, account, false, storagePath, query);
-//
-//        system.configure(currencies);
-//        Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
-//
-//        return system;
-//    }
+    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlockchainDb query, List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> currencies) {
+        String storagePath = dataDir.getAbsolutePath();
+        Account account = HelpersAIT.createDefaultAccount();
+        SystemListener listener = new DefaultSystemListener() {};
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        com.breadwallet.corecrypto.System system = com.breadwallet.corecrypto.System.create(executor, listener, account, false, storagePath, query);
+
+        system.configure();
+        Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+
+        return system;
+    }
 
     /* package */
     static Optional<Network> getNetworkByCurrencyCode(Collection<Network> networks, String code) {

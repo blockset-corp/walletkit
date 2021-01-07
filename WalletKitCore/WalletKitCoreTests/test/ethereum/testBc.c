@@ -358,7 +358,8 @@ runLogTests (void) {
 
     logSetStatus(log, transactionStatusCreateIncluded(someBlockHash, someBlockNumber, 0,
                                                       TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
-                                                      ethGasCreate(0)));
+                                                      ethGasCreate(0),
+                                                      1));
     BREthereumTransactionStatus status = logGetStatus(log);
 
     BRRlpItem item = logRlpEncode(log, RLP_TYPE_ARCHIVE, coder);

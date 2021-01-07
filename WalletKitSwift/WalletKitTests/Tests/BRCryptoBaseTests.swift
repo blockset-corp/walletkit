@@ -448,7 +448,7 @@ class BRCryptoSystemBaseTests: BRCryptoBaseTests {
         XCTAssertEqual (coreDataDir + "/" + self.account.fileSystemIdentifier, system.path)
         XCTAssertEqual (account.uids, system.account.uids)
 
-        system.configure(withCurrencyModels: currencyModels) // Don't connect
+        system.configure()
         wait (for: [self.listener.networkExpectation], timeout: 15)
         wait (for: [self.listener.managerExpectation], timeout: 15)
         wait (for: [self.listener.walletExpectation ], timeout: 15)
