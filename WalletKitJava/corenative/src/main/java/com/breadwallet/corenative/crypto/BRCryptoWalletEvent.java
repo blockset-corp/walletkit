@@ -96,7 +96,7 @@ public class BRCryptoWalletEvent extends PointerType {
     public class FeeBasisEstimate {
         public final BRCryptoStatus status;
         public final Pointer cookie;
-        public final BRCryptoFeeBasis basis;
+        public final BRCryptoFeeBasis basis; // must be given
 
         public FeeBasisEstimate(BRCryptoStatus status, Pointer cookie, BRCryptoFeeBasis basis) {
             this.status = status;

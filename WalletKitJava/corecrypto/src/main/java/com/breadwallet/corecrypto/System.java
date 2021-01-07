@@ -1183,18 +1183,18 @@ final class System implements com.breadwallet.crypto.System {
     private static void walletEventCallback(Cookie context,
                                             BRCryptoWalletManager coreWalletManager,
                                             BRCryptoWallet coreWallet,
-                                            BRCryptoWalletEvent event) {
+                                            BRCryptoWalletEvent coreEvent) {
         EXECUTOR_LISTENER.execute(() -> {
             try {
                 Log.log(Level.FINE, "WalletEventCallback");
 
-                switch (event.type()) {
+                switch (coreEvent.type()) {
                     case CRYPTO_WALLET_EVENT_CREATED: {
                         handleWalletCreated(context, coreWalletManager, coreWallet);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_CHANGED: {
-                        handleWalletChanged(context, coreWalletManager, coreWallet, event);
+                        handleWalletChanged(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_DELETED: {
@@ -1202,35 +1202,36 @@ final class System implements com.breadwallet.crypto.System {
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_ADDED: {
-                        handleWalletTransferAdded(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferAdded(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED: {
-                        handleWalletTransferChanged(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferChanged(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED: {
-                        handleWalletTransferSubmitted(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferSubmitted(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_DELETED: {
-                        handleWalletTransferDeleted(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferDeleted(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_BALANCE_UPDATED: {
-                        handleWalletBalanceUpdated(context, coreWalletManager, coreWallet, event);
+                        handleWalletBalanceUpdated(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED: {
-                        handleWalletFeeBasisUpdated(context, coreWalletManager, coreWallet, event);
+                        handleWalletFeeBasisUpdated(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED: {
-                        handleWalletFeeBasisEstimated(context, event);
+                        handleWalletFeeBasisEstimated(context, coreEvent);
                         break;
                     }
                 }
             } finally {
+                coreEvent.give();
                 coreWallet.give();
                 coreWalletManager.give();
             }
@@ -1559,11 +1560,13 @@ final class System implements com.breadwallet.crypto.System {
 
     private static void handleWalletFeeBasisEstimated(Cookie context, BRCryptoWalletEvent event) {
         BRCryptoWalletEvent.FeeBasisEstimate estimate = event.feeBasisEstimate();
+        // estimate.basis needs to be given
 
         Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)", estimate.status));
 
         boolean success = estimate.status == BRCryptoStatus.CRYPTO_SUCCESS;
         TransferFeeBasis feeBasis = success ? TransferFeeBasis.create(estimate.basis) : null;
+        if (null == feeBasis) estimate.basis.give();
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
