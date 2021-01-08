@@ -96,7 +96,7 @@ public final class Transfer: Equatable {
     /// An optional hash
     public var hash: TransferHash? {
         return cryptoTransferGetHash (core)
-            .map { TransferHash (core: $0) }
+            .map { TransferHash (core: $0, take: false) }
     }
 
     /// The current state
@@ -279,8 +279,8 @@ public struct TransferConfirmation: Equatable {
 public class TransferHash: Hashable, CustomStringConvertible {
     internal let core: BRCryptoHash
 
-    init (core: BRCryptoHash) {
-        self.core = core
+    init (core: BRCryptoHash, take: Bool) {
+        self.core = take ? cryptoHashTake (core) : core
     }
 
     deinit {

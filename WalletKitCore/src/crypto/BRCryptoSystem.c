@@ -238,11 +238,11 @@ cryptoSystemCreate (BRCryptoClient client,
     free (accountFileSystemIdentifier);
 
     // Create the system-state file service
-    system->fileService = fileServiceCreateFromTypeSpecfications (system->path, "system", "state",
-                                                                  system,
-                                                                  cryptoSystemFileServiceErrorHandler,
-                                                                  systemFileServiceSpecificationsCount,
-                                                                  systemFileServiceSpecifications);
+    system->fileService = fileServiceCreateFromTypeSpecifications (system->path, "system", "state",
+                                                                   system,
+                                                                   cryptoSystemFileServiceErrorHandler,
+                                                                   systemFileServiceSpecificationsCount,
+                                                                   systemFileServiceSpecifications);
 
     // Fill in the builtin networks
     size_t networksCount = 0;

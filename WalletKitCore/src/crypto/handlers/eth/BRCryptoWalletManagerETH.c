@@ -133,10 +133,10 @@ cryptoWalletManagerCreateFileServiceETH (BRCryptoWalletManager manager,
                                          const char *network,
                                          BRFileServiceContext context,
                                          BRFileServiceErrorHandler handler) {
-    return fileServiceCreateFromTypeSpecfications (basePath, currency, network,
-                                                   context, handler,
-                                                   fileServiceSpecificationsCountETH,
-                                                   fileServiceSpecificationsETH);
+    return fileServiceCreateFromTypeSpecifications (basePath, currency, network,
+                                                    context, handler,
+                                                    fileServiceSpecificationsCountETH,
+                                                    fileServiceSpecificationsETH);
 }
 
 static const BREventType **
