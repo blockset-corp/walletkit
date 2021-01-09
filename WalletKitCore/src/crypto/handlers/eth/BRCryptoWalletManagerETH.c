@@ -574,6 +574,8 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     *gasUsed  = cwmParseUInt64 (cwmLookupAttributeValueForKey ("gasUsed",  attributesCount, attributeKeys, attributeVals), error);
     *gasPrice = cwmParseUInt256(cwmLookupAttributeValueForKey ("gasPrice", attributesCount, attributeKeys, attributeVals), error);
     *nonce    = cwmParseUInt64 (cwmLookupAttributeValueForKey ("nonce",    attributesCount, attributeKeys, attributeVals), error);
+
+    if (*gasLimit == 21000 && *gasUsed == 0x21000) *gasUsed = 21000;
 }
 
 static bool // true if error
