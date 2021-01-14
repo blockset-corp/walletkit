@@ -1,0 +1,34 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClass = 'com.breadwallet.crypto.explore.Main'
+}
+
+java {
+    sourceCompatibility = jreConfig.javaVersion
+    targetCompatibility = jreConfig.javaVersion
+
+//    compileSdkVersion = jreConfig.compileSdkVersion
+//    buildToolsVersion jreConfig.buildToolsVersion
+//
+//    defaultConfig {
+//        minSdkVersion    jreConfig.minSdkVersion
+//        targetSdkVersion jreConfig.targetSdkVersion
+//    }
+//
+//    compileOptions {
+//        sourceCompatibility JavaVersion.VERSION_1_8
+//        targetCompatibility JavaVersion.VERSION_1_8
+//    }
+}
+
+dependencies {
+    implementation project(':crypto')
+    implementation project(':corecrypto-jre')
+    implementation project(':corenative-jre')
+
+    implementation deps.guavaAndroid
+    implementation deps.okhttp
+}
