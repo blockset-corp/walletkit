@@ -40,8 +40,7 @@ cryptoHashCreateInternal (uint32_t setValue,
                           BRCryptoBlockChainType type);
 
 private_extern OwnershipGiven char *
-cryptoHashStringAsHex (BRCryptoHash hash);
-
+cryptoHashStringAsHex (BRCryptoHash hash, bool includePrefix);
 
 #ifdef __cplusplus
 }

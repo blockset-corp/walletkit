@@ -135,7 +135,7 @@ cryptoNetworkCreateHashFromStringHBAR (BRCryptoNetwork network,
 
 static char *
 cryptoNetworkEncodeHashHBAR (BRCryptoHash hash) {
-    return cryptoHashStringAsHex (hash);
+    return cryptoHashStringAsHex (hash, false);
 }
 
 // MARK: -

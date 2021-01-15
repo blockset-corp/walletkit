@@ -123,7 +123,7 @@ cryptoNetworkCreateHashFromStringXRP (BRCryptoNetwork network,
 
 static char *
 cryptoNetworkEncodeHashXRP (BRCryptoHash hash) {
-    return cryptoHashStringAsHex (hash);
+    return cryptoHashStringAsHex (hash, false);
 }
 
 // MARK: - Handlers

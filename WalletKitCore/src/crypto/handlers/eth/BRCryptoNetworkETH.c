@@ -156,7 +156,7 @@ cryptoNetworkCreateHashFromStringETH (BRCryptoNetwork network,
 
 static char *
 cryptoNetworkEncodeHashETH (BRCryptoHash hash) {
-    return cryptoHashStringAsHex (hash);
+    return cryptoHashStringAsHex (hash, true);
 }
 
 // MARK: -
