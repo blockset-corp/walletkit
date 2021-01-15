@@ -622,7 +622,17 @@ public class BlocksetSystemClient: SystemClient {
     } // End of Model
 
     public func getBlockchains (mainnet: Bool? = nil, completion: @escaping (Result<[SystemClient.Blockchain],SystemClientError>) -> Void) {
-        bdbMakeRequest (path: "blockchains", query: mainnet.map { zip (["testnet"], [($0 ? "false" : "true")]) }) {
+        let queryKeys = [
+            mainnet.map { (_) in "testnet" },
+            "verified"]
+            .compactMap { $0 } // Remove `nil` from blockchainId
+
+        let queryVals: [String] = [
+            mainnet.map { (!$0).description },
+            "true"]
+            .compactMap { $0 }  // Remove `nil` from blockchainId
+
+        bdbMakeRequest (path: "blockchains", query: zip (queryKeys, queryVals)) {
             (more: URL?, res: Result<[JSON], SystemClientError>) in
             precondition (nil == more)
             completion (res.flatMap {
@@ -632,7 +642,7 @@ public class BlocksetSystemClient: SystemClient {
     }
 
     public func getBlockchain (blockchainId: String, completion: @escaping (Result<SystemClient.Blockchain,SystemClientError>) -> Void) {
-        bdbMakeRequest(path: "blockchains/\(blockchainId)", query: nil, embedded: false) {
+        bdbMakeRequest(path: "blockchains/\(blockchainId)", query: zip(["verified"], ["true"]), embedded: false) {
             (more: URL?, res: Result<[JSON], SystemClientError>) in
             precondition (nil == more)
             completion (res.flatMap {
