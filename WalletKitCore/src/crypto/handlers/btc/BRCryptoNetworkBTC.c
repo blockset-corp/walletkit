@@ -199,7 +199,7 @@ cryptoNetworkCreateHashFromStringBTC (BRCryptoNetwork network,
 
 static char *
 cryptoNetworkEncodeHashBTC (BRCryptoHash hash) {
-    return cryptoHashStringAsHex (hash);
+    return cryptoHashStringAsHex (hash, false);
 }
 
 // MARK: - Network Fee

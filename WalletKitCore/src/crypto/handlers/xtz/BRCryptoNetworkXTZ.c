@@ -127,6 +127,8 @@ cryptoNetworkCreateHashFromStringXTZ (BRCryptoNetwork network,
 static char *
 cryptoNetworkEncodeHashXTZ (BRCryptoHash hash) {
     size_t len = BRBase58CheckEncode (NULL, 0, hash->bytes, TEZOS_HASH_BYTES);
+    if (0 == len) return NULL;
+
     char * string = calloc (1, len);
     BRBase58CheckEncode (string, len, hash->bytes, TEZOS_HASH_BYTES);
     return string;

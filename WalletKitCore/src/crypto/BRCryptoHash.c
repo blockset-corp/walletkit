@@ -64,12 +64,12 @@ _cryptoHashAddPrefix (char *hash, int freeHash) {
 }
 
 private_extern OwnershipGiven char *
-cryptoHashStringAsHex (BRCryptoHash hash) {
+cryptoHashStringAsHex (BRCryptoHash hash, bool includePrefix) {
     size_t stringLength = 2 * hash->bytesCount + 1;
     char string [stringLength];
 
     hexEncode (string, stringLength, hash->bytes, hash->bytesCount);
-    return _cryptoHashAddPrefix (string, 0);
+    return (includePrefix ? _cryptoHashAddPrefix (string, 0) : strdup (string));
 }
 
 extern int
