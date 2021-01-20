@@ -146,6 +146,7 @@ transferGetDirectionFromXTZ (BRTezosTransfer transfer,
 BRCryptoTransferHandlers cryptoTransferHandlersXTZ = {
     cryptoTransferReleaseXTZ,
     cryptoTransferGetHashXTZ,
+    NULL, // setHash
     cryptoTransferSerializeXTZ,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualXTZ

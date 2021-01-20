@@ -150,9 +150,12 @@ extern "C" {
 
     /**
      * Returns the transfer's hash.  This is the unique identifier for this transfer on the
-     * associated network's blockchain.
+     * associated network's blockchain.  This value may be NULL; notably before a Transfer is
+     * signed; and, in the case of HBAR, before it is successfully submitted (the HBAR hash depends
+     * on the HBAR node handling the Transfer).
      *
-     * @note: Uniqueness is TBD for Ethereum TOKEN transfers
+     * @note: Uniqueness is TBD for Ethereum TOKEN transfers.  One should expect all Transfers
+     * in a Wallet to have a unique hash.
      *
      * @param transfer the transfer
      *
@@ -160,6 +163,10 @@ extern "C" {
      */
     extern BRCryptoHash
     cryptoTransferGetHash (BRCryptoTransfer transfer);
+
+    extern BRCryptoBoolean
+    cryptoTransferSetHash (BRCryptoTransfer transfer,
+                           OwnershipKept BRCryptoHash hash);
 
     extern BRCryptoUnit
     cryptoTransferGetUnitForAmount (BRCryptoTransfer transfer);

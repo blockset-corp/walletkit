@@ -129,7 +129,49 @@ public protocol SystemClient {
         acknowledgements: UInt64,
         metaData: Dictionary<String,String>?
     )
-    
+
+    typealias TransactionIdentifier = (
+        id: String,
+        blockchainId: String,
+        hash: String,
+        identifier: String
+    )
+
+    /*
+    {
+        "status":422,
+        "error":"Unprocessable Entity",
+        "path":"/transactions",
+        "timestamp":"2021-01-19T16:30:05.040+00:00",
+        "message":"Ripple submit failed",
+        "submit_status":"nonce_already_used",
+        "network_status":"tefPAST_SEQ",
+        "network_message":"This sequence number has already passed.",
+        "parameters":{
+            "transaction_resource": {
+                "transaction_id":"ABCD",
+                "blockchain_id":"ripple-mainnet",
+                "confirmations":0,
+                "index":0,
+                "status":"rejected",
+                "layers":{},
+                "links":[]}
+            }
+        }
+    }
+
+    {
+        "transaction_id":"hedera-mainnet:0.0.89650-1610738946-000879142",
+        "identifier":"0.0.89650-1610738946-000879142",
+        "hash":"a3100a93b21c3f07c803587f08ee92827b18e1448cfb73a0470bf62b55e9ff186f8f8a3c2776c6dc8836c6c9e9bba95d",
+        "blockchain_id":"hedera-mainnet",
+        "confirmations":0,
+        "index":0,
+        "status":"submitted",
+        "layers":{}
+    }
+ */
+
     func getTransactions (blockchainId: String,
                           addresses: [String],
                           begBlockNumber: UInt64?,
@@ -146,9 +188,8 @@ public protocol SystemClient {
                          completion: @escaping (Result<Transaction, SystemClientError>) -> Void)
     
     func createTransaction (blockchainId: String,
-                            hashAsHex: String,
                             transaction: Data,
-                            completion: @escaping (Result<Void, SystemClientError>) -> Void)
+                            completion: @escaping (Result<TransactionIdentifier, SystemClientError>) -> Void)
     
     
     // Transaction Fee
@@ -159,7 +200,6 @@ public protocol SystemClient {
     )
     
     func estimateTransactionFee (blockchainId: String,
-                                 hashAsHex: String,
                                  transaction: Data,
                                  completion: @escaping (Result<TransactionFee, SystemClientError>) -> Void)
     

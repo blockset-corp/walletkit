@@ -86,6 +86,9 @@ cryptoHashCreateAsHBAR (BRHederaTransactionHash hash);
 private_extern BRHederaTransactionHash
 hederaHashCreateFromString (const char *string);
 
+private_extern BRHederaTransactionHash
+cryptoHashAsHBAR (BRCryptoHash hash);
+
 // MARK: - Wallet Manager
 
 typedef struct BRCryptoWalletManagerHBARRecord {

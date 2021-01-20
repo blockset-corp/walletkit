@@ -153,6 +153,7 @@ transferGetDirectionFromXRP (BRRippleTransaction transaction,
 BRCryptoTransferHandlers cryptoTransferHandlersXRP = {
     cryptoTransferReleaseXRP,
     cryptoTransferGetHashXRP,
+    NULL, // setHash
     cryptoTransferSerializeXRP,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualXRP

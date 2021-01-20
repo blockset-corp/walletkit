@@ -310,10 +310,15 @@ cryptoTransferGetDirection (BRCryptoTransfer transfer) {
     return transfer->direction;
 }
 
-
 extern BRCryptoHash
 cryptoTransferGetHash (BRCryptoTransfer transfer) {
     return transfer->handlers->getHash (transfer);
+}
+
+extern BRCryptoBoolean
+cryptoTransferSetHash (BRCryptoTransfer transfer,
+                       OwnershipKept BRCryptoHash hash) {
+    return AS_CRYPTO_BOOLEAN (NULL != transfer->handlers->setHash && transfer->handlers->setHash (transfer, hash));
 }
 
 extern BRCryptoFeeBasis

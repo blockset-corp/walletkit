@@ -336,11 +336,9 @@ cryptoClientCallbackStateCreateGetTrans (BRCryptoClientCallbackType type,
 static BRCryptoClientCallbackState
 cryptoClientCallbackStateCreateSubmitTransaction (BRCryptoWallet wallet,
                                                   BRCryptoTransfer transfer,
-                                                  BRCryptoHash hash,
                                                   size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_SUBMIT_TRANSACTION, rid);
 
-    state->u.submitTransaction.hash     = cryptoHashTake (hash);
     state->u.submitTransaction.wallet   = cryptoWalletTake   (wallet);
     state->u.submitTransaction.transfer = cryptoTransferTake (transfer);
 
@@ -355,7 +353,6 @@ cryptoClientCallbackStateCreateEstimateTransactionFee (BRCryptoHash hash,
                                                        size_t rid) {
     BRCryptoClientCallbackState state = cryptoClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
-    state->u.estimateTransactionFee.hash   = cryptoHashTake (hash);
     state->u.estimateTransactionFee.cookie = cookie;
     state->u.estimateTransactionFee.networkFee = cryptoNetworkFeeTake (networkFee);
     state->u.estimateTransactionFee.initialFeeBasis = cryptoFeeBasisTake (initialFeeBasis);
@@ -375,7 +372,6 @@ cryptoClientCallbackStateRelease (BRCryptoClientCallbackState state) {
             break;
 
         case CLIENT_CALLBACK_SUBMIT_TRANSACTION:
-            cryptoHashGive     (state->u.submitTransaction.hash);
             cryptoWalletGive   (state->u.submitTransaction.wallet);
             cryptoTransferGive (state->u.submitTransaction.transfer);
             break;
@@ -716,27 +712,22 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
                                                                    cwm->network,
                                                                    &serializationCount);
 
-    BRCryptoHash hash = cryptoTransferGetHash (transfer);
-    char *hashAsString = cryptoHashEncodeString (hash);
-
     BRCryptoClientCallbackState callbackState =
-    cryptoClientCallbackStateCreateSubmitTransaction (wallet, transfer, hash, qry->requestId++);
+    cryptoClientCallbackStateCreateSubmitTransaction (wallet, transfer, qry->requestId++);
 
     qry->client.funcSubmitTransaction (qry->client.context,
                                        cwm,
                                        callbackState,
                                        serialization,
-                                       serializationCount,
-                                       hashAsString);
+                                       serializationCount);
 
-    cryptoHashGive (hash);
     free (serialization);
-    free (hashAsString);
 }
 
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           OwnershipKept const char *hashStr,
                            BRCryptoBoolean success) {
     assert (CLIENT_CALLBACK_SUBMIT_TRANSACTION == callbackState->type);
 
@@ -753,6 +744,28 @@ cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
         cryptoTransferSetState (transfer, (CRYPTO_TRUE == success
                                            ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)
                                            : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown())));
+
+        // On successful submit, the hash might be determined.  Yes, somewhat unfathomably (HBAR)
+        BRCryptoHash hash = (NULL == hashStr ? NULL : cryptoNetworkCreateHashFromString (cwm->network, hashStr));
+
+        if (NULL != hash) {
+            BRCryptoBoolean hashChanged = cryptoTransferSetHash (transfer, hash);
+
+            if (CRYPTO_TRUE == hashChanged) {
+                BRCryptoTransferState state = cryptoTransferGetState(transfer);
+
+                cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+                    CRYPTO_TRANSFER_EVENT_CHANGED,
+                    { .state = {
+                        cryptoTransferStateCopy (&state),
+                        cryptoTransferStateCopy (&state) }}
+                });
+
+                cryptoTransferStateRelease(&state);
+            }
+
+            cryptoHashGive (hash);
+        }
     }
 
     cryptoClientCallbackStateRelease(callbackState);
@@ -798,7 +811,6 @@ extern void
 cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipGiven BRCryptoClientCallbackState callbackState,
                                    BRCryptoBoolean success,
-                                   OwnershipKept const char *hash,
                                    uint64_t costUnits,
                                    size_t attributesCount,
                                    OwnershipKept const char **attributeKeys,

@@ -299,6 +299,7 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
+    NULL, // setHash
     cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
@@ -307,6 +308,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
 BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
+    NULL, // setHash
     cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
@@ -315,7 +317,8 @@ BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
 BRCryptoTransferHandlers cryptoTransferHandlersBSV = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
-    cryptoTransferSerializeBTC,
+    NULL, // setHash
+   cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
 };
