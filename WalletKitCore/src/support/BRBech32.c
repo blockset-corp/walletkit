@@ -38,10 +38,13 @@
                     (-(((x) >> 26) & 1) & 0x26508e6d) ^ (-(((x) >> 27) & 1) & 0x1ea119fa) ^\
                     (-(((x) >> 28) & 1) & 0x3d4233dd) ^ (-(((x) >> 29) & 1) & 0x2a1462b3))
 
+#define BECH32M_CONST 0x2bc830a3 // bech32m: https://github.com/sipa/bips/blob/bip-bech32m/bip-bech32m.mediawiki
+
 // returns the number of bytes written to data42 (maximum of 42)
 size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
 {
-    size_t i, j, bufLen, addrLen, sep;
+    size_t i, bufLen, addrLen, sep;
+    int j;
     uint32_t x, chk = 1;
     uint8_t c, ver = 0xff, buf[52], upper = 0, lower = 0;
 
@@ -58,7 +61,7 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
     addrLen = sep = i;
     while (sep > 0 && addr[sep] != '1') sep--;
     if (addrLen < 8 || addrLen > 90 || sep < 1 || sep + 2 + 6 > addrLen || (upper && lower)) return 0;
-    for (i = 0; i < sep; i++) chk = polymod(chk) ^ (tolower(addr[i]) >> 5);
+    for (i = 0; i < sep; i++) chk = polymod(chk) ^ ((uint32_t)tolower(addr[i]) >> 5);
     chk = polymod(chk);
     for (i = 0; i < sep; i++) chk = polymod(chk) ^ (addr[i] & 0x1f);
     memset(buf, 0, sizeof(buf));
@@ -85,7 +88,8 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
     }
     
     bufLen = (addrLen - (sep + 2 + 6))*5/8;
-    if (hrp84 == NULL || data42 == NULL || chk != 1 || ver > 16 || bufLen < 2 || bufLen > 40) return 0;
+    if (hrp84 == NULL || data42 == NULL || bufLen < 2 || bufLen > 40) return 0;
+    if ((ver == 0 && chk != 1) || (ver > 0 && chk != BECH32M_CONST) || ver > 16) return 0;
     assert(sep < 84);
     for (i = 0; i < sep; i++) hrp84[i] = tolower(addr[i]);
     hrp84[sep] = '\0';
@@ -112,7 +116,7 @@ size_t BRBech32Encode(char *addr91, const char *hrp, const uint8_t data[])
     
     for (i = 0; hrp && hrp[i]; i++) {
         if (i > 83 || hrp[i] < 33 || hrp[i] > 126 || isupper(hrp[i])) return 0;
-        chk = polymod(chk) ^ (hrp[i] >> 5);
+        chk = polymod(chk) ^ ((uint32_t)hrp[i] >> 5);
         addr[i] = hrp[i];
     }
     
@@ -136,7 +140,7 @@ size_t BRBech32Encode(char *addr91, const char *hrp, const uint8_t data[])
     }
     
     for (j = 0; j < 6; j++) chk = polymod(chk);
-    chk ^= 1;
+    chk ^= (ver == 0) ? 1 : BECH32M_CONST;
     for (j = 0; j < 6; ++j) addr[i++] = chars[(chk >> ((5 - j)*5)) & 0x1f];
     addr[i++] = '\0';
     memcpy(addr91, addr, i);

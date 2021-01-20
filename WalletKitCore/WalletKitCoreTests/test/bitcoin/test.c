@@ -382,14 +382,17 @@ int BRBech32Tests()
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 2", __func__);
 
     s = "\x52\x10\x75\x1e\x76\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23";
-    l = BRBech32Decode(h, b, "bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj");
+    l = BRBech32Decode(h, b, "bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs");
     if (l != 18 || strcmp(h, "bc") || memcmp(s, b, l))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 3", __func__);
 
     l = BRBech32Encode(addr, "bc", b);
-    if (l == 0 || strcmp(addr, "bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj"))
+    if (l == 0 || strcmp(addr, "bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs"))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 3", __func__);
-
+    
+    l = BRBech32Decode(h, b, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqh2y7hd");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 4", __func__);
+    
     if (! r) fprintf(stderr, "\n                                    ");
     return r;
 }
