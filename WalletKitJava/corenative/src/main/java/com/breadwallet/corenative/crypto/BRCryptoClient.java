@@ -55,8 +55,7 @@ public class BRCryptoClient extends Structure {
                       Pointer manager,
                       Pointer callbackState,
                       Pointer tx,
-                      SizeT txLength,
-                      String hashAsHex);
+                      SizeT txLength);
     }
 
     public interface BRCryptoClientEstimateTransactionFeeCallback extends Callback {
@@ -64,8 +63,7 @@ public class BRCryptoClient extends Structure {
                       Pointer manager,
                       Pointer callbackState,
                       Pointer tx,
-                      SizeT txLength,
-                      String hashAsHex);
+                      SizeT txLength);
     }
 
     //
@@ -155,22 +153,19 @@ public class BRCryptoClient extends Structure {
         void handle(Cookie context,
                     BRCryptoWalletManager manager,
                     BRCryptoClientCallbackState callbackState,
-                    byte[] transaction,
-                    String hashAsHex);
+                    byte[] transaction);
 
         @Override
         default void callback(Pointer context,
                               Pointer manager,
                               Pointer callbackState,
                               Pointer tx,
-                              SizeT txLength,
-                              String hashAsHex) {
+                              SizeT txLength) {
             handle(
                     new Cookie(context),
                     new BRCryptoWalletManager(manager),
                     new BRCryptoClientCallbackState(callbackState),
-                    tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue())),
-                    hashAsHex
+                    tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue()))
             );
         }
     }
@@ -179,22 +174,19 @@ public class BRCryptoClient extends Structure {
         void handle(Cookie context,
                     BRCryptoWalletManager manager,
                     BRCryptoClientCallbackState callbackState,
-                    byte[] transaction,
-                    String hashAsHex);
+                    byte[] transaction);
 
         @Override
         default void callback(Pointer context,
                               Pointer manager,
                               Pointer callbackState,
                               Pointer tx,
-                              SizeT txLength,
-                              String hashAsHex) {
+                              SizeT txLength) {
             handle(
                     new Cookie(context),
                     new BRCryptoWalletManager(manager),
                     new BRCryptoClientCallbackState(callbackState),
-                    tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue())),
-                    hashAsHex
+                    tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue()))
             );
         }
     }

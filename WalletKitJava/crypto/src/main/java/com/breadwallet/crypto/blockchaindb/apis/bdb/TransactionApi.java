@@ -14,6 +14,7 @@ import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.errors.QueryJsonParseError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
@@ -95,19 +96,17 @@ public class TransactionApi {
     }
 
     public void createTransaction(String id,
-                                  String hashAsHex,
                                   byte[] tx,
-                                  CompletionHandler<Void, QueryError> handler) {
+                                  CompletionHandler<TransactionIdentifier, QueryError> handler) {
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", hashAsHex,
+                "transaction_id", "unknown",
                 "data", BaseEncoding.base64().encode(tx));
 
-        jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, handler);
+        jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, TransactionIdentifier.class, handler);
     }
 
     public void estimateTransactionFee(String id,
-                                  String hashAsHex,
                                   byte[] tx,
                                   CompletionHandler<TransactionFee, QueryError> handler) {
 
@@ -116,7 +115,7 @@ public class TransactionApi {
 
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", hashAsHex,
+                "transaction_id", "unknown",
                 "data", BaseEncoding.base64().encode(tx));
 
         jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);
