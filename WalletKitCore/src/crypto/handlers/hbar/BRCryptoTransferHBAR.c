@@ -104,6 +104,14 @@ cryptoTransferSetHashHBAR (BRCryptoTransfer transfer,
     return hederaTransactionUpdateHash (transferHBAR->hbarTransaction, hashHBAR);
 }
 
+static void
+crptoTransferUpdateIdentifierHBAR (BRCryptoTransfer transfer) {
+    if (NULL != transfer->identifier) return;
+
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
+    transfer->identifier = hederaTransactionGetTransactionId (transferHBAR->hbarTransaction);
+}
+
 static uint8_t *
 cryptoTransferSerializeHBAR (BRCryptoTransfer transfer,
                              BRCryptoNetwork network,
@@ -150,6 +158,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersHBAR = {
     cryptoTransferReleaseHBAR,
     cryptoTransferGetHashHBAR,
     cryptoTransferSetHashHBAR,
+    crptoTransferUpdateIdentifierHBAR,
     cryptoTransferSerializeHBAR,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualHBAR

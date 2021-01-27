@@ -727,6 +727,7 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           OwnershipKept const char *identifierStr,
                            OwnershipKept const char *hashStr,
                            BRCryptoBoolean success) {
     assert (CLIENT_CALLBACK_SUBMIT_TRANSACTION == callbackState->type);
@@ -862,6 +863,12 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
                                   OwnershipKept const char **attributeKeys,
                                   OwnershipKept const char **attributeVals) {
     BRCryptoClientTransferBundle bundle = calloc (1, sizeof (struct BRCryptoClientTransferBundleRecord));
+
+    // In the case of an error, as indicated by `status`,  we've got no additional information
+    // as to the error type.  The transfer/transaction is in the blockchain, presumably it has
+    // resulted in a fee paid but no transfer of the desired asset.  A User would be expected to
+    // recover in some blockchain specific way - and hopefully can recognize the cause of the error
+    // so as to avoid simply creating a transaction to cause it again.
 
     bundle->status   = status;
     bundle->hash     = strdup (hash);

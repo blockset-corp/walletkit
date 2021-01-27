@@ -114,6 +114,7 @@ static void
 cryptoTransferRelease (BRCryptoTransfer transfer) {
     pthread_mutex_lock (&transfer->lock);
 
+    if (NULL != transfer->identifier) free (transfer->identifier);
     cryptoAddressGive (transfer->sourceAddress);
     cryptoAddressGive (transfer->targetAddress);
     cryptoUnitGive (transfer->unit);
@@ -308,6 +309,48 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
 extern BRCryptoTransferDirection
 cryptoTransferGetDirection (BRCryptoTransfer transfer) {
     return transfer->direction;
+}
+
+extern const char *
+cryptoTransferGetIdentifier (BRCryptoTransfer transfer) {
+    // Lazy compute the `identifier`
+    if (NULL == transfer->identifier) {
+
+        // If there is a transfer specific `updateIdentifer`, then invoke it.  Think 'HBAR'
+        if (NULL != transfer->handlers->updateIdentifier)
+            transfer->handlers->updateIdentifier (transfer);
+        
+        // Otherwise, base the identifier on the string representation of the hash; which will
+        // exist once the transfer is signed.  Except in certain cases; think 'HBAR'.
+        else {
+            switch (transfer->state.type) {
+                case CRYPTO_TRANSFER_STATE_CREATED:
+                    break;
+
+                case CRYPTO_TRANSFER_STATE_SIGNED:
+                case CRYPTO_TRANSFER_STATE_SUBMITTED:
+                case CRYPTO_TRANSFER_STATE_INCLUDED:
+                case CRYPTO_TRANSFER_STATE_ERRORED: {
+                    //
+                    // Note that BTC segwit transaction have a `txHash` and a `wtxHash`; BTC nodes
+                    // call the `txHash` the `hash` and the `wtxHash` the `identifier`.  WE DO NOT
+                    // adopt that definition of `identifer`.  In WalletKit a BTC Transfer's `hash`
+                    // and `identifer` are both the string representation of the `txHash`.  See
+                    // BRTransaction.{hc}
+                    //
+                   BRCryptoHash hash = cryptoTransferGetHash (transfer);
+                    transfer->identifier = cryptoHashEncodeString(hash);
+                    cryptoHashGive(hash);
+                    break;
+                }
+
+                case CRYPTO_TRANSFER_STATE_DELETED:
+                    break;
+            }
+        }
+    }
+
+    return transfer->identifier;
 }
 
 extern BRCryptoHash

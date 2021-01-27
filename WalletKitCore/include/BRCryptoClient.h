@@ -132,6 +132,7 @@ typedef void
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           OwnershipKept const char *identifier,
                            OwnershipKept const char *hash,
                            BRCryptoBoolean success);
 

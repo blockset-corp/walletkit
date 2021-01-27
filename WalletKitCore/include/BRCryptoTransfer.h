@@ -149,13 +149,34 @@ extern "C" {
     cryptoTransferGetDirection (BRCryptoTransfer transfer);
 
     /**
-     * Returns the transfer's hash.  This is the unique identifier for this transfer on the
-     * associated network's blockchain.  This value may be NULL; notably before a Transfer is
-     * signed; and, in the case of HBAR, before it is successfully submitted (the HBAR hash depends
-     * on the HBAR node handling the Transfer).
+     * Returns the unique identifier for a transaction.  The identifer is unique within the
+     * scope of the Transfer's wallet.  In WalletKit it is possible for two Transfers to have
+     * the same identifier if and only if the Transfers are in a different wallet.  This will
+     * happen, for example, with send ERC-20 wallets whereby both the asset transfer and the fee
+     * will have the same identifer.
      *
-     * @note: Uniqueness is TBD for Ethereum TOKEN transfers.  One should expect all Transfers
-     * in a Wallet to have a unique hash.
+     * @Note In general, the identifier will not exist until the Transfer has been successfully
+     * submitted to its Blockchain; before then the return value is `NULL`.  However, the actual
+     * time of existence is blockchain specific.
+     *
+     * @param transfer the transfer
+     * @return the identifier as a string.
+     */
+    extern const char *
+    cryptoTransferGetIdentifier (BRCryptoTransfer transfer);
+
+    /**
+     * Returns the transfer's hash.  The hash is determined by applying a blockchain-specific hash
+     * function to a blockchain-specific byte-serialized representation of a Transfer.  A hash is
+     * generally a unique identifier of Transfers in a wallet and also, but not always, on a
+     * blockchain.
+     *
+     * This value may be NULL; notably before a Transfer is signed; and, in the case of HBAR,
+     * before it is successfully submitted (the HBAR hash depends on the HBAR node handling the
+     * Transfer).
+     *
+     * @note: One should expect all Transfers in a Wallet to have a unique hash.  However, in
+     * WalletKit, a hash might be shared by two Transfers if and only if in different wallets.
      *
      * @param transfer the transfer
      *
@@ -164,6 +185,14 @@ extern "C" {
     extern BRCryptoHash
     cryptoTransferGetHash (BRCryptoTransfer transfer);
 
+    /**
+     * Generally a Transfer's hash is derived by applying a Blockchain-specific hash function to a
+     * Blockchain-specific byte representation of a Transfer.
+     *
+     * @Note: Some Blockchains, notablely Hedera, produce a hash the depends on the Hedera Node the
+     * processes the Transfer.  Hence, we don't
+     * know the hash until after
+     */
     extern BRCryptoBoolean
     cryptoTransferSetHash (BRCryptoTransfer transfer,
                            OwnershipKept BRCryptoHash hash);

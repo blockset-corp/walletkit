@@ -104,8 +104,7 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
 
     // Parse the transactionID
     if (txID && strlen(txID) > 1) {
-        transaction->transactionId = (char*) calloc(1, strlen(txID) + 1);
-        strcpy(transaction->transactionId, txID);
+        transaction->transactionId = strdup (txID);
         // Get the timestamp from the transaction id
         transaction->timeStamp = hederaParseTimeStamp(txID);
     } else {
@@ -134,8 +133,7 @@ hederaTransactionClone (BRHederaTransaction transaction)
     newTransaction->feeBasis = transaction->feeBasis;
 
     if (transaction->transactionId && strlen(transaction->transactionId) > 1) {
-        newTransaction->transactionId = (char*) calloc(1, strlen(transaction->transactionId) + 1);
-        strcpy(newTransaction->transactionId, transaction->transactionId);
+        newTransaction->transactionId = strdup (transaction->transactionId);
     }
 
     newTransaction->hash = transaction->hash;

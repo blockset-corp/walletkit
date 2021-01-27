@@ -455,6 +455,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersETH = {
     cryptoTransferReleaseETH,
     cryptoTransferGetHashETH,
     NULL, // setHash
+    NULL, // updateIdentifier
     cryptoTransferSerializeETH,
     cryptoTransferGetBytesForFeeEstimateETH,
     cryptoTransferEqualAsETH
