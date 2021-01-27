@@ -21,7 +21,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        TestConfiguration configuration = TestConfiguration.loadFrom("foo");
+        TestConfiguration configuration = TestConfiguration.loadFrom("/Users/ebg/.brdWalletKitTestsConfig.json");
 
         SystemInstance.execute(true, configuration, SYSTEM_COUNT);
 

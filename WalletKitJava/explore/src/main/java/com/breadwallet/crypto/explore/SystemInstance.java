@@ -120,12 +120,18 @@ public class SystemInstance implements SystemListener {
 
         assert null != account : "Missed Account";
 
+        // This is where the DB will be saved as a subdirectory based on the `Account`.  Because
+        // a multiple `SystemInstances` can be created with the same account; this "path" must
+        // be unique for each SystemInstance; otherwise different instances with the same account
+        // will overwrite one another.
+        String path = "path";
+
         system = System.create(
                 null,
                 this,
                 account,
                 isMainnet,
-                "path",
+                path,
                 query);
     }
 
