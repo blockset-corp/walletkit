@@ -46,6 +46,10 @@ typedef void
 typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
+typedef int // 1 if changed; 0 if not
+(*BRCryptoTransferSetHashHandler) (BRCryptoTransfer transfer,
+                                   BRCryptoHash hash);
+
 typedef uint8_t *
 (*BRCryptoTransferSerializeHandler) (BRCryptoTransfer transfer,
                                      BRCryptoNetwork  network,
@@ -64,6 +68,7 @@ typedef int // 1 if equal, 0 if not
 typedef struct {
     BRCryptoTransferReleaseHandler release;
     BRCryptoTransferGetHashHandler getHash;
+    BRCryptoTransferSetHashHandler setHash;
     BRCryptoTransferSerializeHandler serialize;
     BRCryptoTransferGetBytesForFeeEstimateHandler getBytesForFeeEstimate;
     BRCryptoTransferIsEqualHandler isEqual;

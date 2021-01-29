@@ -93,7 +93,7 @@ public final class Transfer: Equatable {
         else { return nil }
     }
 
-    /// An optional hash
+    /// An optional hash.  This only exists if the TransferState is .included or .submitted
     public var hash: TransferHash? {
         return cryptoTransferGetHash (core)
             .map { TransferHash (core: $0, take: false) }

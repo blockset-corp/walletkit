@@ -29,7 +29,6 @@ static uint16_t numNodes = sizeof(nodes) / sizeof(uint16_t);
 // Forward declarations
 int hederaTransactionGetHashCount (BRHederaTransaction transaction);
 BRHederaTransactionHash hederaTransactionGetHashAtIndex (BRHederaTransaction transaction, int index);
-void hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash);
 
 struct BRHederaTransactionRecord {
     BRHederaAddress source;
@@ -627,7 +626,7 @@ BRHederaTransactionHash hederaTransactionGetHashAtIndex (BRHederaTransaction tra
     }
 }
 
-void hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash) {
+extern int hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash) {
     assert(transaction);
     // The hash updating ONLY happens once when we have a SENT transaction waiting to find
     // out which hash was used when submitting - so if we don't have multiple hashes then ignore
@@ -651,8 +650,9 @@ void hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTrans
                     transaction->serializedBytes = NULL;
                     transaction->serializedSize = 0;
                 }
-                return; // Found it - updated - cleaned up - DONE
+                return 1; // Found it - updated - cleaned up - DONE
             }
         }
     }
+    return 0;
 }

@@ -117,8 +117,13 @@ extern "C" {
         CRYPTO_TRANSFER_EVENT_CREATED,
 
         /// Signaled when a transfer's state change - such as when the state transitions from
-        /// SUBMITTED to INCLUDED.
+        /// SUBMITTED to INCLUDED.  Also signaled if the hash changes; which only applies to
+        /// HBAR and only when the transfer is submitted (the HBAR hash depends on what node
+        /// processes the transaction).
         CRYPTO_TRANSFER_EVENT_CHANGED,
+
+        /// For some transfers, the hash is determined when the transfer is signed and submitted.
+        /// CRYPTO_TRANSFER_EVENT_UPDATED_HASH,
 
         /// Signaled when a transfer is deleted; the transfer must not be 'dereferenced' and thus
         /// the pointer value can be used.  Surely the transfer's memory will be gone by the time

@@ -28,6 +28,7 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionCurrency;
 import com.breadwallet.crypto.blockchaindb.models.bdb.SubscriptionEndpoint;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transfer;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.primitives.UnsignedLong;
@@ -338,24 +339,20 @@ public class BlockchainDb {
     }
 
     public void createTransaction(String id,
-                                  String hashAsHex,
                                   byte[] tx,
-                                  CompletionHandler<Void, QueryError> handler) {
+                                  CompletionHandler<TransactionIdentifier, QueryError> handler) {
         transactionApi.createTransaction(
                 id,
-                hashAsHex,
                 tx,
                 handler
         );
     }
 
     public void estimateTransactionFee(String id,
-                                       String hashAsHex,
                                        byte[] tx,
                                        CompletionHandler<TransactionFee, QueryError> handler) {
         transactionApi.estimateTransactionFee(
                 id,
-                hashAsHex,
                 tx,
                 handler
         );

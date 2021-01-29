@@ -454,6 +454,7 @@ cryptoTransferEqualAsETH (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
 BRCryptoTransferHandlers cryptoTransferHandlersETH = {
     cryptoTransferReleaseETH,
     cryptoTransferGetHashETH,
+    NULL, // setHash
     cryptoTransferSerializeETH,
     cryptoTransferGetBytesForFeeEstimateETH,
     cryptoTransferEqualAsETH

@@ -52,7 +52,6 @@ public final class CryptoLibraryIndirect {
     public static void cwmAnnounceEstimateTransactionFee(Pointer cwm,
                                                          Pointer callbackState,
                                                          int success,
-                                                         String hash,
                                                          long costUnits,
                                                          SizeT attributesCount,
                                                          String[] attributeKeys,
@@ -61,7 +60,6 @@ public final class CryptoLibraryIndirect {
         attributeVals = attributeVals.length == 0 ? null : attributeVals;
 
         INSTANCE.cwmAnnounceEstimateTransactionFee(cwm, callbackState, success,
-                hash,
                 costUnits,
                 attributesCount,
                 attributeKeys,
@@ -192,7 +190,6 @@ public final class CryptoLibraryIndirect {
         void cwmAnnounceEstimateTransactionFee(Pointer cwm,
                                                Pointer callbackState,
                                                int success,
-                                               String hash,
                                                long costUnits,
                                                SizeT attributesCount,
                                                String[] attributeKeys,

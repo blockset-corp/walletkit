@@ -43,6 +43,14 @@ hederaHashCreateFromString (const char *string) {
     return hash;
 }
 
+private_extern BRHederaTransactionHash
+cryptoHashAsHBAR (BRCryptoHash hash) {
+    assert (48 == hash->bytesCount);
+    BRHederaTransactionHash hbarHash;
+    memcpy (hbarHash.bytes, hash->bytes, hash->bytesCount);
+    return hbarHash;
+}
+
 // MARK: -
 
 static const char *knownMemoRequiringAddresses[] = {

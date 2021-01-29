@@ -127,12 +127,12 @@ typedef void
                                             OwnershipGiven BRCryptoWalletManager manager,
                                             OwnershipGiven BRCryptoClientCallbackState callbackState,
                                             OwnershipKept const uint8_t *transaction,
-                                            size_t transactionLength,
-                                            OwnershipKept const char *hashAsHex);
+                                            size_t transactionLength);
 
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           OwnershipKept const char *hash,
                            BRCryptoBoolean success);
 
 // MARK: - Estimate Transaction Fee
@@ -149,7 +149,6 @@ extern void
 cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
                                    OwnershipGiven BRCryptoClientCallbackState callbackState,
                                    BRCryptoBoolean success,
-                                   OwnershipKept const char *hash,
                                    uint64_t costUnits,
                                    size_t attributesCount,
                                    OwnershipKept const char **attributeKeys,

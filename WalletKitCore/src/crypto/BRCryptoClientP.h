@@ -189,7 +189,6 @@ struct BRCryptoClientCallbackStateRecord {
         struct {
             BRCryptoWallet wallet;
             BRCryptoTransfer transfer;
-            BRCryptoHash hash;
         } submitTransaction;
 
         struct {

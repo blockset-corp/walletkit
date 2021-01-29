@@ -127,6 +127,9 @@ extern int hederaTransactionHasTarget (BRHederaTransaction tranaction, BRHederaA
 extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransaction transfer,
                                                                BRHederaAddress address,
                                                                int *negative);
+
+extern int hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash);
+
 #ifdef __cplusplus
 }
 #endif

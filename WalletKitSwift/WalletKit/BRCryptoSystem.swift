@@ -114,7 +114,7 @@ public final class System {
     /// reference back to `System`
     public var managers: [WalletManager] {
         var count: BRCryptoCount = 0;
-        var pointers = cryptoSystemGetWalletManagers (core, &count);
+        let pointers = cryptoSystemGetWalletManagers (core, &count);
         defer { if let ptr = pointers { cryptoMemoryFree (ptr) }}
 
         let managers: [BRCryptoWalletManager] = pointers?
@@ -1266,7 +1266,7 @@ extension System {
                     needSystemEvent = false;
 
                     var cookie: BRCryptoCookie!
-                    var status: BRCryptoStatus!
+                    var status: BRCryptoStatus = CRYPTO_SUCCESS
 
                     cryptoWalletEventExtractFeeBasisEstimate (event, &status, &cookie, nil);
 
@@ -1561,25 +1561,24 @@ extension System {
                             cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},
 
-            funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
+            funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
                 else { System.cleanup  ("SYS: SubmitTransaction: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: SubmitTransaction")
 
-                let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.client.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
-                    (res: Result<Void, SystemClientError>) in
+                manager.client.createTransaction (blockchainId: manager.network.uids, transaction: data) {
+                    (res: Result<SystemClient.TransactionIdentifier, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
-                        success: { (_) in
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_TRUE) },
+                        success: { (ti) in
+                            cwmAnnounceSubmitTransfer (cwm, sid, ti.hash, CRYPTO_TRUE) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransfer (cwm, sid, CRYPTO_FALSE) })
+                            cwmAnnounceSubmitTransfer (cwm, sid, nil, CRYPTO_FALSE) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
@@ -1589,10 +1588,9 @@ extension System {
                 else { System.cleanup  ("SYS: EstimateTransactionFee: Missed {cwm}", cwm: cwm); return }
                 print ("SYS: EstimateTransactionFee")
 
-                let hash = asUTF8String (hashAsHex!)
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.client.estimateTransactionFee (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
+                manager.client.estimateTransactionFee (blockchainId: manager.network.uids, transaction: data) {
                     (res: Result<SystemClient.TransactionFee, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
@@ -1609,7 +1607,6 @@ extension System {
                             cwmAnnounceEstimateTransactionFee (cwm,
                                                                sid,
                                                                CRYPTO_TRUE,
-                                                               hash,
                                                                $0.costUnits,
                                                                metaKeysPtr.count,
                                                                &metaKeysPtr,
@@ -1618,7 +1615,7 @@ extension System {
                         },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, hash, 0, 0, nil, nil) })
+                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, 0, 0, nil, nil) })
                 }}
         )
     }

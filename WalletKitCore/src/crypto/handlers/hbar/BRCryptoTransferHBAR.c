@@ -95,6 +95,15 @@ cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
     return cryptoHashCreateAsHBAR (hash);
 }
 
+extern int
+cryptoTransferSetHashHBAR (BRCryptoTransfer transfer,
+                           BRCryptoHash hash) {
+    BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
+    BRHederaTransactionHash hashHBAR  = cryptoHashAsHBAR(hash);
+
+    return hederaTransactionUpdateHash (transferHBAR->hbarTransaction, hashHBAR);
+}
+
 static uint8_t *
 cryptoTransferSerializeHBAR (BRCryptoTransfer transfer,
                              BRCryptoNetwork network,
@@ -140,6 +149,7 @@ transferGetDirectionFromHBAR (BRHederaTransaction transaction,
 BRCryptoTransferHandlers cryptoTransferHandlersHBAR = {
     cryptoTransferReleaseHBAR,
     cryptoTransferGetHashHBAR,
+    cryptoTransferSetHashHBAR,
     cryptoTransferSerializeHBAR,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualHBAR
