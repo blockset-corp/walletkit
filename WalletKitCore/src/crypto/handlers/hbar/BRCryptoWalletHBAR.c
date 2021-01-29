@@ -44,8 +44,11 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                           BRHederaAccount hbarAccount) {
     int hasMinBalance;
     int hasMaxBalance;
-    BRHederaUnitTinyBar minBalance = hederaAccountGetBalanceLimit (hbarAccount, 0, &hasMinBalance);
-    BRHederaUnitTinyBar maxBalance = hederaAccountGetBalanceLimit (hbarAccount, 1, &hasMaxBalance);
+    BRHederaUnitTinyBar minBalanceHBAR = hederaAccountGetBalanceLimit (hbarAccount, 0, &hasMinBalance);
+    BRHederaUnitTinyBar maxBalanceHBAR = hederaAccountGetBalanceLimit (hbarAccount, 1, &hasMaxBalance);
+
+    BRCryptoAmount minBalance = hasMinBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, minBalanceHBAR) : NULL;
+    BRCryptoAmount maxBalance = hasMaxBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, maxBalanceHBAR) : NULL;
 
     BRHederaFeeBasis feeBasisHBAR = hederaAccountGetDefaultFeeBasis (hbarAccount);
     BRCryptoFeeBasis feeBasis     = cryptoFeeBasisCreateAsHBAR (unitForFee, feeBasisHBAR);
@@ -59,13 +62,16 @@ cryptoWalletCreateAsHBAR (BRCryptoWalletListener listener,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      hasMinBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, minBalance) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsHBAR(unit, CRYPTO_FALSE, maxBalance) : NULL,
+                                                      minBalance,
+                                                      maxBalance,
                                                       feeBasis,
                                                       &contextHBAR,
                                                       cryptoWalletCreateCallbackHBAR);
+
     cryptoFeeBasisGive(feeBasis);
-    
+    cryptoAmountGive (maxBalance);
+    cryptoAmountGive (minBalance);
+
     return wallet;
 }
 

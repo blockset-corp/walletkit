@@ -153,11 +153,8 @@ cryptoWalletManagerEstimateLimitXRP (BRCryptoWalletManager manager,
         cryptoAmountGive (fee);
         cryptoAmountGive (newBalance);
     }
-    
-    return cryptoAmountCreateInternal (unit,
-                                       CRYPTO_FALSE,
-                                       amount,
-                                       0);
+
+    return cryptoAmountCreate (unit, CRYPTO_FALSE, amount);
 }
 
 static BRCryptoFeeBasis

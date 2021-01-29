@@ -49,6 +49,9 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
     BRRippleUnitDrops minBalanceDrops = rippleAccountGetBalanceLimit (xrpAccount, 0, &hasMinBalance);
     BRRippleUnitDrops maxBalanceDrops = rippleAccountGetBalanceLimit (xrpAccount, 1, &hasMaxBalance);
 
+    BRCryptoAmount minBalance = hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL;
+    BRCryptoAmount maxBalance = hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL;
+
     BRRippleFeeBasis feeBasisXRP = rippleAccountGetDefaultFeeBasis (xrpAccount);
     BRCryptoFeeBasis feeBasis    = cryptoFeeBasisCreateAsXRP (unitForFee, feeBasisXRP.pricePerCostFactor);
 
@@ -61,12 +64,15 @@ cryptoWalletCreateAsXRP (BRCryptoWalletListener listener,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      hasMinBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, minBalanceDrops) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsXRP(unit, CRYPTO_FALSE, maxBalanceDrops) : NULL,
+                                                      minBalance,
+                                                      maxBalance,
                                                       feeBasis,
                                                       &contextXRP,
                                                       cryptoWalletCreateCallbackXRP);
+
     cryptoFeeBasisGive(feeBasis);
+    cryptoAmountGive (maxBalance);
+    cryptoAmountGive (minBalance);
 
     return wallet;
 }

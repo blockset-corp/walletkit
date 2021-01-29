@@ -132,7 +132,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let unit = self.wallet.unit
             let amount = Amount.create (double: Double(value), unit: unit)
-            print ("APP: TVV: Submit \(self.isBitCurrency ? "BTC/BCH" : "ETH") Amount: \(amount)");
+            print ("APP: TVV: Submit Amount: \(amount)");
 
             guard let transferFeeBasis = self.feeBasis
                 else { self.submitTransferFailed ("no fee basis"); return }
