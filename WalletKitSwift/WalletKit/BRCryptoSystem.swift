@@ -1674,10 +1674,11 @@ extension System {
 
                 default:
                     manager.query.createTransaction (blockchainId: manager.network.uids, hashAsHex: hash, transaction: data) {
-                        (res: Result<Void, BlockChainDB.QueryError>) in
+                        (res: Result<BlockChainDB.Model.TransactionIdentifier, BlockChainDB.QueryError>) in
                         defer { cryptoWalletManagerGive (cwm!) }
                         res.resolve(
-                            success: { (_) in cwmAnnounceSubmitTransferSuccess (cwm, sid) },
+                            success: { (ti) in
+                                cwmAnnounceSubmitTransferSuccess (cwm, sid, ti.hash) },
                             failure: { (e) in
                                 print ("SYS: SubmitTransaction: Error: \(e)")
                                 cwmAnnounceSubmitTransferFailure (cwm, sid) })

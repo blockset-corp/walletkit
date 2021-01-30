@@ -2325,6 +2325,7 @@ cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
 static void
 cwmAnnounceSubmitTransferResultGEN (OwnershipKept BRCryptoWalletManager cwm,
                                     OwnershipKept BRCryptoClientCallbackState callbackState,
+                                    const char *hash,
                                     int error) {
     assert (cwm); assert(callbackState);
     assert (CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type);
@@ -2337,6 +2338,9 @@ cwmAnnounceSubmitTransferResultGEN (OwnershipKept BRCryptoWalletManager cwm,
 
     BRCryptoWallet   wallet   = cryptoWalletManagerFindWalletAsGEN (cwm, callbackState->u.genWithTransaction.wid);
     BRCryptoTransfer transfer = (NULL == wallet ? NULL : cryptoWalletFindTransferAsGEN (wallet, callbackState->u.genWithTransaction.tid));
+
+    if (!error && NULL != transfer && NULL != hash)
+        genTransferSetHash (callbackState->u.genWithTransaction.tid, hash);
 
     // TODO: Assert on these?
     if (NULL != wallet && NULL != transfer) {
@@ -2355,7 +2359,8 @@ cwmAnnounceSubmitTransferResultGEN (OwnershipKept BRCryptoWalletManager cwm,
 
 extern void
 cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState) {
+                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  const char *hash) {
     assert (cwm); assert (callbackState);
     assert (CWM_CALLBACK_TYPE_BTC_SUBMIT_TRANSACTION == callbackState->type ||
             CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type);
@@ -2369,7 +2374,7 @@ cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
     }
 
     else if (CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type && BLOCK_CHAIN_TYPE_GEN == cwm->type) {
-        cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, 0);
+        cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, hash, 0);
     }
 
     cryptoWalletManagerGive (cwm);
@@ -2423,7 +2428,7 @@ cwmAnnounceSubmitTransferFailure (OwnershipKept BRCryptoWalletManager cwm,
                                    callbackState->rid);
 
     } else if (CWM_CALLBACK_TYPE_GEN_SUBMIT_TRANSACTION == callbackState->type && BLOCK_CHAIN_TYPE_GEN == cwm->type) {
-        cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, EIO);
+        cwmAnnounceSubmitTransferResultGEN (cwm, callbackState, NULL, EIO);
     } else {
         assert (0);
     }
