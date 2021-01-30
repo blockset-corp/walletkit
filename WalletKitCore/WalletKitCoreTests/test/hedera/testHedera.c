@@ -175,7 +175,7 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
     feeBasis.costFactor = 1;
     feeBasis.pricePerCostFactor = fee;
     BRHederaTransaction transaction = hederaTransactionCreateNew(sourceAddress, targetAddress, amount,
-                                                                 feeBasis, nodeAddress, &timeStamp);
+                                                                 feeBasis, &timeStamp);
 
     if (memo) hederaTransactionSetMemo(transaction, memo);
 
