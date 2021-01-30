@@ -10,7 +10,7 @@ import com.breadwallet.crypto.events.system.SystemCreatedEvent;
 import com.breadwallet.crypto.events.system.SystemDeletedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
 import com.breadwallet.crypto.events.system.SystemEvent;
-import com.breadwallet.crypto.events.system.SystemEventVisitor;
+//import com.breadwallet.crypto.events.system.SystemEventVisitor;
 import com.breadwallet.crypto.events.system.SystemListener;
 import com.breadwallet.crypto.events.system.SystemManagerAddedEvent;
 import com.breadwallet.crypto.events.system.SystemNetworkAddedEvent;
@@ -48,18 +48,19 @@ import com.breadwallet.crypto.utility.BlocksetAccess;
 import com.breadwallet.crypto.utility.TestConfiguration;
 
 import com.breadwallet.crypto.Account;
-import com.breadwallet.crypto.AddressScheme;
+//import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.Network;
 import com.breadwallet.crypto.System;
 import com.breadwallet.crypto.Transfer;
 import com.breadwallet.crypto.Wallet;
 import com.breadwallet.crypto.WalletManager;
 
+import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Date;
+//import java.util.Date;
 import java.util.UUID;
-import java.util.stream.Stream;
+//import java.util.stream.Stream;
 
 import java.nio.charset.StandardCharsets;
 
@@ -72,6 +73,8 @@ public class SystemInstance implements SystemListener {
 
     public static void execute (boolean isMainnet, TestConfiguration configuration, int count) {
 
+        PrintStream out = java.lang.System.out;
+
         // Create the Blockset `query`
         BlocksetAccess blocksetAccess = configuration.getBlocksetAccess();
         BlockchainDb query = BlockchainDb.createForTest(
@@ -83,8 +86,10 @@ public class SystemInstance implements SystemListener {
         // Find the AccountSpecification from TestConfiguration on `isMainnet`
         List<AccountSpecification> accountSpecs = new ArrayList();
         for (AccountSpecification accountSpec: configuration.getAccountSpecifications()) {
-            if (accountSpec.getNetwork().equals (isMainnet ? "mainnet" : "testnet"))
-                accountSpecs.add (accountSpec);
+            if (accountSpec.getNetwork().equals (isMainnet ? "mainnet" : "testnet")) {
+                accountSpecs.add(accountSpec);
+                out.println("-->Added account spec " + accountSpec.getIdentifier());
+            }
         }
 
         // Create `count` SystemInstances repeatedly using the `accountSpecs`

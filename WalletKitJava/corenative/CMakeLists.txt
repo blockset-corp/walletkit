@@ -6,6 +6,10 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 # now build app's shared lib
+# BG: experimental,making this setting in the cmakelists
+#    does not seem to affect the compilation of the static libs
+#    needed to link with shared lib in Linux
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fPIC")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 #

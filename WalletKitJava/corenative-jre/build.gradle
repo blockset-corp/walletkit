@@ -63,6 +63,7 @@ model {
         }
     }
     components {
+
         sqlite3(NativeLibrarySpec) {
             sources {
                 c {
@@ -76,6 +77,7 @@ model {
                 binaries.all {
                     // TODO(fix): Do we want to use this approach (config.h)?
                     cCompiler.define "_HAVE_SQLITE_CONFIG_H"
+                    cCompiler.args "-fPIC"
                 }
                 withType(StaticLibraryBinarySpec) {
                     buildable = false
@@ -92,6 +94,11 @@ model {
                     }
                 }
             }
+            binaries {
+                binaries.all {
+                    cCompiler.args "-fPIC"
+                }
+            }
         }
 
         blake2(NativeLibrarySpec) {
@@ -103,9 +110,15 @@ model {
                     }
                 }
             }
+            binaries {
+                binaries.all {
+                    cCompiler.args "-fPIC"
+                }
+            }
         }
 
         corecrypto(NativeLibrarySpec) {
+            logger.info("Entered corecrypto nativelibraryspec")
             sources {
                 c {
                     source {
@@ -133,6 +146,11 @@ model {
                     if (os == "osx") {
                         linker.args '-framework', 'Security'
                         linker.args '-lresolv'
+                    } else if (os == "linux") {
+                        logger.info("Building for Linux with ${buildType.displayName}")
+                        logger.info("C compiler args ${cCompiler.args}")
+                        linker.args '-lbsd'
+                        logger.info("C linker args ${linker.args}")
                     }
 
                     // Add a task to copy the resulting library file to the JAR's resources

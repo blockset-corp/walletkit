@@ -2,11 +2,18 @@ plugins {
     id 'application'
 }
 
+tasks.withType(JavaExec) {
+    // To debug issues with loading native libs
+    // systemProperty "jna.debug_load", "true"
+}
+
 application {
     mainClass = 'com.breadwallet.crypto.explore.Main'
 }
 
 java {
+    logger.info("Explore: using java version $jreConfig.javaVersion")
+    
     sourceCompatibility = jreConfig.javaVersion
     targetCompatibility = jreConfig.javaVersion
 
@@ -25,10 +32,14 @@ java {
 }
 
 dependencies {
-    implementation project(':crypto')
+    // gradle 'project as a dependency' 
+    // https://docs.gradle.org/current/userguide/declaring_dependencies.html#sub:project_dependencies
+    implementation project(':crypto') 
     implementation project(':corecrypto-jre')
     implementation project(':corenative-jre')
 
     implementation deps.guavaAndroid
     implementation deps.okhttp
 }
+
+version = "0.1.0"

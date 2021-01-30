@@ -10,7 +10,6 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    private static final int SYSTEM_COUNT = 100;
 
     static {
         try {
@@ -21,12 +20,37 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        TestConfiguration configuration = TestConfiguration.loadFrom("/Users/ebg/.brdWalletKitTestsConfig.json");
 
-        SystemInstance.execute(true, configuration, SYSTEM_COUNT);
+        ExpArg prefs = new ExpArg(args);
+        if (!prefs.Ok())
+        {
+            prefs.Usage(Main.class.getCanonicalName());
+            return;
+        }
+
+        // With config..
+        System.out.println("Launching test configuration ("
+                           + (prefs.isMainNet ? "mainnet" : "testnet")
+                           + ", instances: "
+                           + prefs.systemInstances
+                           + ", config: "
+                           + prefs.walletConfig
+                           + ")");
+
+        TestConfiguration configuration = TestConfiguration.loadFrom(prefs.walletConfig);
+        System.out.println("Loaded test configuration");
+
+        try {
+            Thread.sleep(5000);
+        } catch(InterruptedException ie) {}
+
+        SystemInstance.execute(prefs.isMainNet, configuration, prefs.systemInstances);
+        System.out.println("Executed");
 
         // delay
+        System.out.println("Sleep uninteruptibly");
         Uninterruptibles.sleepUninterruptibly(60, TimeUnit.SECONDS);
+        System.out.println("Sleep done.. exit");
 
 //        SystemInstance.destroy();;
 //        java.lang.System.out.println ("done");
