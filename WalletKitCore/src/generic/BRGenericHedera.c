@@ -201,6 +201,17 @@ genericHederaTransferGetHash (BRGenericTransferRef transfer) {
     return genericHashCreate (sizeof(hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_HEX);
 }
 
+static int
+genericHederaTransferSetHash (BRGenericTransferRef transfer,
+                              const char *string) {
+    BRHederaTransactionHash hash;
+    memset (hash.bytes, 0x00, sizeof (hash.bytes));
+    assert (96 == strlen (string));
+    hexDecode (hash.bytes, sizeof (hash.bytes), string, strlen (string));
+
+    return hederaTransactionUpdateHash((BRHederaTransaction) transfer, hash);
+}
+
 static uint8_t *
 genericHederaTransferGetSerialization (BRGenericTransferRef transfer, size_t *bytesCount)
 {
@@ -500,6 +511,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetAmount,
         genericHederaTransferGetFeeBasis,
         genericHederaTransferGetHash,
+        genericHederaTransferSetHash,
         genericHederaTransferGetSerialization,
         NULL//GetSerializationForFeeEstimation
     },

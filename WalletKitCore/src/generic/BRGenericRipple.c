@@ -511,6 +511,7 @@ struct BRGenericHandersRecord genericRippleHandlersRecord = {
         genericRippleTransferGetAmount,
         genericRippleTransferGetFeeBasis,
         genericRippleTransferGetHash,
+        NULL,
         genericRippleTransferGetSerialization,
         NULL//GetSerializationForFeeEstimation
     },

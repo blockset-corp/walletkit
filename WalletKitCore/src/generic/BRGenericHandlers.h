@@ -102,6 +102,7 @@ extern "C" {
     typedef UInt256 (*BRGenericTransferGetAmount) (BRGenericTransferRef transfer);
     typedef BRGenericFeeBasis (*BRGenericTransferGetFeeBasis) (BRGenericTransferRef transfer);
     typedef BRGenericHash (*BRGenericTransferGetHash) (BRGenericTransferRef transfer);
+    typedef int (*BRGenericTransferSetHash) (BRGenericTransferRef transfer, const char *hash);
     typedef uint8_t * (*BRGenericTransferGetSerialization) (BRGenericTransferRef transfer, size_t *bytesCount);
     typedef uint8_t * (*BRGenericTransferGetSerializationForFeeEstimation) (BRGenericTransferRef transfer, BRGenericWalletRef wallet, BRGenericAccountRef account, size_t *bytesCount);
 
@@ -114,6 +115,7 @@ extern "C" {
         BRGenericTransferGetAmount amount;
         BRGenericTransferGetFeeBasis feeBasis;
         BRGenericTransferGetHash hash;
+        BRGenericTransferSetHash setHash;
         BRGenericTransferGetSerialization getSerialization;
         BRGenericTransferGetSerializationForFeeEstimation getSerializationForFeeEstimation;
     } BRGenericTransferHandlers;

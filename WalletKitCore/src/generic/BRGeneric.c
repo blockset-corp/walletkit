@@ -295,6 +295,12 @@ genTransferGetHash (BRGenericTransfer transfer) {
     return transfer->handlers.hash (transfer->ref);
 }
 
+extern int
+genTransferSetHash (BRGenericTransfer transfer,
+                    const char *hash) {
+    return (NULL != transfer->handlers.setHash &&
+            transfer->handlers.setHash (transfer->ref, hash));
+}
 
 extern const char *
 genTransferGetUIDS (BRGenericTransfer transfer) {
