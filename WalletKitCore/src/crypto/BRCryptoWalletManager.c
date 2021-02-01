@@ -1529,6 +1529,17 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
         if (NULL == genTransferGetUIDS(transferGenericOrig))
             genTransferSetUIDS (transferGenericOrig,
                                 genTransferGetUIDS (transferGeneric));
+
+        // Update the State
+        genTransferSetState (transferGenericOrig, genTransferGetState (transferGeneric));
+
+        // Update the hash
+        BRGenericHash transferGenericHash = genTransferGetHash(transferGeneric);
+        if (!genericHashIsEmpty(transferGenericHash)) {
+            char *hash = genericHashAsString(transferGenericHash);
+            genTransferSetHash  (transferGenericOrig, hash);
+            free (hash);
+        }
     }
 
     // Fill in any attributes
