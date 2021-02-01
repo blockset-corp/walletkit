@@ -132,6 +132,7 @@ extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransacti
                                                                int *negative);
 
 extern int hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash);
+extern bool hederaTransactionHashEqual (BRHederaTransaction t1, BRHederaTransaction t2);
 
 #ifdef __cplusplus
 }
