@@ -23,12 +23,6 @@ cryptoAmountCreate (BRCryptoUnit unit,
                     BRCryptoBoolean isNegative,
                     UInt256 value);
 
-private_extern BRCryptoAmount
-cryptoAmountCreateInternal (BRCryptoUnit unit,
-                            BRCryptoBoolean isNegative,
-                            UInt256 value,
-                            int takeCurrency);
-
 private_extern UInt256
 cryptoAmountGetValue (BRCryptoAmount amount);
 

@@ -47,8 +47,11 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
                          BRTezosAccount xtzAccount) {
     int hasMinBalance;
     int hasMaxBalance;
-    BRTezosUnitMutez minBalance = tezosAccountGetBalanceLimit (xtzAccount, 0, &hasMinBalance);
-    BRTezosUnitMutez maxBalance = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
+    BRTezosUnitMutez minBalanceXTZ = tezosAccountGetBalanceLimit (xtzAccount, 0, &hasMinBalance);
+    BRTezosUnitMutez maxBalanceXTZ = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
+
+    BRCryptoAmount minBalance = hasMinBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, minBalanceXTZ) : NULL;
+    BRCryptoAmount maxBalance = hasMaxBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, maxBalanceXTZ) : NULL;
 
     BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis (TEZOS_DEFAULT_MUTEZ_PER_BYTE);
     BRCryptoFeeBasis feeBasis   = cryptoFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
@@ -62,12 +65,15 @@ cryptoWalletCreateAsXTZ (BRCryptoWalletListener listener,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      hasMinBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, minBalance) : NULL,
-                                                      hasMaxBalance ? cryptoAmountCreateAsXTZ(unit, CRYPTO_FALSE, maxBalance) : NULL,
+                                                      minBalance,
+                                                      maxBalance,
                                                       feeBasis,
                                                       &contextXTZ,
                                                       cryptoWalletCreateCallbackXTZ);
+
     cryptoFeeBasisGive(feeBasis);
+    cryptoAmountGive (maxBalance);
+    cryptoAmountGive (minBalance);
 
     return wallet;
 }

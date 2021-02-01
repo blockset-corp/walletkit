@@ -82,10 +82,7 @@ cryptoFeeBasisGetFeeETH (BRCryptoFeeBasis feeBasis) {
     
     return (overflow
             ? NULL
-            : cryptoAmountCreateInternal (feeBasis->unit,
-                                          CRYPTO_FALSE,
-                                          value,
-                                          1));
+            : cryptoAmountCreate (feeBasis->unit, CRYPTO_FALSE, value));
 }
 
 static BRCryptoBoolean

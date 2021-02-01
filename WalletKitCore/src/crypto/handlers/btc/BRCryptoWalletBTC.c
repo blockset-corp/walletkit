@@ -44,6 +44,8 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
                          BRWallet *wid) {
+    BRCryptoAmount minBalance = cryptoAmountCreateInteger(0, unit);
+
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsBTC (unitForFee,
                                                            CRYPTO_FEE_BASIS_BTC_FEE_UNKNOWN,
                                                            BRWalletFeePerKb(wid),
@@ -58,11 +60,13 @@ cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      cryptoAmountCreateInteger(0, unit),
+                                                      minBalance,
                                                       NULL,
                                                       feeBasis,
                                                       &contextBTC,
                                                       cryptoWalletCreateCallbackBTC);
+
+    cryptoAmountGive (minBalance);
     cryptoFeeBasisGive (feeBasis);
 
     return wallet;

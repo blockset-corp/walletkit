@@ -62,7 +62,7 @@ private_extern BRCryptoAmount
 cryptoWalletSweeperGetBalanceBTC (BRCryptoWalletSweeper sweeper) {
     BRCryptoWalletSweeperBTC sweeperBTC = cryptoWalletSweeperCoerce (sweeper);
     UInt256 value = uint256Create (BRWalletSweeperGetBalance (sweeperBTC));
-    return cryptoAmountCreateInternal(sweeper->unit, CRYPTO_FALSE, value, 0);
+    return cryptoAmountCreate (sweeper->unit, CRYPTO_FALSE, value);
 }
 
 private_extern BRCryptoWalletSweeperStatus
