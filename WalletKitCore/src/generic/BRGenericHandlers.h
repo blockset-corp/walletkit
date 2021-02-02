@@ -101,6 +101,7 @@ extern "C" {
     typedef BRGenericAddressRef (*BRGenericTransferGetTargetAddress) (BRGenericTransferRef transfer);
     typedef UInt256 (*BRGenericTransferGetAmount) (BRGenericTransferRef transfer);
     typedef BRGenericFeeBasis (*BRGenericTransferGetFeeBasis) (BRGenericTransferRef transfer);
+    typedef int (*BRGenericTransferSetFeeBasis) (BRGenericTransferRef transfer, BRGenericFeeBasis feeBasis);
     typedef BRGenericHash (*BRGenericTransferGetHash) (BRGenericTransferRef transfer);
     typedef int (*BRGenericTransferSetHash) (BRGenericTransferRef transfer, const char *hash);
     typedef int (*BRGenericTransferEqual) (BRGenericTransferRef transfer1, BRGenericTransferRef transfer2);
@@ -115,6 +116,7 @@ extern "C" {
         BRGenericTransferGetTargetAddress targetAddress;
         BRGenericTransferGetAmount amount;
         BRGenericTransferGetFeeBasis feeBasis;
+        BRGenericTransferSetFeeBasis setFeeBasis;
         BRGenericTransferGetHash hash;
         BRGenericTransferSetHash setHash;
         BRGenericTransferEqual equal;

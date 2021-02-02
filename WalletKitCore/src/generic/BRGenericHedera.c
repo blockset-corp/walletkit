@@ -516,6 +516,7 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetTargetAddress,
         genericHederaTransferGetAmount,
         genericHederaTransferGetFeeBasis,
+        NULL,
         genericHederaTransferGetHash,
         genericHederaTransferSetHash,
         genericHederaTransferEqual,

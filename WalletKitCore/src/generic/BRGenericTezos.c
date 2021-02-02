@@ -52,6 +52,17 @@ genericFeeBasisFromTezosFeeBasis(BRTezosFeeBasis feeBasis) {
     }
 }
 
+static BRTezosFeeBasis
+tezosFeeBasisFromGenericFeeBasis (BRGenericFeeBasis feeBasis) {
+    int feeOverflow;
+    UInt256 fee = genFeeBasisGetFee(&feeBasis, &feeOverflow);
+    assert(!feeOverflow);
+    
+    return (BRTezosFeeBasis) {
+        FEE_BASIS_ACTUAL,
+        { .actual = { (BRTezosUnitMutez) fee.u64[0] }}
+    };
+}
 
 // MARK: - Generic Network
 
@@ -196,6 +207,13 @@ static BRGenericFeeBasis
 genericTezosTransferGetFeeBasis (BRGenericTransferRef transfer) {
     BRTezosFeeBasis feeBasis = tezosTransferGetFeeBasis ((BRTezosTransfer) transfer);
     return genericFeeBasisFromTezosFeeBasis (feeBasis);
+}
+
+static int
+genericTezosTransferSetFeeBasis (BRGenericTransferRef transfer,
+                                 BRGenericFeeBasis feeBasis) {
+    tezosTransferSetFeeBasis ((BRTezosTransfer) transfer,
+                              tezosFeeBasisFromGenericFeeBasis (feeBasis));
 }
 
 static BRGenericHash
@@ -555,6 +573,7 @@ struct BRGenericHandersRecord genericTezosHandlersRecord = {
         genericTezosTransferGetTargetAddress,
         genericTezosTransferGetAmount,
         genericTezosTransferGetFeeBasis,
+        genericTezosTransferSetFeeBasis,
         genericTezosTransferGetHash,
         NULL,
         NULL,

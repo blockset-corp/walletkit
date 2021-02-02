@@ -131,6 +131,10 @@ extern "C" {
     extern BRGenericFeeBasis
     genTransferGetFeeBasis (BRGenericTransfer transfer);
 
+    extern int
+    genTransferSetFeeBasis (BRGenericTransfer transfer,
+                            BRGenericFeeBasis feeBasis);
+
     extern BRGenericTransferDirection
     genTransferGetDirection (BRGenericTransfer transfer);
 

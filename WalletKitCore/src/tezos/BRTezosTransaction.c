@@ -254,6 +254,12 @@ extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transactio
     return transaction->feeBasis;
 }
 
+extern void tezosTransactionSetFeeBasis(BRTezosTransaction transaction,
+                                        BRTezosFeeBasis feeBasis) {
+    assert(transaction);
+    transaction->feeBasis = feeBasis;
+}
+
 extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction){
     assert(transaction);
     return tezosFeeBasisGetFee (&transaction->feeBasis);
