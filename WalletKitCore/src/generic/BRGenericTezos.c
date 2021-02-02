@@ -556,6 +556,8 @@ struct BRGenericHandersRecord genericTezosHandlersRecord = {
         genericTezosTransferGetAmount,
         genericTezosTransferGetFeeBasis,
         genericTezosTransferGetHash,
+        NULL,
+        NULL,
         genericTezosTransferGetSerialization,
         genericTezosTransferGetSerializationForFeeEstimation
     },

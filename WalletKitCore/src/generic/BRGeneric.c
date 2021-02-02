@@ -295,6 +295,12 @@ genTransferGetHash (BRGenericTransfer transfer) {
     return transfer->handlers.hash (transfer->ref);
 }
 
+extern int
+genTransferSetHash (BRGenericTransfer transfer,
+                    const char *hash) {
+    return (NULL != transfer->handlers.setHash &&
+            transfer->handlers.setHash (transfer->ref, hash));
+}
 
 extern const char *
 genTransferGetUIDS (BRGenericTransfer transfer) {
@@ -345,10 +351,9 @@ extern int
 genTransferEqual (BRGenericTransfer t1,
                   BRGenericTransfer t2) {
     return (t1 == t2 ||
-            (NULL != t1->uids && NULL != t2->uids
-             ? 0 == strcmp (t1->uids, t2->uids)
-             : genericHashEqual (genTransferGetHash (t1),
-                                 genTransferGetHash (t2))));
+            (NULL != t1->handlers.equal && NULL != t2->handlers.equal && t1->handlers.equal (t1->ref, t2->ref)) ||
+            (NULL != t1->uids           && NULL != t2->uids           && 0 == strcmp (t1->uids, t2->uids))      ||
+            genericHashEqual (genTransferGetHash (t1), genTransferGetHash (t2)));
 }
 
 extern uint8_t *

@@ -444,7 +444,27 @@ public class BlockChainDB {
                      transfers: transfers,
                      acknowledgements: acks)
         }
-        
+
+        /// Transaction Identifier
+
+        public typealias TransactionIdentifier = (
+            id: String,
+            blockchainId: String,
+            hash: String,
+            identifier: String
+        )
+
+        static internal func asTransactionIdentifier (json: JSON) -> TransactionIdentifier? {
+            guard let id         = json.asString(name: "transaction_id"),
+                  let bid        = json.asString (name: "blockchain_id"),
+                  let hash       = json.asString (name: "hash"),
+                  let identifier = json.asString (name: "identifier")
+            else { return nil }
+
+            return (id: id, blockchainId: bid, hash: hash, identifier: identifier)
+        }
+
+
         // Transaction Fee
         
         public typealias TransactionFee = (
@@ -969,19 +989,27 @@ public class BlockChainDB {
     public func createTransaction (blockchainId: String,
                                    hashAsHex: String,
                                    transaction: Data,
-                                   completion: @escaping (Result<Void, QueryError>) -> Void) {
+                                   completion: @escaping (Result<Model.TransactionIdentifier, QueryError>) -> Void) {
         let json: JSON.Dict = [
-            "blockchain_id": blockchainId,
-            "transaction_id": hashAsHex,
-            "data" : transaction.base64EncodedString()
+            "blockchain_id"  : blockchainId,
+            "transaction_id" : hashAsHex,
+            "data"           : transaction.base64EncodedString()
         ]
 
         makeRequest (bdbDataTaskFunc, bdbBaseURL,
                      path: "/transactions",
                      data: json,
-                     httpMethod: "POST",
-                     deserializer: { (_) in Result.success(()) },
-                     completion: completion)
+                     httpMethod: "POST") {
+            self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
+                (more: URL?, res: Result<[JSON], QueryError>) in
+                precondition(nil == more)
+                completion (res.flatMap {
+                    BlockChainDB.getOneExpected (id: "POST /transactions",
+                                                 data: $0,
+                                                 transform: Model.asTransactionIdentifier)
+                })
+            }
+        }
     }
     
     public func estimateTransactionFee (blockchainId: String,

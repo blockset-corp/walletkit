@@ -106,7 +106,7 @@ genericHederaAccountSignTransferWithSeed (BRGenericAccountRef account,
                                           UInt512 seed)
 {
     BRKey publicKey = hederaAccountGetPublicKey((BRHederaAccount)account);
-    hederaTransactionSignTransaction ((BRHederaTransaction)transfer, publicKey, seed);
+    hederaTransactionSignTransaction ((BRHederaTransaction)transfer, publicKey, seed, NULL);
 }
 
 static void
@@ -201,6 +201,23 @@ genericHederaTransferGetHash (BRGenericTransferRef transfer) {
     return genericHashCreate (sizeof(hash.bytes), hash.bytes, GENERIC_HASH_ENCODING_HEX);
 }
 
+static int
+genericHederaTransferSetHash (BRGenericTransferRef transfer,
+                              const char *string) {
+    BRHederaTransactionHash hash;
+    memset (hash.bytes, 0x00, sizeof (hash.bytes));
+    assert (96 == strlen (string));
+    hexDecode (hash.bytes, sizeof (hash.bytes), string, strlen (string));
+
+    return hederaTransactionUpdateHash((BRHederaTransaction) transfer, hash);
+}
+
+static int
+genericHederaTransferEqual (BRGenericTransferRef transfer1, BRGenericTransferRef transfer2) {
+    return hederaTransactionHashEqual ((BRHederaTransaction) transfer1,
+                                       (BRHederaTransaction) transfer2);
+}
+
 static uint8_t *
 genericHederaTransferGetSerialization (BRGenericTransferRef transfer, size_t *bytesCount)
 {
@@ -293,7 +310,6 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
                                    BRGenericTransferAttribute *attributes) {
     BRHederaAddress source = hederaWalletGetSourceAddress ((BRHederaWallet) wallet);
     BRHederaUnitTinyBar thbar  = (BRHederaUnitTinyBar) amount.u64[0];
-    BRHederaAddress nodeAddress = hederaWalletGetNodeAddress((BRHederaWallet) wallet);
     BRHederaFeeBasis feeBasis;
     feeBasis.costFactor = (uint32_t)estimatedFeeBasis.costFactor;
     int overflow = 0;
@@ -301,7 +317,7 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
     assert(overflow == 0);
 
     BRHederaTransaction transaction = hederaTransactionCreateNew (source, (BRHederaAddress) target,
-                                                           thbar, feeBasis, nodeAddress, NULL);
+                                                           thbar, feeBasis, NULL);
 
     for (size_t index = 0; index < attributesCount; index++) {
         BRGenericTransferAttribute attribute = attributes[index];
@@ -316,7 +332,6 @@ genericHederaWalletCreateTransfer (BRGenericWalletRef wallet,
     }
 
     hederaAddressFree(source);
-    hederaAddressFree(nodeAddress);
 
     return (BRGenericTransferRef) transaction;
 }
@@ -502,6 +517,8 @@ struct BRGenericHandersRecord genericHederaHandlersRecord = {
         genericHederaTransferGetAmount,
         genericHederaTransferGetFeeBasis,
         genericHederaTransferGetHash,
+        genericHederaTransferSetHash,
+        genericHederaTransferEqual,
         genericHederaTransferGetSerialization,
         NULL//GetSerializationForFeeEstimation
     },

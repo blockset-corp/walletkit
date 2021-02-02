@@ -169,7 +169,8 @@ cwmAnnounceGetTransfersComplete (OwnershipKept BRCryptoWalletManager cwm,
 
 extern void
 cwmAnnounceSubmitTransferSuccess (OwnershipKept BRCryptoWalletManager cwm,
-                                  OwnershipGiven BRCryptoClientCallbackState callbackState);
+                                  OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  const char *hash);
 
 extern void
 cwmAnnounceGetLogsComplete(OwnershipKept BRCryptoWalletManager cwm,

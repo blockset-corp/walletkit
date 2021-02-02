@@ -34,9 +34,11 @@ typedef struct BRHederaTransactionRecord *BRHederaTransaction;
  * @return transaction
  */
 extern BRHederaTransaction /* caller owns memory and must call "hederaTransactionFree" function */
-hederaTransactionCreateNew(BRHederaAddress source, BRHederaAddress target,
-                           BRHederaUnitTinyBar amount, BRHederaFeeBasis feeBasis,
-                           BRHederaAddress nodeAddress, BRHederaTimeStamp *timeStamp);
+hederaTransactionCreateNew(BRHederaAddress source,
+                           BRHederaAddress target,
+                           BRHederaUnitTinyBar amount,
+                           BRHederaFeeBasis feeBasis,
+                           BRHederaTimeStamp *timeStamp);
 
 /**
  * Create a Hedera transaction recovered from the blockset server
@@ -74,17 +76,16 @@ extern void hederaTransactionFree (BRHederaTransaction transaction);
  *
  * @param transaction
  * @param public key      - of the source account
- * @param timeStamp       - used to create the transaction id - just use current
- *                          time
- * @param fee             - max number of tinybars the caller is willing to pay
  * @param seed            - seed for this account, used to create private key
+ * @param nodeAddress - use specific node (if not NULL) otherwise create a serialization for all nodes
  *
  * @return size           - number of bytes in the signed transaction
  */
 extern size_t
 hederaTransactionSignTransaction (BRHederaTransaction transaction,
                                   BRKey publicKey,
-                                  UInt512 seed);
+                                  UInt512 seed,
+                                  BRHederaAddress nodeAddress);
 
 /**
  * Get serialiezd bytes for the specified transaction
@@ -101,11 +102,15 @@ hederaTransactionSerialize (BRHederaTransaction transaction, size_t *size);
 extern BRHederaTransactionHash hederaTransactionGetHash(BRHederaTransaction transaction);
 extern char * // Caller owns memory and must free calling "free"
 hederaTransactionGetTransactionId(BRHederaTransaction transaction);
+extern BRHederaFeeBasis hederaTransactionGetFeeBasis (BRHederaTransaction transaction);
 extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transaction);
 extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transaction);
+
 extern int hederaTransactionHasError (BRHederaTransaction transaction);
+extern BRHederaTimeStamp hederaTransactionGetTimestamp (BRHederaTransaction transaction);
+extern uint64_t hederaTransactionGetBlockheight (BRHederaTransaction transaction);
 
 // Memo
 extern void hederaTransactionSetMemo(BRHederaTransaction transaction, const char* memo);
@@ -125,6 +130,10 @@ extern int hederaTransactionHasTarget (BRHederaTransaction tranaction, BRHederaA
 extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransaction transfer,
                                                                BRHederaAddress address,
                                                                int *negative);
+
+extern int hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash);
+extern bool hederaTransactionHashEqual (BRHederaTransaction t1, BRHederaTransaction t2);
+
 #ifdef __cplusplus
 }
 #endif
