@@ -7,11 +7,21 @@ import com.breadwallet.crypto.utility.TestConfiguration;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Uninterruptibles;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
+//import sun.rmi.runtime.Log;
 
 public class Main {
 
+    private final static Logger Log;
     static {
+        Log = Logger.getLogger(ExploreConstants.ExploreTag
+                               + Main.class.getName());
+
         try {
             CryptoApi.initialize(CryptoApiProvider.getInstance());
         } catch (IllegalStateException e) {
@@ -29,30 +39,51 @@ public class Main {
         }
 
         // With config..
-        System.out.println("Launching test configuration ("
-                           + (prefs.isMainNet ? "mainnet" : "testnet")
-                           + ", instances: "
-                           + prefs.systemInstances
-                           + ", config: "
-                           + prefs.walletConfig
-                           + ")");
+        Log.log(Level.INFO,
+                "Launching test configuration (on "
+                + (prefs.isMainNet ? "mainnet" : "testnet")
+                + " for "
+                + prefs.runSeconds
+                + " secs, instances: "
+                + prefs.systemInstances
+                + ", config: "
+                + prefs.walletConfig
+                + ")");
 
         TestConfiguration configuration = TestConfiguration.loadFrom(prefs.walletConfig);
-        System.out.println("Loaded test configuration");
-
-        try {
-            Thread.sleep(5000);
-        } catch(InterruptedException ie) {}
+        Log.log(Level.FINER, "Loaded test configuration");
 
         SystemInstance.execute(prefs.isMainNet, configuration, prefs.systemInstances);
-        System.out.println("Executed");
+        Log.log(Level.INFO, "Executing");
 
-        // delay
-        System.out.println("Sleep uninteruptibly");
-        Uninterruptibles.sleepUninterruptibly(60, TimeUnit.SECONDS);
-        System.out.println("Sleep done.. exit");
+        // Delay
+        Uninterruptibles.sleepUninterruptibly(prefs.runSeconds, TimeUnit.SECONDS);
 
-//        SystemInstance.destroy();;
-//        java.lang.System.out.println ("done");
+        // Cleanup
+        Log.log(Level.INFO, "Finished, orderly shutdown...");
+        SystemInstance.destroy();
+        SystemInstance.terminate();
+
+        Log.log(Level.INFO, "done");
+
+        // Someone is creating a non-daemon thread
+        // and is holding the application from exiting...
+        // Following prints are informational in case this
+        // problem can be isolated
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread th: threadSet) {
+            if (!th.isDaemon()) {
+                System.out.println(th.getId() + " " + th.getName());
+                StackTraceElement[] st = th.getStackTrace();
+                for (StackTraceElement elem : st) {
+                    System.out.println("   "
+                                       + elem.getClassName() + " "
+                                       + elem.getFileName() + " "
+                                       + elem.getMethodName() + " "
+                                       + elem.getLineNumber());
+                }
+            }
+        }
+        System.exit(0);
     }
 }

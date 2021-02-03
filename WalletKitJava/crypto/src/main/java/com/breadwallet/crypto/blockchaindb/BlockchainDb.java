@@ -32,10 +32,12 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.Transfer;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.primitives.UnsignedLong;
 
+import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
@@ -57,6 +59,10 @@ public class BlockchainDb {
     private final TransferApi transferApi;
     private final TransactionApi transactionApi;
     private final ExperimentalApi experimentalApi;
+
+    /// @brief Concurrent support for various APIS
+    private final ExecutorService           cachedThreadPool;
+    private final ScheduledExecutorService  scheduledSingleThread;
 
     public BlockchainDb(OkHttpClient client) {
         this(client, null, null, null, null);
@@ -81,19 +87,19 @@ public class BlockchainDb {
         BdbApiClient bdbClient = new BdbApiClient(client, bdbBaseURL, bdbDataTask, coder);
         BrdApiClient brdClient = new BrdApiClient(client, apiBaseURL, apiDataTask, coder);
 
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        this.cachedThreadPool = Executors.newCachedThreadPool();
+        this.scheduledSingleThread = Executors.newSingleThreadScheduledExecutor();
 
         this.ridGenerator = new AtomicInteger(0);
 
         this.client = client;
-        this.blockApi = new BlockApi(bdbClient, executorService);
+        this.blockApi = new BlockApi(bdbClient, cachedThreadPool);
         this.blockchainApi = new BlockchainApi(bdbClient);
-        this.currencyApi = new CurrencyApi(bdbClient, executorService);
+        this.currencyApi = new CurrencyApi(bdbClient, cachedThreadPool);
         this.subscriptionApi = new SubscriptionApi(bdbClient);
-        this.transferApi = new TransferApi(bdbClient, executorService);
-        this.transactionApi = new TransactionApi(bdbClient, executorService);
-        this.experimentalApi = new ExperimentalApi(bdbClient, scheduledExecutorService);
+        this.transferApi = new TransferApi(bdbClient, cachedThreadPool);
+        this.transactionApi = new TransactionApi(bdbClient, cachedThreadPool);
+        this.experimentalApi = new ExperimentalApi(bdbClient, scheduledSingleThread);
     }
 
     public static BlockchainDb createForTest (OkHttpClient client,
@@ -112,6 +118,24 @@ public class BlockchainDb {
             cli.newCall(decoratedRequest).enqueue(callback);
         };
         return new BlockchainDb (client, bdbBaseURL, brdDataTask, apiBaseURL, null);
+    }
+
+    /**
+     * Provides a method to terminate concurrent activity
+     */
+    public void orderlyShutdown()
+    {
+        // Reverse order of creation
+        PrintStream pout = java.lang.System.out;
+        pout.println("Shutdown blockchain db");
+        scheduledSingleThread.shutdown();
+        cachedThreadPool.shutdown();
+        try {
+            if (!scheduledSingleThread.awaitTermination(3, TimeUnit.SECONDS))
+                pout.println("scheduled shutdown failed");
+            if (!cachedThreadPool.awaitTermination(3, TimeUnit.SECONDS))
+                pout.println("cached shutdown failed");
+        } catch(InterruptedException ie) {pout.println("blockchain db shutdown ie");}
     }
 
     /**

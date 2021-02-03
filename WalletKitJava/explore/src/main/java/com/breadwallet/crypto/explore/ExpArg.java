@@ -15,6 +15,7 @@ public class ExpArg {
     String              walletConfig;
     boolean             isMainNet = false;
     int                 systemInstances = 1;
+    int                 runSeconds = 60;
 
     ExpArg(String[] args) {
         rawArgs = args;
@@ -26,7 +27,8 @@ public class ExpArg {
         System.out.println("Usage: " + appName + " [Options] <path_to_wallet_kit_config_json>");
         System.out.println("  where [Options]:");
         System.out.println("    -m: use mainnet (default: false)");
-        System.out.println("    -s: number of systems to instantiate (default: 1)");
+        System.out.println("    -n: number of systems to instantiate (default: 1)");
+        System.out.println("    -s: number of seconds to run (default: 60)");
     }
 
     private String argn(boolean valueArg) {
@@ -55,13 +57,24 @@ public class ExpArg {
         while ((arg = argn(false)) != null) {
             if (arg.equals("m")) {
                 isMainNet = true;
-            } else if (arg.equals("s")) {
+            } else if (arg.equals("n")) {
                 if ((val = argn(true)) != null) {
                     try {
                         systemInstances = Integer.parseInt(val);
                     } catch (NumberFormatException nfe) {
                         System.err.println("Err: System instances not a number");
                         systemInstances = 0;
+                    }
+                } else {
+                    break;
+                }
+            } else if (arg.equals("s")) {
+                if ((val = argn(true)) != null) {
+                    try {
+                        runSeconds = Integer.parseInt(val);
+                    } catch (NumberFormatException nfe) {
+                        System.err.println("Err: Run seconds not a number");
+                        runSeconds = 0;
                     }
                 } else {
                     break;
@@ -74,6 +87,7 @@ public class ExpArg {
     boolean Ok() {
         return argNum == rawArgs.length
                && (walletConfig != null && walletConfig.length() > 0)
-               && systemInstances > 0;
+               && systemInstances > 0
+               && runSeconds != 0;
     }
 }

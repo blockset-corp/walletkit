@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 apply from: '../gradle/copy-test-config.gradle'
 
 android {
+    ndkVersion '21.3.6528147'
     compileSdkVersion androidConfig.compileSdkVersion
 
     compileOptions {

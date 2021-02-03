@@ -43,9 +43,15 @@ import com.breadwallet.crypto.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletDeletedEvent;
+import com.breadwallet.crypto.explore.handler.ExploreNetworkEventHandler;
+import com.breadwallet.crypto.explore.handler.ExploreWalletEventHandler;
+import com.breadwallet.crypto.explore.handler.ExploreWalletManagerEventHandler;
 import com.breadwallet.crypto.utility.AccountSpecification;
 import com.breadwallet.crypto.utility.BlocksetAccess;
 import com.breadwallet.crypto.utility.TestConfiguration;
+
+import com.breadwallet.crypto.explore.handler.ExploreSystemEventHandler;
+import com.breadwallet.crypto.explore.handler.ExploreTransferEventHandler;
 
 import com.breadwallet.crypto.Account;
 //import com.breadwallet.crypto.AddressScheme;
@@ -56,46 +62,70 @@ import com.breadwallet.crypto.Wallet;
 import com.breadwallet.crypto.WalletManager;
 
 import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 //import java.util.Date;
 import java.util.UUID;
 //import java.util.stream.Stream;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
 import okhttp3.OkHttpClient;
 
 public class SystemInstance implements SystemListener {
-    static List<SystemInstance> systems = new ArrayList();
+    static List<SystemInstance>     systems = new ArrayList();
+    static BlockchainDb             blockset;
+    static OkHttpClient             httpClient;
+    static int                      id = 0;
+
+    private final static Logger Log;
+
+    static {
+        Log = Logger.getLogger(ExploreConstants.ExploreTag
+                               + SystemInstance.class.getName());
+    }
 
     public static void execute (boolean isMainnet, TestConfiguration configuration, int count) {
 
-        PrintStream out = java.lang.System.out;
+        PrintStream pout = java.lang.System.out;
 
         // Create the Blockset `query`
         BlocksetAccess blocksetAccess = configuration.getBlocksetAccess();
-        BlockchainDb query = BlockchainDb.createForTest(
-                new OkHttpClient(),
+        httpClient = new OkHttpClient();
+        blockset = BlockchainDb.createForTest(
+                httpClient,
                 blocksetAccess.getToken(),
                 blocksetAccess.getBaseURL(),
                 null);
+        Log.log(Level.INFO, "Blockchain DB is created");
 
         // Find the AccountSpecification from TestConfiguration on `isMainnet`
         List<AccountSpecification> accountSpecs = new ArrayList();
         for (AccountSpecification accountSpec: configuration.getAccountSpecifications()) {
             if (accountSpec.getNetwork().equals (isMainnet ? "mainnet" : "testnet")) {
                 accountSpecs.add(accountSpec);
-                out.println("-->Added account spec " + accountSpec.getIdentifier());
+                Log.log(Level.INFO, "Added account spec " + accountSpec.getIdentifier());
             }
         }
 
         // Create `count` SystemInstances repeatedly using the `accountSpecs`
         for (int i = 0; i < count; i++) {
             AccountSpecification accountSpec = accountSpecs.get (i % accountSpecs.size());
-            systems.add (new SystemInstance(isMainnet, accountSpec, query));
+            SystemInstance exploreSystemN = new SystemInstance(isMainnet, accountSpec, blockset);
+            Log.log(Level.INFO, i + ") SystemInstance: " + exploreSystemN.systemIdentifier);
+            systems.add (exploreSystemN);
         }
 
         // Run a system for each one.
@@ -111,8 +141,43 @@ public class SystemInstance implements SystemListener {
         }
     }
 
+    public static void terminate() {
 
-    System system;
+        // Shutdown okhttpclient thread pools
+        ExecutorService httpExe = httpClient.dispatcher().executorService();
+        httpExe.shutdown();
+        try {
+            httpExe.awaitTermination(3, TimeUnit.SECONDS);
+        } catch(InterruptedException ie) {}
+        httpClient.connectionPool().evictAll();
+        if (httpClient.cache()!= null) {
+            try {
+                httpClient.cache().close();
+            } catch(java.io.IOException ioe) {}
+        }
+
+        // End concurrency for each of the systems instances created
+        for (SystemInstance sys : systems) {
+            Log.log(Level.INFO, "Shutdown " + sys.systemIdentifier);
+            sys.taskMgmt.shutdown();
+
+            try {
+                if (!sys.taskMgmt.awaitTermination(3, TimeUnit.SECONDS))
+                    Log.log(Level.WARNING, sys.systemIdentifier + " not shutdown");
+            } catch(InterruptedException ie) {}
+        }
+
+        // Finally all system instances share the single blockset concurrency
+        blockset.orderlyShutdown();
+    }
+
+    System                      system;
+    ScheduledExecutorService    taskMgmt;
+    String                      systemIdentifier;
+    boolean                     isMainnet;
+
+    /// @brief System event handler for network events and wallet management
+    ExploreSystemEventHandler walletHandling;
 
     public SystemInstance (boolean isMainnet,
                            AccountSpecification accountSpec,
@@ -125,14 +190,26 @@ public class SystemInstance implements SystemListener {
 
         assert null != account : "Missed Account";
 
+        this.isMainnet = isMainnet;
+
         // This is where the DB will be saved as a subdirectory based on the `Account`.  Because
         // a multiple `SystemInstances` can be created with the same account; this "path" must
         // be unique for each SystemInstance; otherwise different instances with the same account
         // will overwrite one another.
-        String path = "path";
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss_SSS");
+        LocalDateTime d = LocalDateTime.now();
+        systemIdentifier = "system_"
+                + f.format(d)
+                + "_"
+                + Integer.toString(++id)
+                + "-"
+                + accountSpec.getIdentifier();
+        String path = "dbs/" + systemIdentifier;
 
+        // Create single threaded concurrency
+        taskMgmt = Executors.newSingleThreadScheduledExecutor();
         system = System.create(
-                null,
+                taskMgmt,
                 this,
                 account,
                 isMainnet,
@@ -140,217 +217,30 @@ public class SystemInstance implements SystemListener {
                 query);
     }
 
+
     @java.lang.Override
     public void handleSystemEvent(System system, SystemEvent event) {
-        event.accept(new DefaultSystemEventVisitor<Void>() {
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemCreatedEvent event) {
-                             return super.visit(event);
-                         }
-
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemChangedEvent event) {
-                             return super.visit(event);
-                         }
-
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemDeletedEvent event) {
-                             return super.visit(event);
-                         }
-
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemManagerAddedEvent event) {
-                             return super.visit(event);
-                         }
-
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemNetworkAddedEvent event) {
-                             return super.visit(event);
-                         }
-
-                         @Nullable
-                         @java.lang.Override
-                         public Void visit(SystemDiscoveredNetworksEvent event) {
-                             return super.visit(event);
-                         }
-                     }
-        );
+        event.accept(new ExploreSystemEventHandler<Void>(system, this.isMainnet));
     }
 
     @java.lang.Override
     public void handleNetworkEvent(System system, Network network, NetworkEvent event) {
-        event.accept(
-                new DefaultNetworkEventVisitor<Void>() {
-                    @java.lang.Override
-                    public Void visit(NetworkDeletedEvent event) {
-                        return null;
-                    }
-                }
-        );
+        event.accept(new ExploreNetworkEventHandler<Void>());
     }
 
     @java.lang.Override
     public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
-        event.accept(
-                new DefaultTransferEventVisitor<Void>() {
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(TransferChangedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(TransferCreatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(TransferDeletedEvent event) {
-                        return super.visit(event);
-                    }
-                }
-        );
+        event.accept(new ExploreTransferEventHandler<Void>());
 
     }
 
     @java.lang.Override
     public void handleWalletEvent(System system, WalletManager manager, Wallet wallet, WalletEvent event) {
-        event.accept(
-                new DefaultWalletEventVisitor<Void>() {
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletBalanceUpdatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletChangedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletCreatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletDeletedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletFeeBasisUpdatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletTransferAddedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletTransferChangedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletTransferDeletedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletTransferSubmittedEvent event) {
-                        return super.visit(event);
-                    }
-                }
-        );
+        event.accept(new ExploreWalletEventHandler<Void>());
     }
 
     @java.lang.Override
     public void handleManagerEvent(System system, WalletManager manager, WalletManagerEvent event) {
-        event.accept(
-                new DefaultWalletManagerEventVisitor<Void>() {
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerBlockUpdatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerChangedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerCreatedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerDeletedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerSyncProgressEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerSyncStartedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerSyncStoppedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerSyncRecommendedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerWalletAddedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerWalletChangedEvent event) {
-                        return super.visit(event);
-                    }
-
-                    @Nullable
-                    @java.lang.Override
-                    public Void visit(WalletManagerWalletDeletedEvent event) {
-                        return super.visit(event);
-                    }
-                }
-        );
+        event.accept(new ExploreWalletManagerEventHandler<Void>());
     }
 }

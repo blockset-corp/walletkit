@@ -5,6 +5,8 @@ plugins {
 tasks.withType(JavaExec) {
     // To debug issues with loading native libs
     // systemProperty "jna.debug_load", "true"
+    systemProperty "java.util.logging.config.file", "explorelog.properties"
+
 }
 
 application {
