@@ -91,6 +91,8 @@ cryptoTransferReleaseHBAR (BRCryptoTransfer transfer) {
 static BRCryptoHash
 cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
     BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
+    if (! hederaTransactionHashExists(transferHBAR->hbarTransaction)) return NULL;
+
     BRHederaTransactionHash hash = hederaTransactionGetHash (transferHBAR->hbarTransaction);
     return cryptoHashCreateAsHBAR (hash);
 }

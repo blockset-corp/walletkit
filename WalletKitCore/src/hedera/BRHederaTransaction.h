@@ -51,9 +51,14 @@ hederaTransactionCreateNew(BRHederaAddress source, BRHederaAddress target,
  * @return transaction
  */
 extern BRHederaTransaction /* caller must free - hederaTransactionFree */
-hederaTransactionCreate(BRHederaAddress source, BRHederaAddress target,
-                        BRHederaUnitTinyBar amount, BRHederaUnitTinyBar fee, const char *txID,
-                        BRHederaTransactionHash hash, uint64_t timestamp, uint64_t blockHeight,
+hederaTransactionCreate(BRHederaAddress source,
+                        BRHederaAddress target,
+                        BRHederaUnitTinyBar amount,
+                        BRHederaUnitTinyBar fee,
+                        const char * transactionId,
+                        BRHederaTransactionHash hash,
+                        uint64_t timestamp,
+                        uint64_t blockHeight,
                         int error);
 
 extern BRHederaTransaction /* caller must free - hederaTrasactionFree */
@@ -96,6 +101,7 @@ extern uint8_t * /* caller owns and must free using normal "free" function */
 hederaTransactionSerialize (BRHederaTransaction transaction, size_t *size);
 
 // Getters for the various transaction fields
+extern int hederaTransactionHashExists (BRHederaTransaction transaction);
 extern BRHederaTransactionHash hederaTransactionGetHash(BRHederaTransaction transaction);
 extern char * // Caller owns memory and must free calling "free"
 hederaTransactionGetTransactionId(BRHederaTransaction transaction);
