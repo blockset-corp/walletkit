@@ -7,14 +7,26 @@ import com.google.common.util.concurrent.Uninterruptibles;
 
 import java.util.concurrent.TimeUnit;
 
+/// @brief Collects user arguments for driving number of test instances,
+///        total run time and config
 public class ExpArg {
 
+    /// @brief Raw arguments switches and values
     private String[]    rawArgs;
+
+    /// @brief Current argument number
     private int         argNum = 0;
 
+    /// @brief Configuration file (e.g. '.walletKitTestsConfig.json')
     String              walletConfig;
+
+    /// @brief Indication to use mainnet or testnet testing scenario
     boolean             isMainNet = false;
+
+    /// @brief Number of concurrent system instances (accounts) to run
     int                 systemInstances = 1;
+
+    /// @brief Total run time before exit
     int                 runSeconds = 60;
 
     ExpArg(String[] args) {
@@ -31,6 +43,10 @@ public class ExpArg {
         System.out.println("    -s: number of seconds to run (default: 60)");
     }
 
+    /// @brief Get a single arguments from passed arguments
+    /// @param valueArg Indicates whether a switch or switches value (valueArg == true)
+    /// @return The bare argument switch or value, or null if there are insufficient
+    ///         remaining arguments or the argument looks like a switch rather than value
     private String argn(boolean valueArg) {
         String arg = null;
         if (argNum < rawArgs.length - (valueArg ? 0 : 1)) {
@@ -45,6 +61,7 @@ public class ExpArg {
         return arg;
     }
 
+    /// @brief Populate application defaults from user input
     private void GetUserArgs() {
 
         int argsc;
@@ -84,6 +101,8 @@ public class ExpArg {
         walletConfig = argn(true);
     }
 
+    /// @brief Verify that all required input is provided and options are valid
+    /// @return true on check OK
     boolean Ok() {
         return argNum == rawArgs.length
                && (walletConfig != null && walletConfig.length() > 0)

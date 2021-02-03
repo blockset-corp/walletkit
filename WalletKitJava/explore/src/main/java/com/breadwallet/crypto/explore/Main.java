@@ -4,24 +4,52 @@ import com.breadwallet.corecrypto.CryptoApiProvider;
 import com.breadwallet.crypto.CryptoApi;
 import com.breadwallet.crypto.utility.TestConfiguration;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import java.util.Set;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.SimpleFormatter;
 
-//import sun.rmi.runtime.Log;
-
+/// @brief Explore application main. Runs with number of instances,
+///        time to run and config file (see ExpArg)
 public class Main {
 
-    private final static Logger Log;
+    private final static Logger     Log;
+
     static {
         Log = Logger.getLogger(ExploreConstants.ExploreTag
                                + Main.class.getName());
 
+        // Create a unique system identifier for this system instance. Surely
+        // granularity of millisecond should be more than sufficient
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("HH_mm_ss_SSS");
+        LocalDateTime d = LocalDateTime.now();
+        String timestamp = f.format(d);
+
+        String logPattern = ExploreConstants.ExploreHome
+                            + ExploreConstants.ExploreLogFolder
+                            + ExploreConstants.ExploreTag
+                            + timestamp
+                            + "_Main_rot%u.log";
+        try {
+            // Simple formatter output format is most conveniently described
+            // in the explorelog.properties file.
+            FileHandler forFile = new FileHandler(logPattern);
+            forFile.setFormatter(new SimpleFormatter());
+            Log.addHandler(forFile);
+        } catch (IOException | SecurityException except) {
+            Log.log(Level.WARNING,
+                    "File permissions for "
+                    + logPattern
+                    + " not available");
+        }
+
+        // Initialize crypto
         try {
             CryptoApi.initialize(CryptoApiProvider.getInstance());
         } catch (IllegalStateException e) {
@@ -51,9 +79,12 @@ public class Main {
                 + ")");
 
         TestConfiguration configuration = TestConfiguration.loadFrom(prefs.walletConfig);
-        Log.log(Level.FINER, "Loaded test configuration");
+        Log.log(Level.INFO, "Loaded test configuration");
 
-        SystemInstance.execute(prefs.isMainNet, configuration, prefs.systemInstances);
+        SystemInstance.execute(prefs.isMainNet,
+                               configuration,
+                               prefs.systemInstances,
+                               Log);
         Log.log(Level.INFO, "Executing");
 
         // Delay
@@ -62,7 +93,7 @@ public class Main {
         // Cleanup
         Log.log(Level.INFO, "Finished, orderly shutdown...");
         SystemInstance.destroy();
-        SystemInstance.terminate();
+        SystemInstance.terminate(Log);
 
         Log.log(Level.INFO, "done");
 
@@ -70,7 +101,7 @@ public class Main {
         // and is holding the application from exiting...
         // Following prints are informational in case this
         // problem can be isolated
-        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        /*Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
         for (Thread th: threadSet) {
             if (!th.isDaemon()) {
                 System.out.println(th.getId() + " " + th.getName());
@@ -83,7 +114,7 @@ public class Main {
                                        + elem.getLineNumber());
                 }
             }
-        }
+        }*/
         System.exit(0);
     }
 }

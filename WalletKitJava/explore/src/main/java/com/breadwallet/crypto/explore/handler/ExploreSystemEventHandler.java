@@ -16,52 +16,52 @@ import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
 import com.breadwallet.crypto.events.system.SystemManagerAddedEvent;
 import com.breadwallet.crypto.events.system.SystemNetworkAddedEvent;
 import com.breadwallet.crypto.System;
-import com.breadwallet.crypto.explore.ExploreConstants;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
+
 public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<Void> {
 
-    private final static Logger     Log;
     private final System            cryptoSystem;
     private final boolean           isMainnet;
+    private final Logger            logger;
 
-    static {
-        Log = Logger.getLogger(ExploreConstants.ExploreTag
-                               + ExploreSystemEventHandler.class.getName());
-    }
 
-    public ExploreSystemEventHandler(System system, boolean isMainnet) {
+    public ExploreSystemEventHandler(
+            System      system,
+            boolean     isMainnet,
+            Logger      logger) {
+
         super();
         this.cryptoSystem = system;
         this.isMainnet = isMainnet;
+        this.logger = logger;
     }
 
     @Nullable
     @Override
     public Void visit(SystemCreatedEvent event)
     {
-        Log.log(Level.FINE, "[todo-ev] System created");
+        logger.log(Level.FINER, "[todo-ev] System created");
         return super.visit(event);
     }
 
     @Nullable
     @Override
     public Void visit(SystemDeletedEvent event) {
-        Log.log(Level.FINE, "[todo-ev] System deleted");
+        logger.log(Level.FINER, "[todo-ev] System deleted");
         return super.visit(event);
     }
 
     @Nullable
     @Override
     public Void visit(SystemChangedEvent event) {
-        Log.log(Level.FINE, "[todo-ev] System changed");
+        logger.log(Level.FINER, "[todo-ev] System changed");
         return super.visit(event);
     }
 
@@ -77,12 +77,12 @@ public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<V
     @Override
     public Void visit(SystemNetworkAddedEvent event) {
         // Here we create the wallet
-        Log.log(Level.INFO, String.format("Network added %s",
+        logger.log(Level.INFO, String.format("Network added %s",
                                            event.getNetwork().getName()));
         if (createWallet(event.getNetwork())) {
-            Log.log(Level.INFO, "--> Wallet created");
+            logger.log(Level.INFO, "--> Wallet created");
         } else {
-            Log.log(Level.WARNING, "Failed wallet creation");
+            logger.log(Level.WARNING, "Failed wallet creation");
         }
         return null;
     }
@@ -97,30 +97,30 @@ public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<V
     private boolean createWallet(Network net)
     {
         if (net.getCurrencies().size() == 0) {
-            Log.log(Level.INFO,"~No currencies");
+            logger.log(Level.INFO,"~No currencies");
             return false;
         }
         String whatNet = isMainnet ? "mainnet" : "testnet";
         if (net.isMainnet() ^ isMainnet) {
-            Log.log(Level.INFO, String.format("~Desired network type mismatched (on %s)",
-                                              whatNet));
+            logger.log(Level.INFO, String.format("~Desired network type mismatched (on %s)",
+                                                  whatNet));
             return false;
         }
 
         // Use network defaults for now...
         AddressScheme       addrScheme = net.getDefaultAddressScheme();
         WalletManagerMode   defMode = net.getDefaultWalletManagerMode();
-        Log.log(Level.INFO, String.format("Creating %s %s wallet (addrScheme:%s, mode:%s)",
-                                          whatNet,
-                                          net.getName(),
-                                          addrScheme,
-                                          defMode));
+        logger.log(Level.INFO, String.format("Creating %s %s wallet (addrScheme:%s, mode:%s)",
+                                             whatNet,
+                                             net.getName(),
+                                             addrScheme,
+                                             defMode));
         boolean created = cryptoSystem.createWalletManager(net,
                                                            defMode,
                                                            addrScheme,
                                                            Collections.emptySet());
         if (!created) {
-            Log.log(Level.WARNING, "~recover failed wallet creation");
+            logger.log(Level.WARNING, "~recover failed wallet creation");
 
             // Recover: wipe network initialize accounts if required
             // CoreSystemListener attempts recovery by wiping network
@@ -139,7 +139,7 @@ public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<V
                     wallet.getBalance().toStringAsUnit(wallet.getUnit()).or("None"),
                     wallet.getUnit().getSymbol()));
         }
-        Log.log(Level.INFO, desc.toString());
+        logger.log(Level.INFO, desc.toString());
 
         // Presumably the manager uses the network on which it had been created
         mgr.connect(null);
@@ -149,8 +149,8 @@ public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<V
 
         int     netNumber = 1;
 
-        Log.log(Level.INFO, String.format("%d Networks discovered",
-                                          nets.size()));
+        logger.log(Level.INFO, String.format("%d Networks discovered",
+                                             nets.size()));
         for (Network net: nets) {
 
             StringBuffer desc = new StringBuffer();
@@ -185,7 +185,7 @@ public class ExploreSystemEventHandler<Void> extends DefaultSystemEventVisitor<V
                                           fee.getConfirmationTimeInMilliseconds()));
             }
 
-            Log.log(Level.INFO, desc.toString());
+            logger.log(Level.INFO, desc.toString());
 
             netNumber++;
         }
