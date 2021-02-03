@@ -45,7 +45,11 @@
 #define _peer_log(...) __android_log_print(ANDROID_LOG_INFO, "bread", __VA_ARGS__)
 #else
 #include <stdio.h>
+#ifndef __NON_VERBOSE_PEERLOG__
 #define _peer_log(...) printf(__VA_ARGS__)
+#else
+#define _peer_log(...)
+#endif // __NON_VERBOSE_PEERLOG__
 #endif
 
 #ifdef __cplusplus

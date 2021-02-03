@@ -131,6 +131,7 @@ model {
                 binaries.all {
                     project(':corenative').cppCryptoMainIncDirs.forEach {
                         cCompiler.args "-I$it"
+                        cCompiler.args "-D__NON_VERBOSE_PEERLOG__"
                     }
 
                     lib library: 'sqlite3', linkage: 'static'
