@@ -847,8 +847,9 @@ cwmAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager cwm,
 
 extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
-                                  OwnershipKept const char *hash,
                                   OwnershipKept const char *uids,
+                                  OwnershipKept const char *hash,
+                                  OwnershipKept const char *identifier,
                                   OwnershipKept const char *from,
                                   OwnershipKept const char *to,
                                   OwnershipKept const char *amount,
@@ -870,9 +871,10 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
     // recover in some blockchain specific way - and hopefully can recognize the cause of the error
     // so as to avoid simply creating a transaction to cause it again.
 
-    bundle->status   = status;
-    bundle->hash     = strdup (hash);
-    bundle->uids     = strdup (uids);
+    bundle->status     = status;
+    bundle->uids       = strdup (uids);
+    bundle->hash       = strdup (hash);
+    bundle->identifier = strdup (identifier);
     bundle->from     = strdup (from);
     bundle->to       = strdup (to);
     bundle->amount   = strdup (amount);
@@ -904,8 +906,9 @@ cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
 extern void
 cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle) {
     //
-    free (bundle->hash);
     free (bundle->uids);
+    free (bundle->hash);
+    free (bundle->identifier);
     free (bundle->from);
     free (bundle->to);
     free (bundle->amount);
@@ -1009,10 +1012,11 @@ private_extern BRRlpItem
 cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
                                      BRRlpCoder coder) {
 
-    return rlpEncodeList (coder, 14,
+    return rlpEncodeList (coder, 15,
                           rlpEncodeUInt64 (coder, bundle->status, 0),
-                          rlpEncodeString (coder, bundle->hash),
                           rlpEncodeString (coder, bundle->uids),
+                          rlpEncodeString (coder, bundle->hash),
+                          rlpEncodeString (coder, bundle->identifier),
                           rlpEncodeString (coder, bundle->from),
                           rlpEncodeString (coder, bundle->to),
                           rlpEncodeString (coder, bundle->amount),
@@ -1034,33 +1038,35 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
                                      BRRlpCoder coder) {
     size_t itemsCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
-    assert (14 == itemsCount);
+    assert (15 == itemsCount);
 
-    char *hash     = rlpDecodeString (coder, items[ 1]);
-    char *uids     = rlpDecodeString (coder, items[ 2]);
-    char *from     = rlpDecodeString (coder, items[ 3]);
-    char *to       = rlpDecodeString (coder, items[ 4]);
-    char *amount   = rlpDecodeString (coder, items[ 5]);
-    char *currency = rlpDecodeString (coder, items[ 6]);
-    char *fee      = rlpDecodeString (coder, items[ 7]);
-    char *blkHash  = rlpDecodeString (coder, items[12]);
+    char *uids     = rlpDecodeString (coder, items[ 1]);
+    char *hash     = rlpDecodeString (coder, items[ 2]);
+    char *ident    = rlpDecodeString (coder, items[ 3]);
+    char *from     = rlpDecodeString (coder, items[ 4]);
+    char *to       = rlpDecodeString (coder, items[ 5]);
+    char *amount   = rlpDecodeString (coder, items[ 6]);
+    char *currency = rlpDecodeString (coder, items[ 7]);
+    char *fee      = rlpDecodeString (coder, items[ 8]);
+    char *blkHash  = rlpDecodeString (coder, items[13]);
 
     BRCryptoTransferBundleRlpDecodeAttributesResult attributesResult =
-    cryptoClientTransferBundleRlpDecodeAttributes (items[13], coder);
+    cryptoClientTransferBundleRlpDecodeAttributes (items[14], coder);
 
     BRCryptoClientTransferBundle bundle =
     cryptoClientTransferBundleCreate ((BRCryptoTransferStateType) rlpDecodeUInt64 (coder, items[ 0], 0),
-                                      hash,
                                       uids,
+                                      hash,
+                                      ident,
                                       from,
                                       to,
                                       amount,
                                       currency,
                                       (0 == strcmp(fee,"") ? NULL : fee),
-                                      rlpDecodeUInt64 (coder, items[ 8], 0),
                                       rlpDecodeUInt64 (coder, items[ 9], 0),
                                       rlpDecodeUInt64 (coder, items[10], 0),
                                       rlpDecodeUInt64 (coder, items[11], 0),
+                                      rlpDecodeUInt64 (coder, items[12], 0),
                                       blkHash,
                                       array_count(attributesResult.keys),
                                       (const char **) attributesResult.keys,

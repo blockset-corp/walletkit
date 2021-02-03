@@ -1470,8 +1470,9 @@ extension System {
                 defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
                 return cryptoClientTransferBundleCreate (status,
-                                                         transaction.hash,
                                                          transfer.id,
+                                                         transaction.hash,
+                                                         transaction.identifier,
                                                          transfer.source,
                                                          transfer.target,
                                                          transfer.amount.value,

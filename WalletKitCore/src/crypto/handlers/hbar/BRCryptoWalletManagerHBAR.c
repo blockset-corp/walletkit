@@ -206,7 +206,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
         assert(96 == strlen(bundle->hash));
         hexDecode(txHash.bytes, sizeof(txHash.bytes), bundle->hash, strlen(bundle->hash));
     }
-    
+
     int error = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status);
 
     bool hbarTransactionNeedFree = true;
@@ -214,7 +214,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
                                                                   toAddress,
                                                                   amountHbar,
                                                                   feeHbar,
-                                                                  NULL,
+                                                                  bundle->identifier,
                                                                   txHash,
                                                                   bundle->blockTimestamp,
                                                                   bundle->blockNumber,
