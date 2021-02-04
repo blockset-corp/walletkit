@@ -592,11 +592,27 @@ static void transaction_tests() {
     //create_real_transactions();
 }
 
+// From BRHederaTransaction
+/*test */ extern  int hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds);
+
 static void txIDTests() {
-    const char * txID1 = "hedera-mainnet:0.0.14222-1569828647-256912000-0";
-    BRHederaTimeStamp ts1 = hederaParseTimeStamp(txID1);
-    assert(ts1.seconds == 1569828647);
-    assert(ts1.nano == 256912000);
+    char *address;
+    BRHederaTimeStamp timestamp = (BRHederaTimeStamp) { 0, 0 };
+
+    bool success = hederaParseTransactionId("0.0.14222-1569828647-256912000",
+                                            &address,
+                                            &timestamp.seconds,
+                                            &timestamp.nano);
+    assert(success);
+    assert(0 == strcmp (address, "0.0.14222"));
+    assert(timestamp.seconds == 1569828647);
+    assert(timestamp.nano    == 256912000);
+
+    success = hederaParseTransactionId("0.0.14222@1569828647.256912000",
+                                       &address,
+                                       &timestamp.seconds,
+                                       &timestamp.nano);
+    assert(!success);
 }
 
 extern void

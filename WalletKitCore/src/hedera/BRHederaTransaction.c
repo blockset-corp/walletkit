@@ -23,7 +23,7 @@
 // Forward Declarations
 
 static char * hederaCreateTransactionId(BRHederaAddress address, BRHederaTimeStamp timeStamp);
-static int hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds);
+/*test */ extern  int hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds);
 
 // Here is the list of Hedera nodes used in production
 static uint16_t nodes[10] = {
@@ -592,7 +592,7 @@ hederaCreateTransactionId(BRHederaAddress address, BRHederaTimeStamp timeStamp)
 }
 
 
-static int
+/*test */ extern int
 hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds)
 {
     assert (strlen (transactionId) <= 128);
