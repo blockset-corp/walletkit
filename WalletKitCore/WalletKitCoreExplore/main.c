@@ -28,6 +28,7 @@
 #include "ethereum/blockchain/BREthereumAccount.h"
 //#include "ethereum/ewm/BREthereumTransfer.h"
 //#include "ethereum/BREthereum.h"
+#include "ripple/BRRipple.h"
 
 #define TEST_TRANS_ETH      "0xf86a75843b9aca00825208943d7eefb552b7d633e7f9eb48cd82cd098ecd5b4687038d7ea4c68000802aa045827725970e3c9729c9450b3ff04f98f10e231ebdeec5d522585a9a57bab1b4a025547970f9bedbef17d4aadd38f4263955633507689a9d7598c9e9bc38438d03"
 #define TEST_TRANS_BRD      "0xf8a976841dcd65008301676094722dd3f80bac40c951b51bdd28dd19d43576218080b844a9059cbb0000000000000000000000003d7eefb552b7d633e7f9eb48cd82cd098ecd5b46000000000000000000000000000000000000000000000000000000e8d4a5100029a02604f887d60d438d29c73b69ade7208ced970d5c74b1bf5b2f156e56c785f15da03b56daa107f678fee099347af966093081e3ef87dc6040a1ce0113452e37f664"
@@ -435,6 +436,9 @@ void handleHasherTestGen () {
     handleHasherShowData (digest, 20);
 }
 
+// Forward declarations
+void createRippleTx();
+
 int main(int argc, const char * argv[]) {
     BRRlpCoder coder = rlpCoderCreate();
 
@@ -511,5 +515,60 @@ int main(int argc, const char * argv[]) {
     handleHasherTestGen();
 #endif
     rlpCoderRelease(coder);
+
+    createRippleTx();
     return 0;
+}
+
+void createRippleTx() {
+    // Create a signed submittable Ripple TX
+    const char * source_paper_key = "";
+    const char * target_address = "";
+    BRRippleUnitDrops amount = 5000L;
+    BRRippleSequence sequence = 60110799;
+
+    if (strlen(source_paper_key) == 0) return;
+
+    BRRippleTransaction transaction;
+    BRRippleAccount sourceAccount = rippleAccountCreate(source_paper_key);
+    BRRippleAddress sourceAddress = rippleAccountGetAddress(sourceAccount);
+    char * sourceAddressString = rippleAddressAsString(sourceAddress);
+    BRRippleAddress targetAddress = rippleAddressCreateFromString(target_address, true);
+    BRRippleFeeBasis feeBasis;
+    feeBasis.pricePerCostFactor = 10;
+    feeBasis.costFactor = 1;
+    printf("%s is sending %llu to %s\n", sourceAddressString, amount, target_address);
+    free(sourceAddressString);
+    transaction = rippleTransactionCreate(sourceAddress, targetAddress, amount, feeBasis);
+    rippleAddressFree(sourceAddress);
+    rippleAddressFree(targetAddress);
+
+    // Sign
+    rippleAccountSetSequence(sourceAccount, sequence);
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, source_paper_key, NULL);
+    rippleAccountSignTransaction(sourceAccount, transaction, seed);
+    // Cleanup
+    rippleAccountFree(sourceAccount);
+
+    // Print out the Ripple identifier (hash in this case)
+    BRRippleTransactionHash hash = rippleTransactionGetHash(transaction);
+    for (int i = 0; i < 32; i++) {
+        if (i == 0) printf("HASH: \n");
+        printf("%02X", hash.bytes[i]);
+    }
+    printf("\n");
+
+    // Get the bytes and print to the console
+    size_t signedBytesSize = 0;
+    uint8_t * signedBytes = rippleTransactionSerialize(transaction, &signedBytesSize);
+    for (int i = 0; i < signedBytesSize; i++) {
+        if (i == 0) printf("Signed bytes: \n");
+        printf("%02X", signedBytes[i]);
+    }
+    printf("\n");
+
+    // Cleanup
+    rippleTransactionFree(transaction);
+    free(signedBytes);
 }
