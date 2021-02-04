@@ -1540,6 +1540,13 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
             genTransferSetHash  (transferGenericOrig, hash);
             free (hash);
         }
+
+        // Update the fee
+        BRGenericFeeBasis transferGenericFeeBasis = genTransferGetFeeBasis(transferGeneric);
+        genTransferSetFeeBasis (transferGenericOrig, transferGenericFeeBasis);
+
+        // We don't need to save the transferGenericOrig transfer; instead, below, we'll save
+        // transferGeneric which will overwrite 'orig'.
     }
 
     // Fill in any attributes
@@ -1602,12 +1609,12 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
         if (CRYPTO_TRUE == needBalanceEvent && CRYPTO_COMPARE_EQ != cryptoAmountCompare(oldBalance, newBalance))
             cwm->listener.walletEventCallback (cwm->listener.context,
                                                cryptoWalletManagerTake (cwm),
-                                               cryptoWalletTake (cwm->wallet),
+                                               cryptoWalletTake (wallet),
                                                (BRCryptoWalletEvent) {
                                                 CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
-                                                { .balanceUpdated = { newBalance }}
+                                                { .balanceUpdated = { cryptoAmountTake(newBalance) }}
                                             });
-        else cryptoAmountGive(newBalance);
+        cryptoAmountGive(newBalance);
         cryptoAmountGive(oldBalance);
 
         // Tell the manager that that wallet changed (added transfer, perhaps balance changed)
@@ -1617,6 +1624,28 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
             CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
             { .wallet = cryptoWalletTake (cwm->wallet) }
         });
+    }
+    else {
+        BRCryptoAmount oldBalance = NULL, newBalance = NULL;
+
+        if (CRYPTO_TRUE == needBalanceEvent) oldBalance = cryptoWalletGetBalance(wallet);
+
+        // Update 'generic wallet' for the updated 'transfer'.  Specifically, fee changes.
+        genWalletUpdTransfer (cryptoWalletAsGEN(wallet), cryptoTransferAsGEN(transfer));
+
+        if (CRYPTO_TRUE == needBalanceEvent) {
+            newBalance = cryptoWalletGetBalance(wallet);
+            if (CRYPTO_COMPARE_EQ != cryptoAmountCompare(oldBalance, newBalance))
+                cwm->listener.walletEventCallback (cwm->listener.context,
+                                                   cryptoWalletManagerTake (cwm),
+                                                   cryptoWalletTake (wallet),
+                                                   (BRCryptoWalletEvent) {
+                    CRYPTO_WALLET_EVENT_BALANCE_UPDATED,
+                    { .balanceUpdated = { cryptoAmountTake (newBalance) }}
+                });
+            cryptoAmountGive(newBalance);
+            cryptoAmountGive(oldBalance);
+        }
     }
 
     // If the state is not created and changed, announce a transfer state change.

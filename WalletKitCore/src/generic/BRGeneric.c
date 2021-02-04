@@ -285,6 +285,13 @@ genTransferGetFeeBasis (BRGenericTransfer transfer) {
     return transfer->handlers.feeBasis (transfer->ref);
 }
 
+extern int
+genTransferSetFeeBasis (BRGenericTransfer transfer,
+                        BRGenericFeeBasis feeBasis) {
+    return (NULL != transfer->handlers.setFeeBasis &&
+            transfer->handlers.setFeeBasis (transfer->ref, feeBasis));
+}
+
 extern BRGenericTransferDirection
 genTransferGetDirection (BRGenericTransfer transfer) {
     return transfer->direction;

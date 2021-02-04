@@ -172,6 +172,13 @@ extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer) {
     : tezosTransactionGetFeeBasis (transfer->transaction);
 }
 
+extern void tezosTransferSetFeeBasis (BRTezosTransfer transfer,
+                                      BRTezosFeeBasis feeBasis) {
+    assert(transfer);
+    if (NULL == transfer->transaction) transfer->fee = tezosFeeBasisGetFee (&feeBasis);
+    else tezosTransactionSetFeeBasis (transfer->transaction, feeBasis);
+}
+
 extern BRTezosTransaction tezosTransferGetTransaction(BRTezosTransfer transfer)
 {
     assert(transfer);

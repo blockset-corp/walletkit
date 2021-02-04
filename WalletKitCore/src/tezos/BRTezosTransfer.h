@@ -48,6 +48,8 @@ extern BRTezosUnitMutez tezosTransferGetAmountDirected (BRTezosTransfer transfer
                                                         int *negative);
 extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer);
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer);
+extern void tezosTransferSetFeeBasis (BRTezosTransfer transfer,
+                                      BRTezosFeeBasis feeBasis);
 
 extern BRTezosAddress // caller owns object, must free with tezosAddressFree
 tezosTransferGetSource(BRTezosTransfer transfer);
