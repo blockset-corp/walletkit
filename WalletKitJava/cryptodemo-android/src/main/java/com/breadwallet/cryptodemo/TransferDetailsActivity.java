@@ -258,7 +258,7 @@ public class TransferDetailsActivity extends AppCompatActivity implements Defaul
             this.feeText = transfer.getFee().toString();
             this.senderText = transfer.getSource().transform(Address::toString).or("<unknown>");
             this.receiverText = transfer.getTarget().transform(Address::toString).or("<unknown>");
-            this.identifierText = transfer.getHash().transform(TransferHash::toString).or("<pending>");
+            this.identifierText = transfer.getIdentifier().or("<pending>");
             this.confirmationText = conf.transform((c) -> "Yes @ " + c.getBlockNumber()).or("No");
             this.confirmationCountText = transfer.getConfirmations().transform(String::valueOf).or("");
             this.dateText = conf.transform((c) -> DATE_FORMAT.get().format(c.getConfirmationTime())).or("<pending>");

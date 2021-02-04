@@ -36,6 +36,8 @@ public interface Transfer {
 
     TransferDirection getDirection();
 
+    Optional<String> getIdentifier();
+
     Optional<? extends TransferHash> getHash();
 
     Unit getUnit();
