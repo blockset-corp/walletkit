@@ -93,6 +93,10 @@ public final class Transfer: Equatable {
         else { return nil }
     }
 
+    public var identifier: String? {
+        return cryptoTransferGetIdentifier(core)
+            .map { asUTF8String($0) }
+    }
     /// An optional hash.  This only exists if the TransferState is .included or .submitted
     public var hash: TransferHash? {
         return cryptoTransferGetHash (core)

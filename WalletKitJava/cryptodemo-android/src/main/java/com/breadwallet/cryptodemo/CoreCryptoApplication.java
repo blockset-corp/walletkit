@@ -151,7 +151,8 @@ public class CoreCryptoApplication extends Application {
                     "eth",
                     "xrp",
                     "hbar",
-                    "xtz"
+                    "xtz",
+                    "ignore - end-of-array, w/o comma"
             );
             systemListener = new DispatchingSystemListener();
             systemListener.addSystemListener(new CoreSystemListener(mode, isMainnet, currencyCodesNeeded));

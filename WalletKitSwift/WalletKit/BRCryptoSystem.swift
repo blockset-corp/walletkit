@@ -1470,8 +1470,9 @@ extension System {
                 defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
                 return cryptoClientTransferBundleCreate (status,
-                                                         transaction.hash,
                                                          transfer.id,
+                                                         transaction.hash,
+                                                         transaction.identifier,
                                                          transfer.source,
                                                          transfer.target,
                                                          transfer.amount.value,
@@ -1575,10 +1576,10 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (ti) in
-                            cwmAnnounceSubmitTransfer (cwm, sid, ti.hash, CRYPTO_TRUE) },
+                            cwmAnnounceSubmitTransfer (cwm, sid, ti.identifier, ti.hash, CRYPTO_TRUE) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransfer (cwm, sid, nil, CRYPTO_FALSE) })
+                            cwmAnnounceSubmitTransfer (cwm, sid, nil, nil, CRYPTO_FALSE) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in

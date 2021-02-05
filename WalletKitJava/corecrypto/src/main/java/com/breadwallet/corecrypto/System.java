@@ -1932,8 +1932,9 @@ final class System implements com.breadwallet.crypto.System {
 
             result.add (BRCryptoClientTransferBundle.create(
                     status,
-                    transaction.getHash(),
                     o.o1.getId(),
+                    transaction.getHash(),
+                    transaction.getIdentifier(),
                     o.o1.getFromAddress().orNull(),
                     o.o1.getToAddress().orNull(),
                     o.o1.getAmount().getAmount(),

@@ -11,8 +11,9 @@ import java.util.Map;
 public class BRCryptoClientTransferBundle extends PointerType {
     public static BRCryptoClientTransferBundle create(
             BRCryptoTransferStateType status,
-            String hash,
             String uids,
+            String hash,
+            String identifier,
             String from,
             String to,
             String amount,
@@ -32,8 +33,9 @@ public class BRCryptoClientTransferBundle extends PointerType {
 
         Pointer pointer = CryptoLibraryIndirect.cryptoClientTransferBundleCreate(
                 status.toCore(),
-                hash,
                 uids,
+                hash,
+                identifier,
                 from,
                 to,
                 amount,

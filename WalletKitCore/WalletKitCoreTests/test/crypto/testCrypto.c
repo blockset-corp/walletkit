@@ -400,8 +400,7 @@ _CWMNopSubmitTransactionCallback (BRCryptoClientContext context,
                                   OwnershipGiven BRCryptoWalletManager manager,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
                                   OwnershipKept const uint8_t *transaction,
-                                  size_t transactionLength,
-                                  OwnershipKept const char *hashAsHex) {
+                                  size_t transactionLength) {
     cryptoWalletManagerGive (manager);
 }
 

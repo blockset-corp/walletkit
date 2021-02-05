@@ -154,6 +154,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersXRP = {
     cryptoTransferReleaseXRP,
     cryptoTransferGetHashXRP,
     NULL, // setHash
+    NULL,
     cryptoTransferSerializeXRP,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualXRP

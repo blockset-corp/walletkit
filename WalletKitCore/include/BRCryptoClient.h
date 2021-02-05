@@ -86,8 +86,9 @@ typedef struct BRCryptoClientTransferBundleRecord *BRCryptoClientTransferBundle;
 
 extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
-                                  OwnershipKept const char *hash,
                                   OwnershipKept const char *uids,
+                                  OwnershipKept const char *hash,
+                                  OwnershipKept const char *identifier,
                                   OwnershipKept const char *from,
                                   OwnershipKept const char *to,
                                   OwnershipKept const char *amount,
@@ -132,6 +133,7 @@ typedef void
 extern void
 cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                           OwnershipKept const char *identifier,
                            OwnershipKept const char *hash,
                            BRCryptoBoolean success);
 

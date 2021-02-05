@@ -147,6 +147,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersXTZ = {
     cryptoTransferReleaseXTZ,
     cryptoTransferGetHashXTZ,
     NULL, // setHash
+    NULL, // updateIdentifier
     cryptoTransferSerializeXTZ,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualXTZ

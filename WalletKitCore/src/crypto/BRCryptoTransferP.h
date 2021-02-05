@@ -43,6 +43,9 @@ typedef struct {
 typedef void
 (*BRCryptoTransferReleaseHandler) (BRCryptoTransfer transfer);
 
+typedef void
+(*BRCryptoTransferUpdateIdentifierHandler) (BRCryptoTransfer transfer);
+
 typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
@@ -69,6 +72,7 @@ typedef struct {
     BRCryptoTransferReleaseHandler release;
     BRCryptoTransferGetHashHandler getHash;
     BRCryptoTransferSetHashHandler setHash;
+    BRCryptoTransferUpdateIdentifierHandler updateIdentifier;
     BRCryptoTransferSerializeHandler serialize;
     BRCryptoTransferGetBytesForFeeEstimateHandler getBytesForFeeEstimate;
     BRCryptoTransferIsEqualHandler isEqual;
@@ -85,6 +89,7 @@ struct BRCryptoTransferRecord {
     pthread_mutex_t lock;
     BRCryptoTransferListener listener;
 
+    char *identifier;
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
     BRCryptoTransferState state;

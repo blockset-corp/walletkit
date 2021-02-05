@@ -300,6 +300,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     NULL, // setHash
+    NULL, // updateIdentifier
     cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
@@ -309,6 +310,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBCH = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     NULL, // setHash
+    NULL, // updateIdentifier
     cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC
@@ -318,6 +320,7 @@ BRCryptoTransferHandlers cryptoTransferHandlersBSV = {
     cryptoTransferReleaseBTC,
     cryptoTransferGetHashBTC,
     NULL, // setHash
+    NULL, // updateIdentifier
    cryptoTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     cryptoTransferIsEqualBTC

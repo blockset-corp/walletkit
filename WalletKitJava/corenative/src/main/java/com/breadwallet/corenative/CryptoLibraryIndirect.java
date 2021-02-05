@@ -67,8 +67,9 @@ public final class CryptoLibraryIndirect {
     }
 
     public static Pointer cryptoClientTransferBundleCreate(int status,
-                                                           String hash,
                                                            String uids,
+                                                           String hash,
+                                                           String identifier,
                                                            String sourceAddr,
                                                            String targetAddr,
                                                            String amount,
@@ -85,7 +86,7 @@ public final class CryptoLibraryIndirect {
         attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
         attributeVals = attributeVals.length == 0 ? null : attributeVals;
         return INSTANCE.cryptoClientTransferBundleCreate(status,
-                hash, uids, sourceAddr, targetAddr,
+                uids, hash, identifier, sourceAddr, targetAddr,
                 amount, currency, fee,
                 blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
@@ -156,8 +157,9 @@ public final class CryptoLibraryIndirect {
         int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates);
 
         Pointer cryptoClientTransferBundleCreate(int status,
-                                                 String hash,
                                                  String uids,
+                                                 String hash,
+                                                 String identifier,
                                                  String sourceAddr,
                                                  String targetAddr,
                                                  String amount,

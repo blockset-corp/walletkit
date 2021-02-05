@@ -242,6 +242,7 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoTransferGetAmountDirected(Pointer transfer);
     public static native int cryptoTransferGetDirection(Pointer transfer);
     public static native BRCryptoTransferState.ByValue cryptoTransferGetState(Pointer transfer);
+    public static native Pointer cryptoTransferGetIdentifier(Pointer transfer);
     public static native Pointer cryptoTransferGetHash(Pointer transfer);
     public static native Pointer cryptoTransferGetUnitForAmount (Pointer transfer);
     public static native Pointer cryptoTransferGetUnitForFee (Pointer transfer);

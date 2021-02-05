@@ -20,6 +20,11 @@
 #include <string.h>
 #include "support/BRInt.h"
 
+// Forward Declarations
+
+static char * hederaCreateTransactionId(BRHederaAddress address, BRHederaTimeStamp timeStamp);
+/*test */ extern  int hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds);
+
 // Here is the list of Hedera nodes used in production
 static uint16_t nodes[10] = {
     3, 4, 5, 6, 7, 8, 9, 10, 11, 12
@@ -48,16 +53,6 @@ struct BRHederaTransactionRecord {
     BRArrayOf(BRHederaTransactionHash) hashes;
 };
 
-char * createTransactionID(BRHederaAddress address, BRHederaTimeStamp timeStamp)
-{
-    char buffer[128] = {0};
-    const char * hederaAddress = hederaAddressAsString(address);
-    sprintf(buffer, "%s-%" PRIi64 "-%" PRIi32, hederaAddress, timeStamp.seconds, timeStamp.nano);
-    char * result = calloc(1, strlen(buffer) + 1);
-    strncpy(result, buffer, strlen(buffer));
-    return result;
-}
-
 extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
                                                        BRHederaAddress target,
                                                        BRHederaUnitTinyBar amount,
@@ -77,7 +72,7 @@ extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
         // and includes seconds and nano-seconds
         transaction->timeStamp = hederaGenerateTimeStamp();
     }
-    transaction->transactionId = createTransactionID(source, transaction->timeStamp);
+    transaction->transactionId = hederaCreateTransactionId(source, transaction->timeStamp);
     transaction->blockHeight = 0;
     transaction->error = 0;
     return transaction;
@@ -87,7 +82,7 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
                                                     BRHederaAddress target,
                                                     BRHederaUnitTinyBar amount,
                                                     BRHederaUnitTinyBar fee,
-                                                    const char * txID,
+                                                    const char * transactionId,
                                                     BRHederaTransactionHash hash,
                                                     uint64_t timestamp, uint64_t blockHeight,
                                                     int error)
@@ -103,11 +98,16 @@ extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
     transaction->fee = hederaFeeBasisGetFee(&transaction->feeBasis);
 
     // Parse the transactionID
-    if (txID && strlen(txID) > 1) {
-        transaction->transactionId = (char*) calloc(1, strlen(txID) + 1);
-        strcpy(transaction->transactionId, txID);
+    if (transactionId && strlen(transactionId) > 1) {
+        transaction->transactionId = NULL;
+        transaction->timeStamp     = (BRHederaTimeStamp) { 0, 0 };
+
         // Get the timestamp from the transaction id
-        transaction->timeStamp = hederaParseTimeStamp(txID);
+        int success = hederaParseTransactionId (transactionId, NULL,
+                                                &transaction->timeStamp.seconds,
+                                                &transaction->timeStamp.nano);
+
+        if (success) transaction->transactionId = strdup (transactionId);
     } else {
         // It would great to be able to get the timestamp from the txID - but I guess
         // we just have to use whatever came from blockset
@@ -134,8 +134,7 @@ hederaTransactionClone (BRHederaTransaction transaction)
     newTransaction->feeBasis = transaction->feeBasis;
 
     if (transaction->transactionId && strlen(transaction->transactionId) > 1) {
-        newTransaction->transactionId = (char*) calloc(1, strlen(transaction->transactionId) + 1);
-        strcpy(newTransaction->transactionId, transaction->transactionId);
+        newTransaction->transactionId = strdup (transaction->transactionId);
     }
 
     newTransaction->hash = transaction->hash;
@@ -334,7 +333,7 @@ hederaTransactionSignTransactionV0 (BRHederaTransaction transaction,
     free (serializedBytes);
 
     // Create the transaction id
-    transaction->transactionId = createTransactionID(transaction->source, transaction->timeStamp);
+    transaction->transactionId = hederaCreateTransactionId(transaction->source, transaction->timeStamp);
 
     transaction->serializedSize += HEDERA_ADDRESS_SERIALIZED_SIZE; // This will be our new size of serialized bytes
     return transaction->serializedSize;
@@ -383,6 +382,11 @@ extern uint8_t * hederaTransactionSerialize (BRHederaTransaction transaction, si
         *size = 0;
         return NULL;
     }
+}
+
+extern int hederaTransactionHashExists (BRHederaTransaction transaction) {
+    BRHederaTransactionHash empty = { 0 };
+    return 0 != memcmp (transaction->hash.bytes, empty.bytes, sizeof (empty.bytes));
 }
 
 extern BRHederaTransactionHash hederaTransactionGetHash(BRHederaTransaction transaction)
@@ -576,33 +580,38 @@ extern BRHederaTimeStamp hederaGenerateTimeStamp(void)
     return ts;
 }
 
-BRHederaTimeStamp hederaParseTimeStamp(const char* transactionID)
+static char *
+hederaCreateTransactionId(BRHederaAddress address, BRHederaTimeStamp timeStamp)
 {
-    BRHederaTimeStamp ts;
+    char buffer[128] = {0};
+    const char * hederaAddress = hederaAddressAsString(address);
+    sprintf(buffer, "%s-%10" PRIi64 "-%09" PRIi32, hederaAddress, timeStamp.seconds, timeStamp.nano);
+    char * result = calloc(1, strlen(buffer) + 1);
+    strncpy(result, buffer, strlen(buffer));
+    return result;
+}
 
-    // The transaction ID looks like this:
-    // block-chain:shard.realm.account-seconds-nanos-index
 
-    // Copy the transactionID and then use strtok to parse
-    char * txID = strdup(transactionID);
-    const char * searchTokens = ":.";
-    strtok(txID, searchTokens); // blockchain-id
-    strtok(NULL, searchTokens); // shard
-    strtok(NULL, searchTokens); // realm
-    char * accountAndTS = strtok(NULL, searchTokens); // account plus rest of the string
+/*test */ extern int
+hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds)
+{
+    assert (strlen (transactionId) <= 128);
+    char tid[129];
+    strcpy (tid, transactionId);
 
-    // Now start over and search for the "-" the string now looks like this:
-    // account-seconds-nanos-index-whatever
-    strtok(accountAndTS, "-"); // Account number
-    char * secondsStr = strtok(NULL, "-"); // Seconds
-    char * nanosStr = strtok(NULL, "-"); // Nanos
+    char *addressParse     = strtok (tid,  "-");
+    char *secondsParse     = strtok (NULL, "-");
+    char *nanosecondsParse = strtok (NULL, "-");
 
-    //sscanf(transactionID, "%s:%lld.%lld.%lld-%lld-%d-", blockchain, &shard, &realm, &account, &seconds, &nanos);
-    sscanf(secondsStr, "%" PRIi64, &ts.seconds);
-    sscanf(nanosStr, "%" PRIi32, &ts.nano);
+    bool success = (NULL != addressParse && NULL != secondsParse && NULL != nanosecondsParse);
 
-    free (txID);
-    return ts;
+    if (success) {
+        if (NULL != address)     *address     = strdup (addressParse);
+        if (NULL != seconds)     *seconds     = (int64_t) strtoll (secondsParse,     NULL, 10);
+        if (NULL != nanoseconds) *nanoseconds = (int32_t) strtoll (nanosecondsParse, NULL, 10);
+    }
+
+    return success;
 }
 
 int hederaTransactionGetHashCount (BRHederaTransaction transaction) {
