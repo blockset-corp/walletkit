@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Comparator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -223,4 +224,20 @@ public class Transaction {
         @JsonProperty
         public List<Transfer> transfers;
     }
+
+    // Comparators
+
+    public static final Comparator<Transaction> blockHeightAndIndexComparator =
+            (Transaction t1, Transaction t2) -> {
+            UnsignedLong th1 = t1.getBlockHeight().or(UnsignedLong.MAX_VALUE);
+            UnsignedLong th2 = t2.getBlockHeight().or(UnsignedLong.MAX_VALUE);
+
+            UnsignedLong ti1 = t1.getIndex().or(UnsignedLong.MAX_VALUE);
+            UnsignedLong ti2 = t2.getIndex().or(UnsignedLong.MAX_VALUE);
+
+            int heightCompare = th1.compareTo(th2);
+            int indexCompare  = ti1.compareTo(ti2);
+
+            return heightCompare != 0 ? heightCompare : indexCompare;
+        };
 }
