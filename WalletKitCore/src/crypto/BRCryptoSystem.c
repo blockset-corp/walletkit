@@ -216,6 +216,49 @@ static size_t systemFileServiceSpecificationsCount = (sizeof (systemFileServiceS
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoSystem, cryptoSystem)
 
+// BG: 02/06/2021 Experimental attempt to introduce a signal
+// handler within the c native lib to see where any potential
+// SIGSEGV arises from. Limited success... First make sure
+// LD_PRELOAD specifies libjsig.so is specified so that JVM
+// chains signal handlers.
+// backtrace() may be useful in other bits of code for debugging
+// crashes but is not useful in the signal handler due to limitations
+// vis-a-vis memory allocation.Was not able to get past backtrace()
+// Also there should be a guard to ensure the signal handler is
+// never inserted more than once for all systems created.
+#ifdef __EXP_SIGNALS__
+#include <signal.h>
+#include <unistd.h>
+#include <execinfo.h>
+
+static _Atomic(unsigned int) g_sighandlerInstalled;
+void crypto_sig_handler(int signum) {
+	void* symbols[100];
+	size_t size = 0;
+	
+	if (signum == SIGSEGV) {
+		printf("Issuing backtrace\n");
+		
+		size = backtrace(symbols, 100);
+		printf("EXP_SIGNAL: %s %d Received SIGSEGV (%d) in native code (%lu symbols)\n", 
+		       __FILE__, __LINE__, signum, size);
+		
+		// Following code never reached... Not in any safe/useful
+		// in signal handler due to the need to allocate memory
+		//char** btSymbols = backtrace_symbols(symbols, size);
+		//for (int i=0;i < size; i++) {
+		//	printf("%i) %s\n", btSymbols[i]);
+		//}
+		
+		// Alternate methodology for obtaining bt information
+		//backtrace_symbols_fd(symbols, size, STDOUT_FILENO);
+		
+		// Force an exit here to read the signal backtrace (never reached)
+		exit(-1);
+	} 
+}
+#endif // __EXP_SIGNALS__
+
 extern BRCryptoSystem
 cryptoSystemCreate (BRCryptoClient client,
                     BRCryptoListener listener,
@@ -293,6 +336,20 @@ cryptoSystemCreate (BRCryptoClient client,
     cryptoAllSystemsAdd (system);
 #endif
 
+#ifdef __EXP_SIGNALS__
+    printf("Do install signal handler\n");
+    unsigned int sigHndlerInstall = atomic_load(&g_sighandlerInstalled); 
+	if (sigHndlerInstall == 0)
+	{
+		if (signal(SIGSEGV, crypto_sig_handler) == SIG_ERR) {
+			printf("Err: Failed to install signal handler\n");
+	
+		} else {
+			printf("-->Sigsegv handler is installed\n");
+			atomic_fetch_add (&g_sighandlerInstalled, 1);
+		}
+	}
+#endif // __EXP_SIGNALS__
     return system;
 }
 

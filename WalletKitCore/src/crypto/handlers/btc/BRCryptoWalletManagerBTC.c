@@ -439,20 +439,26 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
     BRWallet      *wid    = cryptoWalletAsBTC(wallet);
 
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
+#ifndef __NON_VERBOSE_PEERLOG__
     printf ("BTC: TxAdded  : %zu (Unresolved Count)\n", array_count (walletBTC->tidsUnresolved));
-
+#endif
+	
     // Save `tid` to the fileService.
     fileServiceSave (manager->base.fileService, fileServiceTypeTransactionsBTC, tid);
 
     // If `tid` is not resolved in `wid`, then add it as unresolved to `wid` and skip out.
     if (!BRWalletTransactionIsResolved (wid, tid)) {
+#ifndef __NON_VERBOSE_PEERLOG__
         printf ("BTC: TxAdded  : %s (Not Resolved)\n", u256hex(UInt256Reverse(tid->txHash)));
+#endif
         cryptoWalletAddUnresolvedAsBTC (wallet, tid);
         pthread_mutex_unlock (&manager->base.lock);
         return;
     }
 
+#ifndef __NON_VERBOSE_PEERLOG__
     printf ("BTC: TxAdded  : %s\n", u256hex(UInt256Reverse(tid->txHash)));
+#endif
 
     bool wasDeleted = false;
     bool wasCreated = false;
@@ -515,7 +521,9 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tid) {
 
     for (size_t index = 0; index < resolvedTransactionsCount; index++) {
         BRTransaction *tid = resolvedTransactions[index];
+#ifndef __NON_VERBOSE_PEERLOG__
         printf ("BTC: TxAdded  : %s (Resolved)\n", u256hex(UInt256Reverse(tid->txHash)));
+#endif
         cryptoWalletManagerBTCTxAdded   (info, tid);
         cryptoWalletManagerBTCTxUpdated (info,
                                          &tid->txHash, 1,
@@ -551,7 +559,9 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
         else {
             assert (BRTransactionIsSigned (transfer->tid));
 
+#ifndef __NON_VERBOSE_PEERLOG__
             printf ("BTC: TxUpdated: %s\n",u256hex(UInt256Reverse(transfer->tid->txHash)));
+#endif
 
             if (!transfer->isDeleted) {
                 transfer->tid->blockHeight = blockHeight;

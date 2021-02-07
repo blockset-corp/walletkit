@@ -78,6 +78,23 @@ model {
                     // TODO(fix): Do we want to use this approach (config.h)?
                     cCompiler.define "_HAVE_SQLITE_CONFIG_H"
                     cCompiler.args "-fPIC"
+                    cCompiler.args "-g"
+                    cCompiler.args "-O0"
+
+                    // Experimental, useful for working with 3rd party libs that done come
+                    // with debug info. Turns of some optimizations
+                    // https://clang.llvm.org/docs/CommandGuide/clang.html
+                    cCompiler.args "-fstandalone-debug"
+
+                    // Experimental, mentioned by backtrace() as a necessary requirement
+                    // for symbol names
+                    //cCompiler.args "-rdynamic"
+
+                    // Address sanitizer can find issues with typical memory and
+                    // buffer issues
+                    // https://clang.llvm.org/docs/AddressSanitizer.html
+                    cCompiler.args "-fsanitize=address"
+                    cCompiler.args "-fno-omit-frame-pointer"
                 }
                 withType(StaticLibraryBinarySpec) {
                     buildable = false
@@ -97,6 +114,23 @@ model {
             binaries {
                 binaries.all {
                     cCompiler.args "-fPIC"
+                    cCompiler.args "-g"
+                    cCompiler.args "-O0"
+
+                    // Experimental, useful for working with 3rd party libs that done come
+                    // with debug info. Turns of some optimizations
+                    // https://clang.llvm.org/docs/CommandGuide/clang.html
+                    cCompiler.args "-fstandalone-debug"
+
+                    // Experimental, mentioned by backtrace() as a necessary requirement
+                    // for symbol names
+                    //cCompiler.args "-rdynamic"
+
+                    // Address sanitizer can find issues with typical memory and
+                    // buffer issues
+                    // https://clang.llvm.org/docs/AddressSanitizer.html
+                    cCompiler.args "-fsanitize=address"
+                    cCompiler.args "-fno-omit-frame-pointer"
                 }
             }
         }
@@ -113,6 +147,23 @@ model {
             binaries {
                 binaries.all {
                     cCompiler.args "-fPIC"
+                    cCompiler.args "-g"
+                    cCompiler.args "-O0"
+
+                    // Experimental, useful for working with 3rd party libs that done come
+                    // with debug info. Turns of some optimizations
+                    // https://clang.llvm.org/docs/CommandGuide/clang.html
+                    cCompiler.args "-fstandalone-debug"
+
+                    // Experimental, mentioned by backtrace() as a necessary requirement
+                    // for symbol names
+                    //cCompiler.args "-rdynamic"
+
+                    // Address sanitizer can find issues with typical memory and
+                    // buffer issues
+                    // https://clang.llvm.org/docs/AddressSanitizer.html
+                    cCompiler.args "-fsanitize=address"
+                    cCompiler.args "-fno-omit-frame-pointer"
                 }
             }
         }
@@ -129,9 +180,33 @@ model {
             }
             binaries {
                 binaries.all {
+
+                    cCompiler.args "-D__NON_VERBOSE_PEERLOG__"
+                    cCompiler.args "-g"
+                    cCompiler.args "-O0"
+                    // cCompiler.args "-DCRYPTO_REF_DEBUG"
+
+                    // For experiment trapping sigsegv
+                    // cCompiler.args "-D__EXP_SIGNALS__"
+
+                    // Experimental, useful for working with 3rd party libs that done come
+                    // with debug info. Turns of some optimizations
+                    // https://clang.llvm.org/docs/CommandGuide/clang.html
+                    cCompiler.args "-fstandalone-debug"
+
+                    // Experimental, mentioned by backtrace() as a necessary requirement
+                    // for symbol names
+                    //cCompiler.args "-rdynamic"
+
+                    // Address sanitizer can find issues with typical memory and
+                    // buffer issues
+                    // https://clang.llvm.org/docs/AddressSanitizer.html
+                    cCompiler.args "-fsanitize=address"
+                    cCompiler.args "-fno-omit-frame-pointer"
+
                     project(':corenative').cppCryptoMainIncDirs.forEach {
                         cCompiler.args "-I$it"
-                        cCompiler.args "-D__NON_VERBOSE_PEERLOG__"
+
                     }
 
                     lib library: 'sqlite3', linkage: 'static'
@@ -150,7 +225,18 @@ model {
                     } else if (os == "linux") {
                         logger.info("Building for Linux with ${buildType.displayName}")
                         logger.info("C compiler args ${cCompiler.args}")
+                        linker.args "-g"
                         linker.args '-lbsd'
+
+                        // Following for address sanitizer
+                        // https://clang.llvm.org/docs/AddressSanitizer.html
+                        // Not certain that -lasan is actually needed for this
+                        linker.args '-lasan'
+                        linker.args "-fsanitize=address"
+
+                        //linker.args '-rdynamic'
+
+                        logger.info("C linker ${linker}")
                         logger.info("C linker args ${linker.args}")
                     }
 

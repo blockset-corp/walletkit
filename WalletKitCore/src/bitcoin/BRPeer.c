@@ -43,6 +43,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>	
 #include <arpa/inet.h>
+#include <poll.h>
 
 #define HEADER_LENGTH      24
 #define MAX_MSG_LENGTH     0x02000000
@@ -865,18 +866,24 @@ static int _BRPeerAcceptMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen,
     return r;
 }
 
-static int _BRPeerOpenSocket(BRPeer *peer, int domain, double timeout, int *error)
+static int _BRPeerOpenSocket(BRPeer *peer, int domain, double timeoutSecs, int *error)
 {
     BRPeerContext *ctx = (BRPeerContext *)peer;
     struct sockaddr_storage addr;
     struct timeval tv;
-    fd_set fds;
+	struct pollfd peerSockFd = {0};
     socklen_t addrLen, optLen;
     int count, arg = 0, err = 0, on = 1, r = 1;
     int sock;
 
     pthread_mutex_lock(&ctx->lock);
     sock = ctx->socket = socket(domain, SOCK_STREAM, 0);
+	// BG: With FD_SET using array of 128 bytes, the maximum
+	//     bitmask is for socket id 1023. Over that and
+	//     FD_SET macro will write beyond the bounds of
+	//     this item on the stack
+	
+	// assert(sock < 1024);
     pthread_mutex_unlock(&ctx->lock);
 
     if (sock < 0) {
@@ -918,20 +925,26 @@ static int _BRPeerOpenSocket(BRPeer *peer, int domain, double timeout, int *erro
         if (err == EINPROGRESS) {
             err = 0;
             optLen = sizeof(err);
-            tv.tv_sec = timeout;
-            tv.tv_usec = (long)(timeout*1000000) % 1000000;
-            FD_ZERO(&fds);
-            FD_SET(sock, &fds);
-            count = select(sock + 1, NULL, &fds, NULL, &tv);
+			peerSockFd.events = POLLOUT;
+			peerSockFd.fd = sock;
+
+			// Poll timeout indicated by return 0, < 0 is an error,
+			// The 'count' should be exactly one for an event set in 
+			// this pollfd, either error or write is possible event
+			count = poll(&peerSockFd, 1, timeoutSecs * 1000);
 
             if (count <= 0 || getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &optLen) < 0 || err) {
                 if (count == 0) err = ETIMEDOUT;
                 if (count < 0 || ! err) err = errno;
                 r = 0;
+            } else if (count == 1 && peerSockFd.revents != POLLOUT) {
+            	// May be one of POLLERR, POLLHUP or POLLNVAL
+            	err = errno;
+            	r = 0;
             }
         }
         else if (err && domain == PF_INET6 && _BRPeerIsIPv4(peer)) {
-            return _BRPeerOpenSocket(peer, PF_INET, timeout, error); // fallback to IPv4
+            return _BRPeerOpenSocket(peer, PF_INET, timeoutSecs, error); // fallback to IPv4
         }
         else if (err) r = 0;
 
