@@ -1,0 +1,97 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==575468==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000060 (pc 0x7f8faf0ea1ef bp 0x7f8f3b3b3f50 sp 0x7f8f3b3b3ee0 T3369)
+==575468==The signal is caused by a READ memory access.
+==575468==Hint: address points to the zero page.
+[02-07.12:01:57.896][SEVERE][com.breadwallet.corecrypto.System] WalletCreated: missed wallet manager
+[02-07.12:01:57.897][SEVERE][com.breadwallet.corecrypto.System] WalletManagerWalletAdded: missed wallet manager
+[02-07.12:01:57.923][INFO][xplr-instance-361-ginger] Log instance started
+[02-07.12:01:58.137][SEVERE][com.breadwallet.corecrypto.System] WalletCreated: missed wallet manager
+[02-07.12:01:58.137][SEVERE][com.breadwallet.corecrypto.System] WalletManagerWalletAdded: missed wallet manager
+[02-07.12:01:58.358][SEVERE][com.breadwallet.corecrypto.System] WalletCreated: missed wallet manager
+[02-07.12:01:58.359][SEVERE][com.breadwallet.corecrypto.System] WalletManagerWalletAdded: missed wallet manager
+[02-07.12:01:58.421][SEVERE][com.breadwallet.corecrypto.System] WalletCreated: missed wallet manager
+[02-07.12:01:58.422][SEVERE][com.breadwallet.corecrypto.System] WalletManagerWalletAdded: missed wallet manager
+[02-07.12:01:58.494][SEVERE][com.breadwallet.corecrypto.System] WalletCreated: missed wallet manager
+[02-07.12:01:58.494][SEVERE][com.breadwallet.corecrypto.System] WalletManagerWalletAdded: missed wallet manager
+    #0 0x7f8faf0ea1ee  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x4421ee)
+    #1 0x7f8faf0f256c  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x44a56c)
+    #2 0x7f8faedfff2f  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x157f2f)
+    #3 0x7f8faedfeeb2  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x156eb2)
+    #4 0x7f8faf06665f  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x3be65f)
+    #5 0x7f8faee01818  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x159818)
+    #6 0x7f8faf086575  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x3de575)
+    #7 0x7f8faffef643  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0x13643)
+    #8 0x7f8faffef3aa  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0x133aa)
+    #9 0x7f8faffe8564  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0xc564)
+    #10 0x7f8faffe8e50  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0xce50)
+    #11 0x7f92063a1fc5  (<unknown module>)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x4421ee) 
+Thread T3369 (pool-340-thread) created by T31 (pool-4-thread-1) here:
+    #0 0x7f921ad59805 in pthread_create (/usr/lib/gcc/x86_64-linux-gnu/9/libasan.so+0x3a805)
+    #1 0x7f9216c33e75 in os::create_thread(Thread*, os::ThreadType, unsigned long) src/hotspot/os/linux/os_linux.cpp:845
+    #2 0x7f9216966ea0 in JVM_StartThread src/hotspot/share/prims/jvm.cpp:2893
+    #3 0x7f92064c6500  (<unknown module>)
+    #4 0x7f91ff7011b3  (<unknown module>)
+
+Thread T31 (pool-4-thread-1) created by T30 here:
+    #0 0x7f921ad59805 in pthread_create (/usr/lib/gcc/x86_64-linux-gnu/9/libasan.so+0x3a805)
+    #1 0x7f9216c33e75 in os::create_thread(Thread*, os::ThreadType, unsigned long) src/hotspot/os/linux/os_linux.cpp:845
+    #2 0x7f9216966ea0 in JVM_StartThread src/hotspot/share/prims/jvm.cpp:2893
+    #3 0x7f91fe62738f  (<unknown module>)
+    #4 0x7f91fe621c1b  (<unknown module>)
+    #5 0x7f91fe621c1b  (<unknown module>)
+    #6 0x7f91fe6213af  (<unknown module>)
+    #7 0x7f91fe621c60  (<unknown module>)
+    #8 0x7f91fe621c60  (<unknown module>)
+    #9 0x7f91fe621c1b  (<unknown module>)
+    #10 0x7f91fe621c60  (<unknown module>)
+    #11 0x7f91fe618848  (<unknown module>)
+    #12 0x7f92168b85d8 in JavaCalls::call_helper(JavaValue*, methodHandle const&, JavaCallArguments*, Thread*) src/hotspot/share/runtime/javaCalls.cpp:442
+    #13 0x7f9216933bf8 in jni_invoke_nonstatic src/hotspot/share/prims/jni.cpp:1184
+    #14 0x7f92169360c9 in jni_CallVoidMethod src/hotspot/share/prims/jni.cpp:1569
+    #15 0x7f8faffef643  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0x13643)
+    #16 0x7f8fae7fdd9f  (<unknown module>)
+
+Thread T30 created by T1 here:
+    #0 0x7f921ad59805 in pthread_create (/usr/lib/gcc/x86_64-linux-gnu/9/libasan.so+0x3a805)
+    #1 0x7f8faf15d0a6  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x4b50a6)
+    #2 0x7f8faee7dee2  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x1d5ee2)
+    #3 0x7f8faf087d22  (/home/bryan/.cache/JNA/temp/jna8429565948549955575.tmp+0x3dfd22)
+    #4 0x7f8faffef643  (/home/bryan/.cache/JNA/temp/jna16872133950460902910.tmp+0x13643)
+    #5 0x7f9215e7e55f  (<unknown module>)
+
+Thread T1 created by T0 here:
+    #0 0x7f921ad59805 in pthread_create (/usr/lib/gcc/x86_64-linux-gnu/9/libasan.so+0x3a805)
+    #1 0x7f921ad1694a in ContinueInNewThread0 src/java.base/unix/native/libjli/java_md_solinux.c:760
+    #2 0x7f921ad12e45 in ContinueInNewThread src/java.base/share/native/libjli/java.c:2354
+    #3 0x7f921ad14739 in JLI_Launch src/java.base/share/native/libjli/java.c:341
+    #4 0x55f63783a2b2 in main src/java.base/share/native/launcher/main.c:206
+    #5 0x7f921ab2d0b2 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x270b2)
+
+[02-07.12:02:21.155][INFO][xplr-instance-345-ginger] --> Wallet created
+[02-07.12:02:21.156][INFO][xplr-instance-345-ginger] Network added Bitcoin SV
+[02-07.12:02:21.204][INFO][xplr-instance-345-ginger] Creating testnet Bitcoin SV wallet (addrScheme:BTC Legacy, mode:P2P_ONLY)
+[02-07.12:02:21.570][INFO][xplr-instance-324-ginger] --> Wallet created
+[02-07.12:02:21.574][INFO][xplr-instance-324-ginger] 3 Networks discovered
+[02-07.12:02:21.575][INFO][xplr-instance-324-ginger] 
+  1) Bitcoin BTC (testnet)
+    Height: 1660401
+    Currencies: 
+      Bitcoin native btc 
+    Fees: 600000Msec 
+[02-07.12:02:21.579][INFO][xplr-instance-324-ginger] 
+  2) Bitcoin Cash BCH (testnet)
+    Height: 1353306
+    Currencies: 
+      Bitcoin Cash native bch 
+    Fees: 1200000Msec 
+[02-07.12:02:21.642][INFO][xplr-instance-351-ginger] --> Wallet created
+[02-07.12:02:21.643][INFO][xplr-instance-351-ginger] Network added Bitcoin Cash
+[02-07.12:02:21.643][INFO][xplr-instance-351-ginger] Creating testnet Bitcoin Cash wallet (addrScheme:BTC Legacy, mode:API_ONLY)
+[02-07.12:02:21.644][INFO][xplr-instance-328-ginger] --> Wallet created
+[02-07.12:02:21.645][INFO][xplr-instance-328-ginger] 3 Networks discovered
+==575468==ABORTING
+
