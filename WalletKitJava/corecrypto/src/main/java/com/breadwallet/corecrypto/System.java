@@ -1737,6 +1737,24 @@ final class System implements com.breadwallet.crypto.System {
         });
     }
 
+    private static List<Transaction> canonicalizeTransactions (List<Transaction> transactions) {
+        Collections.sort (transactions, Transaction.blockHeightAndIndexComparator);
+
+        List<Transaction> results = new ArrayList<>();
+        for (Transaction transaction : transactions) {
+            boolean needTransaction = true;
+            for (Transaction result : results) {
+                if (result.getId().equals (transaction.getId())) {
+                    needTransaction = false;
+                    break;
+                }
+            }
+            if (needTransaction) results.add (transaction);
+        }
+
+        return results;
+    }
+
     private static void getTransactions(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
                                         List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
@@ -1768,7 +1786,7 @@ final class System implements com.breadwallet.crypto.System {
                                         Log.log(Level.FINE, "BRCryptoCWMBtcGetTransactionsCallback received transactions");
 
                                         try {
-                                            for (Transaction transaction : transactions) {
+                                            for (Transaction transaction : canonicalizeTransactions (transactions)) {
                                                 Optional<byte[]> optRaw = transaction.getRaw();
                                                 if (!optRaw.isPresent()) {
                                                     Log.log(Level.SEVERE, "BRCryptoCWMBtcGetTransactionsCallback completing with missing raw bytes");
