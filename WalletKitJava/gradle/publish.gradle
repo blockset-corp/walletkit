@@ -25,7 +25,7 @@ publishing {
             if (isAndroidLibrary) {
                 from components.android
             } else {
-                from components.java
+                from components.findByName("kotlin") ?: components.java
             }
         }
     }
