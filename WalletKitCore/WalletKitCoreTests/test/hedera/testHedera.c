@@ -181,7 +181,7 @@ static BRHederaTransaction createSignedTransaction (const char * source, const c
 
     // Sign the transaction
     BRKey publicKey = hederaAccountGetPublicKey(account);
-    hederaTransactionSignTransaction (transaction, publicKey, seed, NULL);
+    hederaTransactionSignTransaction (transaction, publicKey, seed, nodeAddress);
 
     // Cleaup
     hederaAddressFree (sourceAddress);

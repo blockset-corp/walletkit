@@ -410,6 +410,15 @@ _CWMNopSubmitTransactionCallback (BRCryptoClientContext context,
 }
 
 static void
+_CWMNopEstimateFeeCallback (BRCryptoClientContext context,
+                            OwnershipGiven BRCryptoWalletManager manager,
+                            OwnershipGiven BRCryptoClientCallbackState callbackState,
+                            OwnershipKept const uint8_t *transaction,
+                            size_t transactionLength) {
+    cryptoWalletManagerGive(manager);
+}
+
+static void
 _CWMNopGetGasPriceEthCallback (BRCryptoClientContext context,
                                         OwnershipGiven BRCryptoWalletManager manager,
                                         OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -930,7 +939,8 @@ BRCryptoWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
         _CWMNopGetTransactionsCallback,
         _CWMNopGetTransfersCallback,
         _CWMNopSubmitTransactionCallback,
-
+        _CWMNopEstimateFeeCallback,
+        
         // ETH
         _CWMNopGetGasPriceEthCallback,
         _CWMNopEstimateGasEthCallback,
