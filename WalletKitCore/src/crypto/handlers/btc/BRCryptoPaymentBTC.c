@@ -633,7 +633,7 @@ cryptoPaymentProtocolPaymentEncodeBTC (BRCryptoPaymentProtocolPayment protoPayBa
 
                 #define PP_JSON_CURRENCY_PRE    "\"currency\":\""
                 #define PP_JSON_CURRENCY_PRE_SZ (sizeof(PP_JSON_CURRENCY_PRE) - 1)
-                array_add_array (encodedArray, PP_JSON_CURRENCY_PRE, PP_JSON_CURRENCY_PRE_SZ);
+                array_add_array (encodedArray, (uint8_t*) PP_JSON_CURRENCY_PRE, PP_JSON_CURRENCY_PRE_SZ);
 
                 const char *currencyCode = cryptoCurrencyGetCode (protoPayBase->cryptoCurrency);
                 size_t currencyCodeLen = strlen(currencyCode);
@@ -643,25 +643,25 @@ cryptoPaymentProtocolPaymentEncodeBTC (BRCryptoPaymentProtocolPayment protoPayBa
 
                 #define PP_JSON_CURRENCY_PST    "\","
                 #define PP_JSON_CURRENCY_PST_SZ (sizeof(PP_JSON_CURRENCY_PST) - 1)
-                array_add_array (encodedArray, PP_JSON_CURRENCY_PST, PP_JSON_CURRENCY_PST_SZ);
+                array_add_array (encodedArray, (uint8_t*) PP_JSON_CURRENCY_PST, PP_JSON_CURRENCY_PST_SZ);
 
                 #define PP_JSON_TXNS_PRE        "\"transactions\": [\""
                 #define PP_JSON_TXNS_PRE_SZ     (sizeof(PP_JSON_TXNS_PRE) - 1)
-                array_add_array (encodedArray, PP_JSON_TXNS_PRE, PP_JSON_TXNS_PRE_SZ);
+                array_add_array (encodedArray, (uint8_t*) PP_JSON_TXNS_PRE, PP_JSON_TXNS_PRE_SZ);
 
                 uint8_t *transactionBuf = malloc (transactionBufLen);
                 BRTransactionSerialize (protoPay->transaction, transactionBuf, transactionBufLen);
                 size_t transactionHexLen = 0;
                 char *transactionHex = hexEncodeCreate (&transactionHexLen, transactionBuf, transactionBufLen);
 
-                array_add_array (encodedArray, transactionHex, transactionHexLen - 1);
+                array_add_array (encodedArray, (uint8_t*) transactionHex, transactionHexLen - 1);
 
                 free (transactionHex);
                 free (transactionBuf);
 
                 #define PP_JSON_TXNS_PST        "\"]"
                 #define PP_JSON_TXNS_PST_SZ     (sizeof(PP_JSON_TXNS_PST) - 1)
-                array_add_array (encodedArray, PP_JSON_TXNS_PST, PP_JSON_TXNS_PST_SZ);
+                array_add_array (encodedArray, (uint8_t*) PP_JSON_TXNS_PST, PP_JSON_TXNS_PST_SZ);
 
                 array_add (encodedArray, '}');
 

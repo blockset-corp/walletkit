@@ -255,7 +255,7 @@ static size_t _BRPeerManagerBlockLocators(BRPeerManager *manager, UInt256 locato
     }
     
     if (locators && i < locatorsCount) locators[i] = genesis_block_hash(manager->params);
-    return ++i;
+    return (size_t) ++i;
 }
 
 static void _setApplyFreeBlock(void *info, void *block)
@@ -653,7 +653,7 @@ static void *_findPeersThreadRoutine(void *arg)
     
     for (addr = addrList; addr && ! UInt128IsZero(*addr); addr++) {
         age = 24*60*60 + BRRand(2*24*60*60); // add between 1 and 3 days
-        array_add(manager->peers, ((const BRPeer) { *addr, manager->params->standardPort, services, now - age, 0 }));
+        array_add(manager->peers, ((const BRPeer) { *addr, manager->params->standardPort, services, (uint64_t) (now - age), 0 }));
     }
 
     manager->dnsThreadCount--;
@@ -678,7 +678,7 @@ static void _BRPeerManagerFindPeers(BRPeerManager *manager)
         array_set_count(manager->peers, 1);
         manager->peers[0] = manager->fixedPeer;
         manager->peers[0].services = services;
-        manager->peers[0].timestamp = now;
+        manager->peers[0].timestamp = (uint64_t) now;
     }
     else {
         for (size_t i = 1; manager->params->dnsSeeds[i]; i++) {
@@ -693,7 +693,7 @@ static void _BRPeerManagerFindPeers(BRPeerManager *manager)
         }
 
         for (addr = addrList = _addressLookup(manager->params->dnsSeeds[0]); addr && ! UInt128IsZero(*addr); addr++) {
-            array_add(manager->peers, ((const BRPeer) { *addr, manager->params->standardPort, services, now, 0 }));
+            array_add(manager->peers, ((const BRPeer) { *addr, manager->params->standardPort, services, (uint64_t) now, 0 }));
         }
 
         if (addrList) free(addrList);
@@ -718,7 +718,7 @@ static void _peerConnected(void *info)
     time_t now = time(NULL);
     
     pthread_mutex_lock(&manager->lock);
-    if (peer->timestamp > now + 2*60*60 || peer->timestamp < now - 2*60*60) peer->timestamp = now; // sanity check
+    if (peer->timestamp > now + 2*60*60 || peer->timestamp < now - 2*60*60) peer->timestamp = (uint64_t) now; // sanity check
     
     // TODO: XXX does this work with 0.11 pruned nodes?
     if ((peer->services & manager->params->services) != manager->params->services) {

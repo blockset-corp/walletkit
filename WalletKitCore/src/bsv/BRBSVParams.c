@@ -147,7 +147,7 @@ static int BRBSVVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockS
         target = (work) ? ~0ULL/work : ~0ULL;
 
         while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-        target |= size << 24;
+        target |= (uint64_t) (size << 24);
 
         if (target > 0x1d00ffff) target = 0x1d00ffff; // max proof-of-work
         if (target - block->target > 1) return 0;

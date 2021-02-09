@@ -370,8 +370,7 @@ transactionRlpEncode(BREthereumTransaction transaction,
         case RLP_TYPE_TRANSACTION_SIGNED: // aka NETWORK
         case RLP_TYPE_ARCHIVE:
             // For EIP-155, encode v with the chainID.
-            items[6] = rlpEncodeUInt64(coder, transaction->signature.sig.vrs.v + 8 +
-                                       2 * transaction->chainId, 1);
+            items[6] = rlpEncodeUInt64(coder, (uint64_t) (transaction->signature.sig.vrs.v + 8 + 2 * transaction->chainId), 1);
 
             items[7] = rlpEncodeBytesPurgeLeadingZeros (coder,
                                                         transaction->signature.sig.vrs.r,
@@ -449,7 +448,7 @@ transactionRlpDecode (BRRlpItem item,
         // If we are RLP decoding a transactino prior to EIP-xxx, then the eipChainId will
         // not be encoded with the chainId.  In that case, just use the eipChainId
         transaction->signature.sig.vrs.v = (eipChainId > 30
-                                            ? eipChainId - 8 - 2 * transaction->chainId
+                                            ? eipChainId - 8 - (uint64_t) (2 * transaction->chainId)
                                             : eipChainId);
         
         BRRlpData rData = rlpDecodeBytesSharedDontRelease (coder, items[7]);

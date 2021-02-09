@@ -394,7 +394,6 @@ cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
     BRCryptoCurrency currency = cryptoNetworkGetCurrencyForIssuer(network, issuer);
     if (NULL == currency) {
         const char *tokenName = ethTokenGetName (token);
-        const char *tokenDesc = ethTokenGetDescription (token);
         const char *tokenSymb = ethTokenGetSymbol (token);
         const char *tokenAddr = ethTokenGetAddress (token);
 
@@ -631,7 +630,7 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
     transactionSetHash (tid, ethHashCreate (bundle->hash));
 
-    int success = statusError ? 0 : 1;
+    uint64_t success = statusError ? 0 : 1;
     BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
@@ -764,7 +763,7 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                      ethHashCreate(bundle->hash),
                                      exchangeIndex);
 
-    int success = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status) ? 0 : 1;
+    uint64_t success = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status) ? 0 : 1;
     BREthereumTransactionStatus status =
     transactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
                                      bundle->blockNumber,

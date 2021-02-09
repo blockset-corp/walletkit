@@ -246,7 +246,7 @@ cryptoWalletManagerSaveTransactionBundleBTC (BRCryptoWalletManager manager,
         printf ("BTC: SaveTransactionBundle: Missed @ Height %"PRIu64"\n", bundle->blockHeight);
     else {
         transaction->blockHeight = (uint32_t) bundle->blockHeight;
-        transaction->timestamp   = bundle->timestamp;
+        transaction->timestamp   = (uint32_t) bundle->timestamp;
 
         fileServiceSave (manager->fileService, fileServiceTypeTransactionsBTC, transaction);
         BRTransactionFree(transaction);

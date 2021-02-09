@@ -63,7 +63,7 @@ inline static size_t _txChainIndex(const BRTransaction *tx, const UInt160 *chain
         }
     }
     
-    return -1;
+    return (size_t) -1;
 }
 
 struct BRWalletStruct {
@@ -106,7 +106,7 @@ inline static int _BRWalletTxIsAscending(BRWallet *wallet, const BRTransaction *
 
 inline static int _BRWalletTxCompare(BRWallet *wallet, const BRTransaction *tx1, const BRTransaction *tx2)
 {
-    size_t i = -1, j = -1;
+    size_t i = (size_t) -1, j = (size_t) -1;
 
     if (_BRWalletTxIsAscending(wallet, tx1, tx2)) return 1;
     if (_BRWalletTxIsAscending(wallet, tx2, tx1)) return -1;
