@@ -214,6 +214,7 @@ genericTezosTransferSetFeeBasis (BRGenericTransferRef transfer,
                                  BRGenericFeeBasis feeBasis) {
     tezosTransferSetFeeBasis ((BRTezosTransfer) transfer,
                               tezosFeeBasisFromGenericFeeBasis (feeBasis));
+    return 1;
 }
 
 static BRGenericHash
@@ -369,7 +370,7 @@ genericTezosWalletCreateTransfer (BRGenericWalletRef wallet,
         if (NULL != genTransferAttributeGetVal(attribute)) {
             if (genericTezosCompareFieldOption (genTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
                 uint8_t op;
-                sscanf (genTransferAttributeGetVal(attribute), "%u", &op);
+                sscanf (genTransferAttributeGetVal(attribute), "%"SCNu8, &op);
                 delegationOp = (op == 1);
             }
         }
