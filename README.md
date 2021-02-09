@@ -2,7 +2,7 @@
 ![WalletKit](../gh-pages/public/img/logo-tight.png)
 
 WalletKit provides a uniform wallet interface to access numerous crypto-currencies including 
-Bitcoin and Etheruem.  WalletKit is implemented in the C progamming language and includes
+Bitcoin and Ethereum.  WalletKit is implemented in the C progamming language and includes
 a number of bindings for other languages, notably Swift and Java.  
 
 WalletKit supports the following crypto-currencies: Bitcoin, Bitcoin Cash, Bitcoin SV, Ethereum,
