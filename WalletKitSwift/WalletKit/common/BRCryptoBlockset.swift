@@ -254,7 +254,7 @@ public class BlocksetSystemClient: SystemClient {
                 let network = json.asString (name: "network"),
                 let isMainnet = json.asBool (name: "is_mainnet"),
                 let currency = json.asString (name: "native_currency_id"),
-                let blockHeight = json.asInt64 (name: "block_height"),
+                let blockHeight = json.asInt64 (name: "verified_height"),
                 let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
             else {
                 print ("SYS: BDB:API: ERROR in Blockchain JSON: '\(json)'")
