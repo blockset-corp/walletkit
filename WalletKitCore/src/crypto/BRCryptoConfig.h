@@ -11,7 +11,7 @@
 #define HAS_BTC_TESTNET     1
 #define HAS_BCH_TESTNET     1
 #define HAS_BSV_TESTNET     0
-#define HAS_ETH_TESTNET     0
+#define HAS_ETH_TESTNET     1
 #define HAS_XRP_TESTNET     0
 #define HAS_HBAR_TESTNET    0
 #define HAS_XTZ_TESTNET     0
