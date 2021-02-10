@@ -32,7 +32,7 @@ public class Blockchain {
                                     @JsonProperty("network") String network,
                                     @JsonProperty("is_mainnet") Boolean isMainNet,
                                     @JsonProperty("native_currency_id") String currencyId,
-                                    @JsonProperty("block_height") UnsignedLong blockHeight,
+                                    @JsonProperty("verified_height") UnsignedLong blockHeight,
                                     @JsonProperty("fee_estimates") List<BlockchainFee> feeEstimates,
                                     @JsonProperty("confirmations_until_final") UnsignedInteger confirmationsUntilFinal,
                                     @JsonProperty("verified_block_hash") @Nullable String verifiedBlockHash) {
@@ -118,7 +118,7 @@ public class Blockchain {
         return confirmationsUntilFinal;
     }
 
-    @JsonProperty("block_height")
+    @JsonProperty("verified_height")
     public UnsignedLong getBlockHeightValue() {
         return blockHeight;
     }
