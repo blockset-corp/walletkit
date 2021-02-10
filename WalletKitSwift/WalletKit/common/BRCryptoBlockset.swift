@@ -991,7 +991,7 @@ public class BlocksetSystemClient: SystemClient {
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
             // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
-            "transaction_id" : "unkonwn",
+            "transaction_id" : "unknown",
             "data"           : transaction.base64EncodedString()
         ]
 
