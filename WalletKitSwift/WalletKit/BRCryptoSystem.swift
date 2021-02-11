@@ -1253,37 +1253,38 @@ extension System {
                 guard let (system, manager, wallet) = System.systemExtract (context, cwm, wid)
                 else { print ("SYS: Event: \(eventType): Missed {cwm, wid}"); return }
 
-                let walletEvent = WalletEvent (wallet: wallet, core: event!)
-
-                var needSystemEvent = true
                 var printString = "SYS: Event: Wallet (\(wallet.name)): \(eventType)"
 
-                switch walletEvent {
-                case .changed(oldState: let oldState, newState: let newState):
-                    printString = "SYS: Event: Wallet (\(manager.name)): \(eventType): {\(oldState)) -> \(newState)}"
+                // On 'FEE_BASIS_ESTIMATED' invoke the callbackCoordinator
+                if CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED == cryptoWalletEventGetType(event!) {
+                    print (printString)
 
-                case .feeBasisEstimated(feeBasis: let feeBasis):
-                    needSystemEvent = false;
+                    var status:   BRCryptoStatus = CRYPTO_SUCCESS
+                    var cookie:   BRCryptoCookie!
+                    var feeBasis: BRCryptoFeeBasis!
 
-                    var cookie: BRCryptoCookie!
-                    var status: BRCryptoStatus = CRYPTO_SUCCESS
-
-                    cryptoWalletEventExtractFeeBasisEstimate (event, &status, &cookie, nil);
+                    cryptoWalletEventExtractFeeBasisEstimate (event, &status, &cookie, &feeBasis);
 
                     if status == CRYPTO_SUCCESS {
-                        system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: feeBasis)
+                        system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: TransferFeeBasis (core: feeBasis, take: false))
                     }
                     else {
-                        let feeError = Wallet.FeeEstimationError.fromStatus(status)
-                        system.callbackCoordinator.handleWalletFeeEstimateFailure (cookie, error: feeError)
+                        system.callbackCoordinator.handleWalletFeeEstimateFailure (cookie, error: Wallet.FeeEstimationError.fromStatus(status))
                     }
-
-                default:
-                    break
                 }
 
-                print (printString)
-                if needSystemEvent {
+                // On 'FEE_BASIS_UPDATED -
+                //else if CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED == cryptoWalletEventGetType(event!) {
+                // }
+
+                // Based on `event` the WalletEvent might be `nil` - this will occur, for example,
+                // if a feeEstimate failed.  But we handle that above.
+                else if let walletEvent = WalletEvent (wallet: wallet, core: event!) {
+                    if case let .changed(oldState: oldState, newState: newState) = walletEvent {
+                        printString = "SYS: Event: Wallet (\(manager.name)): \(eventType): {\(oldState)) -> \(newState)}"
+                    }
+
+                    print (printString)
                     system.listener?.handleWalletEvent (system: manager.system,
                                                         manager: manager,
                                                         wallet: wallet,
