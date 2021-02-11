@@ -387,7 +387,7 @@ public final class CryptoLibraryDirect {
 //                                                            long timestamp, long blockHeight,
 //                                                            int attributesCount, Pointer arrayOfAttributeKeys, Pointer arrayOfAttributeVals);
     public static native void cwmAnnounceGetTransfersComplete(Pointer cwm, Pointer callbackState, int success);
-    public static native void cwmAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState);
+    public static native void cwmAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState, String hash);
     public static native void cwmAnnounceSubmitTransferSuccessForHash(Pointer cwm, Pointer callbackState, String hash);
     public static native void cwmAnnounceSubmitTransferFailure(Pointer cwm, Pointer callbackState);
 //  INDIRECT:   public static native void cwmAnnounceEstimateFeeSuccess(Pointer cwm, Pointer callbackState,
