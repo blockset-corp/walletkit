@@ -40,15 +40,24 @@ cryptoNetworkCreateCallbackETH (BRCryptoNetworkCreateContext context,
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsETH (BRCryptoNetworkListener listener,
-                          const char *uids,
-                          const char *name,
-                          const char *desc,
-                          bool isMainnet,
-                          uint32_t confirmationPeriodInSeconds,
-                          BREthereumNetwork eth) {
+cyptoNetworkCreateETH (BRCryptoNetworkListener listener,
+                       const char *uids,
+                       const char *name,
+                       const char *desc,
+                       bool isMainnet,
+                       uint32_t confirmationPeriodInSeconds,
+                       BRCryptoAddressScheme defaultAddressScheme,
+                       BRCryptoSyncMode defaultSyncMode,
+                       BRCryptoCurrency nativeCurrency) {
+
+    bool useMainnet = (0 == strcmp ("mainnet", desc));
+    bool useTestnet = (0 == strcmp ("testnet", desc));
+    bool useRinkeby = (0 == strcmp ("rinkeby", desc));
+
+    assert (isMainnet ? useMainnet : (useTestnet || useRinkeby));
+    
     BRCryptoNetworkCreateContextETH contextETH = {
-        eth
+        (useMainnet ? ethNetworkMainnet : (useTestnet ? ethNetworkTestnet : ethNetworkRinkeby))
     };
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkETHRecord),
@@ -59,26 +68,11 @@ cryptoNetworkCreateAsETH (BRCryptoNetworkListener listener,
                                       desc,
                                       isMainnet,
                                       confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
                                       &contextETH,
                                       cryptoNetworkCreateCallbackETH);
-}
-
-static BRCryptoNetwork
-cyptoNetworkCreateETH (BRCryptoNetworkListener listener,
-                       const char *uids,
-                       const char *name,
-                       const char *desc,
-                       bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds) {
-    if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsETH (listener, uids, name, desc, true, confirmationPeriodInSeconds, ethNetworkMainnet);
-    else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsETH (listener, uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkTestnet);
-    else if (0 == strcmp ("rinkeby", desc))
-        return cryptoNetworkCreateAsETH (listener, uids, name, desc, false, confirmationPeriodInSeconds, ethNetworkRinkeby);
-    else {
-        assert (false); return NULL;
-    }
 }
 
 static void

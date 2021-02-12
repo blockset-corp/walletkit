@@ -119,6 +119,9 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *desc,
                            bool isMainnet,
                            uint32_t confirmationPeriodInSeconds,
+                           BRCryptoAddressScheme defaultAddressScheme,
+                           BRCryptoSyncMode defaultSyncMode,
+                           BRCryptoCurrency currencyNative,
                            BRCryptoNetworkCreateContext createContext,
                            BRCryptoNetworkCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct BRCryptoNetworkRecord));
@@ -133,18 +136,25 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
     network->uids = strdup (uids);
     network->name = strdup (name);
     network->desc = strdup (desc);
-    network->currency = NULL;
-    network->height = 0;
+
+    network->isMainnet = isMainnet;
+    network->currency  = cryptoCurrencyTake (currencyNative);
+    network->height    = 0;
+
     array_new (network->associations, CRYPTO_NETWORK_DEFAULT_CURRENCY_ASSOCIATIONS);
     array_new (network->fees, CRYPTO_NETWORK_DEFAULT_FEES);
 
     network->confirmationPeriodInSeconds = confirmationPeriodInSeconds;
 
-    network->addressSchemes = NULL;
-    network->syncModes = NULL;
-    network->verifiedBlockHash = NULL;
+    network->defaultAddressScheme = defaultAddressScheme;
+    array_new (network->addressSchemes, NUMBER_OF_ADDRESS_SCHEMES);
+    array_add (network->addressSchemes, network->defaultAddressScheme);
 
-    network->isMainnet = isMainnet;
+    network->defaultSyncMode = defaultSyncMode;
+    array_new (network->syncModes, NUMBER_OF_SYNC_MODES);
+    array_add (network->syncModes, network->defaultSyncMode);
+
+    network->verifiedBlockHash = NULL;
 
     network->ref = CRYPTO_REF_ASSIGN(cryptoNetworkRelease);
 
@@ -649,7 +659,6 @@ cryptoNetworkGetDefaultAddressScheme (BRCryptoNetwork network) {
 static void
 cryptoNetworkAddSupportedAddressScheme (BRCryptoNetwork network,
                                         BRCryptoAddressScheme scheme) {
-    if (NULL == network->addressSchemes) array_new (network->addressSchemes, NUMBER_OF_ADDRESS_SCHEMES);
     array_add (network->addressSchemes, scheme);
 }
 
@@ -691,7 +700,6 @@ cryptoNetworkGetDefaultSyncMode (BRCryptoNetwork network) {
 static void
 cryptoNetworkAddSupportedSyncMode (BRCryptoNetwork network,
                                    BRCryptoSyncMode scheme) {
-    if (NULL == network->syncModes) array_new (network->syncModes, NUMBER_OF_SYNC_MODES);
     array_add (network->syncModes, scheme);
 }
 
@@ -893,12 +901,47 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
         // for debugging purposes - as a way to avoid unimplemented currencies.
         if (NULL == handlers->network) break;
 
+        BRCryptoCurrency nativeCurrency = NULL;
+
+        // Create the native Currency
+        for (size_t currencyIndex = 0; currencyIndex < NUMBER_OF_CURRENCIES; currencyIndex++) {
+            struct CurrencySpecification *currencySpec = &currencySpecifications[currencyIndex];
+            if (0 == strcmp (networkSpec->networkId, currencySpec->networkId) &&
+                0 == strcmp ("native", currencySpec->type))
+                nativeCurrency = cryptoCurrencyCreate (currencySpec->currencyId,
+                                                       currencySpec->name,
+                                                       currencySpec->code,
+                                                       currencySpec->type,
+                                                       currencySpec->address);
+        }
+
+        BRCryptoAddressScheme defaultAddressScheme;
+
+        // Fill out the Address Schemes
+        for (size_t schemeIndex = 0; schemeIndex < NUMBER_OF_SCHEMES; schemeIndex++) {
+            struct AddressSchemeSpecification *schemeSpec = &addressSchemeSpecs[schemeIndex];
+            if (0 == strcmp (networkSpec->networkId, schemeSpec->networkId))
+                defaultAddressScheme = schemeSpec->defaultScheme;
+        }
+
+        BRCryptoSyncMode defaultSyncMode;
+
+        // Fill out the sync modes
+        for (size_t modeIndex = 0; modeIndex < NUMBER_OF_MODES; modeIndex++) {
+            struct SyncModeSpecification *modeSpec = &modeSpecs[modeIndex];
+            if (0 == strcmp (networkSpec->networkId, modeSpec->networkId))
+                defaultSyncMode = modeSpec->defaultMode;
+        }
+
         BRCryptoNetwork network = handlers->network->create (listener,
                                                              networkSpec->networkId,
                                                              networkSpec->name,
                                                              networkSpec->network,
                                                              networkSpec->isMainnet,
-                                                             networkSpec->confirmationPeriodInSeconds);
+                                                             networkSpec->confirmationPeriodInSeconds,
+                                                             defaultAddressScheme,
+                                                             defaultSyncMode,
+                                                             nativeCurrency);
 
         BRCryptoCurrency currency = NULL;
 
@@ -912,11 +955,13 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
         for (size_t currencyIndex = 0; currencyIndex < NUMBER_OF_CURRENCIES; currencyIndex++) {
             struct CurrencySpecification *currencySpec = &currencySpecifications[currencyIndex];
             if (0 == strcmp (networkSpec->networkId, currencySpec->networkId)) {
-                currency = cryptoCurrencyCreate (currencySpec->currencyId,
-                                                 currencySpec->name,
-                                                 currencySpec->code,
-                                                 currencySpec->type,
-                                                 currencySpec->address);
+                currency = (0 == strcmp ("native", currencySpec->type)
+                            ? cryptoCurrencyTake (nativeCurrency)
+                            : cryptoCurrencyCreate (currencySpec->currencyId,
+                                                    currencySpec->name,
+                                                    currencySpec->code,
+                                                    currencySpec->type,
+                                                    currencySpec->address));
 
                 BRCryptoUnit unitBase    = NULL;
                 BRCryptoUnit unitDefault = NULL;
@@ -950,9 +995,6 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
                     }
                 }
 
-                if (0 == strcmp ("native", currencySpec->type))
-                    cryptoNetworkSetCurrency (network, currency);
-
                 cryptoNetworkAddCurrency (network, currency, unitBase, unitDefault);
 
                 for (size_t unitIndex = 0; unitIndex < array_count(units); unitIndex++) {
@@ -966,6 +1008,8 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
                 cryptoCurrencyGive(currency);
             }
         }
+        cryptoCurrencyGive(nativeCurrency);
+        nativeCurrency = NULL;
 
         // Create the Network Fees
         BRCryptoUnit feeUnit = cryptoNetworkGetUnitAsDefault (network, network->currency);
@@ -995,8 +1039,8 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
             struct AddressSchemeSpecification *schemeSpec = &addressSchemeSpecs[schemeIndex];
             if (0 == strcmp (networkSpec->networkId, schemeSpec->networkId)) {
                 for (size_t index = 0; index < schemeSpec->numberOfSchemes; index++)
-                    cryptoNetworkAddSupportedAddressScheme(network, schemeSpec->schemes[index]);
-                network->defaultAddressScheme = schemeSpec->defaultScheme;
+                    if (network->defaultAddressScheme != schemeSpec->schemes[index])
+                        cryptoNetworkAddSupportedAddressScheme(network, schemeSpec->schemes[index]);
             }
         }
 
@@ -1005,8 +1049,8 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
             struct SyncModeSpecification *modeSpec = &modeSpecs[modeIndex];
             if (0 == strcmp (networkSpec->networkId, modeSpec->networkId)) {
                 for (size_t index = 0; index < modeSpec->numberOfModes; index++)
-                    cryptoNetworkAddSupportedSyncMode (network, modeSpec->modes[index]);
-                network->defaultSyncMode = modeSpec->defaultMode;
+                    if (network->defaultSyncMode != modeSpec->modes[index])
+                        cryptoNetworkAddSupportedSyncMode (network, modeSpec->modes[index]);
             }
         }
 

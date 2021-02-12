@@ -19,40 +19,30 @@ cryptoNetworkCoerce (BRCryptoNetwork network) {
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsXRP (BRCryptoNetworkListener listener,
-                          const char *uids,
-                          const char *name,
-                          const char *desc,
-                          bool isMainnet,
-                          uint32_t confirmationPeriodInSeconds) {
-    BRCryptoNetwork network = cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
-                                                         CRYPTO_NETWORK_TYPE_XRP,
-                                                         listener,
-                                                         uids,
-                                                         name,
-                                                         desc,
-                                                         isMainnet,
-                                                         confirmationPeriodInSeconds,
-                                                         NULL,
-                                                         NULL);
-    
-    return network;
-}
-
-static BRCryptoNetwork
 cyptoNetworkCreateXRP (BRCryptoNetworkListener listener,
                        const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds) {
-    if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsXRP (listener, uids, name, desc, true, confirmationPeriodInSeconds);
-    else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsXRP (listener, uids, name, desc, false, confirmationPeriodInSeconds);
-    else {
-        assert (false); return NULL;
-    }
+                       uint32_t confirmationPeriodInSeconds,
+                       BRCryptoAddressScheme defaultAddressScheme,
+                       BRCryptoSyncMode defaultSyncMode,
+                       BRCryptoCurrency nativeCurrency) {
+    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
+
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkRecord),
+                                      CRYPTO_NETWORK_TYPE_XRP,
+                                      listener,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
+                                      NULL,
+                                      NULL);
 }
 
 static void

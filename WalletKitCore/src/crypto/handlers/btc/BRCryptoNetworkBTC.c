@@ -47,44 +47,34 @@ cryptoNetworkCreateCallbackBTC (BRCryptoNetworkCreateContext context,
 }
 
 static BRCryptoNetwork
-cryptoNetworkCreateAsBTC (BRCryptoBlockChainType type,
-                          BRCryptoNetworkListener listener,
-                          const char *uids,
-                          const char *name,
-                          const char *desc,
-                          bool isMainnet,
-                          uint32_t confirmationPeriodInSeconds,
-                          const BRChainParams *params) {
+cyptoNetworkCreateBTC (BRCryptoNetworkListener listener,
+                       const char *uids,
+                       const char *name,
+                       const char *desc,
+                       bool isMainnet,
+                       uint32_t confirmationPeriodInSeconds,
+                       BRCryptoAddressScheme defaultAddressScheme,
+                       BRCryptoSyncMode defaultSyncMode,
+                       BRCryptoCurrency nativeCurrency) {
+    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
+
     BRCryptoNetworkCreateContextBTC contextBTC = {
-        params
+        (isMainnet ? BRMainNetParams : BRTestNetParams)
     };
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
-                                      type,
+                                      CRYPTO_NETWORK_TYPE_BTC,
                                       listener,
                                       uids,
                                       name,
                                       desc,
                                       isMainnet,
                                       confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
                                       &contextBTC,
                                       cryptoNetworkCreateCallbackBTC);
-}
-
-static BRCryptoNetwork
-cyptoNetworkCreateBTC (BRCryptoNetworkListener listener,
-                       const char *uids,
-                       const char *name,
-                       const char *desc,
-                       bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds) {
-    if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, listener, uids, name, desc, true, confirmationPeriodInSeconds, BRMainNetParams);
-    else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BTC, listener,uids, name, desc, false, confirmationPeriodInSeconds, BRTestNetParams);
-    else {
-        assert (false); return NULL;
-    }
 }
 
 static BRCryptoNetwork
@@ -93,32 +83,61 @@ cyptoNetworkCreateBCH (BRCryptoNetworkListener listener,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds) {
-    if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, listener, uids, name, desc, true, confirmationPeriodInSeconds,  BRBCashParams);
-    else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH, listener, uids, name, desc, false, confirmationPeriodInSeconds, BRBCashTestNetParams);
-    else {
-        assert (false); return NULL;
-    }
+                       uint32_t confirmationPeriodInSeconds,
+                       BRCryptoAddressScheme defaultAddressScheme,
+                       BRCryptoSyncMode defaultSyncMode,
+                       BRCryptoCurrency nativeCurrency) {
+    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
+
+    BRCryptoNetworkCreateContextBTC contextBTC = {
+        (isMainnet ? BRBCashParams : BRBCashTestNetParams)
+    };
+
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+                                      CRYPTO_NETWORK_TYPE_BCH,
+                                      listener,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
+                                      &contextBTC,
+                                      cryptoNetworkCreateCallbackBTC);
 }
 
 static BRCryptoNetwork
 cyptoNetworkCreateBSV (BRCryptoNetworkListener listener,
-const char *uids,
+                       const char *uids,
                        const char *name,
                        const char *desc,
                        bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds) {
-    if      (0 == strcmp ("mainnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, listener, uids, name, desc, true, confirmationPeriodInSeconds,  BRBSVParams);
-    else if (0 == strcmp ("testnet", desc))
-        return cryptoNetworkCreateAsBTC (CRYPTO_NETWORK_TYPE_BSV, listener, uids, name, desc, false, confirmationPeriodInSeconds, BRBSVTestNetParams);
-    else {
-        assert (false); return NULL;
-    }
-}
+                       uint32_t confirmationPeriodInSeconds,
+                       BRCryptoAddressScheme defaultAddressScheme,
+                       BRCryptoSyncMode defaultSyncMode,
+                       BRCryptoCurrency nativeCurrency) {
+    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
+    BRCryptoNetworkCreateContextBTC contextBTC = {
+        (isMainnet ? BRBSVParams : BRBSVTestNetParams)
+    };
+
+    return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
+                                      CRYPTO_NETWORK_TYPE_BSV,
+                                      listener,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
+                                      &contextBTC,
+                                      cryptoNetworkCreateCallbackBTC);
+}
 
 static void
 cryptoNetworkReleaseBTC (BRCryptoNetwork network) {
