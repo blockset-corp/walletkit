@@ -358,9 +358,9 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
      public void announceEstimateTransactionFee(BRCryptoClientCallbackState callbackState, boolean success, UnsignedLong costUnits, Map<String, String> meta) {
-         int metaCount = meta.size();
-         String[] metaKeys = meta.keySet().toArray(new String[metaCount]);
-         String[] metaVals = meta.values().toArray(new String[metaCount]);
+         int metaCount     = (null == meta ? 0    : meta.size());
+         String[] metaKeys = (null == meta ? null : meta.keySet().toArray(new String[metaCount]));
+         String[] metaVals = (null == meta ? null : meta.values().toArray(new String[metaCount]));
 
          CryptoLibraryIndirect.cwmAnnounceEstimateTransactionFee(
                  this.getPointer(),

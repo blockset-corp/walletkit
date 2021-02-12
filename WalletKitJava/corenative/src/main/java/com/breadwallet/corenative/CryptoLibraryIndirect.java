@@ -40,13 +40,13 @@ public final class CryptoLibraryIndirect {
     }
 
     public static Pointer cryptoWalletCreateTransfer(Pointer wallet, Pointer target, Pointer amount, Pointer feeBasis, SizeT attributesCount, BRCryptoTransferAttribute[] attributes) {
-        attributes = attributes.length == 0 ? null : attributes;
+        attributes = attributesCount.intValue() == 0 ? null : attributes;
         return INSTANCE.cryptoWalletCreateTransfer(wallet, target, amount, feeBasis, attributesCount, attributes);
     }
 
-    public static int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates) {
-        attributes = attributes.length == 0 ? null : attributes;
-        return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, countOfAttributes, attributes, validates);
+    public static int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT attributesCount, BRCryptoTransferAttribute[] attributes, IntByReference validates) {
+        attributes = attributesCount.intValue() == 0 ? null : attributes;
+        return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, attributesCount, attributes, validates);
     }
 
     public static void cwmAnnounceEstimateTransactionFee(Pointer cwm,
@@ -56,8 +56,8 @@ public final class CryptoLibraryIndirect {
                                                          SizeT attributesCount,
                                                          String[] attributeKeys,
                                                          String[] attributeVals) {
-        attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
-        attributeVals = attributeVals.length == 0 ? null : attributeVals;
+        attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
+        attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
 
         INSTANCE.cwmAnnounceEstimateTransactionFee(cwm, callbackState, success,
                 costUnits,
@@ -83,8 +83,8 @@ public final class CryptoLibraryIndirect {
                                                            SizeT attributesCount,
                                                            String[] attributeKeys,
                                                            String[] attributeVals) {
-        attributeKeys = attributeKeys.length == 0 ? null : attributeKeys;
-        attributeVals = attributeVals.length == 0 ? null : attributeVals;
+        attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
+        attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
         return INSTANCE.cryptoClientTransferBundleCreate(status,
                 uids, hash, identifier, sourceAddr, targetAddr,
                 amount, currency, fee,
@@ -94,13 +94,13 @@ public final class CryptoLibraryIndirect {
 
     public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransactions(cwm, callbackState, success,
-                (0 == bundles.length ? null : bundles),
+                (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
     }
 
     public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
         INSTANCE.cwmAnnounceTransfers(cwm, callbackState, success,
-                (0 == bundles.length ? null : bundles),
+                (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
     }
 
@@ -121,8 +121,8 @@ public final class CryptoLibraryIndirect {
                 blockchainId,
                 address,
                 verified,
-                new SizeT(denominations.length),
-                (0 == denominations.length ? null : denominations));
+                denominationsCount,
+                (0 == denominationsCount.intValue() ? null : denominations));
     }
 
     public static void cwmAnnounceCurrencies(Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount) {
