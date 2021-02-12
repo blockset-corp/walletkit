@@ -145,7 +145,7 @@ DEFINE_MODES            ("ethereum-ropsten", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_S
 // MARK: XRP
 
 #define NETWORK_NAME    "Ripple"
-DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XRP,  "ripple-mainnet", NETWORK_NAME, "mainnet", true, 61321875, 6, 5)
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XRP,  "ripple-mainnet", NETWORK_NAME, "mainnet", true, 61321875, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("ripple-mainnet", "10", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("ripple-mainnet",     "ripple-mainnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XRP,  "native",   NULL,   true)
     DEFINE_UNIT ("ripple-mainnet:__native__",      "Drop",       "drop",      0,      "DROP")
@@ -154,7 +154,7 @@ DEFINE_ADDRESS_SCHEMES  ("ripple-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("ripple-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
 #if HAS_XRP_TESTNET
-DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XRP,  "ripple-testnet", NETWORK_NAME, "testnet", false, 50000, 6, 5)
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XRP,  "ripple-testnet", NETWORK_NAME, "testnet", false, 50000, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("ripple-testnet", "10", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("ripple-testnet",     "ripple-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XRP,  "native",   NULL,   true)
     DEFINE_UNIT ("ripple-testnet:__native__",      "Drop",       "drop",      0,      "DROP")
@@ -189,7 +189,7 @@ DEFINE_MODES            ("hedera-testnet", CRYPTO_SYNC_MODE_API_ONLY)
 // MARK: Tezos
 
 #define NETWORK_NAME    "Tezos"
-DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 1328407, 1, 60)
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 1328407, 6, 60)
 DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "500000", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("tezos-mainnet",     "tezos-mainnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-mainnet:__native__",  "mutez",     "mtz",   0,  "mutez")
@@ -198,7 +198,7 @@ DEFINE_ADDRESS_SCHEMES  ("tezos-mainnet", CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
 DEFINE_MODES            ("tezos-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
 #if HAS_XTZ_TESTNET
-DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 1, 60)
+DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 6, 60)
 DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "500000", "1m", 1 * 60 * 1000)
 DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME,  CRYPTO_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-testnet:__native__",  "mutez",     "mtz",   0,  "mutez")
