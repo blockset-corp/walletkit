@@ -187,10 +187,6 @@ cryptoNetworkSetConfirmationsUntilFinal (BRCryptoNetwork network,
                                          uint32_t confirmationsUntilFinal);
 
 private_extern void
-cryptoNetworkSetCurrency (BRCryptoNetwork network,
-                          BRCryptoCurrency currency);
-
-private_extern void
 cryptoNetworkAddCurrency (BRCryptoNetwork network,
                           BRCryptoCurrency currency,
                           BRCryptoUnit baseUnit,

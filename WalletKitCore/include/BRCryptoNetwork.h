@@ -116,10 +116,6 @@ extern "C" {
     cryptoNetworkGetCurrency (BRCryptoNetwork network);
 
     extern void
-    cryptoNetworkSetCurrency (BRCryptoNetwork network,
-                              BRCryptoCurrency currency);
-
-    extern void
     cryptoNetworkAddCurrency (BRCryptoNetwork network,
                               BRCryptoCurrency currency,
                               BRCryptoUnit baseUnit,

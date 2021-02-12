@@ -287,18 +287,6 @@ cryptoNetworkGetCurrencyCode (BRCryptoNetwork network) {
     return cryptoCurrencyGetCode (network->currency);
 }
 
-extern void
-cryptoNetworkSetCurrency (BRCryptoNetwork network,
-                          BRCryptoCurrency newCurrency) {
-    pthread_mutex_lock (&network->lock);
-    BRCryptoCurrency currency = network->currency;
-    network->currency = cryptoCurrencyTake(newCurrency);
-    pthread_mutex_unlock (&network->lock);
-
-    // drop reference outside of lock to avoid potential case where release function runs
-    if (NULL != currency) cryptoCurrencyGive (currency);
-}
-
 extern size_t
 cryptoNetworkGetCurrencyCount (BRCryptoNetwork network) {
     pthread_mutex_lock (&network->lock);

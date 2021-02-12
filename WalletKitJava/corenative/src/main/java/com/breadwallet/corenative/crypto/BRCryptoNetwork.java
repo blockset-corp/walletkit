@@ -74,16 +74,6 @@ public class BRCryptoNetwork extends PointerType {
                 )
         );
     }
-
-    public void setCurrency(BRCryptoCurrency currency) {
-        Pointer thisPtr = this.getPointer();
-
-        CryptoLibraryDirect.cryptoNetworkSetCurrency(
-                thisPtr,
-                currency.getPointer()
-        );
-    }
-
     public boolean hasCurrency(BRCryptoCurrency currency) {
         Pointer thisPtr = this.getPointer();
 
