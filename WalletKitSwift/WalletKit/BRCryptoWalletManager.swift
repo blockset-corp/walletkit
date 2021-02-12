@@ -578,6 +578,11 @@ public enum WalletManagerMode: Equatable {
         }
     }
 
+    public static let all = [WalletManagerMode.api_only,
+                             WalletManagerMode.api_with_p2p_submit,
+                             WalletManagerMode.p2p_with_api_sync,
+                             WalletManagerMode.p2p_only]
+    
     // Equatable: [Swift-generated]
 }
 

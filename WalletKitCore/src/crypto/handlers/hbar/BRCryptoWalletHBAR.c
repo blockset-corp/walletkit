@@ -84,7 +84,7 @@ cryptoWalletReleaseHBAR (BRCryptoWallet wallet) {
 static BRCryptoAddress
 cryptoWalletGetAddressHBAR (BRCryptoWallet wallet,
                             BRCryptoAddressScheme addressScheme) {
-    assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
+    assert (CRYPTO_ADDRESS_SCHEME_NATIVE == addressScheme);
     BRCryptoWalletHBAR walletHBAR = cryptoWalletCoerce (wallet);
     return cryptoAddressCreateAsHBAR (hederaAccountGetAddress (walletHBAR->hbarAccount));
 }

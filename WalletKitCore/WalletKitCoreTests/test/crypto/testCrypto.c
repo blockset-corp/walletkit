@@ -1524,9 +1524,7 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
 
     BRCryptoAddressScheme scheme = ((isBtc || isBch) ?
                                     CRYPTO_ADDRESS_SCHEME_BTC_LEGACY :
-                                    (isEth ?
-                                     CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT :
-                                     CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT));
+                                    CRYPTO_ADDRESS_SCHEME_NATIVE);
 
     if (isBtc || isEth || isGen) {
         success = AS_CRYPTO_BOOLEAN(runCryptoWalletManagerLifecycleTest (account,

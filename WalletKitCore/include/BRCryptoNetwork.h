@@ -43,11 +43,10 @@ extern "C" {
     typedef enum {
         CRYPTO_ADDRESS_SCHEME_BTC_LEGACY,
         CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT,
-        CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT,
-        CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT
+        CRYPTO_ADDRESS_SCHEME_NATIVE,          // Default for Currency
     } BRCryptoAddressScheme;
 
-#define NUMBER_OF_ADDRESS_SCHEMES   (1 + CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT)
+#define NUMBER_OF_ADDRESS_SCHEMES   (1 + CRYPTO_ADDRESS_SCHEME_NATIVE)
 
 
     typedef struct BRCryptoNetworkFeeRecord *BRCryptoNetworkFee;

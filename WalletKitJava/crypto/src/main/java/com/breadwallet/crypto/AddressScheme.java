@@ -17,8 +17,7 @@ package com.breadwallet.crypto;
 public enum  AddressScheme {
     BTC_LEGACY,
     BTC_SEGWIT,
-    ETH_DEFAULT,
-    GEN_DEFAULT;
+    NATIVE;
 
     @Override
     public String toString() {
@@ -27,10 +26,8 @@ public enum  AddressScheme {
                 return "BTC Legacy";
             case BTC_SEGWIT:
                 return "BTC Segwit";
-            case ETH_DEFAULT:
-                return "ETH Default";
-            case GEN_DEFAULT:
-                return "GEN Default";
+            case NATIVE:
+                return "Native";
             default:
                 return "Default";
         }

@@ -23,31 +23,22 @@ public enum BRCryptoAddressScheme {
         }
     },
 
-    CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT {
+    CRYPTO_ADDRESS_SCHEME_NATIVE {
         @Override
         public int toCore() {
-            return CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT_VALUE;
-        }
-    },
-
-    CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT {
-        @Override
-        public int toCore() {
-            return CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT_VALUE;
+            return CRYPTO_ADDRESS_SCHEME_NATIVE_VALUE;
         }
     };
 
     private static final int CRYPTO_ADDRESS_SCHEME_BTC_LEGACY_VALUE  = 0;
     private static final int CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT_VALUE  = 1;
-    private static final int CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT_VALUE = 2;
-    private static final int CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT_VALUE = 3;
+    private static final int CRYPTO_ADDRESS_SCHEME_NATIVE_VALUE      = 2;
 
     public static BRCryptoAddressScheme fromCore(int nativeValue) {
         switch (nativeValue) {
             case CRYPTO_ADDRESS_SCHEME_BTC_LEGACY_VALUE:  return CRYPTO_ADDRESS_SCHEME_BTC_LEGACY;
             case CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT_VALUE:  return CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT;
-            case CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT_VALUE: return CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT;
-            case CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT_VALUE: return CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT;
+            case CRYPTO_ADDRESS_SCHEME_NATIVE_VALUE:      return CRYPTO_ADDRESS_SCHEME_NATIVE;
             default: throw new IllegalArgumentException("Invalid core value");
         }
     }

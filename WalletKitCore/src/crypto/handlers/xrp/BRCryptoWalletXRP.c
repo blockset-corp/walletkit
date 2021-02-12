@@ -86,7 +86,7 @@ cryptoWalletReleaseXRP (BRCryptoWallet wallet) {
 static BRCryptoAddress
 cryptoWalletGetAddressXRP (BRCryptoWallet wallet,
                            BRCryptoAddressScheme addressScheme) {
-    assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
+    assert (CRYPTO_ADDRESS_SCHEME_NATIVE == addressScheme);
     BRCryptoWalletXRP walletXRP = cryptoWalletCoerce (wallet);
     return cryptoAddressCreateAsXRP (rippleAccountGetAddress(walletXRP->xrpAccount));
 }
