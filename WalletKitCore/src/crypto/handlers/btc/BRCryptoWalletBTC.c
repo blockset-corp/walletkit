@@ -162,7 +162,7 @@ cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
         for (ssize_t tIndex = (ssize_t) MIN (tidsCount, count) - 1; tIndex >= 0; tIndex--)
             if (BRWalletTransactionIsResolved (walletBTC->wid, walletBTC->tidsUnresolved[tIndex])) {
                 tids[rIndex++] = walletBTC->tidsUnresolved[tIndex];
-                array_rm (walletBTC->tidsUnresolved, tIndex);
+                array_rm (walletBTC->tidsUnresolved, (size_t) tIndex);
             }
 
         count = rIndex;

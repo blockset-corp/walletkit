@@ -125,14 +125,14 @@ static int BRTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *bl
 }
 
 extern const BRCheckPoint *BRChainParamsGetCheckpointBefore (const BRChainParams *params, uint32_t timestamp) {
-    for (ssize_t index = params->checkpointsCount - 1; index >= 0; index--)
+    for (ssize_t index = (ssize_t) (params->checkpointsCount - 1); index >= 0; index--)
         if (params->checkpoints[index].timestamp < timestamp)
             return &params->checkpoints[index];
    return NULL;
 }
 
 extern const BRCheckPoint *BRChainParamsGetCheckpointBeforeBlockNumber (const BRChainParams *params, uint32_t blockNumber) {
-    for (ssize_t index = params->checkpointsCount - 1; index >= 0; index--)
+    for (ssize_t index = (ssize_t) (params->checkpointsCount - 1); index >= 0; index--)
         if (params->checkpoints[index].height < blockNumber)
             return &params->checkpoints[index];
    return NULL;

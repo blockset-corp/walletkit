@@ -1285,7 +1285,7 @@ lesThread (BREthereumLES les) {
         }
 
         // ... and then remove them in reverse order.
-        for (ssize_t index = requestsToFailCount - 1; index >= 0; index--)
+        for (ssize_t index = (ssize_t) (requestsToFailCount - 1); index >= 0; index--)
             array_rm (les->requests, requestsToFail[index]);
 
         //

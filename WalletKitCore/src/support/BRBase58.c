@@ -101,26 +101,26 @@ size_t BRBase58Decode(uint8_t *data, size_t dataLen, const char *str)
                 break;
                 
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H':
-                carry += 9 - 'A';
+                carry += (uint32_t) (9 - 'A');
                 break;
                 
             case 'J': case 'K': case 'L': case 'M': case 'N':
-                carry += 17 - 'J';
+                carry += (uint32_t) (17 - 'J');
                 break;
                 
             case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y':
             case 'Z':
-                carry += 22 - 'P';
+                carry += (uint32_t) (22 - 'P');
                 break;
                 
             case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j':
             case 'k':
-                carry += 33 - 'a';
+                carry += (uint32_t) (33 - 'a');
                 break;
                 
             case 'm': case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': case 'v':
             case 'w': case 'x': case 'y': case 'z':
-                carry += 44 - 'm';
+                carry += (uint32_t) (44 - 'm');
                 break;
                 
             default:

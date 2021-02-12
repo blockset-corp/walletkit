@@ -254,7 +254,7 @@ static size_t _BRTransactionWitnessData(const BRTransaction *tx, uint8_t *data, 
     off += sizeof(UInt256);
     if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], tx->lockTime); // locktime
     off += sizeof(uint32_t);
-    if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], hashType); // hash type
+    if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], (uint32_t) hashType); // hash type
     off += sizeof(uint32_t);
     return (! data || off <= dataLen) ? off : 0;
 }
@@ -318,7 +318,7 @@ static size_t _BRTransactionData(const BRTransaction *tx, uint8_t *data, size_t 
         off += BRVarIntSet((data ? &data[off] : NULL), (off <= dataLen ? dataLen - off : 0), index + 1);
         
         for (i = 0; i < index; i++)  {
-            if (data && off + sizeof(uint64_t) <= dataLen) UInt64SetLE(&data[off], -1LL);
+            if (data && off + sizeof(uint64_t) <= dataLen) UInt64SetLE(&data[off], (uint32_t) -1LL);
             off += sizeof(uint64_t);
             off += BRVarIntSet((data ? &data[off] : NULL), (off <= dataLen ? dataLen - off : 0), 0);
         }
@@ -344,7 +344,7 @@ static size_t _BRTransactionData(const BRTransaction *tx, uint8_t *data, size_t 
     off += sizeof(uint32_t);
     
     if (index != SIZE_MAX) {
-        if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], hashType); // hash type
+        if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], (uint32_t) hashType); // hash type
         off += sizeof(uint32_t);
     }
     
