@@ -37,6 +37,7 @@ import com.breadwallet.crypto.blockchaindb.models.bdb.BlockchainFee;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthLog;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthToken;
 import com.breadwallet.crypto.blockchaindb.models.brd.EthTransaction;
@@ -2062,7 +2063,7 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(String hash) {
                                         Log.log(Level.FINE, "BRCryptoCWMEthSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState, hash);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccessForHash(callbackState, hash);
                                     }
 
                                     @Override
@@ -2074,11 +2075,11 @@ final class System implements com.breadwallet.crypto.System {
                                 break;
 
                             default:
-                                system.query.createTransaction(walletManager.getNetwork().getUids(), hashAsHex, transaction, new CompletionHandler<Void, QueryError>() {
+                                system.query.createTransaction(walletManager.getNetwork().getUids(), hashAsHex, transaction, new CompletionHandler<TransactionIdentifier, QueryError>() {
                                     @Override
-                                    public void handleData(Void data) {
+                                    public void handleData(TransactionIdentifier data) {
                                         Log.log(Level.FINE, "BRCryptoCWMBtcSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState, data.getHash());
                                     }
 
                                     @Override

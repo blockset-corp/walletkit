@@ -465,9 +465,10 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
                     .transform(TransferConfirmation::getConfirmationTime)
                     .transform(t -> DATE_FORMAT.get().format(t))
                     .or("<pending>"));
-            this.addressText = Suppliers.memoize(() -> transfer.getHash()
-                    .transform(h -> String.format("Hash: %s", h))
-                    .or("<pending>"));
+            this.addressText = Suppliers.memoize(() ->
+                    transfer.getHash()
+                            .transform(h -> String.format("Hash: %s", h))
+                            .or("<pending>"));
         }
 
         TransferState state() {

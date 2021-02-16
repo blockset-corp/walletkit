@@ -2340,7 +2340,7 @@ cwmAnnounceSubmitTransferResultGEN (OwnershipKept BRCryptoWalletManager cwm,
     BRCryptoTransfer transfer = (NULL == wallet ? NULL : cryptoWalletFindTransferAsGEN (wallet, callbackState->u.genWithTransaction.tid));
 
     if (!error && NULL != transfer && NULL != hash)
-        genTransferSetHash (callbackState->u.genWithTransaction.tid, hash);
+        genTransferSetHash (cryptoTransferAsGEN(transfer), hash);
 
     // TODO: Assert on these?
     if (NULL != wallet && NULL != transfer) {
