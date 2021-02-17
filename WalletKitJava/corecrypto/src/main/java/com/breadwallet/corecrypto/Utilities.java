@@ -226,8 +226,7 @@ final class Utilities {
         switch (scheme) {
             case BTC_LEGACY: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_BTC_LEGACY;
             case BTC_SEGWIT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT;
-            case ETH_DEFAULT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT;
-            case GEN_DEFAULT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT;
+            case NATIVE:     return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_NATIVE;
             default: throw new IllegalArgumentException("Unsupported scheme");
         }
     }
@@ -237,8 +236,7 @@ final class Utilities {
         switch (scheme) {
             case CRYPTO_ADDRESS_SCHEME_BTC_LEGACY: return AddressScheme.BTC_LEGACY;
             case CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT: return AddressScheme.BTC_SEGWIT;
-            case CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT: return AddressScheme.ETH_DEFAULT;
-            case CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT: return AddressScheme.GEN_DEFAULT;
+            case CRYPTO_ADDRESS_SCHEME_NATIVE:     return AddressScheme.NATIVE;
             default: throw new IllegalArgumentException("Unsupported scheme");
         }
     }

@@ -226,7 +226,6 @@ public final class CryptoLibraryDirect {
 
     // crypto/BRCryptoPrivate.h (BRCryptoNetwork)
     public static native void cryptoNetworkSetHeight(Pointer network, long height);
-    public static native void cryptoNetworkSetCurrency(Pointer network, Pointer currency);
     public static native void cryptoNetworkAddCurrency(Pointer network, Pointer currency, Pointer baseUnit, Pointer defaultUnit);
     public static native void cryptoNetworkAddCurrencyUnit(Pointer network, Pointer currency, Pointer unit);
     public static native void cryptoNetworkAddNetworkFee(Pointer network, Pointer networkFee);

@@ -67,16 +67,15 @@ public final class Address: Equatable, CustomStringConvertible {
 public enum AddressScheme: Equatable, CustomStringConvertible {
     case btcLegacy
     case btcSegwit
-    case ethDefault
-    case genDefault
+    case native
+
 
     internal init (core: BRCryptoAddressScheme) {
         switch core {
         case CRYPTO_ADDRESS_SCHEME_BTC_LEGACY:  self = .btcLegacy
         case CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT:  self = .btcSegwit
-        case CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT: self = .ethDefault
-        case CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT: self = .genDefault
-        default: self = .genDefault;  preconditionFailure()
+        case CRYPTO_ADDRESS_SCHEME_NATIVE:      self = .native
+        default: self = .native;  preconditionFailure()
         }
     }
 
@@ -84,8 +83,7 @@ public enum AddressScheme: Equatable, CustomStringConvertible {
         switch self {
         case .btcLegacy:  return CRYPTO_ADDRESS_SCHEME_BTC_LEGACY
         case .btcSegwit:  return CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT
-        case .ethDefault: return CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT
-        case .genDefault: return CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT
+        case .native:     return CRYPTO_ADDRESS_SCHEME_NATIVE
         }
     }
 
@@ -93,8 +91,11 @@ public enum AddressScheme: Equatable, CustomStringConvertible {
         switch self {
         case .btcLegacy: return "BTC Legacy"
         case .btcSegwit: return "BTC Segwit"
-        case .ethDefault: return "ETH Default"
-        case .genDefault: return "GEN Default"
+        case .native:   return "Native"
         }
     }
+
+    public static let all = [AddressScheme.btcLegacy,
+                             AddressScheme.btcSegwit,
+                             AddressScheme.native]
 }

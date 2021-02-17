@@ -171,13 +171,13 @@ class BRCryptoAccountTests: XCTestCase {
     func testAddressScheme () {
         XCTAssertEqual (AddressScheme.btcLegacy,  AddressScheme(core: AddressScheme.btcLegacy.core))
         XCTAssertEqual (AddressScheme.btcSegwit,  AddressScheme(core: AddressScheme.btcSegwit.core))
-        XCTAssertEqual (AddressScheme.ethDefault, AddressScheme(core: AddressScheme.ethDefault.core))
-        XCTAssertEqual (AddressScheme.genDefault, AddressScheme(core: AddressScheme.genDefault.core))
+        XCTAssertEqual (AddressScheme.native, AddressScheme(core: AddressScheme.native.core))
+        XCTAssertEqual (AddressScheme.native, AddressScheme(core: AddressScheme.native.core))
 
         XCTAssertEqual("BTC Legacy",  AddressScheme.btcLegacy.description)
         XCTAssertEqual("BTC Segwit",  AddressScheme.btcSegwit.description)
-        XCTAssertEqual("ETH Default", AddressScheme.ethDefault.description)
-        XCTAssertEqual("GEN Default", AddressScheme.genDefault.description)
+        XCTAssertEqual("Native", AddressScheme.native.description)
+        XCTAssertEqual("Native", AddressScheme.native.description)
 
     }
 

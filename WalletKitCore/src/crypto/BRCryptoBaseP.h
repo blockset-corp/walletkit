@@ -25,5 +25,12 @@
 ///
 /// This is an implementation detail
 ///
+#define free_const(pointer)    free((void*) (pointer))
+
+#define assign_const(type, lval, rval) do { \
+  type *__ptr = (type *) &(lval);           \
+  *__ptr = (rval);                          \
+} while (0)
+
 
 #endif /* BRCryptoBaseP_h */

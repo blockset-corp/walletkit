@@ -57,7 +57,10 @@ typedef BRCryptoNetwork
                                  const char *name,               // Bitcoin
                                  const char *network,            // testnet
                                  bool isMainnet,                 // false
-                                 uint32_t confirmationPeriodInSeconds); // 10 * 60
+                                 uint32_t confirmationPeriodInSeconds,  // 10 * 60
+                                 BRCryptoAddressScheme defaultAddressScheme,
+                                 BRCryptoSyncMode defaultSyncMode,
+                                 BRCryptoCurrency nativeCurrency);
 
 typedef void
 (*BRCryptoNetworkReleaseHandler) (BRCryptoNetwork network);
@@ -157,6 +160,9 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            const char *desc,        // "mainnet", "testnet", "rinkeby"
                            bool isMainnet,
                            uint32_t confirmationPeriodInSeconds,
+                           BRCryptoAddressScheme defaultAddressScheme,
+                           BRCryptoSyncMode defaultSyncMode,
+                           BRCryptoCurrency currencyNative,
                            BRCryptoNetworkCreateContext createContext,
                            BRCryptoNetworkCreateCallback createCallback);
 
@@ -179,10 +185,6 @@ cryptoNetworkSetHeight (BRCryptoNetwork network,
 private_extern void
 cryptoNetworkSetConfirmationsUntilFinal (BRCryptoNetwork network,
                                          uint32_t confirmationsUntilFinal);
-
-private_extern void
-cryptoNetworkSetCurrency (BRCryptoNetwork network,
-                          BRCryptoCurrency currency);
 
 private_extern void
 cryptoNetworkAddCurrency (BRCryptoNetwork network,

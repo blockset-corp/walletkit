@@ -342,7 +342,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -375,7 +374,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -408,7 +406,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -444,7 +441,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, weiUnit, etherUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, weiUnit)

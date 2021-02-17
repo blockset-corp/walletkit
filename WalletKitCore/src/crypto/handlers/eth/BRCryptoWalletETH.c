@@ -265,7 +265,7 @@ cryptoWalletCreateTransferMultipleETH (BRCryptoWallet wallet,
 static OwnershipGiven BRSetOf(BRCryptoAddress)
 cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet wallet) {
     BRSetOf(BRCryptoAddress) addresses = cryptoAddressSetCreate (1);
-    BRSetAdd (addresses, cryptoWalletGetAddressETH (wallet, CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT));
+    BRSetAdd (addresses, cryptoWalletGetAddressETH (wallet, CRYPTO_ADDRESS_SCHEME_NATIVE));
     return addresses;
 }
 

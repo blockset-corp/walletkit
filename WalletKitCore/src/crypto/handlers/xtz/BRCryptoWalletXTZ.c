@@ -87,7 +87,7 @@ cryptoWalletReleaseXTZ (BRCryptoWallet wallet) {
 static BRCryptoAddress
 cryptoWalletGetAddressXTZ (BRCryptoWallet wallet,
                            BRCryptoAddressScheme addressScheme) {
-    assert (CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT == addressScheme);
+    assert (CRYPTO_ADDRESS_SCHEME_NATIVE == addressScheme);
     BRCryptoWalletXTZ walletXTZ = cryptoWalletCoerce (wallet);
     return cryptoAddressCreateAsXTZ (tezosAccountGetAddress(walletXTZ->xtzAccount));
 }
