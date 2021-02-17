@@ -40,6 +40,31 @@
 // targeted for every 10 minutes; we'll check every 2.5 minutes.
 #define CWM_CONFIRMATION_PERIOD_FACTOR  (4)
 
+// We don't want to sample too frequently or too infrequently.  As a base, we'll sample at:
+//     block-chain-period / CWM_CONFIRMATION_PERIOD_FACTOR
+// which is 2.5 minutes for BTC and 1/4 second for Ripple.
+//
+// From a User perspective waiting 10 seconds to learn of a transaction, even if it could be
+// confirmed in 1 second, isn't burdensome.  This would ba a case like Ripple where blocks arrive
+// every 1 second and only 1 block-ing is needed for confirmation.  Other blockchains have
+// confirmationCounts beyond 1, like 6, and thus waiting 10 seconds isn't bad when 6 blocks are
+// needed anyway.
+//
+// Additionally sampling at 1 minutes for a blockchain like BTC, where blocks average 10 minutes,
+// is not burdensome on the network data rates.
+//
+#define CWM_MAXIMUM_SAMPLING_PERIOD_IN_MILLISECONDS   (1 * 60 * 1000)    //  1 minute
+#define CWM_MINIMUM_SAMPLING_PERIOD_IN_MILLISECONDS   (    10 * 1000)    // 10 seconds
+
+static unsigned int
+cryptoWalletManagerBoundSamplingPeriod (unsigned int milliseconds) {
+    return (milliseconds > CWM_MAXIMUM_SAMPLING_PERIOD_IN_MILLISECONDS
+            ? CWM_MAXIMUM_SAMPLING_PERIOD_IN_MILLISECONDS
+            : (milliseconds < CWM_MINIMUM_SAMPLING_PERIOD_IN_MILLISECONDS
+               ? CWM_MINIMUM_SAMPLING_PERIOD_IN_MILLISECONDS
+               : milliseconds));
+}
+
 uint64_t BLOCK_HEIGHT_UNBOUND_VALUE = UINT64_MAX;
 
 static void
@@ -314,7 +339,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                            &manager->lock);
 
     eventHandlerSetTimeoutDispatcher (manager->handler,
-                                      (1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR,
+                                      cryptoWalletManagerBoundSamplingPeriod ((1000 * cryptoNetworkGetConfirmationPeriodInSeconds(network)) / CWM_CONFIRMATION_PERIOD_FACTOR),
                                       (BREventDispatcher) cryptoWalletManagerPeriodicDispatcher,
                                       (void*) manager);
 

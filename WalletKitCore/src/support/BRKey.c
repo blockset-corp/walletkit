@@ -70,7 +70,7 @@ uint32_t BRRand(uint32_t upperBound)
     if (upperBound == 0 || upperBound > BR_RAND_MAX) upperBound = BR_RAND_MAX;
 
     do { // to avoid modulo bias, find a rand value not less than 0x100000000 % upperBound
-        r = rand();
+        r = (uint32_t) rand();
     } while (r < ((0xffffffff - upperBound*2) + 1) % upperBound); // (((0xffffffff - x*2) + 1) % x) == (0x100000000 % x)
 
     return r % upperBound;

@@ -63,7 +63,7 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
     for (i = 0; i < sep; i++) chk = polymod(chk) ^ (addr[i] & 0x1f);
     memset(buf, 0, sizeof(buf));
 
-    for (i = sep + 1, j = -1; i < addrLen; i++, j++) {
+    for (i = sep + 1, j = (size_t) -1; i < addrLen; i++, j++) {
         switch (tolower(addr[i])) {
             case 'q': c = 0;  break; case 'p': c = 1;  break; case 'z': c = 2;  break; case 'r': c = 3;  break;
             case 'y': c = 4;  break; case '9': c = 5;  break; case 'x': c = 6;  break; case '8': c = 7;  break;

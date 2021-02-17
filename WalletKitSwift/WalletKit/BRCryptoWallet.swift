@@ -686,7 +686,7 @@ public enum WalletEvent {
     case feeBasisUpdated   (feeBasis: TransferFeeBasis)
     case feeBasisEstimated (feeBasis: TransferFeeBasis)
 
-    init (wallet: Wallet, core: BRCryptoWalletEvent) {
+    init? (wallet: Wallet, core: BRCryptoWalletEvent) {
         switch cryptoWalletEventGetType(core) {
         case CRYPTO_WALLET_EVENT_CREATED:
             self = .created
@@ -745,12 +745,16 @@ public enum WalletEvent {
             var feeBasis: BRCryptoFeeBasis!
 
             cryptoWalletEventExtractFeeBasisUpdate (core, &feeBasis);
+
+            guard nil != feeBasis else { return nil }
             self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
-            
+
         case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
             var feeBasis: BRCryptoFeeBasis!
 
             cryptoWalletEventExtractFeeBasisEstimate (core, nil, nil, &feeBasis);
+            
+            guard nil != feeBasis else { return nil }
             self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
             
         default:

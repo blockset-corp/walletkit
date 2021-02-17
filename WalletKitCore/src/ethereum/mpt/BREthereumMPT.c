@@ -143,7 +143,7 @@ mptNodeDecode (BRRlpItem item,
             int padded = 0 == (nodeTypeNibble & 0x01);
 
             // Fill the encoded path
-            size_t   pathCount = 2 * pathData.bytesCount - 1 - padded;
+            size_t   pathCount = 2 * pathData.bytesCount - 1 - (size_t) padded;
             uint8_t *pathBytes = malloc (pathCount);
 
             BREthereumData path = { pathCount, pathBytes };
