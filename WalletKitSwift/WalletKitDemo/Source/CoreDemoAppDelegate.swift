@@ -127,23 +127,16 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
         currencyCodesToMode = [
             "btc" : .api_only,
             "bch" : .api_only,
-            "bsv" : .p2p_only,
+            "bsv" : .api_only,
             "eth" : .api_only,
             "xrp" : .api_only,
             "hbar" : .api_only,
             "xtz": .api_only
             ]
-        if mainnet {
 
-        }
-        else {
-
-        }
-
-        registerCurrencyCodes = [
-//            "zla",
-//            "adt"
-        ]
+        registerCurrencyCodes = (mainnet
+                                        ? [ /* "zla", "adt" */ ]
+                                        : [ "brd", "tst" ])
 
         print ("APP: CurrenciesToMode  : \(currencyCodesToMode!)")
 
