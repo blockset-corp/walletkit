@@ -34,8 +34,11 @@ typedef struct BRHederaTransactionRecord *BRHederaTransaction;
  * @return transaction
  */
 extern BRHederaTransaction /* caller owns memory and must call "hederaTransactionFree" function */
-hederaTransactionCreateNew(BRHederaAddress source, BRHederaAddress target,
-                           BRHederaUnitTinyBar amount, BRHederaFeeBasis feeBasis, BRHederaTimeStamp *timeStamp);
+hederaTransactionCreateNew(BRHederaAddress source,
+                           BRHederaAddress target,
+                           BRHederaUnitTinyBar amount,
+                           BRHederaFeeBasis feeBasis,
+                           BRHederaTimeStamp *timeStamp);
 
 /**
  * Create a Hedera transaction recovered from the blockset server
@@ -120,9 +123,6 @@ extern void hederaTransactionSetMemo(BRHederaTransaction transaction, const char
 extern char * // Caller owns memory and must free calling "free"
 hederaTransactionGetMemo(BRHederaTransaction transaction);
 
-// Check equality
-extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2);
-
 extern BRHederaTimeStamp hederaGenerateTimeStamp(void);
 extern BRHederaTimeStamp hederaParseTimeStamp(const char* txID);
 
@@ -135,6 +135,10 @@ extern BRHederaUnitTinyBar hederaTransactionGetAmountDirected (BRHederaTransacti
                                                                int *negative);
 
 extern int hederaTransactionUpdateHash (BRHederaTransaction transaction, BRHederaTransactionHash hash);
+extern bool hederaTransactionHashEqual (BRHederaTransaction t1, BRHederaTransaction t2);
+
+// Check equality
+extern bool hederaTransactionEqual (BRHederaTransaction t1, BRHederaTransaction t2);
 
 #ifdef __cplusplus
 }

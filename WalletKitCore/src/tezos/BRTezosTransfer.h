@@ -43,8 +43,13 @@ extern void tezosTransferFree(BRTezosTransfer transfer);
 // Getters for all the values
 extern BRTezosHash tezosTransferGetTransactionId(BRTezosTransfer transfer);
 extern BRTezosUnitMutez tezosTransferGetAmount(BRTezosTransfer transfer);
+extern BRTezosUnitMutez tezosTransferGetAmountDirected (BRTezosTransfer transfer,
+                                                        BRTezosAddress address,
+                                                        int *negative);
 extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer);
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer);
+extern void tezosTransferSetFeeBasis (BRTezosTransfer transfer,
+                                      BRTezosFeeBasis feeBasis);
 
 extern BRTezosAddress // caller owns object, must free with tezosAddressFree
 tezosTransferGetSource(BRTezosTransfer transfer);
@@ -60,6 +65,8 @@ extern BRTezosTransaction tezosTransferGetTransaction(BRTezosTransfer transfer);
 // Internal
 extern int tezosTransferHasSource (BRTezosTransfer transfer,
                                    BRTezosAddress source);
+extern int tezosTransferHasTarget (BRTezosTransfer transfer,
+                                   BRTezosAddress target);
 
 extern uint64_t tezosTransferGetBlockHeight (BRTezosTransfer transfer);
 

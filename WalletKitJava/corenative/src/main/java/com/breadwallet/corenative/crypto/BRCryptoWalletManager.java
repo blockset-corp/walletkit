@@ -286,14 +286,22 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
     public void estimateFeeBasis(BRCryptoWallet wallet, Cookie cookie,
-                                 BRCryptoAddress target, BRCryptoAmount amount, BRCryptoNetworkFee fee) {
-        CryptoLibraryDirect.cryptoWalletManagerEstimateFeeBasis(
-                this.getPointer(),
+                                 BRCryptoAddress target, BRCryptoAmount amount, BRCryptoNetworkFee fee, List<BRCryptoTransferAttribute> attributes) {
+        Pointer thisPtr = this.getPointer();
+
+        int attributesCount  = attributes.size();
+        BRCryptoTransferAttribute[] attributeRefs = new BRCryptoTransferAttribute[attributesCount];
+        for (int i = 0; i < attributesCount; i++) attributeRefs[i] = attributes.get(i);
+
+        CryptoLibraryIndirect.cryptoWalletManagerEstimateFeeBasis(
+                thisPtr,
                 wallet.getPointer(),
                 cookie.getPointer(),
                 target.getPointer(),
                 amount.getPointer(),
-                fee.getPointer());
+                fee.getPointer(),
+                new SizeT(attributesCount),
+                attributeRefs);
     }
 
     public void estimateFeeBasisForWalletSweep(BRCryptoWallet wallet, Cookie cookie,

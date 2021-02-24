@@ -134,10 +134,10 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
  */
 extern size_t
 tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
-                                 BRTezosAccount account,
-                                 UInt512 seed,
-                                 BRTezosHash lastBlockHash,
-                                 bool needsReveal);
+                                  BRTezosAccount account,
+                                  UInt512 seed,
+                                  BRTezosHash lastBlockHash,
+                                  bool needsReveal);
 
 /**
  * Get serialiezd bytes for the specified transaction
@@ -161,6 +161,10 @@ tezosTransactionGetFee(BRTezosTransaction transaction);
 
 extern BRTezosFeeBasis
 tezosTransactionGetFeeBasis(BRTezosTransaction transaction);
+
+extern void
+tezosTransactionSetFeeBasis(BRTezosTransaction transaction,
+                            BRTezosFeeBasis feeBasis);
 
 extern BRTezosUnitMutez
 tezosTransactionGetAmount(BRTezosTransaction transaction);

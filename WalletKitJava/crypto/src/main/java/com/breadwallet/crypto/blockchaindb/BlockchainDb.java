@@ -358,6 +358,18 @@ public class BlockchainDb {
         );
     }
 
+    public void estimateFee(String id,
+                            String hashAsHex,
+                            byte[] tx,
+                            CompletionHandler<TransactionFee, QueryError> handler) {
+        transactionApi.estimateFee(
+                id,
+                hashAsHex,
+                tx,
+                handler
+        );
+    }
+
     // Blocks
 
     public void getBlocks(String id,

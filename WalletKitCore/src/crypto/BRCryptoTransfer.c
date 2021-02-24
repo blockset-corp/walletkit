@@ -437,8 +437,10 @@ cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
 extern BRCryptoBoolean
 cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
     return AS_CRYPTO_BOOLEAN (t1 == t2 ||
-            (t1->type == t2->type &&
-             t1->handlers->isEqual (t1, t2)));
+                              (t1->type == t2->type &&
+                               (NULL != t1->identifier && NULL != t2->identifier
+                                ? 0 == strcmp (t1->identifier, t2->identifier)
+                                : t1->handlers->isEqual (t1, t2))));
 }
 
 extern BRCryptoComparison

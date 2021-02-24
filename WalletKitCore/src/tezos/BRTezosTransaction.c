@@ -184,12 +184,13 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
     BRCryptoData serializedBytes = cryptoDataNew(unsignedBytes.size + signature.size);
     memcpy(serializedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
     memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
-    
+
     cryptoDataFree (unsignedBytes);
     cryptoDataFree (signature);
-
+    
     transaction->signedBytes = serializedBytes;
-    transaction->feeBasis.u.estimate.sizeInKBytes = (double) serializedBytes.size / 1000;
+    assert (FEE_BASIS_INITIAL == transaction->feeBasis.type);
+    transaction->feeBasis.u.initial.sizeInKBytes = (double) serializedBytes.size / 1000;
     
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
@@ -252,6 +253,12 @@ extern int64_t tezosTransactionGetCounter(BRTezosTransaction transaction) {
 extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transaction) {
     assert(transaction);
     return transaction->feeBasis;
+}
+
+extern void tezosTransactionSetFeeBasis(BRTezosTransaction transaction,
+                                        BRTezosFeeBasis feeBasis) {
+    assert(transaction);
+    transaction->feeBasis = feeBasis;
 }
 
 extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction){

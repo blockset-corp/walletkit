@@ -122,12 +122,17 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
 
     @Override
     public void estimateFee(com.breadwallet.crypto.Address target, com.breadwallet.crypto.Amount amount,
-                            com.breadwallet.crypto.NetworkFee fee, CompletionHandler<com.breadwallet.crypto.TransferFeeBasis, FeeEstimationError> handler) {
+                            com.breadwallet.crypto.NetworkFee fee, @Nullable Set<com.breadwallet.crypto.TransferAttribute> attributes, CompletionHandler<com.breadwallet.crypto.TransferFeeBasis, FeeEstimationError> handler) {
         BRCryptoWalletManager coreManager = getWalletManager().getCoreBRCryptoWalletManager();
         BRCryptoAddress coreAddress = Address.from(target).getCoreBRCryptoAddress();
         BRCryptoAmount coreAmount = Amount.from(amount).getCoreBRCryptoAmount();
         BRCryptoNetworkFee coreFee = NetworkFee.from(fee).getCoreBRCryptoNetworkFee();
-        coreManager.estimateFeeBasis(core, callbackCoordinator.registerFeeBasisEstimateHandler(handler), coreAddress, coreAmount, coreFee);
+        List<BRCryptoTransferAttribute> coreAttributes = new ArrayList<>();
+        if (null != attributes)
+            for (com.breadwallet.crypto.TransferAttribute attribute : attributes) {
+                coreAttributes.add (TransferAttribute.from(attribute).getCoreBRCryptoTransferAttribute());
+            }
+        coreManager.estimateFeeBasis(core, callbackCoordinator.registerFeeBasisEstimateHandler(handler), coreAddress, coreAmount, coreFee, coreAttributes);
     }
 
     /* package */
@@ -224,7 +229,7 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
             // This `amount` will not unusually be zero.
             // TODO: Does ETH fee estimation work if the ERC20 amount is zero?
             final Wallet walletForFeeInner = walletForFee;
-            estimateFee(target, amount, fee, new CompletionHandler<com.breadwallet.crypto.TransferFeeBasis,
+            estimateFee(target, amount, fee, null, new CompletionHandler<com.breadwallet.crypto.TransferFeeBasis,
                     FeeEstimationError>() {
                 @Override
                 public void handleData(com.breadwallet.crypto.TransferFeeBasis feeBasis) {
@@ -250,7 +255,7 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
         // balance is enough to cover the (minimum) amount plus the fee
         //
         if (!asMaximum) {
-            estimateFee(target, amount, fee, new CompletionHandler<com.breadwallet.crypto.TransferFeeBasis,
+            estimateFee(target, amount, fee, null, new CompletionHandler<com.breadwallet.crypto.TransferFeeBasis,
                     FeeEstimationError>() {
                 @Override
                 public void handleData(com.breadwallet.crypto.TransferFeeBasis feeBasis) {
@@ -308,7 +313,7 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
                 } else if (estimationCompleterRecurseCount < estimationCompleterRecurseLimit) {
                     // but is they haven't converged try again with the new amount
                     transferFee = newTransferFee;
-                    estimateFee(target, newTransferAmount.get(), fee, this);
+                    estimateFee(target, newTransferAmount.get(), fee, null, this);
 
                 } else {
                     // We've tried too many times w/o convergence; abort
@@ -322,7 +327,7 @@ final class Wallet implements com.breadwallet.crypto.Wallet {
             }
         };
 
-        estimateFee(target, amount, fee, estimationHandler);
+        estimateFee(target, amount, fee, null, estimationHandler);
     }
 
     @Override

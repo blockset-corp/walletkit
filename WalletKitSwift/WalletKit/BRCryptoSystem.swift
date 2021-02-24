@@ -1435,6 +1435,22 @@ extension System {
         return addresses
     }
 
+    internal static func canonicalizeTransactions (_ transactions: [BlockChainDB.Model.Transaction]) -> [BlockChainDB.Model.Transaction] {
+        var uids = Set<String>()
+        return transactions
+            // Sort by {blockHeight, index }
+            .sorted {
+                let bh0 = $0.blockHeight ?? UInt64.max
+                let bh1 = $1.blockHeight ?? UInt64.max
+                let bi0 = $0.index       ?? UInt64.max
+                let bi1 = $1.index       ?? UInt64.max
+
+                return bh0 < bh1 || (bh0 == bh1 && bi0 < bi1 )
+            }
+            // Remove duplicates
+            .filter { uids.insert($0.id).inserted }
+    }
+
     internal static func makeTransactionBundle (_ model: SystemClient.Transaction) -> BRCryptoClientTransactionBundle {
         let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
         let height    = model.blockHeight ?? 0
@@ -1530,7 +1546,7 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: {
-                            var bundles: [BRCryptoClientTransactionBundle?] = $0.map { System.makeTransactionBundle ($0) }
+                            var bundles: [BRCryptoClientTransactionBundle?] = System.canonicalizeTransactions ($0).map { System.makeTransactionBundle ($0) }
                             cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransactions: Error: \(e)")

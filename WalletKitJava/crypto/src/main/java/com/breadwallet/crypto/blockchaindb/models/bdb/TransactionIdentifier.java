@@ -15,11 +15,11 @@ public class TransactionIdentifier {
     // creator
 
     @JsonCreator
-    public static com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
-                                                                                              @JsonProperty("identifier") String identifier,
-                                                                                              @JsonProperty("hash") String hash,
-                                                                                              @JsonProperty("blockchain_id") String blockchainId) {
-        return new com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier(
+    public static TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
+                                               @JsonProperty("identifier") String identifier,
+                                               @JsonProperty("hash") String hash,
+                                               @JsonProperty("blockchain_id") String blockchainId) {
+        return new TransactionIdentifier(
                 checkNotNull(transactionId),
                 checkNotNull(identifier),
                 checkNotNull(hash),

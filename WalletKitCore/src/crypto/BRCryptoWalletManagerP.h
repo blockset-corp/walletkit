@@ -298,6 +298,7 @@ cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,
     cryptoListenerGenerateManagerEvent (&manager->listener, manager, event);
 }
 
+
 #ifdef __cplusplus
 }
 #endif

@@ -42,4 +42,4 @@
 .swiftpm/
 *TestsConfig.json
 /WalletKitTestsConfig.env
-
+.cxx/

@@ -2181,11 +2181,11 @@ final class System implements com.breadwallet.crypto.System {
                                 transferWithFee.getId(),
                                 transferWithFee.getBlockchainId(),
                                 transferWithFee.getIndex(),
-                                transferWithFee.getAmount(),
+                                com.breadwallet.crypto.blockchaindb.models.bdb.Amount.create(transferWithFee.getAmount().getCurrencyId(), "0"),
                                 transferWithFee.getMeta(),
                                 transferWithFee.getFromAddress().orNull(),
                                 "unknown",
-                                "0",
+                                transferWithFee.getTransactionId().or("0"),
                                 transferWithFee.getAcknowledgements().orNull())
                 );
             }

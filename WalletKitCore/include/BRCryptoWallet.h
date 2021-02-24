@@ -194,6 +194,35 @@ extern "C" {
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet);
 
+    /// MARK: Exportable Paper Wallet
+
+    typedef enum {
+        CRYPTO_EXPORTABLE_PAPER_WALLET_SUCCESS,
+        CRYPTO_EXPORTABLE_PAPER_WALLET_UNSUPPORTED_CURRENCY,
+        CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS,
+        
+        // calling a sweeper function for the wrong type
+        CRYPTO_EXPORTABLE_PAPER_WALLET_ILLEGAL_OPERATION,
+    } BRCryptoExportablePaperWalletStatus;
+
+    extern BRCryptoExportablePaperWalletStatus
+    cryptoExportablePaperWalletValidateSupported (BRCryptoNetwork network,
+                                                  BRCryptoCurrency currency);
+
+    extern BRCryptoExportablePaperWallet
+    cryptoExportablePaperWalletCreateAsBTC (BRCryptoNetwork network,
+                                            BRCryptoCurrency currency);
+
+    extern void
+    cryptoExportablePaperWalletRelease (BRCryptoExportablePaperWallet paperWallet);
+
+    extern BRCryptoKey
+    cryptoExportablePaperWalletGetKey (BRCryptoExportablePaperWallet paperWallet);
+
+    extern BRCryptoAddress
+    cryptoExportablePaperWalletGetAddress (BRCryptoExportablePaperWallet paperWallet);
+
+
 #ifdef __cplusplus
 }
 #endif
