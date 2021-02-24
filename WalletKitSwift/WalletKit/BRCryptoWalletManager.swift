@@ -467,27 +467,16 @@ public enum ExportablePaperWalletError: Error {
 public final class ExportablePaperWallet {
     internal static func create(manager: WalletManager) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
         // check that requested wallet supports generating exportable paper wallets
-        if let e = ExportablePaperWalletError(cryptoExportablePaperWalletValidateSupported(manager.network.core,
-                                                                                           manager.currency.core)) {
-            return Result.failure(e)
+        if let error =  ExportablePaperWalletError (cryptoExportablePaperWalletValidateSupported (manager.network.core,
+                                                                                                  manager.currency.core)) {
+            return Result.failure (error)
         }
 
-        switch cryptoNetworkGetCanonicalType (manager.network.core) {
-        case CRYPTO_NETWORK_TYPE_BTC:
-            let paperWallet: ExportablePaperWallet = createAsBTC(manager: manager)
-            return Result.success(paperWallet)
-        default:
-            assertionFailure()
-        }
-        
-        return Result.failure(.unexpectedError)
+        return cryptoExportablePaperWalletCreate (manager.network.core, manager.currency.core)
+            .map { Result.success (ExportablePaperWallet (core: $0)) }
+            ?? Result.failure(.unexpectedError)
     }
 
-    private static func createAsBTC(manager: WalletManager) -> ExportablePaperWallet {
-        return ExportablePaperWallet(core: cryptoExportablePaperWalletCreateAsBTC(manager.network.core,
-                                                                                  manager.currency.core))
-    }
-    
     internal let core: BRCryptoWalletSweeper
 
     private init (core: BRCryptoWalletSweeper) {

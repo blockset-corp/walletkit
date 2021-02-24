@@ -403,6 +403,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoClient.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoCoder.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoCurrency.h
+                ${PROJECT_SOURCE_DIR}/include/BRCryptoExportablePaperWallet.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoFeeBasis.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoHash.h
                 ${PROJECT_SOURCE_DIR}/include/BRCryptoHasher.h
@@ -434,6 +435,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCoder.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoConfig.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCurrency.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoExportablePaperWalletP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoExportablePaperWallet.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFeeBasisP.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFeeBasis.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFileService.h
@@ -483,6 +486,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerP2PBTC.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerPersistBTC.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletSweeperBTC.c
+                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoExportablePaperWalletBTC.c
                 )
 
 # Crypto ETH

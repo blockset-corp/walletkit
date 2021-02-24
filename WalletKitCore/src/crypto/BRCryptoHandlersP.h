@@ -17,6 +17,7 @@
 #include "BRCryptoWalletP.h"
 #include "BRCryptoWalletManagerP.h"
 #include "BRCryptoWalletSweeperP.h"
+#include "BRCryptoExportablePaperWalletP.h"
 #include "BRCryptoPaymentP.h"
 #include "BRCryptoFeeBasisP.h"
 
@@ -36,9 +37,8 @@ typedef struct {
     const BRCryptoAddressHandlers  *address;
     const BRCryptoTransferHandlers *transfer;
     const BRCryptoWalletHandlers   *wallet;
-    // Will be NULL if wallet sweeping is unsupported for the currency
-    // (cryptoWalletManagerWalletSweeperValidateSupported status is CRYPTO_WALLET_SWEEPER_UNSUPPORTED_CURRENCY)
-    const BRCryptoWalletSweeperHandlers *sweeper;
+    const BRCryptoWalletSweeperHandlers *sweeper;                           // NULLable
+    const BRCryptoExportablePaperWalletHandlers *exportablePaperWallet;     // NULLable
     const BRCryptoPaymentProtocolHandlers *payment;
     const BRCryptoFeeBasisHandlers *feeBasis;
     const BRCryptoWalletManagerHandlers *manager;

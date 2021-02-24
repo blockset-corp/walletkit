@@ -32,8 +32,15 @@ final class ExportablePaperWallet implements com.breadwallet.crypto.ExportablePa
             return;
         }
 
-        ExportablePaperWallet paperWallet = ExportablePaperWallet.createAsBTC(manager);
-        completion.handleData(paperWallet);
+        Optional<BRCryptoExportablePaperWallet> paperWallet = BRCryptoExportablePaperWallet.create (
+                manager.getNetwork().getCoreBRCryptoNetwork(),
+                manager.getCurrency().getCoreBRCryptoCurrency());
+
+        if (paperWallet.isPresent())
+            completion.handleData(ExportablePaperWallet.create(paperWallet.get()));
+        else
+            completion.handleError(ExportablePaperWallet.statusToError(
+                    BRCryptoExportablePaperWalletStatus.CRYPTO_EXPORTABLE_PAPER_WALLET_ILLEGAL_OPERATION));
     }
 
     private static ExportablePaperWalletError statusToError(BRCryptoExportablePaperWalletStatus status) {
@@ -54,17 +61,6 @@ final class ExportablePaperWallet implements com.breadwallet.crypto.ExportablePa
         BRCryptoCurrency coreCurrency = currency.getCoreBRCryptoCurrency();
 
         return ExportablePaperWallet.statusToError(BRCryptoExportablePaperWallet.validateSupported(coreNetwork, coreCurrency));
-    }
-
-    private static ExportablePaperWallet createAsBTC(WalletManager manager) {
-        Network network = manager.getNetwork();
-        Currency currency = manager.getCurrency();
-
-        BRCryptoNetwork coreNetwork = network.getCoreBRCryptoNetwork();
-        BRCryptoCurrency coreCurrency = currency.getCoreBRCryptoCurrency();
-
-        BRCryptoExportablePaperWallet core = BRCryptoExportablePaperWallet.createAsBTC(coreNetwork, coreCurrency);
-        return ExportablePaperWallet.create(core);
     }
 
     private static ExportablePaperWallet create(BRCryptoExportablePaperWallet core) {

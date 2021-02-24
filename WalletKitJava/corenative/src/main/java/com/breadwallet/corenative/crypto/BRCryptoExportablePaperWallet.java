@@ -30,14 +30,13 @@ public class BRCryptoExportablePaperWallet extends PointerType {
         );
     }
 
-    public static BRCryptoExportablePaperWallet createAsBTC(BRCryptoNetwork network,
-                                                            BRCryptoCurrency currency) {
-        return new BRCryptoExportablePaperWallet(
-                CryptoLibraryDirect.cryptoExportablePaperWalletCreateAsBTC(
+    public static Optional<BRCryptoExportablePaperWallet> create(BRCryptoNetwork network,
+                                                                 BRCryptoCurrency currency) {
+        return Optional.fromNullable(
+                CryptoLibraryDirect.cryptoExportablePaperWalletCreate(
                         network.getPointer(),
-                        currency.getPointer()
-                )
-        );
+                        currency.getPointer())
+        ).transform(BRCryptoExportablePaperWallet::new);
     }
 
     public Optional<BRCryptoKey> getKey() {

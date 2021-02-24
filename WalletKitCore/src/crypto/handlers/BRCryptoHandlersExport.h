@@ -24,6 +24,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBTC;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBTC;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
 extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBTC;
+extern BRCryptoExportablePaperWalletHandlers cryptoExportablePaperWalletHandlersBTC;
 extern BRCryptoPaymentProtocolHandlers cryptoPaymentProtocolHandlersBTC;
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersBTC;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
@@ -35,6 +36,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBCH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBCH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBCH;
 extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBCH;
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersBCH;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBCH;
@@ -46,6 +48,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersBSV;
 extern BRCryptoTransferHandlers cryptoTransferHandlersBSV;
 extern BRCryptoWalletHandlers cryptoWalletHandlersBSV;
 extern BRCryptoWalletSweeperHandlers cryptoWalletSweeperHandlersBSV;
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersBSV;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBSV;
@@ -57,6 +60,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersETH;
 extern BRCryptoTransferHandlers cryptoTransferHandlersETH;
 extern BRCryptoWalletHandlers cryptoWalletHandlersETH;
 // Wallet Sweep
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersETH;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH;
@@ -68,6 +72,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersXRP;
 extern BRCryptoTransferHandlers cryptoTransferHandlersXRP;
 extern BRCryptoWalletHandlers cryptoWalletHandlersXRP;
 // Wallet Sweep
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersXRP;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXRP;
@@ -79,6 +84,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersHBAR;
 extern BRCryptoTransferHandlers cryptoTransferHandlersHBAR;
 extern BRCryptoWalletHandlers cryptoWalletHandlersHBAR;
 // Wallet Sweep
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersHBAR;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersHBAR;
@@ -90,6 +96,7 @@ extern BRCryptoNetworkHandlers cryptoNetworkHandlersXTZ;
 extern BRCryptoTransferHandlers cryptoTransferHandlersXTZ;
 extern BRCryptoWalletHandlers cryptoWalletHandlersXTZ;
 // Wallet Sweep
+// ExportablePaperHandlers
 // Payment Protocol
 extern BRCryptoFeeBasisHandlers cryptoFeeBasisHandlersXTZ;
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersXTZ;

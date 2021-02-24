@@ -1435,7 +1435,7 @@ extension System {
         return addresses
     }
 
-    internal static func canonicalizeTransactions (_ transactions: [BlockChainDB.Model.Transaction]) -> [BlockChainDB.Model.Transaction] {
+    internal static func canonicalizeTransactions (_ transactions: [SystemClient.Transaction]) -> [SystemClient.Transaction] {
         var uids = Set<String>()
         return transactions
             // Sort by {blockHeight, index }
