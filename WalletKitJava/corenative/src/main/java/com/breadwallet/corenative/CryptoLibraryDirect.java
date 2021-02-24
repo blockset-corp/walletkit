@@ -349,7 +349,7 @@ public final class CryptoLibraryDirect {
     public static native void cryptoWalletManagerSubmitForKey(Pointer cwm, Pointer wid, Pointer tid, Pointer key);
     public static native void cryptoWalletManagerSubmitSigned(Pointer cwm, Pointer wid, Pointer tid);
     public static native Pointer cryptoWalletManagerEstimateLimit(Pointer cwm, Pointer wid, int asMaximum, Pointer target, Pointer fee, IntByReference needEstimate, IntByReference isZeroIfInsuffientFunds);
-    public static native void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee);
+    // INDIRECT: public static native void cryptoWalletManagerEstimateFeeBasis(Pointer cwm, Pointer wid, Pointer cookie, Pointer target, Pointer amount, Pointer fee);
     public static native void cryptoWalletManagerEstimateFeeBasisForWalletSweep(Pointer sweeper, Pointer cwm, Pointer wid, Pointer cookie, Pointer fee);
     public static native void cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest(Pointer cwm, Pointer wid, Pointer cookie, Pointer request, Pointer fee);
     public static native Pointer cryptoWalletManagerTake(Pointer cwm);

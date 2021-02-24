@@ -21,7 +21,7 @@ suspend fun Wallet.estimateFee(
         networkFee: NetworkFee = walletManager.defaultNetworkFee
 ): TransferFeeBasis {
     return suspendForCompletion<TransferFeeBasis, FeeEstimationError> {
-        estimateFee(address, amount, networkFee, it)
+        estimateFee(address, amount, networkFee, null, it)
     }
 }
 
