@@ -352,8 +352,9 @@ testTransactionSerialize() {
     feeBasis.type = FEE_BASIS_ESTIMATE;
     feeBasis.u.estimate.gasLimit = 10200;
     feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
+    // MERGE
+    // feeBasis.u.estimate.mutezPerKByte = 48880;
+    // feeBasis.u.estimate.sizeInKBytes = 1;
 //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
@@ -448,8 +449,9 @@ testBatchOperationSerialize() {
     feeBasis.type = FEE_BASIS_ESTIMATE;
     feeBasis.u.estimate.gasLimit = 10200;
     feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
+    // MERGE
+    // feeBasis.u.estimate.mutezPerKByte = 48880;
+    // feeBasis.u.estimate.sizeInKBytes = 1;
     //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
@@ -502,8 +504,9 @@ testTransactionSign() {
     feeBasis.type = FEE_BASIS_ESTIMATE;
     feeBasis.u.estimate.gasLimit = 10200;
     feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 48880;
-    feeBasis.u.estimate.sizeInKBytes = 1;
+    // MERGE
+    // feeBasis.u.estimate.mutezPerKByte = 48880;
+    // feeBasis.u.estimate.sizeInKBytes = 1;
     //    feeBasis.u.estimate.fee = 50000;
     counter = 3;
     amount = 100000000;
@@ -555,8 +558,9 @@ testTransactionSignWithReveal() {
     feeBasis.type = FEE_BASIS_ESTIMATE;
     feeBasis.u.estimate.gasLimit = 12000;
     feeBasis.u.estimate.storageLimit = 0;
-    feeBasis.u.estimate.mutezPerKByte = 3700;
-    feeBasis.u.estimate.sizeInKBytes = 1;
+    // MERGE:
+    // feeBasis.u.estimate.mutezPerKByte = 3700;
+    // feeBasis.u.estimate.sizeInKBytes = 1;
     //    feeBasis.u.estimate.fee = 5000;
     counter = 6307075;
     amount = 100000;

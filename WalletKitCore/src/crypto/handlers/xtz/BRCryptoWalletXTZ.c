@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-
 static BRCryptoWalletXTZ
 cryptoWalletCoerce (BRCryptoWallet wallet) {
     assert (CRYPTO_NETWORK_TYPE_XTZ == wallet->type);

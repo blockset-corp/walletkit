@@ -220,8 +220,10 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
     
     transaction->signedBytes = signedBytes;
-    transaction->feeBasis.u.estimate.sizeInKBytes = (double) signedBytes.size / 1000;
-    
+    // MERGE:
+    // transaction->feeBasis.u.estimate.sizeInKBytes = (double) signedBytes.size / 1000;
+    transaction->feeBasis.u.initial.sizeInKBytes = (double) signedBytes.size / 1000;
+
     if (transaction->signedBytes.size > 0) {
         createTransactionHash(transaction);
     }

@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#define TEZOS_DEFAULT_MUTEZ_PER_BYTE 1
 
 typedef enum {
     FEE_BASIS_INITIAL,
