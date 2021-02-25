@@ -62,9 +62,7 @@ cryptoFeeBasisGetCostFactorXTZ (BRCryptoFeeBasis feeBasis) {
         case FEE_BASIS_INITIAL:
             return (double) xtzFeeBasis.u.initial.sizeInKBytes;
         case FEE_BASIS_ESTIMATE:
-            assert (false);
-            // MERGE
-            return 0.0;
+            return 1.0;
         case FEE_BASIS_ACTUAL:
             return 1.0;
     }
@@ -77,9 +75,7 @@ cryptoFeeBasisGetPricePerCostFactorXTZ (BRCryptoFeeBasis feeBasis) {
         case FEE_BASIS_INITIAL:
             return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.u.initial.mutezPerKByte);
         case FEE_BASIS_ESTIMATE:
-            assert (false);
-            // MERGE
-            return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, 0.0);
+            return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.u.estimate.calculatedFee);
         case FEE_BASIS_ACTUAL:
             return cryptoAmountCreateAsXTZ (feeBasis->unit, CRYPTO_FALSE, xtzFeeBasis.u.actual.fee);
     }

@@ -298,10 +298,8 @@ cryptoWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (BRCryptoWalletManager cwm,
     gasUsed = (int64_t)(gasUsed * 1.1);
     storageUsed = (int64_t)(storageUsed * 1.1);
     BRTezosUnitMutez mutezPerKByte = tezosMutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
+    
     // get the serialized txn size from the estimation payload
-
-    // MERGE
-    // double sizeInKBytes = cryptoFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.estimate.sizeInKBytes;
     double sizeInKBytes = cryptoFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.initial.sizeInKBytes;
 
     BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerKByte,
