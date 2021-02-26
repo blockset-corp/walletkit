@@ -2079,7 +2079,7 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(TransactionIdentifier data) {
                                         Log.log(Level.FINE, "BRCryptoCWMBtcSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState, data.getHash());
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState, data.getHash().orNull());
                                     }
 
                                     @Override

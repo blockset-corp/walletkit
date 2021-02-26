@@ -450,16 +450,17 @@ public class BlockChainDB {
         public typealias TransactionIdentifier = (
             id: String,
             blockchainId: String,
-            hash: String,
+            hash: String?,
             identifier: String
         )
 
         static internal func asTransactionIdentifier (json: JSON) -> TransactionIdentifier? {
             guard let id         = json.asString(name: "transaction_id"),
                   let bid        = json.asString (name: "blockchain_id"),
-                  let hash       = json.asString (name: "hash"),
                   let identifier = json.asString (name: "identifier")
             else { return nil }
+
+            let hash = json.asString (name: "hash")
 
             return (id: id, blockchainId: bid, hash: hash, identifier: identifier)
         }
