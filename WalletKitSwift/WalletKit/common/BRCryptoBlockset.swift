@@ -962,10 +962,11 @@ public class BlocksetSystemClient: SystemClient {
 
     public func createTransaction (blockchainId: String,
                                    transaction: Data,
+                                   identifier: String?,
                                    completion: @escaping (Result<TransactionIdentifier, SystemClientError>) -> Void) {
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            "transaction_id" : "unknown",
+            "transaction_id" : identifier.map { "\(blockchainId):\($0)" } ?? "unknown",
             "data"           : transaction.base64EncodedString()
         ]
 

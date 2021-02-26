@@ -1563,7 +1563,7 @@ extension System {
                             cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},
 
-            funcSubmitTransaction: { (context, cwm, sid, transactionBytes, transactionBytesLength) in
+            funcSubmitTransaction: { (context, cwm, sid, identifier, transactionBytes, transactionBytesLength) in
                 precondition (nil != context  && nil != cwm)
 
                 guard let (_, manager) = System.systemExtract (context, cwm)
@@ -1572,7 +1572,9 @@ extension System {
 
                 let data = Data (bytes: transactionBytes!, count: transactionBytesLength)
 
-                manager.client.createTransaction (blockchainId: manager.network.uids, transaction: data) {
+                manager.client.createTransaction (blockchainId: manager.network.uids,
+                                                  transaction: data,
+                                                  identifier: identifier.map { asUTF8String($0) }) {
                     (res: Result<SystemClient.TransactionIdentifier, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(

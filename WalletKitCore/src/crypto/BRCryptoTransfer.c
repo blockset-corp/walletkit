@@ -338,7 +338,7 @@ cryptoTransferGetIdentifier (BRCryptoTransfer transfer) {
                     // and `identifer` are both the string representation of the `txHash`.  See
                     // BRTransaction.{hc}
                     //
-                   BRCryptoHash hash = cryptoTransferGetHash (transfer);
+                    BRCryptoHash hash = cryptoTransferGetHash (transfer);
                     transfer->identifier = cryptoHashEncodeString(hash);
                     cryptoHashGive(hash);
                     break;
