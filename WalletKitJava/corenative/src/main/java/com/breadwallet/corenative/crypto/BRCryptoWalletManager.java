@@ -357,10 +357,11 @@ public class BRCryptoWalletManager extends PointerType {
                 new SizeT(bundlesCount));
     }
 
-    public void announceSubmitTransfer(BRCryptoClientCallbackState callbackState, String hash, boolean success) {
+    public void announceSubmitTransfer(BRCryptoClientCallbackState callbackState, String identifier, String hash, boolean success) {
         CryptoLibraryDirect.cwmAnnounceSubmitTransfer (
                 this.getPointer(),
                 callbackState.getPointer(),
+                identifier,
                 hash,
                 (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE));
     }

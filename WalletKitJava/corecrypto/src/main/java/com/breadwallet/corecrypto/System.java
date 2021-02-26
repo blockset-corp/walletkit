@@ -2037,13 +2037,13 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(TransactionIdentifier tid) {
                                         Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getHash(), true);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash(), true);
                                     }
 
                                     @Override
                                     public void handleError(QueryError error) {
                                         Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, false);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
                                     }
                                 });
 
@@ -2056,7 +2056,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceSubmitTransfer(callbackState, null, false);
+                coreWalletManager.announceSubmitTransfer(callbackState, null, null, false);
             } finally {
                 coreWalletManager.give();
             }

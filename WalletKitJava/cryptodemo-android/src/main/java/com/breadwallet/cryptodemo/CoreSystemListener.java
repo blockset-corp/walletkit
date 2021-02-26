@@ -171,7 +171,8 @@ public class CoreSystemListener implements SystemListener {
                             if (error instanceof AccountInitializationMultipleHederaAccountsError) {
                                 List<HederaAccount> accounts = ((AccountInitializationMultipleHederaAccountsError) error).getAccounts();
 
-                                // TODO: Sort accounts?
+                                // Find the account with the largest balance
+                                Collections.sort (accounts, HederaAccount.BALANCE_COMPARATOR.reversed());
 
                                 system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
                                         .transform((bytes) -> { serializationData.add(bytes); return true; });

@@ -386,7 +386,7 @@ public final class CryptoLibraryDirect {
     public static native void cryptoClientCurrencyBundleRelease (Pointer currencyBundle);
 
     public static native void cwmAnnounceBlockNumber(Pointer cwm, Pointer callbackState, int success, long blockNumber, String verifiedBlockHash);
-    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, String hash, int success);
+    public static native void cwmAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, String identifier, String hash, int success);
 
     //
     // Crypto Primitives
