@@ -340,10 +340,12 @@ public class BlockchainDb {
 
     public void createTransaction(String id,
                                   byte[] tx,
+                                  String identifier,
                                   CompletionHandler<TransactionIdentifier, QueryError> handler) {
         transactionApi.createTransaction(
                 id,
                 tx,
+                identifier,
                 handler
         );
     }

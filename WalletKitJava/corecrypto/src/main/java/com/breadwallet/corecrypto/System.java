@@ -2019,6 +2019,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void submitTransaction(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
+                                          String identifier,
                                           byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
@@ -2032,7 +2033,7 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.createTransaction(walletManager.getNetwork().getUids(), transaction,
+                        system.query.createTransaction(walletManager.getNetwork().getUids(), transaction, identifier,
                                 new CompletionHandler<TransactionIdentifier, QueryError>() {
                                     @Override
                                     public void handleData(TransactionIdentifier tid) {

@@ -97,10 +97,11 @@ public class TransactionApi {
 
     public void createTransaction(String id,
                                   byte[] tx,
+                                  String identifier,
                                   CompletionHandler<TransactionIdentifier, QueryError> handler) {
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", "unknown",
+                "transaction_id", (null == identifier ? "unknown" : (id + ":" + identifier)),
                 "data", BaseEncoding.base64().encode(tx));
 
         jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, TransactionIdentifier.class, handler);

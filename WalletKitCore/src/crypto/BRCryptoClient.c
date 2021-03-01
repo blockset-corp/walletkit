@@ -718,6 +718,7 @@ cryptoClientQRYSubmitTransfer (BRCryptoClientQRYManager qry,
     qry->client.funcSubmitTransaction (qry->client.context,
                                        cwm,
                                        callbackState,
+                                       cryptoTransferGetIdentifier(transfer),
                                        serialization,
                                        serializationCount);
 
