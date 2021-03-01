@@ -23,8 +23,6 @@ cryptoExportablePaperWalletValidateSupporteBTC (BRCryptoNetwork network,
 static BRCryptoAddress
 cryptoExportablePaperWalletCreateAddressBTC (BRCryptoNetwork network,
                                              BRCryptoKey key) {
-    return NULL;
-
     BRAddressParams addrParamsBTC = cryptoNetworkAsBTC (network)->addrParams;
     BRKey          *keyBTC        = cryptoKeyGetCore (key);
 
