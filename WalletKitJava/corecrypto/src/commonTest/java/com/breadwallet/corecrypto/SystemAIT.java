@@ -281,12 +281,12 @@ public class SystemAIT {
 
     @Test
     public void testSystemEth() {
-        testSystemForCurrency("eth", true, WalletManagerMode.API_ONLY, AddressScheme.ETH_DEFAULT, 0);
+        testSystemForCurrency("eth", true, WalletManagerMode.API_ONLY, AddressScheme.NATIVE, 0);
     }
 
     @Test
     public void testSystemXrp() {
-        testSystemForCurrency("xrp", true, WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 20);
+        testSystemForCurrency("xrp", true, WalletManagerMode.API_ONLY, AddressScheme.NATIVE, 20);
     }
 
 //    @Test
@@ -296,7 +296,7 @@ public class SystemAIT {
 
     @Test
     public void testSystemXtz() {
-        testSystemForCurrency("xtz", true, WalletManagerMode.API_ONLY, AddressScheme.GEN_DEFAULT, 0);
+        testSystemForCurrency("xtz", true, WalletManagerMode.API_ONLY, AddressScheme.NATIVE, 0);
     }
 
     private void testSystemForCurrency(String currencyCode, boolean mainnet,  WalletManagerMode mode, AddressScheme scheme, long balanceMinimum) {

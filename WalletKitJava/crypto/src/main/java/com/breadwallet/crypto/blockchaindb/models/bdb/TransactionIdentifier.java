@@ -17,12 +17,12 @@ public class TransactionIdentifier {
     @JsonCreator
     public static com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
                                                                                               @JsonProperty("identifier") String identifier,
-                                                                                              @JsonProperty("hash") String hash,
+                                                                                              @JsonProperty("hash") @Nullable String hash,
                                                                                               @JsonProperty("blockchain_id") String blockchainId) {
         return new com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier(
                 checkNotNull(transactionId),
                 checkNotNull(identifier),
-                checkNotNull(hash),
+                hash,
                 checkNotNull(blockchainId)
         );
     }
@@ -31,12 +31,12 @@ public class TransactionIdentifier {
 
     private final String transactionId;
     private final String identifier;
-    private final String hash;
+    private final @Nullable String hash;
     private final String blockchainId;
 
     private TransactionIdentifier(String transactionId,
                                   String identifier,
-                                  String hash,
+                                  @Nullable String hash,
                                   String blockchainId) {
         this.transactionId = transactionId;
         this.identifier = identifier;
@@ -56,8 +56,8 @@ public class TransactionIdentifier {
     }
 
     @JsonProperty("hash")
-    public String getHash() {
-        return hash;
+    public Optional<String> getHash() {
+        return Optional.fromNullable (hash);
     }
 
     @JsonProperty("blockchain_id")

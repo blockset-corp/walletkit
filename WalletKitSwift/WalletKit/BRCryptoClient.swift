@@ -133,7 +133,7 @@ public protocol SystemClient {
     typealias TransactionIdentifier = (
         id: String,
         blockchainId: String,
-        hash: String,
+        hash: String?,
         identifier: String
     )
 
