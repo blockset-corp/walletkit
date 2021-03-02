@@ -916,3 +916,4 @@ cryptoWalletEventTypeString (BRCryptoWalletEventType t) {
     }
     return "<CRYPTO_WALLET_EVENT_TYPE_UNKNOWN>";
 }
+

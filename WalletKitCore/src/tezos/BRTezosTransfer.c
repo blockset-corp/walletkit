@@ -112,10 +112,39 @@ extern BRTezosHash tezosTransferGetTransactionId(BRTezosTransfer transfer)
         return transfer->transactionId;
     }
 }
+
 extern BRTezosUnitMutez tezosTransferGetAmount(BRTezosTransfer transfer)
 {
     assert(transfer);
     return transfer->amount;
+}
+
+extern BRTezosUnitMutez tezosTransferGetAmountDirected (BRTezosTransfer transfer,
+                                                        BRTezosAddress address,
+                                                        int *negative) {
+    BRTezosUnitMutez amount = (tezosTransferHasError(transfer)
+                               ? 0
+                               : tezosTransferGetAmount(transfer));
+    BRTezosUnitMutez fee    = tezosTransferGetFee(transfer);
+    
+    int isSource = tezosTransferHasSource (transfer, address);
+    int isTarget = tezosTransferHasTarget (transfer, address);
+    
+    if (isSource && isTarget) {
+        *negative = 1;
+        return fee;
+    }
+    else if (isSource) {
+        *negative = 1;
+        return amount + fee;
+    }
+    else if (isTarget) {
+        *negative = 0;
+        return amount;
+    }
+    else {
+        assert (0);
+    }
 }
 
 extern BRTezosAddress tezosTransferGetSource(BRTezosTransfer transfer)
@@ -137,7 +166,17 @@ extern BRTezosUnitMutez tezosTransferGetFee(BRTezosTransfer transfer)
 }
 
 extern BRTezosFeeBasis tezosTransferGetFeeBasis (BRTezosTransfer transfer) {
-    return tezosTransactionGetFeeBasis (transfer->transaction);
+    assert(transfer);
+    return (NULL == transfer->transaction)
+    ? tezosFeeBasisCreateActual (transfer->fee)
+    : tezosTransactionGetFeeBasis (transfer->transaction);
+}
+
+extern void tezosTransferSetFeeBasis (BRTezosTransfer transfer,
+                                      BRTezosFeeBasis feeBasis) {
+    assert(transfer);
+    if (NULL == transfer->transaction) transfer->fee = tezosFeeBasisGetFee (&feeBasis);
+    else tezosTransactionSetFeeBasis (transfer->transaction, feeBasis);
 }
 
 extern BRTezosTransaction tezosTransferGetTransaction(BRTezosTransfer transfer)
@@ -154,6 +193,11 @@ tezosTransferHasError(BRTezosTransfer transfer) {
 extern int tezosTransferHasSource (BRTezosTransfer transfer,
                                    BRTezosAddress source) {
     return tezosAddressEqual (transfer->sourceAddress, source);
+}
+
+extern int tezosTransferHasTarget (BRTezosTransfer transfer,
+                                   BRTezosAddress target) {
+    return tezosAddressEqual (transfer->targetAddress, target);
 }
 
 extern uint64_t tezosTransferGetBlockHeight (BRTezosTransfer transfer) {

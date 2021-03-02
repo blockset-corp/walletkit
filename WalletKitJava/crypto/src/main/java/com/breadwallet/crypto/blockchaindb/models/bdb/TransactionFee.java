@@ -1,3 +1,10 @@
+/*
+ * Created by Ehsan Rezaie on 10/30/20.
+ * Copyright (c) 2020 Breadwinner AG.  All right reserved.
+ *
+ * See the LICENSE file at the project root for license information.
+ * See the CONTRIBUTORS file at the project root for a list of contributors.
+ */
 package com.breadwallet.crypto.blockchaindb.models.bdb;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

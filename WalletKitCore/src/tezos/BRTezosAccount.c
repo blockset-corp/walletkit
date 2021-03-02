@@ -148,8 +148,8 @@ tezosAccountHasAddress (BRTezosAccount account,
 
 extern BRTezosUnitMutez
 tezosAccountGetBalanceLimit (BRTezosAccount account,
-                            int asMaximum,
-                            int *hasLimit) {
+                             int asMaximum,
+                             int *hasLimit) {
     assert (NULL != hasLimit);
     *hasLimit = 0;
     return 0;

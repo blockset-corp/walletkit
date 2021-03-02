@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3C13F33824C759B4008410C8 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C13F33724C759A0008410C8 /* libresolv.tbd */; };
+		3C486DDF25ED576700FAE817 /* ExportablePaperWalletController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C486DDE25ED576700FAE817 /* ExportablePaperWalletController.swift */; };
 		3C7CEC2A255F1C53008C1816 /* WalletKitTestsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = 3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */; };
 		3C82745423ECC3770047A2D3 /* WalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3C82745323ECC3770047A2D3 /* WalletKit */; };
 		3CCCFC0D24C0CDD90045FA37 /* CONTRIBUTORS in Resources */ = {isa = PBXBuildFile; fileRef = 3CCCFC0A24C0CDD90045FA37 /* CONTRIBUTORS */; };
@@ -38,6 +39,7 @@
 
 /* Begin PBXFileReference section */
 		3C13F33724C759A0008410C8 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
+		3C486DDE25ED576700FAE817 /* ExportablePaperWalletController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportablePaperWalletController.swift; sourceTree = "<group>"; };
 		3C5C8DF02566F457002ED2D2 /* WalletKitTestsConfig.env */ = {isa = PBXFileReference; lastKnownFileType = text; path = WalletKitTestsConfig.env; sourceTree = "<group>"; };
 		3C5C8DF12566F457002ED2D2 /* WalletKitTestsConfig_Example.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = WalletKitTestsConfig_Example.json; sourceTree = "<group>"; };
 		3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = WalletKitTestsConfig.json; sourceTree = "<group>"; };
@@ -143,6 +145,7 @@
 				3CD5B24B23EB7C2600CC8A56 /* Support.swift */,
 				3C7CEC29255F1C53008C1816 /* WalletKitTestsConfig.json */,
 				3C82745123ECBD9F0047A2D3 /* Info.plist */,
+				3C486DDE25ED576700FAE817 /* ExportablePaperWalletController.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -260,6 +263,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3CD5B26523EB7C2600CC8A56 /* WalletManagersTableViewController.swift in Sources */,
+				3C486DDF25ED576700FAE817 /* ExportablePaperWalletController.swift in Sources */,
 				3CD5B25523EB7C2600CC8A56 /* TransferCreateSweepController.swift in Sources */,
 				3CD5B25723EB7C2600CC8A56 /* WalletManagerViewController.swift in Sources */,
 				3CD5B26723EB7C2600CC8A56 /* CoreDemoAppDelegate.swift in Sources */,

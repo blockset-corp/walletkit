@@ -88,6 +88,31 @@ class BRCryptoTransferTests: BRCryptoSystemBaseTests {
                             hash: "0xf6d9bca3d4346ce75c151d1d8f061d56ff25e41a89553544b80d316f7d9ccedc",
                             amount: UInt64(1000000))
         ]
+        /*
+        {
+            "transaction_id": "bitcoin-testnet:7beb10985270c6f04cf99ff4384f7ebc3fc8c9a3dbb6a383b4b723b8c42f366f",
+            "identifier": "7beb10985270c6f04cf99ff4384f7ebc3fc8c9a3dbb6a383b4b723b8c42f366f",
+            "hash": "b0d3b4c1845544c55a16c91e3d174f48659f391062acf7e87d4b46d58e292584",
+            "blockchain_id": "bitcoin-testnet",
+            "timestamp": "2020-05-12T20:46:22.000+00:00",
+            "size": 245,
+            "fee": {
+                "currency_id": "bitcoin-testnet:__native__",
+                "amount": "8063"
+            },
+            "confirmations": 193028,
+            "index": 2,
+            "block_hash": "0000000000001329c0850074446a6a10c49c00cc702f50ab5eff7505ca8adec2",
+            "block_height": 1741917,
+            "status": "confirmed",
+            "calls": [],
+            "meta": {},
+            "acknowledgements": 1,
+            "layers": {},
+            "_links": ...
+        }
+         */
+
     }
 
     override func setUp() {

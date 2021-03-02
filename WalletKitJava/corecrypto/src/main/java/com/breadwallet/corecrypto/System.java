@@ -2038,13 +2038,13 @@ final class System implements com.breadwallet.crypto.System {
                                     @Override
                                     public void handleData(TransactionIdentifier tid) {
                                         Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getHash().orNull(), true);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash().orNull(), true);
                                     }
 
                                     @Override
                                     public void handleError(QueryError error) {
                                         Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, false);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
                                     }
                                 });
 
@@ -2057,7 +2057,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceSubmitTransfer(callbackState, null, false);
+                coreWalletManager.announceSubmitTransfer(callbackState, null, null, false);
             } finally {
                 coreWalletManager.give();
             }
@@ -2182,11 +2182,11 @@ final class System implements com.breadwallet.crypto.System {
                                 transferWithFee.getId(),
                                 transferWithFee.getBlockchainId(),
                                 transferWithFee.getIndex(),
-                                transferWithFee.getAmount(),
+                                com.breadwallet.crypto.blockchaindb.models.bdb.Amount.create(transferWithFee.getAmount().getCurrencyId(), "0"),
                                 transferWithFee.getMeta(),
                                 transferWithFee.getFromAddress().orNull(),
                                 "unknown",
-                                "0",
+                                transferWithFee.getTransactionId().or("0"),
                                 transferWithFee.getAcknowledgements().orNull())
                 );
             }

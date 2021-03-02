@@ -2,12 +2,9 @@ package com.breadwallet.crypto.blockchaindb.models.bdb;
 
 import android.support.annotation.Nullable;
 
-import com.breadwallet.crypto.blockchaindb.models.Utilities;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
-import com.google.common.primitives.UnsignedLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -15,11 +12,11 @@ public class TransactionIdentifier {
     // creator
 
     @JsonCreator
-    public static com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
-                                                                                              @JsonProperty("identifier") String identifier,
-                                                                                              @JsonProperty("hash") @Nullable String hash,
-                                                                                              @JsonProperty("blockchain_id") String blockchainId) {
-        return new com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier(
+    public static TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
+                                               @JsonProperty("identifier") String identifier,
+                                               @JsonProperty("hash") @Nullable String hash,
+                                               @JsonProperty("blockchain_id") String blockchainId) {
+        return new TransactionIdentifier(
                 checkNotNull(transactionId),
                 checkNotNull(identifier),
                 hash,

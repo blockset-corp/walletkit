@@ -22,6 +22,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersBTC,
         &cryptoWalletHandlersBTC,
         &cryptoWalletSweeperHandlersBTC,
+        &cryptoExportablePaperWalletHandlersBTC,
         &cryptoPaymentProtocolHandlersBTC,
         &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBTC
@@ -34,6 +35,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersBCH,
         &cryptoWalletHandlersBCH,
         &cryptoWalletSweeperHandlersBCH,
+        NULL,//BRCryptoExportablePaperWalletHandlers
         &cryptoPaymentProtocolHandlersBTC,
         &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBCH
@@ -46,6 +48,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersBSV,
         &cryptoWalletHandlersBSV,
         &cryptoWalletSweeperHandlersBSV,
+        NULL,//BRCryptoExportablePaperWalletHandlers
         &cryptoPaymentProtocolHandlersBTC,
         &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBSV
@@ -58,6 +61,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersETH,
         &cryptoWalletHandlersETH,
         NULL,//BRCryptoWalletSweeperHandlers not supported
+        NULL,//BRCryptoExportablePaperWalletHandlers
         NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoFeeBasisHandlersETH,
         &cryptoWalletManagerHandlersETH
@@ -70,6 +74,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersXRP,
         &cryptoWalletHandlersXRP,
         NULL,//BRCryptoWalletSweeperHandlers not supported
+        NULL,//BRCryptoExportablePaperWalletHandlers
         NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoFeeBasisHandlersXRP,
         &cryptoWalletManagerHandlersXRP
@@ -82,6 +87,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersHBAR,
         &cryptoWalletHandlersHBAR,
         NULL,//BRCryptoWalletSweeperHandlers not supported
+        NULL,//BRCryptoExportablePaperWalletHandlers
         NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoFeeBasisHandlersHBAR,
         &cryptoWalletManagerHandlersHBAR
@@ -94,6 +100,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoTransferHandlersXTZ,
         &cryptoWalletHandlersXTZ,
         NULL,//BRCryptoWalletSweeperHandlers not supported
+        NULL,//BRCryptoExportablePaperWalletHandlers
         NULL,//BRCryptoPaymentProtocolHandlers not supported
         &cryptoFeeBasisHandlersXTZ,
         &cryptoWalletManagerHandlersXTZ

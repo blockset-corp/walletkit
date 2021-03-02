@@ -131,6 +131,26 @@ public final class CryptoLibraryIndirect {
                 bundlesCount);
     }
 
+    public static void cryptoWalletManagerEstimateFeeBasis(Pointer cwm,
+                                                           Pointer wid,
+                                                           Pointer cookie,
+                                                           Pointer target,
+                                                           Pointer amount,
+                                                           Pointer fee,
+                                                           SizeT attributesCount,
+                                                           BRCryptoTransferAttribute[] attributes) {
+        attributes = attributes.length == 0 ? null : attributes;
+        INSTANCE.cryptoWalletManagerEstimateFeeBasis(
+                cwm,
+                wid,
+                cookie,
+                target,
+                amount,
+                fee,
+                attributesCount,
+                attributes);
+    }
+
     public static Pointer cryptoSystemCreateWalletManager(Pointer system,
                                                           Pointer network,
                                                           int mode,
@@ -196,6 +216,16 @@ public final class CryptoLibraryIndirect {
                                                SizeT attributesCount,
                                                String[] attributeKeys,
                                                String[] attributeVals);
+
+        // crypto/BRCryptoWalletManager.h
+        void cryptoWalletManagerEstimateFeeBasis (Pointer cwm,
+                                                  Pointer wallet,
+                                                  Pointer cookie,
+                                                  Pointer target,
+                                                  Pointer amount,
+                                                  Pointer fee,
+                                                  SizeT attributesCount,
+                                                  BRCryptoTransferAttribute[] attributes);
 
         // crypto/BRCryptoSystem.h
         Pointer cryptoSystemCreateWalletManager(Pointer system,

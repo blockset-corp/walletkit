@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="H1p-Uh-vWS">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="H1p-Uh-vWS">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17125"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -22,11 +22,11 @@
                                 <rect key="frame" x="0.0" y="55.5" width="375" height="43.5"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="eEw-HE-2rc" id="fS9-iS-Ovv">
-                                    <rect key="frame" x="0.0" y="0.0" width="356" height="43.5"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="348" height="43.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="9S5-cR-ZmV">
-                                            <rect key="frame" x="15" y="0.0" width="333" height="43.5"/>
+                                            <rect key="frame" x="16" y="0.0" width="324" height="43.5"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <nil key="textColor"/>
@@ -1484,6 +1484,100 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="hoc-3h-PCJ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="673" y="1979"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="wp1-WZ-Ks3">
+            <objects>
+                <navigationController storyboardIdentifier="createExportablePaperWalletNC" id="UAa-K2-Oc1" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="5xo-sE-0e2">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="l0m-Aj-DLd" kind="relationship" relationship="rootViewController" id="Kgd-ex-yG6"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Fyt-XW-rZs" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="673" y="2694"/>
+        </scene>
+        <!--Exportable Paper Wallet-->
+        <scene sceneID="Gv9-qA-4IU">
+            <objects>
+                <viewController id="l0m-Aj-DLd" customClass="ExportablePaperWalletController" customModule="WalletKitDemo" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Cz1-Do-EWm">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Address" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="a81-HK-S9J">
+                                <rect key="frame" x="16" y="58" width="343" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Private Key" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="v22-dg-uPq">
+                                <rect key="frame" x="16" y="155" width="343" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Gn4-X5-4CY">
+                                <rect key="frame" x="16" y="91" width="343" height="30"/>
+                                <state key="normal" title="Button"/>
+                                <connections>
+                                    <action selector="toPasteBoard:" destination="l0m-Aj-DLd" eventType="touchUpInside" id="D80-5u-OXB"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nlv-3u-irF">
+                                <rect key="frame" x="16" y="188" width="343" height="30"/>
+                                <state key="normal" title="Button"/>
+                                <connections>
+                                    <action selector="toPasteBoard:" destination="l0m-Aj-DLd" eventType="touchUpInside" id="O9W-lH-qBH"/>
+                                </connections>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="e5Z-a3-28W">
+                                <rect key="frame" x="16" y="264" width="343" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="mZS-0u-P1A"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="mZS-0u-P1A" firstAttribute="trailing" secondItem="e5Z-a3-28W" secondAttribute="trailing" constant="16" id="DY8-nJ-uxV"/>
+                            <constraint firstItem="a81-HK-S9J" firstAttribute="top" secondItem="mZS-0u-P1A" secondAttribute="top" constant="14" id="EJf-L0-w3D"/>
+                            <constraint firstItem="nlv-3u-irF" firstAttribute="top" secondItem="v22-dg-uPq" secondAttribute="bottom" constant="12" id="ILM-hD-Yhs"/>
+                            <constraint firstItem="v22-dg-uPq" firstAttribute="top" secondItem="Gn4-X5-4CY" secondAttribute="bottom" constant="34" id="J5X-Sf-aX3"/>
+                            <constraint firstItem="v22-dg-uPq" firstAttribute="leading" secondItem="mZS-0u-P1A" secondAttribute="leading" constant="16" id="LfO-Ww-DLu"/>
+                            <constraint firstItem="nlv-3u-irF" firstAttribute="leading" secondItem="mZS-0u-P1A" secondAttribute="leading" constant="16" id="Nh8-nu-Bz4"/>
+                            <constraint firstItem="mZS-0u-P1A" firstAttribute="trailing" secondItem="a81-HK-S9J" secondAttribute="trailing" constant="16" id="Nm3-Jk-Dfn"/>
+                            <constraint firstItem="e5Z-a3-28W" firstAttribute="top" secondItem="nlv-3u-irF" secondAttribute="bottom" constant="46" id="R4Q-9X-ab0"/>
+                            <constraint firstItem="mZS-0u-P1A" firstAttribute="trailing" secondItem="nlv-3u-irF" secondAttribute="trailing" constant="16" id="e5B-7C-1Be"/>
+                            <constraint firstItem="Gn4-X5-4CY" firstAttribute="leading" secondItem="mZS-0u-P1A" secondAttribute="leading" constant="16" id="gtK-EK-F12"/>
+                            <constraint firstItem="e5Z-a3-28W" firstAttribute="leading" secondItem="mZS-0u-P1A" secondAttribute="leading" constant="16" id="hXn-Mc-a7P"/>
+                            <constraint firstItem="Gn4-X5-4CY" firstAttribute="top" secondItem="a81-HK-S9J" secondAttribute="bottom" constant="12" id="jcH-pf-PtJ"/>
+                            <constraint firstItem="a81-HK-S9J" firstAttribute="leading" secondItem="mZS-0u-P1A" secondAttribute="leading" constant="16" id="pjB-qG-ynH"/>
+                            <constraint firstItem="mZS-0u-P1A" firstAttribute="trailing" secondItem="Gn4-X5-4CY" secondAttribute="trailing" constant="16" id="qF6-ac-U65"/>
+                            <constraint firstItem="mZS-0u-P1A" firstAttribute="trailing" secondItem="v22-dg-uPq" secondAttribute="trailing" constant="16" id="yaj-xO-tv1"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Exportable Paper Wallet" id="vpR-Wa-GlH">
+                        <barButtonItem key="leftBarButtonItem" systemItem="done" id="jXu-ad-1vF">
+                            <connections>
+                                <action selector="cancel:" destination="l0m-Aj-DLd" id="X49-KV-jt3"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
+                    <connections>
+                        <outlet property="exportablePaperWalletAddressButton" destination="Gn4-X5-4CY" id="Wnw-Z6-yhP"/>
+                        <outlet property="exportablePaperWalletPrivateKeyButton" destination="nlv-3u-irF" id="i3A-mD-7ty"/>
+                        <outlet property="exportablePaperWalletResultLabel" destination="e5Z-a3-28W" id="gzg-7f-Ab3"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="kxK-Ul-jav" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1624.8" y="2693.7031484257873"/>
         </scene>
         <!--Create Delegation-->
         <scene sceneID="k8i-Ta-e0r">

@@ -186,6 +186,5 @@ public class AddressAIT {
         assertEquals("BTC Legacy",  AddressScheme.BTC_LEGACY.toString());
         assertEquals("BTC Segwit",  AddressScheme.BTC_SEGWIT.toString());
         assertEquals("Native", AddressScheme.NATIVE.toString());
-        assertEquals("Native", AddressScheme.NATIVE.toString());
     }
 }

@@ -230,6 +230,10 @@ public final class WalletManager: Equatable, CustomStringConvertible {
                                completion: @escaping (Result<WalletSweeper, WalletSweeperError>) -> Void) {
         WalletSweeper.create(wallet: wallet, key: key, client: client, completion: completion)
     }
+    
+    public func createExportablePaperWallet () -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+        return ExportablePaperWallet.create(manager: self)
+    }
 
     internal init (core: BRCryptoWalletManager,
                    system: System,
@@ -439,6 +443,58 @@ public final class WalletSweeper {
 
     deinit {
         cryptoWalletSweeperRelease(core)
+    }
+}
+
+///
+/// Exportable Paper Wallet
+///
+
+public enum ExportablePaperWalletError: Error {
+    case unsupportedCurrency
+    case unexpectedError
+
+    internal init? (_ core: BRCryptoExportablePaperWalletStatus) {
+        switch core {
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_SUCCESS:                 return nil
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_UNSUPPORTED_CURRENCY:    self = .unsupportedCurrency
+        case CRYPTO_EXPORTABLE_PAPER_WALLET_INVALID_ARGUMENTS:       self = .unexpectedError
+        default: self = .unexpectedError; preconditionFailure()
+        }
+    }
+}
+
+public final class ExportablePaperWallet {
+    internal static func create(manager: WalletManager) -> Result<ExportablePaperWallet, ExportablePaperWalletError> {
+        // check that requested wallet supports generating exportable paper wallets
+        if let error =  ExportablePaperWalletError (cryptoExportablePaperWalletValidateSupported (manager.network.core,
+                                                                                                  manager.currency.core)) {
+            return Result.failure (error)
+        }
+
+        return cryptoExportablePaperWalletCreate (manager.network.core, manager.currency.core)
+            .map { Result.success (ExportablePaperWallet (core: $0)) }
+            ?? Result.failure(.unexpectedError)
+    }
+
+    internal let core: BRCryptoWalletSweeper
+
+    private init (core: BRCryptoWalletSweeper) {
+        self.core = core
+    }
+
+    public var privateKey: Key? {
+        return cryptoExportablePaperWalletGetKey (self.core)
+            .map { Key (core: $0) }
+    }
+
+    public var address: Address? {
+        return cryptoExportablePaperWalletGetAddress (self.core)
+            .map { Address (core: $0, take: false) }
+    }
+
+    deinit {
+        cryptoExportablePaperWalletRelease(core)
     }
 }
 

@@ -105,11 +105,16 @@ class WalletViewController: UITableViewController, WalletListener, WalletManager
     }
 
     func showCreateTransferController (named: String) {
-        if let navigationController = self.storyboard?.instantiateViewController(withIdentifier: named) as? UINavigationController,
-            let controller = navigationController.topViewController as? TransferCreateController {
-            controller.wallet = self.wallet
-            controller.fee    = self.wallet.manager.defaultNetworkFee
-            self.present (navigationController, animated: true, completion: nil)
+        if let navigationController = self.storyboard?.instantiateViewController(withIdentifier: named) as? UINavigationController {
+            if let controller = navigationController.topViewController as? TransferCreateController {
+                controller.wallet = self.wallet
+                controller.fee    = self.wallet.manager.defaultNetworkFee
+                self.present (navigationController, animated: true, completion: nil)
+            }
+            else if let controller = navigationController.topViewController as? ExportablePaperWalletController {
+                controller.walletManager = self.wallet.manager
+                self.present(navigationController, animated: true, completion: nil)
+            }
         }
     }
 
@@ -152,7 +157,13 @@ class WalletViewController: UITableViewController, WalletListener, WalletManager
         addAlertAction(alert: alert, networkTypes: [.xtz], UIAlertAction (title: "Delegate", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Delegate")
             self.showCreateTransferController(named: "createTransferDelegateNC")
-           alert.dismiss(animated: true) {}
+            alert.dismiss(animated: true) {}
+        })
+
+        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Exportable Paper Wallet", style: UIAlertAction.Style.default) { (action) in
+            print ("APP: WVC: Want to Create Exportable Paper Wallet")
+            self.showCreateTransferController(named: "createExportablePaperWalletNC")
+            alert.dismiss(animated: true) {}
         })
 
         alert.addAction (UIAlertAction (title: "Cancel", style: UIAlertAction.Style.cancel))
