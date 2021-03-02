@@ -2,12 +2,9 @@ package com.breadwallet.crypto.blockchaindb.models.bdb;
 
 import android.support.annotation.Nullable;
 
-import com.breadwallet.crypto.blockchaindb.models.Utilities;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
-import com.google.common.primitives.UnsignedLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -17,12 +14,12 @@ public class TransactionIdentifier {
     @JsonCreator
     public static TransactionIdentifier create(@JsonProperty("transaction_id") String transactionId,
                                                @JsonProperty("identifier") String identifier,
-                                               @JsonProperty("hash") String hash,
+                                               @JsonProperty("hash") @Nullable String hash,
                                                @JsonProperty("blockchain_id") String blockchainId) {
         return new TransactionIdentifier(
                 checkNotNull(transactionId),
                 checkNotNull(identifier),
-                checkNotNull(hash),
+                hash,
                 checkNotNull(blockchainId)
         );
     }
@@ -31,12 +28,12 @@ public class TransactionIdentifier {
 
     private final String transactionId;
     private final String identifier;
-    private final String hash;
+    private final @Nullable String hash;
     private final String blockchainId;
 
     private TransactionIdentifier(String transactionId,
                                   String identifier,
-                                  String hash,
+                                  @Nullable String hash,
                                   String blockchainId) {
         this.transactionId = transactionId;
         this.identifier = identifier;
@@ -56,8 +53,8 @@ public class TransactionIdentifier {
     }
 
     @JsonProperty("hash")
-    public String getHash() {
-        return hash;
+    public Optional<String> getHash() {
+        return Optional.fromNullable (hash);
     }
 
     @JsonProperty("blockchain_id")

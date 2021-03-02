@@ -399,6 +399,7 @@ static void
 _CWMNopSubmitTransactionCallback (BRCryptoClientContext context,
                                   OwnershipGiven BRCryptoWalletManager manager,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
+                                  OwnershipKept const char    *identifier,
                                   OwnershipKept const uint8_t *transaction,
                                   size_t transactionLength) {
     cryptoWalletManagerGive (manager);

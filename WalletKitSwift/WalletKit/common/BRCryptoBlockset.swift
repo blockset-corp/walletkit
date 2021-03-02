@@ -423,9 +423,10 @@ public class BlocksetSystemClient: SystemClient {
         static internal func asTransactionIdentifier (json: JSON) -> SystemClient.TransactionIdentifier? {
             guard let id         = json.asString(name: "transaction_id"),
                   let bid        = json.asString (name: "blockchain_id"),
-                  let hash       = json.asString (name: "hash"),
                   let identifier = json.asString (name: "identifier")
             else { return nil }
+
+            let hash = json.asString (name: "hash")
 
             return (id: id, blockchainId: bid, hash: hash, identifier: identifier)
         }
@@ -962,10 +963,11 @@ public class BlocksetSystemClient: SystemClient {
 
     public func createTransaction (blockchainId: String,
                                    transaction: Data,
+                                   identifier: String?,
                                    completion: @escaping (Result<TransactionIdentifier, SystemClientError>) -> Void) {
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            "transaction_id" : "unknown",
+            "transaction_id" : identifier.map { "\(blockchainId):\($0)" } ?? "unknown",
             "data"           : transaction.base64EncodedString()
         ]
 

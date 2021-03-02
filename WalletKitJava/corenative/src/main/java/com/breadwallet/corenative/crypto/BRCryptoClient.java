@@ -54,6 +54,7 @@ public class BRCryptoClient extends Structure {
         void callback(Pointer context,
                       Pointer manager,
                       Pointer callbackState,
+                      String  identifier,
                       Pointer tx,
                       SizeT txLength);
     }
@@ -153,18 +154,21 @@ public class BRCryptoClient extends Structure {
         void handle(Cookie context,
                     BRCryptoWalletManager manager,
                     BRCryptoClientCallbackState callbackState,
+                    String identifier,
                     byte[] transaction);
 
         @Override
         default void callback(Pointer context,
                               Pointer manager,
                               Pointer callbackState,
+                              String identifier,
                               Pointer tx,
                               SizeT txLength) {
             handle(
                     new Cookie(context),
                     new BRCryptoWalletManager(manager),
                     new BRCryptoClientCallbackState(callbackState),
+                    identifier,
                     tx.getByteArray(0, UnsignedInts.checkedCast(txLength.longValue()))
             );
         }
