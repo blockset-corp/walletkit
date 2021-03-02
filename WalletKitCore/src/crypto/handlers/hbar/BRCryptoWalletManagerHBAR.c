@@ -249,7 +249,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
     
     cryptoFeeBasisGive (feeBasis);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
 
     if (hbarTransactionNeedFree)
         hederaTransactionFree (hbarTransaction);

@@ -251,16 +251,16 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
 
     tezosAddressFree (source);
 
-    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
-
-    BRCryptoTransfer transfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
-                                                           unit,
-                                                           unitForFee,
-                                                           state,
-                                                           walletXTZ->xtzAccount,
-                                                           xtzTransfer);
+    BRCryptoTransferState state    = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
+    BRCryptoTransfer      transfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                                unit,
+                                                                unitForFee,
+                                                                state,
+                                                                walletXTZ->xtzAccount,
+                                                                xtzTransfer);
+    
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     
     return transfer;
 }

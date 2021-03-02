@@ -223,16 +223,17 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
 
     rippleAddressFree(source);
 
-    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
+    BRCryptoTransferState state    = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
+    BRCryptoTransfer      transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                                unit,
+                                                                unitForFee,
+                                                                state,
+                                                                walletXRP->xrpAccount,
+                                                                xrpTransaction);
 
-    BRCryptoTransfer transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
-                                                           unit,
-                                                           unitForFee,
-                                                           state,
-                                                           walletXRP->xrpAccount,
-                                                           xrpTransaction);
+
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive(state);
 
     return transfer;
 }

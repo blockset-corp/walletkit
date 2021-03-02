@@ -25,9 +25,35 @@ extern "C" {
 
 // MARK: - Transfer State
 
+#define CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE     16
+
+struct BRCryptoTransferStateRecord {
+    BRCryptoTransferStateType type;
+    union {
+        struct {
+            uint64_t blockNumber;
+            uint64_t transactionIndex;
+            // This is not assuredly the including block's timestamp; it is the transaction's
+            // timestamp which varies depending on how the transaction was discovered.
+            uint64_t timestamp;
+            BRCryptoFeeBasis feeBasis;
+
+            // transfer that has failed can be included too
+            BRCryptoBoolean success;
+            char error[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
+        } included;
+
+        struct {
+            BRCryptoTransferSubmitError error;
+        } errored;
+    } u;
+
+    BRCryptoRef ref;
+};
+
 private_extern bool
-cryptoTransferStateIsEqual (const BRCryptoTransferState *s1,
-                            const BRCryptoTransferState *s2);
+cryptoTransferStateIsEqual (const BRCryptoTransferState s1,
+                            const BRCryptoTransferState s2);
 
 // MARK: - Transfer Confirmation
 

@@ -239,7 +239,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                                            basis,
                                                            ethTransaction);
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
 
     cryptoAddressGive(source);
 

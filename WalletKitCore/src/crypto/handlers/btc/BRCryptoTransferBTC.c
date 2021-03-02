@@ -189,7 +189,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                             &contextBTC,
                                                             cryptoTransferCreateCallbackBTC);
 
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAmountGive  (amount);
     cryptoAddressGive (sourceAddress);

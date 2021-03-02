@@ -413,8 +413,8 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error) {
     assert (cryptoWalletHasTransfer (wallet, transfer));
 
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-    assert (CRYPTO_TRANSFER_STATE_SUBMITTED != oldState.type);
-    cryptoTransferStateRelease (&oldState);
+    assert (CRYPTO_TRANSFER_STATE_SUBMITTED != oldState->type);
+    cryptoTransferStateGive (oldState);
 
     cryptoTransferSetState (transfer, cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED));
 

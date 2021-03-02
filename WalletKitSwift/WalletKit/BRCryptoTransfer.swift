@@ -426,26 +426,42 @@ public enum TransferState {
     case deleted
 
     internal init (core: BRCryptoTransferState) {
-        switch core.type {
+        switch cryptoTransferStateGetType (core) {
         case CRYPTO_TRANSFER_STATE_CREATED:   self = .created
         case CRYPTO_TRANSFER_STATE_SIGNED:    self = .signed
         case CRYPTO_TRANSFER_STATE_SUBMITTED: self = .submitted
         case CRYPTO_TRANSFER_STATE_INCLUDED:
-            var coreError = core.u.included.error
-            let error = CRYPTO_TRUE == core.u.included.success
-                ? nil
-                : asUTF8String(&coreError.0)
+            var coreBlockNumber      : UInt64 = 0
+            var coreBlockTimestamp   : UInt64 = 0
+            var coreTransactionIndex : UInt64 = 0
+            var coreFeeBasis         : BRCryptoFeeBasis!
+            var coreSuccess          : BRCryptoBoolean = CRYPTO_TRUE
+            var coreErrorString      : UnsafeMutablePointer<Int8>!
+
+            cryptoTransferStateExtractIncluded (core,
+                                                &coreBlockNumber,
+                                                &coreBlockTimestamp,
+                                                &coreTransactionIndex,
+                                                &coreFeeBasis,
+                                                &coreSuccess,
+                                                &coreErrorString);
+            defer { cryptoMemoryFree (coreErrorString) }
 
             self = .included (
-                confirmation: TransferConfirmation (blockNumber: core.u.included.blockNumber,
-                                                    transactionIndex: core.u.included.transactionIndex,
-                                                    timestamp: core.u.included.timestamp,
-                                                    fee: core.u.included.feeBasis
+                confirmation: TransferConfirmation (blockNumber:      coreBlockNumber,
+                                                    transactionIndex: coreTransactionIndex,
+                                                    timestamp:        coreBlockTimestamp,
+                                                    fee: coreFeeBasis
                                                         .map { cryptoFeeBasisGetFee ($0) }
                                                         .map { Amount (core: $0, take: false) },
-                                                    success: CRYPTO_TRUE == core.u.included.success,
-                                                    error: error))
-        case CRYPTO_TRANSFER_STATE_ERRORED:   self = .failed(error: TransferSubmitError (core: core.u.errored.error))
+                                                    success: CRYPTO_TRUE == coreSuccess,
+                                                    error: coreErrorString.map { asUTF8String ($0)} ))
+
+        case CRYPTO_TRANSFER_STATE_ERRORED:
+            var error : BRCryptoTransferSubmitError!
+            cryptoTransferStateExtractError (core, &error)
+            self = .failed(error: TransferSubmitError (core: error))
+
         case CRYPTO_TRANSFER_STATE_DELETED:   self = .deleted
         default: /* ignore this */ self = .pending; preconditionFailure()
         }
