@@ -429,6 +429,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAmountP.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAmount.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoBaseP.h
+                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoBase.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCipher.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClientP.h
                 ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClient.c

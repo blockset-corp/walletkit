@@ -37,7 +37,6 @@ public class BRCryptoWalletEvent extends PointerType {
             this.oldState = oldState;
             this.newState = newState;
         }
-
     }
 
     public States states() {
@@ -120,8 +119,8 @@ public class BRCryptoWalletEvent extends PointerType {
                 new BRCryptoFeeBasis (feeBasisPtr.getValue()));
     }
 
-    public BRCryptoWallet take() {
-        return new BRCryptoWallet(
+    public BRCryptoWalletEvent take() {
+        return new BRCryptoWalletEvent(
                 CryptoLibraryDirect.cryptoWalletEventTake(
                         this.getPointer()));
     }

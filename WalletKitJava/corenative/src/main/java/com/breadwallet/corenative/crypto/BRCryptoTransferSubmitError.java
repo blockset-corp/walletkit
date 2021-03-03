@@ -121,4 +121,11 @@ public class BRCryptoTransferSubmitError extends Structure {
             if (ptr != null) Native.free(Pointer.nativeValue(ptr));
         }
     }
+
+    public static class ByReference extends BRCryptoTransferSubmitError implements Structure.ByReference {
+    }
+
+    public static class ByValue extends BRCryptoTransferSubmitError implements Structure.ByValue {
+    }
+
 }

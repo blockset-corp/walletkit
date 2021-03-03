@@ -8,12 +8,9 @@
 package com.breadwallet.corenative;
 
 import com.breadwallet.corenative.crypto.BRCryptoClient;
-import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoPayProtReqBitPayAndBip70Callbacks;
-import com.breadwallet.corenative.crypto.BRCryptoTransferState;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManager;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerState;
-import com.breadwallet.corenative.crypto.BRCryptoWalletMigratorStatus;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerDisconnectReason;
 import com.breadwallet.corenative.crypto.BRCryptoSyncStoppedReason;
 import com.breadwallet.corenative.crypto.BRCryptoTransferSubmitError;
@@ -25,6 +22,7 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.LongByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 import java.nio.ByteBuffer;
@@ -38,6 +36,7 @@ public final class CryptoLibraryDirect {
     //
     // Crypto Core
     //
+    public static native void cryptoMemoryFreeExtern(Pointer memory);
 
     // crypto/BRCryptoAccount.h
     public static native Pointer cryptoAccountCreate(ByteBuffer phrase, long /* BRCryptoTimestamp */ timestamp, String uids);
@@ -240,13 +239,19 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoTransferGetAmount(Pointer transfer);
     public static native Pointer cryptoTransferGetAmountDirected(Pointer transfer);
     public static native int cryptoTransferGetDirection(Pointer transfer);
-    public static native BRCryptoTransferState.ByValue cryptoTransferGetState(Pointer transfer);
+    public static native Pointer cryptoTransferGetState(Pointer transfer);
     public static native Pointer cryptoTransferGetIdentifier(Pointer transfer);
     public static native Pointer cryptoTransferGetHash(Pointer transfer);
     public static native Pointer cryptoTransferGetUnitForAmount (Pointer transfer);
     public static native Pointer cryptoTransferGetUnitForFee (Pointer transfer);
     public static native Pointer cryptoTransferGetEstimatedFeeBasis (Pointer transfer);
     public static native Pointer cryptoTransferGetConfirmedFeeBasis (Pointer transfer);
+
+    public static native int cryptoTransferStateGetType(Pointer state);
+    public static native int cryptoTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, IntByReference success, PointerByReference error);
+    public static native int cryptoTransferStateExtractError(Pointer state, BRCryptoTransferSubmitError.ByValue error);
+    public static native Pointer cryptoTransferStateTake(Pointer state);
+    public static native void cryptoTransferStateGive(Pointer state);
 
     public static native SizeT cryptoTransferGetAttributeCount(Pointer transfer);
     public static native Pointer cryptoTransferGetAttributeAt(Pointer transfer, SizeT index);
