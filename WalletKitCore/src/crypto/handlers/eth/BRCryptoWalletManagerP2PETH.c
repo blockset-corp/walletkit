@@ -179,6 +179,8 @@ ewmHandleTransactionOriginatingLog (BRCryptoWalletManagerETH manager,
     assert (TRANSFER_BASIS_TRANSACTION == thisTransferETH->basis.type);
 
     BREthereumTransaction thisTransaction = thisTransferETH->basis.u.transaction;
+    if (NULL == thisTransaction) return;
+
     BREthereumHash        thisHash        = transactionGetHash (thisTransaction);
 
     // Only consider a transfer where account has the source address
@@ -370,7 +372,7 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
                                                                                       walletETH->base.unit,
                                                                                       walletETH->base.unitForFee,
                                                                                       managerETH->account,
-                                                             transaction);
+                                                                                      transaction);
         needTransactionRelease = false;
 
         cryptoWalletAddTransfer (&walletETH->base, &transferETH->base);

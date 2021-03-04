@@ -458,7 +458,7 @@ public enum TransferState {
                                                     error: coreErrorString.map { asUTF8String ($0)} ))
 
         case CRYPTO_TRANSFER_STATE_ERRORED:
-            var error : BRCryptoTransferSubmitError!
+            var error = BRCryptoTransferSubmitError()
             cryptoTransferStateExtractError (core, &error)
             self = .failed(error: TransferSubmitError (core: error))
 

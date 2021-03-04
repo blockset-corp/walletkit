@@ -336,7 +336,11 @@ extern const BREthereumHash
 cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer) {
     switch (transfer->basis.type) {
         case TRANSFER_BASIS_TRANSACTION:
-            return (NULL == transfer->basis.u.transaction ? EMPTY_HASH_INIT : transactionGetHash(transfer->basis.u.transaction));
+            return (NULL != transfer->originatingTransaction
+                    ? transactionGetHash (transfer->originatingTransaction)
+                    : (NULL != transfer->basis.u.transaction
+                       ? transactionGetHash(transfer->basis.u.transaction)
+                       : EMPTY_HASH_INIT));
         case TRANSFER_BASIS_LOG:
             return (NULL == transfer->basis.u.log         ? EMPTY_HASH_INIT : logGetHash(transfer->basis.u.log));
         case TRANSFER_BASIS_EXCHANGE:
