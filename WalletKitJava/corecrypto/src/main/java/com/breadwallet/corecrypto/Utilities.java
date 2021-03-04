@@ -16,6 +16,7 @@ import com.breadwallet.corenative.crypto.BRCryptoSystemState;
 import com.breadwallet.corenative.crypto.BRCryptoTransferAttributeValidationError;
 import com.breadwallet.corenative.crypto.BRCryptoTransferDirection;
 import com.breadwallet.corenative.crypto.BRCryptoTransferState;
+import com.breadwallet.corenative.crypto.BRCryptoTransferSubmitError;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerState;
 import com.breadwallet.corenative.crypto.BRCryptoWalletState;
 import com.breadwallet.corenative.crypto.BRCryptoSyncDepth;
@@ -152,31 +153,39 @@ final class Utilities {
             case CRYPTO_TRANSFER_STATE_DELETED: return TransferState.DELETED();
             case CRYPTO_TRANSFER_STATE_SIGNED: return TransferState.SIGNED();
             case CRYPTO_TRANSFER_STATE_SUBMITTED: return TransferState.SUBMITTED();
-            case CRYPTO_TRANSFER_STATE_ERRORED:
-                switch (state.u.errored.error.type()) {
-                    case CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN: return TransferState.FAILED(
-                            new TransferSubmitUnknownError()
-                    );
-                    case CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX: return TransferState.FAILED(
-                            new TransferSubmitPosixError(
-                                    state.u.errored.error.u.posix.errnum,
-                                    state.u.errored.error.getMessage().orNull()
-                            )
-                    );
-                    default: throw new IllegalArgumentException("Unsupported error");
+            case CRYPTO_TRANSFER_STATE_ERRORED: {
+                BRCryptoTransferSubmitError error = state.errored();
+
+                switch (error.type()) {
+                    case CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN:
+                        return TransferState.FAILED(
+                                new TransferSubmitUnknownError()
+                        );
+                    case CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX:
+                        return TransferState.FAILED(
+                                new TransferSubmitPosixError(
+                                        error.u.posix.errnum,
+                                        error.getMessage().orNull()
+                                ));
+                    default:
+                        throw new IllegalArgumentException("Unsupported error");
                 }
-            case CRYPTO_TRANSFER_STATE_INCLUDED: return TransferState.INCLUDED(
+            }
+
+            case CRYPTO_TRANSFER_STATE_INCLUDED:
+                BRCryptoTransferState.Included included = state.included();
+
+                return TransferState.INCLUDED(
                     new TransferConfirmation(
-                            UnsignedLong.fromLongBits(state.u.included.blockNumber),
-                            UnsignedLong.fromLongBits(state.u.included.transactionIndex),
-                            UnsignedLong.fromLongBits(state.u.included.timestamp),
-                            Optional.fromNullable(state.u.included.feeBasis)
+                            included.blockNumber,
+                            included.transactionIndex,
+                            included.blockTimestamp,
+                            Optional.fromNullable(included.feeBasis)
                                     .transform(TransferFeeBasis::create)
                                     .transform(TransferFeeBasis::getFee),
-                            Boolean.valueOf(state.u.included.getSuccess()),
-                            Optional.fromNullable(state.u.included.getError())
-                    )
-            );
+                            included.success,
+                            included.error));
+
             default: throw new IllegalArgumentException("Unsupported state");
         }
     }

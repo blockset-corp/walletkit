@@ -668,9 +668,9 @@ cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
 static void
 cryptoWalletUpdTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer,
-                         OwnershipKept BRCryptoTransferState newState) {
+                         BRCryptoTransferState newState) {
     // The transfer's state has changed.  This implies a possible amount/fee change.
-    if (newState.type == CRYPTO_TRANSFER_STATE_INCLUDED &&
+    if (newState->type == CRYPTO_TRANSFER_STATE_INCLUDED &&
         CRYPTO_TRUE == cryptoWalletHasTransfer (wallet, transfer))
         cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
 }

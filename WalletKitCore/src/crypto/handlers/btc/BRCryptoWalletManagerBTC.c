@@ -573,8 +573,8 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
                 cryptoFeeBasisGive (feeBasis);
                 cryptoTransferSetState (&transfer->base, newState);
 
-                cryptoTransferStateRelease (&oldState);
-                cryptoTransferStateRelease (&newState);
+                cryptoTransferStateGive (oldState);
+                cryptoTransferStateGive (newState);
             }
         }
 

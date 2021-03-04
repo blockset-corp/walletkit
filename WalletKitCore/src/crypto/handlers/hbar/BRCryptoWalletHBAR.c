@@ -198,16 +198,16 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
     
     hederaAddressFree (source);
 
-    BRCryptoTransferState state = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
-
-    BRCryptoTransfer transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
-                                                            unit,
-                                                            unitForFee,
-                                                            state,
-                                                            walletHBAR->hbarAccount,
-                                                            hbarTransaction);
+    BRCryptoTransferState state    = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
+    BRCryptoTransfer      transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                                 unit,
+                                                                 unitForFee,
+                                                                 state,
+                                                                 walletHBAR->hbarAccount,
+                                                                 hbarTransaction);
+    
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
 
     return transfer;
 }

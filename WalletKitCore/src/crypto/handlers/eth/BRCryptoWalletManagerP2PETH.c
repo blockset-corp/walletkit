@@ -253,7 +253,7 @@ ewmHandleLogFeeBasis (BRCryptoWalletManagerETH manager,
     if (NULL != transferLog) {
         BRCryptoTransferState oldState = cryptoTransferGetState (transferLog);
         cryptoTransferSetState (transferLog, cryptoTransferGetState(transferTransaction));
-        cryptoTransferStateRelease(&oldState);
+        cryptoTransferStateGive(oldState);
     }
 
     // but if we don't have a TOK transfer, find every transfer referencing `hash` and set the basis.
@@ -304,7 +304,7 @@ ewmHandleExchangeFeeBasis (BRCryptoWalletManagerETH manager,
     if (NULL != transferExchange) {
         BRCryptoTransferState oldState = cryptoTransferGetState (transferExchange);
         cryptoTransferSetState (transferExchange, cryptoTransferGetState(transferTransaction));
-        cryptoTransferStateRelease(&oldState);
+        cryptoTransferStateGive(oldState);
     }
 
     // but if we don't have an exchanage transfer, find every transfer referencing `hash` and set the basis.
@@ -386,11 +386,11 @@ ewmHandleTransaction (BREthereumBCSCallbackContext context,
 
         cryptoFeeBasisGive (feeBasis);
 
-        needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
+        needStatusReport = !cryptoTransferStateIsEqual (oldState, newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
-        cryptoTransferStateRelease (&oldState);
-        cryptoTransferStateRelease (&newState);
+        cryptoTransferStateGive (oldState);
+        cryptoTransferStateGive (newState);
     }
 
     // If this transfer is referenced, fill out the referencer's fee basis.
@@ -493,11 +493,11 @@ ewmHandleLog (BREthereumBCSCallbackContext context,
         transferETH->basis.type = TRANSFER_BASIS_LOG;
         transferETH->basis.u.log = log;               // ownership given
 
-        needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
+        needStatusReport = !cryptoTransferStateIsEqual (oldState, newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
-        cryptoTransferStateRelease (&oldState);
-        cryptoTransferStateRelease (&newState);
+        cryptoTransferStateGive (oldState);
+        cryptoTransferStateGive (newState);
     }
 
     if (needStatusReport) {
@@ -563,7 +563,7 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
 
         ewmHandleExchangeFeeBasis (managerETH, transactionHash, NULL, &transferETH->base, &walletETH->base);
 
-        oldState = (BRCryptoTransferState) { CRYPTO_TRANSFER_STATE_CREATED };
+        oldState = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
 
         needStatusReport = true;
     }
@@ -585,11 +585,11 @@ ewmHandleExchange (BREthereumBCSCallbackContext context,
         transferETH->basis.type = TRANSFER_BASIS_EXCHANGE;
         transferETH->basis.u.exchange = exchange;
 
-        needStatusReport = !cryptoTransferStateIsEqual (&oldState, &newState);
+        needStatusReport = !cryptoTransferStateIsEqual (oldState, newState);
 
         cryptoTransferSetState (&transferETH->base, newState);
-        cryptoTransferStateRelease (&oldState);
-        cryptoTransferStateRelease (&newState);
+        cryptoTransferStateGive (oldState);
+        cryptoTransferStateGive (newState);
     }
 
     if (needStatusReport) {

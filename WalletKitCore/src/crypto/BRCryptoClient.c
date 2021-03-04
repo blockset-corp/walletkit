@@ -759,11 +759,11 @@ cwmAnnounceSubmitTransfer (OwnershipKept BRCryptoWalletManager cwm,
                 cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
                     CRYPTO_TRANSFER_EVENT_CHANGED,
                     { .state = {
-                        cryptoTransferStateCopy (&state),
-                        cryptoTransferStateCopy (&state) }}
+                        cryptoTransferStateTake (state),
+                        cryptoTransferStateTake (state) }}
                 });
 
-                cryptoTransferStateRelease(&state);
+                cryptoTransferStateGive (state);
             }
 
             cryptoHashGive (hash);

@@ -58,14 +58,17 @@ extern "C" {
 
 #define AS_CRYPTO_BOOLEAN(zeroIfFalse)   ((zeroIfFalse) ? CRYPTO_TRUE : CRYPTO_FALSE)
 
-    // Only for use in Swift/Java
+    // For use in Swift/Java
     typedef size_t BRCryptoCount;
 
-    // Only for use in Swift/Java
+    // For use in Swift/Java
     static inline void
     cryptoMemoryFree (void *memory) {
-        free (memory);
+        if (NULL != memory) free (memory);
     }
+
+    // For use in Java (needing an 'extern' for a 'native' declaration)
+    extern void cryptoMemoryFreeExtern (void *memory);
 
     // Same as: BRBlockHeight
     typedef uint64_t BRCryptoBlockNumber;

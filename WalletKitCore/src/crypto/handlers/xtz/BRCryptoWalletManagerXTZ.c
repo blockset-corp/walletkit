@@ -273,7 +273,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
     
     cryptoFeeBasisGive (feeBasis);
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     
     if (xtzTransferNeedFree)
         tezosTransferFree (xtzTransfer);

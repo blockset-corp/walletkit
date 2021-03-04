@@ -65,29 +65,10 @@ extern "C" {
     extern const char *
     cryptoTransferStateTypeString (BRCryptoTransferStateType type);
 
-    #define CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE     16
+    typedef struct BRCryptoTransferStateRecord *BRCryptoTransferState;
 
-    typedef struct {
-        BRCryptoTransferStateType type;
-        union {
-            struct {
-                uint64_t blockNumber;
-                uint64_t transactionIndex;
-                // This is not assuredly the including block's timestamp; it is the transaction's
-                // timestamp which varies depending on how the transaction was discovered.
-                uint64_t timestamp;
-                BRCryptoFeeBasis feeBasis;
-
-                // transfer that has failed can be included too
-                BRCryptoBoolean success;
-                char error[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
-            } included;
-
-            struct {
-                BRCryptoTransferSubmitError error;
-            } errored;
-        } u;
-    } BRCryptoTransferState;
+    extern BRCryptoTransferStateType
+    cryptoTransferStateGetType (BRCryptoTransferState state);
 
     extern BRCryptoTransferState // Does not require cryptoTransferStateRelease
     cryptoTransferStateInit (BRCryptoTransferStateType type);
@@ -103,11 +84,20 @@ extern "C" {
     extern BRCryptoTransferState  // Does not require cryptoTransferStateRelease
     cryptoTransferStateErroredInit (BRCryptoTransferSubmitError error);
 
-    extern BRCryptoTransferState  // Requires cryptoTransferStateRelease
-    cryptoTransferStateCopy (BRCryptoTransferState *state);
+    extern bool
+    cryptoTransferStateExtractIncluded (BRCryptoTransferState state,
+                                        uint64_t *blockNumber,
+                                        uint64_t *blockTimestamp,
+                                        uint64_t *transactionIndex,
+                                        BRCryptoFeeBasis *feeBasis,
+                                        BRCryptoBoolean  *success,
+                                        char **error);
 
-    extern void
-    cryptoTransferStateRelease (BRCryptoTransferState *state);
+    extern bool
+    cryptoTransferStateExtractError (BRCryptoTransferState state,
+                                     BRCryptoTransferSubmitError *error);
+
+    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoTransferState, cryptoTransferState);
 
     /// MARK: - Transfer Event
 

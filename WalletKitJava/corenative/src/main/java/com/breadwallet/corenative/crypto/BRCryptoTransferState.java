@@ -7,176 +7,107 @@
  */
 package com.breadwallet.corenative.crypto;
 
-import com.sun.jna.Native;
+import com.breadwallet.corenative.CryptoLibraryDirect;
+import com.google.common.base.Optional;
+import com.google.common.primitives.UnsignedLong;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.Union;
+import com.sun.jna.PointerType;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.LongByReference;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.Arrays;
-import java.util.List;
+public class BRCryptoTransferState extends PointerType {
 
-import javax.annotation.Nullable;
+    public BRCryptoTransferState() { super(); }
 
-public class BRCryptoTransferState extends Structure {
-
-    public int typeEnum;
-    public u_union u;
-
-    public static class u_union extends Union {
-
-        public included_struct included;
-        public errored_struct errored;
-
-        public static class included_struct extends Structure {
-            private static int CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE = 16;
-
-            public long blockNumber;
-            public long transactionIndex;
-            public long timestamp;
-            public BRCryptoFeeBasis feeBasis;
-            public int success = BRCryptoBoolean.CRYPTO_TRUE;
-            public byte[] error = new byte[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
-
-            public included_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("blockNumber", "transactionIndex", "timestamp", "feeBasis", "success", "error");
-            }
-
-            public included_struct(long blockNumber, long transactionIndex, long timestamp, BRCryptoFeeBasis feeBasis, int success, byte[] error) {
-                super();
-                this.blockNumber = blockNumber;
-                this.transactionIndex = transactionIndex;
-                this.timestamp = timestamp;
-                this.feeBasis = feeBasis;
-                this.success = success;
-                this.error = error;
-            }
-
-            public included_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public @Nullable
-            String getError () {
-                return getSuccess() ? null : Native.toString(this.error);
-            }
-
-            public boolean getSuccess () {
-                return BRCryptoBoolean.CRYPTO_TRUE == this.success;
-            }
-
-            public static class ByReference extends included_struct implements Structure.ByReference {
-
-            }
-            public static class ByValue extends included_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public static class errored_struct extends Structure {
-
-            public BRCryptoTransferSubmitError error;
-
-            public errored_struct() {
-                super();
-            }
-
-            protected List<String> getFieldOrder() {
-                return Arrays.asList("error");
-            }
-
-            public errored_struct(BRCryptoTransferSubmitError error) {
-                super();
-                this.error = error;
-            }
-
-            public errored_struct(Pointer peer) {
-                super(peer);
-            }
-
-            public static class ByReference extends errored_struct implements Structure.ByReference {
-
-            }
-
-            public static class ByValue extends errored_struct implements Structure.ByValue {
-
-            }
-        }
-
-        public u_union() {
-            super();
-        }
-
-        public u_union(included_struct state) {
-            super();
-            this.included = state;
-            setType(included_struct.class);
-        }
-
-        public u_union(errored_struct confirmation) {
-            super();
-            this.errored = confirmation;
-            setType(errored_struct.class);
-        }
-
-        public u_union(Pointer peer) {
-            super(peer);
-        }
-
-        public static class ByReference extends u_union implements Structure.ByReference {
-
-        }
-
-        public static class ByValue extends u_union implements Structure.ByValue {
-
-        }
-    }
-
-    public BRCryptoTransferState() {
-        super();
-    }
+    public BRCryptoTransferState(Pointer address) { super (address); }
 
     public BRCryptoTransferStateType type() {
-        return BRCryptoTransferStateType.fromCore(typeEnum);
+        return BRCryptoTransferStateType.fromCore(
+                CryptoLibraryDirect.cryptoTransferStateGetType(
+                        this.getPointer()));
     }
 
-    protected List<String> getFieldOrder() {
-        return Arrays.asList("typeEnum", "u");
-    }
+    private static int CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE = 16;
 
-    public BRCryptoTransferState(int type, u_union u) {
-        super();
-        this.typeEnum = type;
-        this.u = u;
-    }
+    public class Included {
 
-    public BRCryptoTransferState(Pointer peer) {
-        super(peer);
-    }
+        public final UnsignedLong blockNumber;
+        public final UnsignedLong blockTimestamp;
+        public final UnsignedLong transactionIndex;
+        public final BRCryptoFeeBasis feeBasis;
+        public final boolean success;
+        public Optional<String> error;
 
-    @Override
-    public void read() {
-        super.read();
-        switch (type()){
-            case CRYPTO_TRANSFER_STATE_INCLUDED:
-                u.setType(u_union.included_struct.class);
-                u.read();
-                break;
-            case CRYPTO_TRANSFER_STATE_ERRORED:
-                u.setType(u_union.errored_struct.class);
-                u.read();
-                break;
+        public Included(UnsignedLong blockNumber,
+                        UnsignedLong blockTimestamp,
+                        UnsignedLong transactionIndex,
+                        BRCryptoFeeBasis feeBasis,
+                        boolean success,
+                        Optional<String> error) {
+            this.blockNumber = blockNumber;
+            this.blockTimestamp = blockTimestamp;
+            this.transactionIndex = transactionIndex;
+            this.feeBasis = feeBasis;
+            this.success = success;
+            this.error = error;
         }
     }
 
-    public static class ByReference extends BRCryptoTransferState implements Structure.ByReference {
+    public Included included() {
+        LongByReference blockNumber      = new LongByReference();
+        LongByReference blockTimestamp   = new LongByReference();
+        LongByReference transactionIndex = new LongByReference();
 
+        PointerByReference feeBasis = new PointerByReference();
+        IntByReference     success  = new IntByReference();
+        PointerByReference error    = new PointerByReference();
+
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoTransferStateExtractIncluded(
+                        this.getPointer(),
+                        blockNumber,
+                        blockTimestamp,
+                        transactionIndex,
+                        feeBasis,
+                        success,
+                        error))
+            throw new IllegalStateException();
+
+        try {
+            return new Included(
+                    UnsignedLong.fromLongBits(blockNumber.getValue()),
+                    UnsignedLong.fromLongBits(blockTimestamp.getValue()),
+                    UnsignedLong.fromLongBits(transactionIndex.getValue()),
+                    new BRCryptoFeeBasis(feeBasis.getValue()),
+                    BRCryptoBoolean.CRYPTO_TRUE == success.getValue(),
+                    Optional.fromNullable(error.getValue()).transform(p -> p.getString(0)));
+        }
+        finally {
+            CryptoLibraryDirect.cryptoMemoryFreeExtern(error.getValue());
+        }
     }
 
-    public static class ByValue extends BRCryptoTransferState implements Structure.ByValue {
+    public BRCryptoTransferSubmitError errored() {
+        BRCryptoTransferSubmitError.ByValue error = new BRCryptoTransferSubmitError.ByValue();
 
+        if (BRCryptoBoolean.CRYPTO_FALSE ==
+                CryptoLibraryDirect.cryptoTransferStateExtractError(
+                        this.getPointer(),
+                        error))
+            throw new IllegalStateException();
+
+        return error;
+    }
+
+    public BRCryptoTransferState take() {
+        return new BRCryptoTransferState(
+                CryptoLibraryDirect.cryptoTransferStateTake (
+                        this.getPointer()));
+    }
+
+    public void give() {
+        CryptoLibraryDirect.cryptoTransferStateGive(
+                this.getPointer());
     }
 }

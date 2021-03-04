@@ -158,7 +158,7 @@ cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
                                                            basis,
                                                            NULL);
 
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     cryptoFeeBasisGive(confirmedFeeBasis);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
@@ -209,7 +209,7 @@ cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
                                                            basis,
                                                            NULL);
 
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
     cryptoAddressGive(target);
@@ -258,7 +258,7 @@ cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
                                                            basis,
                                                            NULL);
 
-    cryptoTransferStateRelease (&state);
+    cryptoTransferStateGive (state);
     cryptoFeeBasisGive(estimatedFeeBasis);
     cryptoAddressGive(source);
     cryptoAddressGive(target);
