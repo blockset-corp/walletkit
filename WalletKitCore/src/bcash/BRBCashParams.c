@@ -29,22 +29,21 @@
 #include "BRBCashParams.h"
 
 static const char *BRBCashDNSSeeds[] = {
-    "seed-abc.breadwallet.com.",
-    "seed.bitcoinabc.org.",
+    "seed-bch.breadwallet.com.",
+    "seed.flowee.cash.",
     "seed-bch.bitcoinforks.org.",
-    "seed.bitcoinunlimited.info.",
-    "seed.bitprim.org.",
-    "seed.deadalnix.me.",
+    "btccash-seeder.bitcoinunlimited.info.",
+    "seed.bchd.cash.",
+    "seed.bch.loping.net.",
+    "dnsseed.electroncash.de.",
     NULL
 };
 
 static const char *BRBCashTestNetDNSSeeds[] = {
-    "testnet-seed-abc.breadwallet.com",
-    "testnet-seed.bitcoinabc.org",
-    "testnet-seed-bch.bitcoinforks.org",
-    "testnet-seed.bitprim.org",
-    "testnet-seed.deadalnix.me",
-    "testnet-seeder.criptolayer.net",
+    "testnet-seed-bch.breadwallet.com.",
+    "testnet-seed-bch.bitcoinforks.org.",
+    "testnet-seed.bchd.cash.",
+    "seed.tbch.loping.net.",
     NULL
 };
 
