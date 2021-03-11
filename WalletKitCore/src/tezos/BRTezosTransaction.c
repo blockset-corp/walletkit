@@ -154,9 +154,29 @@ tezosTransactionSerialize (BRTezosTransaction transaction,
     // add a reveal operation to the operation list if needed
     if (needsReveal) {
         BRKey publicKey = tezosAccountGetPublicKey(account);
+
+        // The 'reveal' operation takes the transaction's feeBasis.
+        BRTezosFeeBasis revealFeeBasis = transaction->feeBasis;
+
+        // If this is a submit, we need to modifiy the reveal operation's feeBasis.
+        if (FEE_BASIS_ESTIMATE == transaction->feeBasis.type) {
+            assert (0 != transaction->feeBasis.u.estimate.gasLimit);
+
+            // When a 'reveal' operation is needed, we are going to double the transaction's
+            // gasLimit *and* calculated fee.  This is 'belt and suspenders' - ensuring the
+            // operation succeeds.
+            transaction->feeBasis.u.estimate.gasLimit      *= 2;
+            transaction->feeBasis.u.estimate.calculatedFee *= 2;
+
+            // The 'reveal' operation itself will duplicate the transaction's feeBasis except the
+            // fee will be set to zero.  The 'fee split' should be 0/100 for reveal/transaction.
+            revealFeeBasis.u.estimate.gasLimit     *= 2;
+            revealFeeBasis.u.estimate.calculatedFee = 0;
+        }
+
         BRTezosTransaction reveal = tezosTransactionCreateReveal(transaction->source,
                                                                  publicKey.pubKey,
-                                                                 transaction->feeBasis,
+                                                                 revealFeeBasis,
                                                                  transaction->counter);
         transaction->counter += 1;
         
@@ -164,7 +184,7 @@ tezosTransactionSerialize (BRTezosTransaction transaction,
     }
     
     opList[opCount++] = transaction;
-    
+
     return tezosSerializeOperationList(opList, opCount, lastBlockHash);
 }
 

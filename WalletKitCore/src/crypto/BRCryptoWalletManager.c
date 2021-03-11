@@ -1564,7 +1564,7 @@ cryptoWalletManagerHandleTransferGENFilter (BRCryptoWalletManager cwm,
 
     // Set the state from `transferGeneric`.  This is where we move from 'submitted' to 'included'
     BRCryptoTransferState oldState = cryptoTransferGetState (transfer);
-    BRCryptoTransferState newState = cryptoTransferStateCreateGEN (genTransferGetState(transferGeneric), unitForFee);
+    BRCryptoTransferState newState = cryptoTransferStateCreateGEN (genTransferGetState (cryptoTransferAsGEN (transfer)), unitForFee);
     cryptoTransferSetState (transfer, newState);
 
     if (!transferWasCreated)
