@@ -14,6 +14,7 @@
 #include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoKeyP.h"
 #include "crypto/BRCryptoClientP.h"
+#include "crypto/BRCryptoFileService.h"
 #include "crypto/BRCryptoWalletManagerP.h"
 
 #include <ctype.h>
@@ -83,13 +84,8 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
                                                                      cryptoWaleltMangerCreateCallbackETH);
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    // Load the persistently stored data.
-    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
-    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (manager);
-    BRSetOf(BREthereumExchanges)   exchanges    = initialExchangesLoadETH    (manager);
-
     // Save the recovered tokens
-    managerETH->tokens = initialTokensLoadETH (manager);
+    managerETH->tokens = ethTokenSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
 
     // Ensure a token (but not a wallet) for each currency
     cryptoWalletManagerCreateTokensForNetwork (managerETH, network);
@@ -98,21 +94,6 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
     FOR_SET (BREthereumToken, token, managerETH->tokens) {
         cryptoWalletManagerCreateCurrencyForToken (managerETH, token);
     }
-
-    // Announce all the provided transactions...
-    FOR_SET (BREthereumTransaction, transaction, transactions)
-        ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_ADDED, transaction);
-    BRSetFree(transactions);
-
-    // ... and all the provided logs
-    FOR_SET (BREthereumLog, log, logs)
-        ewmHandleLog (managerETH, BCS_CALLBACK_LOG_ADDED, log);
-    BRSetFree (logs);
-
-    // ... and all the provided exhanges
-    FOR_SET (BREthereumExchange, exchange, exchanges)
-        ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
-    BRSetFree(exchanges);
 
     return manager;
 }
@@ -135,8 +116,8 @@ cryptoWalletManagerCreateFileServiceETH (BRCryptoWalletManager manager,
                                          BRFileServiceErrorHandler handler) {
     return fileServiceCreateFromTypeSpecifications (basePath, currency, network,
                                                     context, handler,
-                                                    fileServiceSpecificationsCountETH,
-                                                    fileServiceSpecificationsETH);
+                                                    cryptoFileServiceSpecificationsCount,
+                                                    cryptoFileServiceSpecifications);
 }
 
 static const BREventType **
@@ -351,8 +332,6 @@ cryptoWalletManagerCreateTokenForCurrencyInternal (BRCryptoWalletManagerETH mana
                         defaultGasLimit,
                         defaultGasPrice);
     }
-
-    fileServiceSave (managerETH->base.fileService, fileServiceTypeTokensETH, token);
 }
 
 static void

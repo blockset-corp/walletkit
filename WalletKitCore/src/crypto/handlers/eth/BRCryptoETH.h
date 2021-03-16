@@ -238,35 +238,14 @@ cryptoHashCreateAsETH (BREthereumHash hash);
 private_extern BREthereumHash
 cryptoHashAsETH (BRCryptoHash hash);
 
-/// MARK: - File Service
-
-extern const char *fileServiceTypeTransactionsETH;
-extern const char *fileServiceTypeLogsETH;
-extern const char *fileServiceTypeExchangesETH;
-extern const char *fileServiceTypeBlocksETH;
-extern const char *fileServiceTypeNodesETH;
-extern const char *fileServiceTypeTokensETH;
-extern const char *fileServiceTypeWalletsETH;
-
-extern size_t fileServiceSpecificationsCountETH;
-extern BRFileServiceTypeSpecification *fileServiceSpecificationsETH;
-
-#define EWM_INITIAL_SET_SIZE_DEFAULT  (10)
-
-extern BRSetOf(BREthereumTransaction) initialTransactionsLoadETH (BRCryptoWalletManager manager);
-extern BRSetOf(BREthereumLog)         initialLogsLoadETH         (BRCryptoWalletManager manager);
-extern BRSetOf(BREthereumExchange)    initialExchangesLoadETH    (BRCryptoWalletManager manager);
-extern BRSetOf(BREthereumBlock)       initialBlocksLoadETH       (BRCryptoWalletManager manager);
-extern BRSetOf(BREthereumNodeConfig)  initialNodesLoadETH        (BRCryptoWalletManager manager);
-extern BRSetOf(BREthereumToken)       initialTokensLoadETH       (BRCryptoWalletManager manager);
-#if defined(NEED_ETH_WALLET_IN_FILE_SERVICE)
-extern BRSetOf(BREthereumWalletState) initialWalletsLoadETH      (BRCryptoWalletManager manager);
-#endif
-
 // MARK: - Events
 
 extern const BREventType *eventTypesETH[];
 extern const unsigned int eventTypesCountETH;
+
+// MARK: - Misc
+
+#define EWM_INITIAL_SET_SIZE_DEFAULT  (10)
 
 #ifdef __cplusplus
 }
