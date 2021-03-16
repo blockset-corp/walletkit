@@ -275,6 +275,11 @@ extern BRCryptoAmount
 cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
     BRCryptoAmount   amount;
 
+    // If the transfer is included but has an error, then the amountDirected is zero.
+    BRCryptoBoolean success = CRYPTO_TRUE;
+    if (cryptoTransferStateExtractIncluded (transfer->state, NULL, NULL, NULL, NULL, &success, NULL) && CRYPTO_FALSE == success)
+        return cryptoAmountCreateInteger(0, transfer->unit);
+
     switch (cryptoTransferGetDirection(transfer)) {
         case CRYPTO_TRANSFER_RECOVERED: {
             amount = cryptoAmountCreate (transfer->unit,
@@ -309,7 +314,11 @@ cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
         case CRYPTO_TRANSFER_RECOVERED:
         case CRYPTO_TRANSFER_SENT: {
             BRCryptoAmount fee = cryptoTransferGetFee (transfer);
-            amountNet = (NULL == fee) ? cryptoAmountTake (amount) : cryptoAmountSub (amount, fee);
+
+            amountNet = (CRYPTO_TRUE == cryptoAmountIsCompatible (fee, amount)
+                         ? cryptoAmountSub (amount, fee)
+                         : cryptoAmountTake (amount));
+
             cryptoAmountGive (fee);
             break;
         }
@@ -508,9 +517,6 @@ cryptoTransferGetFeeBasis (BRCryptoTransfer transfer) {
 
 extern BRCryptoAmount
 cryptoTransferGetFee (BRCryptoTransfer transfer) {
-    if (CRYPTO_FALSE == cryptoUnitIsCompatible (transfer->unit, transfer->unitForFee))
-        return NULL;
-
     BRCryptoFeeBasis feeBasis = (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type
                                  ? transfer->state->u.included.feeBasis
                                  : transfer->feeBasisEstimated);

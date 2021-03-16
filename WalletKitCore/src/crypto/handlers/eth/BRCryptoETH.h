@@ -51,31 +51,17 @@ cryptoNetworkFeeAsETH (BRCryptoNetworkFee fee);
 
 // MARK: - Transfer
 
-typedef enum  {
-    TRANSFER_BASIS_TRANSACTION,
-    TRANSFER_BASIS_LOG,
-    TRANSFER_BASIS_EXCHANGE
-} BREthereumTransferBasisType;
-
-typedef struct {
-    BREthereumTransferBasisType type;
-    union {
-        BREthereumTransaction transaction;
-        BREthereumLog log;
-        BREthereumExchange exchange;
-    } u;
-} BREthereumTransferBasis;
-
 /// A ETH Transfer
 typedef struct BRCryptoTransferETHRecord {
     struct BRCryptoTransferRecord base;
 
+    BRCryptoHash hash;
     BREthereumAccount account;
     BREthereumGas gasEstimate;
-    BREthereumTransferBasis basis;
+    uint64_t nonce;
 
     // The tranaction that originated this transfer.  Will be NULL if the transaction's source
-    // address is not in `account`.  My be NULL if the transaction has not been seen yet.
+    // address is not in `account`.  May be NULL if the transaction has not been seen yet.
     BREthereumTransaction originatingTransaction;
 } *BRCryptoTransferETH;
 
@@ -84,40 +70,17 @@ cryptoTransferCoerceETH (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
+                           BRCryptoHash hash,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoFeeBasis feeBasisEstimated,
                            BRCryptoAmount amount,
-                           BRCryptoTransferDirection direction,
                            BRCryptoAddress sourceAddress,
                            BRCryptoAddress targetAddress,
                            BRCryptoTransferState transferState,
                            BREthereumAccount account,
-                           BREthereumTransferBasis basis,
+                           uint64_t nonce,
                            OwnershipGiven BREthereumTransaction originatingTransaction);
-
-extern BRCryptoTransfer
-cryptoTransferCreateWithTransactionAsETH (BRCryptoTransferListener listener,
-                                          BRCryptoUnit unit,
-                                          BRCryptoUnit unitForFee,
-                                          BREthereumAccount account,
-                                          OwnershipGiven BREthereumTransaction ethTransaction);
-
-extern BRCryptoTransfer
-cryptoTransferCreateWithLogAsETH (BRCryptoTransferListener listener,
-                                  BRCryptoUnit unit,
-                                  BRCryptoUnit unitForFee,
-                                  BREthereumAccount account,
-                                  UInt256 ethAmount,
-                                  OwnershipGiven BREthereumLog ethLog);
-
-extern BRCryptoTransfer
-cryptoTransferCreateWithExchangeAsETH (BRCryptoTransferListener listener,
-                                       BRCryptoUnit unit,
-                                       BRCryptoUnit unitForFee,
-                                       BREthereumAccount account,
-                                       UInt256 ethAmount,
-                                       OwnershipGiven BREthereumExchange ethExchange);
 
 extern const BREthereumHash
 cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer);
