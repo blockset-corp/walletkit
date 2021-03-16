@@ -426,6 +426,12 @@ cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
     cryptoCurrencyGive (currency);
 }
 
+static BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
+    // unsupported
+    return NULL;
+}
+
 static BRCryptoWallet
 cryptoWalletManagerCreateWalletETH (BRCryptoWalletManager manager,
                                     BRCryptoCurrency currency,
@@ -619,7 +625,9 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     transactionSetStatus (tid, status);
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_UPDATED, tid);
+#endif
 
     return false;
 }
@@ -700,7 +708,9 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
 
     // If we had a `bcs` we might think about `bcsSignalLog(ewm->bcs, log);`
     //            ewmSignalLog(ewm, BCS_CALLBACK_LOG_UPDATED, log);
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleLog (managerETH, BCS_CALLBACK_LOG_UPDATED, log);
+#endif
 
     // The `bundle` has `gasPrice` and `gasUsed` values.  The above `ewmSignalLog()` is
     // going to create a `transfer` and that transfer needs a correct `feeBasis`.  We will
@@ -752,7 +762,9 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                      success);
     ethExchangeSetStatus (exchange, status);
 
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_UPDATED, exchange);
+#endif
 
     return false; // no error
 }
