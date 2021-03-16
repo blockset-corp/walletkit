@@ -174,8 +174,8 @@ class WalletViewController: UITableViewController, WalletListener, WalletManager
     override func tableView (_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TransferCell", for: indexPath) as! TransferTableViewCell
 
+        cell.currency = wallet.currency
         cell.transfer = transfers[indexPath.row]
-        cell.updateView()
 
         return cell
      }
