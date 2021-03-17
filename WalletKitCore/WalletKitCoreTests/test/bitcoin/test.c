@@ -439,6 +439,94 @@ int BRBCashAddrTests()
     return r;
 }
 
+int BRBCashAsertTests()
+{
+    int r = 1;
+    
+    if (aserti3_2d(0x1d00ffff, 1200, 1) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 1\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 6600, 10) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 2\n", __func__);
+
+    if (aserti3_2d(0x1a2b3c4d, 6600, 10) != 0x1a2b3c4d)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 3\n", __func__);
+
+    if (aserti3_2d(0x01010000, 6600, 10) != 0x01010000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 4\n", __func__);
+
+    if (aserti3_2d(0x01010000, 174000, 1) != 0x01020000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 5\n", __func__);
+
+    if (aserti3_2d(0x01010000, 38668800, 223) != 0x1d008000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 6\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 1) != 0x1d00fec5)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 7\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 289) != 0x1c7f62c0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 8\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 28513) != 0x101fd8b0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 9\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 42913) != 0x0a07f62c)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 10\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 57313) != 0x0401fd8b)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 11\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 60193) != 0x027f6200)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 12\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 63937) != 0x01030000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 13\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 64513) != 0x01010000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 14\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1200, 1) != 0x1802aee8)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 15\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 589738, 1000) != 0x180291ad)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 16\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 33365, 1000) != 0x17469789)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 17\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 2114311, 250) != 0x191ba03b)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 18\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 6930238, 483) != 0x1d00e688)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 19\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 7462933, 500) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 20\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234568190 - 1234567290, 2147483643 - 2147483642) != 0x1802ae16)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 21\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234570890 - 1234567290, 2147483652 - 2147483642) != 0x1802a6b7)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 22\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234570890 - 1234567290, 2147483652 - 2147483642) != 0x1802a6b7)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 22\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 293713, 1000) != 0x1800c896)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 23\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 11200 - 10000, 1) != 0x1802aee8)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 24\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1201 - 10000, 10000) != 0x13643f64)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 25\n", __func__);
+
+    if (aserti3_2d(0x1804dafe, 1605449609 - 1605447844, 0) != 0x1804e0d0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 26\n", __func__);
+    
+    return r;
+}
+
 int BRHashTests()
 {
     // test sha1
@@ -2739,6 +2827,17 @@ int BRMerkleBlockTests()
 
 
     if (b) BRMerkleBlockFree(b);
+    
+//    b = BRMerkleBlockNew();
+//    b->timestamp = 1607600095;
+//    b->target = 0x180458b3;
+//    b->height = 665280;
+//
+//    if (! BRBCashParams->verifyDifficulty(b, NULL))
+//        r = 0, fprintf(stderr, "***FAILED*** %s: BRBCashVerifyDifficulty() test 1\n", __func__);
+//
+//    BRMerkleBlockFree(b);
+
     return r;
 }
 
@@ -3206,6 +3305,8 @@ int BRRunTests()
     printf("%s\n", (BRBech32Tests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRBCashAddrTests...                 ");
     printf("%s\n", (BRBCashAddrTests()) ? "success" : (fail++, "***FAIL***"));
+    printf("BRBCashAsertTests...                ");
+    printf("%s\n", (BRBCashAsertTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRHashTests...                      ");
     printf("%s\n", (BRHashTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRMacTests...                       ");
