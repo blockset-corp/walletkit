@@ -484,7 +484,7 @@ cryptoWalletGetTransferAmountDirectedNet (BRCryptoWallet wallet,
                                           BRCryptoTransfer transfer) {
     // If the wallet and transfer units are compatible, use the transfer's amount
     BRCryptoAmount transferAmount = (CRYPTO_TRUE == cryptoUnitIsCompatible(wallet->unit, transfer->unit)
-                                     ? cryptoTransferGetAmountDirected (transfer)
+                                     ? cryptoTransferGetAmountDirectedInternal (transfer, CRYPTO_TRUE)
                                      : cryptoAmountCreateInteger (0, wallet->unit));
 
     // If the wallet unit and the transfer unitForFee are compatible and if we did not
