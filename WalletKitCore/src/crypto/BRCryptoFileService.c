@@ -24,15 +24,15 @@ private_extern UInt256
 cryptoFileServiceTypeTransferV1Identifier (BRFileServiceContext context,
                                      BRFileService fs,
                                      const void *entity) {
-    BRCryptoWalletManager        manager = (BRCryptoWalletManager) context;
+    BRCryptoWalletManager        manager = (BRCryptoWalletManager) context; (void) manager;
     BRCryptoClientTransferBundle bundle  = (BRCryptoClientTransferBundle) entity;
 
-    BRCryptoHash hash = cryptoNetworkCreateHashFromString (manager->network, bundle->hash);
+    // Only the bundle->uids is guaranteed unique.  Both of bundle->{hash,identifer} refer to the
+    // corresponding transaction's hash - but there can be multiple transfers in one transaction.
 
     UInt256 identifier = UINT256_ZERO;
-    memcpy (identifier.u8, hash->bytes, MIN (32, hash->bytesCount));
+    BRSHA256 (identifier.u8, bundle->uids, strlen(bundle->uids));
 
-    cryptoHashGive (hash);
     return identifier;
 }
 
