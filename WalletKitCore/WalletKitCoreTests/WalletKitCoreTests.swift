@@ -185,35 +185,6 @@ final class WalletKitCoreTests: XCTestCase {
         runTests (0)
     }
 
-    func testLESETH () {
-        runLESTests(paperKey)
-        runNodeTests()
-    }
-
-//    func testEWM () {
-//        runEWMTests(paperKey, storagePath)
-//    }
-
-    /// Run an Etheruem Sync.  Two syncs are run back-to-back with the second sync meant to
-    /// start from the saved state of the first sync.
-    ///
-    /// Note: The first sync saves state to the file system..
-    ///
-    /// - Throws: something
-    ///
-//    func testEthereumSyncStorage () throws {
-//        let mode = CRYPTO_SYNC_MODE_P2P_ONLY;
-//        let timestamp : UInt64 = 0
-//
-//        let network = (isMainnet ? ethNetworkMainnet : ethNetworkTestnet)
-//
-//        print ("ETH: TST: Core Dir: \(storagePath!)")
-//        storagePathClear()
-//        runSyncTest (network, ethAccount, mode, timestamp, 5 * 60, storagePath);
-//        runSyncTest (network, ethAccount, mode, timestamp, 1 * 60, storagePath);
-//    }
-
-
     // MARK: - Ripple
 
     func testRipple () {
@@ -467,8 +438,6 @@ final class WalletKitCoreTests: XCTestCase {
         ("testBC",              testBlockchainETH),
         ("testContracdt",       testContractETH),
         ("testBasics",          testBasicsETH),
-        ("testLES",             testLESETH),
-//        ("testEWM",             testEWM),
 
         // Ripple
         ("testRipple",          testRipple),
