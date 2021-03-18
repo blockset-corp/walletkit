@@ -125,7 +125,7 @@ DEFINE_CURRENCY ("ethereum-mainnet",    "ethereum-mainnet:0x558ec3152e2eb2174905
     DEFINE_UNIT ("ethereum-mainnet:0x558ec3152e2eb2174905cd19aea4e34a23de9ad6",      "BRD Token INT",         "brdi",      0,      "BRDI")
     DEFINE_UNIT ("ethereum-mainnet:0x558ec3152e2eb2174905cd19aea4e34a23de9ad6",      "BRD Token",             "brd",       18,     "BRD")
 DEFINE_ADDRESS_SCHEMES  ("ethereum-mainnet", CRYPTO_ADDRESS_SCHEME_NATIVE)
-DEFINE_MODES            ("ethereum-mainnet", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_SYNC_MODE_API_WITH_P2P_SEND, CRYPTO_SYNC_MODE_P2P_ONLY)
+DEFINE_MODES            ("ethereum-mainnet", CRYPTO_SYNC_MODE_API_ONLY)
 
 #if HAS_ETH_TESTNET
 DEFINE_NETWORK (CRYPTO_NETWORK_TYPE_ETH,  "ethereum-ropsten", NETWORK_NAME, "testnet", false, 9588166, 6, 15)
@@ -141,7 +141,7 @@ DEFINE_CURRENCY ("ethereum-ropsten",    "ethereum-ropsten:0x722dd3f80bac40c951b5
     DEFINE_UNIT ("ethereum-ropsten:0x722dd3f80bac40c951b51bdd28dd19d435762180",      "TST Token INT",         "tsti",      0,      "TSTI")
     DEFINE_UNIT ("ethereum-ropsten:0x722dd3f80bac40c951b51bdd28dd19d435762180",      "TST Token",             "tst",       18,     "TST")
 DEFINE_ADDRESS_SCHEMES  ("ethereum-ropsten", CRYPTO_ADDRESS_SCHEME_NATIVE)
-DEFINE_MODES            ("ethereum-ropsten", CRYPTO_SYNC_MODE_API_ONLY, CRYPTO_SYNC_MODE_API_WITH_P2P_SEND, CRYPTO_SYNC_MODE_P2P_ONLY)
+DEFINE_MODES            ("ethereum-ropsten", CRYPTO_SYNC_MODE_API_ONLY)
 #endif
 #undef NETWORK_NAME
 
