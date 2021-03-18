@@ -197,12 +197,12 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.h
 
                 # BCS
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSEvent.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSPrivate.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSSync.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBlockChainSlice.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSEvent.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSPrivate.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCSSync.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBlockChainSlice.h
 
                 # Block Chain
                 ${PROJECT_SOURCE_DIR}/src/ethereum/blockchain/BREthereumAccount.c
@@ -235,36 +235,37 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/ethereum/contract/BREthereumToken.h
 
                 # LES Msg
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageDIS.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageDIS.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageETH.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageLES.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageLES.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageP2P.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageP2P.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessagePIP.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessagePIP.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageDIS.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageDIS.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageETH.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageLES.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageLES.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageP2P.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessageP2P.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessagePIP.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/msg/BREthereumMessagePIP.h
 
                 # LES
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLES.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLES.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESBase.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESFrameCoder.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESFrameCoder.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESRandom.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESRandom.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumMessage.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumMessage.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNode.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNode.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNodeEndpoint.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNodeEndpoint.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumProvision.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumProvision.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLES.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLES.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESBase.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESFrameCoder.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESFrameCoder.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESRandom.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumLESRandom.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumMessage.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumMessage.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNode.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNode.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNodeEndpoint.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumNodeEndpoint.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumProvision.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/les/BREthereumProvision.h
 
                 # MPT
-                ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.h
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.c
+                # ${PROJECT_SOURCE_DIR}/src/ethereum/mpt/BREthereumMPT.h
+		
                 # Util
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.h
@@ -285,7 +286,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testRlp.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testLES.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testUtil.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
@@ -501,8 +501,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoTransferETH.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletETH.c
                 ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerP2PETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerPersistETH.c
                 )
 
 # Crypto XRP
