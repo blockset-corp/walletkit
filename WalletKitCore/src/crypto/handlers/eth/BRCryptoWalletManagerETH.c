@@ -10,10 +10,12 @@
 //
 #include "BRCryptoETH.h"
 
+#include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoAccountP.h"
 #include "crypto/BRCryptoNetworkP.h"
 #include "crypto/BRCryptoKeyP.h"
 #include "crypto/BRCryptoClientP.h"
+#include "crypto/BRCryptoFileService.h"
 #include "crypto/BRCryptoWalletManagerP.h"
 
 #include <ctype.h>
@@ -83,13 +85,8 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
                                                                      cryptoWaleltMangerCreateCallbackETH);
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
 
-    // Load the persistently stored data.
-    BRSetOf(BREthereumTransaction) transactions = initialTransactionsLoadETH (manager);
-    BRSetOf(BREthereumLog)         logs         = initialLogsLoadETH         (manager);
-    BRSetOf(BREthereumExchanges)   exchanges    = initialExchangesLoadETH    (manager);
-
     // Save the recovered tokens
-    managerETH->tokens = initialTokensLoadETH (manager);
+    managerETH->tokens = ethTokenSetCreate (EWM_INITIAL_SET_SIZE_DEFAULT);
 
     // Ensure a token (but not a wallet) for each currency
     cryptoWalletManagerCreateTokensForNetwork (managerETH, network);
@@ -98,21 +95,6 @@ cryptoWalletManagerCreateETH (BRCryptoWalletManagerListener listener,
     FOR_SET (BREthereumToken, token, managerETH->tokens) {
         cryptoWalletManagerCreateCurrencyForToken (managerETH, token);
     }
-
-    // Announce all the provided transactions...
-    FOR_SET (BREthereumTransaction, transaction, transactions)
-        ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_ADDED, transaction);
-    BRSetFree(transactions);
-
-    // ... and all the provided logs
-    FOR_SET (BREthereumLog, log, logs)
-        ewmHandleLog (managerETH, BCS_CALLBACK_LOG_ADDED, log);
-    BRSetFree (logs);
-
-    // ... and all the provided exhanges
-    FOR_SET (BREthereumExchange, exchange, exchanges)
-        ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_ADDED,  exchange);
-    BRSetFree(exchanges);
 
     return manager;
 }
@@ -135,8 +117,8 @@ cryptoWalletManagerCreateFileServiceETH (BRCryptoWalletManager manager,
                                          BRFileServiceErrorHandler handler) {
     return fileServiceCreateFromTypeSpecifications (basePath, currency, network,
                                                     context, handler,
-                                                    fileServiceSpecificationsCountETH,
-                                                    fileServiceSpecificationsETH);
+                                                    cryptoFileServiceSpecificationsCount,
+                                                    cryptoFileServiceSpecifications);
 }
 
 static const BREventType **
@@ -195,6 +177,8 @@ cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
                                  coder);
     transactionSetHash (ethTransaction,
                         ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
+
+    transferETH->hash = cryptoHashCreateAsETH(transactionGetHash(ethTransaction));
 
     rlpItemRelease(coder, item);
     rlpCoderRelease(coder);
@@ -351,8 +335,6 @@ cryptoWalletManagerCreateTokenForCurrencyInternal (BRCryptoWalletManagerETH mana
                         defaultGasLimit,
                         defaultGasPrice);
     }
-
-    fileServiceSave (managerETH->base.fileService, fileServiceTypeTokensETH, token);
 }
 
 static void
@@ -445,6 +427,12 @@ cryptoWalletManagerCreateCurrencyForToken (BRCryptoWalletManagerETH managerETH,
     }
 
     cryptoCurrencyGive (currency);
+}
+
+static BRCryptoClientP2PManager
+cryptoWalletManagerCreateP2PManagerETH (BRCryptoWalletManager manager) {
+    // unsupported
+    return NULL;
 }
 
 static BRCryptoWallet
@@ -640,7 +628,9 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     transactionSetStatus (tid, status);
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleTransaction (managerETH, BCS_CALLBACK_TRANSACTION_UPDATED, tid);
+#endif
 
     return false;
 }
@@ -721,7 +711,9 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
 
     // If we had a `bcs` we might think about `bcsSignalLog(ewm->bcs, log);`
     //            ewmSignalLog(ewm, BCS_CALLBACK_LOG_UPDATED, log);
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleLog (managerETH, BCS_CALLBACK_LOG_UPDATED, log);
+#endif
 
     // The `bundle` has `gasPrice` and `gasUsed` values.  The above `ewmSignalLog()` is
     // going to create a `transfer` and that transfer needs a correct `feeBasis`.  We will
@@ -773,7 +765,9 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                      success);
     ethExchangeSetStatus (exchange, status);
 
+#if defined (NEED_ETH_LES_SUPPORT)
     ewmHandleExchange (managerETH, BCS_CALLBACK_EXCHANGE_UPDATED, exchange);
+#endif
 
     return false; // no error
 }
@@ -803,131 +797,144 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     BRCryptoWalletManagerETH managerETH = cryptoWalletManagerCoerceETH (manager);
     (void) managerETH;
 
-    BRCryptoNetwork  network = cryptoWalletManagerGetNetwork (manager);
+    BRCryptoNetwork network = cryptoWalletManagerGetNetwork (manager);
 
     // We'll only have a `walletCurrency` if the bundle->currency is for ETH or from an ERC20 token
-    // that is known.  If `bundle` indicates a `transfer` that we sent and we do not know about
-    // the ERC20 token we STILL MUST process the fee and the nonce.
-    BRCryptoCurrency walletCurrency = cryptoNetworkGetCurrencyForUids (network, bundle->currency);
+    // that is known by `network`.  If `bundle` indicates a `transfer` that we sent and we do not
+    // know about the ERC20 token we STILL MUST process the fee and the nonce.
+    BRCryptoCurrency currency = cryptoNetworkGetCurrencyForUids (network, bundle->currency);
 
-    // A token for this currency might not exist when recovering a bundle.  We've created tokens
-    // for every currency known upon wallet manager creation; but currencies might be added to
-    // the network later.  Thus we'll try to create a token for walletCurrency.
-    if (NULL != walletCurrency) {
-        BRCryptoUnit walletUnitDefault = cryptoNetworkGetUnitAsDefault (network, walletCurrency);
-        cryptoWalletManagerEnsureTokenForCurrency (managerETH, walletCurrency, walletUnitDefault);
+    // If we have a currency, ensure that we also have an ERC20 token
+    if (NULL != currency) {
+        BRCryptoUnit walletUnitDefault = cryptoNetworkGetUnitAsDefault (network, currency);
+        cryptoWalletManagerEnsureTokenForCurrency (managerETH, currency, walletUnitDefault);
         cryptoUnitGive (walletUnitDefault);
     }
-    
-    // The contract is NULL or an ERC20 Smart Contract address.
-    const char *contract = (NULL == walletCurrency
-                            ? cryptoWalletManagerParseIssuer (bundle->currency)
-                            : cryptoCurrencyGetIssuer(walletCurrency));
 
-    cryptoCurrencyGive (walletCurrency);
+    UInt256  amountETH;
+    uint64_t gasLimit;
+    uint64_t gasUsed;
+    UInt256  gasPrice;
+    uint64_t nonce;
 
-    switch (manager->syncMode) {
-        case CRYPTO_SYNC_MODE_API_ONLY:
-        case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND: {
-            bool error = CRYPTO_TRANSFER_STATE_ERRORED == bundle->status;
+    bool error = false;
+    cwmExtractAttributes (bundle, &amountETH, &gasLimit, &gasUsed, &gasPrice, &nonce, &error);
 
-            bool needTransaction = false;
-            bool needLog         = false;
-            bool needExchange    = false;
+    if (error) {
+        printf ("SYS: ETH: Bundle Attribute Error - Want to FATAL: %s\n", bundle->uids);
+        cryptoCurrencyGive(currency);
+        cryptoNetworkGive(network);
+        return;
+    }
 
-            // Use `data` to determine the need for {Transaction,Log,Exchange)
-            const char *data = cwmLookupAttributeValueForKey ("input",
-                                                              bundle->attributesCount,
-                                                              (const char **) bundle->attributeKeys,
-                                                              (const char **) bundle->attributeVals);
-            assert (NULL != data);
+    // The Ethereum Account.
+    BREthereumAccount accountETH = managerETH->account;
 
-            // A Primary Transaction of ETH.  The Transaction produces one and only one Transfer
-            if (strcasecmp (data, "0x") == 0) {
-                needTransaction = true;
-            }
+    // The primary wallet always holds transfers for fees paid.
+    BRCryptoWallet primaryWallet = manager->wallet;
+    assert (NULL != primaryWallet);
 
-            // A Primary Transaction of some arbitrary asset.  The Transaction produces one or more
-            // Transfers - one Transfer for some asset (ETH or ERC20) w/ the ETH fee (if we sent
-            // it).  The Primary Transaction might have other transfers
+    // The wallet holds currency transfers.
+    BRCryptoWallet wallet = (NULL == currency ? NULL : cryptoWalletManagerCreateWallet (manager, currency));
 
-            // ... an `ERC20 Transfer Event` produces a BREthereumLog - if we know about the token
-            else if (strPrefix ("0xa9059cbb", data)) {
-                // See below analogous description for 'Internal Transfer'
-                needLog         = (NULL != contract);
-                needTransaction = (NULL != bundle->fee);
-            }
+    // Get the confirmed feeBasis which we'll use even if the transfer is already known.
+    BREthereumFeeBasis feeBasisConfirmedETH = ethFeeBasisCreate (ethGasCreate(gasUsed), ethGasPriceCreate(ethEtherCreate(gasPrice)));
+    BRCryptoFeeBasis   feeBasisConfirmed    = cryptoFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisConfirmedETH);
 
-            // ... an 'Internal Transfer' produces a BREthereumExchang - if we know about the token
-            else {
+    // Derive the transfer's state
+    BRCryptoTransferState state = cryptoClientTransferBundleGetTransferState (bundle, feeBasisConfirmed);
 
-                // If contract is NULL, then we do not know about this ERC20 token; we won't need
-                // an exchange but might need a transaction if we sent the tranaction (paid a fee).
-                //
-                // If contract is not NULL, then we know about this ERC20 token; we will need
-                // an exchange.  We'll need a transaction if we sent the transaction.
-                // `needTransaction`.
+    // Get the hash; we'll use it to find a pre-existing transfer in wallet or primaryWallet
+    BRCryptoHash hash = cryptoNetworkCreateHashFromString (network, bundle->hash);
 
-                needExchange    = (NULL != contract);        // NULL contract -> ETH exchange
-                needTransaction = (NULL != bundle->fee);     // && NULL == contract
+    // We'll create or find a transfer for the bundle
+    BRCryptoTransfer transfer = NULL;
 
-                // if ( needExchange && needTransaction) then the transaction will have amount == 0
-                // if (!needExchange && needTransaction) then the transaction will have amount  > 0
-            }
+    // Look for a transfer in the wallet for currency
+    if (NULL != wallet)
+        transfer = cryptoWalletGetTransferByHash (wallet, hash);
 
-            // On errors, skip Log and Exchange; but keep Transaction if needed.
-            needLog      &= !error;
-            needExchange &= !error;
+    // If there isn't one, look in the primaryWAllet
+    if (NULL == transfer && wallet != primaryWallet)
+        transfer = cryptoWalletGetTransferByHash (primaryWallet, hash);
 
-            if (needLog) {
-                // This could produce an error - generally a parse error.  We'll soldier on.
-                cryptoWalletManagerRecoverLog (manager, contract, bundle);
-            }
+    // If we have a transfer, simply update its state
+    if (NULL != transfer) {
+        cryptoTransferSetState (transfer, state);
+    }
 
-            if (needExchange) {
-                cryptoWalletManagerRecoverExchange (manager, contract, bundle);
-            }
+    else {
+        BRCryptoAddress source = cryptoNetworkCreateAddress (network, bundle->from);
+        BRCryptoAddress target = cryptoNetworkCreateAddress (network, bundle->to);
 
-            // We must handle Log and Exchange above, based on the contents of `bundle`.  In the
-            // following we'll possibly re-write `bundle` so that it works with a Log or Exchange.
-            if (needTransaction) {
+        BREthereumFeeBasis feeBasisEstimatedETH = ethFeeBasisCreate (ethGasCreate(gasLimit), ethGasPriceCreate(ethEtherCreate(gasPrice)));
+        BRCryptoFeeBasis   feeBasisEstimated = cryptoFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisEstimatedETH);
 
-                // If we need a Log or Exchange then we zero-out the amount.  If we don't need
-                // a Log nor Exhange, then the recovered transaction is for an ETH transfer and
-                // we'll keep the amount.
-                if (needLog || needExchange) {
-                    
-                    // If needLog or needExchange w/ needTransaction then the transaction
-                    //     a) holds the fee; and
-                    //     b) increases the nonce.
+        BRCryptoAmount amount = NULL;
 
-                    free (bundle->amount);
-                    bundle->amount = strdup ("0x0");
-
-                    if (NULL != contract) {
-                        free (bundle->to);
-                        bundle->to = strdup (contract);
-                    }
-                }
-                cryptoWalletManagerRecoverTransaction (manager, bundle);
-            }
-            break;
+        // If we have a currency, then create an amount
+        if (NULL != currency) {
+            BRCryptoUnit   amountUnit = cryptoNetworkGetUnitAsDefault (network, currency);
+            amount = cryptoAmountCreate (amountUnit, CRYPTO_FALSE, amountETH);
+            cryptoUnitGive(amountUnit);
         }
 
-        case CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC:
-        case CRYPTO_SYNC_MODE_P2P_ONLY:
-//            if (NULL != cryptoCurrencyGetIssuer(walletCurrency))
-//                bcsSendLogRequest (p2p->bcs,
-//                                   bundle->hash,
-//                                   bundle->blockNumber,
-//                                   bundle->blockTransactionIndex);
-//            else
-//                bcsSendTransactionRequest (p2p->bcs,
-//                                           bundle->hash,
-//                                           bundle->blockNumber,
-//                                           bundle->blockTransactionIndex);
-            break;
+        // We pay the fee
+        bool paysFee = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (accountETH, ethAddressCreate(bundle->from)));
+
+        // If we pay the fee but don't have a currency, then we'll need a transfer with a zero amount.
+        if (NULL == amount && paysFee)
+            amount = cryptoAmountCreateInteger(0, primaryWallet->unit);
+
+        // If we have a currency or pay the fee, we'll need a transfer
+        if (NULL != currency || paysFee) {
+            BRCryptoWallet transfersPrimaryWallet = (NULL != wallet ? wallet : primaryWallet);
+
+            // Finally create a transfer
+            transfer = cryptoTransferCreateAsETH (transfersPrimaryWallet->listenerTransfer,
+                                                  hash,
+                                                  transfersPrimaryWallet->unit,
+                                                  transfersPrimaryWallet->unitForFee,
+                                                  feeBasisEstimated,
+                                                  amount,
+                                                  source,
+                                                  target,
+                                                  state,
+                                                  accountETH,
+                                                  nonce,
+                                                  NULL);
+
+            // The transfer's primaryWallet holds the transfer
+            cryptoWalletAddTransfer (transfersPrimaryWallet, transfer);
+
+            // If we pay the fee, then the manager's primaryWallet holds the transfer too.
+            if (paysFee && transfersPrimaryWallet != primaryWallet)
+                cryptoWalletAddTransfer (primaryWallet, transfer);
+
+#if defined (NEVER_DEFINED)
+            // if we pay the fee, then we send the transfer, update the Ethereum Account's nonce
+            if (paysFee) {
+                ethAccountSetAddressNonce (accountETH,
+                                           ethAccountGetPrimaryAddress(accountETH),
+                                           nonce + 1, // next Nonce
+                                           ETHEREUM_BOOLEAN_FALSE);
+                printf ("DBG: Nonce: try: %llu, now: %llu\n", nonce + 1, ethAccountGetAddressNonce(accountETH, ethAccountGetPrimaryAddress(accountETH)));
+            }
+#endif
+        }
+
+        cryptoAmountGive (amount);
+        cryptoFeeBasisGive (feeBasisEstimated);
+        cryptoAddressGive (target);
+        cryptoAddressGive (source);
     }
+
+    cryptoTransferGive (transfer);
+    cryptoHashGive (hash);
+    cryptoTransferStateGive (state);
+    cryptoFeeBasisGive (feeBasisConfirmed);
+    cryptoCurrencyGive (currency);
+    cryptoNetworkGive (network);
 }
 
 const BREventType *eventTypesETH[] = {};

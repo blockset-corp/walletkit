@@ -271,9 +271,17 @@ cryptoTransferGetAmount (BRCryptoTransfer transfer) {
     return cryptoAmountTake (transfer->amount);
 }
 
-extern BRCryptoAmount
-cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
+private_extern BRCryptoAmount
+cryptoTransferGetAmountDirectedInternal (BRCryptoTransfer transfer,
+                                         BRCryptoBoolean  respectSuccess) {
     BRCryptoAmount   amount;
+
+    // If the transfer is included but has an error, then the amountDirected is zero.
+    BRCryptoBoolean success = CRYPTO_TRUE;
+    if (CRYPTO_TRUE == respectSuccess &&
+        cryptoTransferStateExtractIncluded (transfer->state, NULL, NULL, NULL, NULL, &success, NULL) &&
+        CRYPTO_FALSE == success)
+        return cryptoAmountCreateInteger(0, transfer->unit);
 
     switch (cryptoTransferGetDirection(transfer)) {
         case CRYPTO_TRANSFER_RECOVERED: {
@@ -301,29 +309,8 @@ cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
 }
 
 extern BRCryptoAmount
-cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer) {
-    BRCryptoAmount amount = cryptoTransferGetAmountDirected (transfer);
-    BRCryptoAmount amountNet;
-    
-    switch (cryptoTransferGetDirection(transfer)) {
-        case CRYPTO_TRANSFER_RECOVERED:
-        case CRYPTO_TRANSFER_SENT: {
-            BRCryptoAmount fee = cryptoTransferGetFee (transfer);
-            amountNet = (NULL == fee) ? cryptoAmountTake (amount) : cryptoAmountSub (amount, fee);
-            cryptoAmountGive (fee);
-            break;
-        }
-
-        case CRYPTO_TRANSFER_RECEIVED: {
-            amountNet = cryptoAmountTake (amount);
-            break;
-        }
-        default: assert(0);
-    }
-    
-    cryptoAmountGive (amount);
-    
-    return amountNet;
+cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
+    return cryptoTransferGetAmountDirectedInternal (transfer, CRYPTO_FALSE);
 }
 
 extern BRCryptoUnit
@@ -508,9 +495,6 @@ cryptoTransferGetFeeBasis (BRCryptoTransfer transfer) {
 
 extern BRCryptoAmount
 cryptoTransferGetFee (BRCryptoTransfer transfer) {
-    if (CRYPTO_FALSE == cryptoUnitIsCompatible (transfer->unit, transfer->unitForFee))
-        return NULL;
-
     BRCryptoFeeBasis feeBasis = (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type
                                  ? transfer->state->u.included.feeBasis
                                  : transfer->feeBasisEstimated);

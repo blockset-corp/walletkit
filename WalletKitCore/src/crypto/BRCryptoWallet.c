@@ -474,13 +474,44 @@ cryptoWalletDecBalance (BRCryptoWallet wallet,
 #pragma GCC   diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma GCC   diagnostic ignored "-Wunused-function"
-static void
-cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
+
+/**
+ * Return the amount from `transfer` that applies to the balance of `wallet`.  The result must
+ * be in the wallet's unit
+ */
+static OwnershipGiven BRCryptoAmount
+cryptoWalletGetTransferAmountDirectedNet (BRCryptoWallet wallet,
+                                          BRCryptoTransfer transfer) {
+    // If the wallet and transfer units are compatible, use the transfer's amount
+    BRCryptoAmount transferAmount = (CRYPTO_TRUE == cryptoUnitIsCompatible(wallet->unit, transfer->unit)
+                                     ? cryptoTransferGetAmountDirectedInternal (transfer, CRYPTO_TRUE)
+                                     : cryptoAmountCreateInteger (0, wallet->unit));
+
+    // If the wallet unit and the transfer unitForFee are compatible and if we did not
+    // receive the transfer then use the transfer's fee
+    BRCryptoAmount transferFee    = (CRYPTO_TRUE == cryptoUnitIsCompatible(wallet->unit, transfer->unitForFee) &&
+                                     CRYPTO_TRANSFER_RECEIVED != cryptoTransferGetDirection(transfer)
+                                     ? cryptoTransferGetFee (transfer)
+                                     : NULL);
+
+    BRCryptoAmount transferNet = (NULL != transferFee
+                                  ? cryptoAmountSub  (transferAmount, transferFee)
+                                  : cryptoAmountTake (transferAmount));
+
+    cryptoAmountGive(transferFee);
+    cryptoAmountGive(transferAmount);
+
+    return transferNet;
+}
+
+
+static BRCryptoAmount
+cryptoWalletComputeBalance (BRCryptoWallet wallet, bool needLock) {
     if (needLock) pthread_mutex_lock (&wallet->lock);
     BRCryptoAmount balance = cryptoAmountCreateInteger (0, wallet->unit);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        BRCryptoAmount amount     = cryptoTransferGetAmountDirectedNet (wallet->transfers[index]);
+        BRCryptoAmount amount     = cryptoWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
         BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
 
         cryptoAmountGive(amount);
@@ -488,8 +519,15 @@ cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
 
         balance = newBalance;
     }
-    cryptoWalletSetBalance (wallet, balance);
+    if (needLock) pthread_mutex_unlock (&wallet->lock);
 
+    return balance;
+}
+
+static void
+cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
+    if (needLock) pthread_mutex_lock (&wallet->lock);
+    cryptoWalletSetBalance (wallet, cryptoWalletComputeBalance (wallet, false));
     if (needLock) pthread_mutex_unlock (&wallet->lock);
 }
 #pragma clang diagnostic pop
@@ -583,7 +621,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
         array_add (wallet->transfers, cryptoTransferTake(transfer));
         cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
         cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_ADDED, transfer));
-        cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
+        cryptoWalletIncBalance (wallet, cryptoWalletGetTransferAmountDirectedNet(wallet, transfer));
      }
     pthread_mutex_unlock (&wallet->lock);
 }
@@ -625,7 +663,7 @@ cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
             array_rm (wallet->transfers, index);
             cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
             cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_DELETED, transfer));
-            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(transfer));
+            cryptoWalletDecBalance (wallet, cryptoWalletGetTransferAmountDirectedNet(wallet, transfer));
             break;
         }
     }
@@ -649,11 +687,11 @@ cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
 
             cryptoWalletAnnounceTransfer (wallet, oldTransfer, CRYPTO_WALLET_EVENT_TRANSFER_DELETED);
             cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_DELETED, oldTransfer));
-            cryptoWalletDecBalance (wallet, cryptoTransferGetAmountDirectedNet(oldTransfer));
+            cryptoWalletDecBalance (wallet, cryptoWalletGetTransferAmountDirectedNet(wallet, oldTransfer));
 
             cryptoWalletAnnounceTransfer (wallet, newTransfer, CRYPTO_WALLET_EVENT_TRANSFER_ADDED);
             cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransfer (CRYPTO_WALLET_EVENT_TRANSFER_ADDED, newTransfer));
-            cryptoWalletIncBalance (wallet, cryptoTransferGetAmountDirectedNet(newTransfer));
+            cryptoWalletIncBalance (wallet, cryptoWalletGetTransferAmountDirectedNet(wallet, newTransfer));
 
             break;
         }
