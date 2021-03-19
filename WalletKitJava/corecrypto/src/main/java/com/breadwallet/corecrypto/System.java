@@ -476,8 +476,11 @@ final class System implements com.breadwallet.crypto.System {
                     if (null == network) continue;
 
                     // We always have a feeUnit for network
-                    Optional<Unit> maybeFeeUnit = network.baseUnitFor(network.getCurrency());
-                    checkState(maybeFeeUnit.isPresent());
+                    Optional<Unit> maybeFeeUnitBase = network.baseUnitFor(network.getCurrency());
+                    checkState(maybeFeeUnitBase.isPresent());
+
+                    Optional<Unit> maybeFeeUnitDefault = network.defaultUnitFor(network.getCurrency());
+                    checkState(maybeFeeUnitDefault.isPresent());
 
                     // Set the blockHeight
                     UnsignedLong blockHeight = blockChainModel.getBlockHeight().orNull();
@@ -492,7 +495,9 @@ final class System implements com.breadwallet.crypto.System {
                     List<NetworkFee> fees = new ArrayList<>();
                     for (BlockchainFee feeEstimate: blockChainModel.getFeeEstimates()) {
                         // Well, quietly ignore a fee if we can't parse the amount.
-                        Optional<Amount> maybeFeeAmount = Amount.create(feeEstimate.getAmount(), false, maybeFeeUnit.get());
+                        Optional<Amount> maybeFeeAmount =
+                                Amount.create(feeEstimate.getAmount(), false, maybeFeeUnitBase.get())
+                                        .transform(a -> a.convert(maybeFeeUnitDefault.get()).or(a));
                         if (!maybeFeeAmount.isPresent()) continue;
 
                         fees.add(NetworkFee.create(feeEstimate.getConfirmationTimeInMilliseconds(), maybeFeeAmount.get()));
