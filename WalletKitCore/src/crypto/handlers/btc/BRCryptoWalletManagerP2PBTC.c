@@ -103,9 +103,9 @@ cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
         BRPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
     }
 
-//    if (!syncInProgress)
-        // Change state here; before connecting to the `btcPeerManager` produces start/stop/updates.
-        cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_SYNCING));
+    //    if (!syncInProgress)
+    // Change state here; before connecting to the `btcPeerManager` produces start/stop/updates.
+    cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_SYNCING));
 
     // Start periodic updates, sync if required.
     BRPeerManagerConnect(manager->btcPeerManager);

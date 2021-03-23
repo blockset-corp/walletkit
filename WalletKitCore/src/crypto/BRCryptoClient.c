@@ -187,7 +187,7 @@ cryptoClientQRYManagerCreate (BRCryptoClient client,
     qry->sync.success   = false;
     qry->sync.unbounded = CRYPTO_CLIENT_QRY_IS_UNBOUNDED;
 
-    qry->connected = true;
+    qry->connected = false;
 
     pthread_mutex_init_brd (&qry->lock, PTHREAD_MUTEX_NORMAL);
     return qry;
@@ -209,12 +209,17 @@ extern void
 cryptoClientQRYManagerConnect (BRCryptoClientQRYManager qry) {
     pthread_mutex_lock (&qry->lock);
     qry->connected = true;
+    cryptoWalletManagerSetState (qry->manager, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_SYNCING));
     pthread_mutex_unlock (&qry->lock);
+
+    // Start a sync immediately.
+    cryptoClientQRYManagerTickTock (qry);
 }
 
 extern void
 cryptoClientQRYManagerDisconnect (BRCryptoClientQRYManager qry) {
     pthread_mutex_lock (&qry->lock);
+    cryptoWalletManagerSetState (qry->manager, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
     qry->connected = false;
     pthread_mutex_unlock (&qry->lock);
 }
@@ -239,42 +244,114 @@ cryptoClientQRYManagerSend (BRCryptoClientQRYManager qry,
     cryptoClientQRYSubmitTransfer (qry, wallet, transfer);
 }
 
+static void
+cryptoClientQRYManagerUpdateSync (BRCryptoClientQRYManager qry,
+                                  bool completed,
+                                  bool success,
+                                  bool needLock) {
+    if (needLock) pthread_mutex_lock(&qry->lock);
+
+    bool needBegEvent = !completed && qry->sync.completed;
+    bool needEndEvent = completed && !qry->sync.completed;
+
+    //
+    // If the sync is an incremental sync - because the `begBlockNumber` is near to the current
+    // network's block height, then we don't want events generated.  This makes the QRY events
+    // similar to P2P events where as each block is announced NO sync event are generated.
+    //
+    // We are a little bit sloppy with avoiding the events.  Normally the `begBlockNumber` is
+    // `blockNumberOffset` less than the current network's height - but we'll avoid events if
+    // `begBlockNumber` is within `2 * blockNumberOffset`
+    //
+    if (qry->sync.begBlockNumber >= cryptoClientQRYGetNetworkBlockHeight (qry) - 2 * qry->blockNumberOffset) {
+        needBegEvent = false;
+        needEndEvent = false;
+    }
+    
+    qry->sync.completed = completed;
+    qry->sync.success   = success;
+
+    if (needBegEvent) {
+        cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
+        });
+
+        cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
+            { .syncContinues = { NO_CRYPTO_TIMESTAMP, 0 }}
+        });
+    }
+
+    if (needEndEvent) {
+        cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
+            { .syncContinues = { NO_CRYPTO_TIMESTAMP, 100 }}
+        });
+
+        cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
+            CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
+            { .syncStopped = (success
+                              ? cryptoSyncStoppedReasonComplete()
+                              : cryptoSyncStoppedReasonUnknown()) }
+        });
+    }
+
+    if (needLock) pthread_mutex_unlock(&qry->lock);
+}
+
 extern void
 cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
     pthread_mutex_lock (&qry->lock);
 
-    // Skip out if not connected.
-    if (!qry->connected) {
-        pthread_mutex_unlock (&qry->lock);
-        return;
+    // Only continue if connected
+    if (qry->connected) {
+        switch (qry->manager->syncMode) {
+            case CRYPTO_SYNC_MODE_API_ONLY:
+            case CRYPTO_SYNC_MODE_API_WITH_P2P_SEND:
+                // Alwwys get the current block
+                cryptoClientQRYRequestBlockNumber (qry);
+                break;
+
+            case CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC:
+            case CRYPTO_SYNC_MODE_P2P_ONLY:
+                break;
+        }
     }
 
-    // Skip out if not an API sync.
-    if (CRYPTO_SYNC_MODE_API_ONLY          != qry->manager->syncMode &&
-        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND != qry->manager->syncMode) return;
+    pthread_mutex_unlock (&qry->lock);
+}
 
-    cryptoClientQRYRequestBlockNumber (qry);
+static void
+cryptoClientQRYRequestSync (BRCryptoClientQRYManager qry, bool needLock) {
+    if (needLock) pthread_mutex_lock (&qry->lock);
+
+    // If we've successfully completed a sync then update `begBlockNumber` which will always be
+    // `blockNumberOffset` prior to the `endBlockNumber`.  Using the offset, which is weeks prior,
+    // ensures that we don't miss a range of blocks in the {transfer,transaction} query.
 
     if (qry->sync.completed && qry->sync.success) {
-        // 1a) if so, advance the sync range by updating `begBlockNumber`
+
+        // Be careful to ensure that the `begBlockNumber` is not negative.
         qry->sync.begBlockNumber = (qry->sync.endBlockNumber >= qry->blockNumberOffset
                                     ? qry->sync.endBlockNumber - qry->blockNumberOffset
                                     : 0);
     }
 
-    // 2) completed or not, update the `endBlockNumber` to the current block height.
+    // Whether or not we completed , update the `endBlockNumber` to the current block height.
     qry->sync.endBlockNumber = MAX (cryptoClientQRYGetNetworkBlockHeight (qry),
                                     qry->sync.begBlockNumber);
 
-    // 3) we'll update transactions if there are more blocks to examine and if the
-    //    prior sync completed successfully or not.
+    // We'll update transactions if there are more blocks to examine and if the prior sync
+    // completed (successfully or not).
     if (qry->sync.completed && qry->sync.begBlockNumber != qry->sync.endBlockNumber) {
 
-        // 3a) Save the current requestId and mark as not completed.
+        // Save the current requestId and mark the sync as completed successfully.
         qry->sync.rid = qry->requestId++;
-        qry->sync.completed = false;
-        qry->sync.success   = false;
 
+        // Mark the sync as completed, unsucessfully (the initial state)
+        cryptoClientQRYManagerUpdateSync (qry, false, false, false);
+
+        // Get the addresses for the manager's wallet
         BRCryptoWallet wallet = cryptoWalletManagerGetWallet (qry->manager);
         BRSetOf(BRCryptoAddress) addresses = cryptoWalletGetAddressesForRecovery (wallet);
         assert (0 != BRSetCount(addresses));
@@ -294,7 +371,8 @@ cryptoClientQRYManagerTickTock (BRCryptoClientQRYManager qry) {
 
         cryptoWalletGive (wallet);
     }
-    pthread_mutex_unlock (&qry->lock);
+
+    if (needLock) pthread_mutex_unlock (&qry->lock);
 }
 
 // MARK: - Client Callback State
@@ -434,6 +512,10 @@ cwmAnnounceBlockNumber (OwnershipKept BRCryptoWalletManager cwm,
     }
 
     cryptoClientCallbackStateRelease (callbackState);
+
+    // After getting any block number, whether successful or not, do a sync.  The sync will be
+    // incremental or full - depending on where the last sync ended.
+    cryptoClientQRYRequestSync (cwm->qryManager, true);
 }
 
 // MARK: - Request/Announce Transaction
@@ -605,10 +687,7 @@ cwmAnnounceTransactions (OwnershipKept BRCryptoWalletManager manager,
         }
     }
 
-    pthread_mutex_lock (&qry->lock);
-    qry->sync.completed = syncCompleted;
-    qry->sync.success   = syncSuccess;
-    pthread_mutex_unlock (&qry->lock);
+    cryptoClientQRYManagerUpdateSync (qry, syncCompleted, syncSuccess, true);
 
     for (size_t index = 0; index < bundlesCount; index++)
         cryptoClientTransactionBundleRelease (bundles[index]);
@@ -687,10 +766,7 @@ cwmAnnounceTransfers (OwnershipKept BRCryptoWalletManager manager,
         }
     }
 
-    pthread_mutex_lock (&qry->lock);
-    qry->sync.completed = syncCompleted;
-    qry->sync.success   = syncSuccess;
-    pthread_mutex_unlock (&qry->lock);
+    cryptoClientQRYManagerUpdateSync (qry, syncCompleted, syncSuccess, true);
 
     for (size_t index = 0; index < bundlesCount; index++)
         cryptoClientTransferBundleRelease (bundles[index]);

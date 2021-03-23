@@ -768,7 +768,7 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
         case CRYPTO_WALLET_MANAGER_STATE_CREATED:
         case CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED: {
 
-            cryptoClientQRYManagerConnect (cwm->qryManager);
+            // Go to the connected state.
             if (CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSend.type ||
                 CRYPTO_CLIENT_P2P_MANAGER_TYPE == cwm->canSync.type)
                 cryptoClientP2PManagerConnect (cwm->p2pManager, peer);
@@ -776,6 +776,8 @@ cryptoWalletManagerConnect (BRCryptoWalletManager cwm,
                 // TODO: CORE-1059 - Do we require cryptoClientP2PManagerConnect to set BRCryptoWalletManager state?
                 cryptoWalletManagerSetState (cwm, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
 
+            // Start the QRY Manager
+            cryptoClientQRYManagerConnect (cwm->qryManager);
             break;
         }
             
