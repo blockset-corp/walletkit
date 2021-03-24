@@ -243,10 +243,10 @@ static size_t _BRPeerManagerBlockLocators(BRPeerManager *manager, UInt256 locato
     // append 10 most recent block hashes, decending, then continue appending, doubling the step back each time,
     // finishing with the genesis block (top, -1, -2, -3, -4, -5, -6, -7, -8, -9, -11, -15, -23, -39, -71, -135, ..., 0)
     BRMerkleBlock *block = manager->lastBlock;
-    int32_t step = 1, i = 0, j;
+    size_t step = 1, height = 0, i = 0, j;
     
     while (block && block->height > 0) {
-        if (locators && i < locatorsCount) locators[i] = block->blockHash;
+        if (locators && i < locatorsCount) locators[i] = block->blockHash, height = block->height;
         if (++i >= 10) step *= 2;
         
         for (j = 0; block && j < step; j++) {
@@ -254,8 +254,13 @@ static size_t _BRPeerManagerBlockLocators(BRPeerManager *manager, UInt256 locato
         }
     }
     
-    if (locators && i < locatorsCount) locators[i] = genesis_block_hash(manager->params);
-    return ++i;
+    for (j = manager->params->checkpointsCount; j > 0; j--) { // add checkpoint hashes older than oldest saved block
+        if (manager->params->checkpoints[j - 1].height >= height) continue;
+        if (locators && i < locatorsCount) locators[i] = manager->params->checkpoints[j - 1].hash;
+        i++;
+    }
+    
+    return i;
 }
 
 static void _setApplyFreeBlock(void *info, void *block)
