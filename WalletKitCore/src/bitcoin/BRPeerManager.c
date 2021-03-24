@@ -1297,12 +1297,7 @@ static void _peerRelayedBlock(void *info, BRMerkleBlock *block)
         b = manager->lastBlock;
         while (b && b->height > block->height) b = BRSetGet(manager->blocks, &b->prevBlock); // is block in main chain?
 
-        if (NULL == b) {
-            _peerRelayedBlockFailed (block, peer, "In 'already have a block' missed 'b'");
-            return;
-        }
-
-        if (BRMerkleBlockEq(b, block)) { // if it's not on a fork, set block heights for its transactions
+        if (b && BRMerkleBlockEq(b, block)) { // if it's not on a fork, set block heights for its transactions
             if (txCount > 0) BRWalletUpdateTransactions(manager->wallet, txHashes, txCount, block->height, txTime);
             if (block->height == manager->lastBlock->height) manager->lastBlock = block;
         }
@@ -1320,12 +1315,6 @@ static void _peerRelayedBlock(void *info, BRMerkleBlock *block)
         peer_log(peer, "marking new block #%"PRIu32" as orphan until rescan completes", block->height);
         BRSetAdd(manager->orphans, block); // mark as orphan til we're caught up
         manager->lastOrphan = block;
-    }
-    else if (block->height <= manager->params->checkpoints[manager->params->checkpointsCount - 1].height) { // old fork
-        peer_log(peer, "ignoring block on fork older than most recent checkpoint, block #%"PRIu32", hash: %s",
-                 block->height, u256hex(block->blockHash));
-        BRMerkleBlockFree(block);
-        block = NULL;
     }
     else { // new block is on a fork
         peer_log(peer, "chain fork reached height %"PRIu32, block->height);
