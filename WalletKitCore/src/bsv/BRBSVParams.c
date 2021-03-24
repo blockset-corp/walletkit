@@ -1,53 +1,33 @@
 //
-//  BRBCashParams.c
-//  BRCore
+//  BRBSVParams.c
+//  Core
 //
-//  Created by Aaron Voisine on 3/11/19.
-//  Copyright © 2019 breadwallet. All rights reserved.
+//  Created by Ehsan Rezaie on 2020-06-04.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-//  THE SOFTWARE.
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "support/BRInt.h"
 #include "support/BRSet.h"
 #include "bitcoin/BRPeer.h"
-#include "BRBCashParams.h"
+#include "BRBSVParams.h"
 
-static const char *BRBCashDNSSeeds[] = {
-    "seed-bch.breadwallet.com.",
-    "seed.flowee.cash.",
-    "seed-bch.bitcoinforks.org.",
-    "btccash-seeder.bitcoinunlimited.info.",
-    "seed.bchd.cash.",
-    "seed.bch.loping.net.",
-    "dnsseed.electroncash.de.",
+static const char *BRBSVDNSSeeds[] = {
+    "seed.bitcoinsv.io",
+    "seed.cascharia.com",
+    "seed.satoshisvision.network",
     NULL
 };
 
-static const char *BRBCashTestNetDNSSeeds[] = {
-    "testnet-seed-bch.breadwallet.com.",
-    "testnet-seed-bch.bitcoinforks.org.",
-    "testnet-seed.bchd.cash.",
-    "seed.tbch.loping.net.",
+static const char *BRBSVTestNetDNSSeeds[] = {
+    "testnet-seed.bitcoinsv.io",
+    "testnet-seed.cascharia.com",
+    "testnet-seed.bitcoincloud.net",
     NULL
 };
 
-static const BRCheckPoint BRBCashTestNetCheckpoints[] = {
+static const BRCheckPoint BRBSVTestNetCheckpoints[] = {
     {       0, uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff },
     {  100800, uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907 },
     {  201600, uint256("0000000000376bb71314321c45de3015fe958543afcbada242a3b1b072498e38"), 1393813869, 0x1b602ac0 },
@@ -61,15 +41,14 @@ static const BRCheckPoint BRBCashTestNetCheckpoints[] = {
     { 1008000, uint256("000000000000390aca616746a9456a0d64c1bd73661fd60a51b5bf1c92bae5a0"), 1476926743, 0x1a52ccc0 },
     { 1108800, uint256("00000000000288d9a219419d0607fb67cc324d4b6d2945ca81eaa5e739fab81e"), 1490751239, 0x1b09ecf0 },
     { 1209600, uint256("0000000000083e8da119a0dee60f7d8925488f43a9f3591fef0cf8c3b1a86887"), 1517992679, 0x1c01bbf5 },
-    { 1310400, uint256("00000000066c529e690ef631773ff540866188a6c6509c73dfc87bc2979322c2"), 1561313963, 0x1c096cde },
-    { 1411200, uint256("000000000011a7d78a28f9822f07e8a931dd9a4de1892670665b10f2c81f7c5a"), 1600929524, 0x1b309a2b }
-    // 1512000
-    // 1612800
+    //{ 1223263, uint256("000000000005b07ecf85563034d13efd81c1a29e47e22b20f4fc6919d5b09cd6"), 1522608381, 0x1d00ffff }
+    { 1310400, uint256("00000000000061681e3ea8822abecd076fcb38ac45900107d6bf48a2abe6811f"), 1562460976, 0x1d00ffff }
+    // 1411200
 };
 
 // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
 // difficulty transition boundaries in order to verify the block difficulty at the immediately following transition
-static const BRCheckPoint BRBCashCheckpoints[] = {
+static const BRCheckPoint BRBSVCheckpoints[] = {
     {      0, uint256("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"), 1231006505, 0x1d00ffff },
     {  20160, uint256("000000000f1aef56190aee63d33a373e6487132d522ff4cd98ccfc96566d461e"), 1248481816, 0x1d00ffff },
     {  40320, uint256("0000000045861e169b5a961b7034f8de9e98022e7a39100dde3ae3ea240d7245"), 1266191579, 0x1c654657 },
@@ -99,100 +78,111 @@ static const BRCheckPoint BRBCashCheckpoints[] = {
     { 504000, uint256("0000000000000000006cdeece5716c9c700f34ad98cb0ed0ad2c5767bbe0bc8c"), 1510516839, 0x18021abd },
     { 524160, uint256("0000000000000000003f40db0a3ed4b4d82b105e212166b2db498d5688bac60f"), 1522711454, 0x18033b64 },
     { 544320, uint256("000000000000000001619f65f7d5ef7a06ee50d2b459cdf727d74b2a7a762268"), 1534794998, 0x18022f7e },
-    { 564480, uint256("0000000000000000020f6ec365b859c7160fbab65652dfc8b52a2664f8ba1e48"), 1546969567, 0x18058b4b },
-    { 584640, uint256("000000000000000001d07b1281321b5aa04506e6630dc1e66cf0ad0324d0533c"), 1559087892, 0x18039060 },
-    { 604800, uint256("0000000000000000014c579c6ec5dcaf3ed526c5391509c9860b34ed465500a0"), 1571195602, 0x18033efa },
-    { 624960, uint256("00000000000000000124d45a12cf1c35cfacc9886216a297fbb5e115c8bd942a"), 1583318442, 0x1801f8db },
-    { 645120, uint256("000000000000000001498214c105c8f077879ade00a126a0d4d3aef98cdff2dd"), 1595490461, 0x1802ad71 },
-    { 661648, uint256("0000000000000000029e471c41818d24b8b74c911071c4ef0b4a0509f9b5a8ce"), 1605449817, 0x1804e0d0 }, // BCHN Hard Fork
-    { 665280, uint256("000000000000000001b2c74d7a603fb04c227c83cd935088eb65917070bacb83"), 1607600095, 0x180458b3 }
+    { 556767, uint256("000000000000000001d956714215d96ffc00e0afda4cd0a96c96f8d802b1662b"), 1542305817, 0x18021fdb }, // BSV Hard Fork
+    { 604800, uint256("0000000000000000058059ec0aeccf3515f4e92bef34c0f447471267de7689f0"), 1571366318, 0x180830d1 },
+    { 624960, uint256("000000000000000000daeab1bb427e7923ed950d5c4b440d211fe81466836b10"), 1583458494, 0x1802cdf3 },
+    { 645120, uint256("000000000000000000111e57d611f4e3c048e83782b04f0750314df5a3a93dcb"), 1595622858, 0x1803e39f },
+    { 665280, uint256("000000000000000000b1ad07728395b22d12fe1d140db3e5853f9d0342923e91"), 1607782016, 0x180731fb }
     // 685440
 };
 
-#define ASERT_REF_BITS   0x1804dafe
-#define ASERT_REF_HEIGHT 661647
-#define ASERT_REF_TIME   1605447844
-#define ASERT_HALFLIFE   (2*24*60*60)
-
-// aserti3-2d difficulty algorithm: https://upgradespecs.bitcoincashnode.org/2020-11-15-asert/
-uint32_t aserti3_2d(uint32_t refBits, int64_t timeDelta, int64_t heightDelta)
+static const BRMerkleBlock *_medianBlock(const BRMerkleBlock *b, const BRSet *blockSet)
 {
-    // refBits is in "compact" format, where the most significant byte is the size of the value in bytes, next
-    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    const BRMerkleBlock *b0 = NULL, *b1 = NULL, *b2 = b;
 
-    // next_target = old_target * 2^((time_delta - ideal_block_time * (height_delta + 1)) / halflife)
-    int64_t exponent = ((timeDelta - 600*(heightDelta + 1))*65536)/ASERT_HALFLIFE;
-    int64_t size = refBits >> 24, shifts = exponent >> 16;
-    uint64_t factor, target = refBits & 0x007fffff, exp = exponent & 0xffff;
-
-    factor = 65536 + ((195766423245049ULL*exp + 971821376ULL*exp*exp + 5127ULL*exp*exp*exp + (1ULL << 47)) >> 48);
-    while (factor && target > ~0ULL/factor) target >>= 8, size++;
-    target *= factor;
-    shifts -= 16;
-    while (size > 3 && shifts < 0) shifts += 8, size--;
-    while (shifts >= 8) shifts -= 8, size++;
-
-    if (shifts > 0) {
-        while (target > ~0ULL >> shifts) target >>= 8, size++;
-        target <<= shifts;
-    }
-    else target >>= -shifts;
-    
-    if (target == 0) target = 1;
-    while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-    while (size > 1 && target <= 0x7fff) target <<= 8, size--;
-    target |= (uint64_t)size << 24;
-    if (target > 0x1d00ffff) target = 0x1d00ffff;
-    
-    return (uint32_t)target;
+    b1 = (b2) ? BRSetGet(blockSet, &b2->prevBlock) : NULL;
+    b0 = (b1) ? BRSetGet(blockSet, &b1->prevBlock) : NULL;
+    if (b0 && b2 && b0->timestamp > b2->timestamp) b = b0, b0 = b2, b2 = b;
+    if (b0 && b1 && b0->timestamp > b1->timestamp) b = b0, b0 = b1, b1 = b;
+    if (b1 && b2 && b1->timestamp > b2->timestamp) b = b1, b1 = b2, b2 = b;
+    return (b0 && b1 && b2) ? b1 : NULL;
 }
 
-static int BRBCashVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int BRBSVVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
 {
-    const BRMerkleBlock *prev;
-    int64_t timeDelta, heightDelta;
+    const BRMerkleBlock *b, *first, *last;
+    int i, sz, size = 0x1d;
+    uint64_t t, target, w, work = 0;
+    int64_t timespan;
 
     assert(block != NULL);
     assert(blockSet != NULL);
 
-    if (block && block->height > ASERT_REF_HEIGHT) { // axion activation height
-        prev = BRSetGet(blockSet, &block->prevBlock);
-        if (! prev) return 1;
-        timeDelta = prev->timestamp - ASERT_REF_TIME;
-        heightDelta = prev->height - ASERT_REF_HEIGHT;
-        if (aserti3_2d(ASERT_REF_BITS, timeDelta, heightDelta) != block->target) return 0;
+    if (block && block->height >= 504032) { // D601 hard fork height: https://reviews.bitcoinabc.org/D601
+        last = BRSetGet(blockSet, &block->prevBlock);
+        last = _medianBlock(last, blockSet);
+
+        for (i = 0, first = block; first && i <= 144; i++) {
+            first = BRSetGet(blockSet, &first->prevBlock);
+        }
+
+        first = _medianBlock(first, blockSet);
+
+        if (! first) return 1;
+        timespan = (int64_t)last->timestamp - first->timestamp;
+        if (timespan > 288*10*60) timespan = 288*10*60;
+        if (timespan < 72*10*60) timespan = 72*10*60;
+
+        for (b = last; b != first;) {
+            // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+            // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+            sz = b->target >> 24, t = b->target & 0x007fffff;
+
+            // work += 2^256/(target + 1)
+            w = (t) ? ~0ULL/t : ~0ULL;
+            while (sz < size) work >>= 8, size--;
+            while (size < sz) w >>= 8, sz--;
+            while (work + w < w) w >>= 8, work >>= 8, size--;
+            work += w;
+
+            b = BRSetGet(blockSet, &b->prevBlock);
+        }
+
+        // work = work*10*60/timespan
+        while (work > ~0ULL/(10*60)) work >>= 8, size--;
+        work = work*10*60/timespan;
+
+        // target = (2^256/work) - 1
+        while (work && ~0ULL/work < 0x8000) work >>= 8, size--;
+        target = (work) ? ~0ULL/work : ~0ULL;
+
+        while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
+        target |= (uint64_t) (size << 24);
+
+        if (target > 0x1d00ffff) target = 0x1d00ffff; // max proof-of-work
+        if (target - block->target > 1) return 0;
     }
 
     return 1;
 }
 
-static int BRBCashTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int BRBSVTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
 {
     return 1; // XXX skip testnet difficulty check for now
 }
 
-static const BRChainParams BRBCashParamsRecord = {
-    BRBCashDNSSeeds,
+static const BRChainParams BRBSVParamsRecord = {
+    BRBSVDNSSeeds,
     8333,                // standardPort
     0xe8f3e1e3,          // magicNumber
     SERVICES_NODE_BCASH, // services
-    BRBCashVerifyDifficulty,
-    BRBCashCheckpoints,
-    sizeof(BRBCashCheckpoints)/sizeof(*BRBCashCheckpoints),
+    BRBSVVerifyDifficulty,
+    BRBSVCheckpoints,
+    sizeof(BRBSVCheckpoints)/sizeof(*BRBSVCheckpoints),
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL },
-    BCASH_FORKID
+    BSV_FORKID
 };
-const BRChainParams *BRBCashParams = &BRBCashParamsRecord;
+const BRChainParams *BRBSVParams = &BRBSVParamsRecord;
 
-static const BRChainParams BRBCashTestNetParamsRecord = {
-    BRBCashTestNetDNSSeeds,
+static const BRChainParams BRBSVTestNetParamsRecord = {
+    BRBSVTestNetDNSSeeds,
     18333,               // standardPort
     0xf4f3e5f4,          // magicNumber
     SERVICES_NODE_BCASH, // services
-    BRBCashTestNetVerifyDifficulty,
-    BRBCashTestNetCheckpoints,
-    sizeof(BRBCashTestNetCheckpoints)/sizeof(*BRBCashTestNetCheckpoints),
+    BRBSVTestNetVerifyDifficulty,
+    BRBSVTestNetCheckpoints,
+    sizeof(BRBSVTestNetCheckpoints)/sizeof(*BRBSVTestNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL },
-    BCASH_FORKID
+    BSV_FORKID
 };
-const BRChainParams *BRBCashTestNetParams = &BRBCashTestNetParamsRecord;
+const BRChainParams *BRBSVTestNetParams = &BRBSVTestNetParamsRecord;
