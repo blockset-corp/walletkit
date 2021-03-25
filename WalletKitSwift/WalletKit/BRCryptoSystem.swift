@@ -1311,12 +1311,13 @@ extension System {
                     transferEvent = TransferEvent.created
 
                 case CRYPTO_TRANSFER_EVENT_CHANGED:
-                    print ("SYS: Event: Transfer (\(wallet.name)): \(event.type): {\(TransferState (core: event.u.state.old)) -> \(TransferState (core: event.u.state.new))}")
+                    defer { cryptoTransferStateGive (event.u.state.old); cryptoTransferStateGive (event.u.state.new) }
 
-                    // The event.u.state.{old,new} references to BRCryptoTransferState are 'passed'
-                    // to the TransferState initializer.
-                    transferEvent = TransferEvent.changed (old: TransferState (core: event.u.state.old),
-                                                           new: TransferState (core: event.u.state.new))
+                    let oldState = TransferState (core: event.u.state.old)
+                    let newState = TransferState (core: event.u.state.new)
+
+                    print ("SYS: Event: Transfer (\(wallet.name)): \(event.type): {\(oldState) -> \(newState)}")
+                    transferEvent = TransferEvent.changed (old: oldState, new: newState)
 
                 case CRYPTO_TRANSFER_EVENT_DELETED:
                     transferEvent = TransferEvent.deleted

@@ -240,6 +240,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
 
+    cryptoTransferGive(baseTransfer);
     cryptoFeeBasisGive (feeBasis);
     cryptoTransferStateGive (state);
 
