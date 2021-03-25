@@ -21,9 +21,9 @@ extern "C" {
 #define TEZOS_DEFAULT_MUTEZ_PER_BYTE 1
 
 typedef enum {
-    FEE_BASIS_INITIAL,
-    FEE_BASIS_ESTIMATE,
-    FEE_BASIS_ACTUAL
+    FEE_BASIS_INITIAL,      // for fee estimation
+    FEE_BASIS_ESTIMATE,     // for submit
+    FEE_BASIS_ACTUAL        // when included
 } BRTezosFeeBasisType;
 
 typedef struct

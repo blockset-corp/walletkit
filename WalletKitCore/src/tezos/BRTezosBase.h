@@ -55,6 +55,12 @@ tezosHashFromString(const char *input) {
     return hash;
 }
 
+static inline char *
+tezosHashToString (BRTezosHash hash) {
+    char string[64] = {0};
+    BRBase58CheckEncode(string, sizeof(string), hash.bytes, sizeof(hash.bytes));
+    return strdup(string);
+}
 
 #ifdef __cplusplus
 }
