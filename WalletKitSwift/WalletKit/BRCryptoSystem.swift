@@ -666,7 +666,7 @@ public final class System {
                                                                  &denominationBundles);
                     }
                     defer { bundles.forEach { cryptoClientCurrencyBundleRelease($0) }}
-                    cwmAnnounceCurrencies (self.core, &bundles, bundles.count)
+                    cryptoClientAnnounceCurrencies (self.core, &bundles, bundles.count)
                     completion? (Result.success(self.networks))
                 },
 
@@ -1521,10 +1521,13 @@ extension System {
                     (res: Result<SystemClient.Blockchain, SystemClientError>) in
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve (
-                        success: {        cwmAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0, $0.verifiedBlockHash) },
+                        success: {
+                            cryptoClientAnnounceBlockNumber (cwm, sid, CRYPTO_TRUE,  $0.blockHeight ?? 0, $0.verifiedBlockHash)
+                        },
                         failure: { (e) in
                             print ("SYS: GetBlockNumber: Error: \(e)")
-                            cwmAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0, nil) })
+                            cryptoClientAnnounceBlockNumber (cwm, sid, CRYPTO_FALSE, 0, nil)
+                        })
                 }},
 
             funcGetTransactions: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
@@ -1547,10 +1550,10 @@ extension System {
                     res.resolve(
                         success: {
                             var bundles: [BRCryptoClientTransactionBundle?] = System.canonicalizeTransactions ($0).map { System.makeTransactionBundle ($0) }
-                            cwmAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
+                            cryptoClientAnnounceTransactions (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransactions: Error: \(e)")
-                            cwmAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
+                            cryptoClientAnnounceTransactions (cwm, sid, CRYPTO_FALSE, nil, 0) })
                 }},
 
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
@@ -1573,10 +1576,10 @@ extension System {
                     res.resolve(
                         success: {
                             var bundles: [BRCryptoClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
-                            cwmAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
+                            cryptoClientAnnounceTransfers (cwm, sid, CRYPTO_TRUE,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransfers: Error: \(e)")
-                            cwmAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
+                            cryptoClientAnnounceTransfers (cwm, sid, CRYPTO_FALSE, nil,     0) })
                 }},
 
             funcSubmitTransaction: { (context, cwm, sid, identifier, transactionBytes, transactionBytesLength) in
@@ -1595,10 +1598,10 @@ extension System {
                     defer { cryptoWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (ti) in
-                            cwmAnnounceSubmitTransfer (cwm, sid, ti.identifier, ti.hash, CRYPTO_TRUE) },
+                            cryptoClientAnnounceSubmitTransfer (cwm, sid, ti.identifier, ti.hash, CRYPTO_TRUE) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            cwmAnnounceSubmitTransfer (cwm, sid, nil, nil, CRYPTO_FALSE) })
+                            cryptoClientAnnounceSubmitTransfer (cwm, sid, nil, nil, CRYPTO_FALSE) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
@@ -1624,7 +1627,7 @@ extension System {
                                 .map { UnsafePointer<Int8>(strdup($0)) }
                             defer { metaValsPtr.forEach { cryptoMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
                             
-                            cwmAnnounceEstimateTransactionFee (cwm,
+                            cryptoClientAnnounceEstimateTransactionFee (cwm,
                                                                sid,
                                                                CRYPTO_TRUE,
                                                                $0.costUnits,
@@ -1635,7 +1638,7 @@ extension System {
                         },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            cwmAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, 0, 0, nil, nil) })
+                            cryptoClientAnnounceEstimateTransactionFee (cwm, sid, CRYPTO_FALSE, 0, 0, nil, nil) })
                 }}
         )
     }

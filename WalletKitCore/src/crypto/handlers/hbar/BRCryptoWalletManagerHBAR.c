@@ -24,20 +24,12 @@
 
 // MARK: - Events
 
-//TODO:HBAR make common
-const BREventType *hbarEventTypes[] = {
-    // ...
+static const BREventType *hbarEventTypes[] = {
+    CRYPTO_CLIENT_EVENT_TYPES
 };
 
-const unsigned int
+static const unsigned int
 hbarEventTypesCount = (sizeof (hbarEventTypes) / sizeof (BREventType*));
-
-
-//static BRCryptoWalletManagerHBAR
-//cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
-//    assert (CRYPTO_NETWORK_TYPE_HBAR == wm->type);
-//    return (BRCryptoWalletManagerHBAR) wm;
-//}
 
 // MARK: - Handlers
 

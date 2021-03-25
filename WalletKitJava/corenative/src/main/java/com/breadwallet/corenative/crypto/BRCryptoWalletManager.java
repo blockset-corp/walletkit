@@ -325,7 +325,7 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
     public void announceGetBlockNumber(BRCryptoClientCallbackState callbackState, boolean success, UnsignedLong blockNumber, String verifiedBlockHash) {
-        CryptoLibraryDirect.cwmAnnounceBlockNumber (
+        CryptoLibraryDirect.cryptoClientAnnounceBlockNumber (
                 this.getPointer(),
                 callbackState.getPointer(),
                 (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
@@ -337,7 +337,7 @@ public class BRCryptoWalletManager extends PointerType {
         int bundlesCount = bundles.size();
         BRCryptoClientTransactionBundle[] bundlesArr = bundles.toArray(new BRCryptoClientTransactionBundle[bundlesCount]);
 
-        CryptoLibraryIndirect.cwmAnnounceTransactions(
+        CryptoLibraryIndirect.cryptoClientAnnounceTransactions(
                 this.getPointer(),
                 callbackState.getPointer(),
                 (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
@@ -349,7 +349,7 @@ public class BRCryptoWalletManager extends PointerType {
         int bundlesCount = bundles.size();
         BRCryptoClientTransferBundle[] bundlesArr = bundles.toArray(new BRCryptoClientTransferBundle[bundlesCount]);
 
-        CryptoLibraryIndirect.cwmAnnounceTransfers(
+        CryptoLibraryIndirect.cryptoClientAnnounceTransfers(
                 this.getPointer(),
                 callbackState.getPointer(),
                 (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),
@@ -358,7 +358,7 @@ public class BRCryptoWalletManager extends PointerType {
     }
 
     public void announceSubmitTransfer(BRCryptoClientCallbackState callbackState, String identifier, String hash, boolean success) {
-        CryptoLibraryDirect.cwmAnnounceSubmitTransfer (
+        CryptoLibraryDirect.cryptoClientAnnounceSubmitTransfer (
                 this.getPointer(),
                 callbackState.getPointer(),
                 identifier,
@@ -371,7 +371,7 @@ public class BRCryptoWalletManager extends PointerType {
          String[] metaKeys = (null == meta ? null : meta.keySet().toArray(new String[metaCount]));
          String[] metaVals = (null == meta ? null : meta.values().toArray(new String[metaCount]));
 
-         CryptoLibraryIndirect.cwmAnnounceEstimateTransactionFee(
+         CryptoLibraryIndirect.cryptoClientAnnounceEstimateTransactionFee(
                  this.getPointer(),
                  callbackState.getPointer(),
                  (success ? BRCryptoBoolean.CRYPTO_TRUE : BRCryptoBoolean.CRYPTO_FALSE),

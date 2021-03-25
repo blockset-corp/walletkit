@@ -35,6 +35,15 @@ static void
 cryptoWalletManagerCreateTokensForNetwork (BRCryptoWalletManagerETH manager,
                                            BRCryptoNetwork network);
 
+// MARK: - Event Types
+
+const BREventType *eventTypesETH[] = {
+    CRYPTO_CLIENT_EVENT_TYPES
+};
+const unsigned int eventTypesCountETH = (sizeof (eventTypesETH) / sizeof (BREventType*));
+
+// MARK: - Wallet Manager
+
 extern BRCryptoWalletManagerETH
 cryptoWalletManagerCoerceETH (BRCryptoWalletManager manager) {
     assert (CRYPTO_NETWORK_TYPE_ETH == manager->type);
@@ -936,9 +945,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     cryptoCurrencyGive (currency);
     cryptoNetworkGive (network);
 }
-
-const BREventType *eventTypesETH[] = {};
-const unsigned int eventTypesCountETH = (sizeof (eventTypesETH) / sizeof (BREventType*));
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersETH = {
     cryptoWalletManagerCreateETH,

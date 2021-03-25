@@ -19,6 +19,8 @@
 
 // BRWallet Callbacks
 
+// MARK: - Foward Declarations
+
 // On: BRWalletRegisterTransaction, BRWalletRemoveTransaction
 static void cryptoWalletManagerBTCBalanceChanged (void *info, uint64_t balanceInSatoshi);
 // On: BRWalletRegisterTransaction
@@ -27,6 +29,17 @@ static void cryptoWalletManagerBTCTxAdded   (void *info, BRTransaction *tx);
 static void cryptoWalletManagerBTCTxUpdated (void *info, const UInt256 *hashes, size_t count, uint32_t blockHeight, uint32_t timestamp);
 // On: BRWalletRemoveTransaction
 static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notifyUser, int recommendRescan);
+
+// MARK: - Events
+
+static const BREventType *eventTypesBTC[] = {
+    CRYPTO_CLIENT_EVENT_TYPES
+};
+
+static const unsigned int
+eventTypesCountBTC = (sizeof (eventTypesBTC) / sizeof (BREventType*));
+
+// MARK: - Wallet Manager
 
 extern BRCryptoWalletManagerBTC
 cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
@@ -640,12 +653,6 @@ static void cryptoWalletManagerBTCTxDeleted (void *info, UInt256 hash, int notif
         }
     }
 }
-
-const BREventType *eventTypesBTC[] = {
-};
-
-const unsigned int
-eventTypesCountBTC = (sizeof (eventTypesBTC) / sizeof (BREventType*));
 
 BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC = {
     cryptoWalletManagerCreateBTC,

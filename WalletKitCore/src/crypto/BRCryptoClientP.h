@@ -16,6 +16,7 @@
 #include "support/BRArray.h"
 #include "support/BRSet.h"
 #include "support/rlp/BRRlp.h"
+#include "support/event/BREvent.h"
 
 #include "BRCryptoClient.h"
 #include "BRCryptoSync.h"
@@ -397,6 +398,19 @@ cryptoClientQRYManagerAsSend (BRCryptoClientQRYManager qry) {
         { .qryManager = qry }
     };
 }
+
+extern BREventType handleClientAnnounceBlockNumberEventType;
+extern BREventType handleClientAnnounceTransactionsEventType;
+extern BREventType handleClientAnnounceTransfersEventType;
+extern BREventType handleClientAnnounceSubmitEventType;
+extern BREventType handleClientAnnounceEstimateTransactionFeeEventType;
+
+#define CRYPTO_CLIENT_EVENT_TYPES             \
+  &handleClientAnnounceBlockNumberEventType,  \
+  &handleClientAnnounceTransactionsEventType, \
+  &handleClientAnnounceTransfersEventType,    \
+  &handleClientAnnounceSubmitEventType,       \
+  &handleClientAnnounceEstimateTransactionFeeEventType
 
 #ifdef __cplusplus
 }
