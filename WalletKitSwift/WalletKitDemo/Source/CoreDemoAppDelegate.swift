@@ -44,9 +44,9 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var currencyCodesToMode: [String:WalletManagerMode]!
     var registerCurrencyCodes: [String]!
 
-    var btcPeerSpec = (address: "103.99.168.100", port: UInt16(8333))
-    var btcPeer: NetworkPeer? = nil
-    var btcPeerUse = false
+    let peerSpecs = [NetworkType.btc : (use: false, address: "103.99.168.100", port: UInt16(8333)),
+                     NetworkType.bch : (use: false, address: "18.182.43.60",   port: UInt16(8333))]
+    var peers = [NetworkType:NetworkPeer]()
 
     var clearPersistentData: Bool = false
 
@@ -345,16 +345,14 @@ extension UIApplication {
 
     static func peer (network: Network) -> NetworkPeer? {
         guard let app = UIApplication.shared.delegate as? CoreDemoAppDelegate else { return nil }
-        guard "btc" == network.currency.code else { return nil }
-        guard app.btcPeerUse else { return nil }
 
-        if nil == app.btcPeer {
-            app.btcPeer = network.createPeer (address: app.btcPeerSpec.address,
-                                              port: app.btcPeerSpec.port,
-                                              publicKey: nil)
+        if nil == app.peers[network.type],
+           let (use, address, port) = app.peerSpecs[network.type],
+           use {
+            app.peers[network.type] = network.createPeer(address: address, port: port, publicKey: nil)
         }
 
-        return app.btcPeer
+        return app.peers[network.type]
     }
 }
 
