@@ -220,7 +220,6 @@ cryptoWalletEventCreateFeeBasisUpdated (BRCryptoFeeBasis basis) {
     return event;
 }
 
-
 extern BRCryptoBoolean
 cryptoWalletEventExtractFeeBasisUpdate (BRCryptoWalletEvent event,
                                         BRCryptoFeeBasis *basis) {
@@ -400,16 +399,22 @@ cryptoWalletHasCurrency (BRCryptoWallet wallet,
 
 extern BRCryptoWalletState
 cryptoWalletGetState (BRCryptoWallet wallet) {
-    return wallet->state;
+    pthread_mutex_lock (&wallet->lock);
+    BRCryptoWalletState state = wallet->state;
+    pthread_mutex_unlock (&wallet->lock);
+
+    return state;
 }
 
 private_extern void
 cryptoWalletSetState (BRCryptoWallet wallet,
                       BRCryptoWalletState state) {
     BRCryptoWalletState newState = state;
-    BRCryptoWalletState oldState = wallet->state;
 
+    pthread_mutex_lock (&wallet->lock);
+    BRCryptoWalletState oldState = wallet->state;
     wallet->state = state;
+    pthread_mutex_unlock (&wallet->lock);
 
     if (oldState != newState)
         cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateState (oldState, newState));
@@ -433,10 +438,14 @@ cryptoWalletHasCurrencyForFee (BRCryptoWallet wallet,
 
 extern BRCryptoAmount
 cryptoWalletGetBalance (BRCryptoWallet wallet) {
-    return cryptoAmountTake (wallet->balance);
+    pthread_mutex_lock (&wallet->lock);
+    BRCryptoAmount amount = cryptoAmountTake (wallet->balance);
+    pthread_mutex_unlock (&wallet->lock);
+
+    return amount;
 }
 
-static void
+static void // called wtih wallet->lock
 cryptoWalletSetBalance (BRCryptoWallet wallet,
                         OwnershipGiven BRCryptoAmount newBalance) {
     BRCryptoAmount oldBalance = wallet->balance;
@@ -450,36 +459,25 @@ cryptoWalletSetBalance (BRCryptoWallet wallet,
     cryptoAmountGive(oldBalance);
 }
 
-static void
+static void // called wtih wallet->lock
 cryptoWalletIncBalance (BRCryptoWallet wallet,
                         OwnershipGiven BRCryptoAmount amount) {
     cryptoWalletSetBalance (wallet, cryptoAmountAdd (wallet->balance, amount));
     cryptoAmountGive(amount);
 }
 
-static void
+static void // called wtih wallet->lock
 cryptoWalletDecBalance (BRCryptoWallet wallet,
                         OwnershipGiven BRCryptoAmount amount) {
     cryptoWalletSetBalance (wallet, cryptoAmountSub (wallet->balance, amount));
     cryptoAmountGive(amount);
 }
 
-//
-// Recompute the balance by iterating over all transfers and summing the 'amount directed net'.
-// This is appropriately used when the 'amount directed net' has changed; typically when a
-// transfer's state is become 'included' and thus the fee has been finalized.  Note, however, we
-// handle an estimated vs confirmed fee explicitly in the subsequent function.
-//
-#pragma clang diagnostic push
-#pragma GCC   diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
-#pragma GCC   diagnostic ignored "-Wunused-function"
-
 /**
  * Return the amount from `transfer` that applies to the balance of `wallet`.  The result must
  * be in the wallet's unit
  */
-static OwnershipGiven BRCryptoAmount
+static OwnershipGiven BRCryptoAmount // called wtih wallet->lock
 cryptoWalletGetTransferAmountDirectedNet (BRCryptoWallet wallet,
                                           BRCryptoTransfer transfer) {
     // If the wallet and transfer units are compatible, use the transfer's amount
@@ -505,6 +503,12 @@ cryptoWalletGetTransferAmountDirectedNet (BRCryptoWallet wallet,
 }
 
 
+/**
+ * Recompute the balance by iterating over all transfers and summing the 'amount directed net'.
+ * This is appropriately used when the 'amount directed net' has changed; typically when a
+ * transfer's state is become 'included' and thus the fee has been finalized.  Note, however, we
+ *  handle an estimated vs confirmed fee explicitly in the subsequent function.
+*/
 static BRCryptoAmount
 cryptoWalletComputeBalance (BRCryptoWallet wallet, bool needLock) {
     if (needLock) pthread_mutex_lock (&wallet->lock);
@@ -530,8 +534,6 @@ cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
     cryptoWalletSetBalance (wallet, cryptoWalletComputeBalance (wallet, false));
     if (needLock) pthread_mutex_unlock (&wallet->lock);
 }
-#pragma clang diagnostic pop
-#pragma GCC   diagnostic pop
 
 //
 // When a transfer is confirmed, the fee can change.  A typical example is that for ETH a transfer
@@ -544,7 +546,7 @@ cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
 // added to the BRWallet, and then addresses are generated upto the gap_limit.  Only then can the
 // later transactions inputs and outputs be resovled.  We don't handle that case in this function.
 //
-static void
+static void // called wtih wallet->lock
 cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
                                               BRCryptoTransfer transfer) {
     // if this wallet does not pay fees, then there is nothing to do
@@ -553,8 +555,8 @@ cryptoWalletUpdBalanceOnTransferConfirmation (BRCryptoWallet wallet,
 
     BRCryptoAmount feeEstimated = cryptoTransferGetEstimatedFee (transfer);
     BRCryptoAmount feeConfirmed = cryptoTransferGetConfirmedFee (transfer);
-    assert (NULL == feeConfirmed || NULL == feeEstimated || cryptoAmountIsCompatible (feeEstimated, feeConfirmed));
-    assert (NULL == feeConfirmed || cryptoAmountIsCompatible (feeConfirmed, wallet->balance));
+    assert (NULL == feeConfirmed || NULL == feeEstimated || CRYPTO_TRUE == cryptoAmountIsCompatible (feeEstimated, feeConfirmed));
+    assert (NULL == feeConfirmed || CRYPTO_TRUE == cryptoAmountIsCompatible (feeConfirmed, wallet->balance));
     // TODO: assert (NULL != feeConfirmed)
 
     BRCryptoAmount change = NULL;
@@ -600,14 +602,14 @@ cryptoWalletHasTransferLock (BRCryptoWallet wallet,
 extern BRCryptoBoolean
 cryptoWalletHasTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer) {
-    return cryptoWalletHasTransferLock(wallet, transfer, true);
+    return cryptoWalletHasTransferLock (wallet, transfer, true);
 }
 
 static void
 cryptoWalletAnnounceTransfer (BRCryptoWallet wallet,
                               BRCryptoTransfer transfer,
                               BRCryptoWalletEventType type) {  // TRANSFER_{ADDED,DELETED}
-    assert (CRYPTO_WALLET_EVENT_TRANSFER_ADDED == type ||
+    assert (CRYPTO_WALLET_EVENT_TRANSFER_ADDED   == type ||
             CRYPTO_WALLET_EVENT_TRANSFER_DELETED == type);
     if (NULL != wallet->handlers->announceTransfer)
         wallet->handlers->announceTransfer (wallet, transfer, type);
@@ -708,9 +710,11 @@ cryptoWalletUpdTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer,
                          BRCryptoTransferState newState) {
     // The transfer's state has changed.  This implies a possible amount/fee change.
+    pthread_mutex_lock (&wallet->lock);
     if (newState->type == CRYPTO_TRANSFER_STATE_INCLUDED &&
-        CRYPTO_TRUE == cryptoWalletHasTransfer (wallet, transfer))
+        CRYPTO_TRUE == cryptoWalletHasTransferLock (wallet, transfer, false))
         cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+    pthread_mutex_unlock (&wallet->lock);
 }
 
 extern BRCryptoTransfer *
@@ -766,15 +770,23 @@ cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet) {
 
 extern BRCryptoFeeBasis
 cryptoWalletGetDefaultFeeBasis (BRCryptoWallet wallet) {
-    return cryptoFeeBasisTake (wallet->defaultFeeBasis);
+    pthread_mutex_lock (&wallet->lock);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisTake (wallet->defaultFeeBasis);
+    pthread_mutex_unlock (&wallet->lock);
+
+    return feeBasis;
 }
 
 extern void
 cryptoWalletSetDefaultFeeBasis (BRCryptoWallet wallet,
                                 BRCryptoFeeBasis feeBasis) {
+    pthread_mutex_lock (&wallet->lock);
     if (NULL != wallet->defaultFeeBasis) cryptoFeeBasisGive (wallet->defaultFeeBasis);
     wallet->defaultFeeBasis = cryptoFeeBasisTake(feeBasis);
-    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisUpdated (wallet->defaultFeeBasis));
+    BRCryptoFeeBasis newFeeBasis = wallet->defaultFeeBasis;
+    pthread_mutex_unlock (&wallet->lock);
+
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateFeeBasisUpdated (newFeeBasis));
 }
 
 extern size_t

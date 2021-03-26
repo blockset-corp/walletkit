@@ -361,12 +361,18 @@ cryptoTransferSetAttributes (BRCryptoTransfer transfer,
 
 extern BRCryptoTransferStateType
 cryptoTransferGetStateType (BRCryptoTransfer transfer) {
-    return transfer->state->type;
+    pthread_mutex_lock (&transfer->lock);
+    BRCryptoTransferStateType type = transfer->state->type;
+    pthread_mutex_unlock (&transfer->lock);
+    return type;
 }
 
 extern BRCryptoTransferState
 cryptoTransferGetState (BRCryptoTransfer transfer) {
-    return cryptoTransferStateTake (transfer->state);
+    pthread_mutex_lock (&transfer->lock);
+    BRCryptoTransferState state = cryptoTransferStateTake (transfer->state);
+    pthread_mutex_unlock (&transfer->lock);
+    return state;
 }
 
 private_extern void
@@ -444,13 +450,21 @@ cryptoTransferGetIdentifier (BRCryptoTransfer transfer) {
 
 extern BRCryptoHash
 cryptoTransferGetHash (BRCryptoTransfer transfer) {
-    return transfer->handlers->getHash (transfer);
+    pthread_mutex_lock (&transfer->lock);
+    BRCryptoHash hash = transfer->handlers->getHash (transfer);
+    pthread_mutex_unlock (&transfer->lock);
+
+    return hash;
 }
 
 extern BRCryptoBoolean
 cryptoTransferSetHash (BRCryptoTransfer transfer,
                        OwnershipKept BRCryptoHash hash) {
-    return AS_CRYPTO_BOOLEAN (NULL != transfer->handlers->setHash && transfer->handlers->setHash (transfer, hash));
+    pthread_mutex_lock (&transfer->lock);
+    bool changed = (NULL != transfer->handlers->setHash && transfer->handlers->setHash (transfer, hash));
+    pthread_mutex_unlock (&transfer->lock);
+
+    return AS_CRYPTO_BOOLEAN(changed);
 }
 
 extern BRCryptoFeeBasis
@@ -460,7 +474,6 @@ cryptoTransferGetEstimatedFeeBasis (BRCryptoTransfer transfer) {
 
 private_extern BRCryptoAmount
 cryptoTransferGetEstimatedFee (BRCryptoTransfer transfer) {
-    // TODO: NULL on unit vs unitForFee mismatch?
    return (NULL != transfer->feeBasisEstimated
             ? cryptoFeeBasisGetFee (transfer->feeBasisEstimated)
             : NULL);
@@ -479,27 +492,38 @@ cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer) {
 
 private_extern BRCryptoAmount
 cryptoTransferGetConfirmedFee (BRCryptoTransfer transfer) {
-    // TODO: NULL on unit vs unitForFee mismatch?
-    return ((CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type &&
-             NULL != transfer->state->u.included.feeBasis)
-            ? cryptoFeeBasisGetFee (transfer->state->u.included.feeBasis)
-            : NULL);
+    pthread_mutex_lock (&transfer->lock);
+    BRCryptoAmount amount = ((CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type &&
+                              NULL != transfer->state->u.included.feeBasis)
+                             ? cryptoFeeBasisGetFee (transfer->state->u.included.feeBasis)
+                             : NULL);
+    pthread_mutex_unlock (&transfer->lock);
+
+    return amount;
 }
 
 private_extern BRCryptoFeeBasis
 cryptoTransferGetFeeBasis (BRCryptoTransfer transfer) {
-    return cryptoFeeBasisTake (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type
-                               ? transfer->state->u.included.feeBasis
-                               : transfer->feeBasisEstimated);
+    pthread_mutex_lock (&transfer->lock);
+    BRCryptoFeeBasis feeBasis = cryptoFeeBasisTake (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type
+                                                    ? transfer->state->u.included.feeBasis
+                                                    : transfer->feeBasisEstimated);
+    pthread_mutex_unlock (&transfer->lock);
+
+    return feeBasis;
 }
 
 extern BRCryptoAmount
 cryptoTransferGetFee (BRCryptoTransfer transfer) {
+    pthread_mutex_lock (&transfer->lock);
     BRCryptoFeeBasis feeBasis = (CRYPTO_TRANSFER_STATE_INCLUDED == transfer->state->type
                                  ? transfer->state->u.included.feeBasis
                                  : transfer->feeBasisEstimated);
 
-    return (NULL == feeBasis ? NULL : cryptoFeeBasisGetFee (feeBasis));
+    BRCryptoAmount amount = (NULL == feeBasis ? NULL : cryptoFeeBasisGetFee (feeBasis));
+    pthread_mutex_unlock (&transfer->lock);
+
+    return amount;
 }
 
 extern uint8_t *
