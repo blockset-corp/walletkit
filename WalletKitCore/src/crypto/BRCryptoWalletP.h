@@ -138,26 +138,21 @@ struct BRCryptoWalletRecord {
     pthread_mutex_t lock;
     BRCryptoWalletListener listener;
 
+    /// The state (modifiable)
     BRCryptoWalletState state;
 
     BRCryptoUnit unit;
     BRCryptoUnit unitForFee;
 
-    //
-    // Do we hold transfers here?  The BRWallet and the BREthereumWallet already hold transfers.
-    // Shouldn't we defer to those to get transfers (and then wrap them in BRCryptoTransfer)?
-    // Then we avoid caching trouble (in part).  For a newly created transaction (not yet signed),
-    // the BRWallet will not hold a BRTransaction however, BREthereumWallet will hold a new
-    // BREthereumTransaction. From BRWalet: `assert(tx != NULL && BRTransactionIsSigned(tx));`
-    //
-    // We are going to have the same
-    //
+    /// The transfers (modifiable)
     BRArrayOf (BRCryptoTransfer) transfers;
 
+    /// The balance (modifiable)
     BRCryptoAmount balance;
     BRCryptoAmount balanceMinimum;
     BRCryptoAmount balanceMaximum;
 
+    /// The defaultFeeBaiss (modifiable)
     BRCryptoFeeBasis defaultFeeBasis;
 
     BRCryptoTransferListener listenerTransfer;

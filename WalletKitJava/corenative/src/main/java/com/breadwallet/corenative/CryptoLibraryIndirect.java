@@ -49,17 +49,17 @@ public final class CryptoLibraryIndirect {
         return INSTANCE.cryptoWalletValidateTransferAttributes(wallet, attributesCount, attributes, validates);
     }
 
-    public static void cwmAnnounceEstimateTransactionFee(Pointer cwm,
-                                                         Pointer callbackState,
-                                                         int success,
-                                                         long costUnits,
-                                                         SizeT attributesCount,
-                                                         String[] attributeKeys,
-                                                         String[] attributeVals) {
+    public static void cryptoClientAnnounceEstimateTransactionFee(Pointer cwm,
+                                                                  Pointer callbackState,
+                                                                  int success,
+                                                                  long costUnits,
+                                                                  SizeT attributesCount,
+                                                                  String[] attributeKeys,
+                                                                  String[] attributeVals) {
         attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
         attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
 
-        INSTANCE.cwmAnnounceEstimateTransactionFee(cwm, callbackState, success,
+        INSTANCE.cryptoClientAnnounceEstimateTransactionFee(cwm, callbackState, success,
                 costUnits,
                 attributesCount,
                 attributeKeys,
@@ -92,14 +92,14 @@ public final class CryptoLibraryIndirect {
                 attributesCount, attributeKeys, attributeVals);
     }
 
-    public static void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.cwmAnnounceTransactions(cwm, callbackState, success,
+    public static void cryptoClientAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cryptoClientAnnounceTransactions(cwm, callbackState, success,
                 (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
     }
 
-    public static void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.cwmAnnounceTransfers(cwm, callbackState, success,
+    public static void cryptoClientAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cryptoClientAnnounceTransfers(cwm, callbackState, success,
                 (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
     }
@@ -125,8 +125,8 @@ public final class CryptoLibraryIndirect {
                 (0 == denominationsCount.intValue() ? null : denominations));
     }
 
-    public static void cwmAnnounceCurrencies(Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.cwmAnnounceCurrencies(system,
+    public static void cryptoClientAnnounceCurrencies(Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.cryptoClientAnnounceCurrencies(system,
                 (0 == bundles.length ? null : bundles),
                 bundlesCount);
     }
@@ -194,8 +194,8 @@ public final class CryptoLibraryIndirect {
                                                  String[] attributeKeys,
                                                  String[] attributeVals);
 
-        void cwmAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
-        void cwmAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
+        void cryptoClientAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransactionBundle[] bundles, SizeT bundlesCount);
+        void cryptoClientAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, BRCryptoClientTransferBundle[] bundles, SizeT bundlesCount);
 
         Pointer cryptoClientCurrencyBundleCreate(String id,
                                                  String name,
@@ -207,15 +207,15 @@ public final class CryptoLibraryIndirect {
                                                  SizeT denominationsCount,
                                                  BRCryptoClientCurrencyDenominationBundle[] denominations);
 
-        void cwmAnnounceCurrencies (Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount);
+        void cryptoClientAnnounceCurrencies (Pointer system, BRCryptoClientCurrencyBundle[] bundles, SizeT bundlesCount);
 
-        void cwmAnnounceEstimateTransactionFee(Pointer cwm,
-                                               Pointer callbackState,
-                                               int success,
-                                               long costUnits,
-                                               SizeT attributesCount,
-                                               String[] attributeKeys,
-                                               String[] attributeVals);
+        void cryptoClientAnnounceEstimateTransactionFee(Pointer cwm,
+                                                        Pointer callbackState,
+                                                        int success,
+                                                        long costUnits,
+                                                        SizeT attributesCount,
+                                                        String[] attributeKeys,
+                                                        String[] attributeVals);
 
         // crypto/BRCryptoWalletManager.h
         void cryptoWalletManagerEstimateFeeBasis (Pointer cwm,

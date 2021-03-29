@@ -25,11 +25,11 @@
 // MARK: - Events
 
 //TODO:XRP make common
-const BREventType *xrpEventTypes[] = {
-    // ...
+static const BREventType *xrpEventTypes[] = {
+    CRYPTO_CLIENT_EVENT_TYPES
 };
 
-const unsigned int
+static const unsigned int
 xrpEventTypesCount = (sizeof (xrpEventTypes) / sizeof (BREventType*));
 
 
@@ -240,6 +240,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     
     cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
 
+    cryptoTransferGive(baseTransfer);
     cryptoFeeBasisGive (feeBasis);
     cryptoTransferStateGive (state);
 

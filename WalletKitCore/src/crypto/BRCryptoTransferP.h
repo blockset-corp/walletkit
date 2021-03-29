@@ -75,7 +75,7 @@ typedef void
 typedef BRCryptoHash
 (*BRCryptoTransferGetHashHandler) (BRCryptoTransfer transfer);
 
-typedef int // 1 if changed; 0 if not
+typedef bool // true if changed
 (*BRCryptoTransferSetHashHandler) (BRCryptoTransfer transfer,
                                    BRCryptoHash hash);
 
@@ -118,6 +118,8 @@ struct BRCryptoTransferRecord {
     char *identifier;
     BRCryptoAddress sourceAddress;
     BRCryptoAddress targetAddress;
+
+    /// The state (modifiable)
     BRCryptoTransferState state;
 
     /// The amount's unit.
@@ -139,6 +141,7 @@ struct BRCryptoTransferRecord {
     /// The amount (unsigned value).
     BRCryptoAmount amount;
 
+    /// The attributes (modifiable)
     BRArrayOf(BRCryptoTransferAttribute) attributes;
 };
 
@@ -168,6 +171,7 @@ private_extern void
 cryptoTransferSetState (BRCryptoTransfer transfer,
                         BRCryptoTransferState state);
 
+// TODO: Are TransferAttributes not constant?
 private_extern void
 cryptoTransferSetAttributes (BRCryptoTransfer transfer,
                              size_t attributesCount,

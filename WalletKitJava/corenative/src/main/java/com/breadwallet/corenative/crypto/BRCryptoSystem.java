@@ -241,7 +241,7 @@ public class BRCryptoSystem extends PointerType {
         int bundlesCount = bundles.size();
         BRCryptoClientCurrencyBundle[] bundlesArr = bundles.toArray(new BRCryptoClientCurrencyBundle[bundlesCount]);
 
-        CryptoLibraryIndirect.cwmAnnounceCurrencies(
+        CryptoLibraryIndirect.cryptoClientAnnounceCurrencies(
                 this.getPointer(),
                 bundlesArr,
                 new SizeT(bundlesCount));

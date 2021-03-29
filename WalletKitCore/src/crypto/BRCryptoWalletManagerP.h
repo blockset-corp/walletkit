@@ -193,15 +193,16 @@ struct BRCryptoWalletManagerRecord {
     /// The primary wallet
     BRCryptoWallet wallet;
 
-    /// All wallets
+    /// All wallets (modifiable)
     BRArrayOf(BRCryptoWallet) wallets;
 
+    /// The state (modifiable)
     BRCryptoWalletManagerState state;
 
     BRCryptoWalletManagerListener listener;
     BRCryptoWalletListener listenerWallet;
-//    BRCryptoListener listenerTrampoline;
 
+    /// The {Transfer,Transaction}Bundle (modifiable)
     Nullable BRArrayOf(BRCryptoClientTransferBundle) bundleTransfers;
     Nullable BRArrayOf(BRCryptoClientTransactionBundle) bundleTransactions;
 };
@@ -270,19 +271,6 @@ cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (BRCryptoWallet w
                                                                 BRCryptoTransfer transfer,
                                                                 OwnershipKept BRCryptoClientTransferBundle bundle);
 
-//private_extern void
-//cryptoWalletManagerGenerateTransferEvent (BRCryptoWalletManager cwm,
-//                                          BRCryptoWallet wallet,
-//                                          BRCryptoTransfer transfer,
-//                                          BRCryptoTransferEvent event);
-//
-//private_extern void
-//cryptoWalletManagerGenerateWalletEvent (BRCryptoWalletManager cwm,
-//                                          BRCryptoWallet wallet,
-//                                          BRCryptoWalletEvent event);
-//
-
-
 private_extern BRCryptoFeeBasis
 cryptoWalletManagerRecoverFeeBasisFromFeeEstimate (BRCryptoWalletManager cwm,
                                                    BRCryptoNetworkFee networkFee,
@@ -297,7 +285,6 @@ cryptoWalletManagerGenerateEvent (BRCryptoWalletManager manager,
                                   BRCryptoWalletManagerEvent event) {
     cryptoListenerGenerateManagerEvent (&manager->listener, manager, event);
 }
-
 
 #ifdef __cplusplus
 }

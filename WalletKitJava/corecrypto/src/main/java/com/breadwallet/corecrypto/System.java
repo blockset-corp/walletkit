@@ -123,6 +123,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.breadwallet.corenative.crypto.BRCryptoTransferEventType.CRYPTO_TRANSFER_EVENT_CHANGED;
 import static com.google.common.base.Preconditions.checkState;
 
 /* package */
@@ -1620,6 +1621,10 @@ final class System implements com.breadwallet.crypto.System {
                     }
                 }
             } finally {
+                if (CRYPTO_TRANSFER_EVENT_CHANGED == event.type()) {
+                    event.u.state.oldState.give();
+                    event.u.state.newState.give();
+                }
                 coreTransfer.give();
                 coreWallet.give();
                 coreWalletManager.give();

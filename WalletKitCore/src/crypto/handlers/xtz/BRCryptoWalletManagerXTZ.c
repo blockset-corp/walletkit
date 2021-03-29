@@ -25,20 +25,12 @@
 
 // MARK: - Events
 
-//TODO:XTZ make common
-const BREventType *xtzEventTypes[] = {
-    // ...
+static const BREventType *xtzEventTypes[] = {
+    CRYPTO_CLIENT_EVENT_TYPES
 };
 
-const unsigned int
+static const unsigned int
 xtzEventTypesCount = (sizeof (xtzEventTypes) / sizeof (BREventType*));
-
-
-//static BRCryptoWalletManagerXTZ
-//cryptoWalletManagerCoerce (BRCryptoWalletManager wm) {
-//    assert (CRYPTO_NETWORK_TYPE_XTZ == wm->type);
-//    return (BRCryptoWalletManagerXTZ) wm;
-//}
 
 // MARK: - Handlers
 
@@ -272,6 +264,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     
     cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
     
+    cryptoTransferGive(baseTransfer);
     cryptoFeeBasisGive (feeBasis);
     cryptoTransferStateGive (state);
     

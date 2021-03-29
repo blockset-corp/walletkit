@@ -97,13 +97,13 @@ cryptoTransferGetHashHBAR (BRCryptoTransfer transfer) {
     return cryptoHashCreateAsHBAR (hash);
 }
 
-extern int
+extern bool
 cryptoTransferSetHashHBAR (BRCryptoTransfer transfer,
                            BRCryptoHash hash) {
     BRCryptoTransferHBAR transferHBAR = cryptoTransferCoerceHBAR(transfer);
     BRHederaTransactionHash hashHBAR  = cryptoHashAsHBAR(hash);
 
-    return hederaTransactionUpdateHash (transferHBAR->hbarTransaction, hashHBAR);
+    return 1 == hederaTransactionUpdateHash (transferHBAR->hbarTransaction, hashHBAR);
 }
 
 static void

@@ -112,83 +112,84 @@ class CoreDemoListener: SystemListener {
             // App might not be interested in having a wallet manager for every network -
             // specifically, test networks are announced and having a wallet manager for a
             // testnet won't happen in a deployed App.
+            DispatchQueue.main.async {
+                if self.isMainnet == network.onMainnet,
+                   network.currencies.contains(where: { nil != self.networkCurrencyCodesToMode[$0.code] }),
+                   let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
+                    // Get a valid mode, ideally from `currencyMode`
 
-            if isMainnet == network.onMainnet,
-                network.currencies.contains(where: { nil != networkCurrencyCodesToMode[$0.code] }),
-                let currencyMode = self.networkCurrencyCodesToMode [network.currency.code] {
-                // Get a valid mode, ideally from `currencyMode`
+                    let mode = network.supportsMode (currencyMode)
+                        ? currencyMode
+                        : network.defaultMode
 
-                let mode = network.supportsMode (currencyMode)
-                    ? currencyMode
-                    : network.defaultMode
+                    let scheme = network.defaultAddressScheme
 
-                let scheme = network.defaultAddressScheme
+                    let currencies = network.currencies
+                        .filter { (c) in self.registerCurrencyCodes.contains { c.code == $0 } }
 
-                let currencies = network.currencies
-                    .filter { (c) in registerCurrencyCodes.contains { c.code == $0 } }
+                    let success = system.createWalletManager (network: network,
+                                                              mode: mode,
+                                                              addressScheme: scheme,
+                                                              currencies: currencies)
+                    if !success {
+                        system.wipe (network: network)
 
-                let success = system.createWalletManager (network: network,
-                                                          mode: mode,
-                                                          addressScheme: scheme,
-                                                          currencies: currencies)
-                if !success {
-                    system.wipe (network: network)
+                        // Recover if account is not initialized
+                        if !system.accountIsInitialized (system.account, onNetwork: network) {
+                            guard .hbar == network.type else { preconditionFailure () }
+                            system.accountInitialize (system.account, onNetwork: network, createIfDoesNotExist: true) {
+                                (res:Result<Data, System.AccountInitializationError>) in
 
-                    // Recover if account is not initialized
-                    if !system.accountIsInitialized (system.account, onNetwork: network) {
-                        guard .hbar == network.type else { preconditionFailure () }
-                        system.accountInitialize (system.account, onNetwork: network, createIfDoesNotExist: true) {
-                            (res:Result<Data, System.AccountInitializationError>) in
+                                var serializationData: Data? = nil
 
-                            var serializationData: Data? = nil
+                                switch res {
+                                case .success (let data):
+                                    serializationData = data
 
-                            switch res {
-                            case .success (let data):
-                                serializationData = data
-
-                            case .failure (let error):
-                                switch error {
-                                case .alreadyInitialized:
-                                    print ("APP: Account: Already Initialized")
+                                case .failure (let error):
+                                    switch error {
+                                    case .alreadyInitialized:
+                                        print ("APP: Account: Already Initialized")
                                     // No serialization data??
 
-                                case .multipleHederaAccounts(let accounts):
-                                    let accountDescriptions = accounts
-                                        .map { "{id: \($0.id), balance: \($0.balance?.description ?? "<none>")}"}
-                                    print ("APP: Account: Multiple Hedera Accounts: \(accountDescriptions.joined(separator: ", "))")
+                                    case .multipleHederaAccounts(let accounts):
+                                        let accountDescriptions = accounts
+                                            .map { "{id: \($0.id), balance: \($0.balance?.description ?? "<none>")}"}
+                                        print ("APP: Account: Multiple Hedera Accounts: \(accountDescriptions.joined(separator: ", "))")
 
-                                    // Chose the Hedera account with the largest balance - DEMO-SPECFIC
-                                    let hederaAccount = accounts.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) }[0]
-                                    serializationData = system.accountInitialize (system.account,
-                                                                                  onNetwork: network,
-                                                                                  hedera: hederaAccount)
+                                        // Chose the Hedera account with the largest balance - DEMO-SPECFIC
+                                        let hederaAccount = accounts.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) }[0]
+                                        serializationData = system.accountInitialize (system.account,
+                                                                                      onNetwork: network,
+                                                                                      hedera: hederaAccount)
 
-                                case .queryFailure(let message):
-                                    print ("APP: Account: Initalization Query Error: \(message)")
+                                    case .queryFailure(let message):
+                                        print ("APP: Account: Initalization Query Error: \(message)")
 
-                                case .cantCreate:
-                                    print ("APP: Account: Initializaiton: Can't Create")
+                                    case .cantCreate:
+                                        print ("APP: Account: Initializaiton: Can't Create")
+                                    }
                                 }
-                            }
 
-                            // If initailization failed, use `accountSpecification` if we can - DEMO-SPECiFIC
-                            if nil == serializationData,
-                                let initializationData = DispatchQueue.main.sync (execute: {
-                                    UIApplication.accountSpecification.hedera
-                                        .flatMap { $0.data(using: .utf8) }
-                                }) {
-                                serializationData = system.accountInitialize(system.account, onNetwork: network, using: initializationData)
-                            }
+                                // If initailization failed, use `accountSpecification` if we can - DEMO-SPECiFIC
+                                if nil == serializationData,
+                                   let initializationData = DispatchQueue.main.sync (execute: {
+                                        UIApplication.accountSpecification.hedera
+                                            .flatMap { $0.data(using: .utf8) }
+                                   }) {
+                                    serializationData = system.accountInitialize(system.account, onNetwork: network, using: initializationData)
+                                }
 
-                            if let serializationData = serializationData {
-                                // Normally, save the `serializationData`; but not here - DEMO-SPECIFIC
-                                print ("APP: Account: SerializationData: \(CoreCoder.hex.encode(data: serializationData)!)")
+                                if let serializationData = serializationData {
+                                    // Normally, save the `serializationData`; but not here - DEMO-SPECIFIC
+                                    print ("APP: Account: SerializationData: \(CoreCoder.hex.encode(data: serializationData)!)")
 
-                                let successRetry = system.createWalletManager (network: network,
-                                                                               mode: mode,
-                                                                               addressScheme: scheme,
-                                                                               currencies: currencies)
-                                if !successRetry { UIApplication.doError(network: network) }
+                                    let successRetry = system.createWalletManager (network: network,
+                                                                                   mode: mode,
+                                                                                   addressScheme: scheme,
+                                                                                   currencies: currencies)
+                                    if !successRetry { UIApplication.doError(network: network) }
+                                }
                             }
                         }
                     }

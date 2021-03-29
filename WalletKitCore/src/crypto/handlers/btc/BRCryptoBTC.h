@@ -251,12 +251,6 @@ extern BRArrayOf(BRTransaction*) initialTransactionsLoadBTC (BRCryptoWalletManag
 extern BRArrayOf(BRPeer)         initialPeersLoadBTC        (BRCryptoWalletManager manager);
 extern BRArrayOf(BRMerkleBlock*) initialBlocksLoadBTC       (BRCryptoWalletManager manager);
 
-// MARK: - Events
-
-extern const BREventType *eventTypesBTC[];
-extern const unsigned int eventTypesCountBTC;
-
-
 #ifdef __cplusplus
 }
 #endif
