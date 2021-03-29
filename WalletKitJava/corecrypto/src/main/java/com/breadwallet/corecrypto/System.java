@@ -1825,7 +1825,7 @@ final class System implements com.breadwallet.crypto.System {
         }
     }
 
-    private static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle (Transaction transaction) {
+    private static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
         Optional<byte[]> optRaw = transaction.getRaw();
         if (!optRaw.isPresent()) {
             Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
@@ -1836,13 +1836,12 @@ final class System implements com.breadwallet.crypto.System {
         UnsignedLong timestamp =
                 transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
 
-        BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
+        BRCryptoTransferStateType status = getTransferStatus(transaction.getStatus());
 
         if (status != BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED) {
-            Log.log(Level.FINE,
-            "BRCryptoCWMGetTransactionsCallback announcing " + transaction.getId());
+            Log.log(Level.FINE,"BRCryptoCWMGetTransactionsCallback announcing " + transaction.getId());
         } else {
-            Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an unknown status, completing with failure");
+            Log.log(Level.SEVERE,"BRCryptoCWMGetTransactionsCallback received an unknown status, completing with failure");
             return Optional.absent();
         }
 
