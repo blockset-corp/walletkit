@@ -577,7 +577,6 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
             // Determine the transfer's state, as best we can.
             BRCryptoFeeBasis feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
 
-            BRCryptoTransferState oldState = cryptoTransferGetState (&transfer->base);
             BRCryptoTransferState newState = cryptoTransferInitializeStateBTC (transfer->tid,
                                                                                blockHeight,
                                                                                timestamp,
@@ -587,7 +586,6 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
 
             cryptoFeeBasisGive (feeBasis);
             cryptoTransferStateGive (newState);
-            cryptoTransferStateGive (oldState);
         }
 
         pthread_mutex_unlock (&manager->base.lock);
