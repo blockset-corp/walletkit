@@ -1444,9 +1444,9 @@ extension System {
                 let transferMatchingFee = transfersMatchingSource.first { $0.amount.currency == transferWithFee.amount.currency }
                     ?? transfersMatchingSource.first
 
-            // We must have a transferMatchingFee; if we don't add one
-            let transfers = transfers[partition...] +
-                (nil != transferMatchingFee
+                // We must have a transferMatchingFee; if we don't add one
+                let transfers = transfers[partition...] +
+                    (nil != transferMatchingFee
                         ? []
                         : [(id: transferWithFee.id,
                             source: transferWithFee.source,

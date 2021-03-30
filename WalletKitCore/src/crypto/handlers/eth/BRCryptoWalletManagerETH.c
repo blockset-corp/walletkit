@@ -863,8 +863,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     if (NULL != wallet)
         transfer = cryptoWalletGetTransferByHash (wallet, hash);
 
-    // If there isn't one, look in the primaryWAllet
-    if (NULL == transfer && wallet != primaryWallet)
+    // If there isn't a wallet, the currency is unknown, look in the primaryWallet (for a fee)
+    else
         transfer = cryptoWalletGetTransferByHash (primaryWallet, hash);
 
     // If we have a transfer, simply update its state
