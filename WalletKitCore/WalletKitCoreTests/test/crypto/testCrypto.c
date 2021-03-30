@@ -284,7 +284,7 @@ transferTestsAddress (void) {
                                                                sat,
                                                                sat,
                                                                wid,
-                                                               tid, // ownership kept
+                                                               BRTransactionCopy(tid), // ownership given
                                                                CRYPTO_NETWORK_TYPE_BTC);
 
         BRCryptoAddress sourceAddress = cryptoTransferGetSourceAddress(transfer);
