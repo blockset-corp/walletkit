@@ -26,6 +26,15 @@ public interface Transfer {
 
     Amount getAmount();
 
+    /**
+     * The amount to transfer after considering the direction and the state.  This value may change
+     * when the transfer's state changes; notably when .included.  If the transfer's state is
+     * '.failed', then the amount will be zero.  Otherwise if we received the transfer, the amount
+     * will be positive; if we sent the transfer, the amount will be negative; if the transfer is
+     * 'self directed', the amount will be zero.
+     * <p>
+     * The `amountDirected` might change on a Transfer state change.
+     */
     Amount getAmountDirected();
 
     Amount getFee();
