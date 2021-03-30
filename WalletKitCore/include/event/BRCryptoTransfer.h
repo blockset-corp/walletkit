@@ -104,6 +104,7 @@ extern "C" {
     typedef enum {
         /// Signaled when a transfer is *allocated*; the transfer may not, in fact generally is
         /// not, fully initialized.  Thus the transfer should only be used for 'identity' purposes.
+        /// The initial TransferStateType could be CREATED, SUBMITTED, INCLUDED, ...
         CRYPTO_TRANSFER_EVENT_CREATED,
 
         /// Signaled when a transfer's state change - such as when the state transitions from

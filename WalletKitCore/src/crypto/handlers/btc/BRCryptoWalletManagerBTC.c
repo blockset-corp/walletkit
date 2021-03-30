@@ -271,7 +271,7 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleBTC (BRCryptoWalletManag
                                                              OwnershipKept BRCryptoClientTransactionBundle bundle) {
     BRTransaction *btcTransaction = BRTransactionParse (bundle->serialization, bundle->serializationCount);
 
-    bool error = TRANSFER_STATUS_ERRORED != bundle->status;
+    bool error = CRYPTO_TRANSFER_STATE_ERRORED == bundle->status;
     bool needRegistration = (!error && NULL != btcTransaction && BRTransactionIsSigned (btcTransaction));
     bool needFree = true;
 
@@ -574,21 +574,18 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
                 fileServiceSave (manager->base.fileService, fileServiceTypeTransactionsBTC, transfer->tid);
             }
 
-            if (TX_UNCONFIRMED != blockHeight) {
-                BRCryptoFeeBasis      feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
-                BRCryptoTransferState oldState = cryptoTransferGetState (&transfer->base);
-                BRCryptoTransferState newState = cryptoTransferStateIncludedInit (blockHeight,
-                                                                                  0,
-                                                                                  timestamp,
-                                                                                  feeBasis,
-                                                                                  CRYPTO_TRUE,
-                                                                                  NULL);
-                cryptoFeeBasisGive (feeBasis);
-                cryptoTransferSetState (&transfer->base, newState);
+            // Determine the transfer's state, as best we can.
+            BRCryptoFeeBasis feeBasis = cryptoFeeBasisTake (transfer->base.feeBasisEstimated);
 
-                cryptoTransferStateGive (oldState);
-                cryptoTransferStateGive (newState);
-            }
+            BRCryptoTransferState newState = cryptoTransferInitializeStateBTC (transfer->tid,
+                                                                               blockHeight,
+                                                                               timestamp,
+                                                                               feeBasis);
+
+            cryptoTransferSetState (&transfer->base, newState);
+
+            cryptoFeeBasisGive (feeBasis);
+            cryptoTransferStateGive (newState);
         }
 
         pthread_mutex_unlock (&manager->base.lock);

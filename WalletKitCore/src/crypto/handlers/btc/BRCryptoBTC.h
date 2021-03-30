@@ -111,6 +111,12 @@ private_extern BRCryptoBoolean
 cryptoTransferChangedAmountBTC (BRCryptoTransfer transfer,
                                 BRWallet *wid);
 
+private_extern OwnershipGiven BRCryptoTransferState
+cryptoTransferInitializeStateBTC (BRTransaction *tid,
+                                  uint64_t blockNumber,
+                                  uint64_t blockTimestamp,
+                                  OwnershipKept BRCryptoFeeBasis feeBasis);
+
 // MARK: - Wallet
 
 typedef struct BRCryptoWalletBTCRecord {

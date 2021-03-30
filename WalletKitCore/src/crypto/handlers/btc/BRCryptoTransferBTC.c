@@ -165,15 +165,10 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
         recv
     };
 
-    BRCryptoTransferState state =
-    (TX_UNCONFIRMED != tid->blockHeight
-     ? cryptoTransferStateIncludedInit (tid->blockHeight,
-                                        0,
-                                        tid->timestamp,
-                                        feeBasisEstimated,
-                                        CRYPTO_TRUE,
-                                        NULL)
-     : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED));
+    BRCryptoTransferState state = cryptoTransferInitializeStateBTC (tid,
+                                                                    tid->blockHeight,
+                                                                    tid->timestamp,
+                                                                    feeBasisEstimated);
 
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                             type,
@@ -295,6 +290,28 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
                   : CRYPTO_TRANSFER_RECEIVED)));
 }
 
+private_extern OwnershipGiven BRCryptoTransferState
+cryptoTransferInitializeStateBTC (BRTransaction *tid,
+                                  uint64_t blockNumber,
+                                  uint64_t blockTimestamp,
+                                  OwnershipKept BRCryptoFeeBasis feeBasis) {
+    // Our Transfer flow is such that we want P2P and API modes to pass through the BRWallet
+    // callbacks, specifically TxAdded and TxUpdated.  Those functions don't have the resolution
+    // to State that BRCryptoTransfers have (rightly or wrongly).  For BTC/etc a non-TX_CONFIRMED
+    // blockNumber guarantees 'INCLUDED'.  A signed transaction does not guarantee SUBMITTED but
+    // in practice we sign-and-submit atomically.  I don't believe we ever get an error state for
+    // BTC/etc from Blockset.  Thus besides INCLUDED and SUBMITTED, we'll use CREATED.
+    return (TX_UNCONFIRMED != blockNumber
+            ? cryptoTransferStateIncludedInit (blockNumber,
+                                               0,
+                                               blockTimestamp,
+                                               feeBasis,
+                                               CRYPTO_TRUE,
+                                               NULL)
+            : (BRTransactionIsSigned (tid)
+               ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)  // Optimistic
+               : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED)));
+}
 
 BRCryptoTransferHandlers cryptoTransferHandlersBTC = {
     cryptoTransferReleaseBTC,

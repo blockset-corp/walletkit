@@ -1308,9 +1308,9 @@ cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
 extern BRCryptoTransferState
 cryptoClientTransferBundleGetTransferState (const BRCryptoClientTransferBundle bundle,
                                             BRCryptoFeeBasis confirmedFeeBasis) {
-    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||
-                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&
-                        0 != bundle->blockNumber &&
+    bool isIncluded = (CRYPTO_TRANSFER_STATE_INCLUDED == bundle->status ||    // success
+                       (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status &&    // error
+                        BLOCK_HEIGHT_UNBOUND != bundle->blockNumber &&
                         0 != bundle->blockTimestamp));
 
     return (isIncluded

@@ -1504,7 +1504,7 @@ extension System {
 
     internal static func makeTransactionBundle (_ model: SystemClient.Transaction) -> BRCryptoClientTransactionBundle {
         let timestamp = model.timestamp.map { $0.asUnixTimestamp } ?? 0
-        let height    = model.blockHeight ?? 0
+        let height    = model.blockHeight ?? BLOCK_HEIGHT_UNBOUND
         let status    = System.getTransferStatus (model.status)
 
         var data = model.raw!
