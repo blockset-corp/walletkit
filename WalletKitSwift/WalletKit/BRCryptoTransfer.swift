@@ -59,10 +59,18 @@ public final class Transfer: Equatable {
     /// The amount to transfer - always positive (from source to target)
     public let amount: Amount
 
-    /// The amount to transfer after considering the direction.  If we received the transfer,
-    /// the amount will be positive; if we sent the transfer, the amount will be negative; if
-    /// the transfer is 'self directed', the amount will be zero.
-    public let amountDirected: Amount
+    ///
+    /// The amount to transfer after considering the direction and the state.  This value may change
+    /// when the transfer's state changed; notably when .included.  If the transfer's state is
+    /// '.failed', then the amount will be zero.  Otherwise if we received the transfer, the amount
+    /// will be positive; if we sent the transfer, the amount will be negative; ifthe transfer is
+    /// 'self directed', the amount will be zero.
+    ///
+    /// The `amountDirected` might change on a Transfer state change.
+    ///
+    public var amountDirected: Amount {
+        return Amount (core: cryptoTransferGetAmountDirected(core), take: false)
+    }
 
     /// TODO: Determine if the estimatedFeeBasis applies across program instantiations
     ///
@@ -142,7 +150,6 @@ public final class Transfer: Equatable {
 
         // Other properties
         self.amount         = Amount (core: cryptoTransferGetAmount (core),        take: false)
-        self.amountDirected = Amount (core: cryptoTransferGetAmountDirected(core), take: false)
     }
 
 

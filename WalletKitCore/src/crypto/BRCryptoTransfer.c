@@ -310,7 +310,7 @@ cryptoTransferGetAmountDirectedInternal (BRCryptoTransfer transfer,
 
 extern BRCryptoAmount
 cryptoTransferGetAmountDirected (BRCryptoTransfer transfer) {
-    return cryptoTransferGetAmountDirectedInternal (transfer, CRYPTO_FALSE);
+    return cryptoTransferGetAmountDirectedInternal (transfer, CRYPTO_TRUE);
 }
 
 extern BRCryptoUnit
