@@ -574,6 +574,7 @@ cwmExtractAttributes (OwnershipKept BRCryptoClientTransferBundle bundle,
     if (*gasLimit == 21000 && *gasUsed == 0x21000) *gasUsed = 21000;
 }
 
+#if defined (INCLUDE_UNUSED_RecoverTransaction)
 static bool // true if error
 cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
                                        OwnershipKept BRCryptoClientTransferBundle bundle) {
@@ -643,7 +644,9 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
 
     return false;
 }
+#endif // defined (INCLUDE_UNUSED_RecoverTransaction)
 
+#if defined (INCLUDE_UNUSED_RecoverLog)
 static bool // true if error
 cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
                                const char *contract,
@@ -739,7 +742,9 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
 
     return false; // no error
 }
+#endif //defined (INCLUDE_UNUSED_RecoverLog)
 
+#if defined (INCLUDE_UNUSED_RecoverExchange)
 static bool // true if error
 cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                     const char *contract,
@@ -780,6 +785,7 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
 
     return false; // no error
 }
+#endif //defined (INCLUDE_UNUSED_RecoverExchange)
 
 static void
 cryptoWalletManagerRecoverTransfersFromTransactionBundleETH (BRCryptoWalletManager manager,
@@ -789,11 +795,13 @@ cryptoWalletManagerRecoverTransfersFromTransactionBundleETH (BRCryptoWalletManag
     assert (0);
 }
 
+#if defined (INCLUDE_UNUSED)
 static const char *
 cryptoWalletManagerParseIssuer (const char *currency) {
     // Parse: "<blockchain-id>:<issuer>"
     return 1 + strrchr (currency, ':');
 }
+#endif
 
 bool strPrefix(const char *pre, const char *str)
 {
