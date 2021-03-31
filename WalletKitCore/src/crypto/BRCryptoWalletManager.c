@@ -867,12 +867,30 @@ extern void
 cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
                                  BRCryptoWallet wallet,
                                  BRCryptoTransfer transfer) {
+    BRCryptoUnit unit       = transfer->unit;
+    BRCryptoUnit unitForFee = transfer->unitForFee;
+
+    BRCryptoCurrency currencyForFee = cryptoUnitGetCurrency(unitForFee);
+
+    // See if `transfer` belongs in another wallet too.  It will if it is not RECEIVED and
+    // has a unitForFee that differs (in currency) from unit.
+    BRCryptoWallet walletForFee = ((CRYPTO_TRANSFER_RECEIVED != cryptoTransferGetDirection(transfer) &&
+                                    CRYPTO_FALSE == cryptoUnitIsCompatible (unit, unitForFee))
+                                   ? cryptoWalletManagerGetWalletForCurrency(cwm, currencyForFee)
+                                   : NULL);
 
     cryptoWalletAddTransfer (wallet, transfer);
+    if (NULL != walletForFee) cryptoWalletAddTransfer (walletForFee, transfer);
 
     cryptoClientSend (cwm->canSend, wallet, transfer);
 
-    cryptoWalletGenerateEvent (wallet, cryptoWalletEventCreateTransferSubmitted (transfer));
+    BRCryptoWalletEvent event = cryptoWalletEventCreateTransferSubmitted (transfer);
+
+    cryptoWalletGenerateEvent (wallet, cryptoWalletEventTake (event));
+    if (NULL != walletForFee) cryptoWalletGenerateEvent (walletForFee, cryptoWalletEventTake (event));
+
+    cryptoWalletEventGive(event);
+    cryptoCurrencyGive(currencyForFee);
 }
 
 extern void
