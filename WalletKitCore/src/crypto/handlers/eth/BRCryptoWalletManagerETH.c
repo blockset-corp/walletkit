@@ -187,7 +187,9 @@ cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
     transactionSetHash (ethTransaction,
                         ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
 
+    pthread_mutex_lock (&transfer->lock);
     transferETH->hash = cryptoHashCreateAsETH(transactionGetHash(ethTransaction));
+    pthread_mutex_unlock (&transfer->lock);
 
     rlpItemRelease(coder, item);
     rlpCoderRelease(coder);
