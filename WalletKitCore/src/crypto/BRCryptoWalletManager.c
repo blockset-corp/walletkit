@@ -887,7 +887,10 @@ cryptoWalletManagerSubmitSigned (BRCryptoWalletManager cwm,
     BRCryptoWalletEvent event = cryptoWalletEventCreateTransferSubmitted (transfer);
 
     cryptoWalletGenerateEvent (wallet, cryptoWalletEventTake (event));
-    if (NULL != walletForFee) cryptoWalletGenerateEvent (walletForFee, cryptoWalletEventTake (event));
+    if (NULL != walletForFee) {
+        cryptoWalletGenerateEvent (walletForFee, cryptoWalletEventTake (event));
+        cryptoWalletGive (walletForFee);
+    }
 
     cryptoWalletEventGive(event);
     cryptoCurrencyGive(currencyForFee);
