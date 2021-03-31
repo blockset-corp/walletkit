@@ -944,7 +944,7 @@ fileServiceWipe (const char *basePath,
 extern bool
 fileServiceHasType (BRFileService fs,
                     const char *type) {
-    return NULL != fileServiceLookupType (fs, type);
+    return NULL != fs && NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256

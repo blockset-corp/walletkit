@@ -60,8 +60,8 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         XCTAssertEqual (wallet.target, wallet.targetForScheme(manager.addressScheme))
         XCTAssertEqual (wallet, wallet)
 
-        let feeBasisPricePerCostFactor = Amount.create (integer: 5000, unit: network.baseUnitFor(currency: network.currency)!)
-        let feeBasisCostFactor = 1.0
+        let feeBasisPricePerCostFactor = Amount.create (integer: 1000, unit: network.baseUnitFor(currency: network.currency)!)
+        let feeBasisCostFactor = 0.2
         let feeBasis: TransferFeeBasis! = wallet.defaultFeeBasis()
         
         XCTAssertNotNil(feeBasis)

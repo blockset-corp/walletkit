@@ -434,7 +434,9 @@ cryptoTransferGetIdentifier (BRCryptoTransfer transfer) {
                     // BRTransaction.{hc}
                     //
                     BRCryptoHash hash = cryptoTransferGetHash (transfer);
+                    pthread_mutex_lock (&transfer->lock);
                     transfer->identifier = cryptoHashEncodeString(hash);
+                    pthread_mutex_unlock (&transfer->lock);
                     cryptoHashGive(hash);
                     break;
                 }
@@ -546,11 +548,20 @@ cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
 
 extern BRCryptoBoolean
 cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
-    return AS_CRYPTO_BOOLEAN (t1 == t2 ||
-                              (t1->type == t2->type &&
-                               (NULL != t1->identifier && NULL != t2->identifier
-                                ? 0 == strcmp (t1->identifier, t2->identifier)
-                                : t1->handlers->isEqual (t1, t2))));
+    if (t1 == t2) return CRYPTO_TRUE;
+    if (t1->type != t2->type) return CRYPTO_FALSE;
+
+    pthread_mutex_lock (&t1->lock);
+    const char *t1ID = t1->identifier;
+    pthread_mutex_unlock (&t1->lock);
+
+    pthread_mutex_lock (&t2->lock);
+    const char *t2ID = t2->identifier;
+    pthread_mutex_unlock (&t2->lock);
+
+    if (NULL != t1ID && NULL != t2ID && 0 == strcmp (t1ID, t2ID)) return CRYPTO_TRUE;
+
+    return AS_CRYPTO_BOOLEAN (t1->handlers->isEqual (t1, t2));
 }
 
 extern BRCryptoComparison

@@ -374,12 +374,12 @@ class CryptoTestSystemListener: SystemListener {
              EventMatcher (event: WalletManagerEvent.walletAdded (wallet: wallet)),
              EventMatcher (event: WalletManagerEvent.changed (oldState: WalletManagerState.created,
                                                               newState: WalletManagerState.connected)),
-             EventMatcher (event: WalletManagerEvent.syncStarted),
              EventMatcher (event: WalletManagerEvent.changed (oldState: WalletManagerState.connected,
                                                               newState: WalletManagerState.syncing)),
+             EventMatcher (event: WalletManagerEvent.syncStarted),
 
              // On API_ONLY here is no .syncProgress: timestamp: nil, percentComplete: 0
-                EventMatcher (event: WalletManagerEvent.walletChanged(wallet: wallet), strict: true, scan: true),
+                // EventMatcher (event: WalletManagerEvent.walletChanged(wallet: wallet), strict: true, scan: true),
 
                 EventMatcher (event: WalletManagerEvent.syncEnded (reason: WalletManagerSyncStoppedReason.complete), strict: false, scan: true),
                 EventMatcher (event: WalletManagerEvent.changed (oldState: WalletManagerState.syncing,
@@ -401,9 +401,9 @@ class CryptoTestSystemListener: SystemListener {
             // before all transfer events.
             return checkWalletEvents(
                 [EventMatcher (event: WalletEvent.created),
-                 EventMatcher (event: WalletEvent.balanceUpdated(amount: balance), strict: true, scan: true),
                  EventMatcher (event: WalletEvent.transferAdded(transfer: transfer), strict: true, scan: true),
-            ])
+                 EventMatcher (event: WalletEvent.balanceUpdated(amount: balance), strict: true, scan: true),
+           ])
         default:
             return false
         }

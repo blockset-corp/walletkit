@@ -52,6 +52,8 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                        ethGasPriceCreate (ethEtherCreateNumber (DEFAULT_ETHER_GAS_PRICE,
                                                                 DEFAULT_ETHER_GAS_PRICE_UNIT)));
 
+    BRCryptoAmount minBalance = cryptoAmountCreateInteger(0, unit);
+
     BRCryptoWalletCreateContextETH contextETH = {
         ethAccount,
         ethToken,
@@ -63,12 +65,13 @@ cryptoWalletCreateAsETH (BRCryptoWalletListener listener,
                                                       listener,
                                                       unit,
                                                       unitForFee,
-                                                      NULL,
+                                                      minBalance,
                                                       NULL,
                                                       cryptoFeeBasisCreateAsETH(unitForFee, ethDefaultFeeBasis),
                                                       &contextETH,
                                                       cryptoWalletCreateCallbackETH);
 
+    cryptoAmountGive(minBalance);
     return wallet;
 }
 
