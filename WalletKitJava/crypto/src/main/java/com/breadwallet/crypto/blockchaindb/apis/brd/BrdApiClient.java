@@ -189,7 +189,18 @@ public class BrdApiClient {
                             data = parser.parseResponse(responseBody.string());
                         }
                     } else {
-                        throw new QueryResponseError(responseCode);
+                        Map<String, Object> json = null;
+                        boolean jsonError = false;
+
+                        // Parse any responseData as JSON
+                        if (responseBody != null) {
+                            try {
+                                json = coder.deserializeJson(Map.class, responseBody.string());
+                            } catch (ObjectCoderException e) {
+                                jsonError = true;
+                            }
+                        }
+                        throw new QueryResponseError(responseCode, json, jsonError);
                     }
                 } catch (QueryError e) {
                     error = e;
