@@ -99,29 +99,30 @@ public class TransactionApi {
                                   byte[] tx,
                                   String identifier,
                                   CompletionHandler<TransactionIdentifier, QueryError> handler) {
-        Map json = ImmutableMap.of(
+        String data = BaseEncoding.base64().encode(tx);
+        Map    json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", (null == identifier ? "unknown" : (id + ":" + identifier)),
-                "data", BaseEncoding.base64().encode(tx));
+                "submit_context", String.format ("WalletKit:%s:%s", id, (null != identifier ? identifier : ("Data:" + data.substring(0,20)))),
+                "data", data);
 
         jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, TransactionIdentifier.class, handler);
     }
 
     public void estimateTransactionFee(String id,
-                                  byte[] tx,
-                                  CompletionHandler<TransactionFee, QueryError> handler) {
+                                       byte[] tx,
+                                       CompletionHandler<TransactionFee, QueryError> handler) {
 
         Multimap<String, String> params = ImmutableListMultimap.of(
                 "estimate_fee", "true");
 
+        String data = BaseEncoding.base64().encode(tx);
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", "unknown",
-                "data", BaseEncoding.base64().encode(tx));
+                "submit_context", String.format("WalletKit:%s:Data:%s (FeeEstimate)", id, data.substring(0, 20)),
+                "data", data);
 
         jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);
     }
-
 
     private CompletionHandler<PagedData<Transaction>, QueryError> createPagedResultsHandler(GetChunkedCoordinator<String, Transaction> coordinator,
                                                                                        List<String> chunkedAddresses) {

@@ -965,9 +965,10 @@ public class BlocksetSystemClient: SystemClient {
                                    transaction: Data,
                                    identifier: String?,
                                    completion: @escaping (Result<TransactionIdentifier, SystemClientError>) -> Void) {
+        let data            = transaction.base64EncodedString()
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            "transaction_id" : identifier.map { "\(blockchainId):\($0)" } ?? "unknown",
+            "submit_context" : "WalletKit:\(blockchainId):\(identifier ?? "Data:\(String(data.prefix(20)))")",
             "data"           : transaction.base64EncodedString()
         ]
 
@@ -990,11 +991,11 @@ public class BlocksetSystemClient: SystemClient {
     public func estimateTransactionFee (blockchainId: String,
                                         transaction: Data,
                                         completion: @escaping (Result<SystemClient.TransactionFee, SystemClientError>) -> Void) {
+        let data            = transaction.base64EncodedString()
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
-            "transaction_id" : "unknown",
-            "data"           : transaction.base64EncodedString()
+            "submit_context" : "WalletKit:\(blockchainId):Data:\(String(data.prefix(20))) (FeeEstimate)",
+            "data"           : data
         ]
 
         makeRequest (bdbDataTaskFunc, bdbBaseURL,
