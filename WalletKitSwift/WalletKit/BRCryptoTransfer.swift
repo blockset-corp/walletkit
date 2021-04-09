@@ -433,6 +433,7 @@ public enum TransferState {
     case deleted
 
     internal init (core: BRCryptoTransferState) {
+        defer { cryptoTransferStateGive (core) }
         switch cryptoTransferStateGetType (core) {
         case CRYPTO_TRANSFER_STATE_CREATED:   self = .created
         case CRYPTO_TRANSFER_STATE_SIGNED:    self = .signed
@@ -499,6 +500,7 @@ public enum TransferEvent {
     case changed (old: TransferState, new: TransferState)
     case deleted
 
+    // unused - caution on {old,new}State ownership - will be given
     init (core: BRCryptoTransferEvent) {
         switch core.type {
         case CRYPTO_TRANSFER_EVENT_CREATED:

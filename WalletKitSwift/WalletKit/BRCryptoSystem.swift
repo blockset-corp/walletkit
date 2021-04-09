@@ -1361,8 +1361,6 @@ extension System {
                     transferEvent = TransferEvent.created
 
                 case CRYPTO_TRANSFER_EVENT_CHANGED:
-                    defer { cryptoTransferStateGive (event.u.state.old); cryptoTransferStateGive (event.u.state.new) }
-
                     let oldState = TransferState (core: event.u.state.old)
                     let newState = TransferState (core: event.u.state.new)
 
