@@ -6,18 +6,31 @@
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
 package com.breadwallet.crypto.blockchaindb.errors;
+import java.util.Map;
 
 // HTTP response unexpected (typically not 200/OK)
 public class QueryResponseError extends QueryError {
 
     private final int statusCode;
+    private final Map<String,Object> json;
+    private final boolean jsonError;
 
-    public QueryResponseError(int statusCode) {
+    public QueryResponseError(int statusCode, Map<String,Object> json, boolean jsonError) {
         super("Status code " + statusCode);
         this.statusCode = statusCode;
+        this.json = json;
+        this.jsonError = jsonError;
     }
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public Map<String, Object> getJson() {
+        return json;
+    }
+
+    public boolean isJsonError() {
+        return jsonError;
     }
 }

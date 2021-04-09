@@ -965,9 +965,10 @@ public class BlocksetSystemClient: SystemClient {
                                    transaction: Data,
                                    identifier: String?,
                                    completion: @escaping (Result<TransactionIdentifier, SystemClientError>) -> Void) {
+        let data            = transaction.base64EncodedString()
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            "transaction_id" : identifier.map { "\(blockchainId):\($0)" } ?? "unknown",
+            "submit_context" : "WalletKit:\(blockchainId):\(identifier ?? "Data:\(String(data.prefix(20)))")",
             "data"           : transaction.base64EncodedString()
         ]
 
@@ -990,11 +991,11 @@ public class BlocksetSystemClient: SystemClient {
     public func estimateTransactionFee (blockchainId: String,
                                         transaction: Data,
                                         completion: @escaping (Result<SystemClient.TransactionFee, SystemClientError>) -> Void) {
+        let data            = transaction.base64EncodedString()
         let json: JSON.Dict = [
             "blockchain_id"  : blockchainId,
-            // Seems the JSON must include a non-empty hash; send something that looks like a zeroed ETH hash.
-            "transaction_id" : "unknown",
-            "data"           : transaction.base64EncodedString()
+            "submit_context" : "WalletKit:\(blockchainId):Data:\(String(data.prefix(20))) (FeeEstimate)",
+            "data"           : data
         ]
 
         makeRequest (bdbDataTaskFunc, bdbBaseURL,
@@ -1241,7 +1242,7 @@ public class BlocksetSystemClient: SystemClient {
                         case .failure (let error):
                             // If a reponse error with HTTP status of 422, the Hedera accont
                             // already exists.  Just get it.
-                            if case let .response (code, _) = error, code == 422 {
+                            if case let .response (code, _, _) = error, code == 422 {
                                 self.getHederaAccount (blockchainId: blockchainId,
                                                        publicKey: publicKey,
                                                        completion: completion)
@@ -1383,12 +1384,13 @@ public class BlocksetSystemClient: SystemClient {
             }
 
             guard responseSuccess.contains(res.statusCode) else {
-                let errorMessage = data
+                let json = data
                     .flatMap { try? JSONSerialization.jsonObject(with: $0, options: []) as? [String:Any] }
-                    .map { JSON (dict: $0)}
-                    .map { $0.asString(name: "message") ?? "internal error" }
 
-                completion (Result.failure (SystemClientError.response(res.statusCode, errorMessage)))
+                // It is an error if there IS data but IS NOT json (could not parse).
+                let jsonError = nil != data && nil == json
+
+                completion (Result.failure (SystemClientError.response(res.statusCode, json, jsonError)))
                 return
             }
 
