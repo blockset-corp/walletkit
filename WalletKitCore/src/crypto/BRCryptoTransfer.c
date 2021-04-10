@@ -109,6 +109,7 @@ cryptoTransferStateRelease (BRCryptoTransferState state) {
     }
 
     memset (state, 0, sizeof(struct BRCryptoTransferStateRecord));
+    free (state);
 }
 
 private_extern bool
