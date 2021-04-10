@@ -14,8 +14,10 @@ public enum SystemClientError: Error {
     // HTTP submission error
     case submission (Error)
     
-    // HTTP response unexpected (typically not 200/OK)
-    case response (Int, String?) // includes the status code, an optional error message
+    // HTTP response unexpected (typically not 200/OK).  Includes a triple of: status coce,
+    // an optional JSON dictionary and a boolean that is true if there was a parse error of the
+    // JSON diectionary.
+    case response (Int, [String:Any]?, Bool)
     
     // HTTP submission didn't error but returned no data
     case noData
