@@ -139,10 +139,10 @@ cryptoWalletManagerGetEventTypesETH (BRCryptoWalletManager manager,
 }
 
 static BRCryptoBoolean
-cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
-                                    BRCryptoWallet wallet,
-                                    BRCryptoTransfer transfer,
-                                    BRKey *key) {
+cryptoWalletManagerSignTransactionETH (BRCryptoWalletManager manager,
+                                       BRCryptoWallet wallet,
+                                       BRCryptoTransfer transfer,
+                                       BRKey *key) {
     BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerceETH (manager);
     BRCryptoTransferETH      transferETH = cryptoTransferCoerceETH      (transfer);
 
@@ -199,9 +199,9 @@ cryptoWalletManagerSignTransaction (BRCryptoWalletManager manager,
 
 static BRCryptoBoolean
 cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager manager,
-                                                      BRCryptoWallet wallet,
-                                                      BRCryptoTransfer transfer,
-                                                      UInt512 seed) {
+                                               BRCryptoWallet wallet,
+                                               BRCryptoTransfer transfer,
+                                               UInt512 seed) {
     BRCryptoWalletManagerETH managerETH  = cryptoWalletManagerCoerceETH (manager);
 
     BREthereumAccount     ethAccount     = managerETH->account;
@@ -209,10 +209,10 @@ cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager manager,
 
     BRKey key = derivePrivateKeyFromSeed (seed, ethAccountGetAddressIndex (ethAccount, ethAddress));
     
-    return cryptoWalletManagerSignTransaction (manager,
-                                               wallet,
-                                               transfer,
-                                               &key);
+    return cryptoWalletManagerSignTransactionETH (manager,
+                                                  wallet,
+                                                  transfer,
+                                                  &key);
 }
 
 static BRCryptoBoolean
@@ -220,10 +220,10 @@ cryptoWalletManagerSignTransactionWithKeyETH (BRCryptoWalletManager manager,
                                               BRCryptoWallet wallet,
                                               BRCryptoTransfer transfer,
                                               BRCryptoKey key) {
-    return cryptoWalletManagerSignTransaction (manager,
-                                               wallet,
-                                               transfer,
-                                               cryptoKeyGetCore (key));
+    return cryptoWalletManagerSignTransactionETH (manager,
+                                                  wallet,
+                                                  transfer,
+                                                  cryptoKeyGetCore (key));
 }
 
 static BRCryptoAmount
