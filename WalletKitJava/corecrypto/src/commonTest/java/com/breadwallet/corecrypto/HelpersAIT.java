@@ -190,8 +190,7 @@ class HelpersAIT {
         if (null == testConfiguration) testConfiguration = TestConfigurationLoader.getTestConfiguration();
         return BlockchainDb.createForTest(DEFAULT_HTTP_CLIENT,
                 testConfiguration.getBlocksetAccess().getToken(),
-                testConfiguration.getBlocksetAccess().getBaseURL(),
-                null);
+                testConfiguration.getBlocksetAccess().getBaseURL());
     }
 
     /* package */

@@ -162,8 +162,7 @@ public class CoreCryptoApplication extends Application {
 
             blockchainDb = BlockchainDb.createForTest (new OkHttpClient(),
                     testConfiguration.getBlocksetAccess().getToken(),
-                    testConfiguration.getBlocksetAccess().getBaseURL(),
-                    null);
+                    testConfiguration.getBlocksetAccess().getBaseURL());
             system = System.create(systemExecutor, systemListener, account,
                     isMainnet, storageFile.getAbsolutePath(), blockchainDb);
             system.configure();

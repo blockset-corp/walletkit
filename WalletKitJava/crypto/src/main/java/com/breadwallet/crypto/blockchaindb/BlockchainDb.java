@@ -17,7 +17,6 @@ import com.breadwallet.crypto.blockchaindb.apis.bdb.ExperimentalApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.SubscriptionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransactionApi;
 import com.breadwallet.crypto.blockchaindb.apis.bdb.TransferApi;
-import com.breadwallet.crypto.blockchaindb.apis.brd.BrdApiClient;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Block;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
@@ -45,7 +44,6 @@ import okhttp3.Request;
 public class BlockchainDb {
 
     private static final String DEFAULT_BDB_BASE_URL = "https://api.blockset.com";
-    private static final String DEFAULT_API_BASE_URL = "https://api.breadwallet.com";
     private static final DataTask DEFAULT_DATA_TASK = (cli, request, callback) -> cli.newCall(request).enqueue(callback);
 
     private final AtomicInteger ridGenerator;
@@ -60,27 +58,22 @@ public class BlockchainDb {
     private final ExperimentalApi experimentalApi;
 
     public BlockchainDb(OkHttpClient client) {
-        this(client, null, null, null, null);
+        this(client, null, null);
     }
 
-    public BlockchainDb(OkHttpClient client, String bdbBaseURL, String apiBaseURL) {
-        this(client, bdbBaseURL, null, apiBaseURL, null);
+    public BlockchainDb(OkHttpClient client, String bdbBaseURL) {
+        this(client, bdbBaseURL, null);
     }
 
     public BlockchainDb(OkHttpClient client,
                         @Nullable String bdbBaseURL,
-                        @Nullable DataTask bdbDataTask,
-                        @Nullable String apiBaseURL,
-                        @Nullable DataTask apiDataTask) {
+                        @Nullable DataTask bdbDataTask) {
         bdbBaseURL = bdbBaseURL == null ? DEFAULT_BDB_BASE_URL : bdbBaseURL;
-        apiBaseURL = apiBaseURL == null ? DEFAULT_API_BASE_URL : apiBaseURL;
 
         bdbDataTask = bdbDataTask == null ? DEFAULT_DATA_TASK : bdbDataTask;
-        apiDataTask = apiDataTask == null ? DEFAULT_DATA_TASK : apiDataTask;
 
         ObjectCoder coder = ObjectCoder.createObjectCoderWithFailOnUnknownProperties();
         BdbApiClient bdbClient = new BdbApiClient(client, bdbBaseURL, bdbDataTask, coder);
-        BrdApiClient brdClient = new BrdApiClient(client, apiBaseURL, apiDataTask, coder);
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -99,20 +92,19 @@ public class BlockchainDb {
 
     public static BlockchainDb createForTest (OkHttpClient client,
                                               String bdbAuthToken) {
-        return createForTest(client, bdbAuthToken, null, null);
+        return createForTest(client, bdbAuthToken, null);
     }
 
     public static BlockchainDb createForTest (OkHttpClient client,
                                               String bdbAuthToken,
-                                              @Nullable String bdbBaseURL,
-                                              @Nullable String apiBaseURL) {
+                                              @Nullable String bdbBaseURL) {
         DataTask brdDataTask = (cli, request, callback) -> {
             Request decoratedRequest = request.newBuilder()
                     .header("Authorization", "Bearer " + bdbAuthToken)
                     .build();
             cli.newCall(decoratedRequest).enqueue(callback);
         };
-        return new BlockchainDb (client, bdbBaseURL, brdDataTask, apiBaseURL, null);
+        return new BlockchainDb (client, bdbBaseURL, brdDataTask);
     }
 
     /**
