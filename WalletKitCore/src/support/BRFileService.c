@@ -516,14 +516,22 @@ fileServiceFailedUnix(BRFileService fs,
 #pragma GCC diagnostic pop
 
 static int
+fileServiceFailedSDBWithBufferFree (BRFileService fs,
+                                    int releaseLock,
+                                    void *bufferToFree,
+                                    sqlite3_status_code code) {
+    return fileServiceFailedInternal (fs, releaseLock, bufferToFree, NULL,
+                                      (BRFileServiceError) {
+        FILE_SERVICE_SDB,
+        { .sdb = { code, sqlite3_errstr(code) }}
+    });
+}
+
+static int
 fileServiceFailedSDB (BRFileService fs,
                       int releaseLock,
                       sqlite3_status_code code) {
-    return fileServiceFailedInternal (fs, releaseLock, NULL, NULL,
-                                      (BRFileServiceError) {
-                                          FILE_SERVICE_SDB,
-                                          { .sdb = { code, sqlite3_errstr(code) }}
-                                      });
+    return fileServiceFailedSDBWithBufferFree (fs, releaseLock, NULL, code);
 }
 
 static int
@@ -920,6 +928,76 @@ fileServiceReplace (BRFileService fs,
     pthread_mutex_unlock (&fs->lock);
 #endif // !defined(NEUTER_FILE_SERVICE)
 
+    return 1;
+}
+
+static char *
+fileServicePurgeCreateSQL (BRFileService fs) {
+    size_t typeCount = array_count(fs->entityTypes);
+
+    static char *sqlFormatter = "DELETE FROM Entity WHERE Type NOT IN (%s);";
+
+    char *sqlArgs;
+    size_t sqlArgsLength = 1;
+
+    char *sqlArgPrefix = "\"";
+
+    // Find the args length
+    for (size_t index = 0; index < typeCount; index++) {
+        sqlArgsLength += strlen (sqlArgPrefix);
+        sqlArgsLength += strlen (fs->entityTypes[index].type) + 2; // quotes
+        sqlArgPrefix = "\",\"";
+    }
+    sqlArgsLength += strlen ("\"");
+
+    sqlArgPrefix = "\"";
+
+    sqlArgs = malloc (sqlArgsLength);
+    for (size_t index = 0; index < typeCount; index++) {
+        strcat (sqlArgs, sqlArgPrefix);
+        strcat (sqlArgs, fs->entityTypes[index].type);
+        sqlArgPrefix = "\",\"";
+    }
+    strcat (sqlArgs, "\"");
+
+    char *sql = NULL;
+    asprintf (&sql, sqlFormatter, sqlArgs);
+
+    return sql;
+}
+
+extern int
+fileServicePurge (BRFileService fs) {
+    if (NULL == fs) return 0;
+
+    size_t typeCount = array_count(fs->entityTypes);
+    if (0 == typeCount) return 0;
+
+    char *sql = fileServicePurgeCreateSQL (fs);
+
+#if !defined(NEUTER_FILE_SERVICE)
+    sqlite3_status_code status;
+
+    pthread_mutex_lock (&fs->lock);
+    if (fs->sdbClosed)
+        return fileServiceFailedImpl (fs, 1, sql, NULL, "closed");
+
+    status = sqlite3_exec (fs->sdb, "BEGIN", NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+    status = sqlite3_exec(fs->sdb, sql, NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+    status = sqlite3_exec (fs->sdb, "COMMIT", NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+    pthread_mutex_unlock (&fs->lock);
+#endif // !defined(NEUTER_FILE_SERVICE)
+
+    free (sql);
     return 1;
 }
 
