@@ -19,7 +19,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoFeeBasis, cryptoFeeBasis)
 
 extern BRCryptoFeeBasis
 cryptoFeeBasisAllocAndInit (size_t sizeInBytes,
-                            BRCryptoBlockChainType type,
+                            BRCryptoNetworkType type,
                             BRCryptoUnit unit,
                             BRCryptoFeeBasisCreateContext  createContext,
                             BRCryptoFeeBasisCreateCallback createCallback) {
@@ -48,7 +48,7 @@ cryptoFeeBasisRelease (BRCryptoFeeBasis feeBasis) {
     free (feeBasis);
 }
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis) {
     return feeBasis->type;
 }

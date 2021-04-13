@@ -39,7 +39,7 @@ cryptoWalletCreateCallbackBTC (BRCryptoWalletCreateContext context,
 
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+cryptoWalletCreateAsBTC (BRCryptoNetworkType type,
                          BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
@@ -198,7 +198,7 @@ cryptoWalletHasAddressBTC (BRCryptoWallet wallet,
 
     BRWallet *btcWallet = walletBTC->wid;
 
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     BRAddress btcAddress = cryptoAddressAsBTC (address, &type);
 
     if (BRWalletAddressIsUsed (btcWallet, btcAddress.s))
@@ -264,7 +264,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
 
     BRWallet *wid = walletBTC->wid;
 
-    BRCryptoBlockChainType addressType;
+    BRCryptoNetworkType addressType;
     BRAddress address = cryptoAddressAsBTC (target, &addressType);
     assert (addressType == wallet->type);
 
@@ -309,7 +309,7 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
         assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(output->target));
         assert (cryptoAmountHasCurrency (output->amount, currency));
 
-        BRCryptoBlockChainType outputTargetType;
+        BRCryptoNetworkType outputTargetType;
         BRAddress address = cryptoAddressAsBTC (output->target, &outputTargetType);
         assert (outputTargetType == wallet->type);
 

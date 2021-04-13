@@ -42,7 +42,7 @@ eventTypesCountBTC = (sizeof (eventTypesBTC) / sizeof (BREventType*));
 // MARK: - Wallet Manager
 
 extern BRCryptoWalletManagerBTC
-cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type) {
+cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoNetworkType type) {
     assert (type == manager->type);
     return (BRCryptoWalletManagerBTC) manager;
 }

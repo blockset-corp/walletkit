@@ -108,7 +108,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 };
 
 extern const BRCryptoHandlers *
-cryptoHandlersLookup (BRCryptoBlockChainType type) {
+cryptoHandlersLookup (BRCryptoNetworkType type) {
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return &handlers[type];
 }

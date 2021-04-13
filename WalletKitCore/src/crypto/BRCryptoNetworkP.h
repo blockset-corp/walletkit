@@ -111,7 +111,7 @@ typedef struct {
 /// MARK: - Network
 
 struct BRCryptoNetworkRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoNetworkHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -153,7 +153,7 @@ typedef void (*BRCryptoNetworkCreateCallback) (BRCryptoNetworkCreateContext cont
 
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
-                           BRCryptoBlockChainType type,
+                           BRCryptoNetworkType type,
                            BRCryptoNetworkListener listener,
                            const char *uids,
                            const char *name,
@@ -166,7 +166,7 @@ cryptoNetworkAllocAndInit (size_t sizeInBytes,
                            BRCryptoNetworkCreateContext createContext,
                            BRCryptoNetworkCreateCallback createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoNetworkGetType (BRCryptoNetwork network);
 
 private_extern const char *
@@ -215,7 +215,7 @@ cryptoNetworkSetNetworkFees (BRCryptoNetwork network,
                              const BRCryptoNetworkFee *fees,
                              size_t count);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network);
 
 private_extern BRCryptoBlockNumber

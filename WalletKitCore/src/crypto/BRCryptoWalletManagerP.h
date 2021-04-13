@@ -164,7 +164,7 @@ cryptoWalletManagerStateDisconnectedInit(BRCryptoWalletManagerDisconnectReason r
 // MARK: - Wallet Manager
 
 struct BRCryptoWalletManagerRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoWalletManagerHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -213,7 +213,7 @@ typedef void (*BRCryptoWalletManagerCreateCallback) (BRCryptoWalletManagerCreate
 
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
-                                 BRCryptoBlockChainType type,
+                                 BRCryptoNetworkType type,
                                  BRCryptoWalletManagerListener listener,
                                  BRCryptoClient client,
                                  BRCryptoAccount account,
@@ -224,7 +224,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoWalletManagerCreateContext createContext,
                                  BRCryptoWalletManagerCreateCallback createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoWalletManagerGetType (BRCryptoWalletManager manager);
 
 private_extern void

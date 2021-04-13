@@ -35,7 +35,7 @@ cryptoPaymentProtocolRequestBitPayBuilderCoerceBTC (BRCryptoPaymentProtocolReque
 }
 
 static BRCryptoPaymentProtocolRequestBitPayBuilder
-cryptoPaymentProtocolRequestBitPayBuilderCreateBTC (BRCryptoBlockChainType chainType,
+cryptoPaymentProtocolRequestBitPayBuilderCreateBTC (BRCryptoNetworkType chainType,
                                                     BRCryptoNetwork cryptoNetwork,
                                                     BRCryptoCurrency cryptoCurrency,
                                                     BRCryptoPayProtReqBitPayCallbacks callbacks,
@@ -125,7 +125,7 @@ extern BRCryptoPaymentProtocolRequest
 cryptoPaymentProtocolRequestCreateForBitPayBTC (BRCryptoPaymentProtocolRequestBitPayBuilder builderBase) {
     BRCryptoPaymentProtocolRequestBitPayBuilderBTC builder = cryptoPaymentProtocolRequestBitPayBuilderCoerceBTC (builderBase);
     
-    BRCryptoBlockChainType type = cryptoNetworkGetType (builderBase->cryptoNetwork);
+    BRCryptoNetworkType type = cryptoNetworkGetType (builderBase->cryptoNetwork);
     
     BRCryptoPaymentProtocolRequest protoReqBase = NULL;
 
@@ -186,7 +186,7 @@ cryptoPaymentProtocolRequestCreateForBip70BTC (BRCryptoNetwork cryptoNetwork,
                                                BRCryptoPayProtReqBip70Callbacks callbacks,
                                                uint8_t *serialization,
                                                size_t serializationLen) {
-    BRCryptoBlockChainType type = cryptoNetworkGetType (cryptoNetwork);
+    BRCryptoNetworkType type = cryptoNetworkGetType (cryptoNetwork);
     
     BRCryptoPaymentProtocolRequest protoReqBase = NULL;
     
@@ -574,7 +574,7 @@ cryptoPaymentProtocolPaymentCreateBTC (BRCryptoPaymentProtocolRequest protoReqBa
                 BRCryptoBoolean overflow = CRYPTO_TRUE;
                 uint64_t refundAmountInt = cryptoAmountGetIntegerRaw (baseAmount, &overflow);
 
-                BRCryptoBlockChainType refundType;
+                BRCryptoNetworkType refundType;
                 BRAddress refundAddressBtc = cryptoAddressAsBTC (refundAddress, &refundType);
                 
                 const BRChainParams * chainParams = cryptoNetworkAsBTC (cryptoNetwork);

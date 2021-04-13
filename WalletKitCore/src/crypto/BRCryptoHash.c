@@ -21,7 +21,7 @@ extern BRCryptoHash
 cryptoHashCreateInternal (uint32_t setValue,
                           size_t   bytesCount,
                           uint8_t *bytes,
-                          BRCryptoBlockChainType type) {
+                          BRCryptoNetworkType type) {
     assert (bytesCount <= CRYPTO_HASH_BYTES);
     BRCryptoHash hash = calloc (1, sizeof (struct BRCryptoHashRecord));
 

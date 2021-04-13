@@ -130,7 +130,7 @@ typedef struct {
 // MARK: - Wallet
 
 struct BRCryptoWalletRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoWalletHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -164,7 +164,7 @@ typedef void (*BRCryptoWalletCreateCallbak) (BRCryptoWalletCreateContext context
 
 extern BRCryptoWallet
 cryptoWalletAllocAndInit (size_t sizeInBytes,
-                          BRCryptoBlockChainType type,
+                          BRCryptoNetworkType type,
                           BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
@@ -174,7 +174,7 @@ cryptoWalletAllocAndInit (size_t sizeInBytes,
                           BRCryptoWalletCreateContext createContext,
                           BRCryptoWalletCreateCallbak createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoWalletGetType (BRCryptoWallet wallet);
 
 private_extern void

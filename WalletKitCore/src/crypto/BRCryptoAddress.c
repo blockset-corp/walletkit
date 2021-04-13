@@ -17,7 +17,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoAddress, cryptoAddress);
 
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
-                           BRCryptoBlockChainType type,
+                           BRCryptoNetworkType type,
                            size_t hashValue,
                            BRCryptoAddressCreateContext  createContext,
                            BRCryptoAddressCreateCallback createCallback) {
@@ -45,7 +45,7 @@ cryptoAddressRelease (BRCryptoAddress address) {
 }
 
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoAddressGetType (BRCryptoAddress address) {
     return address->type;
 }

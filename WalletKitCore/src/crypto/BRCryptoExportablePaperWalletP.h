@@ -37,7 +37,7 @@ typedef struct {
 // MARK: - Sweeper
 
 struct BRCryptoExportablePaperWalletRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoExportablePaperWalletHandlers *handlers;
     size_t sizeInBytes;
 
@@ -49,7 +49,7 @@ struct BRCryptoExportablePaperWalletRecord {
 
 private_extern BRCryptoExportablePaperWallet
 cryptoExportablePaperWalletAllocAndInit (size_t sizeInBytes,
-                                         BRCryptoBlockChainType type,
+                                         BRCryptoNetworkType type,
                                          BRCryptoNetwork network,
                                          BRCryptoAddress address,
                                          BRCryptoKey key);

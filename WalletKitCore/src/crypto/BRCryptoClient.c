@@ -92,7 +92,7 @@ cryptoClientSend (BRCryptoClientSend send,
 
 extern BRCryptoClientP2PManager
 cryptoClientP2PManagerCreate (size_t sizeInBytes,
-                              BRCryptoBlockChainType type,
+                              BRCryptoNetworkType type,
                               const BRCryptoClientP2PHandlers *handlers) {
     assert (sizeInBytes >= sizeof (struct BRCryptoClientP2PManagerRecord));
 

@@ -32,7 +32,7 @@ extern "C" {
  * that currency will not be handled and no others handlers will be referenced.
  */
 typedef struct {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoNetworkHandlers  *network;
     const BRCryptoAddressHandlers  *address;
     const BRCryptoTransferHandlers *transfer;
@@ -45,7 +45,7 @@ typedef struct {
 } BRCryptoHandlers;
 
 extern const BRCryptoHandlers *
-cryptoHandlersLookup (BRCryptoBlockChainType type);
+cryptoHandlersLookup (BRCryptoNetworkType type);
 
 #ifdef __cplusplus
 }

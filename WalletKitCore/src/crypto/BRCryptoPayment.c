@@ -40,7 +40,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequestBitPayBuilder, cryptoP
 
 private_extern BRCryptoPaymentProtocolRequestBitPayBuilder
 cryptoPaymentProtocolRequestBitPayBuilderAllocAndInit (size_t sizeInBytes,
-                                                       BRCryptoBlockChainType type,
+                                                       BRCryptoNetworkType type,
                                                        BRCryptoNetwork cryptoNetwork,
                                                        BRCryptoCurrency cryptoCurrency,
                                                        BRCryptoPayProtReqBitPayCallbacks callbacks,
@@ -102,7 +102,7 @@ cryptoPaymentProtocolRequestBitPayBuilderCreate (BRCryptoNetwork cryptoNetwork,
                                                  const char *paymentURL,
                                                  const uint8_t *merchantData,
                                                  size_t merchantDataLen) {
-    BRCryptoBlockChainType chainType = cryptoNetworkGetType (cryptoNetwork);
+    BRCryptoNetworkType chainType = cryptoNetworkGetType (cryptoNetwork);
     
     const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup (chainType)->payment;
     if (NULL == paymentHandlers) {
@@ -171,7 +171,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequest, cryptoPaymentProtoco
 
 private_extern BRCryptoPaymentProtocolRequest
 cryptoPaymentProtocolRequestAllocAndInit (size_t sizeInBytes,
-                                          BRCryptoBlockChainType type,
+                                          BRCryptoNetworkType type,
                                           BRCryptoPaymentProtocolType paymentProtocolType,
                                           BRCryptoNetwork cryptoNetwork,
                                           BRCryptoCurrency cryptoCurrency,
@@ -215,7 +215,7 @@ cryptoPaymentProtocolRequestValidateSupported (BRCryptoPaymentProtocolType proto
     }
     cryptoCurrencyGive (walletCurrency);
 
-    BRCryptoBlockChainType chainType = cryptoNetworkGetType (network);
+    BRCryptoNetworkType chainType = cryptoNetworkGetType (network);
     const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup (chainType)->payment;
     if (NULL == paymentHandlers) {
         return CRYPTO_FALSE;
@@ -235,7 +235,7 @@ cryptoPaymentProtocolRequestCreateForBip70 (BRCryptoNetwork cryptoNetwork,
                                             BRCryptoPayProtReqBip70Callbacks callbacks,
                                             uint8_t *serialization,
                                             size_t serializationLen) {
-    BRCryptoBlockChainType chainType = cryptoNetworkGetType (cryptoNetwork);
+    BRCryptoNetworkType chainType = cryptoNetworkGetType (cryptoNetwork);
     const BRCryptoPaymentProtocolHandlers * paymentHandlers = cryptoHandlersLookup (chainType)->payment;
     if (NULL == paymentHandlers) {
         assert(0);

@@ -28,7 +28,7 @@ cryptoUnitGiveAll (BRArrayOf(BRCryptoUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type) {
+cryptoBlockChainTypeGetCurrencyCode (BRCryptoNetworkType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         CRYPTO_NETWORK_CURRENCY_BTC,
         CRYPTO_NETWORK_CURRENCY_BCH,
@@ -112,7 +112,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoNetwork, cryptoNetwork)
 
 extern BRCryptoNetwork
 cryptoNetworkAllocAndInit (size_t sizeInBytes,
-                           BRCryptoBlockChainType type,
+                           BRCryptoNetworkType type,
                            BRCryptoNetworkListener listener,
                            const char *uids,
                            const char *name,
@@ -195,7 +195,7 @@ cryptoNetworkRelease (BRCryptoNetwork network) {
     free (network);
 }
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoNetworkGetType (BRCryptoNetwork network) {
     return network->type;
 }
@@ -743,7 +743,7 @@ cryptoNetworkInitializeAccount (BRCryptoNetwork network,
     network->handlers->initializeAccount (network, account, bytes, bytesCount);
 }
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoNetworkGetBlockChainType (BRCryptoNetwork network) {
     return network->type;
 }
@@ -784,7 +784,7 @@ cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
                               bool isMainnet) {
     // Network Specification
     struct NetworkSpecification {
-        BRCryptoBlockChainType type;
+        BRCryptoNetworkType type;
         char *networkId;
         char *name;
         char *network;
@@ -1089,10 +1089,10 @@ cryptoNetworkFindBuiltin (const char *uids,
     return network;
 }
 
-extern BRCryptoBlockChainType
+extern BRCryptoNetworkType
 cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet) {
     struct NetworkSpecification {
-        BRCryptoBlockChainType type;
+        BRCryptoNetworkType type;
         char *networkId;
         char *name;
         char *network;
@@ -1114,6 +1114,6 @@ cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet) {
             return networkSpecifications[index].type;
         }
     }
-    return (BRCryptoBlockChainType) CRYPTO_NETWORK_TYPE_UNKNOWN;
+    return (BRCryptoNetworkType) CRYPTO_NETWORK_TYPE_UNKNOWN;
 }
 

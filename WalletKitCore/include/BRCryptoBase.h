@@ -172,7 +172,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
         CRYPTO_NETWORK_TYPE_HBAR,
         CRYPTO_NETWORK_TYPE_XTZ,
         // CRYPTO_NETWORK_TYPE_XLM,
-    } BRCryptoBlockChainType;
+    } BRCryptoNetworkType;
 
 #    define NUMBER_OF_NETWORK_TYPES     (1 + CRYPTO_NETWORK_TYPE_XTZ)
 #    define CRYPTO_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
@@ -191,7 +191,7 @@ extern uint64_t BLOCK_HEIGHT_UNBOUND_VALUE;
 #    define CRYPTO_NETWORK_CURRENCY_XTZ     "xtz"
 
     extern const char *
-    cryptoBlockChainTypeGetCurrencyCode (BRCryptoBlockChainType type);
+    cryptoBlockChainTypeGetCurrencyCode (BRCryptoNetworkType type);
 
     // MARK: - Status
 

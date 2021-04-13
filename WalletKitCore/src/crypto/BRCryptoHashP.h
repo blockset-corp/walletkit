@@ -28,7 +28,7 @@ struct BRCryptoHashRecord {
     size_t bytesCount;
     uint8_t bytes[CRYPTO_HASH_BYTES];
     
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
 
     BRCryptoRef ref;
 };
@@ -37,7 +37,7 @@ private_extern BRCryptoHash
 cryptoHashCreateInternal (uint32_t setValue,
                           size_t   bytesCount,
                           uint8_t *bytes,
-                          BRCryptoBlockChainType type);
+                          BRCryptoNetworkType type);
 
 private_extern OwnershipGiven char *
 cryptoHashStringAsHex (BRCryptoHash hash, bool includePrefix);

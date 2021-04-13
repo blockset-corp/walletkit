@@ -299,7 +299,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoWallet, cryptoWallet)
 
 extern BRCryptoWallet
 cryptoWalletAllocAndInit (size_t sizeInBytes,
-                          BRCryptoBlockChainType type,
+                          BRCryptoNetworkType type,
                           BRCryptoWalletListener listener,
                           BRCryptoUnit unit,
                           BRCryptoUnit unitForFee,
@@ -376,7 +376,7 @@ cryptoWalletRelease (BRCryptoWallet wallet) {
     free (wallet);
 }
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoWalletGetType (BRCryptoWallet wallet) {
     return wallet->type;
 }

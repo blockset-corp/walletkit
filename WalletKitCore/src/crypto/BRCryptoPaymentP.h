@@ -21,7 +21,7 @@ extern "C" {
 // MARK: Handlers
 
 typedef BRCryptoPaymentProtocolRequestBitPayBuilder
-(*BRCryptoPaymentProtocolRquestBitPayBuilderCreate) (BRCryptoBlockChainType chainType,
+(*BRCryptoPaymentProtocolRquestBitPayBuilderCreate) (BRCryptoNetworkType chainType,
                                                      BRCryptoNetwork cryptoNetwork,
                                                      BRCryptoCurrency cryptoCurrency,
                                                      BRCryptoPayProtReqBitPayCallbacks callbacks,
@@ -132,7 +132,7 @@ typedef struct {
 // MARK: - BitPay Payment Protocol Request Builder
 
 struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoPaymentProtocolHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -153,7 +153,7 @@ struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord {
 
 private_extern BRCryptoPaymentProtocolRequestBitPayBuilder
 cryptoPaymentProtocolRequestBitPayBuilderAllocAndInit (size_t sizeInBytes,
-                                                       BRCryptoBlockChainType type,
+                                                       BRCryptoNetworkType type,
                                                        BRCryptoNetwork cryptoNetwork,
                                                        BRCryptoCurrency cryptoCurrency,
                                                        BRCryptoPayProtReqBitPayCallbacks callbacks,
@@ -169,7 +169,7 @@ cryptoPaymentProtocolRequestBitPayBuilderAllocAndInit (size_t sizeInBytes,
 // MARK: - Payment Protocol Request
 
 struct BRCryptoPaymentProtocolRequestRecord {
-    BRCryptoBlockChainType chainType;
+    BRCryptoNetworkType chainType;
     const BRCryptoPaymentProtocolHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -184,7 +184,7 @@ struct BRCryptoPaymentProtocolRequestRecord {
 
 private_extern BRCryptoPaymentProtocolRequest
 cryptoPaymentProtocolRequestAllocAndInit (size_t sizeInBytes,
-                                          BRCryptoBlockChainType type,
+                                          BRCryptoNetworkType type,
                                           BRCryptoPaymentProtocolType paymentProtocolType,
                                           BRCryptoNetwork cryptoNetwork,
                                           BRCryptoCurrency cryptoCurrency,
@@ -194,7 +194,7 @@ cryptoPaymentProtocolRequestAllocAndInit (size_t sizeInBytes,
 // MARK: - Payment Protocol Payment
 
 struct BRCryptoPaymentProtocolPaymentRecord {
-    BRCryptoBlockChainType chainType;
+    BRCryptoNetworkType chainType;
     BRCryptoRef ref;
     size_t sizeInBytes;
     

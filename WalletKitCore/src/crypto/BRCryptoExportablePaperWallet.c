@@ -13,7 +13,7 @@
 
 private_extern BRCryptoExportablePaperWallet
 cryptoExportablePaperWalletAllocAndInit (size_t sizeInBytes,
-                                         BRCryptoBlockChainType type,
+                                         BRCryptoNetworkType type,
                                          BRCryptoNetwork network,
                                          BRCryptoAddress address,
                                          BRCryptoKey key) {

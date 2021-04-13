@@ -15,7 +15,7 @@
 #include "bcash/BRBCashAddr.h"
 
 static BRCryptoAddressBTC
-cryptoAddressCoerce (BRCryptoAddress address, BRCryptoBlockChainType type) {
+cryptoAddressCoerce (BRCryptoAddress address, BRCryptoNetworkType type) {
     assert (type == address->type);
     return (BRCryptoAddressBTC) address;
 }
@@ -42,7 +42,7 @@ cryptoAddressCreateCallbackBTC (BRCryptoAddressCreateContext context,
 }
 
 extern BRCryptoAddress
-cryptoAddressCreateAsBTC (BRCryptoBlockChainType type, BRAddress addr) {
+cryptoAddressCreateAsBTC (BRCryptoNetworkType type, BRAddress addr) {
     BRCryptoAddressCreateContextBTC contextBTC = {
         addr
     };
@@ -134,7 +134,7 @@ cryptoAddressIsEqualBTC (BRCryptoAddress address1, BRCryptoAddress address2) {
 
 private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
-                    BRCryptoBlockChainType *type) {
+                    BRCryptoNetworkType *type) {
     BRCryptoAddressBTC addressANY = cryptoAddressCoerce (address, address->type);
 
     if (NULL != type) *type = address->type;

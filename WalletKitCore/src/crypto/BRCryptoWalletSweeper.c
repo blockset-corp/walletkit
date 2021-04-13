@@ -15,7 +15,7 @@
 
 extern BRCryptoWalletSweeper
 cryptoWalletSweeperAllocAndInit (size_t sizeInBytes,
-                                 BRCryptoBlockChainType type,
+                                 BRCryptoNetworkType type,
                                  BRCryptoKey key,
                                  BRCryptoUnit unit) {
     assert (sizeInBytes >= sizeof (struct BRCryptoWalletSweeperRecord));

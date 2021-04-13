@@ -38,7 +38,7 @@ typedef struct BRCryptoAddressBTCRecord {
 } *BRCryptoAddressBTC;
 
 extern BRCryptoAddress
-cryptoAddressCreateAsBTC (BRCryptoBlockChainType type,
+cryptoAddressCreateAsBTC (BRCryptoNetworkType type,
                           BRAddress addr);
 
 extern BRCryptoAddress
@@ -52,7 +52,7 @@ cryptoAddressCreateFromStringAsBSV (BRAddressParams params, const char *bsvAddre
 
 private_extern BRAddress
 cryptoAddressAsBTC (BRCryptoAddress address,
-                    BRCryptoBlockChainType *type);
+                    BRCryptoNetworkType *type);
 
 private_extern BRCryptoAddress
 cryptoAddressCreateFromLegacyStringAsBCH (BRAddressParams params, const char *btcAddr);
@@ -98,7 +98,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoUnit unitForFee,
                            BRWallet *wid,
                            BRTransaction *tid,
-                           BRCryptoBlockChainType type);
+                           BRCryptoNetworkType type);
 
 private_extern BRTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transfer);
@@ -134,7 +134,7 @@ private_extern BRWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
-cryptoWalletCreateAsBTC (BRCryptoBlockChainType type,
+cryptoWalletCreateAsBTC (BRCryptoNetworkType type,
                          BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
@@ -170,7 +170,7 @@ typedef struct BRCryptoWalletManagerBTCRecord {
 } *BRCryptoWalletManagerBTC;
 
 extern BRCryptoWalletManagerBTC
-cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoBlockChainType type);
+cryptoWalletManagerCoerceBTC (BRCryptoWalletManager manager, BRCryptoNetworkType type);
 
 extern BRCryptoWalletManagerHandlers cryptoWalletManagerHandlersBTC;
 

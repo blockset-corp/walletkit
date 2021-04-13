@@ -1514,7 +1514,7 @@ runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
                                      const char *storagePath) {
     BRCryptoBoolean success = CRYPTO_TRUE;
 
-    BRCryptoBlockChainType chainType = cryptoNetworkGetType (network);
+    BRCryptoNetworkType chainType = cryptoNetworkGetType (network);
 
  //   BRCryptoBoolean isGen = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_GEN == chainType);
     BRCryptoBoolean isEth = AS_CRYPTO_BOOLEAN (CRYPTO_NETWORK_TYPE_ETH == chainType);

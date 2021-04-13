@@ -39,7 +39,7 @@ typedef struct {
 } BRCryptoAddressHandlers;
 
 struct BRCryptoAddressRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoAddressHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -53,12 +53,12 @@ typedef void (*BRCryptoAddressCreateCallback) (BRCryptoAddressCreateContext cont
 
 private_extern BRCryptoAddress
 cryptoAddressAllocAndInit (size_t sizeInBytes,
-                           BRCryptoBlockChainType type,
+                           BRCryptoNetworkType type,
                            size_t hashValue,
                            BRCryptoAddressCreateContext  createContext,
                            BRCryptoAddressCreateCallback createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoAddressGetType (BRCryptoAddress address);
 
 private_extern size_t

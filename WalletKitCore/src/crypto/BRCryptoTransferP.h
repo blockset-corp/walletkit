@@ -107,7 +107,7 @@ typedef struct {
 /// MARK: - Transfer
 
 struct BRCryptoTransferRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoTransferHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -151,7 +151,7 @@ typedef void (*BRCryptoTransferCreateCallback) (BRCryptoTransferCreateContext co
 
 extern BRCryptoTransfer // OwnershipKept, all arguments
 cryptoTransferAllocAndInit (size_t sizeInBytes,
-                            BRCryptoBlockChainType type,
+                            BRCryptoNetworkType type,
                             BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
@@ -164,7 +164,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoTransferCreateContext  createContext,
                             BRCryptoTransferCreateCallback createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoTransferGetType (BRCryptoTransfer transfer);
 
 private_extern void

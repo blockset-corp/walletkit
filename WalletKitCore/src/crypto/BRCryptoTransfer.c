@@ -171,7 +171,7 @@ IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoTransfer, cryptoTransfer)
 
 extern BRCryptoTransfer // OwnershipKept, all arguments
 cryptoTransferAllocAndInit (size_t sizeInBytes,
-                            BRCryptoBlockChainType type,
+                            BRCryptoNetworkType type,
                             BRCryptoTransferListener listener,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
@@ -245,7 +245,7 @@ cryptoTransferRelease (BRCryptoTransfer transfer) {
     free (transfer);
 }
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoTransferGetType (BRCryptoTransfer transfer) {
     return transfer->type;
 }

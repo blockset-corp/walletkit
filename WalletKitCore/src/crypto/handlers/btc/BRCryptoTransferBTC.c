@@ -75,7 +75,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoUnit unitForFee,
                            OwnershipKept  BRWallet *wid,
                            OwnershipGiven BRTransaction *tid,
-                           BRCryptoBlockChainType type) {
+                           BRCryptoNetworkType type) {
     uint64_t fee  = BRWalletFeeForTx (wid, tid);
     uint64_t recv = BRWalletAmountReceivedFromTx (wid, tid);
     uint64_t send = BRWalletAmountSentByTx (wid, tid);

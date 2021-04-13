@@ -265,7 +265,7 @@ public final class Network: CustomStringConvertible {
     public static func getTypeFromName (name: String) -> NetworkType? {
         var isMainnet: BRCryptoBoolean = CRYPTO_FALSE
         let core = cryptoNetworkGetTypeFromName (name, &isMainnet)
-        return (core == BRCryptoBlockChainType (CRYPTO_NETWORK_TYPE_UNKNOWN)
+        return (core == BRCryptoNetworkType (CRYPTO_NETWORK_TYPE_UNKNOWN)
             ? nil
             : NetworkType (core: core))
     }
@@ -310,7 +310,7 @@ public enum NetworkType: CustomStringConvertible {
     case xtz
 //    case xlm
 
-    internal init (core: BRCryptoBlockChainType) {
+    internal init (core: BRCryptoNetworkType) {
         switch core {
         case CRYPTO_NETWORK_TYPE_BTC:  self = .btc
         case CRYPTO_NETWORK_TYPE_BCH:  self = .bch
@@ -324,7 +324,7 @@ public enum NetworkType: CustomStringConvertible {
         }
     }
 
-    internal var core: BRCryptoBlockChainType {
+    internal var core: BRCryptoNetworkType {
         switch self {
         case .btc: return CRYPTO_NETWORK_TYPE_BTC
         case .bch: return CRYPTO_NETWORK_TYPE_BCH

@@ -15,7 +15,7 @@
 #include "crypto/BRCryptoHashP.h"
 
 static BRCryptoNetworkBTC
-cryptoNetworkCoerce (BRCryptoNetwork network, BRCryptoBlockChainType type) {
+cryptoNetworkCoerce (BRCryptoNetwork network, BRCryptoNetworkType type) {
     assert (type == network->type);
     return (BRCryptoNetworkBTC) network;
 }

@@ -249,7 +249,7 @@ cryptoWalletManagerInitialTransactionBundlesRecover (BRCryptoWalletManager manag
 
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
-                                 BRCryptoBlockChainType type,
+                                 BRCryptoNetworkType type,
                                  BRCryptoWalletManagerListener listener,
                                  BRCryptoClient client,
                                  BRCryptoAccount account,
@@ -375,7 +375,7 @@ cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
         return NULL;
 
     // Lookup the handler for the network's type.
-    BRCryptoBlockChainType type = cryptoNetworkGetType(network);
+    BRCryptoNetworkType type = cryptoNetworkGetType(network);
     const BRCryptoWalletManagerHandlers *handlers = cryptoHandlersLookup(type)->manager;
 
     // Create the manager

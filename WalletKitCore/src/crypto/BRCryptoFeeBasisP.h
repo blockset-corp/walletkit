@@ -43,7 +43,7 @@ typedef struct {
 } BRCryptoFeeBasisHandlers;
 
 struct BRCryptoFeeBasisRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoFeeBasisHandlers *handlers;
     BRCryptoRef ref;
     size_t sizeInBytes;
@@ -57,12 +57,12 @@ typedef void (*BRCryptoFeeBasisCreateCallback) (BRCryptoFeeBasisCreateContext co
 
 private_extern BRCryptoFeeBasis
 cryptoFeeBasisAllocAndInit (size_t sizeInBytes,
-                            BRCryptoBlockChainType type,
+                            BRCryptoNetworkType type,
                             BRCryptoUnit unit,
                             BRCryptoFeeBasisCreateContext  createContext,
                             BRCryptoFeeBasisCreateCallback createCallback);
 
-private_extern BRCryptoBlockChainType
+private_extern BRCryptoNetworkType
 cryptoFeeBasisGetType (BRCryptoFeeBasis feeBasis);
 
 

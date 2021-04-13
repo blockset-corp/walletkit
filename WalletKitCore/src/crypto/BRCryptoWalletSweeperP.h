@@ -61,7 +61,7 @@ typedef struct {
 // MARK: - Sweeper
 
 struct BRCryptoWalletSweeperRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoWalletSweeperHandlers *handlers;
     BRCryptoKey key;
     BRCryptoUnit unit;
@@ -69,7 +69,7 @@ struct BRCryptoWalletSweeperRecord {
 
 private_extern BRCryptoWalletSweeper
 cryptoWalletSweeperAllocAndInit (size_t sizeInBytes,
-                                 BRCryptoBlockChainType type,
+                                 BRCryptoNetworkType type,
                                  BRCryptoKey key,
                                  BRCryptoUnit unit);
 

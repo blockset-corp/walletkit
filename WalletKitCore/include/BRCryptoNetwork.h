@@ -90,7 +90,7 @@ extern "C" {
     extern BRCryptoBoolean
     cryptoNetworkIsMainnet (BRCryptoNetwork network);
 
-    extern BRCryptoBlockChainType
+    extern BRCryptoNetworkType
     cryptoNetworkGetType (BRCryptoNetwork network);
 
 
@@ -101,7 +101,7 @@ extern "C" {
      * @param name the name
      * @param isMainnet filled with true if `name` is for mainnet; false otherwise.
      */
-    extern BRCryptoBlockChainType
+    extern BRCryptoNetworkType
     cryptoNetworkGetTypeFromName (const char *name, BRCryptoBoolean *isMainnet);
 
     /**

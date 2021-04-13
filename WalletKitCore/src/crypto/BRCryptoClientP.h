@@ -283,7 +283,7 @@ typedef struct {
 } BRCryptoClientP2PHandlers;
 
 struct BRCryptoClientP2PManagerRecord {
-    BRCryptoBlockChainType type;
+    BRCryptoNetworkType type;
     const BRCryptoClientP2PHandlers *handlers;
     size_t sizeInBytes;
 
@@ -294,7 +294,7 @@ struct BRCryptoClientP2PManagerRecord {
 
 extern BRCryptoClientP2PManager
 cryptoClientP2PManagerCreate (size_t sizeInBytes,
-                              BRCryptoBlockChainType type,
+                              BRCryptoNetworkType type,
                               const BRCryptoClientP2PHandlers *handlers);
 
 extern void
