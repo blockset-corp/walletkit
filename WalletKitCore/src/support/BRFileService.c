@@ -747,7 +747,7 @@ fileServiceLoad (BRFileService fs,
             return fileServiceFailedEntity (fs, 1, (dataBytes == dataBytesBuffer ? NULL : dataBytes), NULL,
                                             type, "reader");
 
-        // Update restuls with the newly restored entity
+        // Update results with the newly restored entity
         void *oldEntity = BRSetAdd (results, entity);
         assert (NULL == oldEntity);  // DEBUG builds
         if (NULL != oldEntity)

@@ -760,7 +760,7 @@ cryptoWalletHasAddress (BRCryptoWallet wallet,
 
     return (wallet->type != cryptoAddressGetType(address)
             ? false
-            : wallet->handlers->hasAdress (wallet, address));
+            : wallet->handlers->hasAddress (wallet, address));
 }
 
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)

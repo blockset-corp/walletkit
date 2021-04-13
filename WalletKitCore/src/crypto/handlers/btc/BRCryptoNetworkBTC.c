@@ -47,15 +47,15 @@ cryptoNetworkCreateCallbackBTC (BRCryptoNetworkCreateContext context,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBTC (BRCryptoNetworkListener listener,
-                       const char *uids,
-                       const char *name,
-                       const char *desc,
-                       bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds,
-                       BRCryptoAddressScheme defaultAddressScheme,
-                       BRCryptoSyncMode defaultSyncMode,
-                       BRCryptoCurrency nativeCurrency) {
+cryptoNetworkCreateBTC (BRCryptoNetworkListener listener,
+                        const char *uids,
+                        const char *name,
+                        const char *desc,
+                        bool isMainnet,
+                        uint32_t confirmationPeriodInSeconds,
+                        BRCryptoAddressScheme defaultAddressScheme,
+                        BRCryptoSyncMode defaultSyncMode,
+                        BRCryptoCurrency nativeCurrency) {
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
@@ -78,15 +78,15 @@ cyptoNetworkCreateBTC (BRCryptoNetworkListener listener,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBCH (BRCryptoNetworkListener listener,
-                       const char *uids,
-                       const char *name,
-                       const char *desc,
-                       bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds,
-                       BRCryptoAddressScheme defaultAddressScheme,
-                       BRCryptoSyncMode defaultSyncMode,
-                       BRCryptoCurrency nativeCurrency) {
+cryptoNetworkCreateBCH (BRCryptoNetworkListener listener,
+                        const char *uids,
+                        const char *name,
+                        const char *desc,
+                        bool isMainnet,
+                        uint32_t confirmationPeriodInSeconds,
+                        BRCryptoAddressScheme defaultAddressScheme,
+                        BRCryptoSyncMode defaultSyncMode,
+                        BRCryptoCurrency nativeCurrency) {
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
@@ -109,15 +109,15 @@ cyptoNetworkCreateBCH (BRCryptoNetworkListener listener,
 }
 
 static BRCryptoNetwork
-cyptoNetworkCreateBSV (BRCryptoNetworkListener listener,
-                       const char *uids,
-                       const char *name,
-                       const char *desc,
-                       bool isMainnet,
-                       uint32_t confirmationPeriodInSeconds,
-                       BRCryptoAddressScheme defaultAddressScheme,
-                       BRCryptoSyncMode defaultSyncMode,
-                       BRCryptoCurrency nativeCurrency) {
+cryptoNetworkCreateBSV (BRCryptoNetworkListener listener,
+                        const char *uids,
+                        const char *name,
+                        const char *desc,
+                        bool isMainnet,
+                        uint32_t confirmationPeriodInSeconds,
+                        BRCryptoAddressScheme defaultAddressScheme,
+                        BRCryptoSyncMode defaultSyncMode,
+                        BRCryptoCurrency nativeCurrency) {
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
@@ -232,7 +232,7 @@ cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee) {
 }
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
-    cyptoNetworkCreateBTC,
+    cryptoNetworkCreateBTC,
     cryptoNetworkReleaseBTC,
     cryptoNetworkCreateAddressBTC,
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
@@ -244,7 +244,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBTC = {
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
-    cyptoNetworkCreateBCH,
+    cryptoNetworkCreateBCH,
     cryptoNetworkReleaseBTC,
     cryptoNetworkCreateAddressBCH,
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,
@@ -256,7 +256,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBCH = {
 };
 
 BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
-    cyptoNetworkCreateBSV,
+    cryptoNetworkCreateBSV,
     cryptoNetworkReleaseBTC,
     cryptoNetworkCreateAddressBSV,
     cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC,

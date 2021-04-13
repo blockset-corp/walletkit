@@ -115,7 +115,7 @@ typedef bool
 typedef struct {
     BRCryptoWalletReleaseHandler release;
     BRCryptoWalletGetAddressHandler getAddress;
-    BRCryptoWalletHasAddressHandler hasAdress;
+    BRCryptoWalletHasAddressHandler hasAddress;
     BRCryptoWalletGetTransferAttributeCountHandler getTransferAttributeCount;
     BRCryptoWalletGetTransferAttributeAtHandler getTransferAttributeAt;
     BRCryptoWalletValidateTransferAttributeHandler validateTransferAttribute;
