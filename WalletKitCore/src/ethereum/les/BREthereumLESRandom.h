@@ -1,6 +1,6 @@
 //
 //  BREthereumRandom.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 
 //  Created by Lamont Samuels on 5/23/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

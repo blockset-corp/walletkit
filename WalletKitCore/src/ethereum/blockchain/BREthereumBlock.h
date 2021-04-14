@@ -1,6 +1,6 @@
 //
 //  BBREthereumBlock.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/23/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

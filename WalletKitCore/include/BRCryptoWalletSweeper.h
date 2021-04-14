@@ -1,9 +1,9 @@
 //
 //  BRCryptoWalletSweeper.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 5/22/20
-//  Copyright © 2020 breadwallet. All rights reserved.
+//  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.

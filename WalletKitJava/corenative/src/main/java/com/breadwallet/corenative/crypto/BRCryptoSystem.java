@@ -1,6 +1,12 @@
+/*
+ * Created by Ed Gamble.
+ * Copyright (c) 2020 Breadwinner AG.  All right reserved.
+ *
+ * See the LICENSE file at the project root for license information.
+ * See the CONTRIBUTORS file at the project root for a list of contributors.
+ */
 package com.breadwallet.corenative.crypto;
 
-import com.breadwallet.corenative.CryptoLibrary;
 import com.breadwallet.corenative.CryptoLibraryDirect;
 import com.breadwallet.corenative.CryptoLibraryIndirect;
 import com.breadwallet.corenative.utility.SizeT;
@@ -14,7 +20,6 @@ import com.sun.jna.PointerType;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class BRCryptoSystem extends PointerType {
 

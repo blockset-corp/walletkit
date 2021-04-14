@@ -1,9 +1,9 @@
 //
 //  BRBCashParams.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Aaron Voisine on 3/11/19.
-//  Copyright © 2019 breadwallet. All rights reserved.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal

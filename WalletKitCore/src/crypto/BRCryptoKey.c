@@ -1,6 +1,6 @@
 //
 //  BRCryptoKey.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 7/30/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

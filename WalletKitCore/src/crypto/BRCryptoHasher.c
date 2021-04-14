@@ -1,6 +1,6 @@
 //
 //  BRCryptoHasher.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Michael Carrara on 9/23/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

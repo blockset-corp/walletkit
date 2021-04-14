@@ -1,6 +1,6 @@
 //
 //  BRBase.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Michael Carrara on 7/1/19.
 //  Copyright © 2019 breadwallet LLC

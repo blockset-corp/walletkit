@@ -1,6 +1,6 @@
 //
 //  BRTezosEncoder.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-07-22.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.

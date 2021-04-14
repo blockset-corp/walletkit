@@ -1,6 +1,6 @@
 //
 //  BRChainParams.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Aaron Voisine on 3/11/19.
 //  Copyright (c) 2019 breadwallet LLC

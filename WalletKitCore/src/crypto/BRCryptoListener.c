@@ -3,7 +3,7 @@
 //  BRCrypto
 //
 //  Created by Ed Gamble on 8/11/20
-//  Copyright © 2020 breadwallet. All rights reserved.
+//  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.

@@ -1,9 +1,9 @@
 //
 //  BRCryptoNetworkBTC.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 05/07/2020.
-//  Copyright © 2019 Breadwallet AG. All rights reserved.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.

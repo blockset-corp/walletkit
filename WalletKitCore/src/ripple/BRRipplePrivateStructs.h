@@ -1,6 +1,6 @@
 //
 //  BRRipplePrivateStructs.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 4/16/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

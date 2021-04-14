@@ -1,8 +1,12 @@
 //
-//  SystemClien.swift
-//  
+//  BRSystemClient.swift
+//  WalletKit
 //
 //  Created by Ed Gamble on 8/19/20.
+//  Copyright © 2019 Breadwinner AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 import Foundation  // Data, Date
 

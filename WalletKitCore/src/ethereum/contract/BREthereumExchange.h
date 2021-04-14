@@ -1,6 +1,6 @@
 //
 //  BREthereumExchange.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 6/9/20.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

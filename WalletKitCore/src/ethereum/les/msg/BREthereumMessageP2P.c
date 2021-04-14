@@ -1,6 +1,6 @@
 //
 //  BREthereumMessageP2P.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/1/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

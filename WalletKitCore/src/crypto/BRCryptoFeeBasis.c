@@ -1,6 +1,6 @@
 //
 //  BRCryptoFeeBasis.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/15/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

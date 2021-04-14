@@ -1,6 +1,6 @@
 //
 //  BREthereumToken
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/15/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

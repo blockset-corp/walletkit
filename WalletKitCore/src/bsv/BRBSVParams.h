@@ -1,6 +1,6 @@
 //
 //  BRBSVParams.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-04.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

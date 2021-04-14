@@ -1,6 +1,6 @@
 //
 //  BRKeccak.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 
 //  Created by Lamont Samuels on 7/19/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
