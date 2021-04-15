@@ -16,13 +16,30 @@ combined downloads of over 6,000,000.
 
 # Features
 
-## Crypto-Currency Agnostic
+## Cryptocurrency Agnostic
+
+WalletKit treats the assets held in a wallet without regard to the crytpocurrency.  Thus Bitcoin,
+Ethereuem and other wallets have a balance and a set of transfers contributing to that balance.
+The wallet's balance will be in a currency defined for the cryptocurrency.
 
 ## Syncing Modes
 
+WalletKit allows one to specify how a wallet's transfers are identified.  Some cryptocurrencies,
+notably Bitcoin and related currencies, define peer-to-peer interfaces that can be used to 
+identify transactions for a User's wallet.  (For Bitcoin, this peer-to-peer interface is known as
+SPV - 'Simple Payment Verification').  WalletKit implements peer-to-peer interfaces for some
+cyptocurrencies.  In addition, WalletKit defines an interface that can be used to identify 
+transactions based on HTTP requests made to endpoints holding cryptocurrency blocks and 
+transactions.  WalletKIt provides a default implementatin ofthis 'client interface' using Blockset.
+
 ## Event-Based
 
+WalletKit defines
+
 ## Multiple Language Bindings 
+
+WalletKit is implemented in C and uses minimal OS resources.  Thus WalletKit will run on many
+platforms.  With a basis in C, multiple other languages can invoke the C interfaces.
 
 ### C
 
@@ -62,23 +79,29 @@ behaviors.
 
 ## Network
 
-A `BRCryptoNetwork` ...
+A `BRCryptoNetwork` represents a cryptocurrency blockchain.
 
 ## Currency
 
-A `BRCryptoCurrency` ...
+A `BRCryptoCurrency` represents an asset on a particular network that can be held by a User
+or transfers between Users.
 
 ## Transfer
 
-A `BRCryptoTransfer` ...
+A `BRCryptoTransfer` represents the exchange of an asset between two Users.  A transfer
+abstracts over blockchain's transactions - a transaction potentially produces multiple Transfers.
 
 ## Wallet
 
-A `BRCryptoWallet` ...
+A `BRCryptoWallet` holds the asset represented by a currency.  A wallet maintains a balance
+and the time-ordered list of transfers.
 
 ## WalletManager
 
-A `BRCryptoWalletManager` ...
+A `BRCryptoWalletManager` manages one or more wallets associated with a specific network.
+For example, the Ethereum blockchain defines ERC20 tokens, a type of asset.  The Ethereum
+wallet manager can manage a wallet holding Ether as well as any number of ERC20-based 
+assets.
 
 # Installation and Use
 
@@ -96,6 +119,7 @@ If you've cloned WalletKit but without the `--recursive-submodules` flag then pe
 ```
 (cd .../WalletKit; git submodule update --init --recursive)
 ```
+Otherwise a compilation error will arise when a secp256k1 header file is not found.
 
 ### SwiftPM
 
@@ -195,8 +219,6 @@ Version 1.0 is currently the basis for the BRD iOS and Android mobile applicatio
 # Support
 
 Contact [Blockset](https://blockset.com "Blockset")
-
-
 
 [badge-languages]: https://img.shields.io/badge/languages-C%20%7C%20Swift%20%7C%20Java-orange.svg
 [badge-platforms]: https://img.shields.io/badge/platforms-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Linux-lightgrey.svg
