@@ -2241,7 +2241,7 @@ final class System implements com.breadwallet.crypto.System {
                         return;
                     }
 
-                    Log.log(Level.INFO, "HBAR accountInitialize: publicKey: %s", publicKey.get());
+                    Log.log(Level.INFO, String.format ("HBAR accountInitialize: publicKey: %s", publicKey.get()));
 
                     // We'll recursively reference this 'hederaHandler' - put it in a 'final box' so
                     // that the compiler permits references w/o 'perhaps not initialized' errors.
@@ -2299,12 +2299,12 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public Optional<byte[]> accountInitializeUsingData(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network, byte[] data) {
-        return Optional.of (account.initialize (network, data));
+        return Optional.fromNullable (account.initialize (network, data));
     }
 
     @Override
     public Optional<byte[]> accountInitializeUsingHedera(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network, HederaAccount hedera) {
-        return Optional.of (account.initialize (network, hedera.getAccountId().getBytes()));
+        return Optional.fromNullable (account.initialize (network, hedera.getAccountId().getBytes()));
     }
 
     private void accountInitializeReportError(AccountInitializationError error,

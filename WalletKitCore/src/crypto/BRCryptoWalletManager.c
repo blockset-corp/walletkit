@@ -299,6 +299,7 @@ cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                                                  networkName,
                                                                  manager,
                                                                  cryptoWalletManagerFileServiceErrorHandler);
+    fileServicePurge (manager->fileService);
 
     // Create the alarm clock, but don't start it.
     alarmClockCreateIfNecessary(0);
@@ -460,7 +461,7 @@ cryptoWalletManagerRelease (BRCryptoWalletManager cwm) {
     cryptoClientQRYManagerRelease (cwm->qryManager);
 
     // ... then the fileService
-    fileServiceRelease (cwm->fileService);
+    if (NULL != cwm->fileService) fileServiceRelease (cwm->fileService);
 
     // ... then the eventHandler
     eventHandlerDestroy (cwm->handler);
