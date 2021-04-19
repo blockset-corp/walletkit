@@ -41,6 +41,7 @@ typedef BRCryptoWalletManager
                                        BRCryptoAddressScheme scheme,
                                        const char *path);
 
+// The manager's lock is held
 typedef void
 (*BRCryptoWalletManagerReleaseHandler) (BRCryptoWalletManager manager);
 
