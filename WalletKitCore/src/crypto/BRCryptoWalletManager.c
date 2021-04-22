@@ -682,7 +682,7 @@ cryptoWalletManagerHasWallet (BRCryptoWalletManager cwm,
     return cryptoWalletManagerHasWalletLock (cwm, wallet, true);
 }
 
-extern void
+private_extern void
 cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet) {
     pthread_mutex_lock (&cwm->lock);
@@ -696,7 +696,7 @@ cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
     pthread_mutex_unlock (&cwm->lock);
 }
 
-extern void
+private_extern void
 cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                               BRCryptoWallet wallet) {
 

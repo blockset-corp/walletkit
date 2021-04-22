@@ -19,6 +19,7 @@
 #include "BRCryptoBaseP.h"
 #include "BRCryptoHashP.h"
 #include "BRCryptoClientP.h"
+#include "BRCryptoListenerP.h"
 
 #include "BRCryptoNetwork.h"
 
@@ -234,6 +235,16 @@ cryptoNetworkGenerateEvent (BRCryptoNetwork network,
                             BRCryptoNetworkEvent event) {
     cryptoListenerGenerateNetworkEvent (&network->listener, network, event);
 }
+
+/**
+ * Return a newly-allocated array of the built-in networks that are on `isMainet.  The
+ * `listerner` has events announced to it.  Fill `networksCount` with the number of install
+ * networks.
+ */
+private_extern BRCryptoNetwork *
+cryptoNetworkInstallBuiltins (size_t *networksCount,
+                              BRCryptoNetworkListener listener,
+                              bool isMainnet);
 
 #ifdef __cplusplus
 }

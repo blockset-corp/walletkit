@@ -15,7 +15,7 @@
 
 #include "BRCryptoSystem.h"
 #include "BRCryptoBaseP.h"
-
+#include "BRCryptoListenerP.h"
 #include <pthread.h>
 
 #ifdef __cplusplus

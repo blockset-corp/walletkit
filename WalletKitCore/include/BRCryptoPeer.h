@@ -26,10 +26,6 @@ extern "C" {
                       uint16_t port,
                       const char *publicKey);
 
-    private_extern BRCryptoPeer
-    cryptoPeerCreateFromSerialization (BRCryptoNetwork network,
-                                       uint8_t *bytes, size_t bytesCount);
-
     extern BRCryptoData16
     cryptoPeerGetAddrAsInt (BRCryptoPeer peer);
 

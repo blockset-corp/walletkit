@@ -17,11 +17,18 @@
 #include "BRCryptoTransfer.h"
 #include "BRCryptoNetwork.h"
 #include "BRCryptoBaseP.h"
-
+#include "BRCryptoListenerP.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// MARK: - Transfer Attribute
+
+private_extern BRCryptoTransferAttribute
+cryptoTransferAttributeCreate (const char *key,
+                               const char *val, // nullable
+                               BRCryptoBoolean isRequired);
 
 // MARK: - Transfer State
 

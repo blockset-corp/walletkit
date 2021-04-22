@@ -27,7 +27,7 @@ struct BRCryptoPeerRecord {
 
 IMPLEMENT_CRYPTO_GIVE_TAKE (BRCryptoPeer, cryptoPeer);
 
-private_extern BRCryptoPeer
+extern BRCryptoPeer
 cryptoPeerCreate (BRCryptoNetwork network,
                   const char *address,
                   uint16_t port,
@@ -60,12 +60,6 @@ cryptoPeerCreate (BRCryptoNetwork network,
     peer->ref       = CRYPTO_REF_ASSIGN (cryptoPeerRelease);
 
     return peer;
-}
-
-private_extern BRCryptoPeer
-cryptoPeerCreateFromSerialization (BRCryptoNetwork network,
-                                   uint8_t *bytes, size_t bytesCount) {
-    return NULL;
 }
 
 static void

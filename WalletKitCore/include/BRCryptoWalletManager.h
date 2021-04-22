@@ -27,17 +27,7 @@
 extern "C" {
 #endif
 
-/// MARK: Wallet Manager
-
-    /// Can return NULL
-    extern BRCryptoWalletManager
-    cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
-                               BRCryptoClient client,
-                               BRCryptoAccount account,
-                               BRCryptoNetwork network,
-                               BRCryptoSyncMode mode,
-                               BRCryptoAddressScheme scheme,
-                               const char *path);
+    /// MARK: Wallet Manager
 
     extern BRCryptoNetwork
     cryptoWalletManagerGetNetwork (BRCryptoWalletManager cwm);
@@ -106,14 +96,6 @@ extern "C" {
 
     extern BRCryptoBoolean
     cryptoWalletManagerHasWallet (BRCryptoWalletManager cwm,
-                                  BRCryptoWallet wallet);
-
-    extern void
-    cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
-                                  BRCryptoWallet wallet);
-
-    extern void
-    cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
                                   BRCryptoWallet wallet);
 
     /**

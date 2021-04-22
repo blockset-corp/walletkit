@@ -211,6 +211,30 @@ typedef void *BRCryptoWalletManagerCreateContext;
 typedef void (*BRCryptoWalletManagerCreateCallback) (BRCryptoWalletManagerCreateContext context,
                                                      BRCryptoWalletManager manager);
 
+/**
+ * @brief Create a wallet manager.  The result will be NULL if the manager's network has not been
+ * initialized.
+ *
+ * @param listener the listener for wallet manager events
+ * @param client the client for requesting data
+ * @param account the account
+ * @param network the network
+ * @param mode the default mode
+ * @param scheme the default scheme
+ * @param path the file system path under which persistent account data will be stored.  Only public
+ * data is ever stored in this location.
+ *
+ * @return A wallet manager for account on network.  May be NULL if `network` isn't initialized
+ **/
+extern BRCryptoWalletManager
+cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
+                           BRCryptoClient client,
+                           BRCryptoAccount account,
+                           BRCryptoNetwork network,
+                           BRCryptoSyncMode mode,
+                           BRCryptoAddressScheme scheme,
+                           const char *path);
+
 extern BRCryptoWalletManager
 cryptoWalletManagerAllocAndInit (size_t sizeInBytes,
                                  BRCryptoNetworkType type,

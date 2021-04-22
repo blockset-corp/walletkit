@@ -615,7 +615,7 @@ cryptoWalletAnnounceTransfer (BRCryptoWallet wallet,
         wallet->handlers->announceTransfer (wallet, transfer, type);
 }
 
-extern void
+private_extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer) {
     pthread_mutex_lock (&wallet->lock);
@@ -628,7 +628,7 @@ cryptoWalletAddTransfer (BRCryptoWallet wallet,
     pthread_mutex_unlock (&wallet->lock);
 }
 
-extern void
+private_extern void
 cryptoWalletAddTransfers (BRCryptoWallet wallet,
                           OwnershipGiven BRArrayOf(BRCryptoTransfer) transfers) {
     pthread_mutex_lock (&wallet->lock);
@@ -655,7 +655,7 @@ cryptoWalletAddTransfers (BRCryptoWallet wallet,
     pthread_mutex_unlock (&wallet->lock);
 }
 
-extern void
+private_extern void
 cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer) {
     BRCryptoTransfer walletTransfer = NULL;
     pthread_mutex_lock (&wallet->lock);

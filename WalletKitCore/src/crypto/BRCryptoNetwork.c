@@ -778,7 +778,7 @@ cryptoNetworkEventTypeString (BRCryptoNetworkEventType type) {
 
 // MARK: - Network Defaults
 
-extern BRCryptoNetwork *
+private_extern BRCryptoNetwork *
 cryptoNetworkInstallBuiltins (BRCryptoCount *networksCount,
                               BRCryptoNetworkListener listener,
                               bool isMainnet) {

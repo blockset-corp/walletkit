@@ -14,6 +14,7 @@
 
 #include "crypto/BRCryptoSystemP.h"
 #include "crypto/BRCryptoNetworkP.h"
+#include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoClientP.h"
 #include "crypto/BRCryptoListenerP.h"
 

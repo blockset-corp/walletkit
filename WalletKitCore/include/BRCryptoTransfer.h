@@ -109,23 +109,8 @@ extern "C" {
     cryptoTransferGetAmountDirected (BRCryptoTransfer transfer);
 
     /**
-     * Returns the transfer's fee.  Note that the `fee` and the `amount` may be in different
-     * currencies.
-     *
-     * @param transfer the transfer
-     *
-     * @return the fee
+     * Get the transfer's state type.
      */
-//    extern BRCryptoAmount
-//    cryptoTransferGetFee (BRCryptoTransfer transfer);
-
-//    extern BRCryptoBoolean
-//    cryptoTransferExtractConfirmation (BRCryptoTransfer transfer,
-//                                       uint64_t *blockNumber,
-//                                       uint64_t *transactionIndex,
-//                                       uint64_t *timestamp,
-//                                       BRCryptoAmount *fee);
-
     extern BRCryptoTransferStateType
     cryptoTransferGetStateType (BRCryptoTransfer transfer);
 

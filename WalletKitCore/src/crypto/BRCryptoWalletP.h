@@ -22,6 +22,7 @@
 #include "BRCryptoBaseP.h"
 #include "BRCryptoClient.h"
 #include "BRCryptoTransferP.h"
+#include "BRCryptoListenerP.h"
 
 #ifdef __cplusplus
 extern "C" {

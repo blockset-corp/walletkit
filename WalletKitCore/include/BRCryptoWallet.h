@@ -183,12 +183,6 @@ extern "C" {
                                         BRCryptoTransferOutput *outputs,
                                         BRCryptoFeeBasis estimatedFeeBasis);
 
-    extern void
-    cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
-
-    extern void
-    cryptoWalletRemTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
-
     extern BRCryptoBoolean
     cryptoWalletEqual (BRCryptoWallet w1, BRCryptoWallet w2);
 

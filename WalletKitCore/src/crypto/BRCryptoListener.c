@@ -46,7 +46,7 @@ static BREventType handleListenerSignalTransferEventType = {
     (BREventDispatcher) cryptoListenerSignalTransferEventDispatcher
 };
 
-extern void
+private_extern void
 cryptoListenerGenerateTransferEvent (const BRCryptoTransferListener *listener,
                                      BRCryptoTransfer transfer,
                                      BRCryptoTransferEvent event) {
@@ -88,7 +88,7 @@ static BREventType handleListenerSignalWalletEventType = {
     (BREventDispatcher) cryptoListenerSignalWalletEventDispatcher
 };
 
-extern void
+private_extern void
 cryptoListenerGenerateWalletEvent (const BRCryptoWalletListener *listener,
                                    BRCryptoWallet wallet,
                                    OwnershipGiven BRCryptoWalletEvent event) {
@@ -127,7 +127,7 @@ static BREventType handleListenerSignalManagerEventType = {
     (BREventDispatcher) cryptoListenerSignalManagerEventDispatcher
 };
 
-extern void
+private_extern void
 cryptoListenerGenerateManagerEvent (const BRCryptoWalletManagerListener *listener,
                                     BRCryptoWalletManager manager,
                                     BRCryptoWalletManagerEvent event) {
@@ -165,7 +165,7 @@ static BREventType handleListenerSignalNetworkEventType = {
     (BREventDispatcher) cryptoListenerSignalNetworkEventDispatcher
 };
 
-extern void
+private_extern void
 cryptoListenerGenerateNetworkEvent (const BRCryptoNetworkListener *listener,
                                     BRCryptoNetwork network,
                                     BRCryptoNetworkEvent event) {
@@ -203,7 +203,7 @@ static BREventType handleListenerSignalSystemEventType = {
     (BREventDispatcher) cryptoListenerSignalSystemEventDispatcher
 };
 
-extern void
+private_extern void
 cryptoListenerGenerateSystemEvent (BRCryptoListener listener,
                                    BRCryptoSystem system,
                                    BRCryptoSystemEvent event) {
