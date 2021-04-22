@@ -22,154 +22,154 @@
 extern "C" {
 #endif
 
-    /// Mark: Forward Declarations
+/// Mark: Forward Declarations
 
-    typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord *BRCryptoPaymentProtocolRequestBitPayBuilder;
+typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord *BRCryptoPaymentProtocolRequestBitPayBuilder;
 
-    typedef struct BRCryptoPaymentProtocolRequestRecord *BRCryptoPaymentProtocolRequest;
+typedef struct BRCryptoPaymentProtocolRequestRecord *BRCryptoPaymentProtocolRequest;
 
-    typedef struct BRCryptoPaymentProtocolPaymentRecord *BRCryptoPaymentProtocolPayment;
+typedef struct BRCryptoPaymentProtocolPaymentRecord *BRCryptoPaymentProtocolPayment;
 
-    typedef struct BRCryptoPaymentProtocolPaymentACKRecord *BRCryptoPaymentProtocolPaymentACK;
+typedef struct BRCryptoPaymentProtocolPaymentACKRecord *BRCryptoPaymentProtocolPaymentACK;
 
-    typedef enum {
-        CRYPTO_PAYMENT_PROTOCOL_TYPE_BITPAY,
-        CRYPTO_PAYMENT_PROTOCOL_TYPE_BIP70,
-    } BRCryptoPaymentProtocolType;
+typedef enum {
+    CRYPTO_PAYMENT_PROTOCOL_TYPE_BITPAY,
+    CRYPTO_PAYMENT_PROTOCOL_TYPE_BIP70,
+} BRCryptoPaymentProtocolType;
 
-    typedef enum {
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_NONE,
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_CERT_MISSING,
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_CERT_NOT_TRUSTED,
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_SIGNATURE_TYPE_NOT_SUPPORTED,
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_SIGNATURE_VERIFICATION_FAILED,
-        CRYPTO_PAYMENT_PROTOCOL_ERROR_EXPIRED
-    } BRCryptoPaymentProtocolError;
+typedef enum {
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_NONE,
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_CERT_MISSING,
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_CERT_NOT_TRUSTED,
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_SIGNATURE_TYPE_NOT_SUPPORTED,
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_SIGNATURE_VERIFICATION_FAILED,
+    CRYPTO_PAYMENT_PROTOCOL_ERROR_EXPIRED
+} BRCryptoPaymentProtocolError;
 
-    typedef void * BRCryptoPayProtReqContext;
+typedef void * BRCryptoPayProtReqContext;
 
-    typedef char * (*BRCryptoPayProtReqBitPayAndBip70CommonNameExtractor) (BRCryptoPaymentProtocolRequest request,
-                                                                           BRCryptoPayProtReqContext context,
-                                                                           const char *pkiType,
-                                                                           uint8_t *certBytes[],
-                                                                           size_t certLengths[],
-                                                                           size_t certCount);
+typedef char * (*BRCryptoPayProtReqBitPayAndBip70CommonNameExtractor) (BRCryptoPaymentProtocolRequest request,
+                                                                       BRCryptoPayProtReqContext context,
+                                                                       const char *pkiType,
+                                                                       uint8_t *certBytes[],
+                                                                       size_t certLengths[],
+                                                                       size_t certCount);
 
-    typedef BRCryptoPaymentProtocolError (*BRCryptoPayProtReqBitPayAndBip70Validator) (BRCryptoPaymentProtocolRequest request,
-                                                                                       BRCryptoPayProtReqContext context,
-                                                                                       const char *pkiType,
-                                                                                       uint64_t expires,
-                                                                                       uint8_t *certBytes[],
-                                                                                       size_t certLengths[],
-                                                                                       size_t certCount,
-                                                                                       const uint8_t *digest,
-                                                                                       size_t digestLength,
-                                                                                       const uint8_t *signature,
-                                                                                       size_t signatureLength);
+typedef BRCryptoPaymentProtocolError (*BRCryptoPayProtReqBitPayAndBip70Validator) (BRCryptoPaymentProtocolRequest request,
+                                                                                   BRCryptoPayProtReqContext context,
+                                                                                   const char *pkiType,
+                                                                                   uint64_t expires,
+                                                                                   uint8_t *certBytes[],
+                                                                                   size_t certLengths[],
+                                                                                   size_t certCount,
+                                                                                   const uint8_t *digest,
+                                                                                   size_t digestLength,
+                                                                                   const uint8_t *signature,
+                                                                                   size_t signatureLength);
 
 
-    typedef struct {
-        BRCryptoPayProtReqContext context;
-        BRCryptoPayProtReqBitPayAndBip70Validator validator;
-        BRCryptoPayProtReqBitPayAndBip70CommonNameExtractor nameExtractor;
-    } BRCryptoPayProtReqBitPayAndBip70Callbacks;
+typedef struct {
+    BRCryptoPayProtReqContext context;
+    BRCryptoPayProtReqBitPayAndBip70Validator validator;
+    BRCryptoPayProtReqBitPayAndBip70CommonNameExtractor nameExtractor;
+} BRCryptoPayProtReqBitPayAndBip70Callbacks;
 
-    typedef BRCryptoPayProtReqBitPayAndBip70Callbacks BRCryptoPayProtReqBitPayCallbacks;
-    typedef BRCryptoPayProtReqBitPayAndBip70Callbacks BRCryptoPayProtReqBip70Callbacks;
+typedef BRCryptoPayProtReqBitPayAndBip70Callbacks BRCryptoPayProtReqBitPayCallbacks;
+typedef BRCryptoPayProtReqBitPayAndBip70Callbacks BRCryptoPayProtReqBip70Callbacks;
 
-    /// Mark: BitPay Payment Protocol Request Builder
+/// Mark: BitPay Payment Protocol Request Builder
 
-    extern BRCryptoPaymentProtocolRequestBitPayBuilder
-    cryptoPaymentProtocolRequestBitPayBuilderCreate (BRCryptoNetwork cryptoNetwork,
-                                                     BRCryptoCurrency cryptoCurrency,
-                                                     BRCryptoPayProtReqBitPayCallbacks callbacks,
-                                                     const char *network,
-                                                     uint64_t time,
-                                                     uint64_t expires,
-                                                     double feePerByte,
-                                                     const char *memo,
-                                                     const char *paymentURL,
-                                                     const uint8_t *merchantData,
-                                                     size_t merchDataLen);
+extern BRCryptoPaymentProtocolRequestBitPayBuilder
+cryptoPaymentProtocolRequestBitPayBuilderCreate (BRCryptoNetwork cryptoNetwork,
+                                                 BRCryptoCurrency cryptoCurrency,
+                                                 BRCryptoPayProtReqBitPayCallbacks callbacks,
+                                                 const char *network,
+                                                 uint64_t time,
+                                                 uint64_t expires,
+                                                 double feePerByte,
+                                                 const char *memo,
+                                                 const char *paymentURL,
+                                                 const uint8_t *merchantData,
+                                                 size_t merchDataLen);
 
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequestBitPayBuilder, cryptoPaymentProtocolRequestBitPayBuilder);
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequestBitPayBuilder, cryptoPaymentProtocolRequestBitPayBuilder);
 
-    extern void
-    cryptoPaymentProtocolRequestBitPayBuilderAddOutput(BRCryptoPaymentProtocolRequestBitPayBuilder builder,
-                                                       const char *address,
-                                                       uint64_t amount);
+extern void
+cryptoPaymentProtocolRequestBitPayBuilderAddOutput(BRCryptoPaymentProtocolRequestBitPayBuilder builder,
+                                                   const char *address,
+                                                   uint64_t amount);
 
-    extern BRCryptoPaymentProtocolRequest
-    cryptoPaymentProtocolRequestBitPayBuilderBuild(BRCryptoPaymentProtocolRequestBitPayBuilder builder);
+extern BRCryptoPaymentProtocolRequest
+cryptoPaymentProtocolRequestBitPayBuilderBuild(BRCryptoPaymentProtocolRequestBitPayBuilder builder);
 
-    /// Mark: Payment Protocol Request
+/// Mark: Payment Protocol Request
 
-    extern BRCryptoBoolean
-    cryptoPaymentProtocolRequestValidateSupported (BRCryptoPaymentProtocolType type,
-                                                   BRCryptoNetwork network,
-                                                   BRCryptoCurrency currency,
-                                                   BRCryptoWallet wallet);
+extern BRCryptoBoolean
+cryptoPaymentProtocolRequestValidateSupported (BRCryptoPaymentProtocolType type,
+                                               BRCryptoNetwork network,
+                                               BRCryptoCurrency currency,
+                                               BRCryptoWallet wallet);
 
-    extern BRCryptoPaymentProtocolRequest
-    cryptoPaymentProtocolRequestCreateForBip70 (BRCryptoNetwork cryptoNetwork,
-                                                BRCryptoCurrency cryptoCurrency,
-                                                BRCryptoPayProtReqBip70Callbacks callbacks,
-                                                uint8_t *serialization,
-                                                size_t serializationLen);
+extern BRCryptoPaymentProtocolRequest
+cryptoPaymentProtocolRequestCreateForBip70 (BRCryptoNetwork cryptoNetwork,
+                                            BRCryptoCurrency cryptoCurrency,
+                                            BRCryptoPayProtReqBip70Callbacks callbacks,
+                                            uint8_t *serialization,
+                                            size_t serializationLen);
 
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequest, cryptoPaymentProtocolRequest);
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolRequest, cryptoPaymentProtocolRequest);
 
-    extern BRCryptoPaymentProtocolType
-    cryptoPaymentProtocolRequestGetType (BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoPaymentProtocolType
+cryptoPaymentProtocolRequestGetType (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern BRCryptoBoolean
-    cryptoPaymentProtocolRequestIsSecure (BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoBoolean
+cryptoPaymentProtocolRequestIsSecure (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern const char *
-    cryptoPaymentProtocolRequestGetMemo (BRCryptoPaymentProtocolRequest protoReq);
+extern const char *
+cryptoPaymentProtocolRequestGetMemo (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern const char *
-    cryptoPaymentProtocolRequestGetPaymentURL (BRCryptoPaymentProtocolRequest protoReq);
+extern const char *
+cryptoPaymentProtocolRequestGetPaymentURL (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern BRCryptoAmount
-    cryptoPaymentProtocolRequestGetTotalAmount (BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoAmount
+cryptoPaymentProtocolRequestGetTotalAmount (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern BRCryptoNetworkFee
-    cryptoPaymentProtocolRequestGetRequiredNetworkFee (BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoNetworkFee
+cryptoPaymentProtocolRequestGetRequiredNetworkFee (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern BRCryptoAddress
-    cryptoPaymentProtocolRequestGetPrimaryTargetAddress (BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoAddress
+cryptoPaymentProtocolRequestGetPrimaryTargetAddress (BRCryptoPaymentProtocolRequest protoReq);
 
-    // If the return value is not NULL, it must be deallocated using free()
-    extern char *
-    cryptoPaymentProtocolRequestGetCommonName (BRCryptoPaymentProtocolRequest protoReq);
+// If the return value is not NULL, it must be deallocated using free()
+extern char *
+cryptoPaymentProtocolRequestGetCommonName (BRCryptoPaymentProtocolRequest protoReq);
 
-    extern BRCryptoPaymentProtocolError
-    cryptoPaymentProtocolRequestIsValid(BRCryptoPaymentProtocolRequest protoReq);
+extern BRCryptoPaymentProtocolError
+cryptoPaymentProtocolRequestIsValid(BRCryptoPaymentProtocolRequest protoReq);
 
-    /// Mark: Payment Protocol Payment
+/// Mark: Payment Protocol Payment
 
-    extern BRCryptoPaymentProtocolPayment
-    cryptoPaymentProtocolPaymentCreate (BRCryptoPaymentProtocolRequest protoReq,
-                                        BRCryptoTransfer transfer,
-                                        BRCryptoAddress refundAddress);
+extern BRCryptoPaymentProtocolPayment
+cryptoPaymentProtocolPaymentCreate (BRCryptoPaymentProtocolRequest protoReq,
+                                    BRCryptoTransfer transfer,
+                                    BRCryptoAddress refundAddress);
 
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolPayment, cryptoPaymentProtocolPayment);
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolPayment, cryptoPaymentProtocolPayment);
 
-    extern uint8_t *
-    cryptoPaymentProtocolPaymentEncode(BRCryptoPaymentProtocolPayment protoPay,
-                                       size_t *encodedLen);
+extern uint8_t *
+cryptoPaymentProtocolPaymentEncode(BRCryptoPaymentProtocolPayment protoPay,
+                                   size_t *encodedLen);
 
-    /// Mark: Payment Protocol ACK
+/// Mark: Payment Protocol ACK
 
-    extern BRCryptoPaymentProtocolPaymentACK
-    cryptoPaymentProtocolPaymentACKCreateForBip70 (uint8_t *serialization,
-                                                   size_t serializationLen);
+extern BRCryptoPaymentProtocolPaymentACK
+cryptoPaymentProtocolPaymentACKCreateForBip70 (uint8_t *serialization,
+                                               size_t serializationLen);
 
-    DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolPaymentACK, cryptoPaymentProtocolPaymentACK);
+DECLARE_CRYPTO_GIVE_TAKE (BRCryptoPaymentProtocolPaymentACK, cryptoPaymentProtocolPaymentACK);
 
-    extern const char *
-    cryptoPaymentProtocolPaymentACKGetMemo (BRCryptoPaymentProtocolPaymentACK protoAck);
+extern const char *
+cryptoPaymentProtocolPaymentACKGetMemo (BRCryptoPaymentProtocolPaymentACK protoAck);
 
 #ifdef __cplusplus
 }

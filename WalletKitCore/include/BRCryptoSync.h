@@ -18,124 +18,124 @@
 extern "C" {
 #endif
 
-    /// MARK: Sync Stopped Reason
+/// MARK: Sync Stopped Reason
 
+/**
+ * An enumeration of the reasons for stopping a sync
+ */
+typedef enum {
+    CRYPTO_SYNC_STOPPED_REASON_COMPLETE,
+    CRYPTO_SYNC_STOPPED_REASON_REQUESTED,
+    CRYPTO_SYNC_STOPPED_REASON_UNKNOWN,
+    CRYPTO_SYNC_STOPPED_REASON_POSIX
+} BRCryptoSyncStoppedReasonType;
+
+/**
+ * A StoppedReason explains the reason for stopping a sync.
+ */
+typedef struct {
+    BRCryptoSyncStoppedReasonType type;
+    union {
+        struct {
+            int errnum;
+        } posix;
+    } u;
+} BRCryptoSyncStoppedReason;
+
+/**
+ * Create a stopped reason as 'complete'
+ */
+extern BRCryptoSyncStoppedReason
+cryptoSyncStoppedReasonComplete(void);
+
+/**
+ * Create a stopped reason as 'requested'
+ */
+extern BRCryptoSyncStoppedReason
+cryptoSyncStoppedReasonRequested(void);
+
+/**
+ * Create a stopped reason as 'unknown'
+ */
+extern BRCryptoSyncStoppedReason
+cryptoSyncStoppedReasonUnknown(void);
+
+/**
+ * Create a stopped reason as a posix error
+ */
+extern BRCryptoSyncStoppedReason
+cryptoSyncStoppedReasonPosix(int errnum);
+
+/**
+ * Return a descriptive message as to why the sync stopped.
+ *
+ *@return the detailed reason as a string or NULL
+ */
+extern char *
+cryptoSyncStoppedReasonGetMessage(BRCryptoSyncStoppedReason *reason);
+
+/// MARK: Sync Mode
+
+/**
+ * The modes supported for syncing of a wallet's transactions.  These are the supported modes
+ * but they are not necessarily available for any individual WalletKit execution.
+ * Specifically, the API_ONLY mode may be supported but if the backend services are not
+ * accessible, such as if a device is in 'airplane mode', then API_ONLY will not be available.
+ */
+typedef enum {
     /**
-     * An enumeration of the reasons for stopping a sync
+     * Use the BRD backend for all Core blockchain state.  The BRD backend includes a 'submit
+     * transaction' interface.
      */
-    typedef enum {
-        CRYPTO_SYNC_STOPPED_REASON_COMPLETE,
-        CRYPTO_SYNC_STOPPED_REASON_REQUESTED,
-        CRYPTO_SYNC_STOPPED_REASON_UNKNOWN,
-        CRYPTO_SYNC_STOPPED_REASON_POSIX
-    } BRCryptoSyncStoppedReasonType;
-
+    CRYPTO_SYNC_MODE_API_ONLY,
+    
     /**
-     * A StoppedReason explains the reason for stopping a sync.
+     * Use the BRD backend for everything other than 'submit transaction'
      */
-    typedef struct {
-        BRCryptoSyncStoppedReasonType type;
-        union {
-            struct {
-                int errnum;
-            } posix;
-        } u;
-    } BRCryptoSyncStoppedReason;
-
+    CRYPTO_SYNC_MODE_API_WITH_P2P_SEND,
+    
     /**
-     * Create a stopped reason as 'complete'
+     * Use the BRD backend for an initial sync and then, once complete, use P2P.  If a sync
+     * has not occurred in a while, use the BRD backend again before using P2P (so as to catch-up
+     * quickly)
      */
-    extern BRCryptoSyncStoppedReason
-    cryptoSyncStoppedReasonComplete(void);
-
+    CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC,
+    
     /**
-     * Create a stopped reason as 'requested'
+     * Use acomplete block chain sync, even starting at block zero (but usually from a block
+     * derived from the accounts `earliestStartTime` (or the BIP-39 introduction block).
      */
-    extern BRCryptoSyncStoppedReason
-    cryptoSyncStoppedReasonRequested(void);
-
-    /**
-     * Create a stopped reason as 'unknown'
-     */
-    extern BRCryptoSyncStoppedReason
-    cryptoSyncStoppedReasonUnknown(void);
-
-    /**
-     * Create a stopped reason as a posix error
-     */
-    extern BRCryptoSyncStoppedReason
-    cryptoSyncStoppedReasonPosix(int errnum);
-
-    /**
-     * Return a descriptive message as to why the sync stopped.
-     *
-     *@return the detailed reason as a string or NULL
-     */
-    extern char *
-    cryptoSyncStoppedReasonGetMessage(BRCryptoSyncStoppedReason *reason);
-
-    /// MARK: Sync Mode
-
-    /**
-     * The modes supported for syncing of a wallet's transactions.  These are the supported modes
-     * but they are not necessarily available for any individual WalletKit execution.
-     * Specifically, the API_ONLY mode may be supported but if the backend services are not
-     * accessible, such as if a device is in 'airplane mode', then API_ONLY will not be available.
-     */
-    typedef enum {
-        /**
-         * Use the BRD backend for all Core blockchain state.  The BRD backend includes a 'submit
-         * transaction' interface.
-         */
-        CRYPTO_SYNC_MODE_API_ONLY,
-
-        /**
-         * Use the BRD backend for everything other than 'submit transaction'
-         */
-        CRYPTO_SYNC_MODE_API_WITH_P2P_SEND,
-
-        /**
-         * Use the BRD backend for an initial sync and then, once complete, use P2P.  If a sync
-         * has not occurred in a while, use the BRD backend again before using P2P (so as to catch-up
-         * quickly)
-         */
-        CRYPTO_SYNC_MODE_P2P_WITH_API_SYNC,
-
-        /**
-         * Use acomplete block chain sync, even starting at block zero (but usually from a block
-         * derived from the accounts `earliestStartTime` (or the BIP-39 introduction block).
-         */
-        CRYPTO_SYNC_MODE_P2P_ONLY
-    } BRCryptoSyncMode;
+    CRYPTO_SYNC_MODE_P2P_ONLY
+} BRCryptoSyncMode;
 
 #define NUMBER_OF_SYNC_MODES    (1 + CRYPTO_SYNC_MODE_P2P_ONLY)
 
-    extern const char *
-    cryptoSyncModeString (BRCryptoSyncMode m);
+extern const char *
+cryptoSyncModeString (BRCryptoSyncMode m);
 
-    /// MARK: Sync Depth
+/// MARK: Sync Depth
 
-    typedef enum {
-        /**
-         * Sync from the block height of the last confirmed send transaction.
-         */
-        CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND,
+typedef enum {
+    /**
+     * Sync from the block height of the last confirmed send transaction.
+     */
+    CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND,
+    
+    /**
+     * Sync from the block height of the last trusted block; this is dependent on the
+     * blockchain and mode as to how it determines trust.
+     */
+    CRYPTO_SYNC_DEPTH_FROM_LAST_TRUSTED_BLOCK,
+    
+    /**
+     * Sync from the block height of the point in time when the account was created.
+     */
+    CRYPTO_SYNC_DEPTH_FROM_CREATION
+} BRCryptoSyncDepth;
 
-        /**
-         * Sync from the block height of the last trusted block; this is dependent on the
-         * blockchain and mode as to how it determines trust.
-         */
-        CRYPTO_SYNC_DEPTH_FROM_LAST_TRUSTED_BLOCK,
-
-        /**
-         * Sync from the block height of the point in time when the account was created.
-         */
-        CRYPTO_SYNC_DEPTH_FROM_CREATION
-    } BRCryptoSyncDepth;
-
-    /// The Percent Complete (0...100.0) derived from the last block processed relative to the
-    /// full block range in a sync.
-    typedef float BRCryptoSyncPercentComplete;
+/// The Percent Complete (0...100.0) derived from the last block processed relative to the
+/// full block range in a sync.
+typedef float BRCryptoSyncPercentComplete;
 
 #define AS_CRYPTO_SYNC_PERCENT_COMPLETE(number)    ((BRCryptoSyncPercentComplete) (number))
 
