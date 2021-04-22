@@ -17,14 +17,30 @@
 extern "C" {
 #endif
 
+/**
+ * @brief A hash represents a cryptographic hash, which is a series of bytes, for a network.
+ *
+ * @discussion Different cryptocurrency blockchains represent hash values in different ways,
+ * specifically with a different number of byts and often computed using a different cryptographic
+ * hash functions.
+ */
 typedef struct BRCryptoHashRecord *BRCryptoHash;
 
+/**
+ * Check if two hashes are equal
+ */
 extern BRCryptoBoolean
 cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2);
 
+/**
+ * Encode hash as a string appropriate for the network
+ */
 extern OwnershipGiven char *
 cryptoHashEncodeString (BRCryptoHash hash);
 
+/**
+ * Get the hash's integer representation.  This is used for `BRSet` operations.
+ */
 extern int
 cryptoHashGetHashValue (BRCryptoHash hash);
 

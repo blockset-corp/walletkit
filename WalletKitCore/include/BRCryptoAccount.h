@@ -17,6 +17,19 @@
 extern "C" {
 #endif
 
+    /**
+     * @brief An Account holds the public key information associated with a User.
+     *
+     * @discussion An Account is created
+     * from a `paperKey`.  (A `paperKey` being 12 words from the BIP-39 word list appropriate for
+     * the User's locale.)
+     *
+     * An Account can be serialized, which never ever includes private key information, and then
+     * recreated from that serialization.
+     *
+     * An Account has a 'creation timestamp' which can be used to limit the identification of
+     * transfers as younger than the timestamp.
+     */
     typedef struct BRCryptoAccountRecord *BRCryptoAccount;
 
     /**
@@ -110,12 +123,24 @@ extern "C" {
                                         const uint8_t *bytes,
                                         size_t bytesCount);
 
+    /**
+     * The the account's timestamp
+     */
     extern BRCryptoTimestamp
     cryptoAccountGetTimestamp (BRCryptoAccount account);
 
+    /**
+     * Get a unique file-system-identier for the account.  This is derived from the account's
+     * public data only.
+     */
     extern char *
     cryptoAccountGetFileSystemIdentifier (BRCryptoAccount account);
 
+    /**
+     * Get the account's unique-identifier.
+     *
+     * @discussion This is used by the `SystemClient` when subscribing to client events.
+     */
     extern const char *
     cryptoAccountGetUids (BRCryptoAccount account);
 

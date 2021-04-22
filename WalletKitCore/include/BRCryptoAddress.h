@@ -12,7 +12,6 @@
 #define BRCryptoAddress_h
 
 #include "BRCryptoBase.h"
-//#include "BRCryptoNetwork.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,20 +19,15 @@ extern "C" {
 
     /// MARK: - Address
 
+    /**
+     * @brief An address represents an account address on a specific network.
+     *
+     * @discussion Different networks have different addresses and have different string
+     * representations of addresses.  For example, an Ethereum address is 20 bytes that is 'printed'
+     * as a '0x'-prefixed hex string with or without capitalization as a checksum.  Bitcoin has
+     * 'legacy' and 'segwit' addresses.
+     */
     typedef struct BRCryptoAddressRecord *BRCryptoAddress;
-
-    ///
-    /// Create an address for `string` on `network`.  The string representation of addresses differ
-    /// depending on the network.  If `string` is not valid for `network`, then `NULL` is returned.
-    ///
-    /// @param network
-    /// @param string
-    ///
-    /// @return An Address or NULL
-    ///
-//    extern BRCryptoAddress
-//    cryptoAddressCreateFromString (BRCryptoNetwork network,
-//                                   const char *string);
 
     ///
     /// Returns the address' string representation which is suitable for display.  Note that an

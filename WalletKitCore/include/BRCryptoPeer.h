@@ -18,23 +18,43 @@
 extern "C" {
 #endif
 
+    /**
+     * @brief A Peer as a remote host that can be used for peer-to-peer sync modes
+     *
+     * @discussion Although not clear in the interface, relevent only to BTC-related networks
+     */
     typedef struct BRCryptoPeerRecord *BRCryptoPeer;
 
-    private_extern BRCryptoPeer
+    /**
+     * Create a peer on network at `address` and `port` and optionally with `publicKey`.
+     */
+    extern BRCryptoPeer
     cryptoPeerCreate (BRCryptoNetwork network,
                       const char *address,
                       uint16_t port,
                       const char *publicKey);
 
+    /**
+     * The peer's address as 16 bytes.
+     */
     extern BRCryptoData16
     cryptoPeerGetAddrAsInt (BRCryptoPeer peer);
 
+    /**
+     * Get the peer's network
+     */
     extern BRCryptoNetwork
     cryptoPeerGetNetwork (BRCryptoPeer peer);
 
+    /**
+     * Get the peer's address.
+     */
     extern const char *
     cryptoPeerGetAddress (BRCryptoPeer peer);
 
+    /**
+     * Get the peer's port.
+     */
     extern uint16_t
     cryptoPeerGetPort (BRCryptoPeer peer);
 

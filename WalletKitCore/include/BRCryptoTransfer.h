@@ -22,9 +22,11 @@
 extern "C" {
 #endif
 
-
     /// MARK: - Transfer Direction
 
+    /**
+     * An enumeration of transfer directions.
+     */
     typedef enum {
         CRYPTO_TRANSFER_SENT,
         CRYPTO_TRANSFER_RECEIVED,
@@ -33,30 +35,47 @@ extern "C" {
 
     /// MARK: - Transfer Attribute
 
+    /**
+     * @brief A Transfer Attribute is an arbitrary {key,value,isRequired} triple that extends a
+     * transfer with, typically, network specific data.
+     */
     typedef struct BRCryptoTransferAttributeRecord *BRCryptoTransferAttribute;
 
+    /**
+     * Get the transfer attribute's key
+     */
     extern const char *
     cryptoTransferAttributeGetKey (BRCryptoTransferAttribute attribute);
 
+    /**
+     * Get the transfer attribute's value
+     */
     extern const char * // nullable
     cryptoTransferAttributeGetValue (BRCryptoTransferAttribute attribute);
 
+    /**
+     * Set the transfer attribute's value.
+     */
     extern void
     cryptoTransferAttributeSetValue (BRCryptoTransferAttribute attribute, const char *value);
 
+    /**
+     * Check if the transfer attribute is required.
+     */
     extern BRCryptoBoolean
     cryptoTransferAttributeIsRequired (BRCryptoTransferAttribute attribute);
 
+    /**
+     * Copy the transfer attribute.
+     */
     extern BRCryptoTransferAttribute
     cryptoTransferAttributeCopy (BRCryptoTransferAttribute attribute);
 
-    private_extern BRCryptoTransferAttribute
-    cryptoTransferAttributeCreate (const char *key,
-                                   const char *val, // nullable
-                                   BRCryptoBoolean isRequired);
-
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoTransferAttribute, cryptoTransferAttribute);
 
+    /**
+     * An enumeration of transfer attribute validation errors.
+     */
     typedef enum {
         CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_REQUIRED_BUT_NOT_PROVIDED,
         CRYPTO_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE,
@@ -114,12 +133,21 @@ extern "C" {
     extern BRCryptoTransferStateType
     cryptoTransferGetStateType (BRCryptoTransfer transfer);
 
+    /**
+     * Get the transfer's state.
+     */
     extern BRCryptoTransferState
     cryptoTransferGetState (BRCryptoTransfer transfer);
 
+    /**
+     * Check if transfer was sent.
+     */
     extern BRCryptoBoolean
     cryptoTransferIsSent (BRCryptoTransfer transfer);
 
+    /**
+     * Get the transfer's direction.
+     */
     extern BRCryptoTransferDirection
     cryptoTransferGetDirection (BRCryptoTransfer transfer);
 
@@ -172,9 +200,17 @@ extern "C" {
     cryptoTransferSetHash (BRCryptoTransfer transfer,
                            OwnershipKept BRCryptoHash hash);
 
+    /**
+     * Get the unit used for the transfer's amount.
+     */
     extern BRCryptoUnit
     cryptoTransferGetUnitForAmount (BRCryptoTransfer transfer);
 
+    /**
+     * Get the unit used for the transfer's fee.  This unit might be imcompatible (have a different
+     * currency) from the unit for the transfer's amount.  For example, a transfer for an ERC20
+     * token will have a fee in Ether but the amount will be the currency for the ERC20 token
+     */
     extern BRCryptoUnit
     cryptoTransferGetUnitForFee (BRCryptoTransfer transfer);
 
@@ -188,38 +224,63 @@ extern "C" {
     extern BRCryptoFeeBasis
     cryptoTransferGetEstimatedFeeBasis (BRCryptoTransfer transfer);
 
+    /**
+     * Get the transfer's confirmed fee basis.  This can be NULL if the transfer has not been
+     * confirmed.  The confirmed fee basis may differ from the estimated fee basis.  For example,
+     * an Etheruem ERC20 transfer will have an estimated fee basis using the `gasLimit` whereas
+     * the confirmed fee basis has `gasUsed`.  In general `gasUsed <= gasLimit`.
+     */
     extern BRCryptoFeeBasis
     cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer);
 
-    ///
-    /// Return the transfer's fee.  If the transfer's fee is paid in a different currency from the
-    /// transfer's amount, such as an ERC20 transfer being paid in ETHER, then NULL is returned.  If
-    /// the transfers is not SEND by our User, then NULL is returned.
-    ///
-    /// TODO: The Transfer's Fee should be independent of the direction
-    ///
-    /// @param transfer the transfer
-    ///
+    /**
+     * Return the transfer's fee.  If the transfer's fee is paid in a different currency from the
+     * transfer's amount, such as an ERC20 transfer being paid in ETHER, then NULL is returned.  If
+     * the transfers is not SEND by our User, then NULL is returned.
+     *
+     * TODO: The Transfer's Fee should be independent of the direction
+     *
+     * @param transfer the transfer
+    */
     extern BRCryptoAmount
     cryptoTransferGetFee (BRCryptoTransfer transfer);
 
+    /**
+     * Get the count of the transfer's attributes
+     */
     extern size_t
     cryptoTransferGetAttributeCount (BRCryptoTransfer transfer);
 
+    /**
+     * Get the transfer's attribute at `index`.  The index must be `[0,count)`.
+     */
     extern BRCryptoTransferAttribute
     cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
                                   size_t index);
 
+    /**
+     * Get a serialization of `transfer` suitable for submission to `network`.  The transfer must
+     * apply to `network` and the transfer must be signed.  Fills `serializationCount` with the
+     * number of bytes in the serialization.
+     */
     extern uint8_t *
     cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
                                           BRCryptoNetwork  network,
                                           size_t *serializationCount);
 
+    /**
+     * Get a serialization of `transfer` suitable for fee estimation on `network`.  The transfer
+     * must apply to `network` and the transfer should not be signed.  Fills `serializationCount`
+     * with the number of bytes in the serialization.
+     */
     extern uint8_t *
     cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
                                              BRCryptoNetwork  network,
                                              size_t *serializationCount);
 
+    /**
+     * Check if two transfers are equal.
+     */
     extern BRCryptoBoolean
     cryptoTransferEqual (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2);
 

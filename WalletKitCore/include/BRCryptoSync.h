@@ -20,6 +20,9 @@ extern "C" {
 
     /// MARK: Sync Stopped Reason
 
+    /**
+     * An enumeration of the reasons for stopping a sync
+     */
     typedef enum {
         CRYPTO_SYNC_STOPPED_REASON_COMPLETE,
         CRYPTO_SYNC_STOPPED_REASON_REQUESTED,
@@ -27,6 +30,9 @@ extern "C" {
         CRYPTO_SYNC_STOPPED_REASON_POSIX
     } BRCryptoSyncStoppedReasonType;
 
+    /**
+     * A StoppedReason explains the reason for stopping a sync.
+     */
     typedef struct {
         BRCryptoSyncStoppedReasonType type;
         union {
@@ -36,15 +42,27 @@ extern "C" {
         } u;
     } BRCryptoSyncStoppedReason;
 
+    /**
+     * Create a stopped reason as 'complete'
+     */
     extern BRCryptoSyncStoppedReason
     cryptoSyncStoppedReasonComplete(void);
 
+    /**
+     * Create a stopped reason as 'requested'
+     */
     extern BRCryptoSyncStoppedReason
     cryptoSyncStoppedReasonRequested(void);
 
+    /**
+     * Create a stopped reason as 'unknown'
+     */
     extern BRCryptoSyncStoppedReason
     cryptoSyncStoppedReasonUnknown(void);
 
+    /**
+     * Create a stopped reason as a posix error
+     */
     extern BRCryptoSyncStoppedReason
     cryptoSyncStoppedReasonPosix(int errnum);
 
@@ -58,12 +76,12 @@ extern "C" {
 
     /// MARK: Sync Mode
 
-    ///
-    /// The modes supported for syncing of a wallet's transactions.  These are the supported modes
-    /// but they are not necessarily available for any individual WalletKit execution.
-    /// Specifically, the API_ONLY mode may be supported but if the backend services are not
-    /// accessible, such as if a device is in 'airplane mode', then API_ONLY will not be available.
-    ///
+    /**
+     * The modes supported for syncing of a wallet's transactions.  These are the supported modes
+     * but they are not necessarily available for any individual WalletKit execution.
+     * Specifically, the API_ONLY mode may be supported but if the backend services are not
+     * accessible, such as if a device is in 'airplane mode', then API_ONLY will not be available.
+     */
     typedef enum {
         /**
          * Use the BRD backend for all Core blockchain state.  The BRD backend includes a 'submit

@@ -25,6 +25,9 @@ extern "C" {
 
     // MARK: - Wallet
 
+    /**
+     * Get the wallet's state
+     */
     extern BRCryptoWalletState
     cryptoWalletGetState (BRCryptoWallet wallet);
 
@@ -38,6 +41,9 @@ extern "C" {
     extern BRCryptoCurrency
     cryptoWalletGetCurrency (BRCryptoWallet wallet);
 
+    /**
+     * Check if the wallet has `currency`
+     */
     extern BRCryptoBoolean
     cryptoWalletHasCurrency (BRCryptoWallet wallet,
                              BRCryptoCurrency currency);
@@ -51,9 +57,17 @@ extern "C" {
     extern BRCryptoUnit
     cryptoWalletGetUnit (BRCryptoWallet wallet);
 
+    /**
+     * Get the currency used for wallet fees.  This currency might not be the wallet's currency.
+     * For example, Ethereum ERC20 wallets will have a currency for the ERC20 token, but fees
+     * will be paid in Ethere.
+     */
     extern BRCryptoCurrency
     cryptoWalletGetCurrencyForFee (BRCryptoWallet wallet);
 
+    /**
+     * Check if wallet uses `currency` for fees.
+     */
     extern BRCryptoBoolean
     cryptoWalletHasCurrencyForFee (BRCryptoWallet wallet,
                                    BRCryptoCurrency currency);
@@ -78,12 +92,23 @@ extern "C" {
     extern BRCryptoAmount
     cryptoWalletGetBalance (BRCryptoWallet wallet);
 
+    /**
+     * Get the wallet's minimum balance.  Returns NULL if there is no minimum (and thus zero is
+     * the implied minimum).
+     */
     extern BRCryptoAmount /* nullable */
     cryptoWalletGetBalanceMinimum (BRCryptoWallet wallet);
 
+    /**
+     * Get the wallet's maximum balance.  Returns NULL if there is no maximum (and thus the wallet's
+     * balance is the implied maximum)
+     */
     extern BRCryptoAmount /* nullable */
     cryptoWalletGetBalanceMaximum (BRCryptoWallet wallet);
 
+    /**
+     * Check if wallet contains `transfer`
+     */
     extern BRCryptoBoolean
     cryptoWalletHasTransfer (BRCryptoWallet wallet,
                              BRCryptoTransfer transfer);
@@ -121,33 +146,64 @@ extern "C" {
     cryptoWalletHasAddress (BRCryptoWallet wallet,
                             BRCryptoAddress address);
 
+    /**
+     * Get the wallet's default fee basis.
+     */
     extern BRCryptoFeeBasis
     cryptoWalletGetDefaultFeeBasis (BRCryptoWallet wallet);
 
+    /**
+     * Set the wallet's default fee basis.
+     */
     extern void
     cryptoWalletSetDefaultFeeBasis (BRCryptoWallet wallet,
                                     BRCryptoFeeBasis feeBasis);
 
+    /**
+     * Get the count of transfer attributes that are relevent to `wallet` when a transfer uses
+     * the `target` address.  For example, when transfering XRP with a target that is Coinbase one
+     * must provide a transfer attribute of "DestinationTag".  The returned count will be one.
+     */
     extern size_t
     cryptoWalletGetTransferAttributeCount (BRCryptoWallet wallet,
                                            BRCryptoAddress target);
 
+    /**
+     * Get the transfer attribtue at `index` from the attributes that are relevent to 'wallet' when
+     * a transfer uses the `target` address.  The value of `index` must be [0, count).
+     */
     extern BRCryptoTransferAttribute
     cryptoWalletGetTransferAttributeAt (BRCryptoWallet wallet,
                                         BRCryptoAddress target,
                                         size_t index);
 
+    /**
+     * Validate `attribute` for `wallet` and fill `validates` with the result.  If `validates` is
+     * CRYPTO_TRUE then the return value described the validation error; otherwise the return
+     * value is undefined
+     */
     extern BRCryptoTransferAttributeValidationError
     cryptoWalletValidateTransferAttribute (BRCryptoWallet wallet,
                                            OwnershipKept BRCryptoTransferAttribute attribute,
                                            BRCryptoBoolean *validates);
 
+    /**
+     * Validate `attributes` for `wallet` and fill `validates` with the result.  If `validates` is
+     * CRYPTO_TRUE then the return value described the validation error; otherwise the return
+     * value is undefined.  The first attribute that is invalid will be returned; subsequent
+     * attributes will not be validated.
+     */
     extern BRCryptoTransferAttributeValidationError
     cryptoWalletValidateTransferAttributes (BRCryptoWallet wallet,
                                             size_t attributesCount,
-                                            OwnershipKept BRCryptoTransferAttribute *attribute,
+                                            OwnershipKept BRCryptoTransferAttribute *attributes,
                                             BRCryptoBoolean *validates);
 
+    /**
+     * Check the the transfer attributes that are relevent to `wallet` when a transfer uses
+     * the `target` address contain an attribute with `key`.  Fill in `isRequired` if the attribute
+     * matching `key` is a required attribute.
+     */
     extern BRCryptoBoolean
     cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
                                             BRCryptoAddress target,
@@ -183,6 +239,9 @@ extern "C" {
                                         BRCryptoTransferOutput *outputs,
                                         BRCryptoFeeBasis estimatedFeeBasis);
 
+    /**
+     * Check of two wallets are equal.
+     */
     extern BRCryptoBoolean
     cryptoWalletEqual (BRCryptoWallet w1, BRCryptoWallet w2);
 

@@ -19,12 +19,21 @@
 extern "C" {
 #endif
 
+    /**
+     * When comparing two amounts, the result can be less than, equal to or greater than.
+     */
     typedef enum {
         CRYPTO_COMPARE_LT,
         CRYPTO_COMPARE_EQ,
         CRYPTO_COMPARE_GT
     } BRCryptoComparison;
 
+    /**
+     * @brief The amount of an asset held or transfered on a network
+     *
+     * @discussion  An amount is fundamentally represented as a signed 256-bit number in a specfic
+     * currency that will be printed using the amount's unit.
+     */
     typedef struct BRCryptoAmountRecord *BRCryptoAmount;
 
     /**
@@ -93,13 +102,18 @@ extern "C" {
     extern BRCryptoCurrency
     cryptoAmountGetCurrency (BRCryptoAmount amount);
 
+    /**
+     * Check if the amount is in the specified currenty
+     */
     extern BRCryptoBoolean
     cryptoAmountHasCurrency (BRCryptoAmount amount,
                              BRCryptoCurrency currency);
-    
+
+    /**
+     * Check if the amount is negative
+     */
     extern BRCryptoBoolean
     cryptoAmountIsNegative (BRCryptoAmount amount);
-
 
     /**
      * Check of two amount's are compatible; they are compatible if they have the same currency and
@@ -114,21 +128,36 @@ extern "C" {
     cryptoAmountIsCompatible (BRCryptoAmount a1,
                               BRCryptoAmount a2);
 
+    /**
+     * Check if the amount is zero
+     */
     extern BRCryptoBoolean
     cryptoAmountIsZero (BRCryptoAmount amount);
 
+    /**
+     * Compare two amounts
+     */
     extern BRCryptoComparison
     cryptoAmountCompare (BRCryptoAmount a1,
                          BRCryptoAmount a2);
 
+    /**
+     * Add two amounts
+     */
     extern BRCryptoAmount
     cryptoAmountAdd (BRCryptoAmount a1,
                      BRCryptoAmount a2);
 
+    /**
+     * Subtract one amount from another
+     */
     extern BRCryptoAmount
     cryptoAmountSub (BRCryptoAmount a1,
                      BRCryptoAmount a2);
 
+    /**
+     * Negate the amount
+     */
     extern BRCryptoAmount
     cryptoAmountNegate (BRCryptoAmount amount);
 
@@ -175,6 +204,10 @@ extern "C" {
     cryptoAmountGetIntegerRaw (BRCryptoAmount amount,
                                BRCryptoBoolean *overflow);
 
+    /**
+     * Create a string representation of amount in the give base () with the provided prefix.  The
+     * base must be one of 16, 10 or 2.
+     */
     extern char *
     cryptoAmountGetStringPrefaced (BRCryptoAmount amount,
                                    int base,

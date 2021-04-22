@@ -39,18 +39,103 @@ extern "C" {
     extern const char* cryptoVersion;
 
     // Forward Declarations - Required for BRCryptoListener
+
+    /**
+     * @brief A Transfer is an exchange of an asset.  A Transfer occurs between 'source' and
+     * 'target' addresses with an 'amount' in a specified currency.  Note: one creates a transfer
+     * with a 'target' address; the 'source' address is derived from the User's account.
+     *
+     * @discussion A Transfer send by a User results in the submission of a Transaction to a
+     * blockchain.  The structure of the Transaction is deteremined from the Network.  Once the
+     * blockchain has included the Transaction in a block, then the Transfer's state will indicate
+     * the result - generally 'INCLUDED' but perhaps 'ERRORED'.
+     */
     typedef struct BRCryptoTransferRecord      *BRCryptoTransfer;
+
+    /**
+     * @brief A Wallet holds transfers and maintains a balance for a specified currency.
+     */
     typedef struct BRCryptoWalletRecord        *BRCryptoWallet;        // BRCrypto{Transfer,Payment}
+
+    /**
+     * @brief A WalletManager managers one or more wallets on network.
+     *
+     * @discussion A WalletManger is an 'active object' that runs certain tasks asynchornously;
+     * those tasks ensure that all transactions for the User's account are identified, added to
+     * their corresponding wallet, and attributed to the wallet's balance.  The WalletManager
+     * runs these tasks when 'connected'; the tasks are run continuously so that newly included
+     * blockchain blocks can be searched for account transactions.
+     */
     typedef struct BRCryptoWalletManagerRecord *BRCryptoWalletManager; // BRCrypto{Wallet,Transfer,Payment}
+
+    /**
+     * @brief A Network represents a cryptographic blockchain.  WalletKit supports a defined set of
+     * Networks - some of which are for mainnet and some for testnet.
+     *
+     * @discussion
+     *
+     * A Network has a currency which represents the asset used to pay for network fees.  For
+     * Bitcoin the currency is 'Bitcoin'; for Ethereum the currency is 'Ethereum'.
+     *
+     * A Network may support more than one currency.  For Ethereum additional currencies include
+     * the ERC20 Smart Contracts of interest - for example, BRD.
+     *
+     * Every Network's currency has a defined base Unit, default Unit and an arbitrary set of other
+     * units.  For Ethereum there are: WEI, ETHER, [WEI, GWEI, ..., ETHER, ...] respectively.
+     */
     typedef struct BRCryptoNetworkRecord       *BRCryptoNetwork;
+
+    /**
+     * @brief A System represents a User's access to the supported Networks that provide data
+     * for cryptographic blockchains.
+     *
+     * @discussion
+     *
+     * A System is an 'active object' - it runs asynchronously in one or more threads.
+     *
+     * A System 'runs' on zero or more Networks.
+     *
+     * A System 'manages' zero or more WalletManagers, one for each Network of interest.
+     *
+     * A System is defined for one-and-only-one Account.  As each system is independent certain
+     * applications may chose to create multiple system is handling multiple accounts.
+     *
+     * The System must provide a Client, which supports system queries for blockchain data.  The
+     * client implements a defined set of callbacks; these callbacks may be called asynchronously
+     * and generally should not block their calling thread.
+     *
+     * The System must provide a Listener, which defines a set of callbacks to announce changes to
+     * system state.
+     */
     typedef struct BRCryptoSystemRecord        *BRCryptoSystem;        // BRCrypto{Manager,Wallet,Transfer,Payment}
+
+    /**
+     * @brief A Listener listens in on System, Network, WalletManager, Wallet and Transfers events.
+     * This is the primary mechanism by which users of WalletKit are informed about state changes
+     * in their created System.
+     *
+     * @discussion A Listener is created by providing a set of callback functions.  The callback
+     * functions, for System, Network, etc, 'announce' state changes and would, for example,
+     * implement UI updates based on the callback.
+     */
     typedef struct BRCryptoListenerRecord      *BRCryptoListener;
+
+    /**
+     * @brief A Listener Context is an arbitrary pointer that is provided when a Listener is created
+     * and that is passed back in all listener calls.  This allows the listener to establish the
+     * context for handling the call.
+     */
     typedef void  *BRCryptoListenerContext;
 
-    // Cookies are used as markers to match up an asynchronous operation
-    // request with its corresponding event.
+    /**
+     * @brief A Cookie is used as a marker to match up an asynchronou operation with a handler
+     * for the result of the operation
+     */
     typedef void *BRCryptoCookie;
 
+    // End Forward Declarations
+
+    /** An explice boolean type */
     typedef enum {
         CRYPTO_FALSE = 0,
         CRYPTO_TRUE  = 1

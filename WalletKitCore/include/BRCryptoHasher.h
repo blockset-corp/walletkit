@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+    /**
+     * An enumeration of the possible types of cryptographic hash functions
+     */
     typedef enum {
         CRYPTO_HASHER_SHA1,
         CRYPTO_HASHER_SHA224,
@@ -31,14 +34,29 @@ extern "C" {
         CRYPTO_HASHER_MD5
     } BRCryptoHasherType;
 
+    /**
+     * @brief A hasher represents a cryptographic hash function.
+     */
     typedef struct BRCryptoHasherRecord *BRCryptoHasher;
 
+    /**
+     * Create a hasher from a hasher type.
+     */
     extern BRCryptoHasher
     cryptoHasherCreate(BRCryptoHasherType type);
 
+    /*
+     * Get the hasher's length in bytes.  This is the number of byes produced when the hasher is
+     * applied.
+     */
     extern size_t
     cryptoHasherLength (BRCryptoHasher hasher);
 
+    /**
+     * Fill `dst` with the result of applying `hasher` to `src`.  Returns CRYPTO_TRUE is successful.
+     * Typically the application would be unsucessfull if the `dstLen` is not at least as large
+     * as the `cryptoHasherLength()` result.
+     */
     extern BRCryptoBoolean
     cryptoHasherHash (BRCryptoHasher hasher,
                       uint8_t *dst,
