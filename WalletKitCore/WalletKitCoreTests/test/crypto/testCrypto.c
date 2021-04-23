@@ -27,8 +27,8 @@
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
 #include "support/util/BRHex.h"
-#include "bitcoin/BRChainParams.h"
-#include "bitcoin/BRWallet.h"
+#include "bitcoin/BRBitcoinChainParams.h"
+#include "bitcoin/BRBitcoinWallet.h"
 
 #include "crypto/handlers/btc/BRCryptoBTC.h"
 
@@ -210,42 +210,42 @@ static void
 transferTestsBalance (void) {
     BRMasterPubKey mpk = transferTestsGetMPK();
 
-    BRTransaction *transactions[numberOfTransferTests];
+    BRBitcoinTransaction *transactions[numberOfTransferTests];
     for (size_t index = 0; index < numberOfTransferTests; index++) {
         BRCryptoTransferTest *test = &transferTests[index];
 
         size_t   testRawSize;
         uint8_t *testRawBytes = hexDecodeCreate(&testRawSize, test->rawChars, strlen (test->rawChars));
 
-        transactions[index] = BRTransactionParse (testRawBytes, testRawSize);
+        transactions[index] = btcTransactionParse (testRawBytes, testRawSize);
         transactions[index]->blockHeight = test->blockHeight;
         transactions[index]->timestamp   = test->timestamp;
     }
 
     // Initialize wallet w/ all transactions
-    BRWallet *wid1 = BRWalletNew (BRTestNetParams->addrParams, transactions, numberOfTransferTests, mpk);
-    uint64_t balance1 = BRWalletBalance(wid1);
+    BRBitcoinWallet *wid1 = btcWalletNew (btcTestNetParams->addrParams, transactions, numberOfTransferTests, mpk);
+    uint64_t balance1 = btcWalletBalance(wid1);
 
     // Initialize wallet w/ each transaction, one by one
-    BRWallet *wid2 = BRWalletNew (BRTestNetParams->addrParams, NULL, 0, mpk);
+    BRBitcoinWallet *wid2 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
-        BRWalletRegisterTransaction (wid2, BRTransactionCopy (transactions[index]));
+        btcWalletRegisterTransaction (wid2, btcTransactionCopy (transactions[index]));
     }
-    uint64_t balance2 = BRWalletBalance(wid2);
+    uint64_t balance2 = btcWalletBalance(wid2);
 
     // Initialize wallet w/ each transaction in reverse order
-     BRWallet *wid3 = BRWalletNew (BRTestNetParams->addrParams, NULL, 0, mpk);
+     BRBitcoinWallet *wid3 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
-        BRWalletRegisterTransaction (wid3, BRTransactionCopy(transactions[numberOfTransferTests - 1 - index]));
+        btcWalletRegisterTransaction (wid3, btcTransactionCopy(transactions[numberOfTransferTests - 1 - index]));
     }
-    uint64_t balance3 = BRWalletBalance(wid3);
+    uint64_t balance3 = btcWalletBalance(wid3);
 
     assert (balance1 == balance2);
     assert (balance1 == balance3);
 
-    BRWalletFree(wid3);
-    BRWalletFree(wid2);
-    BRWalletFree(wid1);
+    btcWalletFree(wid3);
+    btcWalletFree(wid2);
+    btcWalletFree(wid1);
 }
 
 
@@ -265,8 +265,8 @@ transferTestsAddress (void) {
                             "SAT");
 
     BRMasterPubKey mpk = transferTestsGetMPK();
-    BRWallet *wid = BRWalletNew (BRTestNetParams->addrParams, NULL, 0, mpk);
-    BRWalletSetCallbacks (wid, NULL, NULL, NULL, NULL, NULL);
+    BRBitcoinWallet *wid = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
+    btcWalletSetCallbacks (wid, NULL, NULL, NULL, NULL, NULL);
 
     for (size_t index = 0; index < numberOfTransferTests; index++) {
         BRCryptoTransferTest *test = &transferTests[index];
@@ -274,17 +274,17 @@ transferTestsAddress (void) {
         size_t   testRawSize;
         uint8_t *testRawBytes = hexDecodeCreate(&testRawSize, test->rawChars, strlen (test->rawChars));
 
-        BRTransaction *tid = BRTransactionParse (testRawBytes, testRawSize);
+        BRBitcoinTransaction *tid = btcTransactionParse (testRawBytes, testRawSize);
         tid->blockHeight = test->blockHeight;
         tid->timestamp   = test->timestamp;
-        BRWalletRegisterTransaction (wid, tid); // ownership given
+        btcWalletRegisterTransaction (wid, tid); // ownership given
 
         BRCryptoTransferListener listener = { NULL };
         BRCryptoTransfer transfer = cryptoTransferCreateAsBTC (listener,
                                                                sat,
                                                                sat,
                                                                wid,
-                                                               BRTransactionCopy(tid), // ownership given
+                                                               btcTransactionCopy(tid), // ownership given
                                                                CRYPTO_NETWORK_TYPE_BTC);
 
         BRCryptoAddress sourceAddress = cryptoTransferGetSourceAddress(transfer);
@@ -300,7 +300,7 @@ transferTestsAddress (void) {
         cryptoAddressGive(sourceAddress); cryptoAddressGive(targetAddress);
         cryptoTransferGive(transfer);
     }
-    BRWalletFree(wid);
+    btcWalletFree(wid);
 }
 
 static void

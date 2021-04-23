@@ -25,11 +25,11 @@
 #ifndef BRPeerManager_h
 #define BRPeerManager_h
 
-#include "BRPeer.h"
-#include "BRMerkleBlock.h"
-#include "BRTransaction.h"
-#include "BRWallet.h"
-#include "BRChainParams.h"
+#include "BRBitcoinPeer.h"
+#include "BRBitcoinMerkleBlock.h"
+#include "BRBitcoinTransaction.h"
+#include "BRBitcoinWallet.h"
+#include "BRBitcoinChainParams.h"
 #include <stddef.h>
 #include <inttypes.h>
 
@@ -39,13 +39,13 @@ extern "C" {
 
 #define PEER_MAX_CONNECTIONS 3
 
-typedef struct BRPeerManagerStruct BRPeerManager;
+typedef struct BRBitcoinPeerManagerStruct BRBitcoinPeerManager;
 
-// returns a newly allocated BRPeerManager struct that must be freed by calling BRPeerManagerFree()
-BRPeerManager *BRPeerManagerNew(const BRChainParams *params, BRWallet *wallet, uint32_t earliestKeyTime,
-                                BRMerkleBlock *blocks[], size_t blocksCount, const BRPeer peers[], size_t peersCount);
+// returns a newly allocated BRPeerManager struct that must be freed by calling btcPeerManagerFree()
+BRBitcoinPeerManager *btcPeerManagerNew(const BRBitcoinChainParams *params, BRBitcoinWallet *wallet, uint32_t earliestKeyTime,
+                                BRBitcoinMerkleBlock *blocks[], size_t blocksCount, const BRBitcoinPeer peers[], size_t peersCount);
 
-// not thread-safe, set callbacks once before calling BRPeerManagerConnect()
+// not thread-safe, set callbacks once before calling btcPeerManagerConnect()
 // info is a void pointer that will be passed along with each callback call
 // void syncStarted(void *) - called when blockchain syncing starts
 // void syncStopped(void *, int) - called when blockchain syncing stops, error is an errno.h code
@@ -56,70 +56,70 @@ BRPeerManager *BRPeerManagerNew(const BRChainParams *params, BRWallet *wallet, u
 // - if replace is true, remove any previously saved peers first
 // int networkIsReachable(void *) - must return true when networking is available, false otherwise
 // void threadCleanup(void *) - called before a thread terminates to faciliate any needed cleanup
-void BRPeerManagerSetCallbacks(BRPeerManager *manager, void *info,
+void btcPeerManagerSetCallbacks(BRBitcoinPeerManager *manager, void *info,
                                void (*syncStarted)(void *info),
                                void (*syncStopped)(void *info, int error),
                                void (*txStatusUpdate)(void *info),
-                               void (*saveBlocks)(void *info, int replace, BRMerkleBlock *blocks[], size_t blocksCount),
-                               void (*savePeers)(void *info, int replace, const BRPeer peers[], size_t peersCount),
+                               void (*saveBlocks)(void *info, int replace, BRBitcoinMerkleBlock *blocks[], size_t blocksCount),
+                               void (*savePeers)(void *info, int replace, const BRBitcoinPeer peers[], size_t peersCount),
                                int (*networkIsReachable)(void *info),
                                void (*threadCleanup)(void *info));
 
 // specifies a single fixed peer to use when connecting to the bitcoin network
 // set address to UINT128_ZERO to revert to default behavior
-void BRPeerManagerSetFixedPeer(BRPeerManager *manager, UInt128 address, uint16_t port);
+void btcPeerManagerSetFixedPeer(BRBitcoinPeerManager *manager, UInt128 address, uint16_t port);
 
 // current connect status
-BRPeerStatus BRPeerManagerConnectStatus(BRPeerManager *manager);
+BRBitcoinPeerStatus btcPeerManagerConnectStatus(BRBitcoinPeerManager *manager);
 
 // connect to bitcoin peer-to-peer network (also call this whenever networkIsReachable() status changes)
-void BRPeerManagerConnect(BRPeerManager *manager);
+void btcPeerManagerConnect(BRBitcoinPeerManager *manager);
 
 // disconnect from bitcoin peer-to-peer network (may cause syncFailed(), saveBlocks() or savePeers() callbacks to fire)
-void BRPeerManagerDisconnect(BRPeerManager *manager);
+void btcPeerManagerDisconnect(BRBitcoinPeerManager *manager);
 
 // rescans blocks and transactions after earliestKeyTime (a new random download peer is also selected due to the
 // possibility that a malicious node might lie by omitting transactions that match the bloom filter)
-void BRPeerManagerRescan(BRPeerManager *manager);
+void btcPeerManagerRescan(BRBitcoinPeerManager *manager);
 
 // rescans blocks and transactions after the last hardcoded checkpoint (uses a new random download peer, see above comment)
-void BRPeerManagerRescanFromLastHardcodedCheckpoint(BRPeerManager *manager);
+void btcPeerManagerRescanFromLastHardcodedCheckpoint(BRBitcoinPeerManager *manager);
 
 // rescans blocks and transactions from after the blockNumber.  If blockNumber is not known, then
 // rescan from the just prior checkpoint (uses a new random download peer, see above comment).
-void BRPeerManagerRescanFromBlockNumber(BRPeerManager *manager, uint32_t blockNumber);
+void btcPeerManagerRescanFromBlockNumber(BRBitcoinPeerManager *manager, uint32_t blockNumber);
 
 // the (unverified) best block height reported by connected peers
-uint32_t BRPeerManagerEstimatedBlockHeight(BRPeerManager *manager);
+uint32_t btcPeerManagerEstimatedBlockHeight(BRBitcoinPeerManager *manager);
 
 // current proof-of-work verified best block height
-uint32_t BRPeerManagerLastBlockHeight(BRPeerManager *manager);
+uint32_t btcPeerManagerLastBlockHeight(BRBitcoinPeerManager *manager);
 
 // current proof-of-work verified best block timestamp (time interval since unix epoch)
-uint32_t BRPeerManagerLastBlockTimestamp(BRPeerManager *manager);
+uint32_t btcPeerManagerLastBlockTimestamp(BRBitcoinPeerManager *manager);
 
 // current network sync progress from 0 to 1
 // startHeight is the block height of the most recent fully completed sync
-double BRPeerManagerSyncProgress(BRPeerManager *manager, uint32_t startHeight);
+double btcPeerManagerSyncProgress(BRBitcoinPeerManager *manager, uint32_t startHeight);
 
 // returns the number of currently connected peers
-size_t BRPeerManagerPeerCount(BRPeerManager *manager);
+size_t btcPeerManagerPeerCount(BRBitcoinPeerManager *manager);
 
 // description of the peer most recently used to sync blockchain data
-const char *BRPeerManagerDownloadPeerName(BRPeerManager *manager);
+const char *btcPeerManagerDownloadPeerName(BRBitcoinPeerManager *manager);
 
-// publishes tx to bitcoin network (do not call BRTransactionFree() on tx afterward)
-void BRPeerManagerPublishTx(BRPeerManager *manager, BRTransaction *tx, void *info,
+// publishes tx to bitcoin network (do not call btcTransactionFree() on tx afterward)
+void btcPeerManagerPublishTx(BRBitcoinPeerManager *manager, BRBitcoinTransaction *tx, void *info,
                             void (*callback)(void *info, int error));
 
 // number of connected peers that have relayed the given unconfirmed transaction
-size_t BRPeerManagerRelayCount(BRPeerManager *manager, UInt256 txHash);
+size_t btcPeerManagerRelayCount(BRBitcoinPeerManager *manager, UInt256 txHash);
 
-// return the BRChainParams used to create this peer manager
-const BRChainParams *BRPeerManagerChainParams(BRPeerManager *manager);
+// return the BRBitcoinChainParams used to create this peer manager
+const BRBitcoinChainParams *btcPeerManagerChainParams(BRBitcoinPeerManager *manager);
 
-// frees memory allocated for manager (call BRPeerManagerDisconnect() first if connected)
-void BRPeerManagerFree(BRPeerManager *manager);
+// frees memory allocated for manager (call btcPeerManagerDisconnect() first if connected)
+void btcPeerManagerFree(BRBitcoinPeerManager *manager);
 
 #ifdef __cplusplus
 }

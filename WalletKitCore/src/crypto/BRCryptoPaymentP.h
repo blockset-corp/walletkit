@@ -12,7 +12,7 @@
 #define BRCryptoPaymentP_h
 
 #include "BRCryptoPayment.h"
-#include "bitcoin/BRTransaction.h"
+#include "bitcoin/BRBitcoinTransaction.h"
 
 #ifdef __cplusplus
 extern "C" {

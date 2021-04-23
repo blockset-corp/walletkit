@@ -16,8 +16,8 @@
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRKeyECIES.h"
-#include "ethereum/util/BRUtil.h"
-#include "bitcoin/BRBIP38Key.h"
+#include "support/util/BRUtil.h"
+#include "support/BRBIP38Key.h"
 
 // We create an arbitary BRAddressParams - disconnected from any know BITCOIN, etc address params.
 // We do this until we know how the Key is used.  Right now, the only accessors are to get the
@@ -122,11 +122,11 @@ cryptoKeyCreateFromStringProtectedPrivate (const char *privateKey, const char * 
     if (!BRBIP38KeyIsValid (privateKey)) return NULL;
 
     BRKey core;
-    BRCryptoKey result = (1 == BRKeySetBIP38Key(&core, privateKey, passphrase, BITCOIN_ADDRESS_PARAMS)
+    BRCryptoKey result = (1 == BRBIP38KeySetKey(&core, privateKey, passphrase, BITCOIN_ADDRESS_PARAMS)
                           ? cryptoKeyCreateInternal (core, BITCOIN_ADDRESS_PARAMS)
-                          : (1 == BRKeySetBIP38Key(&core, privateKey, passphrase, BITCOIN_TEST_ADDRESS_PARAMS)
+                          : (1 == BRBIP38KeySetKey(&core, privateKey, passphrase, BITCOIN_TEST_ADDRESS_PARAMS)
                              ? cryptoKeyCreateInternal (core, BITCOIN_TEST_ADDRESS_PARAMS)
-                             : (1 == BRKeySetBIP38Key(&core, privateKey, passphrase, CRYPTO_ADDRESS_PARAMS)
+                             : (1 == BRBIP38KeySetKey(&core, privateKey, passphrase, CRYPTO_ADDRESS_PARAMS)
                                 ? cryptoKeyCreateInternal (core, CRYPTO_ADDRESS_PARAMS)
                                 : NULL)));
 

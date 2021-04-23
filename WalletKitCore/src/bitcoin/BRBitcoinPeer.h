@@ -25,14 +25,14 @@
 #ifndef BRPeer_h
 #define BRPeer_h
 
-#include "BRTransaction.h"
-#include "BRMerkleBlock.h"
+#include "BRBitcoinTransaction.h"
+#include "BRBitcoinMerkleBlock.h"
 #include "support/BRAddress.h"
 #include "support/BRInt.h"
 #include <stddef.h>
 #include <inttypes.h>
 
-#define peer_log(peer, ...) _peer_log("%s:%"PRIu16" " _va_first(__VA_ARGS__, NULL) "\n", BRPeerHost(peer),\
+#define peer_log(peer, ...) _peer_log("%s:%"PRIu16" " _va_first(__VA_ARGS__, NULL) "\n", btcPeerHost(peer),\
                                       (peer)->port, _va_rest(__VA_ARGS__, NULL))
 #define _va_first(first, ...) first
 #define _va_rest(first, ...) __VA_ARGS__
@@ -94,7 +94,7 @@ typedef enum {
     BRPeerStatusDisconnected = 0,
     BRPeerStatusConnecting,
     BRPeerStatusConnected
-} BRPeerStatus;
+} BRBitcoinPeerStatus;
 
 typedef struct {
     UInt128 address; // IPv6 address of peer
@@ -102,116 +102,116 @@ typedef struct {
     uint64_t services; // bitcoin network services supported by peer
     uint64_t timestamp; // timestamp reported by peer
     uint8_t flags; // scratch variable
-} BRPeer;
+} BRBitcoinPeer;
 
 #define BR_PEER_NONE ((const BRPeer) { UINT128_ZERO, 0, 0, 0, 0 })
 
-// NOTE: BRPeer functions are not thread-safe
+// NOTE: BRBitcoinPeer functions are not thread-safe
 
-// returns a newly allocated BRPeer struct that must be freed by calling BRPeerFree()
-BRPeer *BRPeerNew(uint32_t magicNumber);
+// returns a newly allocated BRBitcoinPeer struct that must be freed by calling btcPeerFree()
+BRBitcoinPeer *btcPeerNew(uint32_t magicNumber);
 
 // info is a void pointer that will be passed along with each callback call
 // void connected(void *) - called when peer handshake completes successfully
 // void disconnected(void *, int) - called when peer connection is closed, error is an errno.h code
 // void relayedPeers(void *, const BRPeer[], size_t) - called when an "addr" message is received from peer
-// void relayedTx(void *, BRTransaction *) - called when a "tx" message is received from peer
+// void relayedTx(void *, BRBitcoinTransaction *) - called when a "tx" message is received from peer
 // void hasTx(void *, UInt256 txHash) - called when an "inv" message with an already-known tx hash is received from peer
 // void rejectedTx(void *, UInt256 txHash, uint8_t) - called when a "reject" message is received from peer
 // void relayedBlock(void *, BRMerkleBlock *) - called when a "merkleblock" or "headers" message is received from peer
 // void notfound(void *, const UInt256[], size_t, const UInt256[], size_t) - called when "notfound" message is received
-// BRTransaction *requestedTx(void *, UInt256) - called when "getdata" message with a tx hash is received from peer
+// BRBitcoinTransaction *requestedTx(void *, UInt256) - called when "getdata" message with a tx hash is received from peer
 // int networkIsReachable(void *) - must return true when networking is available, false otherwise
 // void threadCleanup(void *) - called before a thread terminates to faciliate any needed cleanup    
-void BRPeerSetCallbacks(BRPeer *peer, void *info,
+void btcPeerSetCallbacks(BRBitcoinPeer *peer, void *info,
                         void (*connected)(void *info),
                         void (*disconnected)(void *info, int error),
-                        void (*relayedPeers)(void *info, const BRPeer peers[], size_t peersCount),
-                        void (*relayedTx)(void *info, BRTransaction *tx),
+                        void (*relayedPeers)(void *info, const BRBitcoinPeer peers[], size_t peersCount),
+                        void (*relayedTx)(void *info, BRBitcoinTransaction *tx),
                         void (*hasTx)(void *info, UInt256 txHash),
                         void (*rejectedTx)(void *info, UInt256 txHash, uint8_t code),
-                        void (*relayedBlock)(void *info, BRMerkleBlock *block),
+                        void (*relayedBlock)(void *info, BRBitcoinMerkleBlock *block),
                         void (*notfound)(void *info, const UInt256 txHashes[], size_t txCount,
                                          const UInt256 blockHashes[], size_t blockCount),
                         void (*setFeePerKb)(void *info, uint64_t feePerKb),
-                        BRTransaction *(*requestedTx)(void *info, UInt256 txHash),
+                        BRBitcoinTransaction *(*requestedTx)(void *info, UInt256 txHash),
                         int (*networkIsReachable)(void *info),
                         void (*threadCleanup)(void *info));
 
 // set earliestKeyTime to wallet creation time in order to speed up initial sync
-void BRPeerSetEarliestKeyTime(BRPeer *peer, uint32_t earliestKeyTime);
+void btcPeerSetEarliestKeyTime(BRBitcoinPeer *peer, uint32_t earliestKeyTime);
 
 // call this when local best block height changes (helps detect tarpit nodes)
-void BRPeerSetCurrentBlockHeight(BRPeer *peer, uint32_t currentBlockHeight);
+void btcPeerSetCurrentBlockHeight(BRBitcoinPeer *peer, uint32_t currentBlockHeight);
 
 // current connection status
-BRPeerStatus BRPeerConnectStatus(BRPeer *peer);
+BRBitcoinPeerStatus btcPeerConnectStatus(BRBitcoinPeer *peer);
 
 // open connection to peer and perform handshake
-void BRPeerConnect(BRPeer *peer);
+void btcPeerConnect(BRBitcoinPeer *peer);
 
 // close connection to peer
-void BRPeerDisconnect(BRPeer *peer);
+void btcPeerDisconnect(BRBitcoinPeer *peer);
 
 // call this to (re)schedule a disconnect in the given number of seconds, or < 0 to cancel (useful for sync timeout)
-void BRPeerScheduleDisconnect(BRPeer *peer, double seconds);
+void btcPeerScheduleDisconnect(BRBitcoinPeer *peer, double seconds);
 
 // set this to true when wallet addresses need to be added to bloom filter
-void BRPeerSetNeedsFilterUpdate(BRPeer *peer, int needsFilterUpdate);
+void btcPeerSetNeedsFilterUpdate(BRBitcoinPeer *peer, int needsFilterUpdate);
 
 // display name of peer address
-const char *BRPeerHost(BRPeer *peer);
+const char *btcPeerHost(BRBitcoinPeer *peer);
 
 // connected peer version number
-uint32_t BRPeerVersion(BRPeer *peer);
+uint32_t btcPeerVersion(BRBitcoinPeer *peer);
 
 // connected peer user agent string
-const char *BRPeerUserAgent(BRPeer *peer);
+const char *btcPeerUserAgent(BRBitcoinPeer *peer);
 
 // best block height reported by connected peer
-uint32_t BRPeerLastBlock(BRPeer *peer);
+uint32_t btcPeerLastBlock(BRBitcoinPeer *peer);
 
 // minimum tx fee rate peer will accept
-uint64_t BRPeerFeePerKb(BRPeer *peer);
+uint64_t btcPeerFeePerKb(BRBitcoinPeer *peer);
 
 // average ping time for connected peer
-double BRPeerPingTime(BRPeer *peer);
+double btcPeerPingTime(BRBitcoinPeer *peer);
 
 // sends a bitcoin protocol message to peer
-void BRPeerSendMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen, const char *type);
-void BRPeerSendFilterload(BRPeer *peer, const uint8_t *filter, size_t filterLen);
-void BRPeerSendMempool(BRPeer *peer, const UInt256 knownTxHashes[], size_t knownTxCount, void *info,
+void btcPeerSendMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen, const char *type);
+void btcPeerSendFilterload(BRBitcoinPeer *peer, const uint8_t *filter, size_t filterLen);
+void btcPeerSendMempool(BRBitcoinPeer *peer, const UInt256 knownTxHashes[], size_t knownTxCount, void *info,
                        void (*completionCallback)(void *info, int success));
-void BRPeerSendGetheaders(BRPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
-void BRPeerSendGetblocks(BRPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
-void BRPeerSendInv(BRPeer *peer, const UInt256 txHashes[], size_t txCount);
-void BRPeerSendGetdata(BRPeer *peer, const UInt256 txHashes[], size_t txCount, const UInt256 blockHashes[],
+void btcPeerSendGetheaders(BRBitcoinPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
+void btcPeerSendGetblocks(BRBitcoinPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
+void btcPeerSendInv(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCount);
+void btcPeerSendGetdata(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCount, const UInt256 blockHashes[],
                        size_t blockCount);
-void BRPeerSendGetaddr(BRPeer *peer);
-void BRPeerSendPing(BRPeer *peer, void *info, void (*pongCallback)(void *info, int success));
+void btcPeerSendGetaddr(BRBitcoinPeer *peer);
+void btcPeerSendPing(BRBitcoinPeer *peer, void *info, void (*pongCallback)(void *info, int success));
 
 // useful to get additional tx after a bloom filter update
-void BRPeerRerequestBlocks(BRPeer *peer, UInt256 fromBlock);
+void btcPeerRerequestBlocks(BRBitcoinPeer *peer, UInt256 fromBlock);
 
 // returns a hash value for peer suitable for use in a hashtable
-inline static size_t BRPeerHash(const void *peer)
+inline static size_t btcPeerHash(const void *peer)
 {
-    uint32_t address = ((const BRPeer *)peer)->address.u32[3], port = ((const BRPeer *)peer)->port;
+    uint32_t address = ((const BRBitcoinPeer *)peer)->address.u32[3], port = ((const BRBitcoinPeer *)peer)->port;
  
     // (((FNV_OFFSET xor address)*FNV_PRIME) xor port)*FNV_PRIME
     return (size_t)((((0x811C9dc5 ^ address)*0x01000193) ^ port)*0x01000193);
 }
 
 // true if a and b have the same address and port
-inline static int BRPeerEq(const void *peer, const void *otherPeer)
+inline static int btcPeerEq(const void *peer, const void *otherPeer)
 {
     return (peer == otherPeer ||
-            (UInt128Eq(((const BRPeer *)peer)->address, ((const BRPeer *)otherPeer)->address) &&
-             ((const BRPeer *)peer)->port == ((const BRPeer *)otherPeer)->port));
+            (UInt128Eq(((const BRBitcoinPeer *)peer)->address, ((const BRBitcoinPeer *)otherPeer)->address) &&
+             ((const BRBitcoinPeer *)peer)->port == ((const BRBitcoinPeer *)otherPeer)->port));
 }
 
 // frees memory allocated for peer
-void BRPeerFree(BRPeer *peer);
+void btcPeerFree(BRBitcoinPeer *peer);
 
 #ifdef __cplusplus
 }

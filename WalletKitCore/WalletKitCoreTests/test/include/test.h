@@ -16,7 +16,7 @@
 #include "BRCryptoSync.h"
 #include "BRCryptoAccount.h"
 #include "BRCryptoNetwork.h"
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,7 +77,7 @@ typedef enum {
     BITCOIN_CHAIN_BSV
 } BRBitcoinChain;
 
-extern const BRChainParams*
+extern const BRBitcoinChainParams*
 getChainParams (BRBitcoinChain chain, int isMainnet);
 
 extern const char *

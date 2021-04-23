@@ -25,7 +25,7 @@
 
 #include "support/BRInt.h"
 #include "support/BRSet.h"
-#include "bitcoin/BRPeer.h"
+#include "bitcoin/BRBitcoinPeer.h"
 #include "BRBCashParams.h"
 
 static const char *BRBCashDNSSeeds[] = {
@@ -47,7 +47,7 @@ static const char *BRBCashTestNetDNSSeeds[] = {
     NULL
 };
 
-static const BRCheckPoint BRBCashTestNetCheckpoints[] = {
+static const BRBitcoinCheckPoint BRBCashTestNetCheckpoints[] = {
     {       0, uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff },
     {  100800, uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907 },
     {  201600, uint256("0000000000376bb71314321c45de3015fe958543afcbada242a3b1b072498e38"), 1393813869, 0x1b602ac0 },
@@ -70,7 +70,7 @@ static const BRCheckPoint BRBCashTestNetCheckpoints[] = {
 
 // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
 // difficulty transition boundaries in order to verify the block difficulty at the immediately following transition
-static const BRCheckPoint BRBCashCheckpoints[] = {
+static const BRBitcoinCheckPoint BRBCashCheckpoints[] = {
     {      0, uint256("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"), 1231006505, 0x1d00ffff },
     {  20160, uint256("000000000f1aef56190aee63d33a373e6487132d522ff4cd98ccfc96566d461e"), 1248481816, 0x1d00ffff },
     {  40320, uint256("0000000045861e169b5a961b7034f8de9e98022e7a39100dde3ae3ea240d7245"), 1266191579, 0x1c654657 },
@@ -149,9 +149,9 @@ uint32_t aserti3_2d(uint32_t refBits, int64_t timeDelta, int64_t heightDelta)
     return (uint32_t)target;
 }
 
-static int BRBCashVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int BRBCashVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
-    const BRMerkleBlock *prev;
+    const BRBitcoinMerkleBlock *prev;
     int64_t timeDelta, heightDelta;
 
     assert(block != NULL);
@@ -168,12 +168,12 @@ static int BRBCashVerifyDifficulty(const BRMerkleBlock *block, const BRSet *bloc
     return 1;
 }
 
-static int BRBCashTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int BRBCashTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
     return 1; // XXX skip testnet difficulty check for now
 }
 
-static const BRChainParams BRBCashParamsRecord = {
+static const BRBitcoinChainParams BRBCashParamsRecord = {
     BRBCashDNSSeeds,
     8333,                // standardPort
     0xe8f3e1e3,          // magicNumber
@@ -184,9 +184,9 @@ static const BRChainParams BRBCashParamsRecord = {
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL },
     BCASH_FORKID
 };
-const BRChainParams *BRBCashParams = &BRBCashParamsRecord;
+const BRBitcoinChainParams *BRBCashParams = &BRBCashParamsRecord;
 
-static const BRChainParams BRBCashTestNetParamsRecord = {
+static const BRBitcoinChainParams BRBCashTestNetParamsRecord = {
     BRBCashTestNetDNSSeeds,
     18333,               // standardPort
     0xf4f3e5f4,          // magicNumber
@@ -197,4 +197,4 @@ static const BRChainParams BRBCashTestNetParamsRecord = {
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL },
     BCASH_FORKID
 };
-const BRChainParams *BRBCashTestNetParams = &BRBCashTestNetParamsRecord;
+const BRBitcoinChainParams *BRBCashTestNetParams = &BRBCashTestNetParamsRecord;

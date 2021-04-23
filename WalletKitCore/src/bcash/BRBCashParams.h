@@ -25,7 +25,7 @@
 #ifndef BRBCashParams_h
 #define BRBCashParams_h
 
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,14 +33,14 @@ extern "C" {
     
 #define BCASH_FORKID 0x40
 
-extern const BRChainParams *BRBCashParams;
-extern const BRChainParams *BRBCashTestNetParams;
+extern const BRBitcoinChainParams *BRBCashParams;
+extern const BRBitcoinChainParams *BRBCashTestNetParams;
 
-static inline const BRChainParams *BRChainParamsGetBitcash (int mainnet) {
+static inline const BRBitcoinChainParams *btcChainParamsGetBitcash (int mainnet) {
     return mainnet ? BRBCashParams : BRBCashTestNetParams;
 }
 
-static inline int BRChainParamsIsBitcash (const BRChainParams *params) {
+static inline int btcChainParamsIsBitcash (const BRBitcoinChainParams *params) {
     return BRBCashParams == params || BRBCashTestNetParams == params;
 }
 

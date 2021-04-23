@@ -51,60 +51,60 @@ typedef struct {
     uint8_t *flags;
     size_t flagsLen;
     uint32_t height;
-} BRMerkleBlock;
+} BRBitcoinMerkleBlock;
 
 #define BR_MERKLE_BLOCK_NONE ((const BRMerkleBlock) { UINT256_ZERO, 0, UINT256_ZERO, UINT256_ZERO, 0, 0, 0, 0, NULL, 0,\
                                                       NULL, 0, 0 })
 
-// returns a newly allocated merkle block struct that must be freed by calling BRMerkleBlockFree()
-BRMerkleBlock *BRMerkleBlockNew(void);
+// returns a newly allocated merkle block struct that must be freed by calling btcMerkleBlockFree()
+BRBitcoinMerkleBlock *btcMerkleBlockNew(void);
 
-// returns a deep copy of block and that must be freed by calling BRMerkleBlockFree()
-BRMerkleBlock *BRMerkleBlockCopy(const BRMerkleBlock *block);
+// returns a deep copy of block and that must be freed by calling btcMerkleBlockFree()
+BRBitcoinMerkleBlock *btcMerkleBlockCopy(const BRBitcoinMerkleBlock *block);
 
 // buf must contain either a serialized merkleblock or header
-// returns a merkle block struct that must be freed by calling BRMerkleBlockFree()
-BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen);
+// returns a merkle block struct that must be freed by calling btcMerkleBlockFree()
+BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen);
 
 // returns number of bytes written to buf, or total bufLen needed if buf is NULL (block->height is not serialized)
-size_t BRMerkleBlockSerialize(const BRMerkleBlock *block, uint8_t *buf, size_t bufLen);
+size_t btcMerkleBlockSerialize(const BRBitcoinMerkleBlock *block, uint8_t *buf, size_t bufLen);
 
 // populates txHashes with the matched tx hashes in the block
 // returns number of tx hashes written, or the total hashesCount needed if txHashes is NULL
-size_t BRMerkleBlockTxHashes(const BRMerkleBlock *block, UInt256 *txHashes, size_t hashesCount);
+size_t btcMerkleBlockTxHashes(const BRBitcoinMerkleBlock *block, UInt256 *txHashes, size_t hashesCount);
 
-// sets the hashes and flags fields for a block created with BRMerkleBlockNew()
-void BRMerkleBlockSetTxHashes(BRMerkleBlock *block, const UInt256 hashes[], size_t hashesCount,
+// sets the hashes and flags fields for a block created with btcMerkleBlockNew()
+void btcMerkleBlockSetTxHashes(BRBitcoinMerkleBlock *block, const UInt256 hashes[], size_t hashesCount,
                               const uint8_t *flags, size_t flagsLen);
 
 // true if merkle tree and timestamp are valid, and proof-of-work matches the stated difficulty target
 // NOTE: this only checks if the block difficulty matches the difficulty target in the header, it does not check if the
-// target is correct for the block's height in the chain - use BRMerkleBlockVerifyDifficulty() for that
-int BRMerkleBlockIsValid(const BRMerkleBlock *block, uint32_t currentTime);
+// target is correct for the block's height in the chain - use btcMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime);
 
 // true if the given tx hash is known to be included in the block
-int BRMerkleBlockContainsTxHash(const BRMerkleBlock *block, UInt256 txHash);
+int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHash);
 
 // verifies the block difficulty target is correct for the block's position in the chain
 // transitionTime is the timestamp of the block at the previous difficulty transition
 // transitionTime may be 0 if block->height is not a multiple of BLOCK_DIFFICULTY_INTERVAL
-int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBlock *previous, uint32_t transitionTime);
+int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBitcoinMerkleBlock *previous, uint32_t transitionTime);
 
 // returns a hash value for block suitable for use in a hashtable
-inline static size_t BRMerkleBlockHash(const void *block)
+inline static size_t btcMerkleBlockHash(const void *block)
 {
-    return (size_t)((const BRMerkleBlock *)block)->blockHash.u32[0];
+    return (size_t)((const BRBitcoinMerkleBlock *)block)->blockHash.u32[0];
 }
 
 // true if block and otherBlock have equal blockHash values
-inline static int BRMerkleBlockEq(const void *block, const void *otherBlock)
+inline static int btcMerkleBlockEq(const void *block, const void *otherBlock)
 {
     return (block == otherBlock ||
-            UInt256Eq(((const BRMerkleBlock *)block)->blockHash, ((const BRMerkleBlock *)otherBlock)->blockHash));
+            UInt256Eq(((const BRBitcoinMerkleBlock *)block)->blockHash, ((const BRBitcoinMerkleBlock *)otherBlock)->blockHash));
 }
 
 // frees memory allocated for block
-void BRMerkleBlockFree(BRMerkleBlock *block);
+void btcMerkleBlockFree(BRBitcoinMerkleBlock *block);
 
 #ifdef __cplusplus
 }

@@ -17,14 +17,14 @@
 #include "crypto/BRCryptoWalletManagerP.h"
 #include "crypto/BRCryptoWalletSweeperP.h"
 
-#include "bitcoin/BRPeerManager.h"
+#include "bitcoin/BRBitcoinPeerManager.h"
 
 /// BRPeerManager Callbacks
 static void cryptoWalletManagerBTCSyncStarted (void *info);
 static void cryptoWalletManagerBTCSyncStopped (void *info, int reason);
 static void cryptoWalletManagerBTCTxStatusUpdate (void *info);
-static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleBlock **blocks, size_t count);
-static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRPeer *peers, size_t count);
+static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRBitcoinMerkleBlock **blocks, size_t count);
+static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRBitcoinPeer *peers, size_t count);
 static int  cryptoWalletManagerBTCNetworkIsReachable (void *info);
 static void cryptoWalletManagerBTCThreadCleanup (void *info);
 static void cryptoWalletManagerBTCTxPublished (void *info, int error);
@@ -32,7 +32,7 @@ static void cryptoWalletManagerBTCTxPublished (void *info, int error);
 typedef struct BRCryptoClientP2PManagerRecordBTC {
     struct BRCryptoClientP2PManagerRecord base;
     BRCryptoWalletManagerBTC manager;
-    BRPeerManager *btcPeerManager;
+    BRBitcoinPeerManager *btcPeerManager;
 
     // The begining and end blockheight for an ongoing sync.  The end block height will be increased
     // a the blockchain is extended.  The begining block height is used to compute the completion
@@ -68,7 +68,7 @@ static bool cryptoClientP2PManagerSyncInProgress (BRCryptoClientP2PManagerBTC p2
 static void
 cryptoClientP2PManagerReleaseBTC (BRCryptoClientP2PManager baseManager) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
-    BRPeerManagerFree (manager->btcPeerManager);
+    btcPeerManagerFree (manager->btcPeerManager);
 }
 
 static void
@@ -82,7 +82,7 @@ cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
 
     // If we are syncing, then we'll stop the sync; the only way to stop a sync is to disconnect
     if (syncInProgress) {
-        BRPeerManagerDisconnect (manager->btcPeerManager);
+        btcPeerManagerDisconnect (manager->btcPeerManager);
     }
     cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_CONNECTED));
 
@@ -100,7 +100,7 @@ cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
 
         // Calling `SetFixedPeer` will 100% disconnect.  We could avoid calling SetFixedPeer
         // if we kept a reference to `peer` and checked if it differs.
-        BRPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
+        btcPeerManagerSetFixedPeer (manager->btcPeerManager, address, port);
     }
 
     //    if (!syncInProgress)
@@ -108,29 +108,29 @@ cryptoClientP2PManagerConnectBTC (BRCryptoClientP2PManager baseManager,
     cryptoWalletManagerSetState (&manager->manager->base, cryptoWalletManagerStateInit (CRYPTO_WALLET_MANAGER_STATE_SYNCING));
 
     // Start periodic updates, sync if required.
-    BRPeerManagerConnect(manager->btcPeerManager);
+    btcPeerManagerConnect(manager->btcPeerManager);
 }
 
 static void
 cryptoClientP2PManagerDisconnectBTC (BRCryptoClientP2PManager baseManager) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
-    BRPeerManagerDisconnect (manager->btcPeerManager);
+    btcPeerManagerDisconnect (manager->btcPeerManager);
 }
 
 // MARK: - Sync
 
 static uint32_t
 cryptoClientP2PManagerCalculateSyncDepthHeight(BRCryptoSyncDepth depth,
-                                               const BRChainParams *chainParams,
+                                               const BRBitcoinChainParams *chainParams,
                                                uint64_t networkBlockHeight,
-                                               OwnershipKept BRTransaction *lastConfirmedSendTx) {
+                                               OwnershipKept BRBitcoinTransaction *lastConfirmedSendTx) {
     switch (depth) {
         case CRYPTO_SYNC_DEPTH_FROM_LAST_CONFIRMED_SEND:
             return NULL == lastConfirmedSendTx ? 0 : lastConfirmedSendTx->blockHeight;
 
         case CRYPTO_SYNC_DEPTH_FROM_LAST_TRUSTED_BLOCK: {
-            const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBeforeBlockNumber (chainParams,
+            const BRBitcoinCheckPoint *checkpoint = btcChainParamsGetCheckpointBeforeBlockNumber (chainParams,
                                                                                           (uint32_t) MIN (networkBlockHeight, UINT32_MAX));
             return NULL == checkpoint ? 0 : checkpoint->height;
         }
@@ -148,16 +148,16 @@ cryptoClientP2PManagerSyncBTC (BRCryptoClientP2PManager baseManager,
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
     uint32_t calcHeight = cryptoClientP2PManagerCalculateSyncDepthHeight (depth,
-                                                                          BRPeerManagerChainParams(manager->btcPeerManager),
+                                                                          btcPeerManagerChainParams(manager->btcPeerManager),
                                                                           height,
                                                                           NULL /* lastConfirmedSendTx */);
-    uint32_t lastHeight = BRPeerManagerLastBlockHeight (manager->btcPeerManager);
+    uint32_t lastHeight = btcPeerManagerLastBlockHeight (manager->btcPeerManager);
     uint32_t scanHeight = MIN (calcHeight, lastHeight);
 
     if (0 != scanHeight) {
-        BRPeerManagerRescanFromBlockNumber (manager->btcPeerManager, scanHeight);
+        btcPeerManagerRescanFromBlockNumber (manager->btcPeerManager, scanHeight);
     } else {
-        BRPeerManagerRescan (manager->btcPeerManager);
+        btcPeerManagerRescan (manager->btcPeerManager);
     }
 }
 
@@ -173,14 +173,14 @@ cryptoClientP2PManagerSendBTC (BRCryptoClientP2PManager baseManager,
                                BRCryptoTransfer transfer) {
     BRCryptoClientP2PManagerBTC manager = cryptoClientP2PManagerCoerce (baseManager);
 
-    BRTransaction *btcTransaction = cryptoTransferAsBTC (transfer);
+    BRBitcoinTransaction *btcTransaction = cryptoTransferAsBTC (transfer);
 
     BRCryptoClientP2PManagerPublishInfo *btcInfo = calloc (1, sizeof (BRCryptoClientP2PManagerPublishInfo));
     btcInfo->manager  = cryptoWalletManagerTake (&manager->manager->base);
     btcInfo->wallet   = cryptoWalletTake   (wallet);
     btcInfo->transfer = cryptoTransferTake (transfer);
 
-    BRPeerManagerPublishTx (manager->btcPeerManager,
+    btcPeerManagerPublishTx (manager->btcPeerManager,
                             btcTransaction,
                             btcInfo,
                             cryptoWalletManagerBTCTxPublished);
@@ -227,7 +227,7 @@ static void cryptoWalletManagerBTCSyncStarted (void *info) {
     bool needStop  = cryptoClientP2PManagerSyncInProgress (p2p);
 
     // record the starting block
-    p2p->begBlockHeight = BRPeerManagerLastBlockHeight (p2p->btcPeerManager);
+    p2p->begBlockHeight = btcPeerManagerLastBlockHeight (p2p->btcPeerManager);
 
     // We'll always start anew.
     bool needStart = true;
@@ -269,7 +269,7 @@ static void cryptoWalletManagerBTCSyncStopped (void *info, int reason) {
 
     // If the btcPeerManager is not disconnected, then the sync stopped upon completion.  Otherwise
     // the sync stopped upon request.
-    bool syncCompleted = (BRPeerStatusDisconnected != BRPeerManagerConnectStatus (p2p->btcPeerManager));
+    bool syncCompleted = (BRPeerStatusDisconnected != btcPeerManagerConnectStatus (p2p->btcPeerManager));
 
     // With this, we've stopped.
     p2p->begBlockHeight = BLOCK_HEIGHT_UNBOUND;
@@ -277,7 +277,7 @@ static void cryptoWalletManagerBTCSyncStopped (void *info, int reason) {
 
     // Update the block height through which we've synced successfully.
     p2p->blockHeight = (syncCompleted && 0 == reason
-                        ? BRPeerManagerLastBlockHeight (p2p->btcPeerManager)
+                        ? btcPeerManagerLastBlockHeight (p2p->btcPeerManager)
                         : BLOCK_HEIGHT_UNBOUND);
 
     pthread_mutex_unlock (&p2p->base.lock);
@@ -311,7 +311,7 @@ static void cryptoWalletManagerBTCTxStatusUpdate (void *info) {
     //   - If the block height has changed, signal the new value
     //
 
-    BRCryptoBlockNumber blockHeight = BRPeerManagerLastBlockHeight (p2p->btcPeerManager);
+    BRCryptoBlockNumber blockHeight = btcPeerManagerLastBlockHeight (p2p->btcPeerManager);
     bool needBlockHeight = (blockHeight > p2p->endBlockHeight);
 
     // If we are syncing, then we'll make progress
@@ -324,8 +324,8 @@ static void cryptoWalletManagerBTCTxStatusUpdate (void *info) {
         // Update the goal; always forward.
         p2p->endBlockHeight = MAX (blockHeight, p2p->endBlockHeight);
 
-        timestamp = BRPeerManagerLastBlockTimestamp (p2p->btcPeerManager);
-        percentComplete = (BRCryptoSyncPercentComplete) (100.0 * BRPeerManagerSyncProgress (p2p->btcPeerManager, (uint32_t) p2p->begBlockHeight));
+        timestamp = btcPeerManagerLastBlockTimestamp (p2p->btcPeerManager);
+        percentComplete = (BRCryptoSyncPercentComplete) (100.0 * btcPeerManagerSyncProgress (p2p->btcPeerManager, (uint32_t) p2p->begBlockHeight));
     }
 
     pthread_mutex_unlock (&p2p->base.lock);
@@ -345,7 +345,7 @@ static void cryptoWalletManagerBTCTxStatusUpdate (void *info) {
     }
 }
 
-static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleBlock **blocks, size_t count) {
+static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRBitcoinMerkleBlock **blocks, size_t count) {
     BRCryptoWalletManagerBTC manager = info;
 
     if (replace) {
@@ -357,7 +357,7 @@ static void cryptoWalletManagerBTCSaveBlocks (void *info, int replace, BRMerkleB
     }
 }
 
-static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRPeer *peers, size_t count) {
+static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRBitcoinPeer *peers, size_t count) {
     BRCryptoWalletManagerBTC manager = info;
 
     // filesystem changes are NOT queued; they are acted upon immediately
@@ -376,7 +376,7 @@ static void cryptoWalletManagerBTCSavePeers  (void *info, int replace, const BRP
     else {
         // fileServiceReplace expects an array of pointers to entities, instead of an array of
         // structures so let's do the conversion here
-        const BRPeer **peerRefs = calloc (count, sizeof(BRPeer *));
+        const BRBitcoinPeer **peerRefs = calloc (count, sizeof(BRBitcoinPeer *));
 
         for (size_t i = 0; i < count; i++) {
             peerRefs[i] = &peers[i];
@@ -435,18 +435,18 @@ cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager manager) {
     BRCryptoClientP2PManagerBTC p2pManagerBTC = cryptoClientP2PManagerCoerce (p2pManager);
     p2pManagerBTC->manager = cryptoWalletManagerCoerceBTC (manager, p2pManager->type);
 
-    const BRChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
-    BRWallet *btcWallet = cryptoWalletAsBTC(manager->wallet);
+    const BRBitcoinChainParams *btcChainParams = cryptoNetworkAsBTC(manager->network);
+    BRBitcoinWallet *btcWallet = cryptoWalletAsBTC(manager->wallet);
     uint32_t btcEarliestKeyTime = (uint32_t) cryptoAccountGetTimestamp(manager->account);
 
-    BRArrayOf(BRMerkleBlock*) blocks = initialBlocksLoadBTC (manager);
-    BRArrayOf(BRPeer)         peers  = initialPeersLoadBTC  (manager);
+    BRArrayOf(BRBitcoinMerkleBlock*) blocks = initialBlocksLoadBTC (manager);
+    BRArrayOf(BRBitcoinPeer)         peers  = initialPeersLoadBTC  (manager);
 
     p2pManagerBTC->begBlockHeight = BLOCK_HEIGHT_UNBOUND;
     p2pManagerBTC->endBlockHeight = BLOCK_HEIGHT_UNBOUND;
     p2pManagerBTC->blockHeight    = BLOCK_HEIGHT_UNBOUND;
 
-    p2pManagerBTC->btcPeerManager = BRPeerManagerNew (btcChainParams,
+    p2pManagerBTC->btcPeerManager = btcPeerManagerNew (btcChainParams,
                                                 btcWallet,
                                                 btcEarliestKeyTime,
                                                 blocks, (NULL == blocks ? 0 : array_count (blocks)),
@@ -455,7 +455,7 @@ cryptoWalletManagerCreateP2PManagerBTC (BRCryptoWalletManager manager) {
 
     assert (NULL != p2pManagerBTC->btcPeerManager);
 
-    BRPeerManagerSetCallbacks (p2pManagerBTC->btcPeerManager,
+    btcPeerManagerSetCallbacks (p2pManagerBTC->btcPeerManager,
                                cryptoWalletManagerCoerceBTC (manager, p2pManager->type),
                                cryptoWalletManagerBTCSyncStarted,
                                cryptoWalletManagerBTCSyncStopped,

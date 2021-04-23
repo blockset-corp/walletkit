@@ -22,7 +22,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "BRPaymentProtocol.h"
+#include "BRBitcoinPaymentProtocol.h"
 #include "support/BRCrypto.h"
 #include "support/BRArray.h"
 #include <string.h>
@@ -42,7 +42,7 @@ typedef struct {
     uint8_t *unknown;
 } ProtoBufContext;
 
-static uint64_t _ProtoBufVarInt(const uint8_t *buf, size_t bufLen, size_t *off)
+static uint64_t _btcProtoBufVarInt(const uint8_t *buf, size_t bufLen, size_t *off)
 {
     uint64_t varInt = 0;
     uint8_t b = 0x80;
@@ -56,7 +56,7 @@ static uint64_t _ProtoBufVarInt(const uint8_t *buf, size_t bufLen, size_t *off)
     return (b & 0x80) ? 0 : varInt;
 }
 
-static void _ProtoBufSetVarInt(uint8_t *buf, size_t bufLen, uint64_t i, size_t *off)
+static void _btcProtoBufSetVarInt(uint8_t *buf, size_t bufLen, uint64_t i, size_t *off)
 {
     uint8_t b;
     
@@ -69,10 +69,10 @@ static void _ProtoBufSetVarInt(uint8_t *buf, size_t bufLen, uint64_t i, size_t *
     } while (i > 0);
 }
 
-static const uint8_t *_ProtoBufLenDelim(const uint8_t *buf, size_t *len, size_t *off)
+static const uint8_t *_btcProtoBufLenDelim(const uint8_t *buf, size_t *len, size_t *off)
 {
     const uint8_t *data = NULL;
-    size_t dataLen = (size_t)_ProtoBufVarInt(buf, *len, off);
+    size_t dataLen = (size_t)_btcProtoBufVarInt(buf, *len, off);
     
     if (buf && *off + dataLen <= *len) data = &buf[*off];
     *off += dataLen;
@@ -80,10 +80,10 @@ static const uint8_t *_ProtoBufLenDelim(const uint8_t *buf, size_t *len, size_t 
     return data;
 }
 
-static void _ProtoBufSetLenDelim(uint8_t *buf, size_t bufLen, const void *data, size_t dataLen, size_t *off)
+static void _btcProtoBufSetLenDelim(uint8_t *buf, size_t bufLen, const void *data, size_t dataLen, size_t *off)
 {
     if (data || dataLen == 0) {
-        _ProtoBufSetVarInt(buf, bufLen, dataLen, off);
+        _btcProtoBufSetVarInt(buf, bufLen, dataLen, off);
         if (buf && *off + dataLen <= bufLen) memcpy(&buf[*off], data, dataLen);
         *off += dataLen;
     }
@@ -91,7 +91,7 @@ static void _ProtoBufSetLenDelim(uint8_t *buf, size_t bufLen, const void *data, 
 
 // the following fixed int functions are not used by payment protocol, and only work for parsing/serializing unknown
 // fields - the values returned or set are unconverted raw byte values
-static uint64_t _ProtoBufFixed(const uint8_t *buf, size_t bufLen, size_t *off, size_t size)
+static uint64_t _btcProtoBufFixed(const uint8_t *buf, size_t bufLen, size_t *off, size_t size)
 {
     uint64_t i = 0;
     
@@ -100,30 +100,30 @@ static uint64_t _ProtoBufFixed(const uint8_t *buf, size_t bufLen, size_t *off, s
     return i;
 }
 
-static void _ProtoBufSetFixed(uint8_t *buf, size_t bufLen, uint64_t i, size_t *off, size_t size)
+static void _btcProtoBufSetFixed(uint8_t *buf, size_t bufLen, uint64_t i, size_t *off, size_t size)
 {
     if (buf && *off + size <= bufLen && size <= sizeof(i)) memcpy(&buf[*off], &i, size);
     *off += size;
 }
 
 // sets either i or data depending on field type, and returns field key
-static uint64_t _ProtoBufField(uint64_t *i, const uint8_t **data, const uint8_t *buf, size_t *len, size_t *off)
+static uint64_t _btcProtoBufField(uint64_t *i, const uint8_t **data, const uint8_t *buf, size_t *len, size_t *off)
 {
-    uint64_t varInt = 0, fixedInt = 0, key = _ProtoBufVarInt(buf, *len, off);
+    uint64_t varInt = 0, fixedInt = 0, key = _btcProtoBufVarInt(buf, *len, off);
     const uint8_t *lenDelim = NULL;
     
     switch (key & 0x07) {
-        case PROTOBUF_VARINT: varInt = _ProtoBufVarInt(buf, *len, off); if (i) *i = varInt; break;
-        case PROTOBUF_64BIT: fixedInt = _ProtoBufFixed(buf, *len, off, sizeof(uint64_t)); if (i) *i = fixedInt; break;
-        case PROTOBUF_LENDELIM: lenDelim = _ProtoBufLenDelim(buf, len, off); if (data) *data = lenDelim; break;
-        case PROTOBUF_32BIT: fixedInt = _ProtoBufFixed(buf, *len, off, sizeof(uint32_t)); if (i) *i = fixedInt; break;
+        case PROTOBUF_VARINT: varInt = _btcProtoBufVarInt(buf, *len, off); if (i) *i = varInt; break;
+        case PROTOBUF_64BIT: fixedInt = _btcProtoBufFixed(buf, *len, off, sizeof(uint64_t)); if (i) *i = fixedInt; break;
+        case PROTOBUF_LENDELIM: lenDelim = _btcProtoBufLenDelim(buf, len, off); if (data) *data = lenDelim; break;
+        case PROTOBUF_32BIT: fixedInt = _btcProtoBufFixed(buf, *len, off, sizeof(uint32_t)); if (i) *i = fixedInt; break;
         default: break;
     }
     
     return key;
 }
 
-static void _ProtoBufString(char **str, const void *data, size_t dataLen)
+static void _btcProtoBufString(char **str, const void *data, size_t dataLen)
 {
     if (data || dataLen == 0) {
         if (! *str) array_new(*str, dataLen + 1);
@@ -133,15 +133,15 @@ static void _ProtoBufString(char **str, const void *data, size_t dataLen)
     }
 }
 
-static void _ProtoBufSetString(uint8_t *buf, size_t bufLen, const char *str, uint64_t key, size_t *off)
+static void _btcProtoBufSetString(uint8_t *buf, size_t bufLen, const char *str, uint64_t key, size_t *off)
 {
     size_t strLen = (str) ? strlen(str) : 0;
     
-    _ProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_LENDELIM, off);
-    _ProtoBufSetLenDelim(buf, bufLen, str, strLen, off);
+    _btcProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_LENDELIM, off);
+    _btcProtoBufSetLenDelim(buf, bufLen, str, strLen, off);
 }
 
-static size_t _ProtoBufBytes(uint8_t **bytes, const void *data, size_t dataLen)
+static size_t _btcProtoBufBytes(uint8_t **bytes, const void *data, size_t dataLen)
 {
     if (data || dataLen == 0) {
         if (! *bytes) array_new(*bytes, dataLen);
@@ -152,20 +152,20 @@ static size_t _ProtoBufBytes(uint8_t **bytes, const void *data, size_t dataLen)
     return (*bytes) ? array_count(*bytes) : 0;
 }
 
-static void _ProtoBufSetBytes(uint8_t *buf, size_t bufLen, const uint8_t *bytes, size_t bytesLen, uint64_t key,
+static void _btcProtoBufSetBytes(uint8_t *buf, size_t bufLen, const uint8_t *bytes, size_t bytesLen, uint64_t key,
                               size_t *off)
 {
-    _ProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_LENDELIM, off);
-    _ProtoBufSetLenDelim(buf, bufLen, bytes, bytesLen, off);
+    _btcProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_LENDELIM, off);
+    _btcProtoBufSetLenDelim(buf, bufLen, bytes, bytesLen, off);
 }
 
-static void _ProtoBufSetInt(uint8_t *buf, size_t bufLen, uint64_t i, uint64_t key, size_t *off)
+static void _btcProtoBufSetInt(uint8_t *buf, size_t bufLen, uint64_t i, uint64_t key, size_t *off)
 {
-    _ProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_VARINT, off);
-    _ProtoBufSetVarInt(buf, bufLen, i, off);
+    _btcProtoBufSetVarInt(buf, bufLen, (key << 3) | PROTOBUF_VARINT, off);
+    _btcProtoBufSetVarInt(buf, bufLen, i, off);
 }
 
-static void _ProtoBufUnknown(uint8_t **unknown, uint64_t key, uint64_t i, const void *data, size_t dataLen)
+static void _btcProtoBufUnknown(uint8_t **unknown, uint64_t key, uint64_t i, const void *data, size_t dataLen)
 {
     size_t bufLen = 10 + ((key & 0x07) == PROTOBUF_LENDELIM ? dataLen : 0);
     uint8_t _buf[(bufLen <= 0x1000) ? bufLen : 0], *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
@@ -173,13 +173,13 @@ static void _ProtoBufUnknown(uint8_t **unknown, uint64_t key, uint64_t i, const 
     uint64_t k;
     
     assert(buf != NULL);
-    _ProtoBufSetVarInt(buf, bufLen, key, &off);
+    _btcProtoBufSetVarInt(buf, bufLen, key, &off);
     
     switch (key & 0x07) {
-        case PROTOBUF_VARINT: _ProtoBufSetVarInt(buf, bufLen, i, &off); break;
-        case PROTOBUF_64BIT: _ProtoBufSetFixed(buf, bufLen, i, &off, sizeof(uint64_t)); break;
-        case PROTOBUF_LENDELIM: _ProtoBufSetLenDelim(buf, bufLen, data, dataLen, &off); break;
-        case PROTOBUF_32BIT: _ProtoBufSetFixed(buf, bufLen, i, &off, sizeof(uint32_t)); break;
+        case PROTOBUF_VARINT: _btcProtoBufSetVarInt(buf, bufLen, i, &off); break;
+        case PROTOBUF_64BIT: _btcProtoBufSetFixed(buf, bufLen, i, &off, sizeof(uint64_t)); break;
+        case PROTOBUF_LENDELIM: _btcProtoBufSetLenDelim(buf, bufLen, data, dataLen, &off); break;
+        case PROTOBUF_32BIT: _btcProtoBufSetFixed(buf, bufLen, i, &off, sizeof(uint32_t)); break;
         default: break;
     }
     
@@ -190,7 +190,7 @@ static void _ProtoBufUnknown(uint8_t **unknown, uint64_t key, uint64_t i, const 
     while (off < array_count(*unknown)) {
         l = array_count(*unknown);
         o = off;
-        k = _ProtoBufField(NULL, NULL, *unknown, &l, &off);
+        k = _btcProtoBufField(NULL, NULL, *unknown, &l, &off);
         if (k == key) array_rm_range(*unknown, o, off - o);
         if (k >= key) break;
     }
@@ -268,9 +268,9 @@ typedef enum {
     encrypted_msg_status_msg = 9
 } encrypted_msg_key;
 
-static BRTxOutput _BRPaymentProtocolOutput(uint64_t amount, uint8_t *script, size_t scriptLen)
+static BRBitcoinTxOutput _btcPaymentProtocolOutput(uint64_t amount, uint8_t *script, size_t scriptLen)
 {
-    BRTxOutput out = BR_TX_OUTPUT_NONE;
+    BRBitcoinTxOutput out = BR_TX_OUTPUT_NONE;
     ProtoBufContext ctx = { NULL, NULL };
     
     assert(script != NULL || scriptLen == 0);
@@ -278,15 +278,15 @@ static BRTxOutput _BRPaymentProtocolOutput(uint64_t amount, uint8_t *script, siz
     array_new(ctx.defaults, output_script + 1);
     array_set_count(ctx.defaults, output_script + 1);
     out.amount = amount;
-    BRTxOutputSetScript(&out, script, scriptLen);
+    btcTxOutputSetScript(&out, script, scriptLen);
     if (! out.script) array_new(out.script, sizeof(ctx));
     array_add_array(out.script, (uint8_t *)&ctx, sizeof(ctx)); // store context at end of script data
     return out;
 }
 
-static BRTxOutput _BRPaymentProtocolOutputParse(const uint8_t *buf, size_t bufLen)
+static BRBitcoinTxOutput _btcPaymentProtocolOutputParse(const uint8_t *buf, size_t bufLen)
 {
-    BRTxOutput out = BR_TX_OUTPUT_NONE;
+    BRBitcoinTxOutput out = BR_TX_OUTPUT_NONE;
     ProtoBufContext ctx = { NULL, NULL };
     size_t off = 0;
 
@@ -298,12 +298,12 @@ static BRTxOutput _BRPaymentProtocolOutputParse(const uint8_t *buf, size_t bufLe
     while (off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
             case output_amount: out.amount = i, ctx.defaults[output_amount] = 0; break;
-            case output_script: BRTxOutputSetScript(&out, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx.unknown, key, i, data, dataLen); break;
+            case output_script: btcTxOutputSetScript(&out, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx.unknown, key, i, data, dataLen); break;
         }
     }
 
@@ -317,7 +317,7 @@ static BRTxOutput _BRPaymentProtocolOutputParse(const uint8_t *buf, size_t bufLe
     return out;
 }
 
-static size_t _BRPaymentProtocolOutputSerialize(BRTxOutput out, uint8_t *buf, size_t bufLen)
+static size_t _btcPaymentProtocolOutputSerialize(BRBitcoinTxOutput out, uint8_t *buf, size_t bufLen)
 {
     ProtoBufContext ctx;
     size_t off = 0;
@@ -325,8 +325,8 @@ static size_t _BRPaymentProtocolOutputSerialize(BRTxOutput out, uint8_t *buf, si
     assert(out.script != NULL);
     
     memcpy(&ctx, &out.script[out.scriptLen], sizeof(ctx)); // context is stored at end of script data
-    if (! ctx.defaults[output_amount]) _ProtoBufSetInt(buf, bufLen, out.amount, output_amount, &off);
-    if (! ctx.defaults[output_script]) _ProtoBufSetBytes(buf, bufLen, out.script, out.scriptLen, output_script, &off);
+    if (! ctx.defaults[output_amount]) _btcProtoBufSetInt(buf, bufLen, out.amount, output_amount, &off);
+    if (! ctx.defaults[output_script]) _btcProtoBufSetBytes(buf, bufLen, out.script, out.scriptLen, output_script, &off);
     
     if (ctx.unknown) {
         if (buf && off + array_count(ctx.unknown) <= bufLen) memcpy(&buf[off], ctx.unknown, array_count(ctx.unknown));
@@ -336,7 +336,7 @@ static size_t _BRPaymentProtocolOutputSerialize(BRTxOutput out, uint8_t *buf, si
     return (! buf || off <= bufLen) ? off : 0;
 }
 
-static void _BRPaymentProtocolOutputFree(BRTxOutput out)
+static void _btcPaymentProtocolOutputFree(BRBitcoinTxOutput out)
 {
     ProtoBufContext ctx;
 
@@ -344,17 +344,17 @@ static void _BRPaymentProtocolOutputFree(BRTxOutput out)
         memcpy(&ctx, &out.script[out.scriptLen], sizeof(ctx));
         if (ctx.defaults) array_free(ctx.defaults);
         if (ctx.unknown) array_free(ctx.unknown);
-        BRTxOutputSetScript(&out, NULL, 0);
+        btcTxOutputSetScript(&out, NULL, 0);
     }
 }
 
-// returns a newly allocated details struct that must be freed by calling BRPaymentProtocolDetailsFree()
-BRPaymentProtocolDetails *BRPaymentProtocolDetailsNew(const char *network, const BRTxOutput outputs[], size_t outCount,
+// returns a newly allocated details struct that must be freed by calling btcPaymentProtocolDetailsFree()
+BRBitcoinPaymentProtocolDetails *btcPaymentProtocolDetailsNew(const char *network, const BRBitcoinTxOutput outputs[], size_t outCount,
                                                       uint64_t time, uint64_t expires, const char *memo,
                                                       const char *paymentURL, const uint8_t *merchantData,
                                                       size_t merchDataLen)
 {
-    BRPaymentProtocolDetails *details = calloc(1, sizeof(*details) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolDetails *details = calloc(1, sizeof(*details) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&details[1];
     
     assert(details != NULL);
@@ -364,32 +364,32 @@ BRPaymentProtocolDetails *BRPaymentProtocolDetailsNew(const char *network, const
     array_set_count(ctx->defaults, details_merch_data + 1);
 
     if (! network) {
-        _ProtoBufString(&details->network, "main", strlen("main"));
+        _btcProtoBufString(&details->network, "main", strlen("main"));
         ctx->defaults[details_network] = 1;
     }
-    else _ProtoBufString(&details->network, network, strlen(network));
+    else _btcProtoBufString(&details->network, network, strlen(network));
 
     array_new(details->outputs, outCount);
     
     for (size_t i = 0; i < outCount; i++) {
-        array_add(details->outputs, _BRPaymentProtocolOutput(outputs[i].amount, outputs[i].script, outputs[i].scriptLen));
+        array_add(details->outputs, _btcPaymentProtocolOutput(outputs[i].amount, outputs[i].script, outputs[i].scriptLen));
     }
 
     details->outCount = array_count(details->outputs);
 
     details->time = time;
     details->expires = expires;
-    if (memo) _ProtoBufString(&details->memo, memo, strlen(memo));
-    if (paymentURL) _ProtoBufString(&details->paymentURL, paymentURL, strlen(paymentURL));
-    if (merchantData) details->merchDataLen = _ProtoBufBytes(&details->merchantData, merchantData, merchDataLen);
+    if (memo) _btcProtoBufString(&details->memo, memo, strlen(memo));
+    if (paymentURL) _btcProtoBufString(&details->paymentURL, paymentURL, strlen(paymentURL));
+    if (merchantData) details->merchDataLen = _btcProtoBufBytes(&details->merchantData, merchantData, merchDataLen);
     return details;
 }
 
 // buf must contain a serialized details struct
-// returns a details struct that must be freed by calling BRPaymentProtocolDetailsFree()
-BRPaymentProtocolDetails *BRPaymentProtocolDetailsParse(const uint8_t *buf, size_t bufLen)
+// returns a details struct that must be freed by calling btcPaymentProtocolDetailsFree()
+BRBitcoinPaymentProtocolDetails *btcPaymentProtocolDetailsParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolDetails *details = calloc(1, sizeof(*details) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolDetails *details = calloc(1, sizeof(*details) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&details[1];
     size_t off = 0;
 
@@ -403,20 +403,20 @@ BRPaymentProtocolDetails *BRPaymentProtocolDetailsParse(const uint8_t *buf, size
     array_new(details->outputs, 1);
 
     while (buf && off < bufLen) {
-        BRTxOutput out = BR_TX_OUTPUT_NONE;
+        BRBitcoinTxOutput out = BR_TX_OUTPUT_NONE;
         const uint8_t *data = NULL;
         size_t dLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dLen, &off);
 
         switch (key >> 3) {
-            case details_network: _ProtoBufString(&details->network, data, dLen); break;
-            case details_outputs: out = _BRPaymentProtocolOutputParse(data, dLen); break;
+            case details_network: _btcProtoBufString(&details->network, data, dLen); break;
+            case details_outputs: out = _btcPaymentProtocolOutputParse(data, dLen); break;
             case details_time: details->time = i, ctx->defaults[details_time] = 0; break;
             case details_expires: details->expires = i, ctx->defaults[details_expires] = 0; break;
-            case details_memo: _ProtoBufString(&details->memo, data, dLen); break;
-            case details_payment_url: _ProtoBufString(&details->paymentURL, data, dLen); break;
-            case details_merch_data: details->merchDataLen = _ProtoBufBytes(&details->merchantData, data, dLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dLen); break;
+            case details_memo: _btcProtoBufString(&details->memo, data, dLen); break;
+            case details_payment_url: _btcProtoBufString(&details->paymentURL, data, dLen); break;
+            case details_merch_data: details->merchDataLen = _btcProtoBufBytes(&details->merchantData, data, dLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dLen); break;
         }
 
         if (out.script) array_add(details->outputs, out);
@@ -425,7 +425,7 @@ BRPaymentProtocolDetails *BRPaymentProtocolDetailsParse(const uint8_t *buf, size
     details->outCount = array_count(details->outputs);
     
     if (! details->network) {
-        _ProtoBufString(&details->network, "main", strlen("main"));
+        _btcProtoBufString(&details->network, "main", strlen("main"));
         ctx->defaults[details_network] = 1;
     }
     
@@ -433,7 +433,7 @@ BRPaymentProtocolDetails *BRPaymentProtocolDetailsParse(const uint8_t *buf, size
 }
 
 // writes serialized details struct to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolDetailsSerialize(const BRPaymentProtocolDetails *details, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolDetailsSerialize(const BRBitcoinPaymentProtocolDetails *details, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&details[1];
     size_t i, off = 0, outLen = 0x100, l;
@@ -442,22 +442,22 @@ size_t BRPaymentProtocolDetailsSerialize(const BRPaymentProtocolDetails *details
     assert(outBuf != NULL);
     assert(details != NULL);
     
-    if (! ctx->defaults[details_network]) _ProtoBufSetString(buf, bufLen, details->network, details_network, &off);
+    if (! ctx->defaults[details_network]) _btcProtoBufSetString(buf, bufLen, details->network, details_network, &off);
     
     for (i = 0; i < details->outCount; i++) {
-        l = _BRPaymentProtocolOutputSerialize(details->outputs[i], NULL, 0);
+        l = _btcPaymentProtocolOutputSerialize(details->outputs[i], NULL, 0);
         if (l > outLen) outBuf = realloc(outBuf, (outLen = l));
         assert(outBuf != NULL);
-        l = _BRPaymentProtocolOutputSerialize(details->outputs[i], outBuf, outLen);
-        _ProtoBufSetBytes(buf, bufLen, outBuf, l, details_outputs, &off);
+        l = _btcPaymentProtocolOutputSerialize(details->outputs[i], outBuf, outLen);
+        _btcProtoBufSetBytes(buf, bufLen, outBuf, l, details_outputs, &off);
     }
 
     free(outBuf);
-    if (! ctx->defaults[details_time]) _ProtoBufSetInt(buf, bufLen, details->time, details_time, &off);
-    if (! ctx->defaults[details_expires]) _ProtoBufSetInt(buf, bufLen, details->expires, details_expires, &off);
-    if (details->memo) _ProtoBufSetString(buf, bufLen, details->memo, details_memo, &off);
-    if (details->paymentURL) _ProtoBufSetString(buf, bufLen, details->paymentURL, details_payment_url, &off);
-    if (details->merchantData) _ProtoBufSetBytes(buf, bufLen, details->merchantData, details->merchDataLen,
+    if (! ctx->defaults[details_time]) _btcProtoBufSetInt(buf, bufLen, details->time, details_time, &off);
+    if (! ctx->defaults[details_expires]) _btcProtoBufSetInt(buf, bufLen, details->expires, details_expires, &off);
+    if (details->memo) _btcProtoBufSetString(buf, bufLen, details->memo, details_memo, &off);
+    if (details->paymentURL) _btcProtoBufSetString(buf, bufLen, details->paymentURL, details_payment_url, &off);
+    if (details->merchantData) _btcProtoBufSetBytes(buf, bufLen, details->merchantData, details->merchDataLen,
                                                  details_merch_data, &off);
 
     if (ctx->unknown) {
@@ -469,14 +469,14 @@ size_t BRPaymentProtocolDetailsSerialize(const BRPaymentProtocolDetails *details
 }
 
 // frees memory allocated for details struct
-void BRPaymentProtocolDetailsFree(BRPaymentProtocolDetails *details)
+void btcPaymentProtocolDetailsFree(BRBitcoinPaymentProtocolDetails *details)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&details[1];
 
     assert(details != NULL);
     
     if (details->network) array_free(details->network);
-    for (size_t i = 0; i < details->outCount; i++) _BRPaymentProtocolOutputFree(details->outputs[i]);
+    for (size_t i = 0; i < details->outCount; i++) _btcPaymentProtocolOutputFree(details->outputs[i]);
     if (details->outputs) array_free(details->outputs);
     if (details->memo) array_free(details->memo);
     if (details->paymentURL) array_free(details->paymentURL);
@@ -486,12 +486,12 @@ void BRPaymentProtocolDetailsFree(BRPaymentProtocolDetails *details)
     free(details);
 }
 
-// returns a newly allocated request struct that must be freed by calling BRPaymentProtocolRequestFree()
-BRPaymentProtocolRequest *BRPaymentProtocolRequestNew(uint32_t version, const char *pkiType, const uint8_t *pkiData,
-                                                      size_t pkiDataLen, BRPaymentProtocolDetails *details,
+// returns a newly allocated request struct that must be freed by calling btcPaymentProtocolRequestFree()
+BRBitcoinPaymentProtocolRequest *btcPaymentProtocolRequestNew(uint32_t version, const char *pkiType, const uint8_t *pkiData,
+                                                      size_t pkiDataLen, BRBitcoinPaymentProtocolDetails *details,
                                                       const uint8_t *signature, size_t sigLen)
 {
-    BRPaymentProtocolRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
 
     assert(req != NULL);
@@ -507,17 +507,17 @@ BRPaymentProtocolRequest *BRPaymentProtocolRequestNew(uint32_t version, const ch
     else req->version = version;
     
     if (! pkiType) {
-        _ProtoBufString(&req->pkiType, "none", strlen("none"));
+        _btcProtoBufString(&req->pkiType, "none", strlen("none"));
         ctx->defaults[request_pki_type] = 1;
     }
-    else _ProtoBufString(&req->pkiType, pkiType, strlen(pkiType));
+    else _btcProtoBufString(&req->pkiType, pkiType, strlen(pkiType));
     
-    if (pkiData) req->pkiDataLen = _ProtoBufBytes(&req->pkiData, pkiData, pkiDataLen);
+    if (pkiData) req->pkiDataLen = _btcProtoBufBytes(&req->pkiData, pkiData, pkiDataLen);
     req->details = details;
-    if (signature) req->sigLen = _ProtoBufBytes(&req->signature, signature, sigLen);
+    if (signature) req->sigLen = _btcProtoBufBytes(&req->signature, signature, sigLen);
 
     if (! req->details) { // required
-        BRPaymentProtocolRequestFree(req);
+        btcPaymentProtocolRequestFree(req);
         req = NULL;
     }
     
@@ -525,10 +525,10 @@ BRPaymentProtocolRequest *BRPaymentProtocolRequestNew(uint32_t version, const ch
 }
 
 // buf must contain a serialized request struct
-// returns a request struct that must be freed by calling BRPaymentProtocolRequestFree()
-BRPaymentProtocolRequest *BRPaymentProtocolRequestParse(const uint8_t *buf, size_t bufLen)
+// returns a request struct that must be freed by calling btcPaymentProtocolRequestFree()
+BRBitcoinPaymentProtocolRequest *btcPaymentProtocolRequestParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
     size_t off = 0;
     
@@ -543,25 +543,25 @@ BRPaymentProtocolRequest *BRPaymentProtocolRequestParse(const uint8_t *buf, size
     while (buf && off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
             case request_version: req->version = (uint32_t)i, ctx->defaults[request_version] = 0; break;
-            case request_pki_type: _ProtoBufString(&req->pkiType, data, dataLen); break;
-            case request_pki_data: req->pkiDataLen = _ProtoBufBytes(&req->pkiData, data, dataLen); break;
-            case request_details: req->details = (data) ? BRPaymentProtocolDetailsParse(data, dataLen) : NULL; break;
-            case request_signature: req->sigLen = _ProtoBufBytes(&req->signature, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
+            case request_pki_type: _btcProtoBufString(&req->pkiType, data, dataLen); break;
+            case request_pki_data: req->pkiDataLen = _btcProtoBufBytes(&req->pkiData, data, dataLen); break;
+            case request_details: req->details = (data) ? btcPaymentProtocolDetailsParse(data, dataLen) : NULL; break;
+            case request_signature: req->sigLen = _btcProtoBufBytes(&req->signature, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
         }
     }
     
     if (! req->pkiType) {
-        _ProtoBufString(&req->pkiType, "none", strlen("none"));
+        _btcProtoBufString(&req->pkiType, "none", strlen("none"));
         ctx->defaults[request_pki_type] = 1;
     }
     
     if (! req->details) { // required
-        BRPaymentProtocolRequestFree(req);
+        btcPaymentProtocolRequestFree(req);
         req = NULL;
     }
 
@@ -569,7 +569,7 @@ BRPaymentProtocolRequest *BRPaymentProtocolRequestParse(const uint8_t *buf, size
 }
 
 // writes serialized request struct to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolRequestSerialize(const BRPaymentProtocolRequest *req, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolRequestSerialize(const BRBitcoinPaymentProtocolRequest *req, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&req[1];
     size_t off = 0;
@@ -577,21 +577,21 @@ size_t BRPaymentProtocolRequestSerialize(const BRPaymentProtocolRequest *req, ui
     assert(req != NULL);
     assert(req->details != NULL);
     
-    if (! ctx->defaults[request_version]) _ProtoBufSetInt(buf, bufLen, req->version, request_version, &off);
-    if (! ctx->defaults[request_pki_type]) _ProtoBufSetString(buf, bufLen, req->pkiType, request_pki_type, &off);
-    if (req->pkiData) _ProtoBufSetBytes(buf, bufLen, req->pkiData, req->pkiDataLen, request_pki_data, &off);
+    if (! ctx->defaults[request_version]) _btcProtoBufSetInt(buf, bufLen, req->version, request_version, &off);
+    if (! ctx->defaults[request_pki_type]) _btcProtoBufSetString(buf, bufLen, req->pkiType, request_pki_type, &off);
+    if (req->pkiData) _btcProtoBufSetBytes(buf, bufLen, req->pkiData, req->pkiDataLen, request_pki_data, &off);
 
     if (req->details) {
-        size_t detailsLen = BRPaymentProtocolDetailsSerialize(req->details, NULL, 0);
+        size_t detailsLen = btcPaymentProtocolDetailsSerialize(req->details, NULL, 0);
         uint8_t *detailsBuf = malloc(detailsLen);
 
         assert(detailsBuf != NULL);
-        detailsLen = BRPaymentProtocolDetailsSerialize(req->details, detailsBuf, detailsLen);
-        _ProtoBufSetBytes(buf, bufLen, detailsBuf, detailsLen, request_details, &off);
+        detailsLen = btcPaymentProtocolDetailsSerialize(req->details, detailsBuf, detailsLen);
+        _btcProtoBufSetBytes(buf, bufLen, detailsBuf, detailsLen, request_details, &off);
         free(detailsBuf);
     }
     
-    if (req->signature) _ProtoBufSetBytes(buf, bufLen, req->signature, req->sigLen, request_signature, &off);
+    if (req->signature) _btcProtoBufSetBytes(buf, bufLen, req->signature, req->sigLen, request_signature, &off);
 
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -604,7 +604,7 @@ size_t BRPaymentProtocolRequestSerialize(const BRPaymentProtocolRequest *req, ui
 // writes the DER encoded certificate corresponding to index to cert
 // returns the number of bytes written to cert, or the total certLen needed if cert is NULL
 // returns 0 if index is out-of-bounds
-size_t BRPaymentProtocolRequestCert(const BRPaymentProtocolRequest *req, uint8_t *cert, size_t certLen, size_t idx)
+size_t btcPaymentProtocolRequestCert(const BRBitcoinPaymentProtocolRequest *req, uint8_t *cert, size_t certLen, size_t idx)
 {
     size_t off = 0, len = 0;
     
@@ -613,7 +613,7 @@ size_t BRPaymentProtocolRequestCert(const BRPaymentProtocolRequest *req, uint8_t
     while (req->pkiData && off < req->pkiDataLen) {
         const uint8_t *data = NULL;
         size_t dataLen = req->pkiDataLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, req->pkiData, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, req->pkiData, &dataLen, &off);
         
         if ((key >> 3) == certificates_cert && data) {
             if (idx == 0) {
@@ -630,7 +630,7 @@ size_t BRPaymentProtocolRequestCert(const BRPaymentProtocolRequest *req, uint8_t
 
 // writes the hash of the request to md needed to sign or verify the request
 // returns the number of bytes written, or the total mdLen needed if md is NULL
-size_t BRPaymentProtocolRequestDigest(BRPaymentProtocolRequest *req, uint8_t *md, size_t mdLen)
+size_t btcPaymentProtocolRequestDigest(BRBitcoinPaymentProtocolRequest *req, uint8_t *md, size_t mdLen)
 {
     uint8_t *buf;
     size_t bufLen;
@@ -638,10 +638,10 @@ size_t BRPaymentProtocolRequestDigest(BRPaymentProtocolRequest *req, uint8_t *md
     assert(req != NULL);
 
     req->sigLen = 0; // set signature to 0 bytes, a signature can't sign itself
-    bufLen = BRPaymentProtocolRequestSerialize(req, NULL, 0);
+    bufLen = btcPaymentProtocolRequestSerialize(req, NULL, 0);
     buf = malloc(bufLen);
     assert(buf != NULL);
-    bufLen = BRPaymentProtocolRequestSerialize(req, buf, bufLen);
+    bufLen = btcPaymentProtocolRequestSerialize(req, buf, bufLen);
     
     if (req->pkiType && strncmp(req->pkiType, "x509+sha256", strlen("x509+sha256") + 1) == 0) {
         if (md && 256/8 <= mdLen) BRSHA256(md, buf, bufLen);
@@ -659,7 +659,7 @@ size_t BRPaymentProtocolRequestDigest(BRPaymentProtocolRequest *req, uint8_t *md
 }
 
 // frees memory allocated for request struct
-void BRPaymentProtocolRequestFree(BRPaymentProtocolRequest *req)
+void btcPaymentProtocolRequestFree(BRBitcoinPaymentProtocolRequest *req)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
 
@@ -667,22 +667,22 @@ void BRPaymentProtocolRequestFree(BRPaymentProtocolRequest *req)
     
     if (req->pkiType) array_free(req->pkiType);
     if (req->pkiData) array_free(req->pkiData);
-    if (req->details) BRPaymentProtocolDetailsFree(req->details);
+    if (req->details) btcPaymentProtocolDetailsFree(req->details);
     if (req->signature) array_free(req->signature);
     if (ctx->defaults) array_free(ctx->defaults);
     if (ctx->unknown) array_free(ctx->unknown);
     free(req);
 }
 
-// returns a newly allocated payment struct that must be freed by calling BRPaymentProtocolPaymentFree()
-BRPaymentProtocolPayment *BRPaymentProtocolPaymentNew(const uint8_t *merchantData, size_t merchDataLen,
-                                                      BRTransaction *transactions[], size_t txCount,
+// returns a newly allocated payment struct that must be freed by calling btcPaymentProtocolPaymentFree()
+BRBitcoinPaymentProtocolPayment *btcPaymentProtocolPaymentNew(const uint8_t *merchantData, size_t merchDataLen,
+                                                      BRBitcoinTransaction *transactions[], size_t txCount,
                                                       const uint64_t refundToAmounts[],
                                                       BRAddressParams params,
                                                       const BRAddress refundToAddresses[],
                                                       size_t refundToCount, const char *memo)
 {
-    BRPaymentProtocolPayment *payment = calloc(1, sizeof(*payment) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolPayment *payment = calloc(1, sizeof(*payment) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&payment[1];
     
     assert(payment != NULL);
@@ -693,7 +693,7 @@ BRPaymentProtocolPayment *BRPaymentProtocolPaymentNew(const uint8_t *merchantDat
     array_new(ctx->defaults, payment_merch_data + 1);
     array_set_count(ctx->defaults, payment_merch_data + 1);
 
-    if (merchantData) payment->merchDataLen = _ProtoBufBytes(&payment->merchantData, merchantData, merchDataLen);
+    if (merchantData) payment->merchDataLen = _btcProtoBufBytes(&payment->merchantData, merchantData, merchDataLen);
     
     if (transactions) {
         array_new(payment->transactions, txCount);
@@ -707,19 +707,19 @@ BRPaymentProtocolPayment *BRPaymentProtocolPaymentNew(const uint8_t *merchantDat
         uint8_t script[BRAddressScriptPubKey(NULL, 0, params, refundToAddresses[i].s)];
         size_t scriptLen = BRAddressScriptPubKey(script, sizeof(script), params, refundToAddresses[i].s);
             
-        array_add(payment->refundTo, _BRPaymentProtocolOutput(refundToAmounts[i], script, scriptLen));
+        array_add(payment->refundTo, _btcPaymentProtocolOutput(refundToAmounts[i], script, scriptLen));
     }
     
     payment->refundToCount = refundToCount;
-    if (memo) _ProtoBufString(&payment->memo, memo, strlen(memo));
+    if (memo) _btcProtoBufString(&payment->memo, memo, strlen(memo));
     return payment;
 }
 
 // buf must contain a serialized payment struct
-// returns a payment struct that must be freed by calling BRPaymentProtocolPaymentFree()
-BRPaymentProtocolPayment *BRPaymentProtocolPaymentParse(const uint8_t *buf, size_t bufLen)
+// returns a payment struct that must be freed by calling btcPaymentProtocolPaymentFree()
+BRBitcoinPaymentProtocolPayment *btcPaymentProtocolPaymentParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolPayment *payment = calloc(1, sizeof(*payment) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolPayment *payment = calloc(1, sizeof(*payment) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&payment[1];
     size_t off = 0;
     
@@ -732,18 +732,18 @@ BRPaymentProtocolPayment *BRPaymentProtocolPaymentParse(const uint8_t *buf, size
     array_new(payment->refundTo, 1);
     
     while (buf && off < bufLen) {
-        BRTransaction *tx = NULL;
-        BRTxOutput out = BR_TX_OUTPUT_NONE;
+        BRBitcoinTransaction *tx = NULL;
+        BRBitcoinTxOutput out = BR_TX_OUTPUT_NONE;
         const uint8_t *data = NULL;
         size_t dLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dLen, &off);
         
         switch (key >> 3) {
-            case payment_transactions: tx = (data) ? BRTransactionParse(data, dLen) : NULL; break;
-            case payment_refund_to: out = _BRPaymentProtocolOutputParse(data, dLen); break;
-            case payment_memo: _ProtoBufString(&payment->memo, data, dLen); break;
-            case payment_merch_data: payment->merchDataLen = _ProtoBufBytes(&payment->merchantData, data, dLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dLen); break;
+            case payment_transactions: tx = (data) ? btcTransactionParse(data, dLen) : NULL; break;
+            case payment_refund_to: out = _btcPaymentProtocolOutputParse(data, dLen); break;
+            case payment_memo: _btcProtoBufString(&payment->memo, data, dLen); break;
+            case payment_merch_data: payment->merchDataLen = _btcProtoBufBytes(&payment->merchantData, data, dLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dLen); break;
         }
         
         if (tx) array_add(payment->transactions, tx);
@@ -756,7 +756,7 @@ BRPaymentProtocolPayment *BRPaymentProtocolPaymentParse(const uint8_t *buf, size
 }
 
 // writes serialized payment struct to buf, returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolPaymentSerialize(const BRPaymentProtocolPayment *payment, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolPaymentSerialize(const BRBitcoinPaymentProtocolPayment *payment, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&payment[1];
     size_t off = 0, sLen = 0x100, l;
@@ -766,27 +766,27 @@ size_t BRPaymentProtocolPaymentSerialize(const BRPaymentProtocolPayment *payment
     assert(payment != NULL);
     
     if (payment->merchantData) {
-        _ProtoBufSetBytes(buf, bufLen, payment->merchantData, payment->merchDataLen, payment_merch_data, &off);
+        _btcProtoBufSetBytes(buf, bufLen, payment->merchantData, payment->merchDataLen, payment_merch_data, &off);
     }
 
     for (size_t i = 0; i < payment->txCount; i++) {
-        l = BRTransactionSerialize(payment->transactions[i], NULL, 0);
+        l = btcTransactionSerialize(payment->transactions[i], NULL, 0);
         if (l > sLen) sBuf = realloc(sBuf, (sLen = l));
         assert(sBuf != NULL);
-        l = BRTransactionSerialize(payment->transactions[i], sBuf, sLen);
-        _ProtoBufSetBytes(buf, bufLen, sBuf, l, payment_transactions, &off);
+        l = btcTransactionSerialize(payment->transactions[i], sBuf, sLen);
+        _btcProtoBufSetBytes(buf, bufLen, sBuf, l, payment_transactions, &off);
     }
 
     for (size_t i = 0; i < payment->refundToCount; i++) {
-        l = _BRPaymentProtocolOutputSerialize(payment->refundTo[i], NULL, 0);
+        l = _btcPaymentProtocolOutputSerialize(payment->refundTo[i], NULL, 0);
         if (l > sLen) sBuf = realloc(sBuf, (sLen = l));
         assert(sBuf != NULL);
-        l = _BRPaymentProtocolOutputSerialize(payment->refundTo[i], sBuf, l);
-        _ProtoBufSetBytes(buf, bufLen, sBuf, l, payment_refund_to, &off);
+        l = _btcPaymentProtocolOutputSerialize(payment->refundTo[i], sBuf, l);
+        _btcProtoBufSetBytes(buf, bufLen, sBuf, l, payment_refund_to, &off);
     }
 
     free(sBuf);
-    if (payment->memo) _ProtoBufSetString(buf, bufLen, payment->memo, payment_memo, &off);
+    if (payment->memo) _btcProtoBufSetString(buf, bufLen, payment->memo, payment_memo, &off);
 
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -796,8 +796,8 @@ size_t BRPaymentProtocolPaymentSerialize(const BRPaymentProtocolPayment *payment
     return (! buf || off <= bufLen) ? off : 0;
 }
 
-// frees memory allocated for payment struct (does not call BRTransactionFree() on transactions)
-void BRPaymentProtocolPaymentFree(BRPaymentProtocolPayment *payment)
+// frees memory allocated for payment struct (does not call btcTransactionFree() on transactions)
+void btcPaymentProtocolPaymentFree(BRBitcoinPaymentProtocolPayment *payment)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&payment[1];
 
@@ -805,17 +805,17 @@ void BRPaymentProtocolPaymentFree(BRPaymentProtocolPayment *payment)
     
     if (payment->merchantData) array_free(payment->merchantData);
     if (payment->transactions) array_free(payment->transactions);
-    for (size_t i = 0; i < payment->refundToCount; i++) _BRPaymentProtocolOutputFree(payment->refundTo[i]);
+    for (size_t i = 0; i < payment->refundToCount; i++) _btcPaymentProtocolOutputFree(payment->refundTo[i]);
     if (payment->refundTo) array_free(payment->refundTo);
     if (payment->memo) array_free(payment->memo);
     if (ctx->defaults) array_free(ctx->defaults);
     if (ctx->unknown) array_free(ctx->unknown);
 }
 
-// returns a newly allocated ACK struct that must be freed by calling BRPaymentProtocolACKFree()
-BRPaymentProtocolACK *BRPaymentProtocolACKNew(BRPaymentProtocolPayment *payment, const char *memo)
+// returns a newly allocated ACK struct that must be freed by calling btcPaymentProtocolACKFree()
+BRBitcoinPaymentProtocolACK *btcPaymentProtocolACKNew(BRBitcoinPaymentProtocolPayment *payment, const char *memo)
 {
-    BRPaymentProtocolACK *ack = calloc(1, sizeof(*ack) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolACK *ack = calloc(1, sizeof(*ack) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&ack[1];
     
     assert(ack != NULL);
@@ -824,10 +824,10 @@ BRPaymentProtocolACK *BRPaymentProtocolACKNew(BRPaymentProtocolPayment *payment,
     array_new(ctx->defaults, ack_memo + 1);
     array_set_count(ctx->defaults, ack_memo + 1);
     ack->payment = payment;
-    if (memo) _ProtoBufString(&ack->memo, memo, strlen(memo));
+    if (memo) _btcProtoBufString(&ack->memo, memo, strlen(memo));
     
     if (! ack->payment) { // required
-        BRPaymentProtocolACKFree(ack);
+        btcPaymentProtocolACKFree(ack);
         ack = NULL;
     }
 
@@ -835,10 +835,10 @@ BRPaymentProtocolACK *BRPaymentProtocolACKNew(BRPaymentProtocolPayment *payment,
 }
 
 // buf must contain a serialized ACK struct
-// returns a ACK struct that must be freed by calling BRPaymentProtocolACKFree()
-BRPaymentProtocolACK *BRPaymentProtocolACKParse(const uint8_t *buf, size_t bufLen)
+// returns a ACK struct that must be freed by calling btcPaymentProtocolACKFree()
+BRBitcoinPaymentProtocolACK *btcPaymentProtocolACKParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolACK *ack = calloc(1, sizeof(*ack) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolACK *ack = calloc(1, sizeof(*ack) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&ack[1];
     size_t off = 0;
     
@@ -851,17 +851,17 @@ BRPaymentProtocolACK *BRPaymentProtocolACKParse(const uint8_t *buf, size_t bufLe
     while (buf && off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
-            case ack_payment: ack->payment = (data) ? BRPaymentProtocolPaymentParse(data, dataLen) : NULL; break;
-            case ack_memo: _ProtoBufString(&ack->memo, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
+            case ack_payment: ack->payment = (data) ? btcPaymentProtocolPaymentParse(data, dataLen) : NULL; break;
+            case ack_memo: _btcProtoBufString(&ack->memo, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
         }
     }
     
     if (! ack->payment) { // required
-        BRPaymentProtocolACKFree(ack);
+        btcPaymentProtocolACKFree(ack);
         ack = NULL;
     }
     
@@ -869,7 +869,7 @@ BRPaymentProtocolACK *BRPaymentProtocolACKParse(const uint8_t *buf, size_t bufLe
 }
 
 // writes serialized ACK struct to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolACKSerialize(const BRPaymentProtocolACK *ack, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolACKSerialize(const BRBitcoinPaymentProtocolACK *ack, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&ack[1];
     size_t off = 0;
@@ -878,16 +878,16 @@ size_t BRPaymentProtocolACKSerialize(const BRPaymentProtocolACK *ack, uint8_t *b
     assert(ack->payment != NULL);
     
     if (ack->payment) {
-        size_t paymentLen = BRPaymentProtocolPaymentSerialize(ack->payment, NULL, 0);
+        size_t paymentLen = btcPaymentProtocolPaymentSerialize(ack->payment, NULL, 0);
         uint8_t *paymentBuf = malloc(paymentLen);
         
         assert(paymentBuf != NULL);
-        paymentLen = BRPaymentProtocolPaymentSerialize(ack->payment, paymentBuf, paymentLen);
-        _ProtoBufSetBytes(buf, bufLen, paymentBuf, paymentLen, ack_payment, &off);
+        paymentLen = btcPaymentProtocolPaymentSerialize(ack->payment, paymentBuf, paymentLen);
+        _btcProtoBufSetBytes(buf, bufLen, paymentBuf, paymentLen, ack_payment, &off);
         free(paymentBuf);
     }
     
-    if (ack->memo) _ProtoBufSetString(buf, bufLen, ack->memo, ack_memo, &off);
+    if (ack->memo) _btcProtoBufSetString(buf, bufLen, ack->memo, ack_memo, &off);
 
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -898,27 +898,27 @@ size_t BRPaymentProtocolACKSerialize(const BRPaymentProtocolACK *ack, uint8_t *b
 }
 
 // frees memory allocated for ACK struct
-void BRPaymentProtocolACKFree(BRPaymentProtocolACK *ack)
+void btcPaymentProtocolACKFree(BRBitcoinPaymentProtocolACK *ack)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&ack[1];
 
     assert(ack != NULL);
     
-    if (ack->payment) BRPaymentProtocolPaymentFree(ack->payment);
+    if (ack->payment) btcPaymentProtocolPaymentFree(ack->payment);
     if (ack->memo) array_free(ack->memo);
     if (ctx->defaults) array_free(ctx->defaults);
     if (ctx->unknown) array_free(ctx->unknown);
     free(ack);
 }
 
-// returns a newly allocated invoice request struct that must be freed by calling BRPaymentProtocolInvoiceRequestFree()
-BRPaymentProtocolInvoiceRequest *BRPaymentProtocolInvoiceRequestNew(BRKey *senderPubKey, uint64_t amount,
+// returns a newly allocated invoice request struct that must be freed by calling btcPaymentProtocolInvoiceRequestFree()
+BRBitcoinPaymentProtocolInvoiceRequest *btcPaymentProtocolInvoiceRequestNew(BRKey *senderPubKey, uint64_t amount,
                                                                     const char *pkiType, uint8_t *pkiData,
                                                                     size_t pkiDataLen, const char *memo,
                                                                     const char *notifyUrl, const uint8_t *signature,
                                                                     size_t sigLen)
 {
-    BRPaymentProtocolInvoiceRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolInvoiceRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
     uint8_t pk[65];
     size_t pkLen;
@@ -933,23 +933,23 @@ BRPaymentProtocolInvoiceRequest *BRPaymentProtocolInvoiceRequestNew(BRKey *sende
     req->amount = amount;
 
     if (! pkiType) {
-        _ProtoBufString(&req->pkiType, "none", strlen("none"));
+        _btcProtoBufString(&req->pkiType, "none", strlen("none"));
         ctx->defaults[invoice_req_pki_type] = 1;
     }
-    else _ProtoBufString(&req->pkiType, pkiType, strlen(pkiType));
+    else _btcProtoBufString(&req->pkiType, pkiType, strlen(pkiType));
     
-    if (pkiData) req->pkiDataLen = _ProtoBufBytes(&req->pkiData, pkiData, pkiDataLen);
-    if (memo) _ProtoBufString(&req->memo, memo, strlen(memo));
-    if (notifyUrl) _ProtoBufString(&req->notifyUrl, notifyUrl, strlen(notifyUrl));
-    if (signature) req->sigLen = _ProtoBufBytes(&req->signature, signature, sigLen);
+    if (pkiData) req->pkiDataLen = _btcProtoBufBytes(&req->pkiData, pkiData, pkiDataLen);
+    if (memo) _btcProtoBufString(&req->memo, memo, strlen(memo));
+    if (notifyUrl) _btcProtoBufString(&req->notifyUrl, notifyUrl, strlen(notifyUrl));
+    if (signature) req->sigLen = _btcProtoBufBytes(&req->signature, signature, sigLen);
     return req;
 }
 
 // buf must contain a serialized invoice request
-// returns an invoice request struct that must be freed by calling BRPaymentProtocolInvoiceRequestFree()
-BRPaymentProtocolInvoiceRequest *BRPaymentProtocolInvoiceRequestParse(const uint8_t *buf, size_t bufLen)
+// returns an invoice request struct that must be freed by calling btcPaymentProtocolInvoiceRequestFree()
+BRBitcoinPaymentProtocolInvoiceRequest *btcPaymentProtocolInvoiceRequestParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolInvoiceRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolInvoiceRequest *req = calloc(1, sizeof(*req) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
     size_t off = 0;
     int gotSenderPK = 0;
@@ -964,27 +964,27 @@ BRPaymentProtocolInvoiceRequest *BRPaymentProtocolInvoiceRequestParse(const uint
     while (buf && off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
             case invoice_req_sender_pk: gotSenderPK = BRKeySetPubKey(&req->senderPubKey, data, dataLen); break;
             case invoice_req_amount: req->amount = i, ctx->defaults[invoice_req_amount] = 0; break;
-            case invoice_req_pki_type: _ProtoBufString(&req->pkiType, data, dataLen); break;
-            case invoice_req_pki_data: req->pkiDataLen = _ProtoBufBytes(&req->pkiData, data, dataLen); break;
-            case invoice_req_memo: _ProtoBufString(&req->memo, data, dataLen); break;
-            case invoice_req_notify_url: _ProtoBufString(&req->notifyUrl, data, dataLen); break;
-            case invoice_req_signature: req->sigLen = _ProtoBufBytes(&req->signature, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
+            case invoice_req_pki_type: _btcProtoBufString(&req->pkiType, data, dataLen); break;
+            case invoice_req_pki_data: req->pkiDataLen = _btcProtoBufBytes(&req->pkiData, data, dataLen); break;
+            case invoice_req_memo: _btcProtoBufString(&req->memo, data, dataLen); break;
+            case invoice_req_notify_url: _btcProtoBufString(&req->notifyUrl, data, dataLen); break;
+            case invoice_req_signature: req->sigLen = _btcProtoBufBytes(&req->signature, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
         }
     }
     
     if (! req->pkiType) {
-        _ProtoBufString(&req->pkiType, "none", strlen("none"));
+        _btcProtoBufString(&req->pkiType, "none", strlen("none"));
         ctx->defaults[invoice_req_pki_type] = 1;
     }
 
     if (! gotSenderPK) { // required
-        BRPaymentProtocolInvoiceRequestFree(req);
+        btcPaymentProtocolInvoiceRequestFree(req);
         req = NULL;
     }
     
@@ -992,7 +992,7 @@ BRPaymentProtocolInvoiceRequest *BRPaymentProtocolInvoiceRequestParse(const uint
 }
 
 // writes serialized invoice request to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolInvoiceRequestSerialize(BRPaymentProtocolInvoiceRequest *req, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolInvoiceRequestSerialize(BRBitcoinPaymentProtocolInvoiceRequest *req, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&req[1];
     uint8_t pk[65];
@@ -1001,13 +1001,13 @@ size_t BRPaymentProtocolInvoiceRequestSerialize(BRPaymentProtocolInvoiceRequest 
     assert(req != NULL);
     
     pkLen = BRKeyPubKey(&req->senderPubKey, pk, sizeof(pk));
-    _ProtoBufSetBytes(buf, bufLen, pk, pkLen, invoice_req_sender_pk, &off);
-    if (! ctx->defaults[invoice_req_amount]) _ProtoBufSetInt(buf, bufLen, req->amount, invoice_req_amount, &off);
-    if (! ctx->defaults[invoice_req_pki_type]) _ProtoBufSetString(buf, bufLen, req->pkiType, invoice_req_pki_type,&off);
-    if (req->pkiData) _ProtoBufSetBytes(buf, bufLen, req->pkiData, req->pkiDataLen, invoice_req_pki_data, &off);
-    if (req->memo) _ProtoBufSetString(buf, bufLen, req->memo, invoice_req_memo, &off);
-    if (req->notifyUrl) _ProtoBufSetString(buf, bufLen, req->notifyUrl, invoice_req_notify_url, &off);
-    if (req->signature) _ProtoBufSetBytes(buf, bufLen, req->signature, req->sigLen, invoice_req_signature, &off);
+    _btcProtoBufSetBytes(buf, bufLen, pk, pkLen, invoice_req_sender_pk, &off);
+    if (! ctx->defaults[invoice_req_amount]) _btcProtoBufSetInt(buf, bufLen, req->amount, invoice_req_amount, &off);
+    if (! ctx->defaults[invoice_req_pki_type]) _btcProtoBufSetString(buf, bufLen, req->pkiType, invoice_req_pki_type,&off);
+    if (req->pkiData) _btcProtoBufSetBytes(buf, bufLen, req->pkiData, req->pkiDataLen, invoice_req_pki_data, &off);
+    if (req->memo) _btcProtoBufSetString(buf, bufLen, req->memo, invoice_req_memo, &off);
+    if (req->notifyUrl) _btcProtoBufSetString(buf, bufLen, req->notifyUrl, invoice_req_notify_url, &off);
+    if (req->signature) _btcProtoBufSetBytes(buf, bufLen, req->signature, req->sigLen, invoice_req_signature, &off);
     
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -1020,7 +1020,7 @@ size_t BRPaymentProtocolInvoiceRequestSerialize(BRPaymentProtocolInvoiceRequest 
 // writes the DER encoded certificate corresponding to index to cert
 // returns the number of bytes written to cert, or the total certLen needed if cert is NULL
 // returns 0 if index is out-of-bounds
-size_t BRPaymentProtocolInvoiceRequestCert(const BRPaymentProtocolInvoiceRequest *req, uint8_t *cert, size_t certLen,
+size_t btcPaymentProtocolInvoiceRequestCert(const BRBitcoinPaymentProtocolInvoiceRequest *req, uint8_t *cert, size_t certLen,
                                            size_t idx)
 {
     size_t off = 0, len = 0;
@@ -1030,7 +1030,7 @@ size_t BRPaymentProtocolInvoiceRequestCert(const BRPaymentProtocolInvoiceRequest
     while (req->pkiData && off < req->pkiDataLen) {
         const uint8_t *data = NULL;
         size_t dataLen = req->pkiDataLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, req->pkiData, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, req->pkiData, &dataLen, &off);
         
         if ((key >> 3) == certificates_cert && data) {
             if (idx == 0) {
@@ -1047,7 +1047,7 @@ size_t BRPaymentProtocolInvoiceRequestCert(const BRPaymentProtocolInvoiceRequest
 
 // writes the hash of the request to md needed to sign or verify the request
 // returns the number of bytes written, or the total mdLen needed if md is NULL
-size_t BRPaymentProtocolInvoiceRequestDigest(BRPaymentProtocolInvoiceRequest *req, uint8_t *md, size_t mdLen)
+size_t btcPaymentProtocolInvoiceRequestDigest(BRBitcoinPaymentProtocolInvoiceRequest *req, uint8_t *md, size_t mdLen)
 {
     uint8_t *buf;
     size_t bufLen;
@@ -1055,10 +1055,10 @@ size_t BRPaymentProtocolInvoiceRequestDigest(BRPaymentProtocolInvoiceRequest *re
     assert(req != NULL);
     
     req->sigLen = 0; // set signature to 0 bytes, a signature can't sign itself
-    bufLen = BRPaymentProtocolInvoiceRequestSerialize(req, NULL, 0);
+    bufLen = btcPaymentProtocolInvoiceRequestSerialize(req, NULL, 0);
     buf = malloc(bufLen);
     assert(buf != NULL);
-    bufLen = BRPaymentProtocolInvoiceRequestSerialize(req, buf, bufLen);
+    bufLen = btcPaymentProtocolInvoiceRequestSerialize(req, buf, bufLen);
     
     if (req->pkiType && strncmp(req->pkiType, "x509+sha256", strlen("x509+sha256") + 1) == 0) {
         if (md && 256/8 <= mdLen) BRSHA256(md, buf, bufLen);
@@ -1072,7 +1072,7 @@ size_t BRPaymentProtocolInvoiceRequestDigest(BRPaymentProtocolInvoiceRequest *re
 }
 
 // frees memory allocated for invoice request struct
-void BRPaymentProtocolInvoiceRequestFree(BRPaymentProtocolInvoiceRequest *req)
+void btcPaymentProtocolInvoiceRequestFree(BRBitcoinPaymentProtocolInvoiceRequest *req)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&req[1];
 
@@ -1088,12 +1088,12 @@ void BRPaymentProtocolInvoiceRequestFree(BRPaymentProtocolInvoiceRequest *req)
     free(req);
 }
 
-// returns a newly allocated message struct that must be freed by calling BRPaymentProtocolMessageFree()
-BRPaymentProtocolMessage *BRPaymentProtocolMessageNew(BRPaymentProtocolMessageType msgType, const uint8_t *message,
+// returns a newly allocated message struct that must be freed by calling btcPaymentProtocolMessageFree()
+BRBitcoinPaymentProtocolMessage *btcPaymentProtocolMessageNew(BRBitcoinPaymentProtocolMessageType msgType, const uint8_t *message,
                                                       size_t msgLen, uint64_t statusCode, const char *statusMsg,
                                                       const uint8_t *identifier, size_t identLen)
 {
-    BRPaymentProtocolMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     
     assert(msg != NULL);
@@ -1102,13 +1102,13 @@ BRPaymentProtocolMessage *BRPaymentProtocolMessageNew(BRPaymentProtocolMessageTy
     array_new(ctx->defaults, message_identifier + 1);
     array_set_count(ctx->defaults, message_identifier + 1);
     msg->msgType = msgType;
-    if (message) msg->msgLen = _ProtoBufBytes(&msg->message, message, msgLen);
+    if (message) msg->msgLen = _btcProtoBufBytes(&msg->message, message, msgLen);
     msg->statusCode = statusCode;
-    if (statusMsg) _ProtoBufString(&msg->statusMsg, statusMsg, strlen(statusMsg));
-    if (identifier) msg->identLen = _ProtoBufBytes(&msg->identifier, identifier, identLen);
+    if (statusMsg) _btcProtoBufString(&msg->statusMsg, statusMsg, strlen(statusMsg));
+    if (identifier) msg->identLen = _btcProtoBufBytes(&msg->identifier, identifier, identLen);
     
     if (! msg->message) { // required
-        BRPaymentProtocolMessageFree(msg);
+        btcPaymentProtocolMessageFree(msg);
         msg = NULL;
     }
     
@@ -1116,10 +1116,10 @@ BRPaymentProtocolMessage *BRPaymentProtocolMessageNew(BRPaymentProtocolMessageTy
 }
 
 // buf must contain a serialized message
-// returns an message struct that must be freed by calling BRPaymentProtocolMessageFree()
-BRPaymentProtocolMessage *BRPaymentProtocolMessageParse(const uint8_t *buf, size_t bufLen)
+// returns an message struct that must be freed by calling btcPaymentProtocolMessageFree()
+BRBitcoinPaymentProtocolMessage *btcPaymentProtocolMessageParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     size_t off = 0;
     int gotMsgType = 0;
@@ -1134,20 +1134,20 @@ BRPaymentProtocolMessage *BRPaymentProtocolMessageParse(const uint8_t *buf, size
     while (buf && off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
-            case message_msg_type: msg->msgType = (BRPaymentProtocolMessageType)i, gotMsgType = 1; break;
-            case message_message: msg->msgLen = _ProtoBufBytes(&msg->message, data, dataLen); break;
+            case message_msg_type: msg->msgType = (BRBitcoinPaymentProtocolMessageType)i, gotMsgType = 1; break;
+            case message_message: msg->msgLen = _btcProtoBufBytes(&msg->message, data, dataLen); break;
             case message_status_code: msg->statusCode = i, ctx->defaults[message_status_code] = 0; break;
-            case message_status_msg: _ProtoBufString(&msg->statusMsg, data, dataLen); break;
-            case message_identifier: msg->identLen = _ProtoBufBytes(&msg->identifier, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
+            case message_status_msg: _btcProtoBufString(&msg->statusMsg, data, dataLen); break;
+            case message_identifier: msg->identLen = _btcProtoBufBytes(&msg->identifier, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
         }
     }
     
     if (! gotMsgType || ! msg->message) { // required
-        BRPaymentProtocolMessageFree(msg);
+        btcPaymentProtocolMessageFree(msg);
         msg = NULL;
     }
     
@@ -1155,7 +1155,7 @@ BRPaymentProtocolMessage *BRPaymentProtocolMessageParse(const uint8_t *buf, size
 }
 
 // writes serialized message struct to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolMessageSerialize(const BRPaymentProtocolMessage *msg, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolMessageSerialize(const BRBitcoinPaymentProtocolMessage *msg, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&msg[1];
     size_t off = 0;
@@ -1163,11 +1163,11 @@ size_t BRPaymentProtocolMessageSerialize(const BRPaymentProtocolMessage *msg, ui
     assert(msg != NULL);
     assert(msg->message != NULL);
     
-    _ProtoBufSetInt(buf, bufLen, msg->msgType, message_msg_type, &off);
-    _ProtoBufSetBytes(buf, bufLen, msg->message, msg->msgLen, message_message, &off);
-    if (! ctx->defaults[message_status_code]) _ProtoBufSetInt(buf, bufLen, msg->statusCode, message_status_code, &off);
-    if (msg->statusMsg) _ProtoBufSetString(buf, bufLen, msg->statusMsg, message_status_msg, &off);
-    if (msg->identifier) _ProtoBufSetBytes(buf, bufLen, msg->identifier, msg->identLen, message_identifier, &off);
+    _btcProtoBufSetInt(buf, bufLen, msg->msgType, message_msg_type, &off);
+    _btcProtoBufSetBytes(buf, bufLen, msg->message, msg->msgLen, message_message, &off);
+    if (! ctx->defaults[message_status_code]) _btcProtoBufSetInt(buf, bufLen, msg->statusCode, message_status_code, &off);
+    if (msg->statusMsg) _btcProtoBufSetString(buf, bufLen, msg->statusMsg, message_status_msg, &off);
+    if (msg->identifier) _btcProtoBufSetBytes(buf, bufLen, msg->identifier, msg->identLen, message_identifier, &off);
     
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -1178,7 +1178,7 @@ size_t BRPaymentProtocolMessageSerialize(const BRPaymentProtocolMessage *msg, ui
 }
 
 // frees memory allocated for message struct
-void BRPaymentProtocolMessageFree(BRPaymentProtocolMessage *msg)
+void btcPaymentProtocolMessageFree(BRBitcoinPaymentProtocolMessage *msg)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     
@@ -1192,7 +1192,7 @@ void BRPaymentProtocolMessageFree(BRPaymentProtocolMessage *msg)
     free(msg);
 }
 
-static void _BRPaymentProtocolEncryptedMessageCEK(BRPaymentProtocolEncryptedMessage *msg, void *cek32, void *iv12,
+static void _btcPaymentProtocolEncryptedMessageCEK(BRBitcoinPaymentProtocolEncryptedMessage *msg, void *cek32, void *iv12,
                                                   BRKey *privKey)
 {
     uint8_t secret[32], seed[512/8], K[256/8], V[256/8], pk[65], rpk[65],
@@ -1212,17 +1212,17 @@ static void _BRPaymentProtocolEncryptedMessageCEK(BRPaymentProtocolEncryptedMess
     mem_clean(V, sizeof(V));
 }
 
-// returns a newly allocated encrypted message struct that must be freed by calling BRPaymentProtocolMessageFree()
+// returns a newly allocated encrypted message struct that must be freed by calling btcPaymentProtocolMessageFree()
 // message is the un-encrypted serialized payment protocol message
 // one of either receiverKey or senderKey must contain a private key, and the other must contain only a public key
-BRPaymentProtocolEncryptedMessage *BRPaymentProtocolEncryptedMessageNew(BRPaymentProtocolMessageType msgType,
+BRBitcoinPaymentProtocolEncryptedMessage *btcPaymentProtocolEncryptedMessageNew(BRBitcoinPaymentProtocolMessageType msgType,
                                                                         const uint8_t *message, size_t msgLen,
                                                                         BRKey *receiverKey, BRKey *senderKey,
                                                                         uint64_t nonce,
                                                                         const uint8_t *identifier, size_t identLen,
                                                                         uint64_t statusCode, const char *statusMsg)
 {
-    BRPaymentProtocolEncryptedMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolEncryptedMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     BRKey *privKey;
     size_t pkLen, sigLen, bufLen = msgLen + 16, adLen = (statusMsg) ? 20 + strlen(statusMsg) + 1 : 20 + 1;
@@ -1245,44 +1245,44 @@ BRPaymentProtocolEncryptedMessage *BRPaymentProtocolEncryptedMessageNew(BRPaymen
     pkLen = BRKeyPubKey(senderKey, pk, sizeof(pk));
     BRKeySetPubKey(&msg->senderPubKey, pk, pkLen);
     msg->nonce = nonce;
-    if (identifier) msg->identLen = _ProtoBufBytes(&msg->identifier, identifier, identLen);
+    if (identifier) msg->identLen = _btcProtoBufBytes(&msg->identifier, identifier, identLen);
     msg->statusCode = statusCode;
-    if (statusMsg) _ProtoBufString(&msg->statusMsg, statusMsg, strlen(statusMsg));
+    if (statusMsg) _btcProtoBufString(&msg->statusMsg, statusMsg, strlen(statusMsg));
     privKey = (BRKeyIsPrivKey(receiverKey)) ? receiverKey : senderKey;
-    _BRPaymentProtocolEncryptedMessageCEK(msg, cek, iv, privKey);
+    _btcPaymentProtocolEncryptedMessageCEK(msg, cek, iv, privKey);
     snprintf(ad, adLen, "%"PRIu64"%s", statusCode, (statusMsg) ? statusMsg : "");
     bufLen = BRChacha20Poly1305AEADEncrypt(buf, bufLen, cek, iv, message, msgLen, ad, strlen(ad));
     mem_clean(cek, sizeof(cek));
     mem_clean(iv, sizeof(iv));
     free(ad);
-    msg->msgLen = _ProtoBufBytes(&msg->message, buf, bufLen);
+    msg->msgLen = _btcProtoBufBytes(&msg->message, buf, bufLen);
     free(buf);
     
     if (! msg->message) { // required
-        BRPaymentProtocolEncryptedMessageFree(msg);
+        btcPaymentProtocolEncryptedMessageFree(msg);
         msg = NULL;
     }
     else {
         msg->signature = (uint8_t *)"";
-        bufLen = BRPaymentProtocolEncryptedMessageSerialize(msg, NULL, 0);
+        bufLen = btcPaymentProtocolEncryptedMessageSerialize(msg, NULL, 0);
         buf = malloc(bufLen);
         assert(buf != NULL);
-        bufLen = BRPaymentProtocolEncryptedMessageSerialize(msg, buf, bufLen);
+        bufLen = btcPaymentProtocolEncryptedMessageSerialize(msg, buf, bufLen);
         msg->signature = NULL;
         BRSHA256(md, buf, bufLen);
         free(buf);
         sigLen = BRKeySign(privKey, sig, sizeof(sig), UInt256Get(md));
-        msg->sigLen = _ProtoBufBytes(&msg->signature, sig, sigLen);
+        msg->sigLen = _btcProtoBufBytes(&msg->signature, sig, sigLen);
     }
     
     return msg;
 }
 
 // buf must contain a serialized encrytped message
-// returns an encrypted message struct that must be freed by calling BRPaymentProtocolEncryptedMessageFree()
-BRPaymentProtocolEncryptedMessage *BRPaymentProtocolEncryptedMessageParse(const uint8_t *buf, size_t bufLen)
+// returns an encrypted message struct that must be freed by calling btcPaymentProtocolEncryptedMessageFree()
+BRBitcoinPaymentProtocolEncryptedMessage *btcPaymentProtocolEncryptedMessageParse(const uint8_t *buf, size_t bufLen)
 {
-    BRPaymentProtocolEncryptedMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
+    BRBitcoinPaymentProtocolEncryptedMessage *msg = calloc(1, sizeof(*msg) + sizeof(ProtoBufContext));
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     size_t off = 0;
     int gotMsgType = 0, gotNonce = 0, gotReceiverPK = 0, gotSenderPK = 0;
@@ -1297,24 +1297,24 @@ BRPaymentProtocolEncryptedMessage *BRPaymentProtocolEncryptedMessageParse(const 
     while (buf && off < bufLen) {
         const uint8_t *data = NULL;
         size_t dataLen = bufLen;
-        uint64_t i = 0, key = _ProtoBufField(&i, &data, buf, &dataLen, &off);
+        uint64_t i = 0, key = _btcProtoBufField(&i, &data, buf, &dataLen, &off);
         
         switch (key >> 3) {
-            case encrypted_msg_msg_type: msg->msgType = (BRPaymentProtocolMessageType)i, gotMsgType = 1; break;
-            case encrypted_msg_message: msg->msgLen = _ProtoBufBytes(&msg->message, data, dataLen); break;
+            case encrypted_msg_msg_type: msg->msgType = (BRBitcoinPaymentProtocolMessageType)i, gotMsgType = 1; break;
+            case encrypted_msg_message: msg->msgLen = _btcProtoBufBytes(&msg->message, data, dataLen); break;
             case encrypted_msg_receiver_pk: gotReceiverPK = BRKeySetPubKey(&msg->receiverPubKey, data, dataLen); break;
             case encrypted_msg_sender_pk: gotSenderPK = BRKeySetPubKey(&msg->senderPubKey, data, dataLen); break;
             case encrypted_msg_nonce: msg->nonce = i, gotNonce = 1; break;
-            case encrypted_msg_signature: msg->sigLen = _ProtoBufBytes(&msg->signature, data, dataLen); break;
-            case encrypted_msg_identifier: msg->identLen = _ProtoBufBytes(&msg->identifier, data, dataLen); break;
+            case encrypted_msg_signature: msg->sigLen = _btcProtoBufBytes(&msg->signature, data, dataLen); break;
+            case encrypted_msg_identifier: msg->identLen = _btcProtoBufBytes(&msg->identifier, data, dataLen); break;
             case encrypted_msg_status_code: msg->statusCode = i, ctx->defaults[encrypted_msg_status_code] = 0; break;
-            case encrypted_msg_status_msg: _ProtoBufString(&msg->statusMsg, data, dataLen); break;
-            default: _ProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
+            case encrypted_msg_status_msg: _btcProtoBufString(&msg->statusMsg, data, dataLen); break;
+            default: _btcProtoBufUnknown(&ctx->unknown, key, i, data, dataLen); break;
         }
     }
     
     if (! gotMsgType || ! msg->message || ! gotReceiverPK || ! gotSenderPK || ! gotNonce) { // required
-        BRPaymentProtocolEncryptedMessageFree(msg);
+        btcPaymentProtocolEncryptedMessageFree(msg);
         msg = NULL;
     }
     
@@ -1322,7 +1322,7 @@ BRPaymentProtocolEncryptedMessage *BRPaymentProtocolEncryptedMessageParse(const 
 }
 
 // writes serialized encrypted message to buf and returns number of bytes written, or total bufLen needed if buf is NULL
-size_t BRPaymentProtocolEncryptedMessageSerialize(BRPaymentProtocolEncryptedMessage *msg, uint8_t *buf, size_t bufLen)
+size_t btcPaymentProtocolEncryptedMessageSerialize(BRBitcoinPaymentProtocolEncryptedMessage *msg, uint8_t *buf, size_t bufLen)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&msg[1];
     uint8_t pubKey[65];
@@ -1331,18 +1331,18 @@ size_t BRPaymentProtocolEncryptedMessageSerialize(BRPaymentProtocolEncryptedMess
     assert(msg != NULL);
     assert(msg->message != NULL);
     
-    _ProtoBufSetInt(buf, bufLen, msg->msgType, encrypted_msg_msg_type, &off);
-    _ProtoBufSetBytes(buf, bufLen, msg->message, msg->msgLen, encrypted_msg_message, &off);
+    _btcProtoBufSetInt(buf, bufLen, msg->msgType, encrypted_msg_msg_type, &off);
+    _btcProtoBufSetBytes(buf, bufLen, msg->message, msg->msgLen, encrypted_msg_message, &off);
     pkLen = BRKeyPubKey(&msg->receiverPubKey, pubKey, sizeof(pubKey));
-    _ProtoBufSetBytes(buf, bufLen, pubKey, pkLen, encrypted_msg_receiver_pk, &off);
+    _btcProtoBufSetBytes(buf, bufLen, pubKey, pkLen, encrypted_msg_receiver_pk, &off);
     pkLen = BRKeyPubKey(&msg->senderPubKey, pubKey, sizeof(pubKey));
-    _ProtoBufSetBytes(buf, bufLen, pubKey, pkLen, encrypted_msg_sender_pk, &off);
-    _ProtoBufSetInt(buf, bufLen, msg->nonce, encrypted_msg_nonce, &off);
-    if (msg->signature) _ProtoBufSetBytes(buf, bufLen, msg->signature, msg->sigLen, encrypted_msg_signature, &off);
-    if (msg->identifier) _ProtoBufSetBytes(buf, bufLen, msg->identifier, msg->identLen, encrypted_msg_identifier, &off);
-    if (! ctx->defaults[encrypted_msg_status_code]) _ProtoBufSetInt(buf, bufLen, msg->statusCode,
+    _btcProtoBufSetBytes(buf, bufLen, pubKey, pkLen, encrypted_msg_sender_pk, &off);
+    _btcProtoBufSetInt(buf, bufLen, msg->nonce, encrypted_msg_nonce, &off);
+    if (msg->signature) _btcProtoBufSetBytes(buf, bufLen, msg->signature, msg->sigLen, encrypted_msg_signature, &off);
+    if (msg->identifier) _btcProtoBufSetBytes(buf, bufLen, msg->identifier, msg->identLen, encrypted_msg_identifier, &off);
+    if (! ctx->defaults[encrypted_msg_status_code]) _btcProtoBufSetInt(buf, bufLen, msg->statusCode,
                                                                     encrypted_msg_status_code, &off);
-    if (msg->statusMsg) _ProtoBufSetString(buf, bufLen, msg->statusMsg, encrypted_msg_status_msg, &off);
+    if (msg->statusMsg) _btcProtoBufSetString(buf, bufLen, msg->statusMsg, encrypted_msg_status_msg, &off);
     
     if (ctx->unknown) {
         if (buf && off + array_count(ctx->unknown) <= bufLen) memcpy(&buf[off], ctx->unknown,array_count(ctx->unknown));
@@ -1352,7 +1352,7 @@ size_t BRPaymentProtocolEncryptedMessageSerialize(BRPaymentProtocolEncryptedMess
     return (! buf || off <= bufLen) ? off : 0;
 }
 
-int BRPaymentProtocolEncryptedMessageVerify(BRPaymentProtocolEncryptedMessage *msg, BRKey *pubKey)
+int btcPaymentProtocolEncryptedMessageVerify(BRBitcoinPaymentProtocolEncryptedMessage *msg, BRKey *pubKey)
 {
     uint8_t md[256/8], *buf;
     size_t bufLen, sigLen;
@@ -1362,17 +1362,17 @@ int BRPaymentProtocolEncryptedMessageVerify(BRPaymentProtocolEncryptedMessage *m
     
     sigLen = msg->sigLen;
     msg->sigLen = 0; // set signature to zero length (a signature can't sign itself)
-    bufLen = BRPaymentProtocolEncryptedMessageSerialize(msg, NULL, 0);
+    bufLen = btcPaymentProtocolEncryptedMessageSerialize(msg, NULL, 0);
     buf = malloc(bufLen);
     assert(buf != NULL);
-    bufLen = BRPaymentProtocolEncryptedMessageSerialize(msg, buf, bufLen);
+    bufLen = btcPaymentProtocolEncryptedMessageSerialize(msg, buf, bufLen);
     msg->sigLen = sigLen;
     BRSHA256(md, buf, bufLen);
     free(buf);
     return BRKeyVerify(pubKey, UInt256Get(md), msg->signature, msg->sigLen);
 }
 
-size_t BRPaymentProtocolEncryptedMessageDecrypt(BRPaymentProtocolEncryptedMessage *msg, uint8_t *out, size_t outLen,
+size_t btcPaymentProtocolEncryptedMessageDecrypt(BRBitcoinPaymentProtocolEncryptedMessage *msg, uint8_t *out, size_t outLen,
                                                 BRKey *privKey)
 {
     const ProtoBufContext *ctx = (const ProtoBufContext *)&msg[1];
@@ -1387,7 +1387,7 @@ size_t BRPaymentProtocolEncryptedMessageDecrypt(BRPaymentProtocolEncryptedMessag
 
     assert(privKey != NULL);
 
-    _BRPaymentProtocolEncryptedMessageCEK(msg, cek, iv, privKey);
+    _btcPaymentProtocolEncryptedMessageCEK(msg, cek, iv, privKey);
     adLen = (msg->statusMsg) ? 20 + strlen(msg->statusMsg) + 1 : 20 + 1;
     ad = calloc(adLen, sizeof(*ad));
     
@@ -1404,7 +1404,7 @@ size_t BRPaymentProtocolEncryptedMessageDecrypt(BRPaymentProtocolEncryptedMessag
 }
 
 // frees memory allocated for encrypted message struct
-void BRPaymentProtocolEncryptedMessageFree(BRPaymentProtocolEncryptedMessage *msg)
+void btcPaymentProtocolEncryptedMessageFree(BRBitcoinPaymentProtocolEncryptedMessage *msg)
 {
     ProtoBufContext *ctx = (ProtoBufContext *)&msg[1];
     

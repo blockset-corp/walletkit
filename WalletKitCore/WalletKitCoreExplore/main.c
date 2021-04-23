@@ -18,8 +18,8 @@
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39WordsEn.h"
-#include "bitcoin/BRTransaction.h"
-#include "bitcoin/BRWallet.h"
+#include "bitcoin/BRBitcoinTransaction.h"
+#include "bitcoin/BRBitcoinWallet.h"
 #include "bcash/BRBCashAddr.h"
 
 #include "support/rlp/BRRlp.h"
@@ -193,7 +193,7 @@ handleBitcoinTransactionParse (const char *chars) {
     size_t bytesLen;
     uint8_t *bytes = hexDecodeCreate (&bytesLen, chars, strlen(chars));
     
-    BRTransaction *tx = BRTransactionParse(bytes, bytesLen);
+    BRBitcoinTransaction *tx = btcTransactionParse(bytes, bytesLen);
     assert (NULL != tx);
 }
 
@@ -294,10 +294,10 @@ handleWalletAddrs (void) {
 
     BRMasterPubKey mpk = BRBIP32MasterPubKey(&seed, sizeof(seed));
 
-    BRWallet *wallet = BRWalletNew (BITCOIN_ADDRESS_PARAMS, NULL, 0, mpk);
+    BRBitcoinWallet *wallet = btcWalletNew (BITCOIN_ADDRESS_PARAMS, NULL, 0, mpk);
 
-    BRWalletUnusedAddrs (wallet, addrs1, WALLET_GAP, 0);
-    BRWalletUnusedAddrs (wallet, addrs2, WALLET_GAP, 0);
+    btcWalletUnusedAddrs (wallet, addrs1, WALLET_GAP, 0);
+    btcWalletUnusedAddrs (wallet, addrs2, WALLET_GAP, 0);
 
     for (size_t index = 0; index < WALLET_GAP; index++)
         assert (0 == strcmp (addrs1[index].s, addrs2[index].s));

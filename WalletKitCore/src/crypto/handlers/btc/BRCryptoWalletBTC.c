@@ -10,7 +10,7 @@
 //
 #include "BRCryptoBTC.h"
 
-#include "bitcoin/BRWallet.h"
+#include "bitcoin/BRBitcoinWallet.h"
 
 #define DEFAULT_FEE_BASIS_SIZE_IN_BYTES     (200)
 #define DEFAULT_TIDS_UNRESOLVED_COUNT         (2)
@@ -24,7 +24,7 @@ cryptoWalletCoerceBTC (BRCryptoWallet wallet) {
 }
 
 typedef struct {
-    BRWallet *wid;
+    BRBitcoinWallet *wid;
 } BRCryptoWalletCreateContextBTC;
 
 static void
@@ -43,12 +43,12 @@ cryptoWalletCreateAsBTC (BRCryptoNetworkType type,
                          BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-                         BRWallet *wid) {
+                         BRBitcoinWallet *wid) {
     BRCryptoAmount minBalance = cryptoAmountCreateInteger(0, unit);
 
     BRCryptoFeeBasis feeBasis = cryptoFeeBasisCreateAsBTC (unitForFee,
                                                            CRYPTO_FEE_BASIS_BTC_FEE_UNKNOWN,
-                                                           BRWalletFeePerKb(wid),
+                                                           btcWalletFeePerKb(wid),
                                                            DEFAULT_FEE_BASIS_SIZE_IN_BYTES);
 
     BRCryptoWalletCreateContextBTC contextBTC = {
@@ -75,10 +75,10 @@ cryptoWalletCreateAsBTC (BRCryptoNetworkType type,
 static void
 cryptoWalletReleaseBTC (BRCryptoWallet wallet) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
-    array_free_all (walletBTC->tidsUnresolved, BRTransactionFree);
+    array_free_all (walletBTC->tidsUnresolved, btcTransactionFree);
 }
 
-private_extern BRWallet *
+private_extern BRBitcoinWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
     return walletBTC->wid;
@@ -86,7 +86,7 @@ cryptoWalletAsBTC (BRCryptoWallet wallet) {
 
 private_extern BRCryptoTransfer
 cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
-                               BRTransaction *btc) {
+                               BRBitcoinTransaction *btc) {
     BRCryptoTransfer transfer = NULL;
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
@@ -119,7 +119,7 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
 
 private_extern void
 cryptoWalletAddUnresolvedAsBTC (BRCryptoWallet wallet,
-                                OwnershipGiven BRTransaction *tid) {
+                                OwnershipGiven BRBitcoinTransaction *tid) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
     pthread_mutex_lock (&wallet->lock);
@@ -137,8 +137,8 @@ cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
     pthread_mutex_lock (&wallet->lock);
 
     for (size_t index = 0; index < array_count (walletBTC->tidsUnresolved); index++) {
-        BRTransaction *tid = walletBTC->tidsUnresolved[index];
-        if (BRTransactionEq (tid, hash)) {
+        BRBitcoinTransaction *tid = walletBTC->tidsUnresolved[index];
+        if (btcTransactionEq (tid, hash)) {
             tid->blockHeight = blockHeight;
             tid->timestamp   = timestamp;
         }
@@ -149,7 +149,7 @@ cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
 
 private_extern size_t
 cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
-                              BRTransaction **tids,
+                              BRBitcoinTransaction **tids,
                               size_t tidsCount) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
@@ -160,7 +160,7 @@ cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
         size_t  rIndex = 0;
 
         for (ssize_t tIndex = (ssize_t) MIN (tidsCount, count) - 1; tIndex >= 0; tIndex--)
-            if (BRWalletTransactionIsResolved (walletBTC->wid, walletBTC->tidsUnresolved[tIndex])) {
+            if (btcWalletTransactionIsResolved (walletBTC->wid, walletBTC->tidsUnresolved[tIndex])) {
                 tids[rIndex++] = walletBTC->tidsUnresolved[tIndex];
                 array_rm (walletBTC->tidsUnresolved, (size_t) tIndex);
             }
@@ -182,11 +182,11 @@ cryptoWalletGetAddressBTC (BRCryptoWallet wallet,
 
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
-    BRWallet *wid = walletBTC->wid;
+    BRBitcoinWallet *wid = walletBTC->wid;
 
     BRAddress btcAddress = (CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme
-                            ? BRWalletReceiveAddress(wid)
-                            : BRWalletLegacyAddress (wid));
+                            ? btcWalletReceiveAddress(wid)
+                            : btcWalletLegacyAddress (wid));
 
     return cryptoAddressCreateAsBTC (wallet->type, btcAddress);
 }
@@ -196,20 +196,20 @@ cryptoWalletHasAddressBTC (BRCryptoWallet wallet,
                            BRCryptoAddress address) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
-    BRWallet *btcWallet = walletBTC->wid;
+    BRBitcoinWallet *btcWallet = walletBTC->wid;
 
     BRCryptoNetworkType type;
     BRAddress btcAddress = cryptoAddressAsBTC (address, &type);
 
-    if (BRWalletAddressIsUsed (btcWallet, btcAddress.s))
+    if (btcWalletAddressIsUsed (btcWallet, btcAddress.s))
         return true;
 
-    BRAddress btcLegacyAddress = BRWalletLegacyAddress (btcWallet);
+    BRAddress btcLegacyAddress = btcWalletLegacyAddress (btcWallet);
     if (0 == memcmp (btcAddress.s, btcLegacyAddress.s, sizeof (btcAddress.s)))
         return true;
 
     if (CRYPTO_NETWORK_TYPE_BTC == type) {
-        BRAddress btcSegwitAddress = BRWalletReceiveAddress (btcWallet);
+        BRAddress btcSegwitAddress = btcWalletReceiveAddress (btcWallet);
         if (0 == memcmp (btcAddress.s, btcSegwitAddress.s, sizeof (btcAddress.s)))
             return true;
     }
@@ -262,7 +262,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
                                BRCryptoUnit unitForFee) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
-    BRWallet *wid = walletBTC->wid;
+    BRBitcoinWallet *wid = walletBTC->wid;
 
     BRCryptoNetworkType addressType;
     BRAddress address = cryptoAddressAsBTC (target, &addressType);
@@ -274,7 +274,7 @@ cryptoWalletCreateTransferBTC (BRCryptoWallet  wallet,
 
     uint64_t feePerKb = cryptoFeeBasisAsBTC(estimatedFeeBasis);
 
-    BRTransaction *tid = BRWalletCreateTransactionWithFeePerKb (wid, feePerKb, value, address.s);
+    BRBitcoinTransaction *tid = btcWalletCreateTransactionWithFeePerKb (wid, feePerKb, value, address.s);
 
     return (NULL == tid
             ? NULL
@@ -296,15 +296,15 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
                                        BRCryptoUnit unitForFee) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
 
-    BRWallet *wid = walletBTC->wid;
-    BRAddressParams params = BRWalletGetAddressParams(wid);
+    BRBitcoinWallet *wid = walletBTC->wid;
+    BRAddressParams params = btcWalletGetAddressParams(wid);
 
-    BRTxOutput txOutputs [outputsCount];
-    memset (txOutputs, 0, outputsCount * sizeof(BRTxOutput));
+    BRBitcoinTxOutput txOutputs [outputsCount];
+    memset (txOutputs, 0, outputsCount * sizeof(BRBitcoinTxOutput));
 
     for (size_t index = 0; index < outputsCount; index++) {
         BRCryptoTransferOutput *output = &outputs[index];
-        BRTxOutput *txOutput = &txOutputs[index];
+        BRBitcoinTxOutput *txOutput = &txOutputs[index];
 
         assert (cryptoWalletGetType(wallet) == cryptoAddressGetType(output->target));
         assert (cryptoAmountHasCurrency (output->amount, currency));
@@ -318,12 +318,12 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
         assert (CRYPTO_TRUE != overflow);
 
         txOutput->amount = value;
-        BRTxOutputSetAddress (txOutput, params, address.s);
+        btcTxOutputSetAddress (txOutput, params, address.s);
     }
 
     uint64_t feePerKb = cryptoFeeBasisAsBTC(estimatedFeeBasis);
 
-    BRTransaction *tid = BRWalletCreateTxForOutputsWithFeePerKb (wid, feePerKb, txOutputs, outputsCount);
+    BRBitcoinTransaction *tid = btcWalletCreateTxForOutputsWithFeePerKb (wid, feePerKb, txOutputs, outputsCount);
 
     return (NULL == tid
             ? NULL
@@ -338,11 +338,11 @@ cryptoWalletCreateTransferMultipleBTC (BRCryptoWallet wallet,
 static OwnershipGiven BRSetOf(BRCryptoAddress)
 cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
     BRCryptoWalletBTC walletBTC = cryptoWalletCoerceBTC(wallet);
-    BRWallet *btcWallet = walletBTC->wid;
+    BRBitcoinWallet *btcWallet = walletBTC->wid;
 
-    size_t btcAddressesCount = BRWalletAllAddrs (btcWallet, NULL, 0);
+    size_t btcAddressesCount = btcWalletAllAddrs (btcWallet, NULL, 0);
     BRAddress *btcAddresses = calloc (btcAddressesCount, sizeof (BRAddress));
-    BRWalletAllAddrs (btcWallet, btcAddresses, btcAddressesCount);
+    btcWalletAllAddrs (btcWallet, btcAddresses, btcAddressesCount);
 
     BRCryptoAddress replacedAddress = NULL;
 
@@ -351,7 +351,7 @@ cryptoWalletGetAddressesForRecoveryBTC (BRCryptoWallet wallet) {
     for (size_t index = 0; index < btcAddressesCount; index++) {
         // The currency, may or may not have a legacy address;
         BRAddress btcPrimaryAddress = btcAddresses[index];
-        BRAddress btcLegacyAddress  = BRWalletAddressToLegacy(btcWallet, &btcAddresses[index]);
+        BRAddress btcLegacyAddress  = btcWalletAddressToLegacy(btcWallet, &btcAddresses[index]);
 
         // Add in the primaryAddress
         replacedAddress = BRSetAdd (addresses, cryptoAddressCreateAsBTC (wallet->type, btcPrimaryAddress));

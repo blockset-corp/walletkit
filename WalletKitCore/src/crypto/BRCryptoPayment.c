@@ -21,7 +21,7 @@
 
 #include "BRCryptoHandlersP.h"
 
-#include "bitcoin/BRPaymentProtocol.h"
+#include "bitcoin/BRBitcoinPaymentProtocol.h"
 #include "support/BRArray.h"
 
 
@@ -369,7 +369,7 @@ struct BRCryptoPaymentProtocolPaymentACKRecord {
 
     union {
         struct {
-            BRPaymentProtocolACK *ack;
+            BRBitcoinPaymentProtocolACK *ack;
         } btcBip70;
     } u;
 
@@ -383,7 +383,7 @@ cryptoPaymentProtocolPaymentACKCreateForBip70 (uint8_t *serialization,
                                                size_t serializationLen) {
     BRCryptoPaymentProtocolPaymentACK protoAck = NULL;
 
-    BRPaymentProtocolACK *ack = BRPaymentProtocolACKParse (serialization, serializationLen);
+    BRBitcoinPaymentProtocolACK *ack = btcPaymentProtocolACKParse (serialization, serializationLen);
     if (NULL != ack) {
         protoAck = calloc (1, sizeof(struct BRCryptoPaymentProtocolPaymentACKRecord));
         protoAck->ref = CRYPTO_REF_ASSIGN (cryptoPaymentProtocolPaymentACKRelease);
@@ -399,7 +399,7 @@ static void
 cryptoPaymentProtocolPaymentACKRelease (BRCryptoPaymentProtocolPaymentACK protoAck) {
     switch (protoAck->type) {
         case CRYPTO_PAYMENT_PROTOCOL_TYPE_BIP70: {
-            BRPaymentProtocolACKFree (protoAck->u.btcBip70.ack);
+            btcPaymentProtocolACKFree (protoAck->u.btcBip70.ack);
             break;
         }
         default: {

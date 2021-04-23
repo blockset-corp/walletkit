@@ -9,7 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 #include "BRCryptoBTC.h"
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 #include "bcash/BRBCashParams.h"
 #include "bsv/BRBSVParams.h"
 #include "crypto/BRCryptoHashP.h"
@@ -28,13 +28,13 @@ cryptoNetworkCoerceANY (BRCryptoNetwork network) {
     return (BRCryptoNetworkBTC) network;
 }
 
-extern const BRChainParams *
+extern const BRBitcoinChainParams *
 cryptoNetworkAsBTC (BRCryptoNetwork network) {
     return cryptoNetworkCoerce(network, network->type)->params;
 }
 
 typedef struct {
-    const BRChainParams *params;
+    const BRBitcoinChainParams *params;
 } BRCryptoNetworkCreateContextBTC;
 
 static void
@@ -59,7 +59,7 @@ cryptoNetworkCreateBTC (BRCryptoNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? BRMainNetParams : BRTestNetParams)
+        (isMainnet ? btcMainNetParams : btcTestNetParams)
     };
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
@@ -149,7 +149,7 @@ static BRCryptoAddress
 cryptoNetworkCreateAddressBTC (BRCryptoNetwork network,
                                 const char *addressAsString) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BTC);
-    assert (BRChainParamsIsBitcoin (networkBTC->params));
+    assert (btcChainParamsIsBitcoin (networkBTC->params));
     return cryptoAddressCreateFromStringAsBTC (networkBTC->params->addrParams, addressAsString);
 }
 
@@ -157,7 +157,7 @@ static BRCryptoAddress
 cryptoNetworkCreateAddressBCH (BRCryptoNetwork network,
                                 const char *addressAsString) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BCH);
-    assert (!BRChainParamsIsBitcoin (networkBTC->params));
+    assert (!btcChainParamsIsBitcoin (networkBTC->params));
     return cryptoAddressCreateFromStringAsBCH (networkBTC->params->addrParams, addressAsString);
 }
 
@@ -165,7 +165,7 @@ static BRCryptoAddress
 cryptoNetworkCreateAddressBSV (BRCryptoNetwork network,
                                 const char *addressAsString) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, CRYPTO_NETWORK_TYPE_BSV);
-    assert (BRChainParamsIsBSV (networkBTC->params));
+    assert (btcChainParamsIsBSV (networkBTC->params));
     return cryptoAddressCreateFromStringAsBSV (networkBTC->params->addrParams, addressAsString);
 }
 
@@ -173,7 +173,7 @@ static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampBTC (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
     BRCryptoNetworkBTC networkBTC = cryptoNetworkCoerce (network, network->type);
-    const BRCheckPoint *checkpoint = BRChainParamsGetCheckpointBefore (networkBTC->params, (uint32_t) timestamp);
+    const BRBitcoinCheckPoint *checkpoint = btcChainParamsGetCheckpointBefore (networkBTC->params, (uint32_t) timestamp);
     return (NULL == checkpoint ? 0 : checkpoint->height);
 }
 
@@ -271,7 +271,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
 //static BRCryptoNetwork
 //cryptoNetworkCreateAsBTC (const char *uids,
 //                          const char *name,
-//                          const BRChainParams *params) {
+//                          const BRBitcoinChainParams *params) {
 //    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BTC);
 //    network->type = BLOCK_CHAIN_TYPE_BTC;
 //    network->u.btc = params;
@@ -282,7 +282,7 @@ BRCryptoNetworkHandlers cryptoNetworkHandlersBSV = {
 //static BRCryptoNetwork
 //cryptoNetworkCreateAsBCH (const char *uids,
 //                          const char *name,
-//                          const BRChainParams *params) {
+//                          const BRBitcoinChainParams *params) {
 //    BRCryptoNetwork network = cryptoNetworkCreate (uids, name, CRYPTO_NETWORK_TYPE_BCH);
 //    network->type = BLOCK_CHAIN_TYPE_BTC;
 //    network->u.btc = params;

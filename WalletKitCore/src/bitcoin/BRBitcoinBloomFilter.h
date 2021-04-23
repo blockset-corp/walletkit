@@ -48,7 +48,7 @@ typedef struct {
     size_t elemCount;
     uint32_t tweak;
     uint8_t flags;
-} BRBloomFilter;
+} BRBitcoinBloomFilter;
 
 // a bloom filter that matches everything is useful if a full node wants to use the filtered block protocol, which
 // doesn't send transactions with blocks if the receiving node already received the tx prior to its inclusion in the
@@ -56,24 +56,24 @@ typedef struct {
 #define BR_BLOOM_FILTER_FULL ((const BRBloomFilter) { &((struct { uint8_t u; }) { 0xff }).u, 1, 0, 0, 0,\
                                                       BLOOM_UPDATE_NONE })
 
-// returns a newly allocated bloom filter struct that must be freed by calling BRBloomFilterFree()
-BRBloomFilter *BRBloomFilterNew(double falsePositiveRate, size_t elemCount, uint32_t tweak, uint8_t flags);
+// returns a newly allocated bloom filter struct that must be freed by calling btcBloomFilterFree()
+BRBitcoinBloomFilter *btcBloomFilterNew(double falsePositiveRate, size_t elemCount, uint32_t tweak, uint8_t flags);
 
 // buf must contain a serialized filter
-// returns a bloom filter struct that must be freed by calling BRBloomFilterFree()
-BRBloomFilter *BRBloomFilterParse(const uint8_t *buf, size_t bufLen);
+// returns a bloom filter struct that must be freed by calling btcBloomFilterFree()
+BRBitcoinBloomFilter *btcBloomFilterParse(const uint8_t *buf, size_t bufLen);
 
 // returns number of bytes written to buf, or total bufLen needed if buf is NULL
-size_t BRBloomFilterSerialize(const BRBloomFilter *filter, uint8_t *buf, size_t bufLen);
+size_t btcBloomFilterSerialize(const BRBitcoinBloomFilter *filter, uint8_t *buf, size_t bufLen);
 
 // true if data is matched by filter
-int BRBloomFilterContainsData(const BRBloomFilter *filter, const uint8_t *data, size_t dataLen);
+int btcBloomFilterContainsData(const BRBitcoinBloomFilter *filter, const uint8_t *data, size_t dataLen);
 
 // add data to filter
-void BRBloomFilterInsertData(BRBloomFilter *filter, const uint8_t *data, size_t dataLen);
+void btcBloomFilterInsertData(BRBitcoinBloomFilter *filter, const uint8_t *data, size_t dataLen);
 
 // frees memory allocated for filter
-void BRBloomFilterFree(BRBloomFilter *filter);
+void btcBloomFilterFree(BRBitcoinBloomFilter *filter);
 
 #ifdef __cplusplus
 }

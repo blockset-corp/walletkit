@@ -29,7 +29,7 @@ cryptoTransferCoerceBTC (BRCryptoTransfer transfer) {
     return (BRCryptoTransferBTC) transfer;
 }
 
-private_extern OwnershipKept BRTransaction *
+private_extern OwnershipKept BRBitcoinTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transfer) {
     BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
     return transferBTC->tid;
@@ -37,13 +37,13 @@ cryptoTransferAsBTC (BRCryptoTransfer transfer) {
 
 private_extern BRCryptoBoolean
 cryptoTransferHasBTC (BRCryptoTransfer transfer,
-                      BRTransaction *btc) {
+                      BRBitcoinTransaction *btc) {
     BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
-    return AS_CRYPTO_BOOLEAN (BRTransactionEq (btc, transferBTC->tid));
+    return AS_CRYPTO_BOOLEAN (btcTransactionEq (btc, transferBTC->tid));
 }
 
 typedef struct {
-    BRTransaction *tid;
+    BRBitcoinTransaction *tid;
 
     bool isDeleted;
 
@@ -73,14 +73,14 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           OwnershipKept  BRWallet *wid,
-                           OwnershipGiven BRTransaction *tid,
+                           OwnershipKept  BRBitcoinWallet *wid,
+                           OwnershipGiven BRBitcoinTransaction *tid,
                            BRCryptoNetworkType type) {
-    uint64_t fee  = BRWalletFeeForTx (wid, tid);
-    uint64_t recv = BRWalletAmountReceivedFromTx (wid, tid);
-    uint64_t send = BRWalletAmountSentByTx (wid, tid);
+    uint64_t fee  = btcWalletFeeForTx (wid, tid);
+    uint64_t recv = btcWalletAmountReceivedFromTx (wid, tid);
+    uint64_t send = btcWalletAmountSentByTx (wid, tid);
     
-    BRAddressParams  addressParams = BRWalletGetAddressParams (wid);
+    BRAddressParams  addressParams = btcWalletGetAddressParams (wid);
 
     BRCryptoTransferDirection direction = cryptoTransferDirectionFromBTC (send, recv, fee);
     
@@ -91,22 +91,22 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
     BRCryptoAddress sourceAddress = NULL;
     {
         size_t     inputsCount = tid->inCount;
-        BRTxInput *inputs      = tid->inputs;
+        BRBitcoinTxInput *inputs      = tid->inputs;
 
         // If we receive the transfer, then we won't be the source address.
         int inputsContain = (CRYPTO_TRANSFER_RECEIVED != direction);
 
         for (size_t index = 0; index < inputsCount; index++) {
-            size_t addressSize = BRTxInputAddress (&inputs[index], NULL, 0, addressParams);
+            size_t addressSize = btcTxInputAddress (&inputs[index], NULL, 0, addressParams);
 
             // ensure address fits in a BRAddress struct, which adds a nul-terminator
             assert (addressSize < sizeof (BRAddress));
             if (0 != addressSize && addressSize < sizeof (BRAddress)) {
                 char address [addressSize + 1];
-                BRTxInputAddress (&inputs[index], address, addressSize, addressParams);
+                btcTxInputAddress (&inputs[index], address, addressSize, addressParams);
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
-                if (inputsContain == BRWalletContainsAddress(wid, address)) {
+                if (inputsContain == btcWalletContainsAddress(wid, address)) {
                     sourceAddress =
                     cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
@@ -118,25 +118,25 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
     BRCryptoAddress targetAddress = NULL;
     {
         size_t      outputsCount = tid->outCount;
-        BRTxOutput *outputs      = tid->outputs;
+        BRBitcoinTxOutput *outputs      = tid->outputs;
 
         // If we sent the transfer, then we won't be the target address.
         int outputsContain = (CRYPTO_TRANSFER_SENT != direction);
 
         for (size_t index = 0; index < outputsCount; index++) {
-            size_t addressSize = BRTxOutputAddress (&outputs[index], NULL, 0, addressParams);
+            size_t addressSize = btcTxOutputAddress (&outputs[index], NULL, 0, addressParams);
 
             // ensure address fits in a BRAddress struct, which adds a nul-terminator
             assert (addressSize < sizeof (BRAddress));
             if (0 != addressSize && addressSize < sizeof (BRAddress)) {
                 // There will be no targetAddress if we send the amount to ourselves.  In that
                 // case `outputsContain = 0` and every output is our own address and thus 1 is always
-                // returned by `BRWalletContainsAddress()`
+                // returned by `btcWalletContainsAddress()`
                 char address [addressSize + 1];
-                BRTxOutputAddress (&outputs[index], address, addressSize, addressParams);
+                btcTxOutputAddress (&outputs[index], address, addressSize, addressParams);
                 address [addressSize] = '\0'; // ensure address is nul-terminated
 
-                if (outputsContain == BRWalletContainsAddress(wid, address)) {
+                if (outputsContain == btcWalletContainsAddress(wid, address)) {
                     targetAddress =
                     cryptoAddressCreateAsBTC (type, BRAddressFill (addressParams, address));
                     break;
@@ -149,13 +149,13 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
     // Currently this function, cryptoTransferCreateAsBTC(), is only called in various CWM
     // event handlers based on BTC events.  Thus for a newly created BTC transfer, the
     // BRCryptoFeeBasis is long gone.  The best we can do is reconstruct the feeBasis from the
-    // BRTransaction itself.
+    // BRBitcoinTransaction itself.
 
     BRCryptoFeeBasis feeBasisEstimated =
     cryptoFeeBasisCreateAsBTC (unitForFee,
                                (fee == UINT64_MAX ? CRYPTO_FEE_BASIS_BTC_FEE_UNKNOWN        : fee),
                                (fee == UINT64_MAX ? 0                                       : CRYPTO_FEE_BASIS_BTC_FEE_PER_KB_UNKNOWN),
-                               (uint32_t) BRTransactionVSize (tid));
+                               (uint32_t) btcTransactionVSize (tid));
 
     BRCryptoTransferCreateContextBTC contextBTC = {
         tid,
@@ -196,18 +196,18 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
 static void
 cryptoTransferReleaseBTC (BRCryptoTransfer transfer) {
     BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
-    BRTransactionFree (transferBTC->tid);
+    btcTransactionFree (transferBTC->tid);
 }
 
 private_extern BRCryptoBoolean
 cryptoTransferChangedAmountBTC (BRCryptoTransfer transfer,
-                                BRWallet *wid) {
+                                BRBitcoinWallet *wid) {
     BRCryptoTransferBTC transferBTC = cryptoTransferCoerceBTC(transfer);
-    BRTransaction *tid = transferBTC->tid;
+    BRBitcoinTransaction *tid = transferBTC->tid;
 
-    uint64_t fee  = BRWalletFeeForTx (wid, tid);
-    uint64_t send = BRWalletAmountSentByTx (wid, tid);
-    uint64_t recv = BRWalletAmountReceivedFromTx (wid, tid);
+    uint64_t fee  = btcWalletFeeForTx (wid, tid);
+    uint64_t send = btcWalletAmountSentByTx (wid, tid);
+    uint64_t recv = btcWalletAmountReceivedFromTx (wid, tid);
 
     // amount (and direction) are 100% determined by { fee, recv, send}.  See
     // cryptoTransferDirectionFromBTC() and cryptoTransferComputeAmountBTC()
@@ -231,14 +231,14 @@ cryptoTransferSerializeBTC (BRCryptoTransfer transfer,
                             BRCryptoBoolean  requireSignature,
                             size_t *serializationCount) {
     assert (CRYPTO_TRUE == requireSignature);
-    BRTransaction *tid = cryptoTransferAsBTC     (transfer);
+    BRBitcoinTransaction *tid = cryptoTransferAsBTC     (transfer);
 
     if (NULL == tid) { *serializationCount = 0; return NULL; }
 
-    *serializationCount = BRTransactionSerialize (tid, NULL, 0);
+    *serializationCount = btcTransactionSerialize (tid, NULL, 0);
     uint8_t *serialization = malloc (*serializationCount);
 
-    BRTransactionSerialize (tid, serialization, *serializationCount);
+    btcTransactionSerialize (tid, serialization, *serializationCount);
     return serialization;
 }
 
@@ -251,7 +251,7 @@ cryptoTransferIsEqualBTC (BRCryptoTransfer tb1, BRCryptoTransfer tb2) {
     // are compared, one needs to be careful about the BRTransaction's timestamp.  Two transactions
     // with an identical hash can have different timestamps depending on how the transaction
     // is identified.  Specifically P2P and API found transactions *will* have different timestamps.
-    return t1 == t2 || BRTransactionEq (t1->tid, t2->tid);
+    return t1 == t2 || btcTransactionEq (t1->tid, t2->tid);
 }
 
 static uint64_t
@@ -291,11 +291,11 @@ cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 }
 
 private_extern OwnershipGiven BRCryptoTransferState
-cryptoTransferInitializeStateBTC (BRTransaction *tid,
+cryptoTransferInitializeStateBTC (BRBitcoinTransaction *tid,
                                   uint64_t blockNumber,
                                   uint64_t blockTimestamp,
                                   OwnershipKept BRCryptoFeeBasis feeBasis) {
-    // Our Transfer flow is such that we want P2P and API modes to pass through the BRWallet
+    // Our Transfer flow is such that we want P2P and API modes to pass through the BRBitcoinWallet
     // callbacks, specifically TxAdded and TxUpdated.  Those functions don't have the resolution
     // to State that BRCryptoTransfers have (rightly or wrongly).  For BTC/etc a non-TX_CONFIRMED
     // blockNumber guarantees 'INCLUDED'.  A signed transaction does not guarantee SUBMITTED but
@@ -308,7 +308,7 @@ cryptoTransferInitializeStateBTC (BRTransaction *tid,
                                                feeBasis,
                                                CRYPTO_TRUE,
                                                NULL)
-            : (BRTransactionIsSigned (tid)
+            : (btcTransactionIsSigned (tid)
                ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)  // Optimistic
                : cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED)));
 }

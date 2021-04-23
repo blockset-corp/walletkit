@@ -1,5 +1,5 @@
 //
-//  BRChainParams.h
+//  BRBitcoinChainParams.h
 //
 //  Created by Aaron Voisine on 1/10/18.
 //  Copyright (c) 2018-2019 breadwallet LLC
@@ -25,8 +25,8 @@
 #ifndef BRChainParams_h
 #define BRChainParams_h
 
-#include "BRMerkleBlock.h"
-#include "BRPeer.h"
+#include "BRBitcoinMerkleBlock.h"
+#include "BRBitcoinPeer.h"
 #include "support/BRSet.h"
 #include "support/BRAddress.h"
 #include <assert.h>
@@ -42,34 +42,34 @@ typedef struct {
     UInt256 hash;
     uint32_t timestamp;
     uint32_t target;
-} BRCheckPoint;
+} BRBitcoinCheckPoint;
 
 typedef struct {
     const char * const *dnsSeeds; // NULL terminated array of dns seeds
     uint16_t standardPort;
     uint32_t magicNumber;
     uint64_t services;
-    int (*verifyDifficulty)(const BRMerkleBlock *block, const BRSet *blockSet); // blockSet must have last 2016 blocks
-    const BRCheckPoint *checkpoints;
+    int (*verifyDifficulty)(const BRBitcoinMerkleBlock *block, const BRSet *blockSet); // blockSet must have last 2016 blocks
+    const BRBitcoinCheckPoint *checkpoints;
     size_t checkpointsCount;
     BRAddressParams addrParams;
     uint8_t forkId;
-} BRChainParams;
+} BRBitcoinChainParams;
 
-extern const BRChainParams *BRMainNetParams;
-extern const BRChainParams *BRTestNetParams;
+extern const BRBitcoinChainParams *btcMainNetParams;
+extern const BRBitcoinChainParams *btcTestNetParams;
 
-static inline const BRChainParams *BRChainParamsGetBitcoin (int mainnet) {
-    return mainnet ? BRMainNetParams : BRTestNetParams;
+static inline const BRBitcoinChainParams *btcChainParamsGetBitcoin (int mainnet) {
+    return mainnet ? btcMainNetParams : btcTestNetParams;
 }
 
-static inline int BRChainParamsIsBitcoin (const BRChainParams *params) {
-    return BRMainNetParams == params || BRTestNetParams == params;
+static inline int btcChainParamsIsBitcoin (const BRBitcoinChainParams *params) {
+    return btcMainNetParams == params || btcTestNetParams == params;
 }
 
-extern const BRCheckPoint *BRChainParamsGetCheckpointBefore (const BRChainParams *params, uint32_t timestamp);
+extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBefore (const BRBitcoinChainParams *params, uint32_t timestamp);
 
-extern const BRCheckPoint *BRChainParamsGetCheckpointBeforeBlockNumber (const BRChainParams *params, uint32_t blockNumber);
+extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBeforeBlockNumber (const BRBitcoinChainParams *params, uint32_t blockNumber);
 
 #ifdef __cplusplus
 }

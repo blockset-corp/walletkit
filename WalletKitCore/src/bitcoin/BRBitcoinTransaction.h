@@ -1,5 +1,5 @@
 //
-//  BRTransaction.h
+//  BRBitcoinTransaction.h
 //
 //  Created by Aaron Voisine on 8/31/15.
 //  Copyright (c) 2015 breadwallet LLC
@@ -59,99 +59,99 @@ typedef struct {
     uint8_t *witness;
     size_t witLen;
     uint32_t sequence;
-} BRTxInput;
+} BRBitcoinTxInput;
 
-size_t BRTxInputAddress(const BRTxInput *input, char *address, size_t addrLen, BRAddressParams params);
-void BRTxInputSetAddress(BRTxInput *input, BRAddressParams params, const char *address);
-void BRTxInputSetScript(BRTxInput *input, const uint8_t *script, size_t scriptLen);
-void BRTxInputSetSignature(BRTxInput *input, const uint8_t *signature, size_t sigLen);
-void BRTxInputSetWitness(BRTxInput *input, const uint8_t *witness, size_t witLen);
+size_t btcTxInputAddress(const BRBitcoinTxInput *input, char *address, size_t addrLen, BRAddressParams params);
+void btcTxInputSetAddress(BRBitcoinTxInput *input, BRAddressParams params, const char *address);
+void btcTxInputSetScript(BRBitcoinTxInput *input, const uint8_t *script, size_t scriptLen);
+void btcTxInputSetSignature(BRBitcoinTxInput *input, const uint8_t *signature, size_t sigLen);
+void btcTxInputSetWitness(BRBitcoinTxInput *input, const uint8_t *witness, size_t witLen);
 
 typedef struct {
     uint64_t amount;
     uint8_t *script;
     size_t scriptLen;
-} BRTxOutput;
+} BRBitcoinTxOutput;
 
-#define BR_TX_OUTPUT_NONE ((const BRTxOutput) { 0, NULL, 0 })
+#define BR_TX_OUTPUT_NONE ((const BRBitcoinTxOutput) { 0, NULL, 0 })
 
-// when creating a BRTxOutput struct outside of a BRTransaction, set address or script to NULL when done to free memory
-size_t BRTxOutputAddress(const BRTxOutput *output, char *address, size_t addrLen, BRAddressParams params);
-void BRTxOutputSetAddress(BRTxOutput *output, BRAddressParams params, const char *address);
-void BRTxOutputSetScript(BRTxOutput *output, const uint8_t *script, size_t scriptLen);
+// when creating a BRTxOutput struct outside of a BRBitcoinTransaction, set address or script to NULL when done to free memory
+size_t btcTxOutputAddress(const BRBitcoinTxOutput *output, char *address, size_t addrLen, BRAddressParams params);
+void btcTxOutputSetAddress(BRBitcoinTxOutput *output, BRAddressParams params, const char *address);
+void btcTxOutputSetScript(BRBitcoinTxOutput *output, const uint8_t *script, size_t scriptLen);
 
 typedef struct {
     UInt256 txHash;
     UInt256 wtxHash;
     uint32_t version;
-    BRTxInput *inputs;
+    BRBitcoinTxInput *inputs;
     size_t inCount;
-    BRTxOutput *outputs;
+    BRBitcoinTxOutput *outputs;
     size_t outCount;
     uint32_t lockTime;
     uint32_t blockHeight;
     uint32_t timestamp; // time interval since unix epoch
-} BRTransaction;
+} BRBitcoinTransaction;
 
-// returns a newly allocated empty transaction that must be freed by calling BRTransactionFree()
-BRTransaction *BRTransactionNew(void);
+// returns a newly allocated empty transaction that must be freed by calling btcTransactionFree()
+BRBitcoinTransaction *btcTransactionNew(void);
 
-// returns a deep copy of tx and that must be freed by calling BRTransactionFree()
-BRTransaction *BRTransactionCopy(const BRTransaction *tx);
+// returns a deep copy of tx and that must be freed by calling btcTransactionFree()
+BRBitcoinTransaction *btcTransactionCopy(const BRBitcoinTransaction *tx);
 
 // buf must contain a serialized tx
-// retruns a transaction that must be freed by calling BRTransactionFree()
-BRTransaction *BRTransactionParse(const uint8_t *buf, size_t bufLen);
+// retruns a transaction that must be freed by calling btcTransactionFree()
+BRBitcoinTransaction *btcTransactionParse(const uint8_t *buf, size_t bufLen);
 
 // returns number of bytes written to buf, or total bufLen needed if buf is NULL
 // (tx->blockHeight and tx->timestamp are not serialized)
-size_t BRTransactionSerialize(const BRTransaction *tx, uint8_t *buf, size_t bufLen);
+size_t btcTransactionSerialize(const BRBitcoinTransaction *tx, uint8_t *buf, size_t bufLen);
 
 // adds an input to tx
-void BRTransactionAddInput(BRTransaction *tx, UInt256 txHash, uint32_t index, uint64_t amount,
+void btcTransactionAddInput(BRBitcoinTransaction *tx, UInt256 txHash, uint32_t index, uint64_t amount,
                            const uint8_t *script, size_t scriptLen, const uint8_t *signature, size_t sigLen,
                            const uint8_t *witness, size_t witLen, uint32_t sequence);
 
 // adds an output to tx
-void BRTransactionAddOutput(BRTransaction *tx, uint64_t amount, const uint8_t *script, size_t scriptLen);
+void btcTransactionAddOutput(BRBitcoinTransaction *tx, uint64_t amount, const uint8_t *script, size_t scriptLen);
 
 // shuffles order of tx outputs
-void BRTransactionShuffleOutputs(BRTransaction *tx);
+void btcTransactionShuffleOutputs(BRBitcoinTransaction *tx);
 
 // size in bytes if signed, or estimated size assuming compact pubkey sigs
-size_t BRTransactionSize(const BRTransaction *tx);
+size_t btcTransactionSize(const BRBitcoinTransaction *tx);
 
 // virtual transaction size as defined by BIP141: https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
-size_t BRTransactionVSize(const BRTransaction *tx);
+size_t btcTransactionVSize(const BRBitcoinTransaction *tx);
 
 // minimum transaction fee needed for tx to relay across the bitcoin network (bitcoind 0.12 default min-relay fee-rate)
-uint64_t BRTransactionStandardFee(const BRTransaction *tx);
+uint64_t btcTransactionStandardFee(const BRBitcoinTransaction *tx);
 
 // checks if all signatures exist, but does not verify them
-int BRTransactionIsSigned(const BRTransaction *tx);
+int btcTransactionIsSigned(const BRBitcoinTransaction *tx);
 
 // adds signatures to any inputs with NULL signatures that can be signed with any keys
 // forkId is 0 for bitcoin, 0x40 for b-cash, 0x4f for b-gold
 // returns true if tx is signed
-int BRTransactionSign(BRTransaction *tx, int forkId, BRKey keys[], size_t keysCount);
+int btcTransactionSign(BRBitcoinTransaction *tx, int forkId, BRKey keys[], size_t keysCount);
 
 // true if tx meets IsStandard() rules: https://bitcoin.org/en/developer-guide#standard-transactions
-int BRTransactionIsStandard(const BRTransaction *tx);
+int btcTransactionIsStandard(const BRBitcoinTransaction *tx);
 
 // returns a hash value for tx suitable for use in a hashtable
-inline static size_t BRTransactionHash(const void *tx)
+inline static size_t btcTransactionHash(const void *tx)
 {
-    return (size_t)((const BRTransaction *)tx)->txHash.u32[0];
+    return (size_t)((const BRBitcoinTransaction *)tx)->txHash.u32[0];
 }
 
 // true if tx and otherTx have equal txHash values
-inline static int BRTransactionEq(const void *tx, const void *otherTx)
+inline static int btcTransactionEq(const void *tx, const void *otherTx)
 {
-    return (tx == otherTx || UInt256Eq(((const BRTransaction *)tx)->txHash, ((const BRTransaction *)otherTx)->txHash));
+    return (tx == otherTx || UInt256Eq(((const BRBitcoinTransaction *)tx)->txHash, ((const BRBitcoinTransaction *)otherTx)->txHash));
 }
 
 // frees memory allocated for tx
-void BRTransactionFree(BRTransaction *tx);
+void btcTransactionFree(BRBitcoinTransaction *tx);
 
 #ifdef __cplusplus
 }

@@ -18,10 +18,10 @@
 #include "crypto/BRCryptoPaymentP.h"
 #include "crypto/BRCryptoFeeBasisP.h"
 
-#include "bitcoin/BRWallet.h"
-#include "bitcoin/BRTransaction.h"
-#include "bitcoin/BRChainParams.h"
-#include "bitcoin/BRPaymentProtocol.h"
+#include "bitcoin/BRBitcoinWallet.h"
+#include "bitcoin/BRBitcoinTransaction.h"
+#include "bitcoin/BRBitcoinChainParams.h"
+#include "bitcoin/BRBitcoinPaymentProtocol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,10 +62,10 @@ cryptoAddressCreateFromLegacyStringAsBCH (BRAddressParams params, const char *bt
 typedef struct BRCryptoNetworkBTCRecord {
     struct BRCryptoNetworkRecord base;
 
-    const BRChainParams *params;
+    const BRBitcoinChainParams *params;
 } *BRCryptoNetworkBTC;
 
-extern const BRChainParams *
+extern const BRBitcoinChainParams *
 cryptoNetworkAsBTC (BRCryptoNetwork network);
 
 extern uint64_t
@@ -77,9 +77,9 @@ cryptoNetworkFeeAsBTC (BRCryptoNetworkFee networkFee);
 typedef struct BRCryptoTransferBTCRecord {
     struct BRCryptoTransferRecord base;
 
-    // The BRTransaction; this is 100% owned by BRCryptoTransfer.  It can be accessed at any time.
+    // The BRBitcoinTransaction; this is 100% owned by BRCryptoTransfer.  It can be accessed at any time.
     // Prior to signing the hash will be empty.
-    BRTransaction *tid;
+    BRBitcoinTransaction *tid;
 
     // Tracking of 'deleted'
     bool isDeleted;
@@ -96,23 +96,23 @@ extern BRCryptoTransfer
 cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
-                           BRWallet *wid,
-                           BRTransaction *tid,
+                           BRBitcoinWallet *wid,
+                           BRBitcoinTransaction *tid,
                            BRCryptoNetworkType type);
 
-private_extern BRTransaction *
+private_extern BRBitcoinTransaction *
 cryptoTransferAsBTC (BRCryptoTransfer transfer);
 
 private_extern BRCryptoBoolean
 cryptoTransferHasBTC (BRCryptoTransfer transfer,
-                      BRTransaction *btc);
+                      BRBitcoinTransaction *btc);
 
 private_extern BRCryptoBoolean
 cryptoTransferChangedAmountBTC (BRCryptoTransfer transfer,
-                                BRWallet *wid);
+                                BRBitcoinWallet *wid);
 
 private_extern OwnershipGiven BRCryptoTransferState
-cryptoTransferInitializeStateBTC (BRTransaction *tid,
+cryptoTransferInitializeStateBTC (BRBitcoinTransaction *tid,
                                   uint64_t blockNumber,
                                   uint64_t blockTimestamp,
                                   OwnershipKept BRCryptoFeeBasis feeBasis);
@@ -121,8 +121,8 @@ cryptoTransferInitializeStateBTC (BRTransaction *tid,
 
 typedef struct BRCryptoWalletBTCRecord {
     struct BRCryptoWalletRecord base;
-    BRWallet *wid;
-    BRArrayOf (BRTransaction*) tidsUnresolved;
+    BRBitcoinWallet *wid;
+    BRArrayOf (BRBitcoinTransaction*) tidsUnresolved;
 } *BRCryptoWalletBTC;
 
 extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
@@ -130,7 +130,7 @@ extern BRCryptoWalletHandlers cryptoWalletHandlersBTC;
 private_extern BRCryptoWalletBTC
 cryptoWalletCoerceBTC (BRCryptoWallet wallet);
 
-private_extern BRWallet *
+private_extern BRBitcoinWallet *
 cryptoWalletAsBTC (BRCryptoWallet wallet);
 
 private_extern BRCryptoWallet
@@ -138,11 +138,11 @@ cryptoWalletCreateAsBTC (BRCryptoNetworkType type,
                          BRCryptoWalletListener listener,
                          BRCryptoUnit unit,
                          BRCryptoUnit unitForFee,
-                         BRWallet *wid);
+                         BRBitcoinWallet *wid);
 
 private_extern BRCryptoTransfer
 cryptoWalletFindTransferAsBTC (BRCryptoWallet wallet,
-                               BRTransaction *btc);
+                               BRBitcoinTransaction *btc);
 
 private_extern BRCryptoTransferBTC
 cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
@@ -150,7 +150,7 @@ cryptoWalletFindTransferByHashAsBTC (BRCryptoWallet wallet,
 
 private_extern void
 cryptoWalletAddUnresolvedAsBTC (BRCryptoWallet wallet,
-                                OwnershipGiven BRTransaction *tid);
+                                OwnershipGiven BRBitcoinTransaction *tid);
 
 private_extern void
 cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
@@ -160,7 +160,7 @@ cryptoWalletUpdUnresolvedAsBTC (BRCryptoWallet wallet,
 
 private_extern size_t
 cryptoWalletRemResolvedAsBTC (BRCryptoWallet wallet,
-                              BRTransaction **tids,
+                              BRBitcoinTransaction **tids,
                               size_t tidsCount);
 
 // MARK: - (Wallet) Manager
@@ -187,7 +187,7 @@ typedef struct BRCryptoWalletSweeperBTCRecord {
     BRAddressParams addrParams;
     uint8_t isSegwit;
     char * sourceAddress;
-    BRArrayOf(BRTransaction *) txns;
+    BRArrayOf(BRBitcoinTransaction *) txns;
 } *BRCryptoWalletSweeperBTC;
 
 // MARK: - Payment Protocol
@@ -197,7 +197,7 @@ typedef struct BRCryptoWalletSweeperBTCRecord {
 typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderBTCRecord {
     struct BRCryptoPaymentProtocolRequestBitPayBuilderRecord base;
     
-    BRArrayOf(BRTxOutput) outputs;
+    BRArrayOf(BRBitcoinTxOutput) outputs;
 } *BRCryptoPaymentProtocolRequestBitPayBuilderBTC;
 
 // MARK: Payment Protocol Request
@@ -205,7 +205,7 @@ typedef struct BRCryptoPaymentProtocolRequestBitPayBuilderBTCRecord {
 typedef struct BRCryptoPaymentProtocolRequestBTCRecord {
     struct BRCryptoPaymentProtocolRequestRecord base;
     
-    BRPaymentProtocolRequest *request;
+    BRBitcoinPaymentProtocolRequest *request;
 } *BRCryptoPaymentProtocolRequestBTC;
 
 // MARK: Payment Protocol Payment
@@ -213,8 +213,8 @@ typedef struct BRCryptoPaymentProtocolRequestBTCRecord {
 typedef struct BRCryptoPaymentProtocolPaymentBTCRecord {
     struct BRCryptoPaymentProtocolPaymentRecord base;
     
-    BRTransaction *transaction;
-    BRPaymentProtocolPayment *payment; // only used for BIP70
+    BRBitcoinTransaction *transaction;
+    BRBitcoinPaymentProtocolPayment *payment; // only used for BIP70
 } *BRCryptoPaymentProtocolPaymentBTC;
 
 // MARK: - Fee Basis
@@ -253,9 +253,9 @@ extern const char *fileServiceTypePeersBTC;
 extern size_t fileServiceSpecificationsCountBTC;
 extern BRFileServiceTypeSpecification *fileServiceSpecificationsBTC;
 
-extern BRArrayOf(BRTransaction*) initialTransactionsLoadBTC (BRCryptoWalletManager manager);
-extern BRArrayOf(BRPeer)         initialPeersLoadBTC        (BRCryptoWalletManager manager);
-extern BRArrayOf(BRMerkleBlock*) initialBlocksLoadBTC       (BRCryptoWalletManager manager);
+extern BRArrayOf(BRBitcoinTransaction*) initialTransactionsLoadBTC (BRCryptoWalletManager manager);
+extern BRArrayOf(BRBitcoinPeer)         initialPeersLoadBTC        (BRCryptoWalletManager manager);
+extern BRArrayOf(BRBitcoinMerkleBlock*) initialBlocksLoadBTC       (BRCryptoWalletManager manager);
 
 #ifdef __cplusplus
 }

@@ -31,8 +31,8 @@
 
 #include "BRCryptoHandlersP.h"
 
-#include "bitcoin/BRMerkleBlock.h"
-#include "bitcoin/BRPeer.h"
+#include "bitcoin/BRBitcoinMerkleBlock.h"
+#include "bitcoin/BRBitcoinPeer.h"
 #include "support/event/BREventAlarm.h"
 
 // We'll do a period QRY 'tick-tock' CWM_CONFIRMATION_PERIOD_FACTOR times in
@@ -430,7 +430,7 @@ cryptoWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
     // BRWalletManager bwm = (BRWalletManager) context;
     // TODO(fix): What do we actually want to happen here?
     // if (NULL != bwm->peerManager)
-    //     BRPeerManagerRescan (bwm->peerManager);
+    //     btcPeerManagerRescan (bwm->peerManager);
 }
 #undef _peer_log_x
 

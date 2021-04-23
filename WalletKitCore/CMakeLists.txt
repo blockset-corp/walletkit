@@ -101,6 +101,8 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.h
+                ${PROJECT_SOURCE_DIR}/src/support/BRBIP38Key.c
+                ${PROJECT_SOURCE_DIR}/src/support/BRBIP38Key.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRInt.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRKey.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRKey.h
@@ -122,6 +124,10 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.c
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.h
 		# Util
+		${PROJECT_SOURCE_DIR}/src/support/util/BRUtil.h
+                ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMath.c
+                ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMath.h
+                ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMathParse.c
                 ${PROJECT_SOURCE_DIR}/src/support/util/BRHex.c
                 ${PROJECT_SOURCE_DIR}/src/support/util/BRHex.h)
 
@@ -135,24 +141,22 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 # Bitcoin
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBIP38Key.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBIP38Key.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBloomFilter.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBloomFilter.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRChainParams.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRChainParams.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRMerkleBlock.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRMerkleBlock.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPaymentProtocol.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPaymentProtocol.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeer.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeer.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeerManager.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRPeerManager.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRTransaction.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRTransaction.h
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWallet.c
-                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRWallet.h)
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinBloomFilter.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinBloomFilter.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinChainParams.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinChainParams.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinMerkleBlock.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinMerkleBlock.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPaymentProtocol.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPaymentProtocol.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPeer.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPeer.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPeerManager.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinPeerManager.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinTransaction.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinTransaction.h
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinWallet.c
+                ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinWallet.h)
 
 # Bitcoin Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -269,10 +273,6 @@ target_sources (corecrypto
                 # Util
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRKeccak.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtil.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMath.c
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMath.h
-                ${PROJECT_SOURCE_DIR}/src/ethereum/util/BRUtilMathParse.c
 
                 )
 

@@ -11,7 +11,7 @@
 #ifndef BRBSVParams_h
 #define BRBSVParams_h
 
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,14 +19,14 @@ extern "C" {
     
 #define BSV_FORKID 0x40
 
-extern const BRChainParams *BRBSVParams;
-extern const BRChainParams *BRBSVTestNetParams;
+extern const BRBitcoinChainParams *BRBSVParams;
+extern const BRBitcoinChainParams *BRBSVTestNetParams;
 
-static inline const BRChainParams *BRChainParamsGetBSV (int mainnet) {
+static inline const BRBitcoinChainParams *btcChainParamsGetBSV (int mainnet) {
     return mainnet ? BRBSVParams : BRBSVTestNetParams;
 }
 
-static inline int BRChainParamsIsBSV (const BRChainParams *params) {
+static inline int btcChainParamsIsBSV (const BRBitcoinChainParams *params) {
     return BRBSVParams == params || BRBSVTestNetParams == params;
 }
 

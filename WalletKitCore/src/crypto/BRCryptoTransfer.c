@@ -650,11 +650,11 @@ cryptoTransferExtractBlobAsBTC (BRCryptoTransfer transfer,
     #ifdef REFACTOR
     assert (NULL != bytes && NULL != bytesCount);
 
-    BRTransaction *tx = cryptoTransferAsBTC (transfer);
+    BRBitcoinTransaction *tx = cryptoTransferAsBTC (transfer);
 
-    *bytesCount = BRTransactionSerialize (tx, NULL, 0);
+    *bytesCount = btcTransactionSerialize (tx, NULL, 0);
     *bytes = malloc (*bytesCount);
-    BRTransactionSerialize (tx, *bytes, *bytesCount);
+    btcTransactionSerialize (tx, *bytes, *bytesCount);
 
     if (NULL != blockHeight) *blockHeight = tx->blockHeight;
     if (NULL != timestamp)   *timestamp   = tx->timestamp;
