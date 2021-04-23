@@ -41,7 +41,7 @@ ethExchangeInitializeIdentifier (BREthereumExchange exchange,
 /**
  * An identifier for an unknown exchange index index.
  */
-#define EXCHANGE_INDEX_UNKNOWN       (SIZE_MAX)
+#define ETHEREUM_EXCHANGE_INDEX_UNKNOWN       (SIZE_MAX)
 
 /**
  * Extract the log's identifier components.  A Log is identified by the transaction hash that
@@ -62,7 +62,7 @@ ethExchangeExtractIdentifier (BREthereumExchange exchange,
                               BREthereumHash *transactionHash,
                               size_t *exchangeIndex);
 
-// Will be EMPTY_HASH_INIT if no identifier
+// Will be ETHEREUM_EMPTY_HASH_INIT if no identifier
 extern BREthereumHash
 ethExchangeGetIdentifier (BREthereumExchange exchange);
 
@@ -126,14 +126,6 @@ ethExchangeRelease (BREthereumExchange exchange);
 
 extern BREthereumExchange
 ethExchangeCopy (BREthereumExchange exchange);
-
-#if 0
-extern void
-logsRelease (BRArrayOf(BREthereumLog) logs);
-
-extern void
-logReleaseForSet (void *ignore, void *item);
-#endif
 
 #ifdef __cplusplus
 }

@@ -14,8 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define private_extern  extern
     
 //
 // Etherum Boolean

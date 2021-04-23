@@ -154,13 +154,13 @@ cryptoWalletManagerSignTransactionETH (BRCryptoWalletManager manager,
 
     assert (NULL != ethTransaction);
 
-    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == transactionGetNonce (ethTransaction))
-        transactionSetNonce (ethTransaction,
+    if (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == ethTransactionGetNonce (ethTransaction))
+        ethTransactionSetNonce (ethTransaction,
                              ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
 
     // RLP Encode the UNSIGNED transaction
     BRRlpCoder coder = rlpCoderCreate();
-    BRRlpItem item = transactionRlpEncode (ethTransaction,
+    BRRlpItem item = ethTransactionRlpEncode (ethTransaction,
                                            ethNetwork,
                                            RLP_TYPE_TRANSACTION_UNSIGNED,
                                            coder);
@@ -177,18 +177,18 @@ cryptoWalletManagerSignTransactionETH (BRCryptoWalletManager manager,
     BRKeyClean(key);
 
     // Attach the signature
-    transactionSign (ethTransaction, signature);
+    ethTransactionSign (ethTransaction, signature);
 
     // RLP Encode the SIGNED transaction and then assign the hash.
-    item = transactionRlpEncode (ethTransaction,
+    item = ethTransactionRlpEncode (ethTransaction,
                                  ethNetwork,
                                  RLP_TYPE_TRANSACTION_SIGNED,
                                  coder);
-    transactionSetHash (ethTransaction,
+    ethTransactionSetHash (ethTransaction,
                         ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item)));
 
     pthread_mutex_lock (&transfer->lock);
-    transferETH->hash = cryptoHashCreateAsETH(transactionGetHash(ethTransaction));
+    transferETH->hash = cryptoHashCreateAsETH(ethTransactionGetHash(ethTransaction));
     pthread_mutex_unlock (&transfer->lock);
 
     rlpItemRelease(coder, item);
@@ -207,7 +207,7 @@ cryptoWalletManagerSignTransactionWithSeedETH (BRCryptoWalletManager manager,
     BREthereumAccount     ethAccount     = managerETH->account;
     BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
 
-    BRKey key = derivePrivateKeyFromSeed (seed, ethAccountGetAddressIndex (ethAccount, ethAddress));
+    BRKey key = ethAccountDerivePrivateKeyFromSeed (seed, ethAccountGetAddressIndex (ethAccount, ethAddress));
     
     return cryptoWalletManagerSignTransactionETH (manager,
                                                   wallet,
@@ -324,8 +324,8 @@ cryptoWalletManagerCreateTokenForCurrencyInternal (BRCryptoWalletManagerETH mana
     const char *desc = cryptoCurrencyGetUids (currency);
     unsigned int decimals = cryptoUnitGetBaseDecimalOffset(unitDefault);
 
-    BREthereumGas      defaultGasLimit = ethGasCreate(TOKEN_BRD_DEFAULT_GAS_LIMIT);
-    BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
+    BREthereumGas      defaultGasLimit = ethGasCreate(ETHEREUM_TOKEN_BRD_DEFAULT_GAS_LIMIT);
+    BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(ETHEREUM_TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
 
     if (NULL == token) {
         token = ethTokenCreate (address,
@@ -614,7 +614,7 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // if newly submitted?
 
     // TODO: Confirm we are not repeatedly creating transactions
-    BREthereumTransaction tid = transactionCreate (sourceAddress,
+    BREthereumTransaction tid = ethTransactionCreate (sourceAddress,
                                                    targetAddress,
                                                    ethEtherCreate(amount),
                                                    ethGasPriceCreate(ethEtherCreate(gasPrice)),
@@ -628,16 +628,16 @@ cryptoWalletManagerRecoverTransaction (BRCryptoWalletManager manager,
     // just created does not have: network nor signature.
     //
     // TODO: Confirm that BRPersistData does not overwrite the transaction's hash
-    transactionSetHash (tid, ethHashCreate (bundle->hash));
+    ethTransactionSetHash (tid, ethHashCreate (bundle->hash));
 
     uint64_t success = statusError ? 0 : 1;
-    BREthereumTransactionStatus status = transactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
+    BREthereumTransactionStatus status = ethTransactionStatusCreateIncluded (ethHashCreate (bundle->blockHash),
                                                                           bundle->blockNumber,
                                                                           bundle->blockTransactionIndex,
                                                                           bundle->blockTimestamp,
                                                                           ethGasCreate(gasUsed),
                                                                           success);
-    transactionSetStatus (tid, status);
+    ethTransactionSetStatus (tid, status);
 
     // If we had a `bcs` we might think about `bcsSignalTransaction(ewm->bcs, transaction);`
 #if defined (NEED_ETH_LES_SUPPORT)
@@ -691,20 +691,20 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
         };
 
         for (size_t index = 0; index < topicsCount; index++)
-            topics[index] = logTopicCreateFromString(topicsStr[index]);
+            topics[index] = ethLogTopicCreateFromString(topicsStr[index]);
 
         free (topicsStr[1]);
         free (topicsStr[2]);
     }
 
     // In general, log->data is arbitrary data.  In the case of an ERC20 token, log->data
-    // is a numeric value - for the transfer amount.  When parsing in logRlpDecode(),
+    // is a numeric value - for the transfer amount.  When parsing in ethLogRlpDecode(),
     // log->data is assigned with rlpDecodeBytes(coder, items[2]); we'll need the same
     // thing, somehow
 
     BRRlpItem  item  = rlpEncodeUInt256 (managerETH->coder, amount, 1);
 
-    BREthereumLog log = logCreate (ethAddressCreate (contract),
+    BREthereumLog log = ethLogCreate (ethAddressCreate (contract),
                                    topicsCount,
                                    topics,
                                    rlpItemGetDataSharedDontRelease (managerETH->coder, item));
@@ -712,16 +712,16 @@ cryptoWalletManagerRecoverLog (BRCryptoWalletManager manager,
 
     // Given {hash,logIndex}, initialize the log's identifier
     assert (logIndex <= (uint64_t) SIZE_MAX);
-    logInitializeIdentifier(log, ethHashCreate (bundle->hash), logIndex);
+    ethLogInitializeIdentifier(log, ethHashCreate (bundle->hash), logIndex);
 
     BREthereumTransactionStatus status =
-    transactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
+    ethTransactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
                                      bundle->blockNumber,
                                      bundle->blockTransactionIndex,
                                      bundle->blockTimestamp,
                                      ethGasCreate(gasUsed),
                                      1); // failed transactions (statusError) are skipped above
-    logSetStatus (log, status);
+    ethLogSetStatus (log, status);
 
     // If we had a `bcs` we might think about `bcsSignalLog(ewm->bcs, log);`
     //            ewmSignalLog(ewm, BCS_CALLBACK_LOG_UPDATED, log);
@@ -763,7 +763,7 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
                                                      ethAddressCreate(bundle->to),
                                                      (NULL != contract
                                                       ? ethAddressCreate(contract)
-                                                      : EMPTY_ADDRESS_INIT),
+                                                      : ETHEREUM_EMPTY_ADDRESS_INIT),
                                                      0, // contractdAssetIndex,
                                                      amount);
 
@@ -773,7 +773,7 @@ cryptoWalletManagerRecoverExchange (BRCryptoWalletManager manager,
 
     uint64_t success = (CRYPTO_TRANSFER_STATE_ERRORED == bundle->status) ? 0 : 1;
     BREthereumTransactionStatus status =
-    transactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
+    ethTransactionStatusCreateIncluded (ethHashCreate(bundle->blockHash),
                                      bundle->blockNumber,
                                      bundle->blockTransactionIndex,
                                      bundle->blockTimestamp,

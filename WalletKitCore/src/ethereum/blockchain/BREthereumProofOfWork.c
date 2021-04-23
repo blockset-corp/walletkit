@@ -35,7 +35,7 @@ struct BREthereumProofOfWorkStruct {
 };
 
 extern BREthereumProofOfWork
-proofOfWorkCreate (void) {
+ethProofOfWorkCreate (void) {
     BREthereumProofOfWork pow = calloc (1, sizeof (struct BREthereumProofOfWorkStruct));
 
     pow->foo = 0;
@@ -44,80 +44,80 @@ proofOfWorkCreate (void) {
 }
 
 extern void
-proofOfWorkRelease (BREthereumProofOfWork pow) {
+ethProofOfWorkRelease (BREthereumProofOfWork pow) {
     free (pow);
 }
 
 #if defined (INCLUDE_UNUSED_FUNCTIONS)
 static uint64_t
-powEpoch (BREthereumBlockHeader header) {
-    return blockHeaderGetNonce(header) / POW_EPOCH;
+ethPowEpoch (BREthereumBlockHeader header) {
+    return ethBlockHeaderGetNonce(header) / POW_EPOCH;
 }
 
 static uint64_t
-powPrime (uint64_t x, uint64_t y) {
+ethPowPrime (uint64_t x, uint64_t y) {
     return (0 == x % y
             ? x
-            : powPrime (x - 2 * y, y));
+            : ethPowPrime (x - 2 * y, y));
 }
 
 static uint64_t
-powDatasetSize (BREthereumBlockHeader header) {
-    return powPrime (POW_DATA_SET_INIT + POW_DATA_SET_GROWTH * powEpoch(header) - POW_MIX_BYTES,
+ethPowDatasetSize (BREthereumBlockHeader header) {
+    return ethPowPrime (POW_DATA_SET_INIT + POW_DATA_SET_GROWTH * ethPowEpoch(header) - POW_MIX_BYTES,
                      POW_MIX_BYTES);
 }
 
 static uint64_t
-powCacheSize (BREthereumBlockHeader header) {
-    return powPrime (POW_CACHE_INIT + POW_CACHE_GROWTH * powEpoch(header) - POW_HASH_BYTES,
+ethPowCacheSize (BREthereumBlockHeader header) {
+    return ethPowPrime (POW_CACHE_INIT + POW_CACHE_GROWTH * ethPowEpoch(header) - POW_HASH_BYTES,
                      POW_HASH_BYTES);
 }
 
 static BREthereumHash
-powSeedHashInternal (uint64_t number) {
+ethPowSeedHashInternal (uint64_t number) {
     BREthereumHash bytes;
 
     if (0 == number)
         memset (bytes.bytes, 0, 32);
     else
-        bytes = powSeedHashInternal(number - POW_EPOCH);
+        bytes = ethPowSeedHashInternal(number - POW_EPOCH);
 
     return hashCreateFromData ((BRRlpData) { 32, bytes.bytes });
 }
 
 static BREthereumHash
-powSeedHash (BREthereumBlockHeader header) {
-    return powSeedHashInternal(blockHeaderGetNumber(header));
+ethPowSeedHash (BREthereumBlockHeader header) {
+    return ethPowSeedHashInternal(ethBlockHeaderGetNumber(header));
 }
 
 static BREthereumData
-powLittleRMH (BREthereumData x, uint64_t i, uint64_t n) {
+ethPowLittleRMH (BREthereumData x, uint64_t i, uint64_t n) {
     return x;
 }
 
 static BREthereumData
-powBigRMH (BREthereumData x, uint64_t n) {
+ethPowBigRMH (BREthereumData x, uint64_t n) {
     for (uint64_t i = 0; i < n; i++)
-        powLittleRMH(x, i, n);
+        ethPowLittleRMH(x, i, n);
     return x;
 }
 
 static BREthereumData
-powCacheRounds (BREthereumData x, uint64_t y, uint64_t n) {
+ethPowCacheRounds (BREthereumData x, uint64_t y, uint64_t n) {
     return (0 == y
             ? x
             : (1 == y
-               ? powBigRMH (x, n)
-               : powCacheRounds (powBigRMH (x, n), y - 1, n)));
+               ? ethPowBigRMH (x, n)
+               : powCacheRounds (ethPowBigRMH (x, n), y - 1, n)));
 }
 
 static void
-powBigFNV (BREthereumData x,
+ethPowBigFNV (BREthereumData x,
            BREthereumData y) {
 }
 
 static BREthereumData
-powMix (BREthereumData m,
+ethPowMix (BREthereumData m,
         BREthereumData c,
         uint64_t i,
         uint64_t p) {
@@ -127,19 +127,19 @@ powMix (BREthereumData m,
 }
 
 static BREthereumData
-powParents (BREthereumData c,
+ethPowParents (BREthereumData c,
             uint64_t i,
             uint64_t p,
             BREthereumData m) {
     return (p < POW_PARENTS - 1
-            ? powParents(c, i, p + 1, powMix (m, c, i, p + 1))
-            : powMix (m, c, i, p + 1));
+            ? ethPowParents(c, i, p + 1, ethPowMix (m, c, i, p + 1))
+            : ethPowMix (m, c, i, p + 1));
 }
 
 static BREthereumData
-powDatasetItem (BREthereumData c,
+ethPowDatasetItem (BREthereumData c,
                 uint64_t i) {
-    return powParents(c, i, -i, (BREthereumData) { 0, NULL });
+    return ethPowParents(c, i, -i, (BREthereumData) { 0, NULL });
 }
 // On and On and On....
 #endif
@@ -163,5 +163,5 @@ proofOfWorkCompute (BREthereumProofOfWork pow,
 
     // For now, return values that allow subsequent use to succeed
     *n = UINT256_ZERO;
-    *m = blockHeaderGetMixHash (header);
+    *m = ethBlockHeaderGetMixHash (header);
 }

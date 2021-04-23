@@ -27,7 +27,7 @@ typedef struct {
     uint8_t bytes[ETHEREUM_BLOOM_FILTER_BYTES];
 } BREthereumBloomFilter;
 
-#define EMPTY_BLOOM_FILTER_INIT   ((const  BREthereumBloomFilter) { \
+#define ETHEREUM_EMPTY_BLOOM_FILTER_INIT   ((const BREthereumBloomFilter) { \
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0, \
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0, \
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0, \
@@ -50,40 +50,40 @@ typedef struct {
  * Create an empty BloomFilter
  */
 extern BREthereumBloomFilter
-bloomFilterCreateEmpty (void);
+ethBloomFilterCreateEmpty (void);
 
 /**
  * Create a BloomFilter from `hash`
  */
 extern BREthereumBloomFilter
-bloomFilterCreateHash (const BREthereumHash hash);
+ethBloomFilterCreateHash (const BREthereumHash hash);
 
 /**
  * Create a BloomFilter from `data` - computes the hash of `data`
  */
 extern BREthereumBloomFilter
-bloomFilterCreateData (const BRRlpData data);
+ethBloomFilterCreateData (const BRRlpData data);
 
 /**
  * Create a BloomFilter from `address` - computes the hash of `address`
  */
 extern BREthereumBloomFilter
-bloomFilterCreateAddress (const BREthereumAddress address);
+ethBloomFilterCreateAddress (const BREthereumAddress address);
 
 /**
  * Create a BloomFilter from a hex-encoded, non-0x-prefaced string.
  */
 extern BREthereumBloomFilter
-bloomFilterCreateString (const char *string);
+ethBloomFilterCreateString (const char *string);
 
 extern BREthereumBloomFilter
-bloomFilterOr (const BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
+ethBloomFilterOr (const BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
 
 extern void
-bloomFilterOrInPlace (BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
+ethBloomFilterOrInPlace (BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
 
 extern BREthereumBoolean
-bloomFilterEqual (const BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
+ethBloomFilterEqual (const BREthereumBloomFilter filter1, const BREthereumBloomFilter filter2);
 
 /**
  * Check if `other` is contained in `filter`.  Typically `filter` would be the bloom filter
@@ -97,19 +97,19 @@ bloomFilterEqual (const BREthereumBloomFilter filter1, const BREthereumBloomFilt
  * @returns TRUE if `other` matches `filter`; otherwise FALSE
  */
 extern BREthereumBoolean
-bloomFilterMatch (const BREthereumBloomFilter filter, const BREthereumBloomFilter other);
+ethBloomFilterMatch (const BREthereumBloomFilter filter, const BREthereumBloomFilter other);
 
 extern BRRlpItem
-bloomFilterRlpEncode(BREthereumBloomFilter filter, BRRlpCoder coder);
+ethBloomFilterRlpEncode(BREthereumBloomFilter filter, BRRlpCoder coder);
 
 extern BREthereumBloomFilter
-bloomFilterRlpDecode (BRRlpItem item, BRRlpCoder coder);
+ethBloomFilterRlpDecode (BRRlpItem item, BRRlpCoder coder);
 
 /**
  * Return a hex-encode string representation of `filter`.
  */
 extern char *
-bloomFilterAsString (BREthereumBloomFilter filter);
+ethBloomFilterAsString (BREthereumBloomFilter filter);
 
 #ifdef __cplusplus
 }

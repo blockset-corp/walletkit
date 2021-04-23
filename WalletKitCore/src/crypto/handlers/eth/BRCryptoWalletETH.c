@@ -182,13 +182,13 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
     // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.
     BREthereumTransaction ethTransaction =
-    transactionCreate (ethSourceAddress,
+    ethTransactionCreate (ethSourceAddress,
                        cryptoTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
                        cryptoTransferProvideOriginatingAmount (ethToken, value),
                        ethFeeBasisGetGasPrice(ethFeeBasis),
                        gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
                        data,
-                       TRANSACTION_NONCE_IS_NOT_ASSIGNED);
+                       ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED);
 
     free (data);
 
@@ -206,7 +206,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                                            target,
                                                            state,
                                                            walletETH->ethAccount,
-                                                           TRANSACTION_NONCE_IS_NOT_ASSIGNED,
+                                                           ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED,
                                                            ethTransaction);
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     cryptoTransferStateGive (state);
@@ -242,7 +242,7 @@ cryptoWalletGetAddressesForRecoveryETH (BRCryptoWallet wallet) {
 extern BRCryptoTransferETH
 cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH walletETH,
                                         BREthereumHash hash) {
-    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, ETHEREUM_EMPTY_HASH_INIT))) return NULL;
 
     for (int i = 0; i < array_count(walletETH->base.transfers); i++) {
         BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (walletETH->base.transfers[i]);
@@ -256,12 +256,12 @@ cryptoWalletLookupTransferByIdentifier (BRCryptoWalletETH walletETH,
 extern BRCryptoTransferETH
 cryptoWalletLookupTransferByOriginatingHash (BRCryptoWalletETH walletETH,
                                              BREthereumHash hash) {
-    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, EMPTY_HASH_INIT))) return NULL;
+    if (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, ETHEREUM_EMPTY_HASH_INIT))) return NULL;
 
     for (int i = 0; i < array_count(walletETH->base.transfers); i++) {
         BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (walletETH->base.transfers[i]);
         BREthereumTransaction transaction = transferETH->originatingTransaction;
-        if (NULL != transaction && ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, transactionGetHash (transaction))))
+        if (NULL != transaction && ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (hash, ethTransactionGetHash (transaction))))
             return transferETH;
     }
     return NULL;
@@ -295,14 +295,14 @@ cryptoWalletAnnounceTransferETH (BRCryptoWallet wallet,
             case CRYPTO_TRANSFER_SENT:
                 sent += 1;
             updateNonce:
-                if (TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
+                if (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
                     nonce = MAX (nonce, transferETH->nonce);
                 break;
         }
 #else
 
         if (CRYPTO_TRANSFER_RECEIVED != transferETH->base.direction &&
-            TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
+            ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
             nonce = MAX (nonce, transferETH->nonce);
 #endif
     }

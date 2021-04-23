@@ -54,40 +54,40 @@ typedef struct {
     BREthereumHash codeHash;
 } BREthereumAccountState;
 
-#define EMPTY_ACCOUNT_STATE_INIT    ((BREthereumAccountState) { \
-    0, EMPTY_ETHER_INIT, EMPTY_HASH_INIT, EMPTY_HASH_INIT \
+#define ETHEREUM_EMPTY_ACCOUNT_STATE_INIT    ((BREthereumAccountState) { \
+    0, ETHEREUM_EMPTY_ETHER_INIT, ETHEREUM_EMPTY_HASH_INIT, ETHEREUM_EMPTY_HASH_INIT \
 })
 
 extern BREthereumAccountState
-accountStateCreate (uint64_t nonce,
+ethAccountStateCreate (uint64_t nonce,
                     BREthereumEther balance,
                     BREthereumHash storageRoot,
                     BREthereumHash codeHash);
     
 extern BREthereumAccountState
-accountStateCreateEmpty (void);
+ethAccountStateCreateEmpty (void);
     
 extern uint64_t
-accountStateGetNonce (BREthereumAccountState state);
+ethAccountStateGetNonce (BREthereumAccountState state);
 
 extern BREthereumEther
-accountStateGetBalance (BREthereumAccountState state);
+ethAccountStateGetBalance (BREthereumAccountState state);
 
 extern BREthereumHash
-accountStateGetStorageRoot (BREthereumAccountState state);
+ethAccountStateGetStorageRoot (BREthereumAccountState state);
 
 extern BREthereumHash
-accountStateGetCodeHash (BREthereumAccountState state);
+ethAccountStateGetCodeHash (BREthereumAccountState state);
 
 extern BREthereumBoolean
-accountStateEqual (BREthereumAccountState s1,
+ethAccountStateEqual (BREthereumAccountState s1,
                    BREthereumAccountState s2);
     
 extern BRRlpItem
-accountStateRlpEncode (BREthereumAccountState state, BRRlpCoder coder);
+ethAccountStateRlpEncode (BREthereumAccountState state, BRRlpCoder coder);
 
 extern BREthereumAccountState
-accountStateRlpDecode (BRRlpItem item, BRRlpCoder coder);
+ethAccountStateRlpDecode (BRRlpItem item, BRRlpCoder coder);
 
 #ifdef __cplusplus
 }

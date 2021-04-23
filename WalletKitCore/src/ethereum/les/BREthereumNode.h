@@ -61,7 +61,7 @@ typedef enum {
 } BREthereumNodeType;
 
 extern const char *
-nodeTypeGetName (BREthereumNodeType type);
+ethNodeTypeGetName (BREthereumNodeType type);
 
 /**
  * A Node has a priority as one of LCL, BRD or DIS.  When comparing nodes, such as for the LES
@@ -176,15 +176,15 @@ typedef struct {
 
 /** Fills description, returns description */
 extern const char *
-nodeStateDescribe (const BREthereumNodeState *state,
+ethNodeStateDescribe (const BREthereumNodeState *state,
                    char description[128]);
 
 extern BRRlpItem
-nodeStateEncode (const BREthereumNodeState *state,
+ethNodeStateEncode (const BREthereumNodeState *state,
                  BRRlpCoder coder);
 
 extern BREthereumNodeState
-nodeStateDecode (BRRlpItem item,
+ethNodeStateDecode (BRRlpItem item,
                  BRRlpCoder coder);
 
 // connect
@@ -204,7 +204,7 @@ nodeStateDecode (BRRlpItem item,
  * @return
  */
 extern BREthereumNode // add 'message id offset'?
-nodeCreate (BREthereumNodePriority priority,
+ethNodeCreate (BREthereumNodePriority priority,
             BREthereumNetwork network,
             OwnershipKept const BREthereumNodeEndpoint local,
             OwnershipGiven BREthereumNodeEndpoint remote,
@@ -216,104 +216,104 @@ nodeCreate (BREthereumNodePriority priority,
             BREthereumBoolean handleSync);
 
 extern void
-nodeRelease (BREthereumNode node);
+ethNodeRelease (BREthereumNode node);
 
 static inline void
-nodeReleaseForSet (void *ignore, void *item) {
-    nodeRelease ((BREthereumNode) item);
+ethNodeReleaseForSet (void *ignore, void *item) {
+    ethNodeRelease ((BREthereumNode) item);
 }
 
 extern void
-nodeClean (BREthereumNode node);
+ethNodeClean (BREthereumNode node);
 
 extern BREthereumBoolean
-nodeUpdatedLocalStatus (BREthereumNode node,
+ethNodeUpdatedLocalStatus (BREthereumNode node,
                         BREthereumNodeEndpointRoute route);
 
 extern BREthereumNodeType
-nodeGetType (BREthereumNode node);
+ethNodeGetType (BREthereumNode node);
 
 extern BREthereumNodePriority
-nodeGetPriority (BREthereumNode node);
+ethNodeGetPriority (BREthereumNode node);
 
 extern BREthereumNodeState
-nodeConnect (BREthereumNode node,
+ethNodeConnect (BREthereumNode node,
              BREthereumNodeEndpointRoute route,
              time_t now);
 
 extern BREthereumNodeState
-nodeDisconnect (BREthereumNode node,
+ethNodeDisconnect (BREthereumNode node,
                 BREthereumNodeEndpointRoute route,
                 BREthereumNodeState stateToAnnounce,
                 BREthereumBoolean returnToAvailable);
 
 extern int
-nodeUpdateDescriptors (BREthereumNode node,
+ethNodeUpdateDescriptors (BREthereumNode node,
                        BREthereumNodeEndpointRoute route,
                        fd_set *recv,   // read
                        fd_set *send);  // write
 
 extern BREthereumNodeState
-nodeProcess (BREthereumNode node,
+ethNodeProcess (BREthereumNode node,
              BREthereumNodeEndpointRoute route,
              time_t now,
              fd_set *recv,   // read
              fd_set *send);  // write
 
 extern BREthereumBoolean
-nodeCanHandleProvision (BREthereumNode node,
+ethNodeCanHandleProvision (BREthereumNode node,
                         BREthereumProvision provision);
 
 extern void
-nodeHandleProvision (BREthereumNode node,
+ethNodeHandleProvision (BREthereumNode node,
                      BREthereumProvision provision);
 
 extern BRArrayOf(BREthereumProvision)
-nodeUnhandleProvisions (BREthereumNode node);
+ethNodeUnhandleProvisions (BREthereumNode node);
 
 extern const BREthereumNodeEndpoint
-nodeGetRemoteEndpoint (BREthereumNode node);
+ethNodeGetRemoteEndpoint (BREthereumNode node);
 
 extern const BREthereumNodeEndpoint
-nodeGetLocalEndpoint (BREthereumNode node);
+ethNodeGetLocalEndpoint (BREthereumNode node);
 
 /** Compare nodes based on their priority and DIS neighbor distance */
 extern BREthereumComparison
-nodeCompare (BREthereumNode node1,
+ethNodeCompare (BREthereumNode node1,
              BREthereumNode node2);
 
 extern int
-nodeHasState (BREthereumNode node,
+ethNodeHasState (BREthereumNode node,
               BREthereumNodeEndpointRoute route,
               BREthereumNodeStateType type);
 
 extern BREthereumNodeState
-nodeGetState (BREthereumNode node,
+ethNodeGetState (BREthereumNode node,
               BREthereumNodeEndpointRoute route);
 
 extern void
-nodeSetStateInitial (BREthereumNode node,
+ethNodeSetStateInitial (BREthereumNode node,
                      BREthereumNodeEndpointRoute route,
                      BREthereumNodeState state);
 
 extern BREthereumBoolean
-nodeGetDiscovered (BREthereumNode node);
+ethNodeGetDiscovered (BREthereumNode node);
 
 extern void
-nodeSetDiscovered (BREthereumNode node,
+ethNodeSetDiscovered (BREthereumNode node,
                    BREthereumBoolean discovered);
 
 extern BREthereumBoolean
-nodeHandleTime (BREthereumNode node,
+ethNodeHandleTime (BREthereumNode node,
                 BREthereumNodeEndpointRoute route,
                 time_t now,
                 BREthereumBoolean tryPing);
 
 extern size_t
-nodeHashValue (const void *node);
+ethNodeHashValue (const void *node);
 
 extern int
-nodeHashEqual (const void *node1,
+ethNodeHashEqual (const void *node1,
                const void *node2);
 
 /// MARK: - Node Message Send/Recv
@@ -324,7 +324,7 @@ typedef enum {
 } BREthereumNodeStatus;
 
 extern BREthereumNodeStatus
-nodeDiscover (BREthereumNode node,
+ethNodeDiscover (BREthereumNode node,
               const BREthereumNodeEndpoint endpoint);
 
 typedef struct {
@@ -340,7 +340,7 @@ typedef struct {
 } BREthereumNodeMessageResult;
 
 extern void
-nodeShow (BREthereumNode node);
+ethNodeShow (BREthereumNode node);
 
 #ifdef __cplusplus
 }

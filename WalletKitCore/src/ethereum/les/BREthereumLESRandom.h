@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-
-
 typedef struct BREthereumLESRandomRecord* BREthereumLESRandomContext;
 
 /**
@@ -60,7 +58,6 @@ extern void randomGenPriKey(BREthereumLESRandomContext ctx, BRKey* key);
 * @param out - a reference to UInt256 that will contain the random data 
  **/
 extern void randomGenUInt256(BREthereumLESRandomContext ctx, UInt256* out);
-
 
 #ifdef __cplusplus
 }

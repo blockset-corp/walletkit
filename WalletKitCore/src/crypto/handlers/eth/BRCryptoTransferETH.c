@@ -118,7 +118,7 @@ cryptoTransferReleaseETH (BRCryptoTransfer transfer) {
     cryptoHashGive(transferETH->hash);
 
     if (NULL != transferETH->originatingTransaction)
-        transactionRelease(transferETH->originatingTransaction);
+        ethTransactionRelease(transferETH->originatingTransaction);
 }
 
 static BRCryptoTransferDirection
@@ -144,7 +144,7 @@ extern const BREthereumHash
 cryptoTransferGetIdentifierETH (BRCryptoTransferETH transfer) {
     return (NULL != transfer->hash
             ? cryptoHashAsETH(transfer->hash)
-            : EMPTY_HASH_INIT);
+            : ETHEREUM_EMPTY_HASH_INIT);
 }
 
 static BRCryptoHash
@@ -158,8 +158,8 @@ cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer) {
     // If we have an originatingTransaction - becasue we created the transfer - then return its
     // hash.  Otherwise use tEMPTY_HASH_INIT
     return  (NULL != transfer->originatingTransaction
-             ? transactionGetHash (transfer->originatingTransaction)
-             : EMPTY_HASH_INIT);
+             ? ethTransactionGetHash (transfer->originatingTransaction)
+             : ETHEREUM_EMPTY_HASH_INIT);
 }
 
 extern uint8_t *
@@ -171,12 +171,12 @@ cryptoTransferSerializeETH (BRCryptoTransfer transfer,
 
     if (NULL == transferETH->originatingTransaction ||
         (CRYPTO_TRUE == requireSignature &&
-         ETHEREUM_BOOLEAN_FALSE == transactionIsSigned (transferETH->originatingTransaction))) {
+         ETHEREUM_BOOLEAN_FALSE == ethTransactionIsSigned (transferETH->originatingTransaction))) {
         *serializationCount = 0;
         return NULL;
     }
 
-    BRRlpData data = transactionGetRlpData (transferETH->originatingTransaction,
+    BRRlpData data = ethTransactionGetRlpData (transferETH->originatingTransaction,
                                             cryptoNetworkAsETH(network),
                                             (CRYPTO_TRUE == requireSignature
                                              ? RLP_TYPE_TRANSACTION_SIGNED
@@ -195,15 +195,15 @@ cryptoTransferGetBytesForFeeEstimateETH (BRCryptoTransfer transfer,
 
     if (NULL == ethTransaction) { *bytesCount = 0; return NULL; }
 
-    BRRlpData data = transactionGetRlpData (ethTransaction,
+    BRRlpData data = ethTransactionGetRlpData (ethTransaction,
                                             cryptoNetworkAsETH(network),
                                             RLP_TYPE_TRANSACTION_UNSIGNED);
-    BREthereumAddress ethSource = transactionGetSourceAddress (ethTransaction);
+    BREthereumAddress ethSource = ethTransactionGetSourceAddress (ethTransaction);
 
-    *bytesCount = ADDRESS_BYTES + data.bytesCount;
+    *bytesCount = ETHEREUM_ADDRESS_BYTES + data.bytesCount;
     uint8_t *bytes = malloc (*bytesCount);
-    memcpy (&bytes[0],             ethSource.bytes, ADDRESS_BYTES);
-    memcpy (&bytes[ADDRESS_BYTES], data.bytes,      data.bytesCount);
+    memcpy (&bytes[0],             ethSource.bytes, ETHEREUM_ADDRESS_BYTES);
+    memcpy (&bytes[ETHEREUM_ADDRESS_BYTES], data.bytes,      data.bytesCount);
 
     rlpDataRelease(data);
 

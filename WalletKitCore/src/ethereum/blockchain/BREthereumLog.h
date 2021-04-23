@@ -21,13 +21,13 @@ extern "C" {
 
 /// MARK: - Log Topic
 
-#define LOG_TOPIC_BYTES_COUNT   32
+#define ETHEREUM_LOG_TOPIC_BYTES_COUNT   32
 
 /**
  * An Ethereum Log Topic is 32 bytes of arbitary data.
  */
 typedef struct {
-    uint8_t bytes[LOG_TOPIC_BYTES_COUNT];
+    uint8_t bytes[ETHEREUM_LOG_TOPIC_BYTES_COUNT];
 } BREthereumLogTopic;
 
 /**
@@ -37,27 +37,27 @@ typedef struct {
  * @return
  */
 extern BREthereumLogTopic
-logTopicCreateFromString (const char *string);
+ethLogTopicCreateFromString (const char *string);
 
 extern BREthereumBloomFilter
-logTopicGetBloomFilter (BREthereumLogTopic topic);
+ethLogTopicGetBloomFilter (BREthereumLogTopic topic);
 
 extern BREthereumBloomFilter
-logTopicGetBloomFilterAddress (BREthereumAddress address);
+ethLogTopicGetBloomFilterAddress (BREthereumAddress address);
 
 extern BREthereumBoolean
-logTopicMatchesAddress (BREthereumLogTopic topic,
+ethLogTopicMatchesAddress (BREthereumLogTopic topic,
                         BREthereumAddress address);
 
 typedef struct {
-    char chars[2 /* 0x */ + 2 * LOG_TOPIC_BYTES_COUNT + 1];
+    char chars[2 /* 0x */ + 2 * ETHEREUM_LOG_TOPIC_BYTES_COUNT + 1];
 } BREthereumLogTopicString;
 
 extern BREthereumLogTopicString
-logTopicAsString (BREthereumLogTopic topic);
+ethLogTopicAsString (BREthereumLogTopic topic);
 
 extern BREthereumAddress
-logTopicAsAddress (BREthereumLogTopic topic);
+ethLogTopicAsAddress (BREthereumLogTopic topic);
 
 
 /// MARK: - Log
@@ -72,21 +72,21 @@ logTopicAsAddress (BREthereumLogTopic topic);
 typedef struct BREthereumLogRecord *BREthereumLog;
 
 extern BREthereumLog
-logCreate (BREthereumAddress address,
+ethLogCreate (BREthereumAddress address,
            unsigned int topicsCount,
            BREthereumLogTopic *topics,
            BRRlpData data);
 
 
 extern void
-logInitializeIdentifier (BREthereumLog log,
+ethLogInitializeIdentifier (BREthereumLog log,
                          BREthereumHash transactionHash,
                          size_t transactionReceiptIndex);
 
 /**
  * An identifier for an unknown receipt index.
  */
-#define LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN       (SIZE_MAX)
+#define ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN       (SIZE_MAX)
 
 /**
  * Extract the log's identifier components.  A Log is identified by the transaction hash that
@@ -103,89 +103,89 @@ logInitializeIdentifier (BREthereumLog log,
  * @return TRUE if recorded in a block, FALSE otherwise.
  */
 extern BREthereumBoolean
-logExtractIdentifier (BREthereumLog log,
+ethLogExtractIdentifier (BREthereumLog log,
                       BREthereumHash *transactionHash,
                       size_t *transactionReceiptIndex);
 
-// Will be EMPTY_HASH_INIT if no identifier
+// Will be ETHEREUM_EMPTY_HASH_INIT if no identifier
 extern BREthereumHash
-logGetIdentifier (BREthereumLog log);
+ethLogGetIdentifier (BREthereumLog log);
 
 extern BREthereumHash
-logGetHash (BREthereumLog log);
+ethLogGetHash (BREthereumLog log);
 
 extern BREthereumAddress
-logGetAddress (BREthereumLog log);
+ethLogGetAddress (BREthereumLog log);
 
 extern BREthereumBoolean
-logHasAddress (BREthereumLog log,
+ethLogHasAddress (BREthereumLog log,
                BREthereumAddress address);
 
 extern size_t
-logGetTopicsCount (BREthereumLog log);
+ethLogGetTopicsCount (BREthereumLog log);
 
 extern  BREthereumLogTopic
-logGetTopic (BREthereumLog log, size_t index);
+ethLogGetTopic (BREthereumLog log, size_t index);
 
 extern BRRlpData
-logGetData (BREthereumLog log);
+ethLogGetData (BREthereumLog log);
 
 extern BRRlpData
-logGetDataShared (BREthereumLog log);
+ethLogGetDataShared (BREthereumLog log);
     
 extern BREthereumBoolean
-logMatchesAddress (BREthereumLog log,
+ethLogMatchesAddress (BREthereumLog log,
                    BREthereumAddress address,
                    BREthereumBoolean topicsOnly);
 
 extern BREthereumComparison
-logCompare (BREthereumLog l1,
+ethLogCompare (BREthereumLog l1,
             BREthereumLog l2);
 
 extern BREthereumTransactionStatus
-logGetStatus (BREthereumLog log);
+ethLogGetStatus (BREthereumLog log);
 
 extern void
-logSetStatus (BREthereumLog log,
+ethLogSetStatus (BREthereumLog log,
               BREthereumTransactionStatus status);
 
 extern BREthereumBoolean
-logIsConfirmed (BREthereumLog log);
+ethLogIsConfirmed (BREthereumLog log);
 
 extern BREthereumBoolean
-logIsErrored (BREthereumLog log);
+ethLogIsErrored (BREthereumLog log);
 
 // Support BRSet
 extern size_t
-logHashValue (const void *h);
+ethLogHashValue (const void *h);
 
 // Support BRSet
 extern int
-logHashEqual (const void *h1, const void *h2);
+ethLogHashEqual (const void *h1, const void *h2);
 
 extern BREthereumLog
-logRlpDecode (BRRlpItem item,
+ethLogRlpDecode (BRRlpItem item,
               BREthereumRlpType type,
               BRRlpCoder coder);
 /**
  * [QUASI-INTERNAL - used by BREthereumBlock]
  */
 extern BRRlpItem
-logRlpEncode(BREthereumLog log,
+ethLogRlpEncode(BREthereumLog log,
              BREthereumRlpType type,
              BRRlpCoder coder);
 
 extern void
-logRelease (BREthereumLog log);
+ethLogRelease (BREthereumLog log);
 
 extern void
 logsRelease (BRArrayOf(BREthereumLog) logs);
 
 extern void
-logReleaseForSet (void *ignore, void *item);
+ethLogReleaseForSet (void *ignore, void *item);
     
 extern BREthereumLog
-logCopy (BREthereumLog log);
+ethLogCopy (BREthereumLog log);
 
 #ifdef __cplusplus
 }

@@ -31,26 +31,26 @@ extern "C" {
 typedef struct BREthereumNodeConfigRecord *BREthereumNodeConfig;
 
 extern void
-nodeConfigRelease (BREthereumNodeConfig config);
+ethNodeConfigRelease (BREthereumNodeConfig config);
 
 extern BREthereumHash
-nodeConfigGetHash (BREthereumNodeConfig config);
+ethNodeConfigGetHash (BREthereumNodeConfig config);
 
 extern BRRlpItem
-nodeConfigEncode (BREthereumNodeConfig config,
+ethNodeConfigEncode (BREthereumNodeConfig config,
                   BRRlpCoder coder);
 
 extern BREthereumNodeConfig
-nodeConfigDecode (BRRlpItem item,
+ethNodeConfigDecode (BRRlpItem item,
                   BRRlpCoder coder);
 
 // Support BRSet
 extern size_t
-nodeConfigHashValue (const void *h);
+ethNodeConfigHashValue (const void *h);
 
 // Support BRSet
 extern int
-nodeConfigHashEqual (const void *h1, const void *h2);
+ethNodeConfigHashEqual (const void *h1, const void *h2);
 
 
 /*!
@@ -64,43 +64,43 @@ typedef struct BREthereumLESRecord *BREthereumLES;
 /**
  * An opaque type for a Node.  Only used in the announce callback to identify what node produced
  * the result.  This NodeReference is actually a pointer but we override that with some specific
- * values, see NODE_REFERENCE_* below, to represent some special behaviors.
+ * values, see LES_NODE_REFERENCE_* below, to represent some special behaviors.
  */
 typedef void *BREthereumNodeReference;
 
 /** Reserved reference range */
-#define NODE_REFERENCE_BASE   ((BREthereumNodeReference)  0)
-#define NODE_REFERENCE_LIMIT  ((BREthereumNodeReference) 20)
+#define LES_NODE_REFERENCE_BASE   ((BREthereumNodeReference)  0)
+#define LES_NODE_REFERENCE_LIMIT  ((BREthereumNodeReference) 20)
 
 /** References to select a specific node index */
-#define NODE_REFERENCE_0      ((BREthereumNodeReference) 0)
-#define NODE_REFERENCE_1      ((BREthereumNodeReference) 1)
-#define NODE_REFERENCE_2      ((BREthereumNodeReference) 2)
-#define NODE_REFERENCE_3      ((BREthereumNodeReference) 3)
-#define NODE_REFERENCE_4      ((BREthereumNodeReference) 4)
+#define LES_NODE_REFERENCE_0      ((BREthereumNodeReference) 0)
+#define LES_NODE_REFERENCE_1      ((BREthereumNodeReference) 1)
+#define LES_NODE_REFERENCE_2      ((BREthereumNodeReference) 2)
+#define LES_NODE_REFERENCE_3      ((BREthereumNodeReference) 3)
+#define LES_NODE_REFERENCE_4      ((BREthereumNodeReference) 4)
 
 /** Convenient macros for reference bounds */
-#define NODE_REFERENCE_MIN  NODE_REFERENCE_0
-#define NODE_REFERENCE_MAX  NODE_REFERENCE_4
+#define LES_NODE_REFERENCE_MIN  LES_NODE_REFERENCE_0
+#define LES_NODE_REFERENCE_MAX  LES_NODE_REFERENCE_4
 
-#if 5 < LES_ACTIVE_NODE_COUNT  // 5 <= 1 + NODE_REFERENCE_4
-#error Not enough NODE_REFERENCE declarations
+#if 5 < LES_ACTIVE_NODE_COUNT  // 5 <= 1 + LES_NODE_REFERENCE_4
+#error Not enough LES_NODE_REFERENCE declarations
 #endif
 
 /** References to select an arbitrary index */
-#define NODE_REFERENCE_NIL    ((BREthereumNodeReference) 10)
-#define NODE_REFERENCE_ANY    ((BREthereumNodeReference) 11)
-#define NODE_REFERENCE_ALL    ((BREthereumNodeReference) 12)
+#define LES_NODE_REFERENCE_NIL    ((BREthereumNodeReference) 10)
+#define LES_NODE_REFERENCE_ANY    ((BREthereumNodeReference) 11)
+#define LES_NODE_REFERENCE_ALL    ((BREthereumNodeReference) 12)
 
 /** Predicate to check if `n` is a 'generic' reference */
-#define NODE_REFERENCE_IS_GENERIC(n)                        \
-  (NODE_REFERENCE_BASE <= ((BREthereumNodeReference) n) &&  \
-   ((BREthereumNodeReference) n) < NODE_REFERENCE_LIMIT)
+#define LES_NODE_REFERENCE_IS_GENERIC(n)                        \
+  (LES_NODE_REFERENCE_BASE <= ((BREthereumNodeReference) n) &&  \
+   ((BREthereumNodeReference) n) < LES_NODE_REFERENCE_LIMIT)
 
 /** Predicate to check if `n` is an 'arbitrary' node */
-#define NODE_REFERENCE_IS_ARBITRARY(n)                       \
-    (NODE_REFERENCE_NIL <= ((BREthereumNodeReference) n) &&  \
-    ((BREthereumNodeReference) n) <= NODE_REFERENCE_ALL)
+#define LES_NODE_REFERENCE_IS_ARBITRARY(n)                       \
+    (LES_NODE_REFERENCE_NIL <= ((BREthereumNodeReference) n) &&  \
+    ((BREthereumNodeReference) n) <= LES_NODE_REFERENCE_ALL)
 
 /*!
  *@typedef BREthereumLESStatus

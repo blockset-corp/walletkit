@@ -41,24 +41,24 @@ struct BREthereumTransactionReceiptRecord {
 };
 
 extern uint64_t
-transactionReceiptGetGasUsed (BREthereumTransactionReceipt receipt) {
+ethTransactionReceiptGetGasUsed (BREthereumTransactionReceipt receipt) {
     return receipt->gasUsed;
 }
 
 extern size_t
-transactionReceiptGetLogsCount (BREthereumTransactionReceipt receipt) {
+ethTransactionReceiptGetLogsCount (BREthereumTransactionReceipt receipt) {
     return array_count(receipt->logs);
 }
 
 extern BREthereumLog
-transactionReceiptGetLog (BREthereumTransactionReceipt receipt, size_t index) {
+ethTransactionReceiptGetLog (BREthereumTransactionReceipt receipt, size_t index) {
     return (index < array_count(receipt->logs)
             ? receipt->logs[index]
             : NULL);
 }
 
 extern BREthereumBloomFilter
-transactionReceiptGetBloomFilter (BREthereumTransactionReceipt receipt) {
+ethTransactionReceiptGetBloomFilter (BREthereumTransactionReceipt receipt) {
     return receipt->bloomFilter;
 }
 
@@ -66,22 +66,22 @@ transactionReceiptGetBloomFilter (BREthereumTransactionReceipt receipt) {
 // Bloom Filter Matches
 //
 extern BREthereumBoolean
-transactionReceiptMatch (BREthereumTransactionReceipt receipt,
+ethTransactionReceiptMatch (BREthereumTransactionReceipt receipt,
                          BREthereumBloomFilter filter) {
-    return bloomFilterMatch(receipt->bloomFilter, filter);
+    return ethBloomFilterMatch(receipt->bloomFilter, filter);
 }
 
 extern BREthereumBoolean
-transactionReceiptMatchAddress (BREthereumTransactionReceipt receipt,
+ethTransactionReceiptMatchAddress (BREthereumTransactionReceipt receipt,
                                 BREthereumAddress address) {
-    return transactionReceiptMatch(receipt, logTopicGetBloomFilterAddress(address));
+    return ethTransactionReceiptMatch(receipt, ethLogTopicGetBloomFilterAddress(address));
 }
 
 extern void
-transactionReceiptRelease (BREthereumTransactionReceipt receipt) {
+ethTransactionReceiptRelease (BREthereumTransactionReceipt receipt) {
     if (NULL != receipt) {
         for (size_t index = 0; index < array_count(receipt->logs); index++)
-            logRelease(receipt->logs[index]);
+            ethLogRelease(receipt->logs[index]);
         array_free(receipt->logs);
         rlpDataRelease(receipt->stateRoot);
         free (receipt);
@@ -92,19 +92,19 @@ transactionReceiptRelease (BREthereumTransactionReceipt receipt) {
 // Transaction Receipt Logs - RLP Encode/Decode
 //
 static BRRlpItem
-transactionReceiptLogsRlpEncode (BREthereumTransactionReceipt log,
+ethTransactionReceiptLogsRlpEncode (BREthereumTransactionReceipt log,
                                  BRRlpCoder coder) {
     size_t itemsCount = array_count(log->logs);
     BRRlpItem items[itemsCount];
     
     for (int i = 0; i < itemsCount; i++)
-        items[i] = logRlpEncode(log->logs[i], RLP_TYPE_NETWORK, coder);
+        items[i] = ethLogRlpEncode(log->logs[i], RLP_TYPE_NETWORK, coder);
     
     return rlpEncodeListItems(coder, items, itemsCount);
 }
 
 static BREthereumLog *
-transactionReceiptLogsRlpDecode (BRRlpItem item,
+ethTransactionReceiptLogsRlpDecode (BRRlpItem item,
                                  BRRlpCoder coder) {
     size_t itemsCount = 0;
     const BRRlpItem *items = rlpDecodeList(coder, item, &itemsCount);
@@ -113,7 +113,7 @@ transactionReceiptLogsRlpDecode (BRRlpItem item,
     array_new(logs, itemsCount);
 
     for (int i = 0; i < itemsCount; i++) {
-        BREthereumLog log = logRlpDecode(items[i], RLP_TYPE_NETWORK, coder);
+        BREthereumLog log = ethLogRlpDecode(items[i], RLP_TYPE_NETWORK, coder);
         array_add(logs, log);
     }
 
@@ -124,7 +124,7 @@ transactionReceiptLogsRlpDecode (BRRlpItem item,
 // Transaction Receipt - RLP Decode
 //
 extern BREthereumTransactionReceipt
-transactionReceiptRlpDecode (BRRlpItem item,
+ethTransactionReceiptRlpDecode (BRRlpItem item,
                              BRRlpCoder coder) {
     BREthereumTransactionReceipt receipt = calloc (1, sizeof(struct BREthereumTransactionReceiptRecord));
     memset (receipt, 0, sizeof(struct BREthereumTransactionReceiptRecord));
@@ -135,8 +135,8 @@ transactionReceiptRlpDecode (BRRlpItem item,
     
     receipt->stateRoot = rlpDecodeBytes(coder, items[0]);
     receipt->gasUsed = rlpDecodeUInt64(coder, items[1], 0);
-    receipt->bloomFilter = bloomFilterRlpDecode(items[2], coder);
-    receipt->logs = transactionReceiptLogsRlpDecode(items[3], coder);
+    receipt->bloomFilter = ethBloomFilterRlpDecode(items[2], coder);
+    receipt->logs = ethTransactionReceiptLogsRlpDecode(items[3], coder);
     
     return receipt;
 }
@@ -145,20 +145,20 @@ transactionReceiptRlpDecode (BRRlpItem item,
 // Transaction Receipt - RLP Encode
 //
 extern BRRlpItem
-transactionReceiptRlpEncode(BREthereumTransactionReceipt receipt,
+ethTransactionReceiptRlpEncode(BREthereumTransactionReceipt receipt,
                             BRRlpCoder coder) {
     BRRlpItem items[4];
     
     items[0] = rlpEncodeBytes(coder, receipt->stateRoot.bytes, receipt->stateRoot.bytesCount);
     items[1] = rlpEncodeUInt64(coder, receipt->gasUsed, 0);
-    items[2] = bloomFilterRlpEncode(receipt->bloomFilter, coder);
-    items[3] = transactionReceiptLogsRlpEncode(receipt, coder);
+    items[2] = ethBloomFilterRlpEncode(receipt->bloomFilter, coder);
+    items[3] = ethTransactionReceiptLogsRlpEncode(receipt, coder);
     
     return rlpEncodeListItems(coder, items, 4);
 }
 
 extern BRArrayOf (BREthereumTransactionReceipt)
-transactionReceiptDecodeList (BRRlpItem item,
+ethTransactionReceiptDecodeList (BRRlpItem item,
                               BRRlpCoder coder) {
     size_t itemCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemCount);
@@ -166,16 +166,16 @@ transactionReceiptDecodeList (BRRlpItem item,
     BRArrayOf (BREthereumTransactionReceipt) receipts;
     array_new (receipts, itemCount);
     for (size_t index = 0; index < itemCount; index++)
-        array_add (receipts, transactionReceiptRlpDecode (items[index], coder));
+        array_add (receipts, ethTransactionReceiptRlpDecode (items[index], coder));
     return receipts;
 }
 
 extern void
-transactionReceiptsRelease (BRArrayOf(BREthereumTransactionReceipt) receipts) {
+ethTransactionReceiptsRelease (BRArrayOf(BREthereumTransactionReceipt) receipts) {
     if (NULL != receipts) {
         size_t count = array_count(receipts);
         for (size_t index = 0; index < count; index++)
-            transactionReceiptRelease (receipts[index]);
+            ethTransactionReceiptRelease (receipts[index]);
         array_free (receipts);
     }
 }

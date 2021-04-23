@@ -51,7 +51,7 @@ typedef enum {
 } BREthereumTransactionStatusType;
 
 extern const char *
-transactionGetStatusTypeName (BREthereumTransactionStatusType type);
+ethTransactionGetStatusTypeName (BREthereumTransactionStatusType type);
 
 /**
  * Extracted from observation of Geth error reports, from Geth source code, and from Parity
@@ -71,10 +71,10 @@ typedef enum {
 } BREthereumTransactionErrorType;
 
 extern const char *
-transactionGetErrorName (BREthereumTransactionErrorType type);
+ethTransactionGetErrorName (BREthereumTransactionErrorType type);
 
 /** In `Status` we'll include a 'reason' string; limit the string to filling out the union. */
-#define TRANSACTION_STATUS_DETAIL_BYTES   \
+#define ETHEREUM_TRANSACTION_STATUS_DETAIL_BYTES   \
     (sizeof (BREthereumGas) + sizeof (BREthereumHash) + 3 * sizeof(uint64_t) - sizeof (BREthereumTransactionErrorType))
 
 /**
@@ -97,18 +97,18 @@ typedef struct BREthereumTransactionStatusLESRecord {
 
         struct {
             BREthereumTransactionErrorType type;
-            char detail[TRANSACTION_STATUS_DETAIL_BYTES + 1];
+            char detail[ETHEREUM_TRANSACTION_STATUS_DETAIL_BYTES + 1];
         } errored;
     } u;
 } BREthereumTransactionStatus;
 
-#define TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN      (0)
+#define ETHEREUM_TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN      (0)
 
 extern BREthereumTransactionStatus
-transactionStatusCreate (BREthereumTransactionStatusType type);
+ethTransactionStatusCreate (BREthereumTransactionStatusType type);
 
 extern BREthereumTransactionStatus
-transactionStatusCreateIncluded (BREthereumHash blockHash,
+ethTransactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t blockNumber,
                                  uint64_t transactionIndex,
                                  uint64_t blockTimestamp,
@@ -116,17 +116,17 @@ transactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t success);
 
 extern BREthereumTransactionStatus
-transactionStatusCreateErrored (BREthereumTransactionErrorType type,
+ethTransactionStatusCreateErrored (BREthereumTransactionErrorType type,
                                 const char *detail);
 
 static inline BREthereumBoolean
-transactionStatusHasType (const BREthereumTransactionStatus *status,
+ethTransactionStatusHasType (const BREthereumTransactionStatus *status,
                           BREthereumTransactionStatusType type) {
     return AS_ETHEREUM_BOOLEAN(status->type == type);
 }
 
 extern int
-transactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
+ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
                                  BREthereumHash *blockHash,
                                  uint64_t *blockNumber,
                                  uint64_t *blockTransactionIndex,
@@ -134,24 +134,24 @@ transactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
                                  BREthereumGas *gas);
 
 extern BREthereumBoolean
-transactionStatusEqual (BREthereumTransactionStatus ts1,
+ethTransactionStatusEqual (BREthereumTransactionStatus ts1,
                         BREthereumTransactionStatus ts2);
 
 extern BREthereumComparison
-transactionStatusCompare (const BREthereumTransactionStatus *ts1,
+ethTransactionStatusCompare (const BREthereumTransactionStatus *ts1,
                           const BREthereumTransactionStatus *ts2);
 
 extern BREthereumTransactionStatus
-transactionStatusRLPDecode (BRRlpItem item,
+ethTransactionStatusRLPDecode (BRRlpItem item,
                             const char *reasons[],
                             BRRlpCoder coder);
 
 extern BRRlpItem
-transactionStatusRLPEncode (BREthereumTransactionStatus status,
+ethTransactionStatusRLPEncode (BREthereumTransactionStatus status,
                             BRRlpCoder coder);
 
 extern BRArrayOf (BREthereumTransactionStatus)
-transactionStatusDecodeList (BRRlpItem item,
+ethTransactionStatusDecodeList (BRRlpItem item,
                              const char *reasons[],
                              BRRlpCoder coder);
 

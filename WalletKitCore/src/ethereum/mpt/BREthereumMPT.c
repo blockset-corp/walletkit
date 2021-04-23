@@ -38,14 +38,14 @@ struct BREthereumMPTNodeRecord {
 };
 
 static BREthereumMPTNode
-mptNodeCreate (BREthereumMPTNodeType type) {
+ethMptNodeCreate (BREthereumMPTNodeType type) {
     BREthereumMPTNode node = calloc (1, sizeof (struct BREthereumMPTNodeRecord));
     node->type = type;
     return node;
 }
 
 static void
-mptNodeRelease (BREthereumMPTNode node) {
+ethMptNodeRelease (BREthereumMPTNode node) {
     if (NULL == node) return;  // On RLP coding error during 'nodes' processing
     switch (node->type) {
         case MPT_NODE_LEAF:
@@ -65,7 +65,7 @@ mptNodeRelease (BREthereumMPTNode node) {
 }
 
 static BRRlpData
-mptNodeGetValue (BREthereumMPTNode node,
+ethMptNodeGetValue (BREthereumMPTNode node,
                  BREthereumBoolean *found) {
     switch (node->type) {
         case MPT_NODE_LEAF:
@@ -83,7 +83,7 @@ mptNodeGetValue (BREthereumMPTNode node,
 }
 
 static BREthereumData
-mptNodeGetPath (BREthereumMPTNode node) {
+ethMptNodeGetPath (BREthereumMPTNode node) {
     switch (node->type) {
         case MPT_NODE_LEAF:      return node->u.leaf.path;
         case MPT_NODE_EXTENSION: return node->u.extension.path;
@@ -92,11 +92,11 @@ mptNodeGetPath (BREthereumMPTNode node) {
 }
 
 static size_t
-mptNodeConsume (BREthereumMPTNode node, uint8_t *key) {
+ethMptNodeConsume (BREthereumMPTNode node, uint8_t *key) {
     switch (node->type) {
         case MPT_NODE_LEAF:
         case MPT_NODE_EXTENSION: {
-            BREthereumData path = mptNodeGetPath(node);
+            BREthereumData path = ethMptNodeGetPath(node);
             for (size_t index = 0; index < path.count; index++)
                 if (key[index] != path.bytes[index])
                     return 0;
@@ -106,7 +106,7 @@ mptNodeConsume (BREthereumMPTNode node, uint8_t *key) {
         case MPT_NODE_BRANCH: {
             // We'll consume one byte if the node's key is not an empty hash
             return (ETHEREUM_BOOLEAN_IS_TRUE (ethHashEqual (node->u.branch.keys[key[0]],
-                                                         EMPTY_HASH_INIT))
+                                                         ETHEREUM_EMPTY_HASH_INIT))
                     ? 0
                     : 1);
         }
@@ -119,7 +119,7 @@ mptNodeConsume (BREthereumMPTNode node, uint8_t *key) {
 #define NIBBLE_GET(x, upper) (0x0f & ((x) >> ((upper) ? 4 : 0)))
 
 static BREthereumMPTNode
-mptNodeDecode (BRRlpItem item,
+ethMptNodeDecode (BRRlpItem item,
                BRRlpCoder coder) {
     BREthereumMPTNode node = NULL;
 
@@ -167,7 +167,7 @@ mptNodeDecode (BRRlpItem item,
                 *pathBytes++ = NIBBLE_LOWER (byte); // !padded);
             }
 
-            node = mptNodeCreate(type);
+            node = ethMptNodeCreate(type);
             switch (type) {
                 case MPT_NODE_LEAF:
                     node->u.leaf.path = path;
@@ -186,12 +186,12 @@ mptNodeDecode (BRRlpItem item,
         }
 
         case 17: {
-            node = mptNodeCreate(MPT_NODE_BRANCH);
+            node = ethMptNodeCreate(MPT_NODE_BRANCH);
             for (size_t index = 0; index < 16; index++) {
                 BRRlpData data = rlpItemGetDataSharedDontRelease (coder, items[index]);
                 // Either a hash (0x<32 bytes>) or empty (0x)
                 node->u.branch.keys[index] = (0 == data.bytesCount || 1 == data.bytesCount
-                                              ? EMPTY_HASH_INIT
+                                              ? ETHEREUM_EMPTY_HASH_INIT
                                               : ethHashRlpDecode(items[index], coder));
             }
             node->u.branch.value = rlpItemGetData (coder, items[16]);
@@ -208,32 +208,32 @@ struct BREthereumMPTNodePathRecord {
 };
 
 static BREthereumMPTNodePath
-mptNodePathCreate (BRArrayOf(BREthereumMPTNode) nodes) {
+ethMptNodePathCreate (BRArrayOf(BREthereumMPTNode) nodes) {
     BREthereumMPTNodePath path = malloc (sizeof (struct BREthereumMPTNodePathRecord));
     path->nodes = nodes;
     return path;
 }
 
 extern void
-mptNodePathRelease (BREthereumMPTNodePath path) {
+ethMptNodePathRelease (BREthereumMPTNodePath path) {
     for (size_t index = 0; index < array_count (path->nodes); index++)
-        mptNodeRelease (path->nodes[index]);
+        ethMptNodeRelease (path->nodes[index]);
     array_free (path->nodes);
     free (path);
 }
 
 extern void
-mptNodePathsRelease (BRArrayOf(BREthereumMPTNodePath) paths) {
+ethMptNodePathsRelease (BRArrayOf(BREthereumMPTNodePath) paths) {
     if (NULL != paths) {
         size_t count = array_count(paths);
         for (size_t index = 0; index < count; index++)
-            mptNodePathRelease(paths[index]);
+            ethMptNodePathRelease(paths[index]);
         array_free (paths);
     }
 }
 
 extern BREthereumMPTNodePath
-mptNodePathDecode (BRRlpItem item,
+ethMptNodePathDecode (BRRlpItem item,
                    BRRlpCoder coder) {
     size_t itemsCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
@@ -241,13 +241,13 @@ mptNodePathDecode (BRRlpItem item,
     BRArrayOf (BREthereumMPTNode) nodes;
     array_new (nodes, itemsCount);
     for (size_t index = 0; index < itemsCount; index++)
-        array_add (nodes, mptNodeDecode (items[index], coder));
+        array_add (nodes, ethMptNodeDecode (items[index], coder));
 
-    return mptNodePathCreate(nodes);
+    return ethMptNodePathCreate(nodes);
 }
 
 extern BREthereumMPTNodePath
-mptNodePathDecodeFromBytes (BRRlpItem item,
+ethMptNodePathDecodeFromBytes (BRRlpItem item,
                             BRRlpCoder coder) {
     size_t itemsCount = 0;
     BRRlpItem *items = (BRRlpItem *) rlpDecodeList(coder, item, &itemsCount);
@@ -259,7 +259,7 @@ mptNodePathDecodeFromBytes (BRRlpItem item,
         // and then RLP encode the bytes (but this time as RLP items.... got it??).
         BRRlpData data = rlpDecodeBytesSharedDontRelease (coder, items[index]);
         BRRlpItem item = rlpDataGetItem(coder, data);
-        array_add (nodes, mptNodeDecode (item, coder));
+        array_add (nodes, ethMptNodeDecode (item, coder));
 #if defined (MPT_SHOW_PROOF_NODES)
         rlpShowItem (coder, item, "MPTN");
 #endif
@@ -268,11 +268,11 @@ mptNodePathDecodeFromBytes (BRRlpItem item,
 
     // TODO: If any above item is decoded improperly, then `nodes` will have NULL values.
 
-    return mptNodePathCreate(nodes);
+    return ethMptNodePathCreate(nodes);
 }
 
 extern BREthereumMPTNode
-mptNodePathGetNode (BREthereumMPTNodePath path,
+ethMptNodePathGetNode (BREthereumMPTNodePath path,
                     BREthereumData key) {
     size_t  keyEncodedCount = 2 * key.count;
     uint8_t keyEncoded [keyEncodedCount];
@@ -289,7 +289,7 @@ mptNodePathGetNode (BREthereumMPTNodePath path,
     // Walk the nodes, consuming the key if possible.
     for (size_t index = 0; index < array_count (path->nodes); index++) {
         BREthereumMPTNode node = path->nodes[index];
-        size_t keyEncodedIncrement = mptNodeConsume (node, &keyEncoded[keyEncodedIndex]);
+        size_t keyEncodedIncrement = ethMptNodeConsume (node, &keyEncoded[keyEncodedIndex]);
 
         // nothing consumed, definitively node missed
         if (0 == keyEncodedIncrement)
@@ -315,25 +315,25 @@ mptNodePathGetNode (BREthereumMPTNodePath path,
 }
 
 extern BREthereumBoolean
-mptNodePathIsValid (BREthereumMPTNodePath path,
+ethMptNodePathIsValid (BREthereumMPTNodePath path,
                     BREthereumData key) {
-    return AS_ETHEREUM_BOOLEAN (NULL != mptNodePathGetNode (path, key));
+    return AS_ETHEREUM_BOOLEAN (NULL != ethMptNodePathGetNode (path, key));
 }
 
 extern BRRlpData
-mptNodePathGetValue (BREthereumMPTNodePath path,
+ethMptNodePathGetValue (BREthereumMPTNodePath path,
                       BREthereumData key,
                       BREthereumBoolean *found) {
-    BREthereumMPTNode node = mptNodePathGetNode (path, key);
+    BREthereumMPTNode node = ethMptNodePathGetNode (path, key);
     if (NULL == node) {
         *found = ETHEREUM_BOOLEAN_FALSE;
         return (BRRlpData) { 0, NULL };
     }
-    else return rlpDataCopy (mptNodeGetValue (node, found));
+    else return rlpDataCopy (ethMptNodeGetValue (node, found));
 }
 
 extern BREthereumData
-mptNodePathGetKeyFragment (BREthereumMPTNodePath path) {
+ethMptNodePathGetKeyFragment (BREthereumMPTNodePath path) {
     BREthereumData result = { 64, malloc(64) };
     size_t index = 0;
 
@@ -342,7 +342,7 @@ mptNodePathGetKeyFragment (BREthereumMPTNodePath path) {
         switch (node->type) {
             case MPT_NODE_LEAF:
             case MPT_NODE_EXTENSION: {
-                BREthereumData key = mptNodeGetPath (node);
+                BREthereumData key = ethMptNodeGetPath (node);
                 memcpy (&result.bytes[index], key.bytes, key.count);
                 index += key.count;
                 break;
@@ -359,7 +359,7 @@ mptNodePathGetKeyFragment (BREthereumMPTNodePath path) {
 }
 
 extern BREthereumData
-mptKeyGetFromUInt64 (uint64_t value) {
+ethMptKeyGetFromUInt64 (uint64_t value) {
     size_t count = sizeof (uint64_t);
     BREthereumData data = { count, malloc (count) };
 
@@ -374,7 +374,7 @@ mptKeyGetFromUInt64 (uint64_t value) {
 }
 
 extern BREthereumData
-mptKeyGetFromHash (BREthereumHash hash) {
+ethMptKeyGetFromHash (BREthereumHash hash) {
     size_t count = sizeof (hash.bytes);
     BREthereumData data = { count, malloc(count) };
 

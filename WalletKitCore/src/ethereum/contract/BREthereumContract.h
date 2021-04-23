@@ -11,6 +11,9 @@
 #ifndef BR_Ethereum_Contract_h
 #define BR_Ethereum_Contract_h
 
+#include "../base/BREthereumBase.h"
+#include "../util/BRUtil.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,9 +70,6 @@ ethContractLookupEventForTopic (BREthereumContract contract, const char *topic);
 //
 // Contract / Function
 //
-#include "../base/BREthereumLogic.h"
-#include "../util/BRUtil.h"
-
 private_extern UInt256
 ethFunctionERC20TransferDecodeAmount (BREthereumContractFunction function,
                                       const char *data,

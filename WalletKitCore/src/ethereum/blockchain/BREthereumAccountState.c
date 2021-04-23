@@ -13,39 +13,39 @@
 #include "BREthereumAccountState.h"
 
 extern BREthereumAccountState
-accountStateCreateEmpty (void) {
-    return EMPTY_ACCOUNT_STATE_INIT;
+ethAccountStateCreateEmpty (void) {
+    return ETHEREUM_EMPTY_ACCOUNT_STATE_INIT;
 }
 
 extern uint64_t
-accountStateGetNonce (BREthereumAccountState state) {
+ethAccountStateGetNonce (BREthereumAccountState state) {
     return state.nonce;
 }
 
 extern BREthereumEther
-accountStateGetBalance (BREthereumAccountState state) {
+ethAccountStateGetBalance (BREthereumAccountState state) {
     return state.balance;
 }
 
 extern BREthereumHash
-accountStateGetStorageRoot (BREthereumAccountState state) {
+ethAccountStateGetStorageRoot (BREthereumAccountState state) {
     return state.storageRoot;
 }
 
 extern BREthereumHash
-accountStateGetCodeHash (BREthereumAccountState state) {
+ethAccountStateGetCodeHash (BREthereumAccountState state) {
     return state.codeHash;
 }
 
 extern BREthereumBoolean
-accountStateEqual (BREthereumAccountState s1,
+ethAccountStateEqual (BREthereumAccountState s1,
                    BREthereumAccountState s2) {
     return AS_ETHEREUM_BOOLEAN(s1.nonce == s2.nonce &&
                                ETHEREUM_BOOLEAN_IS_TRUE(ethEtherIsEQ(s1.balance, s2.balance)));
 }
 
 extern BREthereumAccountState
-accountStateCreate (uint64_t nonce,
+ethAccountStateCreate (uint64_t nonce,
                     BREthereumEther balance,
                     BREthereumHash storageRoot,
                     BREthereumHash codeHash) {
@@ -61,7 +61,7 @@ accountStateCreate (uint64_t nonce,
 }
 
 extern BRRlpItem
-accountStateRlpEncode(BREthereumAccountState state, BRRlpCoder coder) {
+ethAccountStateRlpEncode(BREthereumAccountState state, BRRlpCoder coder) {
     BRRlpItem items[4];
 
     items[0] = rlpEncodeUInt64(coder, state.nonce, 0);
@@ -73,7 +73,7 @@ accountStateRlpEncode(BREthereumAccountState state, BRRlpCoder coder) {
 }
 
 extern BREthereumAccountState
-accountStateRlpDecode (BRRlpItem item, BRRlpCoder coder) {
+ethAccountStateRlpDecode (BRRlpItem item, BRRlpCoder coder) {
     BREthereumAccountState state;
 
     size_t itemsCount = 0;

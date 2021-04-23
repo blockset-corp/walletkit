@@ -50,7 +50,7 @@ typedef enum {
     TETHER = 10
 } BREthereumEtherUnit;
 
-#define NUMBER_OF_ETHER_UNITS  (1 + TETHER)
+#define ETHEREUM_NUMBER_OF_ETHER_UNITS  (1 + TETHER)
 
 /**
  * Ether is the intrinsic currency of Ethereum.  It is represented as an integer value in WEI
@@ -60,7 +60,7 @@ typedef struct BREthereumEtherStruct {
     UInt256 valueInWEI;
 } BREthereumEther;
 
-#define EMPTY_ETHER_INIT  ((const BREthereumEther) { UINT256_ZERO })
+#define ETHEREUM_EMPTY_ETHER_INIT  ((const BREthereumEther) { UINT256_ZERO })
     
 extern BREthereumEther
 ethEtherCreateZero (void);

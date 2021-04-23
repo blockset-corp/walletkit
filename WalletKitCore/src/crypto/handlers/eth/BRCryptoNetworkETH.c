@@ -97,7 +97,7 @@ static BRCryptoBlockNumber
 cryptoNetworkGetBlockNumberAtOrBeforeTimestampETH (BRCryptoNetwork network,
                                                    BRCryptoTimestamp timestamp) {
     BRCryptoNetworkETH networkETH = cryptoNetworkCoerce (network);
-    const BREthereumBlockCheckpoint *checkpoint = blockCheckpointLookupByTimestamp (networkETH->eth, timestamp);
+    const BREthereumBlockCheckpoint *checkpoint = ethBlockCheckpointLookupByTimestamp (networkETH->eth, timestamp);
     return (NULL == checkpoint ? 0 : checkpoint->number);
 }
 

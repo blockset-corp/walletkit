@@ -214,7 +214,7 @@ extern const unsigned int bcsEventTypesCount;
 #define BCS_FOR_CHAIN(bcs, block)            \
     for (BREthereumBlock block = bcs->chain; \
          NULL != block;                      \
-         block = blockGetNext(block))
+         block = ethBlockGetNext(block))
 
 //
 // Submit Transaction

@@ -54,7 +54,7 @@ cryptoAddressCreateFromStringAsETH (const char *ethAddress) {
     assert (ethAddress);
     return cryptoAddressCreateAsETH (ETHEREUM_BOOLEAN_TRUE == ethAddressValidateString (ethAddress)
                                      ? ethAddressCreate (ethAddress)
-                                     : EMPTY_ADDRESS_INIT);
+                                     : ETHEREUM_EMPTY_ADDRESS_INIT);
 }
 
 static void

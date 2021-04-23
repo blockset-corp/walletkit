@@ -23,17 +23,17 @@ extern "C" {
 
 typedef enum {
     NODE_ROUTE_UDP,
-    NODE_ROUTE_TCP
+    ETHEREUM_NODE_ROUTE_TCP
 } BREthereumNodeEndpointRoute;
 
-#define NUMBER_OF_NODE_ROUTES  (1 + NODE_ROUTE_TCP)
+#define ETHEREUM_NUMBER_OF_NODE_ROUTES  (1 + ETHEREUM_NODE_ROUTE_TCP)
 
 #define FOR_EACH_ROUTE( route ) \
-    for (BREthereumNodeEndpointRoute route = NODE_ROUTE_UDP; route <= NODE_ROUTE_TCP; route++)
+    for (BREthereumNodeEndpointRoute route = NODE_ROUTE_UDP; route <= ETHEREUM_NODE_ROUTE_TCP; route++)
 
 static inline const char *
-nodeEndpointRouteGetName (BREthereumNodeEndpointRoute route) {
-    return (NODE_ROUTE_TCP == route ? "TCP" : "UDP");
+ethNodeEndpointRouteGetName (BREthereumNodeEndpointRoute route) {
+    return (ETHEREUM_NODE_ROUTE_TCP == route ? "TCP" : "UDP");
 }
 
 /**
@@ -58,10 +58,10 @@ nodeEndpointRouteGetName (BREthereumNodeEndpointRoute route) {
  typedef struct BREthereumNodeEndpointRecord  *BREthereumNodeEndpoint;
 
 extern BREthereumNodeEndpoint
-nodeEndpointCreate (BREthereumDISNeighbor dis);
+ethNodeEndpointCreate (BREthereumDISNeighbor dis);
 
 extern BREthereumNodeEndpoint
-nodeEndpointCreateLocal (BREthereumLESRandomContext randomContext);
+ethNodeEndpointCreateLocal (BREthereumLESRandomContext randomContext);
 
 /**
  * Create a Node Endpoint from `enode`.  If `enode` cannot be parsed then NULL is returned.
@@ -71,57 +71,57 @@ nodeEndpointCreateLocal (BREthereumLESRandomContext randomContext);
  * @return a new endpoint or NULL
  */
 extern BREthereumNodeEndpoint
-nodeEndpointCreateEnode (const char *enode);
+ethNodeEndpointCreateEnode (const char *enode);
 
 extern void
-nodeEndpointRelease (OwnershipGiven BREthereumNodeEndpoint endpoint);
+ethNodeEndpointRelease (OwnershipGiven BREthereumNodeEndpoint endpoint);
 
 extern BREthereumHash
-nodeEndpointGetHash (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetHash (BREthereumNodeEndpoint endpoint);
 
 extern const char *
-nodeEndpointGetHostname (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetHostname (BREthereumNodeEndpoint endpoint);
 
 extern int // remote.dis.node.portTCP)
-nodeEndpointGetPort (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointGetPort (BREthereumNodeEndpoint endpoint,
                      BREthereumNodeEndpointRoute route);
 
 extern int
-nodeEndpointGetSocket (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointGetSocket (BREthereumNodeEndpoint endpoint,
                        BREthereumNodeEndpointRoute route);
 
 extern BREthereumDISNeighbor
-nodeEndpointGetDISNeighbor (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetDISNeighbor (BREthereumNodeEndpoint endpoint);
 
 extern BRKey *
-nodeEndpointGetKey (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetKey (BREthereumNodeEndpoint endpoint);
 
 extern BRKey *
-nodeEndpointGetEphemeralKey (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetEphemeralKey (BREthereumNodeEndpoint endpoint);
 
 extern UInt256 *
-nodeEndpointGetNonce (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetNonce (BREthereumNodeEndpoint endpoint);
 
 extern BREthereumP2PMessageHello
-nodeEndpointGetHello (const BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetHello (const BREthereumNodeEndpoint endpoint);
 
 extern void
-nodeEndpointSetHello (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointSetHello (BREthereumNodeEndpoint endpoint,
                       OwnershipGiven BREthereumP2PMessageHello hello);
 
 extern void
-nodeEndpointDefineHello (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointDefineHello (BREthereumNodeEndpoint endpoint,
                          const char *name,
                          OwnershipGiven BRArrayOf(BREthereumP2PCapability) capabilities);
 
 extern void
-nodeEndpointShowHello (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointShowHello (BREthereumNodeEndpoint endpoint);
 
 /**
  * Return TRUE if `endpoint` has a capability with `name`
  */
 extern BREthereumBoolean
-nodeEndpointHasHelloCapability (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointHasHelloCapability (BREthereumNodeEndpoint endpoint,
                                 const char *name,
                                 uint32_t version);
 
@@ -129,54 +129,54 @@ nodeEndpointHasHelloCapability (BREthereumNodeEndpoint endpoint,
  * Return the first `source` capability matched by `target`
  */
 extern const BREthereumP2PCapability *
-nodeEndpointHasHelloMatchingCapability (BREthereumNodeEndpoint source,
+ethNodeEndpointHasHelloMatchingCapability (BREthereumNodeEndpoint source,
                                         BREthereumNodeEndpoint target);
 
 extern BREthereumP2PMessageStatus
-nodeEndpointGetStatus (const BREthereumNodeEndpoint endpoint);
+ethNodeEndpointGetStatus (const BREthereumNodeEndpoint endpoint);
 
 extern void
-nodeEndpointSetStatus (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointSetStatus (BREthereumNodeEndpoint endpoint,
                        OwnershipGiven BREthereumP2PMessageStatus status);
 
 extern void
-nodeEndpointShowStatus (BREthereumNodeEndpoint endpoint);
+ethNodeEndpointShowStatus (BREthereumNodeEndpoint endpoint);
 
 /// MARK: - Open/Close, Send/Recv
 
 extern int
-nodeEndpointOpen (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointOpen (BREthereumNodeEndpoint endpoint,
                   BREthereumNodeEndpointRoute route);
 
 extern int
-nodeEndpointClose (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointClose (BREthereumNodeEndpoint endpoint,
                    BREthereumNodeEndpointRoute route,
                    int needShutdown);
 
 extern int
-nodeEndpointIsOpen (const BREthereumNodeEndpoint endpoint,
+ethNodeEndpointIsOpen (const BREthereumNodeEndpoint endpoint,
                     BREthereumNodeEndpointRoute route);
 
 extern int
-nodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
                       BREthereumNodeEndpointRoute route,
                       uint8_t *bytes,
                       size_t *bytesCount,
                       int needBytesCount);
 
 extern int
-nodeEndpointSendData (BREthereumNodeEndpoint endpoint,
+ethNodeEndpointSendData (BREthereumNodeEndpoint endpoint,
                       BREthereumNodeEndpointRoute route,
                       uint8_t *bytes,
                       size_t bytesCount);
 
 // Support BRSet
 extern size_t
-nodeEndpointHashValue (const void *h);
+ethNodeEndpointHashValue (const void *h);
 
 // Support BRSet
 extern int
-nodeEndpointHashEqual (const void *h1, const void *h2);
+ethNodeEndpointHashEqual (const void *h1, const void *h2);
 
 //
 // Enodes

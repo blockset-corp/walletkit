@@ -126,10 +126,10 @@ ethAccountSignBytes(BREthereumAccount account,
 // Support (quasi-private)
 //
 extern UInt512
-deriveSeedFromPaperKey (const char *paperKey);
+ethAccountDeriveSeedFromPaperKey (const char *paperKey);
 
 extern BRKey
-derivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
+ethAccountDerivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
 
 
 //

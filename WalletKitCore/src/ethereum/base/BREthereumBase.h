@@ -18,6 +18,10 @@
 #include "ethereum/util/BRUtil.h"
 #include "support/rlp/BRRlp.h"
 
+#if !defined(private_extern)
+#define private_extern  extern
+#endif
+
 // All 'base'
 #include "BREthereumLogic.h"
 #include "BREthereumEther.h"
@@ -73,7 +77,7 @@ typedef enum {
 typedef unsigned int BREthereumSyncInterestSet;
 
 static inline bool // 1/true if match; 0/false if not
-syncInterestMatch(BREthereumSyncInterestSet interests,
+ethSyncInterestMatch(BREthereumSyncInterestSet interests,
                   BREthereumSyncInterest interest) {
     return interests & interest;
 }

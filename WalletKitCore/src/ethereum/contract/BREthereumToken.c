@@ -301,8 +301,8 @@ return "static struct BREthereumTokenRecord tokens[] = \n{" +
         ${token.decimal},
         "${token.colors[0]}",
         "${token.colors[1]}",
-        { TOKEN_BRD_DEFAULT_GAS_LIMIT },
-        { { { .u64 = {TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64, 0, 0, 0}}}},
+        { ETHEREUM_TOKEN_BRD_DEFAULT_GAS_LIMIT },
+        { { { .u64 = {ETHEREUM_TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64, 0, 0, 0}}}},
         1
     }`})
 .join (",\n") + "\n};"

@@ -143,7 +143,7 @@ bcsHandleProvisionDispatcher (BREventHandler ignore,
 
 static void
 bcsHandleProvisionDestroyer (BREthereumHandleProvisionEvent *event) {
-    // provisionResultRelease(event->result);
+    // ethProvisionResultRelease(event->result);
 }
 
 static BREventType handleProvisionEventType = {
@@ -181,7 +181,7 @@ bcsHandleTransactionDispatcher (BREventHandler ignore,
 
 static void
 bcsHandleTransactionDestroyer (BREthereumHandleTransactionEvent *event) {
-    transactionRelease(event->transaction);
+    ethTransactionRelease(event->transaction);
 }
 
 static BREventType handleTransactionEventType = {
@@ -218,7 +218,7 @@ bcsHandleLogDispatcher (BREventHandler ignore,
 
 static void
 bcsHandleLogDestroyer (BREthereumHandleLogEvent *event) {
-    logRelease(event->log);
+    ethLogRelease(event->log);
 }
 
 static BREventType handleLogEventType = {
@@ -256,7 +256,7 @@ static void
 bcsHandleNodesDestroyer (BREthereumHandleNodesEvent *event) {
     if (NULL != event->nodes) {
         for (size_t index = 0; index < array_count(event->nodes); index++)
-            nodeConfigRelease(event->nodes[index]);
+            ethNodeConfigRelease(event->nodes[index]);
         array_free(event->nodes);
     }
 }
@@ -299,7 +299,7 @@ bcsSyncHandleProvisionDispatcher (BREventHandler ignore,
 static void
 bcsSyncHandleProvisionDestroyer (BREthereumHandleProvisionEvent *event) {
     // syncRangeRelease (event->range);
-    // provisionResultRelease(event->result);
+    // ethProvisionResultRelease(event->result);
 }
 
 static BREventType handleSyncProvisionEventType = {
