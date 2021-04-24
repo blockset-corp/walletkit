@@ -353,7 +353,7 @@ static void
 handleBRBCashAddrDecode (void) {
     char *bCashAddr = "77047ecdd5ae988f30d68e828dad668439ad3e5ebba05680089c80f0be82d889";
     char bitcoinAddr36 [37];
-    BRBCashAddrDecode(bitcoinAddr36, bCashAddr);
+    bchAddrDecode(bitcoinAddr36, bCashAddr);
 }
 
 //

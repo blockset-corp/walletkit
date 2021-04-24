@@ -33,15 +33,11 @@ extern "C" {
     
 #define BCASH_FORKID 0x40
 
-extern const BRBitcoinChainParams *BRBCashParams;
-extern const BRBitcoinChainParams *BRBCashTestNetParams;
-
-static inline const BRBitcoinChainParams *btcChainParamsGetBitcash (int mainnet) {
-    return mainnet ? BRBCashParams : BRBCashTestNetParams;
-}
+extern const BRBitcoinChainParams *bchMainNetParams;
+extern const BRBitcoinChainParams *bchTestNetParams;
 
 static inline int btcChainParamsIsBitcash (const BRBitcoinChainParams *params) {
-    return BRBCashParams == params || BRBCashTestNetParams == params;
+    return bchMainNetParams == params || bchTestNetParams == params;
 }
 
 // aserti3-2d difficulty algorithm: https://upgradespecs.bitcoincashnode.org/2020-11-15-asert/

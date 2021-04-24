@@ -90,7 +90,7 @@ cryptoNetworkCreateBCH (BRCryptoNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? BRBCashParams : BRBCashTestNetParams)
+        (isMainnet ? bchMainNetParams : bchTestNetParams)
     };
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),
@@ -121,7 +121,7 @@ cryptoNetworkCreateBSV (BRCryptoNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     BRCryptoNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? BRBSVParams : BRBSVTestNetParams)
+        (isMainnet ? bsvMainNetParams : bsvTestNetParams)
     };
 
     return cryptoNetworkAllocAndInit (sizeof (struct BRCryptoNetworkBTCRecord),

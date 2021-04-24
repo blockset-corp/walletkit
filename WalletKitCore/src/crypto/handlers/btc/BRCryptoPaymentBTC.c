@@ -85,7 +85,7 @@ static void cryptoPaymentProtocolRequestBitPayBuilderAddOutputBTC (BRCryptoPayme
             }
         } else if (btcChainParamsIsBitcash (chainParams)) {
             char cashAddr[36];
-            if (0 != BRBCashAddrDecode (cashAddr, address) && !BRAddressIsValid(chainParams->addrParams, address)) {
+            if (0 != bchAddrDecode (cashAddr, address) && !BRAddressIsValid(chainParams->addrParams, address)) {
                 BRBitcoinTxOutput output = {0};
                 btcTxOutputSetAddress (&output, chainParams->addrParams, cashAddr);
                 output.amount = satoshis;

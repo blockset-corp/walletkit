@@ -69,7 +69,7 @@ cryptoAddressCreateFromStringAsBCH (BRAddressParams params, const char *bchAddre
     assert (bchAddress);
 
     char btcAddr[36];
-    return (0 != BRBCashAddrDecode(btcAddr, bchAddress) && !BRAddressIsValid(params, bchAddress)
+    return (0 != bchAddrDecode(btcAddr, bchAddress) && !BRAddressIsValid(params, bchAddress)
             ? cryptoAddressCreateAsBTC (CRYPTO_NETWORK_TYPE_BCH,
                                         BRAddressFill(params, btcAddr))
             : NULL);
@@ -112,7 +112,7 @@ cryptoAddressAsStringBCH (BRCryptoAddress address) {
     BRCryptoAddressBTC addressBCH = cryptoAddressCoerce (address, CRYPTO_NETWORK_TYPE_BCH);
 
     char *result = malloc (55);
-    BRBCashAddrEncode(result, addressBCH->addr.s);
+    bchAddrEncode(result, addressBCH->addr.s);
     return result;
 }
 
