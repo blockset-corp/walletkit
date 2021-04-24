@@ -12,7 +12,7 @@
 #include "hedera/BRHederaBase.h"
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoHashP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include "support/util/BRHex.h"
 
 static uint64_t

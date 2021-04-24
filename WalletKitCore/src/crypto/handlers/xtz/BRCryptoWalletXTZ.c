@@ -15,7 +15,7 @@
 #include "crypto/BRCryptoFeeBasisP.h"
 #include "tezos/BRTezos.h"
 #include "support/BRSet.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 #include <stdio.h>
 #include <errno.h>

@@ -15,7 +15,7 @@
 #include "support/BRArray.h"
 #include "support/BRBase.h"
 #include "support/BRSet.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "support/rlp/BRRlp.h"
 
 #if !defined(private_extern)

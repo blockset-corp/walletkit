@@ -19,7 +19,7 @@
 #include "bcash/BRBCashParams.h"
 #include "support/BRArray.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 
 // MARK: Forward Declaration
 

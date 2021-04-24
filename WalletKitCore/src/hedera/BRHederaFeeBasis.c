@@ -10,7 +10,7 @@
 //
 #include <stdint.h>
 #include "BRHederaFeeBasis.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include <stdio.h>
 #include <assert.h>
 

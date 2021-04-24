@@ -11,7 +11,7 @@
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoWalletSweeperP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 // MARK: Forward Declarations
 

@@ -14,7 +14,7 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "ripple/BRRipple.h"
 #include "support/BRSet.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 #include <stdio.h>
 #include <errno.h>

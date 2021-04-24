@@ -13,7 +13,7 @@
 #include "BRTezosEncoder.h"
 #include "BRTezosAddress.h"
 #include "BRTezosTransaction.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include "support/BRBase58.h"
 #include <stdio.h>
 #include <assert.h>

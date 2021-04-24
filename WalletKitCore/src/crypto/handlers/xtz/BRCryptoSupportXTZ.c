@@ -12,7 +12,7 @@
 #include "tezos/BRTezosBase.h"
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include "support/BRBase58.h"
 
 

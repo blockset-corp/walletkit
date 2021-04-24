@@ -12,7 +12,7 @@
 #define BRCryptoFileService_h
 
 #include "BRCryptoBase.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "support/BRFileService.h"
 
 #ifdef __cplusplus

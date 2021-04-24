@@ -11,7 +11,7 @@
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoFeeBasisP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 
 #include <math.h>
 

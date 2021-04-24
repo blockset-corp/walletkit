@@ -12,7 +12,7 @@
 #include "ripple/BRRippleBase.h"
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include "support/util/BRHex.h"
 
 private_extern BRCryptoAmount

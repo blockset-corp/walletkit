@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "support/rlp/BRRlp.h"
 
 static void

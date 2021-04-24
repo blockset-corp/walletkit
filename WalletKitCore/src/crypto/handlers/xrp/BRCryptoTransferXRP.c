@@ -12,7 +12,7 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoHashP.h"
 #include "ripple/BRRippleTransaction.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
 transferGetDirectionFromXRP (BRRippleTransaction transaction,

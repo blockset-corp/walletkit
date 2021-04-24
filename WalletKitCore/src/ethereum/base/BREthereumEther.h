@@ -12,7 +12,7 @@
 #define BR_Ethereum_Ether_H
 
 #include "support/rlp/BRRlp.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "BREthereumLogic.h"
 
 #ifdef __cplusplus

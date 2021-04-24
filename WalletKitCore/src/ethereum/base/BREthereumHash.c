@@ -12,7 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include "support/BRCrypto.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "BREthereumHash.h"
 
 static BREthereumHash emptyHash;

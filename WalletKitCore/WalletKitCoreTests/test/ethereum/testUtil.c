@@ -12,7 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 
 //
 // Math Tests

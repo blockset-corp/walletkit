@@ -12,7 +12,7 @@
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoHashP.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 
 private_extern BRCryptoHash

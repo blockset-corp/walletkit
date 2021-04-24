@@ -12,7 +12,7 @@
 #include "crypto/BRCryptoAmountP.h"
 #include "crypto/BRCryptoHashP.h"
 #include "hedera/BRHederaTransaction.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
 transferGetDirectionFromHBAR (BRHederaTransaction transaction,

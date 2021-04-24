@@ -11,8 +11,8 @@
 #ifndef BR_Ethereum_Contract_h
 #define BR_Ethereum_Contract_h
 
-#include "../base/BREthereumBase.h"
-#include "../util/BRUtil.h"
+#include "ethereum/base/BREthereumBase.h"
+#include "support/util/BRUtil.h"
 
 #ifdef __cplusplus
 extern "C" {

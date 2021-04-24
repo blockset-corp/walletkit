@@ -18,7 +18,7 @@
 #include "BRCryptoAmount.h"
 
 #include "support/BRInt.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 struct BRCryptoAmountRecord {
     BRCryptoUnit unit;

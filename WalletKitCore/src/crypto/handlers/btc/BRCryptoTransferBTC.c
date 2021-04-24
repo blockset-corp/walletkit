@@ -10,7 +10,7 @@
 //
 #include "BRCryptoBTC.h"
 #include "crypto/BRCryptoAmountP.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
 cryptoTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee);

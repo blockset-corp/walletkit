@@ -13,7 +13,7 @@
 #include "crypto/BRCryptoHashP.h"
 #include "tezos/BRTezosTransfer.h"
 #include "tezos/BRTezosFeeBasis.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 
 static BRCryptoTransferDirection
 transferGetDirectionFromXTZ (BRTezosTransfer transfer,
