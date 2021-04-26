@@ -183,7 +183,7 @@ uint256CoerceStringPrefaced (UInt256 x, int base, const char *preface);
  * @warn YOU OWN THE RETURNED MEMORY
  */
 extern char *
-uint256CoerceStringDecimal (UInt256 x, int decimals);
+uint256CoerceStringDecimal (UInt256 x, size_t decimals);
 
 
 /**

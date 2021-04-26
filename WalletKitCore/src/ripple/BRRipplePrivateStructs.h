@@ -19,7 +19,7 @@
 // A structure to hold some bytes and a length
 typedef struct _vl_bytes {
     uint8_t * value;
-    int length;
+    size_t length;
 } VLBytes;
 
 typedef struct _ripple_memo {
@@ -58,11 +58,11 @@ typedef struct _ripple_field {
 } BRRippleField;
 
 // Create the Variable length byte structure and initialize
-inline static VLBytes * createVLBytes(int length)
+inline static VLBytes * createVLBytes(size_t length)
 {
     VLBytes * bytes = calloc(1, sizeof(VLBytes));
     bytes->length = length;
-    bytes->value = calloc(1, (size_t) length);
+    bytes->value = calloc(1, length);
     return bytes;
 }
 
