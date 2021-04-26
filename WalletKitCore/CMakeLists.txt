@@ -5,9 +5,54 @@
 
 cmake_minimum_required(VERSION 3.10.2)
 
-# now build app's shared lib
+# Change the default RELEASE and DEBUG flags.
+# Even for RELEASE build, always use DEBUG and never NDEBUG (to enable assert())
+set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-Oz")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
+#
+# Core Crypto Library
+#
+
+add_library( # Sets the name of the library.
+             corecrypto
+             # Sets the library as a shared library.
+             SHARED)
+
+# Setup all the include paths
+target_include_directories (corecrypto
+                            PUBLIC
+                            ${PROJECT_SOURCE_DIR}/include
+                            ${PROJECT_SOURCE_DIR}/src
+                            ${PROJECT_SOURCE_DIR}/src/support
+                            ${PROJECT_SOURCE_DIR}
+                            ${PROJECT_SOURCE_DIR}/vendor
+                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
+
+# Set BITCOIN_DEBUG define when building DEBUG builds
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    target_compile_definitions(corecrypto
+                               PUBLIC
+                               "BITCOIN_DEBUG")
+endif (CMAKE_BUILD_TYPE MATCHES Debug)
+
+#
+# Core Crypto Test Library
+#
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+   add_library(corecryptotest
+	       STATIC)
+   target_include_directories (corecryptotest
+                               PUBLIC
+                            ${PROJECT_SOURCE_DIR}/include
+                            ${PROJECT_SOURCE_DIR}/src
+                            ${PROJECT_SOURCE_DIR})
+#                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
+
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+	     
 #
 # sqlite3 build
 #
@@ -71,13 +116,16 @@ target_include_directories (blake2
                             ${PROJECT_SOURCE_DIR}/vendor/blake2)
 
 #
-# crypto build
+# hedera proto build
 #
+add_library (hederaproto
+	     STATIC)
 
-add_library( # Sets the name of the library.
-             corecrypto
-             # Sets the library as a shared library.
-             SHARED)
+# sources added in 'hedera'
+	    
+#
+# crypto sources
+#
 
 # Support
 target_sources (corecrypto
@@ -127,7 +175,7 @@ target_sources (corecrypto
 
 # Support Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
+    target_sources (corecryptotest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -156,7 +204,7 @@ target_sources (corecrypto
 
 # Bitcoin Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
+    target_sources (corecryptotest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/bitcoin/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/bitcoin/testBwm.c)
@@ -278,7 +326,7 @@ target_sources (corecrypto
 
 # Ethereum Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
+    target_sources (corecryptotest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBase.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
@@ -290,7 +338,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
-    target_include_directories(corecrypto
+    target_include_directories(corecryptotest
             PRIVATE
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -318,7 +366,7 @@ target_sources (corecrypto
 
 # Ripple Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   target_sources (corecrypto
+   target_sources (corecryptotest
                    PRIVATE
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ripple/testRipple.c
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ripple/testRippleTxList1.h
@@ -341,8 +389,10 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaSerialize.c
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaSerialize.h
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaTransaction.c
-                ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaTransaction.h
+                ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaTransaction.h)
 
+target_sources (hederaproto
+	        PRIVATE
                 # Proto
                 ${PROJECT_SOURCE_DIR}/src/hedera/proto/BasicTypes.pb-c.c
                 ${PROJECT_SOURCE_DIR}/src/hedera/proto/BasicTypes.pb-c.h
@@ -361,7 +411,7 @@ target_sources (corecrypto
 
 # Hedera Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   target_sources (corecrypto
+   target_sources (corecryptotest
                    PRIVATE
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/hedera/testHedera.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -386,7 +436,7 @@ target_sources (corecrypto
 
 # Tezos Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
+    target_sources (corecryptotest
             PRIVATE
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/tezos/testTezos.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -544,35 +594,23 @@ target_sources (corecrypto
 
 # Crypto Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecrypto
+    target_sources (corecryptotest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/crypto/testCrypto.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
-
-# Setup all the include paths
-target_include_directories (corecrypto
-                            PUBLIC
-                            ${PROJECT_SOURCE_DIR}/include
-                            ${PROJECT_SOURCE_DIR}/src
-                            ${PROJECT_SOURCE_DIR}/src/support
-                            ${PROJECT_SOURCE_DIR}
-                            ${PROJECT_SOURCE_DIR}/vendor
-                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
-
-# Set the DEBUG define when building DEBUG builds
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_compile_definitions(corecrypto
-                               PUBLIC
-                               "DEBUG"
-                               "BITCOIN_DEBUG")
-endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 
 # Link in the static sqlite3 library
 target_link_libraries (corecrypto
                        sqlite3
                        ed25519
-                       blake2)
+                       blake2
+		       hederaproto)
+
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+   target_link_libraries (corecrypto
+   			  corecryptotest)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # On Android, link in the log library
 if (ANDROID)
