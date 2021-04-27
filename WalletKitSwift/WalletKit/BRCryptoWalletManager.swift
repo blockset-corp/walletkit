@@ -787,7 +787,7 @@ public enum WalletManagerEvent {
 ///
 /// Listener For WalletManagerEvent
 ///
-public protocol WalletManagerListener: class {
+public protocol WalletManagerListener: AnyObject {
     ///
     /// Handle a WalletManagerEvent.
     ///
