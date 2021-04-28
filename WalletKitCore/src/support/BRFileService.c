@@ -931,7 +931,7 @@ fileServiceReplace (BRFileService fs,
     return 1;
 }
 
-static char *
+static char * // called while locked
 fileServicePurgeCreateSQL (BRFileService fs) {
     size_t typeCount = array_count(fs->entityTypes);
 
@@ -970,15 +970,20 @@ extern int
 fileServicePurge (BRFileService fs) {
     if (NULL == fs) return 0;
 
+    pthread_mutex_lock (&fs->lock);
+
     size_t typeCount = array_count(fs->entityTypes);
-    if (0 == typeCount) return 0;
+    if (0 == typeCount) {
+        pthread_mutex_unlock (&fs->lock);
+        return 0;
+    }
 
     char *sql = fileServicePurgeCreateSQL (fs);
+    printf ("DBG: FileServicePurge: SQL: %s\n", sql);
 
 #if !defined(NEUTER_FILE_SERVICE)
     sqlite3_status_code status;
 
-    pthread_mutex_lock (&fs->lock);
     if (fs->sdbClosed)
         return fileServiceFailedImpl (fs, 1, sql, NULL, "closed");
 
@@ -994,8 +999,8 @@ fileServicePurge (BRFileService fs) {
     if (SQLITE_OK != status)
         return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
 
-    pthread_mutex_unlock (&fs->lock);
 #endif // !defined(NEUTER_FILE_SERVICE)
+    pthread_mutex_unlock (&fs->lock);
 
     free (sql);
     return 1;
