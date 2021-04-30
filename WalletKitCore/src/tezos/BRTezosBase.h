@@ -11,7 +11,7 @@
 #ifndef BRTezosBase_h
 #define BRTezosBase_h
 
-#include "BRCryptoBase.h"
+#include "WKBase.h"
 #include "support/BRBase58.h"
 #include <stdbool.h>
 

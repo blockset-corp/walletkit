@@ -13,7 +13,7 @@
 
 #include "ethereum/base/BREthereumBase.h"
 #include "ethereum/les/BREthereumLES.h"
-#include "BRCryptoSync.h"
+#include "WKSync.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,7 +170,7 @@ extern BREthereumBCS
 bcsCreate (BREthereumNetwork network,
            BREthereumAddress address,
            BREthereumBCSListener listener,
-           BRCryptoSyncMode syncMode,
+           WKSyncMode syncMode,
            BRSetOf(BREthereumNodeConfig) peers,
            BRSetOf(BREthereumBlock) blocks,
            BRSetOf(BREthereumTransaction) transactions,

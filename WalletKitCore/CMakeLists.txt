@@ -395,151 +395,151 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 target_sources (corecrypto
                 PRIVATE
                 # Public Includes
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoAccount.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoAddress.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoAmount.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoBase.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoCipher.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoClient.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoCoder.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoCurrency.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoExportablePaperWallet.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoFeeBasis.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoHash.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoHasher.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoKey.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoListener.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoNetwork.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoPayment.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoPeer.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoSigner.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoSync.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoSystem.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoTransfer.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoUnit.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoWallet.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoWalletManager.h
-                ${PROJECT_SOURCE_DIR}/include/BRCryptoWalletSweeper.h
+                ${PROJECT_SOURCE_DIR}/include/WKAccount.h
+                ${PROJECT_SOURCE_DIR}/include/WKAddress.h
+                ${PROJECT_SOURCE_DIR}/include/WKAmount.h
+                ${PROJECT_SOURCE_DIR}/include/WKBase.h
+                ${PROJECT_SOURCE_DIR}/include/WKCipher.h
+                ${PROJECT_SOURCE_DIR}/include/WKClient.h
+                ${PROJECT_SOURCE_DIR}/include/WKCoder.h
+                ${PROJECT_SOURCE_DIR}/include/WKCurrency.h
+                ${PROJECT_SOURCE_DIR}/include/WKExportablePaperWallet.h
+                ${PROJECT_SOURCE_DIR}/include/WKFeeBasis.h
+                ${PROJECT_SOURCE_DIR}/include/WKHash.h
+                ${PROJECT_SOURCE_DIR}/include/WKHasher.h
+                ${PROJECT_SOURCE_DIR}/include/WKKey.h
+                ${PROJECT_SOURCE_DIR}/include/WKListener.h
+                ${PROJECT_SOURCE_DIR}/include/WKNetwork.h
+                ${PROJECT_SOURCE_DIR}/include/WKPayment.h
+                ${PROJECT_SOURCE_DIR}/include/WKPeer.h
+                ${PROJECT_SOURCE_DIR}/include/WKSigner.h
+                ${PROJECT_SOURCE_DIR}/include/WKSync.h
+                ${PROJECT_SOURCE_DIR}/include/WKSystem.h
+                ${PROJECT_SOURCE_DIR}/include/WKTransfer.h
+                ${PROJECT_SOURCE_DIR}/include/WKUnit.h
+                ${PROJECT_SOURCE_DIR}/include/WKWallet.h
+                ${PROJECT_SOURCE_DIR}/include/WKWalletManager.h
+                ${PROJECT_SOURCE_DIR}/include/WKWalletSweeper.h
 
                 # Sources
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAccountP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAccount.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAddressP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAddress.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAmountP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoAmount.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoBaseP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoBase.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCipher.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClientP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoClient.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCoder.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoConfig.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoCurrency.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoExportablePaperWalletP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoExportablePaperWallet.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFeeBasisP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFeeBasis.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFileService.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoFileService.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHandlersP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHandlers.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/BRCryptoHandlersExport.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHashP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHash.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoHasher.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoKeyP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoKey.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoListenerP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoListener.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoNetworkP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoNetwork.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPaymentP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPayment.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoPeer.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSigner.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSystemP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoSystem.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoTransferP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoTransfer.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoUnit.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWallet.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletManagerP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletManager.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletSweeperP.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/BRCryptoWalletSweeper.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAccountP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAccount.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAddressP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAddress.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAmountP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKAmount.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKBaseP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKBase.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKCipher.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKClientP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKClient.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKCoder.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKConfig.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKCurrency.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKExportablePaperWalletP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKExportablePaperWallet.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKFeeBasisP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKFeeBasis.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKFileService.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKFileService.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlersP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlers.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/WKHandlersExport.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKHashP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKHash.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKHasher.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKKeyP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKKey.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKListenerP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKListener.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKNetworkP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKNetwork.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKPaymentP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKPayment.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKPeer.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKSigner.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKSystemP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKSystem.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKTransferP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKTransfer.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKUnit.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWallet.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManagerP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManager.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletSweeperP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletSweeper.c
 
-                ${PROJECT_SOURCE_DIR}/src/version/BRCryptoVersion.c)
+                ${PROJECT_SOURCE_DIR}/src/version/WKVersion.c)
 
 # Crypto BTC
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoAddressBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoBTC.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoFeeBasisBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoNetworkBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoPaymentBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoSupportBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoTransferBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerP2PBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletManagerPersistBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoWalletSweeperBTC.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/btc/BRCryptoExportablePaperWalletBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAddressBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKBTC.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKFeeBasisBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKNetworkBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKPaymentBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKSupportBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKTransferBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKWalletBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKWalletManagerBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKWalletManagerP2PBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKWalletManagerPersistBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKWalletSweeperBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKExportablePaperWalletBTC.c
                 )
 
 # Crypto ETH
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoAddressETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoETH.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoFeeBasisETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoNetworkETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoSupportETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoTransferETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletETH.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/eth/BRCryptoWalletManagerETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAddressETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKETH.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKFeeBasisETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKNetworkETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKSupportETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKTransferETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletManagerETH.c
                 )
 
 # Crypto XRP
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoAddressXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoFeeBasisXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoNetworkXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoSupportXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoTransferXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoWalletXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoWalletManagerXRP.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xrp/BRCryptoXRP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAddressXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKFeeBasisXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKNetworkXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKSupportXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKTransferXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKWalletXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKWalletManagerXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKXRP.h
                 )
 
 # Crypto HBAR
 target_sources (corecrypto
                 PRIVATE
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoAddressHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoFeeBasisHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoHBAR.h
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoNetworkHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoSupportHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoTransferHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoWalletHBAR.c
-                ${PROJECT_SOURCE_DIR}/src/crypto/handlers/hbar/BRCryptoWalletManagerHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAddressHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKFeeBasisHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHBAR.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKNetworkHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKSupportHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKTransferHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKWalletHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKWalletManagerHBAR.c
                 )
 
 # Crypto XTZ
 target_sources (corecrypto
         PRIVATE
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoAddressXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoFeeBasisXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoNetworkXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoSupportXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoTransferXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoWalletXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoWalletManagerXTZ.c
-        ${PROJECT_SOURCE_DIR}/src/crypto/handlers/xtz/BRCryptoXTZ.h
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAddressXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKFeeBasisXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKNetworkXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKSupportXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKTransferXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKWalletXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKWalletManagerXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKXTZ.h
         )
 
 # Crypto Tests

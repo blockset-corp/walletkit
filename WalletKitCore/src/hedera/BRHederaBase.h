@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <arpa/inet.h>          // htonl()
-#include "BRCryptoBase.h"
+#include "WKBase.h"
 
 #ifdef __cplusplus
 extern "C" {

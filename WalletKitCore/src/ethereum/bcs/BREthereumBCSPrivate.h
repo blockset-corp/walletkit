@@ -82,7 +82,7 @@ struct BREthereumBCSStruct {
     /**
      * The sync mode
      */
-    BRCryptoSyncMode mode;
+    WKSyncMode mode;
     
     /**
      * A BloomFilter with address for application to transactions

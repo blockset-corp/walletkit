@@ -79,26 +79,26 @@ behaviors.
 
 ## Network
 
-A `BRCryptoNetwork` represents a cryptocurrency blockchain.
+A `WKNetwork` represents a cryptocurrency blockchain.
 
 ## Currency
 
-A `BRCryptoCurrency` represents an asset on a particular network that can be held by a User
+A `WKCurrency` represents an asset on a particular network that can be held by a User
 or transfers between Users.
 
 ## Transfer
 
-A `BRCryptoTransfer` represents the exchange of an asset between two Users.  A transfer
+A `WKTransfer` represents the exchange of an asset between two Users.  A transfer
 abstracts over blockchain's transactions - a transaction potentially produces multiple Transfers.
 
 ## Wallet
 
-A `BRCryptoWallet` holds the asset represented by a currency.  A wallet maintains a balance
+A `WKWallet` holds the asset represented by a currency.  A wallet maintains a balance
 and the time-ordered list of transfers.
 
 ## WalletManager
 
-A `BRCryptoWalletManager` manages one or more wallets associated with a specific network.
+A `WKWalletManager` manages one or more wallets associated with a specific network.
 For example, the Ethereum blockchain defines ERC20 tokens, a type of asset.  The Ethereum
 wallet manager can manage a wallet holding Ether as well as any number of ERC20-based 
 assets.

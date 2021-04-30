@@ -1,5 +1,5 @@
 //
-//  BRCryptoVersion.h
+//  WKVersion.h
 //  WalletKit
 //
 //  Created by Ed Gamble on 10/30/18.

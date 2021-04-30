@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include "BRTezosFeeBasis.h"
 #include "support/util/BRUtilMath.h"
-#include "crypto/BRCryptoBaseP.h"
+#include "walletkit/WKBaseP.h"
 #include <stdio.h>
 #include <assert.h>
 

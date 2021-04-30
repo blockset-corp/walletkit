@@ -91,7 +91,7 @@ uint8_t * hederaTransactionBodyPack (BRHederaAddress source,
     body->transactionvalidduration = createTransactionDuration(180);
 
     // We are creating a "Cryto Transfer" transaction which has a transfer list
-    body->data_case =  PROTO__TRANSACTION_BODY__DATA_CRYPTO_TRANSFER;
+    body->data_case =  PROTO__TRANSACTION_BODY__DATA_WK_TRANSFER;
     body->cryptotransfer = calloc(1, sizeof(Proto__CryptoTransferTransactionBody));
     proto__crypto_transfer_transaction_body__init(body->cryptotransfer);
     body->cryptotransfer->transfers = calloc(1, sizeof(Proto__TransferList));
