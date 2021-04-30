@@ -380,7 +380,7 @@ public enum NetworkEvent {
 ///
 /// Listener for NetworkEvent
 ///
-public protocol NetworkListener: class {
+public protocol NetworkListener: AnyObject {
     ///
     /// Handle a NetworkEvent
     ///
