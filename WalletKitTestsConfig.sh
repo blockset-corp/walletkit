@@ -54,8 +54,5 @@ copyConfigFile "${BASE_DIR}/WalletKitSwift/WalletKitDemo/Source/WalletKitTestsCo
 copyConfigFile "${BASE_DIR}/WalletKitSwift/WalletKitTests/Resources/WalletKitTestsConfig.json"
 
 # Java
-copyConfigFile "${BASE_DIR}/WalletKitJava/cryptodemo-android/src/main/assets/WalletKitTestsConfig.json"
-
-#${SOURCE_ROOT}/../InstallWalletKitTestsConfig.sh "${HOME}/.brdWalletKitTestsConfig.json" "${SOURCE_ROOT}/Source/WalletKitTestsConfig.json"
-#${SOURCE_ROOT}/../InstallWalletKitTestsConfig.sh "${HOME}/.brdWalletKitTestsConfig.json" "${SOURCE_ROOT}/../WalletKitTests/Resources/WalletKitTestsConfig.json"
+copyConfigFile "${BASE_DIR}/WalletKitJava/WalletKitDemo-Android/src/main/assets/WalletKitTestsConfig.json"
 
