@@ -14,7 +14,7 @@ import com.blockset.walletkit.nativex.WKClientTransferBundle;
 import com.blockset.walletkit.nativex.WKCurrency;
 import com.blockset.walletkit.nativex.WKNetworkFee;
 import com.blockset.walletkit.nativex.WKTransferAttribute;
-import com.blockset.walletkit.nativex.utility.SizeT;
+import com.blockset.walletkit.nativex.utility.*;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;

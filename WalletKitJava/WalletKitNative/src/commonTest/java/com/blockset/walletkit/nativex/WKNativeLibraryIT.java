@@ -379,7 +379,7 @@ public class WKNativeLibraryIT {
 
             network.setHeight(UnsignedLong.valueOf(blockHeight));
 
-            network.setCurrency(btc);
+//            network.setCurrency(btc);
             network.addCurrency(btc, satoshis, bitcoins);
 
             network.addCurrencyUnit(btc, satoshis);
@@ -428,7 +428,7 @@ public class WKNativeLibraryIT {
 
             network.setHeight(UnsignedLong.valueOf(blockHeight));
 
-            network.setCurrency(btc);
+//            network.setCurrency(btc);
             network.addCurrency(btc, satoshis, bitcoins);
 
             network.addCurrencyUnit(btc, satoshis);
@@ -481,7 +481,7 @@ public class WKNativeLibraryIT {
 
             network.setHeight(UnsignedLong.valueOf(blockHeight));
 
-            network.setCurrency(eth);
+//            network.setCurrency(eth);
 
             network.addCurrency(eth, wei, ether);
 

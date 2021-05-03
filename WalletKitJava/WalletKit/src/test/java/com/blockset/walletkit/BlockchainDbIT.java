@@ -44,8 +44,6 @@ import static org.junit.Assert.*;
 
 public class BlockchainDbIT {
 
-    private static final String API_BASE_URL = "https://api.breadwallet.com";
-
     private BlockchainDb blockchainDb;
 
     @Before
@@ -58,8 +56,7 @@ public class BlockchainDbIT {
             synchronousDataTask.execute(client, decoratedRequest, callback);
         };
         blockchainDb = new BlockchainDb(new OkHttpClient(),
-                configuration.getBlocksetAccess().getBaseURL(), decoratedSynchronousDataTask,
-                API_BASE_URL, synchronousDataTask);
+                configuration.getBlocksetAccess().getBaseURL(), decoratedSynchronousDataTask);
     }
 
     // BDB
