@@ -85,7 +85,7 @@ hederaAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     // The first 24 bytes will be the account address
     uint8_t addressBytes[HEDERA_ADDRESS_SERIALIZED_SIZE];
     memcpy(addressBytes, bytes, HEDERA_ADDRESS_SERIALIZED_SIZE);
-    int64_t shard, realm, accountNum;
+    uint64_t shard, realm, accountNum; // uint64_t quiets htonll warnings
     memcpy(&shard, addressBytes, 8);
     memcpy(&realm, addressBytes + 8, 8);
     memcpy(&accountNum, addressBytes + 16, 8);

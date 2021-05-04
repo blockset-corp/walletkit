@@ -140,7 +140,7 @@ static int BRBSVVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockS
 
         // work = work*10*60/timespan
         while (work > ~0ULL/(10*60)) work >>= 8, size--;
-        work = work*10*60/timespan;
+        work = work*10*60/(uint64_t)timespan;
 
         // target = (2^256/work) - 1
         while (work && ~0ULL/work < 0x8000) work >>= 8, size--;

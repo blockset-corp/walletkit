@@ -31,6 +31,17 @@ target_include_directories (corecrypto
                             ${PROJECT_SOURCE_DIR}/vendor
                             ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
 
+# specify compiler warnings
+target_compile_options (corecrypto
+	   	        PUBLIC
+		        "-Wall"
+		        "-Wconversion"
+		        "-Wsign-conversion"
+		        "-Wparentheses"
+		        "-Wswitch"
+		        "-Wno-implicit-int-conversion"
+		        "-Wno-missing-braces")
+
 # Set BITCOIN_DEBUG define when building DEBUG builds
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_compile_definitions(corecrypto
@@ -49,7 +60,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                             ${PROJECT_SOURCE_DIR}/include
                             ${PROJECT_SOURCE_DIR}/src
                             ${PROJECT_SOURCE_DIR})
-#                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 	     

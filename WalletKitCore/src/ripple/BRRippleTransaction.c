@@ -268,7 +268,7 @@ extern void rippleTransactionFree(BRRippleTransaction transaction)
 }
 
 int setFieldInfo(BRRippleField *fields, BRRippleTransaction transaction,
-                  uint8_t * signature, int sig_length)
+                  uint8_t * signature, size_t sig_length)
 {
     int index = 0;
     
@@ -348,7 +348,7 @@ static uint64_t calculateFee(BRRippleTransaction transaction)
  */
 static BRRippleSerializedTransaction
 rippleTransactionSerializeImpl (BRRippleTransaction transaction,
-                            uint8_t *signature, int sig_length)
+                            uint8_t *signature, size_t sig_length)
 {
     assert(transaction);
     assert(transaction->transactionType == RIPPLE_TX_TYPE_PAYMENT);

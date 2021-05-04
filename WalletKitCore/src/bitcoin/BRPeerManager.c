@@ -657,7 +657,7 @@ static void *_findPeersThreadRoutine(void *arg)
     pthread_mutex_lock(&manager->lock);
     
     for (addr = addrList; addr && ! UInt128IsZero(*addr); addr++) {
-        age = 24*60*60 + BRRand(2*24*60*60); // add between 1 and 3 days
+        age = (time_t) (24*60*60 + BRRand(2*24*60*60)); // add between 1 and 3 days
         array_add(manager->peers, ((const BRPeer) { *addr, manager->params->standardPort, services, (uint64_t) (now - age), 0 }));
     }
 
