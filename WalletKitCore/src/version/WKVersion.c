@@ -12,5 +12,5 @@
 // Do Not Include Files Here.  Package.swift is not configued with a header search path
 //
 
-const char *wkVersion = "core-6.x.x";
+const char *wkVersion = "walletkit-0.7.0";
 
