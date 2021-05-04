@@ -388,19 +388,19 @@ uint256CoerceStringPrefaced (UInt256 x, int base, const char *preface) {
 }
 
 extern char * 
-uint256CoerceStringDecimal (UInt256 x, int decimals) {
+uint256CoerceStringDecimal (UInt256 x, size_t decimals) {
     char *string = uint256CoerceString(x, 10);
     
     if (0 == decimals)
         return string;
     
-    int slength = (int) strlen (string);
+    size_t slength = strlen (string);
     if (decimals >= slength) {
         char *result = calloc ((size_t) decimals + 3, 1);  // 0.<decimals>'\0'
         
         // Fill to decimals
         char format [10];
-        sprintf (format, "0.%%%ds", decimals);
+        sprintf (format, "0.%%%zus", decimals);
         sprintf (result, format, string);
         
         // Replace fills of ' ' with '0'
@@ -412,9 +412,9 @@ uint256CoerceStringDecimal (UInt256 x, int decimals) {
         return result;
     }
     else {
-        int dindex = slength - decimals;
+        size_t dindex = (size_t) (slength - decimals);
         char *result = calloc ((size_t) slength + 2, 1);  // <whole>.<decimals>'\0'
-        strncpy (result, string, dindex);
+        strncpy (result, string, (size_t) dindex);
         result[dindex] = '.';
         strcpy (&result[dindex+1], &string[dindex]);
         free (string);

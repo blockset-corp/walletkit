@@ -587,8 +587,8 @@ uint32_t BRMurmur3_32(const void *data, size_t dataLen, uint32_t seed)
     k = 0;
     
     switch (dataLen & 3) {
-        case 3: k ^= d[i + 2] << 16; // fall through
-        case 2: k ^= d[i + 1] << 8;  // fall through
+        case 3: k ^= (uint32_t)d[i + 2] << 16; // fall through
+        case 2: k ^= (uint32_t)d[i + 1] << 8;  // fall through
         case 1: k ^= d[i], k *= C1, h ^= rol32(k, 15)*C2;
     }
     
@@ -1194,7 +1194,7 @@ void BRScrypt(void *dk, size_t dkLen, const void *pw, size_t pwLen, const void *
     
     BRPBKDF2(b, sizeof(b), BRSHA256, 256/8, pw, pwLen, salt, saltLen, 1);
     
-    for (int i = 0; i < p; i++) {
+    for (unsigned i = 0; i < p; i++) {
         for (unsigned j = 0; j < 32*r; j++) ((uint32_t *)x)[j] = le32(b[i*32*r + j]);
         
         for (unsigned j = 0; j < n; j += 2) {

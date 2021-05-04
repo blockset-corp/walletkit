@@ -124,7 +124,7 @@ rippleAddressCreateFromKey (BRKey *publicKey)
 }
 
 extern BRRippleAddress // caller must free memory with rippleAddressFree
-rippleAddressCreateFromBytes (uint8_t * buffer, int bufferSize)
+rippleAddressCreateFromBytes (uint8_t * buffer, size_t bufferSize)
 {
     assert(buffer);
     assert(bufferSize == ADDRESS_BYTES);
@@ -216,13 +216,13 @@ rippleAddressHashValue (BRRippleAddress address) {
     return *((size_t*) address->bytes);
 }
 
-extern int
+extern size_t
 rippleAddressGetRawSize (BRRippleAddress address)
 {
     return ADDRESS_BYTES;
 }
 
-extern void rippleAddressGetRawBytes (BRRippleAddress address, uint8_t *buffer, int bufferSize)
+extern void rippleAddressGetRawBytes (BRRippleAddress address, uint8_t *buffer, size_t bufferSize)
 {
     assert(buffer);
     assert(bufferSize >= ADDRESS_BYTES);

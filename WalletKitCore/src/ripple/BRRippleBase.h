@@ -73,7 +73,7 @@ typedef enum {
 // Stucture to hold the calculated signature
 typedef struct {
     uint8_t signature[256];
-    int sig_length;
+    size_t sig_length;
 } BRRippleSignatureRecord;
 typedef BRRippleSignatureRecord *BRRippleSignature;
 

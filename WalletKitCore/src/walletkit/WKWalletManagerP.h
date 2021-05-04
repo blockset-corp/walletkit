@@ -41,6 +41,7 @@ typedef WKWalletManager
                                        WKAddressScheme scheme,
                                        const char *path);
 
+// The manager's lock is held
 typedef void
 (*WKWalletManagerReleaseHandler) (WKWalletManager manager);
 

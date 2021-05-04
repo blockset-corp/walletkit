@@ -206,7 +206,7 @@ uint256Mul_Double (UInt256 x, double y, int *overflow, int *negative, double *re
     uint64_t overflows[count];  // overflow can be huge... not large enough...
 
     // From high to low, account for underflow along the way...
-    for (ssize_t i = count - 1; i >= 0; i--) {
+    for (ssize_t i = (ssize_t) (count - 1); i >= 0; i--) {
         long double total = y * (long double) (x.u16[i]) + underflow;
         // split out the integer and fractional parts
         fractional = modfl (total, &integer);

@@ -276,40 +276,22 @@ wkWalletAnnounceTransferETH (WKWallet wallet,
     // We are only interested in updating the accounts nonce; therefore token wallets are ignored.
     if (NULL != walletETH->ethToken) return;
 
-    uint64_t nonce = 0;
+    uint64_t nonce = ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED;
 
     // Ignore `type`; just iterate over all transfers.
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         WKTransferETH transferETH = wkTransferCoerceETH (wallet->transfers[index]);
 
-#if defined (NEVER_DEFINED)
-        switch (transferETH->base.direction) {
-            case WK_TRANSFER_RECEIVED:
-                recv +=1;
-                break;
-
-            case WK_TRANSFER_RECOVERED:
-                reco += 1;
-                goto updateNonce;
-
-            case WK_TRANSFER_SENT:
-                sent += 1;
-            updateNonce:
-                if (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
-                    nonce = MAX (nonce, transferETH->nonce);
-                break;
-        }
-#else
-
         if (WK_TRANSFER_RECEIVED != transferETH->base.direction &&
             ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
-            nonce = MAX (nonce, transferETH->nonce);
-#endif
+            nonce = (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce
+                     ? transferETH->nonce
+                     : MAX (nonce, transferETH->nonce));
     }
 
     ethAccountSetAddressNonce (walletETH->ethAccount,
                                ethAccountGetPrimaryAddress(walletETH->ethAccount),
-                               nonce + 1,
+                               (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce ? 0 : (nonce + 1)),
                                ETHEREUM_BOOLEAN_TRUE);
 }
 

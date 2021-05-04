@@ -245,6 +245,16 @@ fileServiceCreateFromTypeSpecifications(const char *basePath,
                                         BRFileServiceTypeSpecification *specfications);
 
 ///
+/// Removes unused entities from the file system data
+///
+/// @param fs
+///
+/// @return 1 -> success, 0 -> failure
+///
+extern int
+fileServicePurge (BRFileService fs);
+
+///
 /// Deletes file system data
 ///
 /// @param basePath

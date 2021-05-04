@@ -47,12 +47,12 @@ BRBitcoinBloomFilter *btcBloomFilterNew(double falsePositiveRate, size_t elemCou
 
     assert(filter != NULL);
     filter->length = (falsePositiveRate < DBL_EPSILON) ? BLOOM_MAX_FILTER_LENGTH :
-                     (-1.0/(M_LN2*M_LN2))*elemCount*log(falsePositiveRate)/8.0;
+                     (size_t)((-1.0/(M_LN2*M_LN2))*elemCount*log(falsePositiveRate)/8.0);
     if (filter->length > BLOOM_MAX_FILTER_LENGTH) filter->length = BLOOM_MAX_FILTER_LENGTH;
     if (filter->length < 1) filter->length = 1;
     filter->filter = calloc(filter->length, sizeof(*(filter->filter)));
     assert(filter->filter != NULL);
-    filter->hashFuncs = ((filter->length*8.0)/elemCount)*M_LN2;
+    filter->hashFuncs = (uint32_t)(((filter->length*8.0)/elemCount)*M_LN2);
     if (filter->hashFuncs > BLOOM_MAX_HASH_FUNCS) filter->hashFuncs = BLOOM_MAX_HASH_FUNCS;
     filter->tweak = tweak;
     filter->flags = flags;

@@ -576,7 +576,7 @@ extern BRHederaTimeStamp hederaGenerateTimeStamp(void)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     ts.seconds = tv.tv_sec;
-    ts.nano = tv.tv_usec;
+    ts.nano = (int32_t) tv.tv_usec;
     return ts;
 }
 

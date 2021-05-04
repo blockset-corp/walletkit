@@ -234,12 +234,12 @@ ethExchangeRlpDecode (BRRlpItem item,
     exchange->target   = ethAddressRlpDecode (items[1], coder);
     exchange->contract = ethAddressRlpDecode (items[2], coder);
 
-    exchange->contractAssetIndex = rlpDecodeUInt64  (coder, items[3], 0);
+    exchange->contractAssetIndex = (size_t) rlpDecodeUInt64  (coder, items[3], 0);
     exchange->assetValue         = rlpDecodeUInt256 (coder, items[4], 0);
 
     if (RLP_TYPE_ARCHIVE == type) {
         BREthereumHash hash = ethHashRlpDecode(items[5], coder);
-        size_t exchangeIndex = rlpDecodeUInt64 (coder, items[6], 0);
+        size_t exchangeIndex = (size_t) rlpDecodeUInt64 (coder, items[6], 0);
         ethExchangeInitializeIdentifier (exchange, hash, (size_t) exchangeIndex);
 
         exchange->status = ethTransactionStatusRLPDecode (items[7], NULL, coder);

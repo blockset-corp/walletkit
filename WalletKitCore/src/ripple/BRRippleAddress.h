@@ -61,7 +61,7 @@ rippleAddressCreateFromString(const char * rippleAddressString, bool strict);
  * @return address  - a BRRippleAddress object
  */
 extern BRRippleAddress // caller must free memory with rippleAddressFree
-rippleAddressCreateFromBytes (uint8_t * buffer, int bufferSize);
+rippleAddressCreateFromBytes (uint8_t * buffer, size_t bufferSize);
 
 /**
  * Free the memory associated with a BRRippleAddress
@@ -90,7 +90,7 @@ rippleAddressIsFeeAddress (BRRippleAddress address);
  *
  * @return size of the raw bytes
  */
-extern int
+extern size_t
 rippleAddressGetRawSize (BRRippleAddress address);
 
 /**
@@ -102,7 +102,7 @@ rippleAddressGetRawSize (BRRippleAddress address);
  *
  * @return void
  */
-extern void rippleAddressGetRawBytes (BRRippleAddress address, uint8_t *buffer, int bufferSize);
+extern void rippleAddressGetRawBytes (BRRippleAddress address, uint8_t *buffer, size_t bufferSize);
 
 /**
  * Copy a BRRippleAddress

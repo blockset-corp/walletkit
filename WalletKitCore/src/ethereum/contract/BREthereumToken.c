@@ -266,7 +266,7 @@ ethTokenQuantityGetValueString(const BREthereumTokenQuantity quantity,
                                BREthereumTokenQuantityUnit unit) {
     return TOKEN_QUANTITY_TYPE_INTEGER == unit
     ? uint256CoerceString(quantity.valueAsInteger, 10)
-    : uint256CoerceStringDecimal(quantity.valueAsInteger, (int) quantity.token->decimals);
+    : uint256CoerceStringDecimal(quantity.valueAsInteger, (size_t) quantity.token->decimals);
 }
 
 extern BREthereumComparison

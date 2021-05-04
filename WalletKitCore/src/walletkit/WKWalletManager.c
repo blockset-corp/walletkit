@@ -300,6 +300,9 @@ wkWalletManagerAllocAndInit (size_t sizeInBytes,
                                                                  manager,
                                                                  wkWalletManagerFileServiceErrorHandler);
 
+    // TODO: This causes an Android (only - Core Demo App) crash.  Understand, then restore
+    // fileServicePurge (manager->fileService);
+
     // Create the alarm clock, but don't start it.
     alarmClockCreateIfNecessary(0);
 

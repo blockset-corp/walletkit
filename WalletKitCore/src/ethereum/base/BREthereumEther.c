@@ -99,7 +99,7 @@ ethEtherGetValue(const BREthereumEther ether,
 
 extern char * // Perhaps can be done. 1 WEI -> 1e-18 Ether
 ethEtherGetValueString(const BREthereumEther ether, BREthereumEtherUnit unit) {
-    return uint256CoerceStringDecimal(ether.valueInWEI, 3 * (int) unit);
+    return uint256CoerceStringDecimal(ether.valueInWEI, 3 * (size_t) unit);
 }
 
 extern BRRlpItem

@@ -24,8 +24,7 @@
 
 static void
 wkWalletManagerCreateTokenForCurrency (WKWalletManagerETH manager,
-                                           WKCurrency currency,
-                                           WKUnit     unitDefault);
+                                           WKCurrency currency);
 
 static void
 wkWalletManagerCreateCurrencyForToken (WKWalletManagerETH managerETH,
@@ -34,6 +33,26 @@ wkWalletManagerCreateCurrencyForToken (WKWalletManagerETH managerETH,
 static void
 wkWalletManagerCreateTokensForNetwork (WKWalletManagerETH manager,
                                            WKNetwork network);
+
+static BREthereumToken
+cryptoWalletManagerGetTokenETH (BRCryptoWalletManagerETH managerETH,
+                                const BREthereumAddress *ethAddress) {
+    BREthereumToken token;
+
+    pthread_mutex_lock (&managerETH->base.lock);
+    token = BRSetGet (managerETH->tokens, ethAddress);
+    pthread_mutex_unlock (&managerETH->base.lock);
+
+    return token;
+}
+
+static void
+cryptoWalletManagerAddTokenETH (BRCryptoWalletManagerETH managerETH,
+                                BREthereumToken ethToken) {
+    pthread_mutex_lock (&managerETH->base.lock);
+    BRSetAdd (managerETH->tokens, ethToken);
+    pthread_mutex_unlock (&managerETH->base.lock);
+}
 
 // MARK: - Event Types
 
@@ -305,7 +324,6 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimateETH (WKWalletManager cwm,
 static void
 wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerETH managerETH,
                                                    WKCurrency currency,
-                                                   WKUnit     unitDefault,
                                                    bool updateIfNeeded) {
     const char *address = wkCurrencyGetIssuer(currency);
 
@@ -315,14 +333,17 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerETH managerETH,
     BREthereumAddress addr = ethAddressCreate(address);
 
     // Check for an existing token
-    BREthereumToken token = BRSetGet (managerETH->tokens, &addr);
+    BREthereumToken token = cryptoWalletManagerGetTokenETH(managerETH, &addr);
 
     if (NULL != token && !updateIfNeeded) return;
 
     const char *code = wkCurrencyGetCode (currency);
     const char *name = wkCurrencyGetName (currency);
     const char *desc = wkCurrencyGetUids (currency);
+
+    BRCryptoUnit unitDefault = wkNetworkGetUnitAsDefault (managerETH->base.network, currency);
     unsigned int decimals = wkUnitGetBaseDecimalOffset(unitDefault);
+    wkUnitGive(unitDefault);
 
     BREthereumGas      defaultGasLimit = ethGasCreate(ETHEREUM_TOKEN_BRD_DEFAULT_GAS_LIMIT);
     BREthereumGasPrice defaultGasPrice = ethGasPriceCreate(ethEtherCreate(uint256Create(ETHEREUM_TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64)));
@@ -335,9 +356,10 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerETH managerETH,
                                 decimals,
                                 defaultGasLimit,
                                 defaultGasPrice);
-        BRSetAdd (managerETH->tokens, token);
+        cryptoWalletManagerAddTokenETH (managerETH, token);
     }
     else {
+        pthread_mutex_lock (&managerETH->base.lock);
         ethTokenUpdate (token,
                         code,
                         name,
@@ -345,21 +367,20 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerETH managerETH,
                         decimals,
                         defaultGasLimit,
                         defaultGasPrice);
+        pthread_mutex_unlock (&managerETH->base.lock);
     }
 }
 
 static void
 wkWalletManagerEnsureTokenForCurrency (WKWalletManagerETH managerETH,
-                                           WKCurrency currency,
-                                           WKUnit     unitDefault) {
-    wkWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, unitDefault, false);
+                                           WKCurrency currency) {
+    wkWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, false);
 }
 
 static void
 wkWalletManagerCreateTokenForCurrency (WKWalletManagerETH managerETH,
-                                           WKCurrency currency,
-                                           WKUnit     unitDefault) {
-    wkWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, unitDefault, true);
+                                           WKCurrency currency) {
+    wkWalletManagerCreateTokenForCurrencyInternal (managerETH, currency, true);
 }
 
 static void
@@ -368,11 +389,8 @@ wkWalletManagerCreateTokensForNetwork (WKWalletManagerETH managerETH,
     size_t currencyCount = wkNetworkGetCurrencyCount (network);
     for (size_t index = 0; index < currencyCount; index++) {
         WKCurrency c = wkNetworkGetCurrencyAt (network, index);
-        if (c != network->currency) {
-            WKUnit unitDefault = wkNetworkGetUnitAsDefault (network, c);
-            wkWalletManagerCreateTokenForCurrency (managerETH, c, unitDefault);
-            wkUnitGive (unitDefault);
-        }
+        if (c != network->currency)
+            wkWalletManagerCreateTokenForCurrency (managerETH, c);
         wkCurrencyGive (c);
     }
 }
@@ -455,10 +473,29 @@ wkWalletManagerCreateWalletETH (WKWalletManager manager,
 
     BREthereumToken ethToken = NULL;
 
+    // If there is an issuer, then `currency` is for an ERC20 token; otherwise for 'Ether'
     const char *issuer = wkCurrencyGetIssuer (currency);
     if (NULL != issuer) {
         BREthereumAddress ethAddress = ethAddressCreate (issuer);
-        ethToken = BRSetGet (managerETH->tokens, &ethAddress);
+        ethToken = cryptoWalletManagerGetTokenETH(managerETH, &ethAddress);
+
+        // If there isn't an existing token, then create one.  A token is expected to exist (there
+        // used to be an assert here); however, we've seen a crash on a non-existent token so we'll
+        // create a token as 'belt-and-suspenders'.  Still, the currency is required to be in
+        // `manager->network`, which implies that there should be a token.
+
+        if (NULL == ethToken) {
+            printf ("SYS: ETH: No token for: %s\n", issuer);
+            if (CRYPTO_TRUE != cryptoNetworkHasCurrency (manager->network, currency))
+                printf ("SYS: ETH: No currency in network: %s\n", issuer);
+            assert (CRYPTO_TRUE == cryptoNetworkHasCurrency (manager->network, currency));
+
+            // Create the token
+            cryptoWalletManagerCreateTokenForCurrency (managerETH, currency);
+
+            // Must find one now, surely.
+            ethToken = cryptoWalletManagerGetTokenETH (managerETH, &ethAddress);
+        }
         assert (NULL != ethToken);
     }
 
@@ -824,11 +861,8 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     WKCurrency currency = wkNetworkGetCurrencyForUids (network, bundle->currency);
 
     // If we have a currency, ensure that we also have an ERC20 token
-    if (NULL != currency) {
-        WKUnit walletUnitDefault = wkNetworkGetUnitAsDefault (network, currency);
-        wkWalletManagerEnsureTokenForCurrency (managerETH, currency, walletUnitDefault);
-        wkUnitGive (walletUnitDefault);
-    }
+    if (NULL != currency)
+        wkWalletManagerEnsureTokenForCurrency (managerETH, currency);
 
     UInt256  amountETH;
     uint64_t gasLimit;
