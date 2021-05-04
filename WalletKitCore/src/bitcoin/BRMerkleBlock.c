@@ -35,9 +35,9 @@
 #define MAX_PROOF_OF_WORK 0x1d00ffff    // highest value for difficulty target (higher values are less difficult)
 #define TARGET_TIMESPAN   (14*24*60*60) // the targeted timespan between difficulty target adjustments
 
-inline static int _ceil_log2(int x)
+inline static uint32_t _ceil_log2(uint32_t x)
 {
-    int r = (x & (x - 1)) ? 1 : 0;
+    uint32_t r = (x & (x - 1)) ? 1 : 0;
     
     while ((x >>= 1) != 0) r++;
     return r;
@@ -190,7 +190,7 @@ size_t BRMerkleBlockSerialize(const BRMerkleBlock *block, uint8_t *buf, size_t b
 }
 
 static size_t _BRMerkleBlockTxHashesR(const BRMerkleBlock *block, UInt256 *txHashes, size_t hashesCount, size_t *idx,
-                                      size_t *hashIdx, size_t *flagIdx, int depth)
+                                      size_t *hashIdx, size_t *flagIdx, uint32_t depth)
 {
     uint8_t flag;
     
@@ -245,7 +245,7 @@ void BRMerkleBlockSetTxHashes(BRMerkleBlock *block, const UInt256 hashes[], size
 // recursively walks the merkle tree to calculate the merkle root
 // NOTE: this merkle tree design has a security vulnerability (CVE-2012-2459), which can be defended against by
 // considering the merkle root invalid if there are duplicate hashes in any rows with an even number of elements
-static UInt256 _BRMerkleBlockRootR(const BRMerkleBlock *block, size_t *hashIdx, size_t *flagIdx, int depth)
+static UInt256 _BRMerkleBlockRootR(const BRMerkleBlock *block, size_t *hashIdx, size_t *flagIdx, uint32_t depth)
 {
     uint8_t flag;
     UInt256 hashes[2], md = UINT256_ZERO;
@@ -354,7 +354,7 @@ int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBloc
     
         // TARGET_TIMESPAN happens to be a multiple of 256, and since timespan is at least TARGET_TIMESPAN/4, we don't
         // lose precision when target is multiplied by timespan and then divided by TARGET_TIMESPAN/256
-        target *= timespan;
+        target *= (uint64_t)timespan;
         target /= TARGET_TIMESPAN >> 8;
         size--; // decrement size since we only divided by TARGET_TIMESPAN/256
     

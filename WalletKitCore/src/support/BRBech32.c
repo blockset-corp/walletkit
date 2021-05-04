@@ -58,7 +58,7 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
     addrLen = sep = i;
     while (sep > 0 && addr[sep] != '1') sep--;
     if (addrLen < 8 || addrLen > 90 || sep < 1 || sep + 2 + 6 > addrLen || (upper && lower)) return 0;
-    for (i = 0; i < sep; i++) chk = polymod(chk) ^ (tolower(addr[i]) >> 5);
+    for (i = 0; i < sep; i++) chk = polymod(chk) ^ ((uint32_t)tolower(addr[i]) >> 5);
     chk = polymod(chk);
     for (i = 0; i < sep; i++) chk = polymod(chk) ^ (addr[i] & 0x1f);
     memset(buf, 0, sizeof(buf));
@@ -112,7 +112,7 @@ size_t BRBech32Encode(char *addr91, const char *hrp, const uint8_t data[])
     
     for (i = 0; hrp && hrp[i]; i++) {
         if (i > 83 || hrp[i] < 33 || hrp[i] > 126 || isupper(hrp[i])) return 0;
-        chk = polymod(chk) ^ (hrp[i] >> 5);
+        chk = polymod(chk) ^ ((uint32_t)hrp[i] >> 5);
         addr[i] = hrp[i];
     }
     

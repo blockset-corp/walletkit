@@ -1352,7 +1352,7 @@ void BRWalletFree(BRWallet *wallet)
 // price is local currency units per bitcoin
 int64_t BRLocalAmount(int64_t amount, double price)
 {
-    int64_t localAmount = llabs(amount)*price/SATOSHIS;
+    int64_t localAmount = (int64_t)(llabs(amount)*price/SATOSHIS);
     
     // if amount is not 0, but is too small to be represented in local currency, return minimum non-zero localAmount
     if (localAmount == 0 && amount != 0) localAmount = 1;
@@ -1368,8 +1368,8 @@ int64_t BRBitcoinAmount(int64_t localAmount, double price)
 
     if (lamt != 0 && price > 0) {
         while (lamt + 1 > INT64_MAX/SATOSHIS) lamt /= 2, overflowbits++; // make sure we won't overflow an int64_t
-        min = lamt*SATOSHIS/price; // minimum amount that safely matches localAmount
-        max = (lamt + 1)*SATOSHIS/price - 1; // maximum amount that safely matches localAmount
+        min = (int64_t)(lamt*SATOSHIS/price); // minimum amount that safely matches localAmount
+        max = (int64_t)((lamt + 1)*SATOSHIS/price - 1); // maximum amount that safely matches localAmount
         amount = (min + max)/2; // average min and max
         while (overflowbits > 0) lamt *= 2, min *= 2, max *= 2, amount *= 2, overflowbits--;
         
