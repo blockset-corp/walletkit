@@ -81,9 +81,6 @@ cryptoNetworkReleaseETH (BRCryptoNetwork network) {
     (void) networkETH;
 }
 
-extern BRCryptoAddress
-cryptoAddressCreateFromStringAsETH (const char *address);
-
 static BRCryptoAddress
 cryptoNetworkCreateAddressETH (BRCryptoNetwork network,
                                const char *addressAsString) {

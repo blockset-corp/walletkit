@@ -31,6 +31,9 @@ typedef struct BRCryptoAddressETHRecord {
 } *BRCryptoAddressETH;
 
 private_extern BRCryptoAddress
+cryptoAddressCreateFromStringAsETH (const char *address);
+
+private_extern BRCryptoAddress
 cryptoAddressCreateAsETH (BREthereumAddress eth);
 
 private_extern BREthereumAddress
