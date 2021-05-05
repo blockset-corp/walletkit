@@ -49,12 +49,12 @@ cryptoAddressAsETH (BRCryptoAddress address) {
     return addressETH->eth;
 }
 
-extern BRCryptoAddress
+private_extern BRCryptoAddress
 cryptoAddressCreateFromStringAsETH (const char *ethAddress) {
     assert (ethAddress);
-    return cryptoAddressCreateAsETH (ETHEREUM_BOOLEAN_TRUE == ethAddressValidateString (ethAddress)
-                                     ? ethAddressCreate (ethAddress)
-                                     : EMPTY_ADDRESS_INIT);
+    return (ETHEREUM_BOOLEAN_TRUE == ethAddressValidateString (ethAddress)
+            ? cryptoAddressCreateAsETH (ethAddressCreate (ethAddress))
+            : NULL);
 }
 
 static void
