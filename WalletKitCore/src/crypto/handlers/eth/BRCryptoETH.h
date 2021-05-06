@@ -61,6 +61,10 @@ typedef struct BRCryptoTransferETHRecord {
     BRCryptoHash hash;
     BREthereumAccount account;
     BREthereumGas gasEstimate;
+
+    // Normally the nonce is held in the originatingTransaction; but we don't always have one.
+    // So, we'll keep a nonce here, recovered from the Client/Blockset.  Work hard to keep it in
+    // sync with an originatingTransaction, when we have one.
     uint64_t nonce;
 
     // The tranaction that originated this transfer.  Will be NULL if the transaction's source
@@ -94,6 +98,13 @@ cryptoTransferGetOriginatingTransactionHashETH (BRCryptoTransferETH transfer);
 extern BRCryptoTransferState
 cryptoTransferDeriveStateETH (BREthereumTransactionStatus status,
                               BRCryptoFeeBasis feeBasis);
+
+extern uint64_t
+cryptoTransferGetNonceETH (BRCryptoTransferETH transfer);
+
+extern void
+cryptoTransferSetNonceETH (BRCryptoTransferETH transfer,
+                           uint64_t nonce);
 
 // MARK: - Wallet
 

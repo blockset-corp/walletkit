@@ -177,6 +177,8 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
     UInt256 value = cryptoAmountGetValue (amount);
     char   *data  = cryptoTransferProvideOriginatingData (ethToken, ethTargetAddress, value);
 
+    uint64_t nonce = TRANSACTION_NONCE_IS_NOT_ASSIGNED;
+
     // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
@@ -188,7 +190,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                        ethFeeBasisGetGasPrice(ethFeeBasis),
                        gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
                        data,
-                       TRANSACTION_NONCE_IS_NOT_ASSIGNED);
+                       nonce);
 
     free (data);
 
@@ -206,7 +208,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
                                                            target,
                                                            state,
                                                            walletETH->ethAccount,
-                                                           TRANSACTION_NONCE_IS_NOT_ASSIGNED,
+                                                           nonce,
                                                            ethTransaction);
     cryptoTransferSetAttributes (transfer, attributesCount, attributes);
     cryptoTransferStateGive (state);
@@ -281,12 +283,15 @@ cryptoWalletAnnounceTransferETH (BRCryptoWallet wallet,
     // Ignore `type`; just iterate over all transfers.
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         BRCryptoTransferETH transferETH = cryptoTransferCoerceETH (wallet->transfers[index]);
+        uint64_t transferNonce = cryptoTransferGetNonceETH(transferETH);
 
-        if (CRYPTO_TRANSFER_RECEIVED != transferETH->base.direction &&
-            TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
+        if (CRYPTO_TRANSFER_RECEIVED          != transferETH->base.direction &&
+            TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferNonce               &&
+            CRYPTO_TRANSFER_STATE_ERRORED     != cryptoTransferGetStateType (wallet->transfers[index]))
+            // Assign the nonce as the MAX.
             nonce = (TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce
-                     ? transferETH->nonce
-                     : MAX (nonce, transferETH->nonce));
+                     ? transferNonce
+                     : MAX (nonce, transferNonce));
     }
 
     ethAccountSetAddressNonce (walletETH->ethAccount,
