@@ -371,7 +371,7 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoWalletSweeperGetKey(Pointer sweeper);
     public static native Pointer cryptoWalletSweeperGetBalance(Pointer sweeper);
     public static native Pointer cryptoWalletSweeperGetAddress(Pointer sweeper);
-    public static native int cryptoWalletSweeperAddTransactionFromBundle(Pointer sweeper, byte[] transaction, SizeT transactionLen);//TODO:SWEEP use transaction bundle
+    public static native int cryptoWalletSweeperAddTransactionFromBundle(Pointer sweeper, Pointer bundle);
     public static native int cryptoWalletSweeperValidate(Pointer sweeper);
     public static native void cryptoWalletSweeperRelease(Pointer sweeper);
     public static native Pointer cryptoWalletSweeperCreateTransferForWalletSweep(Pointer sweeper, Pointer walletManager, Pointer wallet, Pointer feeBasis);
@@ -383,6 +383,8 @@ public final class CryptoLibraryDirect {
                                                                       SizeT transactionLength,
                                                                       long timestamp,
                                                                       long blockHeight);
+    public static native void cryptoClientTransactionBundleRelease (Pointer bundle);
+
     // See 'Indirect': void cryptoClientTransferBundleCreate (int status, ...)
 
     public static native Pointer cryptoClientCurrencyDenominationBundleCreate (String name, String code, String symbol, int decimals);

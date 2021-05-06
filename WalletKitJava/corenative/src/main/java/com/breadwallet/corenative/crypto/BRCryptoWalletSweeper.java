@@ -71,15 +71,11 @@ public class BRCryptoWalletSweeper extends PointerType {
         ).transform(BRCryptoAddress::new);
     }
 
-    public BRCryptoWalletSweeperStatus handleTransactionAsBtc(byte[] transaction) {
-        Pointer thisPtr = this.getPointer();
-
-        //TODO:SWEEP use transaction bundle
+    public BRCryptoWalletSweeperStatus handleTransactionAsBtc(BRCryptoClientTransactionBundle bundle) {
         return BRCryptoWalletSweeperStatus.fromCore(
                 CryptoLibraryDirect.cryptoWalletSweeperAddTransactionFromBundle(
-                        thisPtr,
-                        transaction,
-                        new SizeT(transaction.length))
+                        this.getPointer(),
+                        bundle.getPointer())
         );
     }
 
