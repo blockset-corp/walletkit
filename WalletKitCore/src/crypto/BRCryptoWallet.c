@@ -515,20 +515,23 @@ cryptoWalletComputeBalance (BRCryptoWallet wallet, bool needLock) {
     BRCryptoAmount balance = cryptoAmountCreateInteger (0, wallet->unit);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        BRCryptoAmount amount     = cryptoWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
-        BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
+        // If the transfer has ERRORED, ignore it immediately
+        if (CRYPTO_TRANSFER_STATE_ERRORED != cryptoTransferGetStateType (wallet->transfers[index])) {
+            BRCryptoAmount amount     = cryptoWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
+            BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
 
-        cryptoAmountGive(amount);
-        cryptoAmountGive(balance);
+            cryptoAmountGive(amount);
+            cryptoAmountGive(balance);
 
-        balance = newBalance;
+            balance = newBalance;
+        }
     }
     if (needLock) pthread_mutex_unlock (&wallet->lock);
 
     return balance;
 }
 
-static void
+private_extern void
 cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
     if (needLock) pthread_mutex_lock (&wallet->lock);
     cryptoWalletSetBalance (wallet, cryptoWalletComputeBalance (wallet, false));
@@ -716,8 +719,20 @@ cryptoWalletUpdTransfer (BRCryptoWallet wallet,
     // perhaps other wallet changes, such a nonce change.
     pthread_mutex_lock (&wallet->lock);
     if (CRYPTO_TRUE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
-        if (newState->type == CRYPTO_TRANSFER_STATE_INCLUDED)
-            cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+        switch (newState->type) {
+            case CRYPTO_TRANSFER_STATE_CREATED:
+            case CRYPTO_TRANSFER_STATE_SIGNED:
+            case CRYPTO_TRANSFER_STATE_SUBMITTED:
+            case CRYPTO_TRANSFER_STATE_DELETED:
+                break; // nothing
+            case CRYPTO_TRANSFER_STATE_INCLUDED:
+                cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+                break;
+            case CRYPTO_TRANSFER_STATE_ERRORED:
+                // Recompute the balance
+                cryptoWalletUpdBalance (wallet, false);
+                break;
+        }
 
         // Announce a 'TRANSFER_CHANGED'; each currency might respond differently.
         cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_CHANGED);

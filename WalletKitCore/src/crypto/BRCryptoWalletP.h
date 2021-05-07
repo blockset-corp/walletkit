@@ -202,6 +202,9 @@ cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 cryptoWalletGetAddressesForRecovery (BRCryptoWallet wallet);
 
+private_extern void
+cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock);
+
 static inline void
 cryptoWalletGenerateEvent (BRCryptoWallet wallet,
                            OwnershipGiven BRCryptoWalletEvent event) {
