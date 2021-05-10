@@ -1150,12 +1150,15 @@ cryptoClientAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager 
     BRArrayOf(char *) keys;
     array_new (keys, attributesCount);
     array_add_array (keys, (char**) attributeKeys, attributesCount);
-    array_apply (keys, strdup);
 
     BRArrayOf(char *) vals;
     array_new (vals, attributesCount);
     array_add_array (vals, (char**) attributeVals, attributesCount);
-    array_apply (vals, strdup);
+
+    for (size_t index = 0; index < attributesCount; index++) {
+        keys[index] = strdup (keys[index]);
+        vals[index] = strdup (vals[index]);
+    }
 
     BRCryptoClientAnnounceEstimateTransactionFeeEvent event =
     { { NULL, &handleClientAnnounceEstimateTransactionFeeEventType },
