@@ -35,7 +35,7 @@ wkWalletManagerCreateTokensForNetwork (WKWalletManagerETH manager,
                                            WKNetwork network);
 
 static BREthereumToken
-cryptoWalletManagerGetTokenETH (BRCryptoWalletManagerETH managerETH,
+cryptoWalletManagerGetTokenETH (WKWalletManagerETH managerETH,
                                 const BREthereumAddress *ethAddress) {
     BREthereumToken token;
 
@@ -47,7 +47,7 @@ cryptoWalletManagerGetTokenETH (BRCryptoWalletManagerETH managerETH,
 }
 
 static void
-cryptoWalletManagerAddTokenETH (BRCryptoWalletManagerETH managerETH,
+cryptoWalletManagerAddTokenETH (WKWalletManagerETH managerETH,
                                 BREthereumToken ethToken) {
     pthread_mutex_lock (&managerETH->base.lock);
     BRSetAdd (managerETH->tokens, ethToken);
@@ -341,7 +341,7 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerETH managerETH,
     const char *name = wkCurrencyGetName (currency);
     const char *desc = wkCurrencyGetUids (currency);
 
-    BRCryptoUnit unitDefault = wkNetworkGetUnitAsDefault (managerETH->base.network, currency);
+    WKUnit unitDefault = wkNetworkGetUnitAsDefault (managerETH->base.network, currency);
     unsigned int decimals = wkUnitGetBaseDecimalOffset(unitDefault);
     wkUnitGive(unitDefault);
 
@@ -486,12 +486,12 @@ wkWalletManagerCreateWalletETH (WKWalletManager manager,
 
         if (NULL == ethToken) {
             printf ("SYS: ETH: No token for: %s\n", issuer);
-            if (CRYPTO_TRUE != cryptoNetworkHasCurrency (manager->network, currency))
+            if (WK_TRUE != wkNetworkHasCurrency (manager->network, currency))
                 printf ("SYS: ETH: No currency in network: %s\n", issuer);
-            assert (CRYPTO_TRUE == cryptoNetworkHasCurrency (manager->network, currency));
+            assert (WK_TRUE == wkNetworkHasCurrency (manager->network, currency));
 
             // Create the token
-            cryptoWalletManagerCreateTokenForCurrency (managerETH, currency);
+            wkWalletManagerCreateTokenForCurrency (managerETH, currency);
 
             // Must find one now, surely.
             ethToken = cryptoWalletManagerGetTokenETH (managerETH, &ethAddress);
