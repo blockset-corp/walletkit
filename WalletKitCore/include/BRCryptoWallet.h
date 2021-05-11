@@ -137,6 +137,11 @@ extern "C" {
                                         BRCryptoAddress target,
                                         size_t index);
 
+    extern BRCryptoTransferAttribute
+    cryptoWalletGetTransferAttributeForKey (BRCryptoWallet wallet,
+                                            BRCryptoAddress target,
+                                            const char *key);
+
     extern BRCryptoTransferAttributeValidationError
     cryptoWalletValidateTransferAttribute (BRCryptoWallet wallet,
                                            OwnershipKept BRCryptoTransferAttribute attribute,
@@ -147,12 +152,6 @@ extern "C" {
                                             size_t attributesCount,
                                             OwnershipKept BRCryptoTransferAttribute *attribute,
                                             BRCryptoBoolean *validates);
-
-    extern BRCryptoBoolean
-    cryptoWalletHasTransferAttributeForKey (BRCryptoWallet wallet,
-                                            BRCryptoAddress target,
-                                            const char *key,
-                                            BRCryptoBoolean *isRequired);
 
     /**
      * Create a transfer.
