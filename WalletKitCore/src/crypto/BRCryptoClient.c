@@ -272,6 +272,10 @@ cryptoClientQRYManagerUpdateSync (BRCryptoClientQRYManager qry,
     qry->sync.success   = success;
 
     if (needBegEvent) {
+        cryptoWalletManagerSetState (qry->manager, (BRCryptoWalletManagerState) {
+            CRYPTO_WALLET_MANAGER_STATE_SYNCING
+        });
+
         cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
         });
@@ -293,6 +297,10 @@ cryptoClientQRYManagerUpdateSync (BRCryptoClientQRYManager qry,
             { .syncStopped = (success
                               ? cryptoSyncStoppedReasonComplete()
                               : cryptoSyncStoppedReasonUnknown()) }
+        });
+
+        cryptoWalletManagerSetState (qry->manager, (BRCryptoWalletManagerState) {
+            CRYPTO_WALLET_MANAGER_STATE_CONNECTED
         });
     }
 
