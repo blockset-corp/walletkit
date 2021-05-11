@@ -22,6 +22,12 @@ public class BRCryptoClientTransactionBundle extends PointerType {
         return new BRCryptoClientTransactionBundle(pointer);
     }
 
+    public void release () {
+        CryptoLibraryDirect.cryptoClientTransactionBundleRelease(
+                this.getPointer()
+        );
+    }
+
     public BRCryptoClientTransactionBundle() {
         super();
     }

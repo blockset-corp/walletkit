@@ -1232,17 +1232,20 @@ cryptoWalletManagerRecoverTransferAttributesFromTransferBundle (BRCryptoWallet w
         BRArrayOf(BRCryptoTransferAttribute) attributes;
         array_new(attributes, bundle->attributesCount);
         for (size_t index = 0; index < bundle->attributesCount; index++) {
-            const char *key = bundle->attributeKeys[index];
-            BRCryptoBoolean isRequiredAttribute;
-            BRCryptoBoolean isAttribute = cryptoWalletHasTransferAttributeForKey (wallet,
-                                                                                  target,
-                                                                                  key,
-                                                                                  &isRequiredAttribute);
-            if (CRYPTO_TRUE == isAttribute)
+            // Lookup a pre-existing attribute having `key`
+            BRCryptoTransferAttribute attribute =
+            cryptoWalletGetTransferAttributeForKey (wallet,
+                                                    target,
+                                                    bundle->attributeKeys[index]);
+
+            // If an attribute exists, take the bundle's value and extent `attributes`.
+            if (NULL != attribute) {
                 array_add (attributes,
-                           cryptoTransferAttributeCreate(key,
-                                                         bundle->attributeVals[index],
-                                                         isRequiredAttribute));
+                           cryptoTransferAttributeCreate (cryptoTransferAttributeGetKey (attribute),
+                                                          bundle->attributeVals[index],
+                                                          cryptoTransferAttributeIsRequired (attribute)));
+                cryptoTransferAttributeGive(attribute);
+            }
         }
         
         cryptoTransferSetAttributes (transfer, array_count(attributes), attributes);

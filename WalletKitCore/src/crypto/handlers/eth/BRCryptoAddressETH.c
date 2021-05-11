@@ -45,8 +45,9 @@ cryptoAddressCreateAsETH (BREthereumAddress eth) {
 
 private_extern BREthereumAddress
 cryptoAddressAsETH (BRCryptoAddress address) {
-    BRCryptoAddressETH addressETH = cryptoAddressCoerce (address);
-    return addressETH->eth;
+    return (NULL == address
+            ? EMPTY_ADDRESS_INIT
+            : cryptoAddressCoerce (address)->eth);
 }
 
 private_extern BRCryptoAddress

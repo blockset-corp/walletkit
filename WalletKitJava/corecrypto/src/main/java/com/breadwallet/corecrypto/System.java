@@ -1825,7 +1825,7 @@ final class System implements com.breadwallet.crypto.System {
         }
     }
 
-    private static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
+    protected static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
         Optional<byte[]> optRaw = transaction.getRaw();
         if (!optRaw.isPresent()) {
             Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
@@ -1921,7 +1921,7 @@ final class System implements com.breadwallet.crypto.System {
         });
     }
 
-    private static List<BRCryptoClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
+    protected static List<BRCryptoClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
         List<BRCryptoClientTransferBundle> result = new ArrayList<>();
 
         UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);

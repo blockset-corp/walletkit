@@ -272,6 +272,10 @@ cryptoClientQRYManagerUpdateSync (BRCryptoClientQRYManager qry,
     qry->sync.success   = success;
 
     if (needBegEvent) {
+        cryptoWalletManagerSetState (qry->manager, (BRCryptoWalletManagerState) {
+            CRYPTO_WALLET_MANAGER_STATE_SYNCING
+        });
+
         cryptoWalletManagerGenerateEvent (qry->manager, (BRCryptoWalletManagerEvent) {
             CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED
         });
@@ -293,6 +297,10 @@ cryptoClientQRYManagerUpdateSync (BRCryptoClientQRYManager qry,
             { .syncStopped = (success
                               ? cryptoSyncStoppedReasonComplete()
                               : cryptoSyncStoppedReasonUnknown()) }
+        });
+
+        cryptoWalletManagerSetState (qry->manager, (BRCryptoWalletManagerState) {
+            CRYPTO_WALLET_MANAGER_STATE_CONNECTED
         });
     }
 
@@ -960,39 +968,50 @@ cryptoClientHandleSubmit (OwnershipKept BRCryptoWalletManager manager,
     BRCryptoWallet   wallet   = callbackState->u.submitTransaction.wallet;
     BRCryptoTransfer transfer = callbackState->u.submitTransaction.transfer;
 
-    // Must be the case... 'belt and suspenders'
-    if (CRYPTO_TRUE == cryptoWalletHasTransfer (wallet, transfer)) {
-        // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
-        // a possible race condition, whereby the transfer can already be INCLUDED by the time this
-        // `announce` is called.  That has got to be impossible right?
-        //
-        // Assign the state; generate events in the process.
-        cryptoTransferSetState (transfer, (CRYPTO_TRUE == success
+    // Get the transfer state
+    BRCryptoTransferState transferState = (CRYPTO_TRUE == success
                                            ? cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_SUBMITTED)
-                                           : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown())));
+                                           : cryptoTransferStateErroredInit (cryptoTransferSubmitErrorUnknown()));
 
-        // On successful submit, the hash might be determined.  Yes, somewhat unfathomably (HBAR)
-        BRCryptoHash hash = (NULL == hashStr ? NULL : cryptoNetworkCreateHashFromString (manager->network, hashStr));
+    // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
+    // a possible race condition, whereby the transfer can already be INCLUDED by the time this
+    // `announce` is called.  That has got to be impossible right?
+    //
+    // Assign the state; generate events in the process.
+    cryptoTransferSetState (transfer, transferState);
 
-        if (NULL != hash) {
-            BRCryptoBoolean hashChanged = cryptoTransferSetHash (transfer, hash);
+    // On successful submit, the hash might be determined.  Yes, somewhat unfathomably (HBAR)
+    BRCryptoHash hash = (NULL == hashStr ? NULL : cryptoNetworkCreateHashFromString (manager->network, hashStr));
 
-            if (CRYPTO_TRUE == hashChanged) {
-                BRCryptoTransferState state = cryptoTransferGetState(transfer);
+    if (NULL != hash) {
+        BRCryptoBoolean hashChanged = cryptoTransferSetHash (transfer, hash);
 
-                cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
-                    CRYPTO_TRANSFER_EVENT_CHANGED,
-                    { .state = {
-                        cryptoTransferStateTake (state),
-                        cryptoTransferStateTake (state) }}
-                });
+        if (CRYPTO_TRUE == hashChanged) {
+            BRCryptoTransferState state = cryptoTransferGetState(transfer);
 
-                cryptoTransferStateGive (state);
-            }
+            cryptoTransferGenerateEvent (transfer, (BRCryptoTransferEvent) {
+                CRYPTO_TRANSFER_EVENT_CHANGED,
+                { .state = {
+                    cryptoTransferStateTake (state),
+                    cryptoTransferStateTake (state) }}
+            });
 
-            cryptoHashGive (hash);
+            cryptoTransferStateGive (state);
         }
+
+        cryptoHashGive (hash);
     }
+
+    // If the manager's wallet (aka the primaryWallet) does not match the wallet, then the
+    // transaction fee must be updated... on an ERROR - it was already updated upon submit, so
+    // only on ERROR do we undo the fee.
+    if (wallet != manager->wallet &&
+        CRYPTO_TRANSFER_STATE_ERRORED == transferState->type &&
+        CRYPTO_TRANSFER_RECEIVED      != transfer->direction) {
+        cryptoWalletUpdBalance (manager->wallet, true);
+    }
+
+    cryptoTransferStateGive(transferState);
 
     cryptoWalletManagerGive (manager);
     cryptoClientCallbackStateRelease(callbackState);
@@ -1150,12 +1169,15 @@ cryptoClientAnnounceEstimateTransactionFee (OwnershipKept BRCryptoWalletManager 
     BRArrayOf(char *) keys;
     array_new (keys, attributesCount);
     array_add_array (keys, (char**) attributeKeys, attributesCount);
-    array_apply (keys, strdup);
 
     BRArrayOf(char *) vals;
     array_new (vals, attributesCount);
     array_add_array (vals, (char**) attributeVals, attributesCount);
-    array_apply (vals, strdup);
+
+    for (size_t index = 0; index < attributesCount; index++) {
+        keys[index] = strdup (keys[index]);
+        vals[index] = strdup (vals[index]);
+    }
 
     BRCryptoClientAnnounceEstimateTransactionFeeEvent event =
     { { NULL, &handleClientAnnounceEstimateTransactionFeeEventType },

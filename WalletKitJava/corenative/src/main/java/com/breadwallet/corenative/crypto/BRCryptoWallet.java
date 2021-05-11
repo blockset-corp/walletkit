@@ -206,14 +206,11 @@ public class BRCryptoWallet extends PointerType {
     }
 
     public Optional<BRCryptoTransfer> createTransferForWalletSweep(BRCryptoWalletSweeper sweeper, BRCryptoWalletManager manager, BRCryptoFeeBasis estimatedFeeBasis) {
-        Pointer thisPtr = this.getPointer();
-
-        assert (false); // TODO: Need WalletManager?
         return Optional.fromNullable(
                 CryptoLibraryDirect.cryptoWalletSweeperCreateTransferForWalletSweep(
                         sweeper.getPointer(),
                         manager.getPointer(),
-                        thisPtr,
+                        this.getPointer(),
                         estimatedFeeBasis.getPointer()
                 )
         ).transform(BRCryptoTransfer::new);
