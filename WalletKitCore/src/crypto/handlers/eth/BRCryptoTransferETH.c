@@ -85,6 +85,9 @@ cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
                            BREthereumAccount account,
                            uint64_t nonce,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
+    assert (NULL  == originatingTransaction ||
+            nonce == transactionGetNonce (originatingTransaction));
+
     BRCryptoTransferCreateContextETH contextETH = {
         hash,
         account,
@@ -119,6 +122,19 @@ cryptoTransferReleaseETH (BRCryptoTransfer transfer) {
 
     if (NULL != transferETH->originatingTransaction)
         transactionRelease(transferETH->originatingTransaction);
+}
+
+extern uint64_t
+cryptoTransferGetNonceETH (BRCryptoTransferETH transfer) {
+    return transfer->nonce;
+}
+
+extern void
+cryptoTransferSetNonceETH (BRCryptoTransferETH transfer,
+                           uint64_t nonce) {
+    transfer->nonce = nonce;
+    if (NULL != transfer->originatingTransaction)
+        transactionSetNonce (transfer->originatingTransaction, nonce);
 }
 
 static BRCryptoTransferDirection

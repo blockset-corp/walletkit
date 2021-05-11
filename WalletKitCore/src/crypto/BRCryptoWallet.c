@@ -515,20 +515,23 @@ cryptoWalletComputeBalance (BRCryptoWallet wallet, bool needLock) {
     BRCryptoAmount balance = cryptoAmountCreateInteger (0, wallet->unit);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        BRCryptoAmount amount     = cryptoWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
-        BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
+        // If the transfer has ERRORED, ignore it immediately
+        if (CRYPTO_TRANSFER_STATE_ERRORED != cryptoTransferGetStateType (wallet->transfers[index])) {
+            BRCryptoAmount amount     = cryptoWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
+            BRCryptoAmount newBalance = cryptoAmountAdd (balance, amount);
 
-        cryptoAmountGive(amount);
-        cryptoAmountGive(balance);
+            cryptoAmountGive(amount);
+            cryptoAmountGive(balance);
 
-        balance = newBalance;
+            balance = newBalance;
+        }
     }
     if (needLock) pthread_mutex_unlock (&wallet->lock);
 
     return balance;
 }
 
-static void
+private_extern void
 cryptoWalletUpdBalance (BRCryptoWallet wallet, bool needLock) {
     if (needLock) pthread_mutex_lock (&wallet->lock);
     cryptoWalletSetBalance (wallet, cryptoWalletComputeBalance (wallet, false));
@@ -608,8 +611,9 @@ cryptoWalletHasTransfer (BRCryptoWallet wallet,
 static void
 cryptoWalletAnnounceTransfer (BRCryptoWallet wallet,
                               BRCryptoTransfer transfer,
-                              BRCryptoWalletEventType type) {  // TRANSFER_{ADDED,DELETED}
+                              BRCryptoWalletEventType type) {  // TRANSFER_{ADDED,UPDATED,DELETED}
     assert (CRYPTO_WALLET_EVENT_TRANSFER_ADDED   == type ||
+            CRYPTO_WALLET_EVENT_TRANSFER_CHANGED == type ||
             CRYPTO_WALLET_EVENT_TRANSFER_DELETED == type);
     if (NULL != wallet->handlers->announceTransfer)
         wallet->handlers->announceTransfer (wallet, transfer, type);
@@ -705,15 +709,34 @@ cryptoWalletReplaceTransfer (BRCryptoWallet wallet,
     cryptoTransferGive (newTransfer);
 }
 
+// This is called as the 'transferListener' by BRCryptoTransfer from `cryptoTransferSetState`.  It
+// is a way for a wallet to listen in on transfer changes.
 static void
 cryptoWalletUpdTransfer (BRCryptoWallet wallet,
                          BRCryptoTransfer transfer,
                          BRCryptoTransferState newState) {
-    // The transfer's state has changed.  This implies a possible amount/fee change.
+    // The transfer's state has changed.  This implies a possible amount/fee change as well as
+    // perhaps other wallet changes, such a nonce change.
     pthread_mutex_lock (&wallet->lock);
-    if (newState->type == CRYPTO_TRANSFER_STATE_INCLUDED &&
-        CRYPTO_TRUE == cryptoWalletHasTransferLock (wallet, transfer, false))
-        cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+    if (CRYPTO_TRUE == cryptoWalletHasTransferLock (wallet, transfer, false)) {
+        switch (newState->type) {
+            case CRYPTO_TRANSFER_STATE_CREATED:
+            case CRYPTO_TRANSFER_STATE_SIGNED:
+            case CRYPTO_TRANSFER_STATE_SUBMITTED:
+            case CRYPTO_TRANSFER_STATE_DELETED:
+                break; // nothing
+            case CRYPTO_TRANSFER_STATE_INCLUDED:
+                cryptoWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+                break;
+            case CRYPTO_TRANSFER_STATE_ERRORED:
+                // Recompute the balance
+                cryptoWalletUpdBalance (wallet, false);
+                break;
+        }
+
+        // Announce a 'TRANSFER_CHANGED'; each currency might respond differently.
+        cryptoWalletAnnounceTransfer (wallet, transfer, CRYPTO_WALLET_EVENT_TRANSFER_CHANGED);
+    }
     pthread_mutex_unlock (&wallet->lock);
 }
 

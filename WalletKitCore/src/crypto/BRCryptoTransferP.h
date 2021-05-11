@@ -168,8 +168,15 @@ private_extern BRCryptoBlockChainType
 cryptoTransferGetType (BRCryptoTransfer transfer);
 
 private_extern void
+cryptoTransferSetStateForced (BRCryptoTransfer transfer,
+                              BRCryptoTransferState state,
+                              bool forceEvent);
+
+static inline void
 cryptoTransferSetState (BRCryptoTransfer transfer,
-                        BRCryptoTransferState state);
+                        BRCryptoTransferState state) {
+    cryptoTransferSetStateForced (transfer, state, false);
+}
 
 // TODO: Are TransferAttributes not constant?
 private_extern void

@@ -173,9 +173,8 @@ cryptoWalletManagerSignTransactionETH (BRCryptoWalletManager manager,
 
     assert (NULL != ethTransaction);
 
-    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == transactionGetNonce (ethTransaction))
-        transactionSetNonce (ethTransaction,
-                             ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
+    if (TRANSACTION_NONCE_IS_NOT_ASSIGNED == cryptoTransferGetNonceETH(transferETH))
+        cryptoTransferSetNonceETH (transferETH, ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
 
     // RLP Encode the UNSIGNED transaction
     BRRlpCoder coder = rlpCoderCreate();
@@ -912,9 +911,19 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     else
         transfer = cryptoWalletGetTransferByHash (primaryWallet, hash);
 
-    // If we have a transfer, simply update its state
+    // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
-        cryptoTransferSetState (transfer, state);
+        // Get the transferETH so as to check for a nonce update
+        BRCryptoTransferETH transeferETH = cryptoTransferCoerceETH(transfer);
+
+        // Compare the current nonce with the transfer's.
+        bool nonceChanged = (nonce != cryptoTransferGetNonceETH(transeferETH));
+
+        // Update the nonce if it has chanaged
+        if (nonceChanged) cryptoTransferSetNonceETH (transeferETH, nonce);
+
+        // On a state change the wallet will be updated.
+        cryptoTransferSetStateForced (transfer, state, nonceChanged);
     }
 
     else {

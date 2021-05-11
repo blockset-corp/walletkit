@@ -377,8 +377,9 @@ cryptoTransferGetState (BRCryptoTransfer transfer) {
 }
 
 private_extern void
-cryptoTransferSetState (BRCryptoTransfer transfer,
-                        BRCryptoTransferState state) {
+cryptoTransferSetStateForced (BRCryptoTransfer transfer,
+                              BRCryptoTransferState state,
+                              bool forced) {
     BRCryptoTransferState newState = cryptoTransferStateTake (state);
 
     pthread_mutex_lock (&transfer->lock);
@@ -386,7 +387,7 @@ cryptoTransferSetState (BRCryptoTransfer transfer,
     transfer->state = newState;
     pthread_mutex_unlock (&transfer->lock);
 
-    if (!cryptoTransferStateIsEqual (oldState, newState)) {
+    if (forced || !cryptoTransferStateIsEqual (oldState, newState)) {
         // A Hack: Instead Wallet shouild listen for CRYPTO_TRANSFER_EVENT_CHANGED
         if (NULL != transfer->listener.transferChangedCallback)
             transfer->listener.transferChangedCallback (transfer->listener.wallet, transfer, newState);
