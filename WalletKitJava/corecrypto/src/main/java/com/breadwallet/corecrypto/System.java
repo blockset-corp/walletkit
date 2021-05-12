@@ -2091,7 +2091,7 @@ final class System implements com.breadwallet.crypto.System {
                             @Override
                             public void handleData(TransactionFee fee) {
                                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getMeta());
+                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
                             }
 
                             @Override
