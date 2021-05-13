@@ -177,6 +177,8 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     UInt256 value = wkAmountGetValue (amount);
     char   *data  = wkTransferProvideOriginatingData (ethToken, ethTargetAddress, value);
 
+    uint64_t nonce = TRANSACTION_NONCE_IS_NOT_ASSIGNED;
+
     // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or

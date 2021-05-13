@@ -377,8 +377,9 @@ wkTransferGetState (WKTransfer transfer) {
 }
 
 private_extern void
-wkTransferSetState (WKTransfer transfer,
-                        WKTransferState state) {
+wkTransferSetStateForced (WKTransfer transfer,
+                              WKTransferState state,
+                              bool forced) {
     WKTransferState newState = wkTransferStateTake (state);
 
     pthread_mutex_lock (&transfer->lock);
@@ -386,7 +387,7 @@ wkTransferSetState (WKTransfer transfer,
     transfer->state = newState;
     pthread_mutex_unlock (&transfer->lock);
 
-    if (!wkTransferStateIsEqual (oldState, newState)) {
+    if (forced || !wkTransferStateIsEqual (oldState, newState)) {
         // A Hack: Instead Wallet shouild listen for WK_TRANSFER_EVENT_CHANGED
         if (NULL != transfer->listener.transferChangedCallback)
             transfer->listener.transferChangedCallback (transfer->listener.wallet, transfer, newState);

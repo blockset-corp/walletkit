@@ -911,9 +911,19 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     else
         transfer = wkWalletGetTransferByHash (primaryWallet, hash);
 
-    // If we have a transfer, simply update its state
+    // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
-        wkTransferSetState (transfer, state);
+        // Get the transferETH so as to check for a nonce update
+        WKTransferETH transeferETH = wkTransferCoerceETH(transfer);
+
+        // Compare the current nonce with the transfer's.
+        bool nonceChanged = (nonce != wkTransferGetNonceETH(transeferETH));
+
+        // Update the nonce if it has chanaged
+        if (nonceChanged) wkTransferSetNonceETH (transeferETH, nonce);
+
+        // On a state change the wallet will be updated.
+        wkTransferSetStateForced (transfer, state, nonceChanged);
     }
 
     else {

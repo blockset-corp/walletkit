@@ -88,6 +88,13 @@ class WKAccountTests: XCTestCase {
 
         let _ = Address (core: e3!.core, take: true)
         let _ = Address (core: e3!.core)
+
+        XCTAssertNil(Address.create(string: "ethereum:0xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "1xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "0xWWW225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "", network: network));
+        XCTAssertNil(Address.create(string: "0xb0F225defEc7625C6B5E43126bdDE398bD90eF6",  network: network));
+        XCTAssertNil(Address.create(string: "0xb0F225defEc7625C6B5E43126bdDE398bD90eF",   network: network));
     }
 
     func testAddressBTC () {
@@ -149,6 +156,8 @@ class WKAccountTests: XCTestCase {
 
         XCTAssertEqual (Address.create (string: "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network)?.description,
                        "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a")
+
+        XCTAssertNil (Address.create (string: "w41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network))
     }
 
     func testAddressHBAR () {
@@ -157,6 +166,7 @@ class WKAccountTests: XCTestCase {
         XCTAssertEqual (Address.create (string: "0.0.14222", network: network)?.description,
                        "0.0.14222")
 
+        XCTAssertNil (Address.create (string: "0.0.x14222", network: network))
     }
 /*
         let addr1 = bch.addressFor("bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v") // cashaddr with prefix is valid

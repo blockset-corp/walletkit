@@ -1232,17 +1232,20 @@ wkWalletManagerRecoverTransferAttributesFromTransferBundle (WKWallet wallet,
         BRArrayOf(WKTransferAttribute) attributes;
         array_new(attributes, bundle->attributesCount);
         for (size_t index = 0; index < bundle->attributesCount; index++) {
-            const char *key = bundle->attributeKeys[index];
-            WKBoolean isRequiredAttribute;
-            WKBoolean isAttribute = wkWalletHasTransferAttributeForKey (wallet,
-                                                                                  target,
-                                                                                  key,
-                                                                                  &isRequiredAttribute);
-            if (WK_TRUE == isAttribute)
+            // Lookup a pre-existing attribute having `key`
+            WKTransferAttribute attribute =
+            wkWalletGetTransferAttributeForKey (wallet,
+                                                    target,
+                                                    bundle->attributeKeys[index]);
+
+            // If an attribute exists, take the bundle's value and extent `attributes`.
+            if (NULL != attribute) {
                 array_add (attributes,
-                           wkTransferAttributeCreate(key,
-                                                         bundle->attributeVals[index],
-                                                         isRequiredAttribute));
+                           cryptoTransferAttributeCreate (wkTransferAttributeGetKey (attribute),
+                                                          bundle->attributeVals[index],
+                                                          wkTransferAttributeIsRequired (attribute)));
+                wkTransferAttributeGive(attribute);
+            }
         }
         
         wkTransferSetAttributes (transfer, array_count(attributes), attributes);

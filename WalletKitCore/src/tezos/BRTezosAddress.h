@@ -25,6 +25,7 @@ extern "C" {
 extern const uint8_t TZ1_PREFIX[3];
 extern const uint8_t TZ2_PREFIX[3];
 extern const uint8_t TZ3_PREFIX[3];
+extern const uint8_t KT_PREFIX[3];
 
 
 typedef struct BRTezosAddressRecord *BRTezosAddress;

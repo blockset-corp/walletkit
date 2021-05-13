@@ -515,20 +515,23 @@ wkWalletComputeBalance (WKWallet wallet, bool needLock) {
     WKAmount balance = wkAmountCreateInteger (0, wallet->unit);
 
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        WKAmount amount     = wkWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
-        WKAmount newBalance = wkAmountAdd (balance, amount);
+        // If the transfer has ERRORED, ignore it immediately
+        if (WK_TRANSFER_STATE_ERRORED != wkTransferGetStateType (wallet->transfers[index])) {
+            WKAmount amount     = wkWalletGetTransferAmountDirectedNet (wallet, wallet->transfers[index]);
+            WKAmount newBalance = wkAmountAdd (balance, amount);
 
-        wkAmountGive(amount);
-        wkAmountGive(balance);
+            wkAmountGive(amount);
+            wkAmountGive(balance);
 
-        balance = newBalance;
+            balance = newBalance;
+        }
     }
     if (needLock) pthread_mutex_unlock (&wallet->lock);
 
     return balance;
 }
 
-static void
+private_extern void
 wkWalletUpdBalance (WKWallet wallet, bool needLock) {
     if (needLock) pthread_mutex_lock (&wallet->lock);
     wkWalletSetBalance (wallet, wkWalletComputeBalance (wallet, false));
@@ -608,8 +611,9 @@ wkWalletHasTransfer (WKWallet wallet,
 static void
 wkWalletAnnounceTransfer (WKWallet wallet,
                               WKTransfer transfer,
-                              WKWalletEventType type) {  // TRANSFER_{ADDED,DELETED}
+                              WKWalletEventType type) {  // TRANSFER_{ADDED,UPDATED,DELETED}
     assert (WK_WALLET_EVENT_TRANSFER_ADDED   == type ||
+            WK_WALLET_EVENT_TRANSFER_CHANGED == type ||
             WK_WALLET_EVENT_TRANSFER_DELETED == type);
     if (NULL != wallet->handlers->announceTransfer)
         wallet->handlers->announceTransfer (wallet, transfer, type);
@@ -705,15 +709,34 @@ wkWalletReplaceTransfer (WKWallet wallet,
     wkTransferGive (newTransfer);
 }
 
+// This is called as the 'transferListener' by WKTransfer from `cryptoTransferSetState`.  It
+// is a way for a wallet to listen in on transfer changes.
 static void
 wkWalletUpdTransfer (WKWallet wallet,
                          WKTransfer transfer,
                          WKTransferState newState) {
-    // The transfer's state has changed.  This implies a possible amount/fee change.
+    // The transfer's state has changed.  This implies a possible amount/fee change as well as
+    // perhaps other wallet changes, such a nonce change.
     pthread_mutex_lock (&wallet->lock);
-    if (newState->type == WK_TRANSFER_STATE_INCLUDED &&
-        WK_TRUE == wkWalletHasTransferLock (wallet, transfer, false))
-        wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+    if (WK_TRUE == wkWalletHasTransferLock (wallet, transfer, false)) {
+        switch (newState->type) {
+            case WK_TRANSFER_STATE_CREATED:
+            case WK_TRANSFER_STATE_SIGNED:
+            case WK_TRANSFER_STATE_SUBMITTED:
+            case WK_TRANSFER_STATE_DELETED:
+                break; // nothing
+            case WK_TRANSFER_STATE_INCLUDED:
+                wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+                break;
+            case WK_TRANSFER_STATE_ERRORED:
+                // Recompute the balance
+                wkWalletUpdBalance (wallet, false);
+                break;
+        }
+
+        // Announce a 'TRANSFER_CHANGED'; each currency might respond differently.
+        wkWalletAnnounceTransfer (wallet, transfer, WK_WALLET_EVENT_TRANSFER_CHANGED);
+    }
     pthread_mutex_unlock (&wallet->lock);
 }
 
@@ -825,26 +848,20 @@ wkWalletValidateTransferAttributes (WKWallet wallet,
     return (WKTransferAttributeValidationError) 0;
 }
 
-extern WKBoolean
-wkWalletHasTransferAttributeForKey (WKWallet wallet,
+extern WKTransferAttribute
+wkWalletGetTransferAttributeForKey (WKWallet wallet,
                                         WKAddress target,
-                                        const char *key,
-                                        WKBoolean *isRequired) {
-    assert(NULL != isRequired);
-    
+                                        const char *key) {
+
     size_t count = wkWalletGetTransferAttributeCount (wallet, target);
     for (size_t index = 0; index < count; index++) {
         WKTransferAttribute attribute = wkWalletGetTransferAttributeAt (wallet, target, index);
-        if (0 == strcasecmp(key, wkTransferAttributeGetKey (attribute))) {
-            *isRequired = wkTransferAttributeIsRequired (attribute);
-            wkTransferAttributeGive (attribute);
-            return WK_TRUE;
-        }
+        if (0 == strcasecmp (key, wkTransferAttributeGetKey (attribute)))
+            return attribute;
         wkTransferAttributeGive (attribute);
     }
     
-    *isRequired = WK_FALSE;
-    return WK_FALSE;
+    return NULL;
 }
 
 extern WKTransfer

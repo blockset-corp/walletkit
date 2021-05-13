@@ -33,8 +33,10 @@ import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedLong;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -159,25 +161,32 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
                 new CompletionHandler<List<Transaction>, QueryError>() {
 
                     @Override
-                    public void handleData(List<Transaction> data) {
-                        for (Transaction txn: data) {
-                            Optional<byte[]> maybeRaw = txn.getRaw();
-                            if (maybeRaw.isPresent()) {
-                                WalletSweeperError e = handleTransactionAsBtc(maybeRaw.get());
-                                if (null != e) {
-                                    completion.handleError(e);
-                                    return;
-                                }
-                            }
+                    public void handleData(List<Transaction> transactions) {
+                        WalletSweeperError error = null;
+
+                        // Collect all the bundles derived from transactions
+                        List<WKClientTransactionBundle> bundles = new ArrayList<>();
+
+                        for (Transaction transaction : transactions) {
+                            System.makeTransactionBundle (transaction)
+                                    .transform (bundles::add);
                         }
 
-                        WalletSweeperError e = validate();
-                        if (null != e) {
-                            completion.handleError(e);
-                            return;
+                        for (WKClientTransactionBundle bundle : bundles) {
+                            error = handleTransactionAsBtc(bundle);
+                            if (null != error) break /* for */ ;
                         }
 
-                        completion.handleData(WalletSweeper.this);
+                        // Release all the bundles
+                        for (WKClientTransactionBundle bundle : bundles) {
+                            bundle.release();
+                        }
+
+                        // If no error, then validate
+                        if (null == error) error = validate();
+
+                        if (null != error) completion.handleError(error);
+                        else completion.handleData(WalletSweeper.this);
                     }
 
                     @Override
@@ -193,8 +202,8 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
         return maybeAddress.get();
     }
 
-    private WalletSweeperError handleTransactionAsBtc(byte[] transaction) {
-        return statusToError(core.handleTransactionAsBtc(transaction));
+    private WalletSweeperError handleTransactionAsBtc(WKClientTransactionBundle bundle) {
+        return statusToError(core.handleTransactionAsBtc(bundle));
     }
 
     private WalletSweeperError validate() {

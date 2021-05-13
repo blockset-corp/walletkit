@@ -29,6 +29,7 @@
 const uint8_t TZ1_PREFIX[3] = { 6, 161, 159 };
 const uint8_t TZ2_PREFIX[3] = { 6, 161, 161 };
 const uint8_t TZ3_PREFIX[3] = { 6, 161, 164 };
+const uint8_t KT_PREFIX[3] = { 2, 90, 121 };
 
 static uint8_t feeAddressBytes[TEZOS_ADDRESS_BYTES] = {
     0x42, 0x52, 0x44, //BRD
@@ -142,7 +143,8 @@ tezosAddressStringToAddress(const char *input) {
     
     if (0 == memcmp(bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
         || 0 == memcmp(bytes, TZ2_PREFIX, sizeof(TZ2_PREFIX))
-        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ3_PREFIX))) {
+        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ3_PREFIX))
+        || 0 == memcmp(bytes, KT_PREFIX, sizeof(KT_PREFIX))) {
         return tezosAddressCreateFromBytes(bytes, length);
     }
     

@@ -29,6 +29,12 @@ public class WKClientTransactionBundle extends PointerType {
         return new WKClientTransactionBundle(pointer);
     }
 
+    public void release () {
+        CryptoLibraryDirect.wkClientTransactionBundleRelease(
+                this.getPointer()
+        );
+    }
+
     public WKClientTransactionBundle() {
         super();
     }

@@ -85,6 +85,9 @@ wkTransferCreateAsETH (WKTransferListener listener,
                            BREthereumAccount account,
                            uint64_t nonce,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
+    assert (NULL  == originatingTransaction ||
+            nonce == transactionGetNonce (originatingTransaction));
+
     WKTransferCreateContextETH contextETH = {
         hash,
         account,

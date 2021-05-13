@@ -272,6 +272,10 @@ wkClientQRYManagerUpdateSync (WKClientQRYManager qry,
     qry->sync.success   = success;
 
     if (needBegEvent) {
+        wkWalletManagerSetState (qry->manager, (WKWalletManagerState) {
+            WK_WALLET_MANAGER_STATE_SYNCING
+        });
+
         wkWalletManagerGenerateEvent (qry->manager, (WKWalletManagerEvent) {
             WK_WALLET_MANAGER_EVENT_SYNC_STARTED
         });
@@ -293,6 +297,10 @@ wkClientQRYManagerUpdateSync (WKClientQRYManager qry,
             { .syncStopped = (success
                               ? wkSyncStoppedReasonComplete()
                               : wkSyncStoppedReasonUnknown()) }
+        });
+
+        wkWalletManagerSetState (qry->manager, (WKWalletManagerState) {
+            WK_WALLET_MANAGER_STATE_CONNECTED
         });
     }
 
@@ -1150,12 +1158,15 @@ wkClientAnnounceEstimateTransactionFee (OwnershipKept WKWalletManager manager,
     BRArrayOf(char *) keys;
     array_new (keys, attributesCount);
     array_add_array (keys, (char**) attributeKeys, attributesCount);
-    array_apply (keys, strdup);
 
     BRArrayOf(char *) vals;
     array_new (vals, attributesCount);
     array_add_array (vals, (char**) attributeVals, attributesCount);
-    array_apply (vals, strdup);
+
+    for (size_t index = 0; index < attributesCount; index++) {
+        keys[index] = strdup (keys[index]);
+        vals[index] = strdup (vals[index]);
+    }
 
     WKClientAnnounceEstimateTransactionFeeEvent event =
     { { NULL, &handleClientAnnounceEstimateTransactionFeeEventType },

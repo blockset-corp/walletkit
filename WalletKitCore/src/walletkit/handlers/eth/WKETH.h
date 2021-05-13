@@ -31,6 +31,9 @@ typedef struct WKAddressETHRecord {
 } *WKAddressETH;
 
 private_extern WKAddress
+wkAddressCreateFromStringAsETH (const char *address);
+
+private_extern WKAddress
 wkAddressCreateAsETH (BREthereumAddress eth);
 
 private_extern BREthereumAddress
@@ -58,6 +61,10 @@ typedef struct WKTransferETHRecord {
     WKHash hash;
     BREthereumAccount account;
     BREthereumGas gasEstimate;
+
+    // Normally the nonce is held in the originatingTransaction; but we don't always have one.
+    // So, we'll keep a nonce here, recovered from the Client/Blockset.  Work hard to keep it in
+    // sync with an originatingTransaction, when we have one.
     uint64_t nonce;
 
     // The tranaction that originated this transfer.  Will be NULL if the transaction's source
@@ -91,6 +98,13 @@ wkTransferGetOriginatingTransactionHashETH (WKTransferETH transfer);
 extern WKTransferState
 wkTransferDeriveStateETH (BREthereumTransactionStatus status,
                               WKFeeBasis feeBasis);
+
+extern uint64_t
+wkTransferGetNonceETH (WKTransferETH transfer);
+
+extern void
+wkTransferSetNonceETH (WKTransferETH transfer,
+                           uint64_t nonce);
 
 // MARK: - Wallet
 

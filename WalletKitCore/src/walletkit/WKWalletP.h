@@ -203,6 +203,9 @@ wkWalletReplaceTransfer (WKWallet wallet,
 private_extern OwnershipGiven BRSetOf(BRCyptoAddress)
 wkWalletGetAddressesForRecovery (WKWallet wallet);
 
+private_extern void
+wkWalletUpdBalance (WKWallet wallet, bool needLock);
+
 static inline void
 wkWalletGenerateEvent (WKWallet wallet,
                            OwnershipGiven WKWalletEvent event) {

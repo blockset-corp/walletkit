@@ -370,7 +370,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkWalletSweeperGetKey(Pointer sweeper);
     public static native Pointer wkWalletSweeperGetBalance(Pointer sweeper);
     public static native Pointer wkWalletSweeperGetAddress(Pointer sweeper);
-    public static native int wkWalletSweeperAddTransactionFromBundle(Pointer sweeper, byte[] transaction, SizeT transactionLen);//TODO:SWEEP use transaction bundle
+    public static native int wkWalletSweeperAddTransactionFromBundle(Pointer sweeper, Pointer bundle);
     public static native int wkWalletSweeperValidate(Pointer sweeper);
     public static native void wkWalletSweeperRelease(Pointer sweeper);
     public static native Pointer wkWalletSweeperCreateTransferForWalletSweep(Pointer sweeper, Pointer walletManager, Pointer wallet, Pointer feeBasis);
@@ -382,6 +382,8 @@ public final class WKNativeLibraryDirect {
                                                                       SizeT transactionLength,
                                                                       long timestamp,
                                                                       long blockHeight);
+    public static native void wkClientTransactionBundleRelease (Pointer bundle);
+
     // See 'Indirect': void wkClientTransferBundleCreate (int status, ...)
 
     public static native Pointer wkClientCurrencyDenominationBundleCreate (String name, String code, String symbol, int decimals);

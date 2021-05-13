@@ -175,8 +175,15 @@ private_extern WKNetworkType
 wkTransferGetType (WKTransfer transfer);
 
 private_extern void
+wkTransferSetStateForced (WKTransfer transfer,
+                              WKTransferState state,
+                              bool forceEvent);
+
+static inline void
 wkTransferSetState (WKTransfer transfer,
-                        WKTransferState state);
+                        WKTransferState state) {
+    wkTransferSetStateForced (transfer, state, false);
+}
 
 // TODO: Are TransferAttributes not constant?
 private_extern void

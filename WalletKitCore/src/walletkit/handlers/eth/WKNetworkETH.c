@@ -81,9 +81,6 @@ wkNetworkReleaseETH (WKNetwork network) {
     (void) networkETH;
 }
 
-extern WKAddress
-wkAddressCreateFromStringAsETH (const char *address);
-
 static WKAddress
 wkNetworkCreateAddressETH (WKNetwork network,
                                const char *addressAsString) {

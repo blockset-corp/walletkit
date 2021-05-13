@@ -167,7 +167,7 @@ static void testAddressCreate() {
     assert(NULL == tezosAddressCreateFromString("tz4i5JJDhq7x8gVkpWq2Fwef3k7NEcBj2nJS", true));
     
     // Originating address
-    //assert(NULL != tezosAddressCreateFromString("KT1VG2WtYdSWz5E7chTeAdDPZNy2MpP8pTfL", true));
+    assert(NULL != tezosAddressCreateFromString("KT1VG2WtYdSWz5E7chTeAdDPZNy2MpP8pTfL", true));
 }
 
 static void testAddressEqual() {
@@ -558,12 +558,12 @@ testTransactionSignWithReveal() {
     //printByteString(0, signedBytes, signedSize);
 
     bin2HexString(signedBytes, signedSize, serializedHex);
-    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b5822983fa8003e05dac020064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5822984fa8003e05dac02a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f64500a728f8325f1793ec612c64cf088101dd597376c3a2ef07b19271b4f06ce104f5a9ed5175526d28f2c60e4d78dfac2e6f8fbcc35c30be46fae05100f4dca03408", serializedHex));
+    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b50083fa8003c0bb01ac020064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5845284fa8003c0bb01ac02a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f645007120555278435abcd9a8b1397d1964024acd978ee6286b34a04d18aa0d8ee00bf911bc10879bcac6dd9198189f39ee80246724750ac8f3ccba042c3d1fd45507", serializedHex));
 
     BRTezosHash hash = tezosTransactionGetHash(tx);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
-    assert (0 == strcmp ("ooF3XQCjSS2S3TuNeTyxNGuhfWFBzyAwwZu3QyuJz2vNyvjEyq2", hashString));
+    assert (0 == strcmp ("op5o529Ggohc614wQBKfxsQXG6tcH5Q6jqDSDZ4dVDz8mC6LGDB", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
