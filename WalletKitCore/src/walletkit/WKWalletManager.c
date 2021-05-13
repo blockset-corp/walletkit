@@ -1241,7 +1241,7 @@ wkWalletManagerRecoverTransferAttributesFromTransferBundle (WKWallet wallet,
             // If an attribute exists, take the bundle's value and extent `attributes`.
             if (NULL != attribute) {
                 array_add (attributes,
-                           cryptoTransferAttributeCreate (wkTransferAttributeGetKey (attribute),
+                           wkTransferAttributeCreate (wkTransferAttributeGetKey (attribute),
                                                           bundle->attributeVals[index],
                                                           wkTransferAttributeIsRequired (attribute)));
                 wkTransferAttributeGive(attribute);

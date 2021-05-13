@@ -968,39 +968,50 @@ wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
     WKWallet   wallet   = callbackState->u.submitTransaction.wallet;
     WKTransfer transfer = callbackState->u.submitTransaction.transfer;
 
-    // Must be the case... 'belt and suspenders'
-    if (WK_TRUE == wkWalletHasTransfer (wallet, transfer)) {
-        // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
-        // a possible race condition, whereby the transfer can already be INCLUDED by the time this
-        // `announce` is called.  That has got to be impossible right?
-        //
-        // Assign the state; generate events in the process.
-        wkTransferSetState (transfer, (WK_TRUE == success
+    // Get the transfer state
+    WKTransferState transferState = (WK_TRUE == success
                                            ? wkTransferStateInit (WK_TRANSFER_STATE_SUBMITTED)
-                                           : wkTransferStateErroredInit (wkTransferSubmitErrorUnknown())));
+                                           : wkTransferStateErroredInit (wkTransferSubmitErrorUnknown()));
 
-        // On successful submit, the hash might be determined.  Yes, somewhat unfathomably (HBAR)
-        WKHash hash = (NULL == hashStr ? NULL : wkNetworkCreateHashFromString (manager->network, hashStr));
+    // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
+    // a possible race condition, whereby the transfer can already be INCLUDED by the time this
+    // `announce` is called.  That has got to be impossible right?
+    //
+    // Assign the state; generate events in the process.
+    wkTransferSetState (transfer, transferState);
 
-        if (NULL != hash) {
-            WKBoolean hashChanged = wkTransferSetHash (transfer, hash);
+    // On successful submit, the hash might be determined.  Yes, somewhat unfathomably (HBAR)
+    WKHash hash = (NULL == hashStr ? NULL : wkNetworkCreateHashFromString (manager->network, hashStr));
 
-            if (WK_TRUE == hashChanged) {
-                WKTransferState state = wkTransferGetState(transfer);
+    if (NULL != hash) {
+        WKBoolean hashChanged = wkTransferSetHash (transfer, hash);
 
-                wkTransferGenerateEvent (transfer, (WKTransferEvent) {
-                    WK_TRANSFER_EVENT_CHANGED,
-                    { .state = {
-                        wkTransferStateTake (state),
-                        wkTransferStateTake (state) }}
-                });
+        if (WK_TRUE == hashChanged) {
+            WKTransferState state = wkTransferGetState(transfer);
 
-                wkTransferStateGive (state);
-            }
+            wkTransferGenerateEvent (transfer, (WKTransferEvent) {
+                WK_TRANSFER_EVENT_CHANGED,
+                { .state = {
+                    wkTransferStateTake (state),
+                    wkTransferStateTake (state) }}
+            });
 
-            wkHashGive (hash);
+            wkTransferStateGive (state);
         }
+
+        wkHashGive (hash);
     }
+
+    // If the manager's wallet (aka the primaryWallet) does not match the wallet, then the
+    // transaction fee must be updated... on an ERROR - it was already updated upon submit, so
+    // only on ERROR do we undo the fee.
+    if (wallet != manager->wallet &&
+        WK_TRANSFER_STATE_ERRORED == transferState->type &&
+        WK_TRANSFER_RECEIVED      != transfer->direction) {
+        wkWalletUpdBalance (manager->wallet, true);
+    }
+
+    wkTransferStateGive(transferState);
 
     wkWalletManagerGive (manager);
     wkClientCallbackStateRelease(callbackState);

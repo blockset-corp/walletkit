@@ -177,7 +177,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     UInt256 value = wkAmountGetValue (amount);
     char   *data  = wkTransferProvideOriginatingData (ethToken, ethTargetAddress, value);
 
-    uint64_t nonce = TRANSACTION_NONCE_IS_NOT_ASSIGNED;
+    uint64_t nonce = ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED;
 
     // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
@@ -190,7 +190,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
                        ethFeeBasisGetGasPrice(ethFeeBasis),
                        gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
                        data,
-                       ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED);
+                       nonce);
 
     free (data);
 
@@ -208,7 +208,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
                                                            target,
                                                            state,
                                                            walletETH->ethAccount,
-                                                           ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED,
+                                                           nonce,
                                                            ethTransaction);
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);
@@ -283,12 +283,14 @@ wkWalletAnnounceTransferETH (WKWallet wallet,
     // Ignore `type`; just iterate over all transfers.
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         WKTransferETH transferETH = wkTransferCoerceETH (wallet->transfers[index]);
+        uint64_t transferNonce = wkTransferGetNonceETH(transferETH);
 
-        if (WK_TRANSFER_RECEIVED != transferETH->base.direction &&
-            ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferETH->nonce)
+        if (WK_TRANSFER_RECEIVED                       != transferETH->base.direction &&
+            ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED != transferNonce               &&
+            WK_TRANSFER_STATE_ERRORED                  != wkTransferGetStateType (wallet->transfers[index]))
             nonce = (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == nonce
-                     ? transferETH->nonce
-                     : MAX (nonce, transferETH->nonce));
+                     ? transferNonce
+                     : MAX (nonce, transferNonce));
     }
 
     ethAccountSetAddressNonce (walletETH->ethAccount,

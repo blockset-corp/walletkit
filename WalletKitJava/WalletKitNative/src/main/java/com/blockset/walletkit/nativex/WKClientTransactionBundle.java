@@ -30,7 +30,7 @@ public class WKClientTransactionBundle extends PointerType {
     }
 
     public void release () {
-        CryptoLibraryDirect.wkClientTransactionBundleRelease(
+        WKNativeLibraryDirect.wkClientTransactionBundleRelease(
                 this.getPointer()
         );
     }

@@ -45,16 +45,17 @@ wkAddressCreateAsETH (BREthereumAddress eth) {
 
 private_extern BREthereumAddress
 wkAddressAsETH (WKAddress address) {
-    WKAddressETH addressETH = wkAddressCoerce (address);
-    return addressETH->eth;
+    return (NULL == address
+            ? ETHEREUM_EMPTY_ADDRESS_INIT
+            : wkAddressCoerce (address)->eth);
 }
 
 extern WKAddress
 wkAddressCreateFromStringAsETH (const char *ethAddress) {
     assert (ethAddress);
-    return wkAddressCreateAsETH (ETHEREUM_BOOLEAN_TRUE == ethAddressValidateString (ethAddress)
-                                     ? ethAddressCreate (ethAddress)
-                                     : ETHEREUM_EMPTY_ADDRESS_INIT);
+    return (ETHEREUM_BOOLEAN_TRUE == ethAddressValidateString (ethAddress)
+            ? wkAddressCreateAsETH (ethAddressCreate (ethAddress))
+            : NULL);
 }
 
 static void

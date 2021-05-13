@@ -173,9 +173,8 @@ wkWalletManagerSignTransactionETH (WKWalletManager manager,
 
     assert (NULL != ethTransaction);
 
-    if (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == ethTransactionGetNonce (ethTransaction))
-        ethTransactionSetNonce (ethTransaction,
-                             ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
+    if (ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED == wkTransferGetNonceETH (transferETH))
+        wkTransferSetNonceETH (transferETH, ethAccountGetThenIncrementAddressNonce (ethAccount, ethAddress));
 
     // RLP Encode the UNSIGNED transaction
     BRRlpCoder coder = rlpCoderCreate();
@@ -914,13 +913,13 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
         // Get the transferETH so as to check for a nonce update
-        WKTransferETH transeferETH = wkTransferCoerceETH(transfer);
+        WKTransferETH transferETH = wkTransferCoerceETH(transfer);
 
         // Compare the current nonce with the transfer's.
-        bool nonceChanged = (nonce != wkTransferGetNonceETH(transeferETH));
+        bool nonceChanged = (nonce != wkTransferGetNonceETH(transferETH));
 
         // Update the nonce if it has chanaged
-        if (nonceChanged) wkTransferSetNonceETH (transeferETH, nonce);
+        if (nonceChanged) wkTransferSetNonceETH (transferETH, nonce);
 
         // On a state change the wallet will be updated.
         wkTransferSetStateForced (transfer, state, nonceChanged);

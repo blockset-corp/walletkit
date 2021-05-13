@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.TransferFeeBasis;
+import com.blockset.walletkit.nativex.WKClientTransactionBundle;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKAddress;
 import com.blockset.walletkit.nativex.WKKey;
@@ -148,11 +149,10 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
     private void initAsBtc(BlockchainDb bdb,
                            CompletionHandler<com.blockset.walletkit.WalletSweeper, WalletSweeperError> completion) {
         Network network = manager.getNetwork();
-        String address = getAddress();
 
         bdb.getTransactions(
                 network.getUids(),
-                Collections.singletonList(address),
+                Collections.singletonList(getAddress()),
                 UnsignedLong.ZERO,
                 network.getHeight(),
                 true,

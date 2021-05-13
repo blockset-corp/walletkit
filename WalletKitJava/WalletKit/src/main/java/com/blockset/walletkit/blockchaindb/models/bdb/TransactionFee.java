@@ -21,22 +21,22 @@ public class TransactionFee {
     @JsonCreator
     public static TransactionFee create(
             @JsonProperty("cost_units") UnsignedLong costUnits,
-            @JsonProperty("meta") Map<String, String> meta) {
+            @JsonProperty("properties") Map<String, String> properties) {
         return new TransactionFee(
                 checkNotNull(costUnits),
-                meta
+                properties
         );
     }
 
     // fields
 
     private final UnsignedLong costUnits;
-    private final Map<String, String> meta;
+    private final Map<String, String> properties;
 
     private TransactionFee(UnsignedLong costUnits,
-                           Map<String, String> meta) {
+                           Map<String, String> properties) {
         this.costUnits = costUnits;
-        this.meta = meta;
+        this.properties = properties;
     }
 
     // getters
@@ -46,9 +46,9 @@ public class TransactionFee {
         return costUnits;
     }
 
-    @JsonProperty("meta")
-    public Map<String, String> getMeta() {
-        return meta;
+    @JsonProperty("properties")
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
 }

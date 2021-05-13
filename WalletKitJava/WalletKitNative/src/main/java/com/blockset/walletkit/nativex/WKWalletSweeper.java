@@ -71,15 +71,11 @@ public class WKWalletSweeper extends PointerType {
         ).transform(WKAddress::new);
     }
 
-    public WKWalletSweeperStatus handleTransactionAsBtc(byte[] transaction) {
-        Pointer thisPtr = this.getPointer();
-
-        //TODO:SWEEP use transaction bundle
+    public WKWalletSweeperStatus handleTransactionAsBtc(WKClientTransactionBundle bundle) {
         return WKWalletSweeperStatus.fromCore(
                 WKNativeLibraryDirect.wkWalletSweeperAddTransactionFromBundle(
-                        thisPtr,
-                        transaction,
-                        new SizeT(transaction.length))
+		      this.getPointer(),
+		      bundle.getPointer())
         );
     }
 

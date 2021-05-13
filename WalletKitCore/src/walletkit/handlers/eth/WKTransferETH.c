@@ -86,7 +86,7 @@ wkTransferCreateAsETH (WKTransferListener listener,
                            uint64_t nonce,
                            OwnershipGiven BREthereumTransaction originatingTransaction) {
     assert (NULL  == originatingTransaction ||
-            nonce == transactionGetNonce (originatingTransaction));
+            nonce == ethTransactionGetNonce (originatingTransaction));
 
     WKTransferCreateContextETH contextETH = {
         hash,
@@ -122,6 +122,19 @@ wkTransferReleaseETH (WKTransfer transfer) {
 
     if (NULL != transferETH->originatingTransaction)
         ethTransactionRelease(transferETH->originatingTransaction);
+}
+
+extern uint64_t
+wkTransferGetNonceETH (WKTransferETH transfer) {
+    return transfer->nonce;
+}
+
+extern void
+wkTransferSetNonceETH (WKTransferETH transfer,
+                       uint64_t nonce) {
+    transfer->nonce = nonce;
+    if (NULL != transfer->originatingTransaction)
+        ethTransactionSetNonce (transfer->originatingTransaction, nonce);
 }
 
 static WKTransferDirection

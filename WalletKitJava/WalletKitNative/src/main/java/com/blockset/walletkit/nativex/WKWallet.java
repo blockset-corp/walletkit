@@ -206,14 +206,11 @@ public class WKWallet extends PointerType {
     }
 
     public Optional<WKTransfer> createTransferForWalletSweep(WKWalletSweeper sweeper, WKWalletManager manager, WKFeeBasis estimatedFeeBasis) {
-        Pointer thisPtr = this.getPointer();
-
-        assert (false); // TODO: Need WalletManager?
         return Optional.fromNullable(
                 WKNativeLibraryDirect.wkWalletSweeperCreateTransferForWalletSweep(
                         sweeper.getPointer(),
                         manager.getPointer(),
-                        thisPtr,
+                        this.getPointer(),
                         estimatedFeeBasis.getPointer()
                 )
         ).transform(WKTransfer::new);

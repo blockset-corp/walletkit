@@ -189,6 +189,15 @@ wkWalletValidateTransferAttribute (WKWallet wallet,
                                        WKBoolean *validates);
 
 /**
+ * Find the transfer attribute that is relevent to `wallet` when a transfer uses the `target`
+ * address and that contain an attribute with `key`.
+ */
+extern WKTransferAttribute
+wkWalletGetTransferAttributeForKey (WKWallet wallet,
+                                        WKAddress target,
+                                        const char *key);
+
+/**
  * Validate `attributes` for `wallet` and fill `validates` with the result.  If `validates` is
  * WK_TRUE then the return value described the validation error; otherwise the return
  * value is undefined.  The first attribute that is invalid will be returned; subsequent
@@ -199,17 +208,6 @@ wkWalletValidateTransferAttributes (WKWallet wallet,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes,
                                         WKBoolean *validates);
-
-/**
- * Check the the transfer attributes that are relevent to `wallet` when a transfer uses
- * the `target` address contain an attribute with `key`.  Fill in `isRequired` if the attribute
- * matching `key` is a required attribute.
- */
-extern WKBoolean
-wkWalletHasTransferAttributeForKey (WKWallet wallet,
-                                        WKAddress target,
-                                        const char *key,
-                                        WKBoolean *isRequired);
 
 /**
  * Create a transfer.

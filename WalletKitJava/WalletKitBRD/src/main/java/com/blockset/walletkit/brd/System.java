@@ -1826,7 +1826,7 @@ final class System implements com.blockset.walletkit.System {
         }
     }
 
-    private static Optional<WKClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
+    protected static Optional<WKClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
         Optional<byte[]> optRaw = transaction.getRaw();
         if (!optRaw.isPresent()) {
             Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
@@ -1922,7 +1922,7 @@ final class System implements com.blockset.walletkit.System {
         });
     }
 
-    private static List<WKClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
+    protected static List<WKClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
         List<WKClientTransferBundle> result = new ArrayList<>();
 
         UnsignedLong blockHeight    = transaction.getBlockHeight().or(WKConstants.BLOCK_HEIGHT_UNBOUND);
@@ -2092,7 +2092,7 @@ final class System implements com.blockset.walletkit.System {
                             @Override
                             public void handleData(TransactionFee fee) {
                                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getMeta());
+                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
                             }
 
                             @Override
