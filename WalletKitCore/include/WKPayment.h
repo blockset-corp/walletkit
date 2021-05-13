@@ -49,23 +49,23 @@ typedef enum {
 typedef void * WKPayProtReqContext;
 
 typedef char * (*WKPayProtReqBitPayAndBip70CommonNameExtractor) (WKPaymentProtocolRequest request,
-                                                                       WKPayProtReqContext context,
-                                                                       const char *pkiType,
-                                                                       uint8_t *certBytes[],
-                                                                       size_t certLengths[],
-                                                                       size_t certCount);
+                                                                 WKPayProtReqContext context,
+                                                                 const char *pkiType,
+                                                                 uint8_t *certBytes[],
+                                                                 size_t certLengths[],
+                                                                 size_t certCount);
 
 typedef WKPaymentProtocolError (*WKPayProtReqBitPayAndBip70Validator) (WKPaymentProtocolRequest request,
-                                                                                   WKPayProtReqContext context,
-                                                                                   const char *pkiType,
-                                                                                   uint64_t expires,
-                                                                                   uint8_t *certBytes[],
-                                                                                   size_t certLengths[],
-                                                                                   size_t certCount,
-                                                                                   const uint8_t *digest,
-                                                                                   size_t digestLength,
-                                                                                   const uint8_t *signature,
-                                                                                   size_t signatureLength);
+                                                                       WKPayProtReqContext context,
+                                                                       const char *pkiType,
+                                                                       uint64_t expires,
+                                                                       uint8_t *certBytes[],
+                                                                       size_t certLengths[],
+                                                                       size_t certCount,
+                                                                       const uint8_t *digest,
+                                                                       size_t digestLength,
+                                                                       const uint8_t *signature,
+                                                                       size_t signatureLength);
 
 
 typedef struct {
@@ -81,23 +81,23 @@ typedef WKPayProtReqBitPayAndBip70Callbacks WKPayProtReqBip70Callbacks;
 
 extern WKPaymentProtocolRequestBitPayBuilder
 wkPaymentProtocolRequestBitPayBuilderCreate (WKNetwork wkNetwork,
-                                                 WKCurrency wkCurrency,
-                                                 WKPayProtReqBitPayCallbacks callbacks,
-                                                 const char *network,
-                                                 uint64_t time,
-                                                 uint64_t expires,
-                                                 double feePerByte,
-                                                 const char *memo,
-                                                 const char *paymentURL,
-                                                 const uint8_t *merchantData,
-                                                 size_t merchDataLen);
+                                             WKCurrency wkCurrency,
+                                             WKPayProtReqBitPayCallbacks callbacks,
+                                             const char *network,
+                                             uint64_t time,
+                                             uint64_t expires,
+                                             double feePerByte,
+                                             const char *memo,
+                                             const char *paymentURL,
+                                             const uint8_t *merchantData,
+                                             size_t merchDataLen);
 
 DECLARE_WK_GIVE_TAKE (WKPaymentProtocolRequestBitPayBuilder, wkPaymentProtocolRequestBitPayBuilder);
 
 extern void
 wkPaymentProtocolRequestBitPayBuilderAddOutput(WKPaymentProtocolRequestBitPayBuilder builder,
-                                                   const char *address,
-                                                   uint64_t amount);
+                                               const char *address,
+                                               uint64_t amount);
 
 extern WKPaymentProtocolRequest
 wkPaymentProtocolRequestBitPayBuilderBuild(WKPaymentProtocolRequestBitPayBuilder builder);
@@ -106,16 +106,16 @@ wkPaymentProtocolRequestBitPayBuilderBuild(WKPaymentProtocolRequestBitPayBuilder
 
 extern WKBoolean
 wkPaymentProtocolRequestValidateSupported (WKPaymentProtocolType type,
-                                               WKNetwork network,
-                                               WKCurrency currency,
-                                               WKWallet wallet);
+                                           WKNetwork network,
+                                           WKCurrency currency,
+                                           WKWallet wallet);
 
 extern WKPaymentProtocolRequest
 wkPaymentProtocolRequestCreateForBip70 (WKNetwork wkNetwork,
-                                            WKCurrency wkCurrency,
-                                            WKPayProtReqBip70Callbacks callbacks,
-                                            uint8_t *serialization,
-                                            size_t serializationLen);
+                                        WKCurrency wkCurrency,
+                                        WKPayProtReqBip70Callbacks callbacks,
+                                        uint8_t *serialization,
+                                        size_t serializationLen);
 
 DECLARE_WK_GIVE_TAKE (WKPaymentProtocolRequest, wkPaymentProtocolRequest);
 
@@ -151,20 +151,20 @@ wkPaymentProtocolRequestIsValid(WKPaymentProtocolRequest protoReq);
 
 extern WKPaymentProtocolPayment
 wkPaymentProtocolPaymentCreate (WKPaymentProtocolRequest protoReq,
-                                    WKTransfer transfer,
-                                    WKAddress refundAddress);
+                                WKTransfer transfer,
+                                WKAddress refundAddress);
 
 DECLARE_WK_GIVE_TAKE (WKPaymentProtocolPayment, wkPaymentProtocolPayment);
 
 extern uint8_t *
 wkPaymentProtocolPaymentEncode(WKPaymentProtocolPayment protoPay,
-                                   size_t *encodedLen);
+                               size_t *encodedLen);
 
 /// Mark: Payment Protocol ACK
 
 extern WKPaymentProtocolPaymentACK
 wkPaymentProtocolPaymentACKCreateForBip70 (uint8_t *serialization,
-                                               size_t serializationLen);
+                                           size_t serializationLen);
 
 DECLARE_WK_GIVE_TAKE (WKPaymentProtocolPaymentACK, wkPaymentProtocolPaymentACK);
 

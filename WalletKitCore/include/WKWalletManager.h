@@ -40,7 +40,7 @@ wkWalletManagerGetNetwork (WKWalletManager cwm);
  */
 extern WKBoolean
 wkWalletManagerHasNetwork (WKWalletManager cwm,
-                               WKNetwork network);
+                           WKNetwork network);
 
 /*
  * Get the manager's account
@@ -53,7 +53,7 @@ wkWalletManagerGetAccount (WKWalletManager cwm);
  */
 extern WKBoolean
 wkWalletManagerHasAccount (WKWalletManager cwm,
-                               WKAccount account);
+                           WKAccount account);
 
 /**
  * Get the manager's sync mode
@@ -84,7 +84,7 @@ wkWalletManagerGetAddressScheme (WKWalletManager cwm);
  */
 extern void
 wkWalletManagerSetAddressScheme (WKWalletManager cwm,
-                                     WKAddressScheme scheme);
+                                 WKAddressScheme scheme);
 
 /**
  * Get the manager's path
@@ -100,7 +100,7 @@ wkWalletManagerGetPath (WKWalletManager cwm);
  */
 extern void
 wkWalletManagerSetNetworkReachable (WKWalletManager cwm,
-                                        WKBoolean isNetworkReachable);
+                                    WKBoolean isNetworkReachable);
 
 /**
  * Create a manager wallet for `currency`.  If the wallet already exists, it is returned.
@@ -108,7 +108,7 @@ wkWalletManagerSetNetworkReachable (WKWalletManager cwm,
  */
 extern WKWallet
 wkWalletManagerCreateWallet (WKWalletManager cwm,
-                                 WKCurrency currency);
+                             WKCurrency currency);
 
 /**
  * Get the manager's primary wallet.  This is the wallet for the network's native currency.
@@ -132,21 +132,21 @@ wkWalletManagerGetWallet (WKWalletManager cwm);
  */
 extern WKWallet *
 wkWalletManagerGetWallets (WKWalletManager cwm,
-                               size_t *count);
+                           size_t *count);
 
 /**
  Get the manager's wallet holding assets for `currency`.  Result may be NULL.
  */
 extern WKWallet
 wkWalletManagerGetWalletForCurrency (WKWalletManager cwm,
-                                         WKCurrency currency);
+                                     WKCurrency currency);
 
 /**
  * Check if manager has `wallet`
  */
 extern WKBoolean
 wkWalletManagerHasWallet (WKWalletManager cwm,
-                              WKWallet wallet);
+                          WKWallet wallet);
 
 /**
  * Start the WalletManager; allows for handling of events.  This does not connect to an
@@ -170,7 +170,7 @@ wkWalletManagerStop (WKWalletManager cwm);
  */
 extern void
 wkWalletManagerConnect (WKWalletManager cwm,
-                            WKPeer peer);
+                        WKPeer peer);
 
 /**
  * Disconnect the wallet manager.
@@ -189,34 +189,34 @@ wkWalletManagerSync (WKWalletManager cwm);
  */
 extern void
 wkWalletManagerSyncToDepth (WKWalletManager cwm,
-                                WKSyncDepth depth);
+                            WKSyncDepth depth);
 
 /**
  * Sign the `transfer` in `wallet` with the `paperKey`.
  */
 extern WKBoolean
 wkWalletManagerSign (WKWalletManager cwm,
-                         WKWallet wallet,
-                         WKTransfer transfer,
-                         const char *paperKey);
+                     WKWallet wallet,
+                     WKTransfer transfer,
+                     const char *paperKey);
 
 /**
  * Sign and then submit `transfer` in `wallet` with the `paperKey`
  */
 extern void
 wkWalletManagerSubmit (WKWalletManager cwm,
-                           WKWallet wid,
-                           WKTransfer tid,
-                           const char *paperKey);
+                       WKWallet wid,
+                       WKTransfer tid,
+                       const char *paperKey);
 
 /**
  * Sign and then submit `transfer` in `wallet` with the private `key`
  */
 extern void
 wkWalletManagerSubmitForKey (WKWalletManager cwm,
-                                 WKWallet wallet,
-                                 WKTransfer transfer,
-                                 WKKey key);
+                             WKWallet wallet,
+                             WKTransfer transfer,
+                             WKKey key);
 
 /**
  * Submit a `transfer` in `wallet` that is already signed
@@ -225,8 +225,8 @@ wkWalletManagerSubmitForKey (WKWalletManager cwm,
  */
 extern void
 wkWalletManagerSubmitSigned (WKWalletManager cwm,
-                                 WKWallet wallet,
-                                 WKTransfer transfer);
+                             WKWallet wallet,
+                             WKTransfer transfer);
 
 /**
  * Estimate the wallet's maximum or minimun transfer amount.
@@ -245,12 +245,12 @@ wkWalletManagerSubmitSigned (WKWalletManager cwm,
  */
 extern WKAmount
 wkWalletManagerEstimateLimit (WKWalletManager manager,
-                                  WKWallet  wallet,
-                                  WKBoolean asMaximum,
-                                  WKAddress target,
-                                  WKNetworkFee fee,
-                                  WKBoolean *needEstimate,
-                                  WKBoolean *isZeroIfInsuffientFunds);
+                              WKWallet  wallet,
+                              WKBoolean asMaximum,
+                              WKAddress target,
+                              WKNetworkFee fee,
+                              WKBoolean *needEstimate,
+                              WKBoolean *isZeroIfInsuffientFunds);
 
 /**
  * Estimate the fee to transfer `amount` from `wallet` using the `feeBasis`.  Return an amount
@@ -265,30 +265,30 @@ wkWalletManagerEstimateLimit (WKWalletManager manager,
  */
 extern void
 wkWalletManagerEstimateFeeBasis (WKWalletManager manager,
-                                     WKWallet  wallet,
-                                     WKCookie cookie,
-                                     WKAddress target,
-                                     WKAmount  amount,
-                                     WKNetworkFee fee,
-                                     size_t attributesCount,
-                                     OwnershipKept WKTransferAttribute *attributes);
+                                 WKWallet  wallet,
+                                 WKCookie cookie,
+                                 WKAddress target,
+                                 WKAmount  amount,
+                                 WKNetworkFee fee,
+                                 size_t attributesCount,
+                                 OwnershipKept WKTransferAttribute *attributes);
 
 extern WKWalletSweeperStatus
 wkWalletManagerWalletSweeperValidateSupported (WKWalletManager cwm,
-                                                   WKWallet wallet,
-                                                   WKKey key);
+                                               WKWallet wallet,
+                                               WKKey key);
 
 extern WKWalletSweeper
 wkWalletManagerCreateWalletSweeper (WKWalletManager manager,
-                                        WKWallet wallet,
-                                        WKKey key);
+                                    WKWallet wallet,
+                                    WKKey key);
 
 extern void
 wkWalletManagerEstimateFeeBasisForPaymentProtocolRequest (WKWalletManager manager,
-                                                              WKWallet wallet,
-                                                              WKCookie cookie,
-                                                              WKPaymentProtocolRequest request,
-                                                              WKNetworkFee fee);
+                                                          WKWallet wallet,
+                                                          WKCookie cookie,
+                                                          WKPaymentProtocolRequest request,
+                                                          WKNetworkFee fee);
 
 /**
  * Delete the persistent state for a wallet manager on `network` with `path`.  This is a
@@ -298,7 +298,7 @@ wkWalletManagerEstimateFeeBasisForPaymentProtocolRequest (WKWalletManager manage
  */
 extern void
 wkWalletManagerWipe (WKNetwork network,
-                         const char *path);
+                     const char *path);
 
 DECLARE_WK_GIVE_TAKE (WKWalletManager, wkWalletManager);
 

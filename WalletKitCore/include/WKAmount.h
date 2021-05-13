@@ -51,7 +51,7 @@ typedef struct WKAmountRecord *WKAmount;
  */
 extern WKAmount
 wkAmountCreateDouble (double value,
-                          WKUnit unit);
+                      WKUnit unit);
 
 /**
  * Create an amount form `value` in `unit`.  See discusion on `wkAmountCreateDouble()`
@@ -63,7 +63,7 @@ wkAmountCreateDouble (double value,
  */
 extern WKAmount
 wkAmountCreateInteger (int64_t value,
-                           WKUnit unit);
+                       WKUnit unit);
 
 /**
  * Create an amount from `value` and `unit`. See discusion on `wkAmountCreateDouble()`
@@ -78,8 +78,8 @@ wkAmountCreateInteger (int64_t value,
  */
 extern WKAmount
 wkAmountCreateString (const char *value,
-                          WKBoolean isNegative,
-                          WKUnit unit);
+                      WKBoolean isNegative,
+                      WKUnit unit);
 
 /**
  * Returns the amount's unit.
@@ -107,7 +107,7 @@ wkAmountGetCurrency (WKAmount amount);
  */
 extern WKBoolean
 wkAmountHasCurrency (WKAmount amount,
-                         WKCurrency currency);
+                     WKCurrency currency);
 
 /**
  * Check if the amount is negative
@@ -126,7 +126,7 @@ wkAmountIsNegative (WKAmount amount);
  */
 extern WKBoolean
 wkAmountIsCompatible (WKAmount a1,
-                          WKAmount a2);
+                      WKAmount a2);
 
 /**
  * Check if the amount is zero
@@ -139,21 +139,21 @@ wkAmountIsZero (WKAmount amount);
  */
 extern WKComparison
 wkAmountCompare (WKAmount a1,
-                     WKAmount a2);
+                 WKAmount a2);
 
 /**
  * Add two amounts
  */
 extern WKAmount
 wkAmountAdd (WKAmount a1,
-                 WKAmount a2);
+             WKAmount a2);
 
 /**
  * Subtract one amount from another
  */
 extern WKAmount
 wkAmountSub (WKAmount a1,
-                 WKAmount a2);
+             WKAmount a2);
 
 /**
  * Negate the amount
@@ -173,7 +173,7 @@ wkAmountNegate (WKAmount amount);
  */
 extern WKAmount
 wkAmountConvertToUnit (WKAmount amount,
-                           WKUnit unit);
+                       WKUnit unit);
 
 /**
  * Return `amount` as a double in `unit`.  For example, if amount is "2 BTC" and unit is
@@ -188,8 +188,8 @@ wkAmountConvertToUnit (WKAmount amount,
  */
 extern double
 wkAmountGetDouble (WKAmount amount,
-                       WKUnit unit,
-                       WKBoolean *overflow);
+                   WKUnit unit,
+                   WKBoolean *overflow);
 
 /**
  * Return `amount` as a UInt64 if the representation of `amount` in the base unit is less than
@@ -202,7 +202,7 @@ wkAmountGetDouble (WKAmount amount,
  */
 extern uint64_t
 wkAmountGetIntegerRaw (WKAmount amount,
-                           WKBoolean *overflow);
+                       WKBoolean *overflow);
 
 /**
  * Create a string representation of amount in the give base () with the provided prefix.  The
@@ -210,8 +210,8 @@ wkAmountGetIntegerRaw (WKAmount amount,
  */
 extern char *
 wkAmountGetStringPrefaced (WKAmount amount,
-                               int base,
-                               const char *preface);
+                           int base,
+                           const char *preface);
 
 DECLARE_WK_GIVE_TAKE (WKAmount, wkAmount);
 

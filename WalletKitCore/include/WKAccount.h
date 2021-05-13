@@ -120,8 +120,8 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount);
  */
 extern WKBoolean
 wkAccountValidateSerialization (WKAccount account,
-                                    const uint8_t *bytes,
-                                    size_t bytesCount);
+                                const uint8_t *bytes,
+                                size_t bytesCount);
 
 /**
  * The the account's timestamp

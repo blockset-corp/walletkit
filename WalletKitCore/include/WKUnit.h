@@ -31,9 +31,9 @@ typedef struct WKUnitRecord *WKUnit;
  */
 private_extern WKUnit
 wkUnitCreateAsBase (WKCurrency currency,
-                        const char *code,
-                        const char *name,
-                        const char *symbol);
+                    const char *code,
+                    const char *name,
+                    const char *symbol);
 
 /**
  * Create a unit for `currency` as a 'derived unit'.  A derived unit is a unit with a base 10
@@ -43,11 +43,11 @@ wkUnitCreateAsBase (WKCurrency currency,
  */
 private_extern WKUnit
 wkUnitCreate (WKCurrency currency,
-                  const char *code,
-                  const char *name,
-                  const char *symbol,
-                  WKUnit baseUnit,
-                  uint8_t powerOffset);
+              const char *code,
+              const char *name,
+              const char *symbol,
+              WKUnit baseUnit,
+              uint8_t powerOffset);
 
 
 /**
@@ -84,7 +84,7 @@ wkUnitGetCurrency (WKUnit unit);
  */
 extern WKBoolean
 wkUnitHasCurrency (WKUnit unit,
-                       WKCurrency currency);
+                   WKCurrency currency);
 
 /**
  * Returns the unit's base unit.  If unit is itself the base unit then unit is returned
@@ -107,14 +107,14 @@ wkUnitGetBaseDecimalOffset (WKUnit unit);
  */
 extern WKBoolean
 wkUnitIsCompatible (WKUnit u1,
-                        WKUnit u2);
+                    WKUnit u2);
 
 /**
  * Check if two units are identical
  */
 extern WKBoolean
 wkUnitIsIdentical (WKUnit u1,
-                       WKUnit u2);
+                   WKUnit u2);
 
 DECLARE_WK_GIVE_TAKE (WKUnit, wkUnit);
 

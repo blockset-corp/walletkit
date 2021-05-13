@@ -59,10 +59,10 @@ wkHasherLength (WKHasher hasher);
  */
 extern WKBoolean
 wkHasherHash (WKHasher hasher,
-                  uint8_t *dst,
-                  size_t dstLen,
-                  const uint8_t *src,
-                  size_t srcLen);
+              uint8_t *dst,
+              size_t dstLen,
+              const uint8_t *src,
+              size_t srcLen);
 
 DECLARE_WK_GIVE_TAKE (WKHasher, wkHasher);
 

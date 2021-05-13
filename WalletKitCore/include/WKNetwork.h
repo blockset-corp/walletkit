@@ -49,8 +49,8 @@ typedef struct WKNetworkFeeRecord *WKNetworkFee;
  */
 extern WKNetworkFee
 wkNetworkFeeCreate (uint64_t confirmationTimeInMilliseconds,
-                        WKAmount pricePerCostFactor,
-                        WKUnit   pricePerCostFactorUnit);
+                    WKAmount pricePerCostFactor,
+                    WKUnit   pricePerCostFactorUnit);
 
 /**
  * The estimated time to confirm a transfer for this network fee
@@ -135,9 +135,9 @@ wkNetworkGetCurrency (WKNetwork network);
  */
 extern void
 wkNetworkAddCurrency (WKNetwork network,
-                          WKCurrency currency,
-                          WKUnit baseUnit,
-                          WKUnit defaultUnit);
+                      WKCurrency currency,
+                      WKUnit baseUnit,
+                      WKUnit defaultUnit);
 
 /**
  * Get the code for the network's native currency.
@@ -155,7 +155,7 @@ wkNetworkGetCurrencyCode (WKNetwork network);
  */
 extern WKUnit
 wkNetworkGetUnitAsDefault (WKNetwork network,
-                               WKCurrency currency);
+                           WKCurrency currency);
 
 /**
  * Returns the currency's base unit or NULL
@@ -167,15 +167,15 @@ wkNetworkGetUnitAsDefault (WKNetwork network,
  */
 extern WKUnit
 wkNetworkGetUnitAsBase (WKNetwork network,
-                            WKCurrency currency);
+                        WKCurrency currency);
 
 /**
  * Add `unit` to the known units for `currency` on the network.
  */
 extern void
 wkNetworkAddCurrencyUnit (WKNetwork network,
-                              WKCurrency currency,
-                              WKUnit unit);
+                          WKCurrency currency,
+                          WKUnit unit);
 
 /**
  * Get the network's height.  The height changes as the blockchain is extended.
@@ -188,7 +188,7 @@ wkNetworkGetHeight (WKNetwork network);
  */
 extern void
 wkNetworkSetHeight (WKNetwork network,
-                        WKBlockNumber height);
+                    WKBlockNumber height);
 
 /**
  * Get the network's verified block hash.
@@ -201,14 +201,14 @@ wkNetworkGetVerifiedBlockHash (WKNetwork network);
  */
 extern void
 wkNetworkSetVerifiedBlockHash (WKNetwork network,
-                                   WKHash verifiedBlockHash);
+                               WKHash verifiedBlockHash);
 
 /**
  * Set the network's verified block hash from the string encoding of the hash.
  */
 extern void
 wkNetworkSetVerifiedBlockHashAsString (WKNetwork network,
-                                           const char * verifiedBlockHashString);
+                                       const char * verifiedBlockHashString);
 
 /**
  * Get the network's count of blocks needed to confirm a transaction.  For Bitcoin this is six.
@@ -238,7 +238,7 @@ wkNetworkGetCurrencyCount (WKNetwork network);
  */
 extern WKCurrency
 wkNetworkGetCurrencyAt (WKNetwork network,
-                            size_t index);
+                        size_t index);
 
 /**
  * Return 'TRUE' is `network` has `currency`.
@@ -250,7 +250,7 @@ wkNetworkGetCurrencyAt (WKNetwork network,
  */
 extern WKBoolean
 wkNetworkHasCurrency (WKNetwork network,
-                          WKCurrency currency);
+                      WKCurrency currency);
 
 /**
  * Returns the network's currency with `symbol` or NULL.
@@ -262,21 +262,21 @@ wkNetworkHasCurrency (WKNetwork network,
  */
 extern WKCurrency
 wkNetworkGetCurrencyForCode (WKNetwork network,
-                                 const char *code);
+                             const char *code);
 
 /**
  * Get the network's currency with `uids`; otherwise `NULL`
  */
 extern WKCurrency
 wkNetworkGetCurrencyForUids (WKNetwork network,
-                                 const char *uids);
+                             const char *uids);
 
 /**
  * Get the network's currency with `issuer`; otherwise `NULL`
  */
 extern WKCurrency
 wkNetworkGetCurrencyForIssuer (WKNetwork network,
-                                   const char *issuer);
+                               const char *issuer);
 
 /**
  * Returns the number of units for network's `currency`.  This is the index exclusive limit to
@@ -289,7 +289,7 @@ wkNetworkGetCurrencyForIssuer (WKNetwork network,
  */
 extern size_t
 wkNetworkGetUnitCount (WKNetwork network,
-                           WKCurrency currency);
+                       WKCurrency currency);
 
 /**
  * Returns the currency's unit at `index`.  The index must satisfy [0, count) otherwise an
@@ -303,8 +303,8 @@ wkNetworkGetUnitCount (WKNetwork network,
  */
 extern WKUnit
 wkNetworkGetUnitAt (WKNetwork network,
-                        WKCurrency currency,
-                        size_t index);
+                    WKCurrency currency,
+                    size_t index);
 
 /**
  * Get the network's count of network fees.
@@ -317,29 +317,29 @@ wkNetworkGetNetworkFeeCount (WKNetwork network);
  */
 extern WKNetworkFee
 wkNetworkGetNetworkFeeAt (WKNetwork network,
-                              size_t index);
+                          size_t index);
 
 /*
  * Get all the network's fee and fill `count` with the number of fees.
  */
 extern WKNetworkFee *
 wkNetworkGetNetworkFees (WKNetwork network,
-                             size_t *count);
+                         size_t *count);
 
 /**
  * Set the network's fee.
  */
 extern void
 wkNetworkSetNetworkFees (WKNetwork network,
-                             const WKNetworkFee *fees,
-                             size_t count);
+                         const WKNetworkFee *fees,
+                         size_t count);
 
 /**
  * Add `fee` to the network's fees.
  */
 extern void
 wkNetworkAddNetworkFee (WKNetwork network,
-                            WKNetworkFee fee);
+                        WKNetworkFee fee);
 
 // MARK: - Address Scheme
 
@@ -355,14 +355,14 @@ wkNetworkGetDefaultAddressScheme (WKNetwork network);
  */
 extern const WKAddressScheme *
 wkNetworkGetSupportedAddressSchemes (WKNetwork network,
-                                         WKCount *count);
+                                     WKCount *count);
 
 /**
  * Check if network supports scheme
  */
 extern WKBoolean
 wkNetworkSupportsAddressScheme (WKNetwork network,
-                                    WKAddressScheme scheme);
+                                WKAddressScheme scheme);
 
 // MARK: - Address
 
@@ -371,7 +371,7 @@ wkNetworkSupportsAddressScheme (WKNetwork network,
  */
 extern WKAddress
 wkNetworkCreateAddress (WKNetwork network,
-                            const char *address);
+                        const char *address);
 
 // MARK: - Sync Mode
 
@@ -387,14 +387,14 @@ wkNetworkGetDefaultSyncMode (WKNetwork network);
  */
 extern const WKSyncMode *
 wkNetworkGetSupportedSyncModes (WKNetwork network,
-                                    WKCount *count);
+                                WKCount *count);
 
 /**
  * Check if network support `mode`
  */
 extern WKBoolean
 wkNetworkSupportsSyncMode (WKNetwork network,
-                               WKSyncMode mode);
+                           WKSyncMode mode);
 
 /**
  * Check if network requires migration (of persistent storage).
@@ -409,7 +409,7 @@ wkNetworkRequiresMigration (WKNetwork network);
  */
 extern WKBoolean
 wkNetworkIsAccountInitialized (WKNetwork network,
-                                   WKAccount account);
+                               WKAccount account);
 
 /**
  * Get a newly-allocated byte array of the data needed to initialize `account` on the network.
@@ -418,8 +418,8 @@ wkNetworkIsAccountInitialized (WKNetwork network,
 
 extern uint8_t *
 wkNetworkGetAccountInitializationData (WKNetwork network,
-                                           WKAccount account,
-                                           size_t *bytesCount);
+                                       WKAccount account,
+                                       size_t *bytesCount);
 
 /**
  * Initialize `account` on the network with `data`.  The `initialzation data`, from
@@ -427,9 +427,9 @@ wkNetworkGetAccountInitializationData (WKNetwork network,
  */
 extern void
 wkNetworkInitializeAccount (WKNetwork network,
-                                WKAccount account,
-                                const uint8_t *bytes,
-                                size_t bytesCount);
+                            WKAccount account,
+                            const uint8_t *bytes,
+                            size_t bytesCount);
 
 DECLARE_WK_GIVE_TAKE (WKNetwork, wkNetwork);
 
@@ -438,7 +438,7 @@ DECLARE_WK_GIVE_TAKE (WKNetwork, wkNetwork);
  */
 extern WKNetwork
 wkNetworkFindBuiltin (const char *uids,
-                          bool isMainnet);
+                      bool isMainnet);
 
 #ifdef __cplusplus
 }

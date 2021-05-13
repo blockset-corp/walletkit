@@ -39,10 +39,10 @@ typedef struct WKCurrencyRecord *WKCurrency;
  */
 extern WKCurrency
 wkCurrencyCreate (const char *uids,
-                      const char *name,
-                      const char *code,
-                      const char *type,
-                      const char *issuer);
+                  const char *name,
+                  const char *code,
+                  const char *type,
+                  const char *issuer);
 
 /**
  * Get the currency's unique-identifier.  This uniquely identifes all the currencies, be they
@@ -88,14 +88,14 @@ wkCurrencyGetIssuer (WKCurrency currency);
  */
 extern bool
 wkCurrencyHasUids (WKCurrency currency,
-                       const char *uids);
+                   const char *uids);
 
 /**
  * Check of two currencies are identical based on their uids.
  */
 extern WKBoolean
 wkCurrencyIsIdentical (WKCurrency c1,
-                           WKCurrency c2);
+                       WKCurrency c2);
 
 DECLARE_WK_GIVE_TAKE (WKCurrency, wkCurrency);
 

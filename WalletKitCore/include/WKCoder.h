@@ -31,25 +31,25 @@ wkCoderCreate(WKCoderType type);
 
 extern size_t
 wkCoderEncodeLength (WKCoder coder,
-                         const uint8_t *src,
-                         size_t srcLen);
+                     const uint8_t *src,
+                     size_t srcLen);
 
 extern WKBoolean
 wkCoderEncode (WKCoder coder,
-                   char *dst,
-                   size_t dstLen,
-                   const uint8_t *src,
-                   size_t srcLen);
+               char *dst,
+               size_t dstLen,
+               const uint8_t *src,
+               size_t srcLen);
 
 extern size_t
 wkCoderDecodeLength (WKCoder coder,
-                         const char *src);
+                     const char *src);
 
 extern WKBoolean
 wkCoderDecode (WKCoder coder,
-                   uint8_t *dst,
-                   size_t dstLen,
-                   const char *src);
+               uint8_t *dst,
+               size_t dstLen,
+               const char *src);
 
 DECLARE_WK_GIVE_TAKE (WKCoder, wkCoder);
 

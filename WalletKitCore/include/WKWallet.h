@@ -46,7 +46,7 @@ wkWalletGetCurrency (WKWallet wallet);
  */
 extern WKBoolean
 wkWalletHasCurrency (WKWallet wallet,
-                         WKCurrency currency);
+                     WKCurrency currency);
 
 /**
  * Returns the wallet's (default) unit.  Used for *display* of the wallet's balance.
@@ -71,7 +71,7 @@ wkWalletGetCurrencyForFee (WKWallet wallet);
  */
 extern WKBoolean
 wkWalletHasCurrencyForFee (WKWallet wallet,
-                               WKCurrency currency);
+                           WKCurrency currency);
 
 /**
  * Returns the wallet's fee unit.
@@ -112,7 +112,7 @@ wkWalletGetBalanceMaximum (WKWallet wallet);
  */
 extern WKBoolean
 wkWalletHasTransfer (WKWallet wallet,
-                         WKTransfer transfer);
+                     WKTransfer transfer);
 
 /**
  * Returns a newly allocated array of the wallet's transfers.
@@ -128,7 +128,7 @@ wkWalletHasTransfer (WKWallet wallet,
  */
 extern WKTransfer *
 wkWalletGetTransfers (WKWallet wallet,
-                          size_t *count);
+                      size_t *count);
 
 /**
  * Returns a 'new' adddress from `wallet` according to the provided `addressScheme`.  For BTC
@@ -137,7 +137,7 @@ wkWalletGetTransfers (WKWallet wallet,
  */
 extern WKAddress
 wkWalletGetAddress (WKWallet wallet,
-                        WKAddressScheme addressScheme);
+                    WKAddressScheme addressScheme);
 
 /**
  * Check if `wallet` has `address`.  Checks that `address` has been used already by `wallet`
@@ -145,7 +145,7 @@ wkWalletGetAddress (WKWallet wallet,
  */
 extern bool
 wkWalletHasAddress (WKWallet wallet,
-                        WKAddress address);
+                    WKAddress address);
 
 /**
  * Get the wallet's default fee basis.
@@ -158,7 +158,7 @@ wkWalletGetDefaultFeeBasis (WKWallet wallet);
  */
 extern void
 wkWalletSetDefaultFeeBasis (WKWallet wallet,
-                                WKFeeBasis feeBasis);
+                            WKFeeBasis feeBasis);
 
 /**
  * Get the count of transfer attributes that are relevent to `wallet` when a transfer uses
@@ -167,7 +167,7 @@ wkWalletSetDefaultFeeBasis (WKWallet wallet,
  */
 extern size_t
 wkWalletGetTransferAttributeCount (WKWallet wallet,
-                                       WKAddress target);
+                                   WKAddress target);
 
 /**
  * Get the transfer attribtue at `index` from the attributes that are relevent to 'wallet' when
@@ -175,8 +175,8 @@ wkWalletGetTransferAttributeCount (WKWallet wallet,
  */
 extern WKTransferAttribute
 wkWalletGetTransferAttributeAt (WKWallet wallet,
-                                    WKAddress target,
-                                    size_t index);
+                                WKAddress target,
+                                size_t index);
 
 /**
  * Validate `attribute` for `wallet` and fill `validates` with the result.  If `validates` is
@@ -185,8 +185,8 @@ wkWalletGetTransferAttributeAt (WKWallet wallet,
  */
 extern WKTransferAttributeValidationError
 wkWalletValidateTransferAttribute (WKWallet wallet,
-                                       OwnershipKept WKTransferAttribute attribute,
-                                       WKBoolean *validates);
+                                   OwnershipKept WKTransferAttribute attribute,
+                                   WKBoolean *validates);
 
 /**
  * Find the transfer attribute that is relevent to `wallet` when a transfer uses the `target`
@@ -194,8 +194,8 @@ wkWalletValidateTransferAttribute (WKWallet wallet,
  */
 extern WKTransferAttribute
 wkWalletGetTransferAttributeForKey (WKWallet wallet,
-                                        WKAddress target,
-                                        const char *key);
+                                    WKAddress target,
+                                    const char *key);
 
 /**
  * Validate `attributes` for `wallet` and fill `validates` with the result.  If `validates` is
@@ -205,9 +205,9 @@ wkWalletGetTransferAttributeForKey (WKWallet wallet,
  */
 extern WKTransferAttributeValidationError
 wkWalletValidateTransferAttributes (WKWallet wallet,
-                                        size_t attributesCount,
-                                        OwnershipKept WKTransferAttribute *attributes,
-                                        WKBoolean *validates);
+                                    size_t attributesCount,
+                                    OwnershipKept WKTransferAttribute *attributes,
+                                    WKBoolean *validates);
 
 /**
  * Create a transfer.
@@ -221,22 +221,22 @@ wkWalletValidateTransferAttributes (WKWallet wallet,
  */
 extern WKTransfer
 wkWalletCreateTransfer (WKWallet wallet,
-                            WKAddress target,
-                            WKAmount amount,
-                            WKFeeBasis estimatedFeeBasis,
-                            size_t attributesCount,
-                            OwnershipKept WKTransferAttribute *attributes);
+                        WKAddress target,
+                        WKAmount amount,
+                        WKFeeBasis estimatedFeeBasis,
+                        size_t attributesCount,
+                        OwnershipKept WKTransferAttribute *attributes);
 
 extern WKTransfer
 wkWalletCreateTransferForPaymentProtocolRequest (WKWallet wallet,
-                                                     WKPaymentProtocolRequest request,
-                                                     WKFeeBasis estimatedFeeBasis);
+                                                 WKPaymentProtocolRequest request,
+                                                 WKFeeBasis estimatedFeeBasis);
 
 extern WKTransfer
 wkWalletCreateTransferMultiple (WKWallet wallet,
-                                    size_t outputsCount,
-                                    WKTransferOutput *outputs,
-                                    WKFeeBasis estimatedFeeBasis);
+                                size_t outputsCount,
+                                WKTransferOutput *outputs,
+                                WKFeeBasis estimatedFeeBasis);
 
 /**
  * Check of two wallets are equal.

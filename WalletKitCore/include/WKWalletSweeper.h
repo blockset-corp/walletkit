@@ -43,20 +43,20 @@ wkWalletSweeperRelease (WKWalletSweeper sweeper);
 
 extern WKWalletSweeperStatus
 wkWalletSweeperAddTransactionFromBundle (WKWalletSweeper sweeper,
-                                             OwnershipKept WKClientTransactionBundle bundle);
+                                         OwnershipKept WKClientTransactionBundle bundle);
 
 extern void
 wkWalletManagerEstimateFeeBasisForWalletSweep (WKWalletSweeper sweeper,
-                                                   WKWalletManager manager,
-                                                   WKWallet wallet,
-                                                   WKCookie cookie,
-                                                   WKNetworkFee fee);
+                                               WKWalletManager manager,
+                                               WKWallet wallet,
+                                               WKCookie cookie,
+                                               WKNetworkFee fee);
 
 extern WKTransfer
 wkWalletSweeperCreateTransferForWalletSweep (WKWalletSweeper sweeper,
-                                                 WKWalletManager manager,
-                                                 WKWallet wallet,
-                                                 WKFeeBasis estimatedFeeBasis);
+                                             WKWalletManager manager,
+                                             WKWallet wallet,
+                                             WKFeeBasis estimatedFeeBasis);
 
 extern WKKey
 wkWalletSweeperGetKey (WKWalletSweeper sweeper);

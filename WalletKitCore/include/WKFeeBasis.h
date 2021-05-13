@@ -56,7 +56,7 @@ wkFeeBasisGetFee (WKFeeBasis feeBasis);
  */
 extern WKBoolean
 wkFeeBasisIsEqual (WKFeeBasis feeBasis1,
-                       WKFeeBasis feeBasis2);
+                   WKFeeBasis feeBasis2);
 
 DECLARE_WK_GIVE_TAKE (WKFeeBasis, wkFeeBasis);
 

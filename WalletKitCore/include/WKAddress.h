@@ -53,7 +53,7 @@ wkAddressAsString (WKAddress address);
 ///
 extern WKBoolean
 wkAddressIsIdentical (WKAddress a1,
-                          WKAddress a2);
+                      WKAddress a2);
 
 DECLARE_WK_GIVE_TAKE (WKAddress, wkAddress);
 

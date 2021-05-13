@@ -44,9 +44,9 @@ wkSignerCreate(WKSignerType type);
  */
 extern size_t
 wkSignerSignLength (WKSigner signer,
-                        WKKey key,
-                        const uint8_t *src,
-                        size_t srcLen);
+                    WKKey key,
+                    const uint8_t *src,
+                    size_t srcLen);
 
 /**
  * Fill `dst` with the signature as the result of applying `signer` to `digest` where
@@ -56,11 +56,11 @@ wkSignerSignLength (WKSigner signer,
  */
 extern WKBoolean
 wkSignerSign (WKSigner signer,
-                  WKKey key,
-                  uint8_t *dst,
-                  size_t dstLen,
-                  const uint8_t *digest,
-                  size_t digestLen);
+              WKKey key,
+              uint8_t *dst,
+              size_t dstLen,
+              const uint8_t *digest,
+              size_t digestLen);
 
 /**
  * Recover a public Key from `signature` and `digest` by applying the `signer`.  The `digestLen`
@@ -68,10 +68,10 @@ wkSignerSign (WKSigner signer,
  */
 extern WKKey
 wkSignerRecover (WKSigner signer,
-                     const uint8_t *digest,
-                     size_t digestLen,
-                     const uint8_t *signature,
-                     size_t signatureLen);
+                 const uint8_t *digest,
+                 size_t digestLen,
+                 const uint8_t *signature,
+                 size_t signatureLen);
 
 DECLARE_WK_GIVE_TAKE (WKSigner, wkSigner);
 

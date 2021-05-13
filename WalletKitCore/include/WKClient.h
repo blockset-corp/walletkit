@@ -43,18 +43,18 @@ typedef struct WKClientCallbackStateRecord *WKClientCallbackState;
  */
 typedef void
 (*WKClientGetBlockNumberCallback) (WKClientContext context,
-                                         OwnershipGiven WKWalletManager manager,
-                                         OwnershipGiven WKClientCallbackState callbackState);
+                                   OwnershipGiven WKWalletManager manager,
+                                   OwnershipGiven WKClientCallbackState callbackState);
 
 /**
  * Announce the current block number and the verified block hash.
  */
 extern void
 wkClientAnnounceBlockNumber (OwnershipKept WKWalletManager cwm,
-                                 OwnershipGiven WKClientCallbackState callbackState,
-                                 WKBoolean success,
-                                 WKBlockNumber blockNumber,
-                                 const char *verifiedBlockHash);
+                             OwnershipGiven WKClientCallbackState callbackState,
+                             WKBoolean success,
+                             WKBlockNumber blockNumber,
+                             const char *verifiedBlockHash);
 
 // MARK: - Get Transactions
 
@@ -66,12 +66,12 @@ wkClientAnnounceBlockNumber (OwnershipKept WKWalletManager cwm,
  */
 typedef void
 (*WKClientGetTransactionsCallback) (WKClientContext context,
-                                          OwnershipGiven WKWalletManager manager,
-                                          OwnershipGiven WKClientCallbackState callbackState,
-                                          OwnershipKept const char **addresses,
-                                          size_t addressCount,
-                                          WKBlockNumber begBlockNumber,
-                                          WKBlockNumber endBlockNumber);
+                                    OwnershipGiven WKWalletManager manager,
+                                    OwnershipGiven WKClientCallbackState callbackState,
+                                    OwnershipKept const char **addresses,
+                                    size_t addressCount,
+                                    WKBlockNumber begBlockNumber,
+                                    WKBlockNumber endBlockNumber);
 
 /**
  * A TransactionBundle holds the transaction results from the `...GetTransactionsCallback`
@@ -84,10 +84,10 @@ typedef struct WKClientTransactionBundleRecord *WKClientTransactionBundle;
  */
 extern WKClientTransactionBundle
 wkClientTransactionBundleCreate (WKTransferStateType status,
-                                     OwnershipKept uint8_t *transaction,
-                                     size_t transactionLength,
-                                     WKTimestamp timestamp,
-                                     WKBlockNumber blockHeight);
+                                 OwnershipKept uint8_t *transaction,
+                                 size_t transactionLength,
+                                 WKTimestamp timestamp,
+                                 WKBlockNumber blockHeight);
 
 /**
  * Release a Transaction Bundle
@@ -100,17 +100,17 @@ wkClientTransactionBundleRelease (WKClientTransactionBundle bundle);
  */
 extern int
 wkClientTransactionBundleCompare (const WKClientTransactionBundle b1,
-                                      const WKClientTransactionBundle b2);
+                                  const WKClientTransactionBundle b2);
 
 /**
  * Announce the array of bundles with an overall success boolean
  */
 extern void
 wkClientAnnounceTransactions (OwnershipKept WKWalletManager cwm,
-                                  OwnershipGiven WKClientCallbackState callbackState,
-                                  WKBoolean success,
-                                  WKClientTransactionBundle *bundles,
-                                  size_t bundlesCount);
+                              OwnershipGiven WKClientCallbackState callbackState,
+                              WKBoolean success,
+                              WKClientTransactionBundle *bundles,
+                              size_t bundlesCount);
 
 // MARK: - Get Transfers
 
@@ -124,12 +124,12 @@ wkClientAnnounceTransactions (OwnershipKept WKWalletManager cwm,
  */
 typedef void
 (*WKClientGetTransfersCallback) (WKClientContext context,
-                                       OwnershipGiven WKWalletManager manager,
-                                       OwnershipGiven WKClientCallbackState callbackState,
-                                       OwnershipKept const char **addresses,
-                                       size_t addressCount,
-                                       WKBlockNumber begBlockNumber,
-                                       WKBlockNumber endBlockNumber);
+                                 OwnershipGiven WKWalletManager manager,
+                                 OwnershipGiven WKClientCallbackState callbackState,
+                                 OwnershipKept const char **addresses,
+                                 size_t addressCount,
+                                 WKBlockNumber begBlockNumber,
+                                 WKBlockNumber endBlockNumber);
 
 /**
  * A TransferBundle holds the transfer results from the `...GetTransfersCallback`
@@ -141,22 +141,22 @@ typedef struct WKClientTransferBundleRecord *WKClientTransferBundle;
  */
 extern WKClientTransferBundle
 wkClientTransferBundleCreate (WKTransferStateType status,
-                                  OwnershipKept const char *uids,
-                                  OwnershipKept const char *hash,
-                                  OwnershipKept const char *identifier,
-                                  OwnershipKept const char *from,
-                                  OwnershipKept const char *to,
-                                  OwnershipKept const char *amount,
-                                  OwnershipKept const char *currency,
-                                  OwnershipKept const char *fee,
-                                  WKTimestamp blockTimestamp,
-                                  WKBlockNumber blockNumber,
-                                  WKBlockNumber blockConfirmations,
-                                  uint64_t blockTransactionIndex,
-                                  OwnershipKept const char *blockHash,
-                                  size_t attributesCount,
-                                  OwnershipKept const char **attributeKeys,
-                                  OwnershipKept const char **attributeVals);
+                              OwnershipKept const char *uids,
+                              OwnershipKept const char *hash,
+                              OwnershipKept const char *identifier,
+                              OwnershipKept const char *from,
+                              OwnershipKept const char *to,
+                              OwnershipKept const char *amount,
+                              OwnershipKept const char *currency,
+                              OwnershipKept const char *fee,
+                              WKTimestamp blockTimestamp,
+                              WKBlockNumber blockNumber,
+                              WKBlockNumber blockConfirmations,
+                              uint64_t blockTransactionIndex,
+                              OwnershipKept const char *blockHash,
+                              size_t attributesCount,
+                              OwnershipKept const char **attributeKeys,
+                              OwnershipKept const char **attributeVals);
 
 /**
  * Release a transfer bundle
@@ -169,24 +169,24 @@ wkClientTransferBundleRelease (WKClientTransferBundle bundle);
  */
 extern int
 wkClientTransferBundleCompare (const WKClientTransferBundle b1,
-                                   const WKClientTransferBundle b2);
+                               const WKClientTransferBundle b2);
 
 /**
  * Get the transfer bundle's state.
  */
 extern WKTransferState
 wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
-                                            WKFeeBasis confirmedFeeBasis);
+                                        WKFeeBasis confirmedFeeBasis);
 
 /**
  * Announce an array of transfer bundles.
  */
 extern void
 wkClientAnnounceTransfers (OwnershipKept WKWalletManager cwm,
-                               OwnershipGiven WKClientCallbackState callbackState,
-                               WKBoolean success,
-                               WKClientTransferBundle *bundles,
-                               size_t bundlesCount);
+                           OwnershipGiven WKClientCallbackState callbackState,
+                           WKBoolean success,
+                           WKClientTransferBundle *bundles,
+                           size_t bundlesCount);
 
 // MARK: - Submit Transaction
 
@@ -198,21 +198,21 @@ wkClientAnnounceTransfers (OwnershipKept WKWalletManager cwm,
  */
 typedef void
 (*WKClientSubmitTransactionCallback) (WKClientContext context,
-                                            OwnershipGiven WKWalletManager manager,
-                                            OwnershipGiven WKClientCallbackState callbackState,
-                                            OwnershipKept const char    *identifier,
-                                            OwnershipKept const uint8_t *transaction,
-                                            size_t transactionLength);
+                                      OwnershipGiven WKWalletManager manager,
+                                      OwnershipGiven WKClientCallbackState callbackState,
+                                      OwnershipKept const char    *identifier,
+                                      OwnershipKept const uint8_t *transaction,
+                                      size_t transactionLength);
 
 /**
  * Announce the result of the submission.
  */
 extern void
 wkClientAnnounceSubmitTransfer (OwnershipKept WKWalletManager cwm,
-                                    OwnershipGiven WKClientCallbackState callbackState,
-                                    OwnershipKept const char *identifier,
-                                    OwnershipKept const char *hash,
-                                    WKBoolean success);
+                                OwnershipGiven WKClientCallbackState callbackState,
+                                OwnershipKept const char *identifier,
+                                OwnershipKept const char *hash,
+                                WKBoolean success);
 
 // MARK: - Estimate Transaction Fee
 
@@ -224,23 +224,23 @@ wkClientAnnounceSubmitTransfer (OwnershipKept WKWalletManager cwm,
  */
 typedef void
 (*WKClientEstimateTransactionFeeCallback) (WKClientContext context,
-                                                 OwnershipGiven WKWalletManager manager,
-                                                 OwnershipGiven WKClientCallbackState callbackState,
-                                                 OwnershipKept const uint8_t *transaction,
-                                                 size_t transactionLength,
-                                                 OwnershipKept const char *hashAsHex);
+                                           OwnershipGiven WKWalletManager manager,
+                                           OwnershipGiven WKClientCallbackState callbackState,
+                                           OwnershipKept const uint8_t *transaction,
+                                           size_t transactionLength,
+                                           OwnershipKept const char *hashAsHex);
 
 /**
  * Announce the result of fee estimation
  */
 extern void
 wkClientAnnounceEstimateTransactionFee (OwnershipKept WKWalletManager cwm,
-                                            OwnershipGiven WKClientCallbackState callbackState,
-                                            WKBoolean success,
-                                            uint64_t costUnits,
-                                            size_t attributesCount,
-                                            OwnershipKept const char **attributeKeys,
-                                            OwnershipKept const char **attributeVals);
+                                        OwnershipGiven WKClientCallbackState callbackState,
+                                        WKBoolean success,
+                                        uint64_t costUnits,
+                                        size_t attributesCount,
+                                        OwnershipKept const char **attributeKeys,
+                                        OwnershipKept const char **attributeVals);
 
 // MARK: - Currency
 
@@ -259,23 +259,23 @@ typedef struct WKCliehtCurrencyDenominationBundleRecord *WKClientCurrencyDenomin
  */
 extern WKClientCurrencyDenominationBundle
 wkClientCurrencyDenominationBundleCreate (const char *name,
-                                              const char *code,
-                                              const char *symbol,
-                                              uint8_t     decimals);
+                                          const char *code,
+                                          const char *symbol,
+                                          uint8_t     decimals);
 
 /**
  * Create a Currecny Bundle
  */
 extern WKClientCurrencyBundle
 wkClientCurrencyBundleCreate (const char *id,
-                                  const char *name,
-                                  const char *code,
-                                  const char *type,
-                                  const char *blockchainId,
-                                  const char *address,
-                                  bool verified,
-                                  size_t denominationsCount,
-                                  WKClientCurrencyDenominationBundle *denominations);
+                              const char *name,
+                              const char *code,
+                              const char *type,
+                              const char *blockchainId,
+                              const char *address,
+                              bool verified,
+                              size_t denominationsCount,
+                              WKClientCurrencyDenominationBundle *denominations);
 
 /**
  * Release a Currency Bundle
@@ -288,8 +288,8 @@ wkClientCurrencyBundleRelease (WKClientCurrencyBundle bundle);
  */
 extern void
 wkClientAnnounceCurrencies (WKSystem system,
-                                OwnershipGiven WKClientCurrencyBundle *bundles,
-                                size_t bundlesCount);
+                            OwnershipGiven WKClientCurrencyBundle *bundles,
+                            size_t bundlesCount);
 
 /**
  * @brief A Client implements a number of callback functions that provide WalletKit with

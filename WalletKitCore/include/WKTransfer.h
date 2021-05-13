@@ -198,7 +198,7 @@ wkTransferGetHash (WKTransfer transfer);
  */
 extern WKBoolean
 wkTransferSetHash (WKTransfer transfer,
-                       OwnershipKept WKHash hash);
+                   OwnershipKept WKHash hash);
 
 /**
  * Get the unit used for the transfer's amount.
@@ -256,7 +256,7 @@ wkTransferGetAttributeCount (WKTransfer transfer);
  */
 extern WKTransferAttribute
 wkTransferGetAttributeAt (WKTransfer transfer,
-                              size_t index);
+                          size_t index);
 
 /**
  * Get a serialization of `transfer` suitable for submission to `network`.  The transfer must
@@ -265,8 +265,8 @@ wkTransferGetAttributeAt (WKTransfer transfer,
  */
 extern uint8_t *
 wkTransferSerializeForSubmission (WKTransfer transfer,
-                                      WKNetwork  network,
-                                      size_t *serializationCount);
+                                  WKNetwork  network,
+                                  size_t *serializationCount);
 
 /**
  * Get a serialization of `transfer` suitable for fee estimation on `network`.  The transfer
@@ -275,8 +275,8 @@ wkTransferSerializeForSubmission (WKTransfer transfer,
  */
 extern uint8_t *
 wkTransferSerializeForFeeEstimation (WKTransfer transfer,
-                                         WKNetwork  network,
-                                         size_t *serializationCount);
+                                     WKNetwork  network,
+                                     size_t *serializationCount);
 
 /**
  * Check if two transfers are equal.
@@ -310,10 +310,10 @@ DECLARE_WK_GIVE_TAKE (WKTransfer, wkTransfer);
 
 extern void
 wkTransferExtractBlobAsBTC (WKTransfer transfer,
-                                uint8_t **bytes,
-                                size_t   *bytesCount,
-                                uint32_t *blockHeight,
-                                uint32_t *timestamp);
+                            uint8_t **bytes,
+                            size_t   *bytesCount,
+                            uint32_t *blockHeight,
+                            uint32_t *timestamp);
 
 // MARK: - Transfer Output
 

@@ -34,11 +34,11 @@ typedef enum {
 
 extern WKExportablePaperWalletStatus
 wkExportablePaperWalletValidateSupported (WKNetwork network,
-                                              WKCurrency currency);
+                                          WKCurrency currency);
 
 extern WKExportablePaperWallet
 wkExportablePaperWalletCreate (WKNetwork network,
-                                   WKCurrency currency);
+                               WKCurrency currency);
 
 extern void
 wkExportablePaperWalletRelease (WKExportablePaperWallet paperWallet);

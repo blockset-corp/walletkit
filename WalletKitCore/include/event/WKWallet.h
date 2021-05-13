@@ -72,34 +72,34 @@ wkWalletEventGetType (WKWalletEvent event);
 
 extern WKBoolean
 wkWalletEventExtractState (WKWalletEvent event,
-                               WKWalletState *old,
-                               WKWalletState *new);
+                           WKWalletState *old,
+                           WKWalletState *new);
 
 extern WKBoolean
 wkWalletEventExtractTransfer (WKWalletEvent event,
-                                  WKTransfer *transfer);
+                              WKTransfer *transfer);
 
 extern WKBoolean
 wkWalletEventExtractTransferSubmit (WKWalletEvent event,
-                                        WKTransfer *transfer);
+                                    WKTransfer *transfer);
 
 extern WKBoolean
 wkWalletEventExtractBalanceUpdate (WKWalletEvent event,
-                                       WKAmount *balance);
+                                   WKAmount *balance);
 
 extern WKBoolean
 wkWalletEventExtractFeeBasisUpdate (WKWalletEvent event,
-                                        WKFeeBasis *basis);
+                                    WKFeeBasis *basis);
 
 extern WKBoolean
 wkWalletEventExtractFeeBasisEstimate (WKWalletEvent event,
-                                          WKStatus *status,
-                                          WKCookie *cookie,
-                                          WKFeeBasis *basis);
+                                      WKStatus *status,
+                                      WKCookie *cookie,
+                                      WKFeeBasis *basis);
 
 extern WKBoolean
 wkWalletEventIsEqual (WKWalletEvent event1,
-                          WKWalletEvent event2);
+                      WKWalletEvent event2);
 
 DECLARE_WK_GIVE_TAKE (WKWalletEvent, wkWalletEvent);
 

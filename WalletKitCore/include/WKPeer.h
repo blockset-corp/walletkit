@@ -30,9 +30,9 @@ typedef struct WKPeerRecord *WKPeer;
  */
 extern WKPeer
 wkPeerCreate (WKNetwork network,
-                  const char *address,
-                  uint16_t port,
-                  const char *publicKey);
+              const char *address,
+              uint16_t port,
+              const char *publicKey);
 
 /**
  * The peer's address as 16 bytes.

@@ -287,7 +287,7 @@ typedef enum {
     // specific error code does not make sense (you really should create
     // a specifc error code...).
     WK_ERROR_FAILED,
-
+    
     // Reference access
     WK_ERROR_UNKNOWN_NODE = 10000,
     WK_ERROR_UNKNOWN_TRANSFER,
@@ -295,17 +295,17 @@ typedef enum {
     WK_ERROR_UNKNOWN_WALLET,
     WK_ERROR_UNKNOWN_BLOCK,
     WK_ERROR_UNKNOWN_LISTENER,
-
+    
     // Node
     WK_ERROR_NODE_NOT_CONNECTED = 20000,
-
+    
     // Transfer
     WK_ERROR_TRANSFER_HASH_MISMATCH = 30000,
     WK_ERROR_TRANSFER_SUBMISSION,
-
+    
     // Numeric
     WK_ERROR_NUMERIC_PARSE = 40000,
-
+    
     // Acount
     // Wallet
     // Block

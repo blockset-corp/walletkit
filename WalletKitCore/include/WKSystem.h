@@ -28,10 +28,10 @@ DECLARE_WK_GIVE_TAKE (WKSystem, wkSystem);
  */
 extern WKSystem
 wkSystemCreate (WKClient client,
-                    WKListener listener,
-                    WKAccount account,
-                    const char *path,
-                    WKBoolean onMainnet);
+                WKListener listener,
+                WKAccount account,
+                const char *path,
+                WKBoolean onMainnet);
 
 /**
  * Check if system is o mainnet.
@@ -51,7 +51,7 @@ wkSystemIsReachable (WKSystem system);
  */
 extern void
 wkSystemSetReachable (WKSystem system,
-                          WKBoolean isReachable);
+                      WKBoolean isReachable);
 
 /**
  * Get the system's path used to store persistent data
@@ -72,28 +72,28 @@ wkSystemGetState (WKSystem system);
  */
 extern WKBoolean
 wkSystemHasNetwork (WKSystem system,
-                        WKNetwork network);
+                    WKNetwork network);
 
 /**
  * Get the system's networks.  Fills `count` with the number of networks returned.
  */
 extern WKNetwork *
 wkSystemGetNetworks (WKSystem system,
-                         size_t *count);
+                     size_t *count);
 
 /**
  * Get the system's network at `index`.  The `index` must be [0,count).
  */
 extern WKNetwork
 wkSystemGetNetworkAt (WKSystem system,
-                          size_t index);
+                      size_t index);
 
 /**
  * Get the system network with `uids`.  Return can be NULL if `uids` is unknown.
  */
 extern WKNetwork
 wkSystemGetNetworkForUids (WKSystem system,
-                               const char *uids);
+                           const char *uids);
 
 /**
  * Get the count of system networks.
@@ -108,21 +108,21 @@ wkSystemGetNetworksCount (WKSystem system);
  */
 extern WKBoolean
 wkSystemHasWalletManager (WKSystem system,
-                              WKWalletManager network);
+                          WKWalletManager network);
 
 /**
  * Get the system's wallet managers.  Fills `count` with the number of wallet managers returned.
  */
 extern WKWalletManager *
 wkSystemGetWalletManagers (WKSystem system,
-                               size_t *count);
+                           size_t *count);
 
 /**
  * Get the system wallet manager at `index`.  The `index` must be `[0,count)`
  */
 extern WKWalletManager
 wkSystemGetWalletManagerAt (WKSystem system,
-                                size_t index);
+                            size_t index);
 
 /**
  * Get the system wallet manager for `network`.  Return can be NULL if `network` does not have
@@ -130,7 +130,7 @@ wkSystemGetWalletManagerAt (WKSystem system,
  */
 extern WKWalletManager
 wkSystemGetWalletManagerByNetwork (WKSystem system,
-                                       WKNetwork network);
+                                   WKNetwork network);
 
 /**
  * Get the count of system wallet managers.
@@ -150,11 +150,11 @@ wkSystemGetWalletManagersCount (WKSystem system);
  */
 extern WKWalletManager
 wkSystemCreateWalletManager (WKSystem system,
-                                 WKNetwork network,
-                                 WKSyncMode mode,
-                                 WKAddressScheme scheme,
-                                 WKCurrency *currencies,
-                                 size_t currenciesCount);
+                             WKNetwork network,
+                             WKSyncMode mode,
+                             WKAddressScheme scheme,
+                             WKCurrency *currencies,
+                             size_t currenciesCount);
 
 /**
  * Start the system.

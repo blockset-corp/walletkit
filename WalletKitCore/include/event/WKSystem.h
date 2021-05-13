@@ -28,15 +28,15 @@ typedef enum {
     WK_SYSTEM_EVENT_CREATED,
     WK_SYSTEM_EVENT_CHANGED,
     WK_SYSTEM_EVENT_DELETED,
-
+    
     WK_SYSTEM_EVENT_NETWORK_ADDED,
     WK_SYSTEM_EVENT_NETWORK_CHANGED,
     WK_SYSTEM_EVENT_NETWORK_DELETED,
-
+    
     WK_SYSTEM_EVENT_MANAGER_ADDED,
     WK_SYSTEM_EVENT_MANAGER_CHANGED,
     WK_SYSTEM_EVENT_MANAGER_DELETED,
-
+    
     WK_SYSTEM_EVENT_DISCOVERED_NETWORKS,
     
 } WKSystemEventType;
@@ -51,7 +51,7 @@ typedef struct {
             WKSystemState old;
             WKSystemState new;
         } state;
-
+        
         WKNetwork network;
         WKWalletManager manager;
     } u;
