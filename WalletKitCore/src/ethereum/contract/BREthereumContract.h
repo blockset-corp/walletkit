@@ -1,6 +1,6 @@
 //
 //  BREthereumContract
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/5/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -10,6 +10,9 @@
 
 #ifndef BR_Ethereum_Contract_h
 #define BR_Ethereum_Contract_h
+
+#include "ethereum/base/BREthereumBase.h"
+#include "support/util/BRUtil.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,9 +70,6 @@ ethContractLookupEventForTopic (BREthereumContract contract, const char *topic);
 //
 // Contract / Function
 //
-#include "../base/BREthereumLogic.h"
-#include "../util/BRUtil.h"
-
 private_extern UInt256
 ethFunctionERC20TransferDecodeAmount (BREthereumContractFunction function,
                                       const char *data,

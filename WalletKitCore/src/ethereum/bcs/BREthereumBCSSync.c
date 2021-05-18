@@ -1,6 +1,6 @@
 //
 //  BREthereumBCSSync.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 7/25/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -547,7 +547,7 @@ bcsSyncRelease (BREthereumBCSSync sync) {
 
     if (NULL != sync->results) {
         for (size_t index = 0; index < array_count(sync->results); index++)
-            blockHeaderRelease(sync->results[index].header);
+            ethBlockHeaderRelease(sync->results[index].header);
         array_free(sync->results);
     }
 
@@ -644,10 +644,10 @@ bcsSyncStart (BREthereumBCSSync sync,
     uint64_t total = needBlockNumber - chainBlockNumber;
 
     // If `node` is generic, we need to find LES's preferred node.
-    if (NODE_REFERENCE_IS_GENERIC (node)) {
+    if (LES_NODE_REFERENCE_IS_GENERIC (node)) {
         node = lesGetNodePrefer (sync->les);
         // If still 'generic' (specifically NIL), skip this sync.
-        if (NODE_REFERENCE_NIL == node) {
+        if (LES_NODE_REFERENCE_NIL == node) {
             eth_log ("BCS", "Sync: Start Skipped: No suitable nodes%s", "");
             return;
         }
@@ -773,7 +773,7 @@ bcsSyncHandleBlockHeaders (BREthereumBCSSyncRange range,
             array_new (hashes, count);
 
             for (size_t index = 0; index < count; index++)
-                array_add (hashes,  blockHeaderGetHash (headers[index]));
+                array_add (hashes,  ethBlockHeaderGetHash (headers[index]));
 
             lesProvideAccountStates (range->les, node,
                                      (BREthereumLESProvisionContext) range,
@@ -821,12 +821,12 @@ bcsSyncHandleAccountStates (BREthereumBCSSyncRange range,
         BREthereumAccountState newState = states[index];
 
         // If we found an AcountState change...
-        if (ETHEREUM_BOOLEAN_IS_FALSE(accountStateEqual(oldState, newState))) {
+        if (ETHEREUM_BOOLEAN_IS_FALSE(ethAccountStateEqual(oldState, newState))) {
             BREthereumBlockHeader oldHeader = range->headers[index - 1];
             BREthereumBlockHeader newHeader = range->headers[index];
 
-            uint64_t oldNumber = blockHeaderGetNumber(oldHeader);
-            uint64_t newNumber = blockHeaderGetNumber(newHeader);
+            uint64_t oldNumber = ethBlockHeaderGetNumber(oldHeader);
+            uint64_t newNumber = ethBlockHeaderGetNumber(newHeader);
 
             assert (newNumber > oldNumber);
 
@@ -849,7 +849,7 @@ bcsSyncHandleAccountStates (BREthereumBCSSyncRange range,
     array_free (states);
 
     // Release range->result.
-    blockHeadersRelease(range->headers);
+    ethBlockHeadersRelease(range->headers);
     range->headers = NULL;
 
     // If we now have children, dispatch on the first one.  As each one completes, we'll
@@ -931,7 +931,7 @@ bcsSyncHandleProvision (BREthereumBCSSyncRange range,
             switch (result.type) {
                 case PROVISION_BLOCK_HEADERS: {
                     BRArrayOf(BREthereumBlockHeader) headers;
-                    provisionHeadersConsume (&provision->u.headers, &headers);
+                    ethProvisionHeadersConsume (&provision->u.headers, &headers);
                     bcsSyncHandleBlockHeaders (range, node, headers);
                     break;
                 }
@@ -948,7 +948,7 @@ bcsSyncHandleProvision (BREthereumBCSSyncRange range,
                 case PROVISION_ACCOUNTS: {
                     BRArrayOf(BREthereumHash) hashes;
                     BRArrayOf(BREthereumAccountState) accounts;
-                    provisionAccountsConsume (&provision->u.accounts, &hashes, &accounts);
+                    ethProvisionAccountsConsume (&provision->u.accounts, &hashes, &accounts);
                     bcsSyncHandleAccountStates (range, node,
                                                 provision->u.accounts.address,
                                                 hashes,
@@ -965,6 +965,6 @@ bcsSyncHandleProvision (BREthereumBCSSyncRange range,
             break;
         }
     }
-    provisionResultRelease (&result);
+    ethProvisionResultRelease (&result);
 }
 

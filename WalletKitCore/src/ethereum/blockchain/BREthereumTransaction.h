@@ -1,6 +1,6 @@
 //
 //  BBREthereumTransaction.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/21/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -20,14 +20,14 @@
 extern "C" {
 #endif
 
-#define TRANSACTION_NONCE_IS_NOT_ASSIGNED   UINT64_MAX
+#define ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED   UINT64_MAX
 
 /// If we get a gasEstimate we'll want the gasLimit to have a margin over the estimate
-#define GAS_LIMIT_MARGIN_PERCENT        (20)
+#define ETHEREUM_GAS_LIMIT_MARGIN_PERCENT        (20)
 
 static inline BREthereumGas
 gasApplyLimitMargin (BREthereumGas gas) {
-    return ethGasCreate(((100 + GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
+    return ethGasCreate(((100 + ETHEREUM_GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
 }
 
 /**
@@ -46,7 +46,7 @@ gasApplyLimitMargin (BREthereumGas gas) {
 typedef struct BREthereumTransactionRecord *BREthereumTransaction;
 
 extern BREthereumTransaction
-transactionCreate(BREthereumAddress sourceAddress,
+ethTransactionCreate(BREthereumAddress sourceAddress,
                   BREthereumAddress targetAddress,
                   BREthereumEther amount,
                   BREthereumGasPrice gasPrice,
@@ -55,38 +55,38 @@ transactionCreate(BREthereumAddress sourceAddress,
                   uint64_t nonce);
 
 extern BREthereumTransaction
-transactionCopy (BREthereumTransaction transaction);
+ethTransactionCopy (BREthereumTransaction transaction);
 
 extern void
-transactionRelease (BREthereumTransaction transaction);
+ethTransactionRelease (BREthereumTransaction transaction);
 
 extern void
-transactionReleaseForSet (void *ignore, void *item);
+ethTransactionReleaseForSet (void *ignore, void *item);
 
 extern BREthereumAddress
-transactionGetSourceAddress(BREthereumTransaction transaction);
+ethTransactionGetSourceAddress(BREthereumTransaction transaction);
 
 extern BREthereumAddress
-transactionGetTargetAddress(BREthereumTransaction transaction);
+ethTransactionGetTargetAddress(BREthereumTransaction transaction);
 
 extern BREthereumBoolean
-transactionHasAddress (BREthereumTransaction transaction,
+ethTransactionHasAddress (BREthereumTransaction transaction,
                        BREthereumAddress address);
     
 extern BREthereumEther
-transactionGetAmount(BREthereumTransaction transaction);
+ethTransactionGetAmount(BREthereumTransaction transaction);
 
 /**
  * Return the gasPrice
  */
 extern BREthereumGasPrice
-transactionGetGasPrice (BREthereumTransaction transaction);
+ethTransactionGetGasPrice (BREthereumTransaction transaction);
 
 /**
  * Return the gasLimit
  */
 extern BREthereumGas
-transactionGetGasLimit (BREthereumTransaction transaction);
+ethTransactionGetGasLimit (BREthereumTransaction transaction);
 
 /**
  * Return the gasUsed if the transaction is included.  In that case *isValid will be
@@ -94,7 +94,7 @@ transactionGetGasLimit (BREthereumTransaction transaction);
  * gasUsed will be zero.
  */
 extern BREthereumGas
-transactionGetGasUsed (BREthereumTransaction transaction,
+ethTransactionGetGasUsed (BREthereumTransaction transaction,
                        BREthereumBoolean *isValid);
 
 /**
@@ -102,7 +102,7 @@ transactionGetGasUsed (BREthereumTransaction transaction,
  * on the gasUsed; thus the returned feeBasis is but an estimate.
  */
 extern BREthereumFeeBasis
-transactionGetFeeBasisEstimated (BREthereumTransaction transaction);
+ethTransactionGetFeeBasisEstimated (BREthereumTransaction transaction);
 
 /**
  * Return the feeBasis for transaction if the transaction is included.  When included *isValid
@@ -110,7 +110,7 @@ transactionGetFeeBasisEstimated (BREthereumTransaction transaction);
  * and the returned feeBasis should not be referenced (it will be filled with zeros).
  */
 extern BREthereumFeeBasis
-transactionGetFeeBasisConfirmed (BREthereumTransaction transaction,
+ethTransactionGetFeeBasisConfirmed (BREthereumTransaction transaction,
                                  BREthereumBoolean *isValid);
 
 /**
@@ -119,67 +119,67 @@ transactionGetFeeBasisConfirmed (BREthereumTransaction transaction,
  * confirmed then an estimated feeBasis is returned {gasEstimate, gasPrice}.
  */
 extern BREthereumFeeBasis
-transactionGetFeeBasis (BREthereumTransaction transaction);
+ethTransactionGetFeeBasis (BREthereumTransaction transaction);
 
 /**
- * Return the fee (in Ether) for transaction based on `transactionGetFeeBasis()`.  If the fee
+ * Return the fee (in Ether) for transaction based on `ethTransactionGetFeeBasis()`.  If the fee
  * computation overflows, then *overflow is set to ETHEREUM_BOOLEAN_TRUE.
  */
 extern BREthereumEther
-transactionGetFee (BREthereumTransaction transaction,
+ethTransactionGetFee (BREthereumTransaction transaction,
                    BREthereumBoolean *overflow);
 
 extern uint64_t
-transactionGetNonce (BREthereumTransaction transaction);
+ethTransactionGetNonce (BREthereumTransaction transaction);
 
 private_extern void
-transactionSetNonce (BREthereumTransaction transaction,
+ethTransactionSetNonce (BREthereumTransaction transaction,
                      uint64_t nonce);
 
 extern const BREthereumHash
-transactionGetHash (BREthereumTransaction transaction);
+ethTransactionGetHash (BREthereumTransaction transaction);
 
 // Caution
 extern void
-transactionSetHash (BREthereumTransaction transaction,
+ethTransactionSetHash (BREthereumTransaction transaction,
                     BREthereumHash hash);
 
 extern const char * // no not modify the return value
-transactionGetData (BREthereumTransaction transaction);
+ethTransactionGetData (BREthereumTransaction transaction);
 
 // Support BRSet
 extern size_t
-transactionHashValue (const void *h);
+ethTransactionHashValue (const void *h);
 
 // Support BRSet
 extern int
-transactionHashEqual (const void *h1, const void *h2);
+ethTransactionHashEqual (const void *h1, const void *h2);
 
 //
 // Transaction Signing
 //
 extern void
-transactionSign(BREthereumTransaction transaction,
+ethTransactionSign(BREthereumTransaction transaction,
                 BREthereumSignature signature);
 
 extern BREthereumBoolean
-transactionIsSigned (BREthereumTransaction transaction);
+ethTransactionIsSigned (BREthereumTransaction transaction);
 
 extern BREthereumSignature
-transactionGetSignature (BREthereumTransaction transaction);
+ethTransactionGetSignature (BREthereumTransaction transaction);
 
 /**
  * Extract the signer's address.  If not signed, an empty address is returned.
  */
 extern BREthereumAddress
-transactionExtractAddress(BREthereumTransaction transaction,
+ethTransactionExtractAddress(BREthereumTransaction transaction,
                           BREthereumNetwork network,
                           BRRlpCoder coder);
 //
 // Transaction RLP Encoding
 //
 extern BREthereumTransaction
-transactionRlpDecode (BRRlpItem item,
+ethTransactionRlpDecode (BRRlpItem item,
                       BREthereumNetwork network,
                       BREthereumRlpType type,
                       BRRlpCoder coder);
@@ -190,18 +190,18 @@ transactionRlpDecode (BRRlpItem item,
  */
 
 extern BRRlpItem
-transactionRlpEncode(BREthereumTransaction transaction,
+ethTransactionRlpEncode(BREthereumTransaction transaction,
                      BREthereumNetwork network,
                      BREthereumRlpType type,
                      BRRlpCoder coder);
 
 extern BRRlpData
-transactionGetRlpData (BREthereumTransaction transaction,
+ethTransactionGetRlpData (BREthereumTransaction transaction,
                        BREthereumNetwork network,
                        BREthereumRlpType type);
 
 extern char *
-transactionGetRlpHexEncoded (BREthereumTransaction transaction,
+ethTransactionGetRlpHexEncoded (BREthereumTransaction transaction,
                              BREthereumNetwork network,
                              BREthereumRlpType type,
                              const char *prefix);
@@ -209,28 +209,28 @@ transactionGetRlpHexEncoded (BREthereumTransaction transaction,
 // Transaction Comparison
 //
 extern BREthereumComparison
-transactionCompare (BREthereumTransaction t1,
+ethTransactionCompare (BREthereumTransaction t1,
                     BREthereumTransaction t2);
 
 extern BREthereumTransactionStatus
-transactionGetStatus (BREthereumTransaction transaction);
+ethTransactionGetStatus (BREthereumTransaction transaction);
 
 extern void
-transactionSetStatus (BREthereumTransaction transaction,
+ethTransactionSetStatus (BREthereumTransaction transaction,
                       BREthereumTransactionStatus status);
     
 extern BREthereumBoolean
-transactionIsConfirmed (BREthereumTransaction transaction);
+ethTransactionIsConfirmed (BREthereumTransaction transaction);
 
 // TODO: Rethink
 extern BREthereumBoolean
-transactionIsSubmitted (BREthereumTransaction transaction);
+ethTransactionIsSubmitted (BREthereumTransaction transaction);
 
 extern BREthereumBoolean
-transactionIsErrored (BREthereumTransaction transaction);
+ethTransactionIsErrored (BREthereumTransaction transaction);
 
 extern void
-transactionShow (BREthereumTransaction transaction, const char *topic);
+ethTransactionShow (BREthereumTransaction transaction, const char *topic);
 
 extern void
 transactionsRelease (BRArrayOf(BREthereumTransaction) transactions);

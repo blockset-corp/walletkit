@@ -1,6 +1,6 @@
 //
 //  BRTezosEncoder.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-07-22.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -20,13 +20,13 @@
 extern "C" {
 #endif
 
-extern BRCryptoData
+extern WKData
 encodeZarith (int64_t value);
 
-extern BRCryptoData
+extern WKData
 tezosSerializeTransaction (BRTezosTransaction tx);
 
-extern BRCryptoData
+extern WKData
 tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosHash blockHash);
 
 

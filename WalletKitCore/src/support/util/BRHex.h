@@ -1,6 +1,6 @@
 //
 //  BBRUtilHex.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/10/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

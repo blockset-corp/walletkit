@@ -1,6 +1,6 @@
 //
 //  BRAssert.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 2/4/19.
 //  Copyright © 2019 breadwallet LLC

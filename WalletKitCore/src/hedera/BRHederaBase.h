@@ -1,6 +1,6 @@
 //
 //  BRHederaBase.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on Oct. 15, 2019.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <arpa/inet.h>          // htonl()
-#include "BRCryptoBase.h"
+#include "WKBase.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,6 @@
 //
 //  BREthereumMessageLES.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/1/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -264,7 +264,7 @@ messageLESBlockHeadersDecode (BRRlpItem item,
     BRArrayOf(BREthereumBlockHeader) headers;
     array_new (headers, headerItemsCount);
     for (size_t index = 0; index < headerItemsCount; index++)
-        array_add (headers, blockHeaderRlpDecode (headerItems[index], RLP_TYPE_NETWORK, coder.rlp));
+        array_add (headers, ethBlockHeaderRlpDecode (headerItems[index], RLP_TYPE_NETWORK, coder.rlp));
 
     return (BREthereumLESMessageBlockHeaders) {
         reqId,
@@ -311,8 +311,8 @@ messageLESBlockBodiesDecode (BRRlpItem item,
         assert (2 == bodyItemsCount);
 
         BREthereumBlockBodyPair pair = {
-            blockTransactionsRlpDecode (bodyItems[0], coder.network, RLP_TYPE_NETWORK, coder.rlp),
-            blockOmmersRlpDecode (bodyItems[1], coder.network, RLP_TYPE_NETWORK, coder.rlp)
+            ethBlockTransactionsRlpDecode (bodyItems[0], coder.network, RLP_TYPE_NETWORK, coder.rlp),
+            ethBlockOmmersRlpDecode (bodyItems[1], coder.network, RLP_TYPE_NETWORK, coder.rlp)
         };
         array_add(pairs, pair);
     }
@@ -357,7 +357,7 @@ messageLESReceiptsDecode (BRRlpItem item,
     array_new(arrays, arrayItemsCount);
     for (size_t index = 0; index < arrayItemsCount; index++) {
         BREthereumLESMessageReceiptsArray array = {
-            transactionReceiptDecodeList (arrayItems[index], coder.rlp)
+            ethTransactionReceiptDecodeList (arrayItems[index], coder.rlp)
         };
         array_add (arrays, array);
     }
@@ -424,7 +424,7 @@ messageLESProofsDecode (BRRlpItem item,
     BRArrayOf(BREthereumMPTNodePath) paths;
     array_new (paths, pathsCount);
     for (size_t index = 0; index < pathsCount; index++)
-        array_add (paths, mptNodePathDecode (pathsItems[index], coder.rlp));
+        array_add (paths, ethMptNodePathDecode (pathsItems[index], coder.rlp));
 
     return (BREthereumLESMessageProofs) {
         reqId,
@@ -445,7 +445,7 @@ messageLESSendTxEncode (BREthereumLESMessageSendTx message, BREthereumMessageCod
     BRRlpItem items[itemsCount];
 
     for (size_t index = 0; index < itemsCount; index++)
-        items[index] = transactionRlpEncode(message.transactions[index],
+        items[index] = ethTransactionRlpEncode(message.transactions[index],
                                             coder.network,
                                             RLP_TYPE_TRANSACTION_SIGNED,
                                             coder.rlp);
@@ -499,8 +499,8 @@ headerProofsDecode (BRRlpItem item,
         const BRRlpItem *headerItems = rlpDecodeList (coder.rlp, items[index], &headerItemsCount);
         assert (2 == headerItemsCount);
 
-        BREthereumBlockHeader header = blockHeaderRlpDecode (headerItems[0], RLP_TYPE_NETWORK, coder.rlp);
-        BREthereumMPTNodePath path   = mptNodePathDecode (headerItems[1], coder.rlp);
+        BREthereumBlockHeader header = ethBlockHeaderRlpDecode (headerItems[0], RLP_TYPE_NETWORK, coder.rlp);
+        BREthereumMPTNodePath path   = ethMptNodePathDecode (headerItems[1], coder.rlp);
 
         array_add (*headers, header);
         array_add (*paths,   path);
@@ -564,7 +564,7 @@ messageLESProofsV2Decode (BRRlpItem item,
     return (BREthereumLESMessageProofsV2) {
         reqId,
         bv,
-        mptNodePathDecode (items[2], coder.rlp)
+        ethMptNodePathDecode (items[2], coder.rlp)
     };
 }
 
@@ -580,7 +580,7 @@ messageLESSendTx2Encode (BREthereumLESMessageSendTx2 message, BREthereumMessageC
     BRRlpItem items[itemsCount];
 
     for (size_t index = 0; index < itemsCount; index++)
-        items[index] = transactionRlpEncode(message.transactions[index],
+        items[index] = ethTransactionRlpEncode(message.transactions[index],
                                             coder.network,
                                             RLP_TYPE_TRANSACTION_SIGNED,
                                             coder.rlp);
@@ -638,7 +638,7 @@ messageLESTxStatusDecode (BRRlpItem item,
     return (BREthereumLESMessageTxStatus) {
         reqId,
         bv,
-        transactionStatusDecodeList (items[2], lesTransactionErrorPreface, coder.rlp)
+        ethTransactionStatusDecodeList (items[2], lesTransactionErrorPreface, coder.rlp)
     };
 }
 
@@ -781,7 +781,7 @@ messageLESRelease (BREthereumLESMessage *message) {
             break;
 
         case LES_MESSAGE_BLOCK_HEADERS:
-            blockHeadersRelease (message->u.blockHeaders.headers);
+            ethBlockHeadersRelease (message->u.blockHeaders.headers);
             break;
 
         case LES_MESSAGE_GET_BLOCK_BODIES:
@@ -790,7 +790,7 @@ messageLESRelease (BREthereumLESMessage *message) {
             break;
 
         case LES_MESSAGE_BLOCK_BODIES:
-            blockBodyPairsRelease (message->u.blockBodies.pairs);
+            ethBlockBodyPairsRelease (message->u.blockBodies.pairs);
             break;
 
         case LES_MESSAGE_GET_RECEIPTS:
@@ -801,7 +801,7 @@ messageLESRelease (BREthereumLESMessage *message) {
         case LES_MESSAGE_RECEIPTS:
             if (NULL != message->u.receipts.arrays) {
                 for (size_t index = 0; index < array_count (message->u.receipts.arrays); index++)
-                    transactionReceiptsRelease (message->u.receipts.arrays[index].receipts);
+                    ethTransactionReceiptsRelease (message->u.receipts.arrays[index].receipts);
                 array_free (message->u.receipts.arrays);
             }
             break;
@@ -834,9 +834,9 @@ messageLESRelease (BREthereumLESMessage *message) {
 
         case LES_MESSAGE_HEADER_PROOFS:
             if (NULL != message->u.headerProofs.paths)
-                mptNodePathsRelease(message->u.headerProofs.paths);
+                ethMptNodePathsRelease(message->u.headerProofs.paths);
             if (NULL != message->u.headerProofs.headers)
-                blockHeadersRelease(message->u.headerProofs.headers);
+                ethBlockHeadersRelease(message->u.headerProofs.headers);
             break;
 
         case LES_MESSAGE_GET_PROOFS_V2:

@@ -1,6 +1,6 @@
 //
 //  BBREthereumAddress.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/21/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -126,10 +126,10 @@ ethAccountSignBytes(BREthereumAccount account,
 // Support (quasi-private)
 //
 extern UInt512
-deriveSeedFromPaperKey (const char *paperKey);
+ethAccountDeriveSeedFromPaperKey (const char *paperKey);
 
 extern BRKey
-derivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
+ethAccountDerivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
 
 
 //

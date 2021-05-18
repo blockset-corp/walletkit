@@ -1,6 +1,6 @@
 //
 //  BRBSVParams.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-04.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -10,24 +10,24 @@
 
 #include "support/BRInt.h"
 #include "support/BRSet.h"
-#include "bitcoin/BRPeer.h"
+#include "bitcoin/BRBitcoinPeer.h"
 #include "BRBSVParams.h"
 
-static const char *BRBSVDNSSeeds[] = {
+static const char *bsvMainNetDNSSeeds[] = {
     "seed.bitcoinsv.io",
     "seed.cascharia.com",
     "seed.satoshisvision.network",
     NULL
 };
 
-static const char *BRBSVTestNetDNSSeeds[] = {
+static const char *bsvTestNetDNSSeeds[] = {
     "testnet-seed.bitcoinsv.io",
     "testnet-seed.cascharia.com",
     "testnet-seed.bitcoincloud.net",
     NULL
 };
 
-static const BRCheckPoint BRBSVTestNetCheckpoints[] = {
+static const BRBitcoinCheckPoint bsvTestNetCheckpoints[] = {
     {       0, uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff },
     {  100800, uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907 },
     {  201600, uint256("0000000000376bb71314321c45de3015fe958543afcbada242a3b1b072498e38"), 1393813869, 0x1b602ac0 },
@@ -48,7 +48,7 @@ static const BRCheckPoint BRBSVTestNetCheckpoints[] = {
 
 // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
 // difficulty transition boundaries in order to verify the block difficulty at the immediately following transition
-static const BRCheckPoint BRBSVCheckpoints[] = {
+static const BRBitcoinCheckPoint bsvMainNetCheckpoints[] = {
     {      0, uint256("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"), 1231006505, 0x1d00ffff },
     {  20160, uint256("000000000f1aef56190aee63d33a373e6487132d522ff4cd98ccfc96566d461e"), 1248481816, 0x1d00ffff },
     {  40320, uint256("0000000045861e169b5a961b7034f8de9e98022e7a39100dde3ae3ea240d7245"), 1266191579, 0x1c654657 },
@@ -86,9 +86,9 @@ static const BRCheckPoint BRBSVCheckpoints[] = {
     // 685440
 };
 
-static const BRMerkleBlock *_medianBlock(const BRMerkleBlock *b, const BRSet *blockSet)
+static const BRBitcoinMerkleBlock *_medianBlock(const BRBitcoinMerkleBlock *b, const BRSet *blockSet)
 {
-    const BRMerkleBlock *b0 = NULL, *b1 = NULL, *b2 = b;
+    const BRBitcoinMerkleBlock *b0 = NULL, *b1 = NULL, *b2 = b;
 
     b1 = (b2) ? BRSetGet(blockSet, &b2->prevBlock) : NULL;
     b0 = (b1) ? BRSetGet(blockSet, &b1->prevBlock) : NULL;
@@ -98,9 +98,9 @@ static const BRMerkleBlock *_medianBlock(const BRMerkleBlock *b, const BRSet *bl
     return (b0 && b1 && b2) ? b1 : NULL;
 }
 
-static int BRBSVVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int bsvMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
-    const BRMerkleBlock *b, *first, *last;
+    const BRBitcoinMerkleBlock *b, *first, *last;
     int i, sz, size = 0x1d;
     uint64_t t, target, w, work = 0;
     int64_t timespan;
@@ -156,33 +156,33 @@ static int BRBSVVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockS
     return 1;
 }
 
-static int BRBSVTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int bsvTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
     return 1; // XXX skip testnet difficulty check for now
 }
 
-static const BRChainParams BRBSVParamsRecord = {
-    BRBSVDNSSeeds,
+static const BRBitcoinChainParams bsvMainNetParamsRecord = {
+    bsvMainNetDNSSeeds,
     8333,                // standardPort
     0xe8f3e1e3,          // magicNumber
     SERVICES_NODE_BCASH, // services
-    BRBSVVerifyDifficulty,
-    BRBSVCheckpoints,
-    sizeof(BRBSVCheckpoints)/sizeof(*BRBSVCheckpoints),
+    bsvMainNetVerifyDifficulty,
+    bsvMainNetCheckpoints,
+    sizeof(bsvMainNetCheckpoints)/sizeof(*bsvMainNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL },
     BSV_FORKID
 };
-const BRChainParams *BRBSVParams = &BRBSVParamsRecord;
+const BRBitcoinChainParams *bsvMainNetParams = &bsvMainNetParamsRecord;
 
-static const BRChainParams BRBSVTestNetParamsRecord = {
-    BRBSVTestNetDNSSeeds,
+static const BRBitcoinChainParams bsvTestNetParamsRecord = {
+    bsvTestNetDNSSeeds,
     18333,               // standardPort
     0xf4f3e5f4,          // magicNumber
     SERVICES_NODE_BCASH, // services
-    BRBSVTestNetVerifyDifficulty,
-    BRBSVTestNetCheckpoints,
-    sizeof(BRBSVTestNetCheckpoints)/sizeof(*BRBSVTestNetCheckpoints),
+    bsvTestNetVerifyDifficulty,
+    bsvTestNetCheckpoints,
+    sizeof(bsvTestNetCheckpoints)/sizeof(*bsvTestNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL },
     BSV_FORKID
 };
-const BRChainParams *BRBSVTestNetParams = &BRBSVTestNetParamsRecord;
+const BRBitcoinChainParams *bsvTestNetParams = &bsvTestNetParamsRecord;

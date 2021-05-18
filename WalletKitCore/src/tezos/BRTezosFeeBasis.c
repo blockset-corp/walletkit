@@ -1,6 +1,6 @@
 //
 //  BRTezosFeeBasis.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 #include "BRTezosFeeBasis.h"
-#include "ethereum/util/BRUtilMath.h"
-#include "crypto/BRCryptoBaseP.h"
+#include "support/util/BRUtilMath.h"
+#include "walletkit/WKBaseP.h"
 #include <stdio.h>
 #include <assert.h>
 

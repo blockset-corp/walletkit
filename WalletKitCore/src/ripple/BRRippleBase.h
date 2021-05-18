@@ -1,6 +1,6 @@
 //
 //  BRRippleBase.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 4/16/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "BRCryptoBase.h"
+#include "WKBase.h"
 
 // Even though we only support the Payment type - plan for
 // the future

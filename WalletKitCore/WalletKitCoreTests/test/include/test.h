@@ -13,10 +13,10 @@
 
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
-#include "BRCryptoSync.h"
-#include "BRCryptoAccount.h"
-#include "BRCryptoNetwork.h"
-#include "bitcoin/BRChainParams.h"
+#include "WKSync.h"
+#include "WKAccount.h"
+#include "WKNetwork.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +55,7 @@ runEWMTests (const char *paperKey,
 extern void
 runSyncTest (BREthereumNetwork network,
              BREthereumAccount account,
-             BRCryptoSyncMode mode,
+             WKSyncMode mode,
              BREthereumTimestamp accountTimestamp,
              unsigned int durationInSeconds,
              const char *storagePath);
@@ -77,7 +77,7 @@ typedef enum {
     BITCOIN_CHAIN_BSV
 } BRBitcoinChain;
 
-extern const BRChainParams*
+extern const BRBitcoinChainParams*
 getChainParams (BRBitcoinChain chain, int isMainnet);
 
 extern const char *
@@ -115,9 +115,9 @@ extern void BRRandInit (void);
 // testCrypto.c
 extern void runCryptoTests (void);
 
-extern BRCryptoBoolean
-runCryptoTestsWithAccountAndNetwork (BRCryptoAccount account,
-                                     BRCryptoNetwork network,
+extern WKBoolean
+runCryptoTestsWithAccountAndNetwork (WKAccount account,
+                                     WKNetwork network,
                                      const char *storagePath);
 
 // Ripple

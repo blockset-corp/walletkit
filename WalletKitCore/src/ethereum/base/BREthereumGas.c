@@ -1,6 +1,6 @@
 //
 //  BREthereumGas
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/24/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

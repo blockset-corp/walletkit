@@ -1,4 +1,14 @@
 //
+//  createtransactions.c
+//  CoreExplore
+//
+//  Created by Carl Cherry on 3/12/21.
+//  Copyright © 2018-2019 Breadwinner AG. All rights reserved.
+//
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
+//
+
 #include "createtransactions.h"
 #include "ripple/BRRipple.h"
 #include "support/BRBase58.h"

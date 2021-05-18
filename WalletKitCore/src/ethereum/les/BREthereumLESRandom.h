@@ -1,6 +1,6 @@
 //
 //  BREthereumRandom.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 
 //  Created by Lamont Samuels on 5/23/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -19,8 +19,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 typedef struct BREthereumLESRandomRecord* BREthereumLESRandomContext;
 
@@ -60,7 +58,6 @@ extern void randomGenPriKey(BREthereumLESRandomContext ctx, BRKey* key);
 * @param out - a reference to UInt256 that will contain the random data 
  **/
 extern void randomGenUInt256(BREthereumLESRandomContext ctx, UInt256* out);
-
 
 #ifdef __cplusplus
 }

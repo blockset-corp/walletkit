@@ -74,7 +74,7 @@ struct  _Proto__CryptoTransferTransactionBody
    */
   Proto__TransferList *transfers;
 };
-#define PROTO__CRYPTO_TRANSFER_TRANSACTION_BODY__INIT \
+#define PROTO__WK_TRANSFER_TRANSACTION_BODY__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&proto__crypto_transfer_transaction_body__descriptor) \
     , NULL }
 

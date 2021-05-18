@@ -1,6 +1,6 @@
 //
 //  BREthereumLESProvision.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/3/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -28,7 +28,7 @@ typedef enum {
 } BREthereumProvisionErrorReason;
 
 extern const char *
-provisionErrorGetReasonName (BREthereumProvisionErrorReason reason);
+ethProvisionErrorGetReasonName (BREthereumProvisionErrorReason reason);
 
 /// MARK: - Provision Support
 
@@ -47,13 +47,13 @@ typedef enum {
 } BREthereumProvisionType;
 
 extern BREthereumLESMessageIdentifier
-provisionGetMessageLESIdentifier (BREthereumProvisionType type);
+ethProvisionGetMessageLESIdentifier (BREthereumProvisionType type);
 
 extern BREthereumPIPRequestType
-provisionGetMessagePIPIdentifier (BREthereumProvisionType type);
+ethProvisionGetMessagePIPIdentifier (BREthereumProvisionType type);
 
 extern const char *
-provisionGetTypeName (BREthereumProvisionType type);
+ethProvisionGetTypeName (BREthereumProvisionType type);
     
 /**
  * Headers
@@ -69,7 +69,7 @@ typedef struct {
 } BREthereumProvisionHeaders;
 
 extern void
-provisionHeadersConsume (BREthereumProvisionHeaders *provision,
+ethProvisionHeadersConsume (BREthereumProvisionHeaders *provision,
                          BRArrayOf(BREthereumBlockHeader) *headers);
 
 /**
@@ -83,7 +83,7 @@ typedef struct {
 } BREthereumProvisionProofs;
 
 extern void
-provisionProofsConsume (BREthereumProvisionProofs *provision,
+ethProvisionProofsConsume (BREthereumProvisionProofs *provision,
                         BRArrayOf(uint64_t) *numbers,
                         BRArrayOf(BREthereumBlockHeaderProof) *proofs);
 
@@ -98,7 +98,7 @@ typedef struct {
 } BREthereumProvisionBodies;
 
 extern void
-provisionBodiesConsume (BREthereumProvisionBodies *provision,
+ethProvisionBodiesConsume (BREthereumProvisionBodies *provision,
                         BRArrayOf(BREthereumHash) *hashes,
                         BRArrayOf(BREthereumBlockBodyPair) *pairs);
 
@@ -113,7 +113,7 @@ typedef struct {
 } BREthereumProvisionReceipts;
 
 extern void
-provisionReceiptsConsume (BREthereumProvisionReceipts *provision,
+ethProvisionReceiptsConsume (BREthereumProvisionReceipts *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BRArrayOf(BREthereumTransactionReceipt)) *receipts);
 
@@ -129,7 +129,7 @@ typedef struct {
 } BREthereumProvisionAccounts;
 
 extern void
-provisionAccountsConsume (BREthereumProvisionAccounts *provision,
+ethProvisionAccountsConsume (BREthereumProvisionAccounts *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BREthereumAccountState) *accounts);
 
@@ -144,7 +144,7 @@ typedef struct {
 } BREthereumProvisionStatuses;
 
 extern void
-provisionStatusesConsume (BREthereumProvisionStatuses *provision,
+ethProvisionStatusesConsume (BREthereumProvisionStatuses *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BREthereumTransactionStatus) *statuses);
 
@@ -159,7 +159,7 @@ typedef struct {
 } BREthereumProvisionSubmission;
 
 extern void
-provisionSubmissionConsume (BREthereumProvisionSubmission *provision,
+ethProvisionSubmissionConsume (BREthereumProvisionSubmission *provision,
                             BREthereumTransaction *transaction,
                             BREthereumTransactionStatus *status);
 
@@ -170,7 +170,7 @@ provisionSubmissionConsume (BREthereumProvisionSubmission *provision,
  */
 typedef size_t BREthereumProvisionIdentifier;
 
-#define PROVISION_IDENTIFIER_UNDEFINED  ((BREthereumProvisionIdentifier) -1)
+#define ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED  ((BREthereumProvisionIdentifier) -1)
 
 /**
  * Provision
@@ -190,11 +190,11 @@ typedef struct {
 } BREthereumProvision;
 
 extern BREthereumProvision
-provisionCopy (BREthereumProvision *provision,
+ethProvisionCopy (BREthereumProvision *provision,
                BREthereumBoolean copyResults);
 
 extern void
-provisionRelease (BREthereumProvision *provision,
+ethProvisionRelease (BREthereumProvision *provision,
                   BREthereumBoolean releaseResults);
 
 /**
@@ -202,23 +202,23 @@ provisionRelease (BREthereumProvision *provision,
  * partial result and then expect to reschedule the provision.
  */
 extern void
-provisionReleaseResults (BREthereumProvision *provision);
+ethProvisionReleaseResults (BREthereumProvision *provision);
 
 extern BREthereumMessage
-provisionCreateMessage (BREthereumProvision *provision,
+ethProvisionCreateMessage (BREthereumProvision *provision,
                         BREthereumMessageIdentifier type,
                         size_t messageContentLimit,
                         size_t messageIdBase,
                         size_t index);
 
 extern BREthereumProvisionStatus
-provisionHandleMessage (BREthereumProvision *provision,
+ethProvisionHandleMessage (BREthereumProvision *provision,
                         BREthereumMessage message,
                         size_t messageContentLimit,
                         size_t messageIdBase);
 
 extern BREthereumBoolean
-provisionMatches (BREthereumProvision *provision1,
+ethProvisionMatches (BREthereumProvision *provision1,
                   BREthereumProvision *provision2);
 
 /**
@@ -243,7 +243,7 @@ typedef struct {
 } BREthereumProvisionResult;
 
 extern void
-provisionResultRelease (BREthereumProvisionResult *result);
+ethProvisionResultRelease (BREthereumProvisionResult *result);
 
 typedef void *BREthereumProvisionCallbackContext;
 

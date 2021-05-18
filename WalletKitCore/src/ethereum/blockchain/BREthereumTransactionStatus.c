@@ -1,6 +1,6 @@
 //
 //  BREthereumTransactionStatus.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/15/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -13,7 +13,7 @@
 #include "BREthereumTransactionStatus.h"
 
 extern const char *
-transactionGetStatusTypeName (BREthereumTransactionStatusType type) {
+ethTransactionGetStatusTypeName (BREthereumTransactionStatusType type) {
     static const char *names[] = {
         "unknown",
         "queued",
@@ -26,7 +26,7 @@ transactionGetStatusTypeName (BREthereumTransactionStatusType type) {
 }
 
 const char *
-transactionGetErrorName (BREthereumTransactionErrorType type) {
+ethTransactionGetErrorName (BREthereumTransactionErrorType type) {
     static const char *names[] = {
         "* invalid signature",
         "* nonce too low",
@@ -43,7 +43,7 @@ transactionGetErrorName (BREthereumTransactionErrorType type) {
 }
 
 extern BREthereumTransactionStatus
-transactionStatusCreate (BREthereumTransactionStatusType type) {
+ethTransactionStatusCreate (BREthereumTransactionStatusType type) {
     assert (TRANSACTION_STATUS_INCLUDED != type && TRANSACTION_STATUS_ERRORED != type);
     BREthereumTransactionStatus status;
     status.type = type;
@@ -51,7 +51,7 @@ transactionStatusCreate (BREthereumTransactionStatusType type) {
 }
 
 extern BREthereumTransactionStatus
-transactionStatusCreateIncluded (BREthereumHash blockHash,
+ethTransactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t blockNumber,
                                  uint64_t transactionIndex,
                                  uint64_t blockTimestamp,
@@ -69,17 +69,17 @@ transactionStatusCreateIncluded (BREthereumHash blockHash,
 }
 
 extern BREthereumTransactionStatus
-transactionStatusCreateErrored (BREthereumTransactionErrorType type,
+ethTransactionStatusCreateErrored (BREthereumTransactionErrorType type,
                                 const char *detail) {
     BREthereumTransactionStatus status;
     status.type = TRANSACTION_STATUS_ERRORED;
     status.u.errored.type = type;
-    strlcpy (status.u.errored.detail, detail, TRANSACTION_STATUS_DETAIL_BYTES);
+    strlcpy (status.u.errored.detail, detail, ETHEREUM_TRANSACTION_STATUS_DETAIL_BYTES);
     return status;
 }
 
 extern int
-transactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
+ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
                                  BREthereumHash *blockHash,
                                  uint64_t *blockNumber,
                                  uint64_t *blockTransactionIndex,
@@ -99,7 +99,7 @@ transactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
 }
 
 extern BREthereumBoolean
-transactionStatusEqual (BREthereumTransactionStatus ts1,
+ethTransactionStatusEqual (BREthereumTransactionStatus ts1,
                         BREthereumTransactionStatus ts2) {
     return AS_ETHEREUM_BOOLEAN(ts1.type == ts2.type &&
                                ((TRANSACTION_STATUS_INCLUDED != ts1.type && TRANSACTION_STATUS_ERRORED != ts1.type) ||
@@ -114,7 +114,7 @@ transactionStatusEqual (BREthereumTransactionStatus ts1,
 }
 
 extern BREthereumComparison
-transactionStatusCompare (const BREthereumTransactionStatus *ts1,
+ethTransactionStatusCompare (const BREthereumTransactionStatus *ts1,
                           const BREthereumTransactionStatus *ts2) {
     int t1Blocked = ts1->type == TRANSACTION_STATUS_INCLUDED;
     int t2Blocked = ts2->type == TRANSACTION_STATUS_INCLUDED;
@@ -154,7 +154,7 @@ lookupTransactionErrorType (const char *reasons[],
 }
 
 extern BREthereumTransactionStatus
-transactionStatusRLPDecode (BRRlpItem item,
+ethTransactionStatusRLPDecode (BRRlpItem item,
                             const char *reasons[],
                             BRRlpCoder coder) {
     size_t itemsCount = 0;
@@ -167,10 +167,10 @@ transactionStatusRLPDecode (BRRlpItem item,
     char *reason = rlpDecodeString(coder, items[2]);
     if (NULL != reason && 0 != strcmp (reason, "") && 0 != strcmp (reason, "0x")) {
         BREthereumTransactionErrorType type = lookupTransactionErrorType (reasons, reason);
-        BREthereumTransactionStatus status = transactionStatusCreateErrored (type, reason);
+        BREthereumTransactionStatus status = ethTransactionStatusCreateErrored (type, reason);
         free (reason);
         // CORE-264: We always consider an 'already known' error as 'pending'
-        return TRANSACTION_ERROR_ALREADY_KNOWN != type ? status : transactionStatusCreate(TRANSACTION_STATUS_PENDING);
+        return TRANSACTION_ERROR_ALREADY_KNOWN != type ? status : ethTransactionStatusCreate(TRANSACTION_STATUS_PENDING);
     }
     if (NULL != reason) free (reason);
 
@@ -180,7 +180,7 @@ transactionStatusRLPDecode (BRRlpItem item,
         case TRANSACTION_STATUS_QUEUED:
         case TRANSACTION_STATUS_PENDING:
             // assert: [] == item[1], "" == item[2]
-            return transactionStatusCreate(type);
+            return ethTransactionStatusCreate(type);
 
         case TRANSACTION_STATUS_INCLUDED: {
             size_t othersCount;
@@ -193,11 +193,11 @@ transactionStatusRLPDecode (BRRlpItem item,
             //   6: Add - included success
             assert (6 == othersCount || 5 == othersCount || 3 == othersCount);
 
-            return transactionStatusCreateIncluded (ethHashRlpDecode(others[0], coder),
+            return ethTransactionStatusCreateIncluded (ethHashRlpDecode(others[0], coder),
                                                     rlpDecodeUInt64(coder, others[1], 0),
                                                     rlpDecodeUInt64(coder, others[2], 0),
                                                     (3 == othersCount
-                                                     ? TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN
+                                                     ? ETHEREUM_TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN
                                                      : rlpDecodeUInt64(coder, others[3], 0)),
                                                     (3 == othersCount
                                                      ? ethGasCreate(0)
@@ -211,14 +211,14 @@ transactionStatusRLPDecode (BRRlpItem item,
             // We should not be here....
             BREthereumTransactionErrorType type = (BREthereumTransactionErrorType) rlpDecodeUInt64 (coder, items[2], 0);
             return (TRANSACTION_ERROR_ALREADY_KNOWN != type
-                    ? transactionStatusCreateErrored (type, transactionGetErrorName (type))
-                    : transactionStatusCreate(TRANSACTION_STATUS_PENDING));
+                    ? ethTransactionStatusCreateErrored (type, ethTransactionGetErrorName (type))
+                    : ethTransactionStatusCreate(TRANSACTION_STATUS_PENDING));
         }
     }
 }
 
 extern BRRlpItem
-transactionStatusRLPEncode (BREthereumTransactionStatus status,
+ethTransactionStatusRLPEncode (BREthereumTransactionStatus status,
                             BRRlpCoder coder) {
     BRRlpItem items[3];
 
@@ -254,7 +254,7 @@ transactionStatusRLPEncode (BREthereumTransactionStatus status,
 }
 
 extern BRArrayOf (BREthereumTransactionStatus)
-transactionStatusDecodeList (BRRlpItem item,
+ethTransactionStatusDecodeList (BRRlpItem item,
                              const char *reasons[],
                              BRRlpCoder coder) {
     size_t itemCount;
@@ -263,7 +263,7 @@ transactionStatusDecodeList (BRRlpItem item,
     BRArrayOf (BREthereumTransactionStatus) stati;
     array_new (stati, itemCount);
     for (size_t index = 0; index < itemCount; index++)
-        array_add (stati, transactionStatusRLPDecode (items[index], reasons, coder));
+        array_add (stati, ethTransactionStatusRLPDecode (items[index], reasons, coder));
 
     return stati;
 }

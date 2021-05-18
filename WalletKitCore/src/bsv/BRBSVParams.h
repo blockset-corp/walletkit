@@ -1,6 +1,6 @@
 //
 //  BRBSVParams.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-04.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -11,7 +11,7 @@
 #ifndef BRBSVParams_h
 #define BRBSVParams_h
 
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,15 +19,11 @@ extern "C" {
     
 #define BSV_FORKID 0x40
 
-extern const BRChainParams *BRBSVParams;
-extern const BRChainParams *BRBSVTestNetParams;
+extern const BRBitcoinChainParams *bsvMainNetParams;
+extern const BRBitcoinChainParams *bsvTestNetParams;
 
-static inline const BRChainParams *BRChainParamsGetBSV (int mainnet) {
-    return mainnet ? BRBSVParams : BRBSVTestNetParams;
-}
-
-static inline int BRChainParamsIsBSV (const BRChainParams *params) {
-    return BRBSVParams == params || BRBSVTestNetParams == params;
+static inline int btcChainParamsIsBSV (const BRBitcoinChainParams *params) {
+    return bsvMainNetParams == params || bsvTestNetParams == params;
 }
 
 #ifdef __cplusplus

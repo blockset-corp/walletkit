@@ -1,6 +1,6 @@
 //
 //  BRTezosEncoder.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-07-22.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -13,13 +13,13 @@
 #include "BRTezosEncoder.h"
 #include "BRTezosAddress.h"
 #include "BRTezosTransaction.h"
-#include "ethereum/util/BRUtilMath.h"
+#include "support/util/BRUtilMath.h"
 #include "support/BRBase58.h"
 #include <stdio.h>
 #include <assert.h>
 
 
-static BRCryptoData
+static WKData
 encodeAddress (BRTezosAddress address) {
     // address bytes with 3-byte TZx prefix replaced with a 1-byte prefix
     
@@ -45,19 +45,19 @@ encodeAddress (BRTezosAddress address) {
     memcpy(&encoded[0], &prefix, 1);
     memcpy(&encoded[1], &bytes[3], len-3);
     
-    return cryptoDataCopy (encoded, sizeof(encoded));
+    return wkDataCopy (encoded, sizeof(encoded));
 }
 
-static BRCryptoData
+static WKData
 encodePublicKey (uint8_t * pubKey) {
     uint8_t prefix = 0x0; // ed25519
-    BRCryptoData encoded = cryptoDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
+    WKData encoded = wkDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
     memcpy(encoded.bytes, &prefix, 1);
     memcpy(&encoded.bytes[1], pubKey, TEZOS_PUBLIC_KEY_SIZE);
     return encoded;
 }
 
-extern BRCryptoData
+extern WKData
 encodeZarith (int64_t value) {
     assert (value >= 0);
     uint8_t result[32] = {0};
@@ -70,35 +70,35 @@ encodeZarith (int64_t value) {
     }
     result[resultSize++] = (uint8_t)input;
     
-    return cryptoDataCopy(&result[0], resultSize);
+    return wkDataCopy(&result[0], resultSize);
 }
 
-static BRCryptoData
+static WKData
 encodeBool (bool value) {
-    BRCryptoData encoded = cryptoDataNew(1);
+    WKData encoded = wkDataNew(1);
     encoded.bytes[0] = value ? 0xff : 0x00;
     return encoded;
 }
 
-static BRCryptoData
+static WKData
 encodeOperationKind (BRTezosOperationKind kind) {
     uint8_t bytes[1] = { kind };
-    return cryptoDataCopy (bytes, 1);
+    return wkDataCopy (bytes, 1);
 }
 
-static BRCryptoData
+static WKData
 encodeBranch (BRTezosHash blockHash) {
     // omit prefix
     size_t numPrefixBytes = 2;
     size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
     
-    BRCryptoData branchData = cryptoDataNew(branchSize);
+    WKData branchData = wkDataNew(branchSize);
     memcpy(branchData.bytes, &blockHash.bytes[numPrefixBytes], branchSize);
     
     return branchData;
 }
 
-extern BRCryptoData
+extern WKData
 tezosSerializeTransaction (BRTezosTransaction tx) {
     assert (tx);
     
@@ -110,7 +110,7 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     int64_t storageLimit = tezosFeeBasisGetStorageLimit(feeBasis);
     
     size_t maxFields = 10;
-    BRCryptoData fields[maxFields];
+    WKData fields[maxFields];
     size_t numFields = 0;
     fields[numFields++] = encodeOperationKind(opData.kind);
     fields[numFields++] = encodeAddress(source);
@@ -139,21 +139,21 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
         assert(0);
     }
     
-    BRCryptoData serialized = cryptoDataConcat(fields, numFields);
+    WKData serialized = wkDataConcat(fields, numFields);
     
     tezosAddressFree (source);
     tezosTransactionFreeOperationData(opData);
     for (int i=0; i < numFields; i++) {
-        cryptoDataFree(fields[i]);
+        wkDataFree(fields[i]);
     }
     
     return serialized;
 }
 
-extern BRCryptoData
+extern WKData
 tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosHash blockHash) {
     
-    BRCryptoData fields[txCount + 1];
+    WKData fields[txCount + 1];
     size_t numFields = 0;
     
     // operation list = branch + [reveal op bytes] + transaction/delegation op bytes
@@ -164,10 +164,10 @@ tezosSerializeOperationList (BRTezosTransaction * tx, size_t txCount, BRTezosHas
         fields[numFields++] = tezosSerializeTransaction(tx[i]);
     }
     
-    BRCryptoData serialized = cryptoDataConcat(fields, numFields);
+    WKData serialized = wkDataConcat(fields, numFields);
     
     for (int i=0; i < numFields; i++) {
-        cryptoDataFree(fields[i]);
+        wkDataFree(fields[i]);
     }
     
     return serialized;

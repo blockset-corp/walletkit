@@ -1,6 +1,6 @@
 //
 //  BREthereumAddress.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/17/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -21,7 +21,7 @@
 //
 extern BREthereumAddress
 ethAddressCreate (const char *address) {
-    if (ETHEREUM_BOOLEAN_IS_FALSE(ethAddressValidateString(address))) return EMPTY_ADDRESS_INIT;
+    if (ETHEREUM_BOOLEAN_IS_FALSE(ethAddressValidateString(address))) return ETHEREUM_EMPTY_ADDRESS_INIT;
 
     BREthereumAddress raw;
     if (0 == strncmp ("0x", address, 2)) address = &address[2];
@@ -155,7 +155,7 @@ ethAddressGetHash (BREthereumAddress address) {
 
 extern BREthereumAddress
 ethAddressRlpDecode (BRRlpItem item, BRRlpCoder coder) {
-    BREthereumAddress address = EMPTY_ADDRESS_INIT;
+    BREthereumAddress address = ETHEREUM_EMPTY_ADDRESS_INIT;
 
     BRRlpData data = rlpDecodeBytes(coder, item);
     if (0 != data.bytesCount) {

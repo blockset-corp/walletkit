@@ -1,6 +1,6 @@
 //
 //  BREthereumBCSPrivate.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/24/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -82,7 +82,7 @@ struct BREthereumBCSStruct {
     /**
      * The sync mode
      */
-    BRCryptoSyncMode mode;
+    WKSyncMode mode;
     
     /**
      * A BloomFilter with address for application to transactions
@@ -214,7 +214,7 @@ extern const unsigned int bcsEventTypesCount;
 #define BCS_FOR_CHAIN(bcs, block)            \
     for (BREthereumBlock block = bcs->chain; \
          NULL != block;                      \
-         block = blockGetNext(block))
+         block = ethBlockGetNext(block))
 
 //
 // Submit Transaction

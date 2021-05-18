@@ -1,6 +1,6 @@
 //
 //  BBREthereumAddress.c
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/21/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -130,7 +130,7 @@ addressDetailFillKey(BREthereumAddressDetail *address, const BRKey *key, uint32_
 
 static void
 addressDetailFillSeed (BREthereumAddressDetail *address, UInt512 seed, uint32_t index) {
-    BRKey key = derivePrivateKeyFromSeed (seed, index);
+    BRKey key = ethAccountDerivePrivateKeyFromSeed (seed, index);
     
     // Seriously???
     //
@@ -219,13 +219,13 @@ ethAccountCreateDetailed(const char *paperKey, const char *wordList[], const int
 
         // Use a well-known public paper key, but overwrite the address.  This won't work for
         // signing, but will work for viewing.
-        BREthereumAccount account = ethAccountCreateWithBIP32Seed(deriveSeedFromPaperKey(DEBUG_PAPER_KEY));
+        BREthereumAccount account = ethAccountCreateWithBIP32Seed(ethAccountDeriveSeedFromPaperKey(DEBUG_PAPER_KEY));
         addressDetailFillRaw (&account->primaryAddress, paperKey);
         return account;
     }
 #endif
     // Generate the 512bit private key using a BIP39 paperKey
-    return ethAccountCreateWithBIP32Seed(deriveSeedFromPaperKey(paperKey));
+    return ethAccountCreateWithBIP32Seed(ethAccountDeriveSeedFromPaperKey(paperKey));
 }
 
 extern BREthereumAccount
@@ -260,7 +260,7 @@ ethAccountGetPrimaryAddressPublicKey (BREthereumAccount account) {
 extern BRKey
 ethAccountGetPrimaryAddressPrivateKey (BREthereumAccount account,
                                        const char *paperKey) {
-    return derivePrivateKeyFromSeed(deriveSeedFromPaperKey(paperKey),
+    return ethAccountDerivePrivateKeyFromSeed(ethAccountDeriveSeedFromPaperKey(paperKey),
                                     account->primaryAddress.index);
 }
 
@@ -311,14 +311,14 @@ ethAccountSignBytes(BREthereumAccount account,
                     uint8_t *bytes,
                     size_t bytesCount,
                     const char *paperKey) {
-    UInt512 seed = deriveSeedFromPaperKey(paperKey);
+    UInt512 seed = ethAccountDeriveSeedFromPaperKey(paperKey);
     // TODO: Account has Address
     return ethAccountSignBytesWithPrivateKey(account,
                                              address,
                                              type,
                                              bytes,
                                              bytesCount,
-                                             derivePrivateKeyFromSeed(seed, account->primaryAddress.index));
+                                             ethAccountDerivePrivateKeyFromSeed(seed, account->primaryAddress.index));
 }
 
 //
@@ -326,7 +326,7 @@ ethAccountSignBytes(BREthereumAccount account,
 //
 
 extern UInt512
-deriveSeedFromPaperKey (const char *paperKey) {
+ethAccountDeriveSeedFromPaperKey (const char *paperKey) {
     // Generate the 512bit private key using a BIP39 paperKey
     UInt512 seed = UINT512_ZERO;
     BRBIP39DeriveKey(seed.u8, paperKey, NULL); // no passphrase
@@ -334,7 +334,7 @@ deriveSeedFromPaperKey (const char *paperKey) {
 }
 
 extern BRKey
-derivePrivateKeyFromSeed (UInt512 seed, uint32_t index) {
+ethAccountDerivePrivateKeyFromSeed (UInt512 seed, uint32_t index) {
     BRKey privateKey;
     
     // The BIP32 privateKey for m/44'/60'/0'/0/index

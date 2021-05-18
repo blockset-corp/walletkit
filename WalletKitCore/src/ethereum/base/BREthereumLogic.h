@@ -1,6 +1,6 @@
 //
 //  BREthereumLogic
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/22/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -14,8 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define private_extern  extern
     
 //
 // Etherum Boolean

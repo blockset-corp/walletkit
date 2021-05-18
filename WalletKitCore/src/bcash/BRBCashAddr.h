@@ -36,10 +36,10 @@ extern "C" {
 // b-cash address format: https://github.com/bitcoincashorg/spec/blob/master/cashaddr.md
 
 // returns the number of bytes written to bitcoinAddr36 (maximum of 36)
-size_t BRBCashAddrDecode(char *bitcoinAddr36, const char *bCashAddr);
+size_t bchAddrDecode(char *bitcoinAddr36, const char *bCashAddr);
 
 // returns the number of bytes written to bCashAddr55 (maximum of 55)
-size_t BRBCashAddrEncode(char *bCashAddr55, const char *bitcoinAddr);
+size_t bchAddrEncode(char *bCashAddr55, const char *bitcoinAddr);
 
 #ifdef __cplusplus
 }

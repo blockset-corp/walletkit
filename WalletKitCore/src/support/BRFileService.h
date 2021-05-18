@@ -1,6 +1,6 @@
 //
 //  BRFileService.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Richard Evers on 1/4/19.
 //  Copyright © 2019 breadwallet LLC

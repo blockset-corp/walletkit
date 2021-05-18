@@ -1,6 +1,6 @@
 //
 //  BREthereumData.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 10/3/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -8,7 +8,7 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
-#include "ethereum/util/BRUtil.h" // hexEncodeCreate()
+#include "support/util/BRUtil.h" // hexEncodeCreate()
 #include "BREthereumData.h"
 
 /// MARK: - Data

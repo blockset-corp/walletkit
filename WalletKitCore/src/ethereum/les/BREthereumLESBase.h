@@ -1,6 +1,6 @@
 //
 //  BREthereumLESBase.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/1/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -18,12 +18,12 @@
 #include "ethereum/base/BREthereumHash.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 
-#define DEFAULT_UDPPORT     (30303)
-#define DEFAULT_TCPPORT     (30303)
+#define LES_DEFAULT_UDPPORT     (30303)
+#define LES_DEFAULT_TCPPORT     (30303)
 
 #define LES_LOCAL_ENDPOINT_ADDRESS    "1.1.1.1"
-#define LES_LOCAL_ENDPOINT_TCP_PORT   DEFAULT_TCPPORT
-#define LES_LOCAL_ENDPOINT_UDP_PORT   DEFAULT_UDPPORT
+#define LES_LOCAL_ENDPOINT_TCP_PORT   LES_DEFAULT_TCPPORT
+#define LES_LOCAL_ENDPOINT_UDP_PORT   LES__DEFAULT_UDPPORT
 #define LES_LOCAL_ENDPOINT_NAME       "BRD Light Client"
 
 #define LES_LOG_TOPIC "LES"
@@ -108,7 +108,6 @@
 // TODO: Unused
 #define LES_WRAP_SEND_WHEN_MULTIPLE_INDEX    1
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -146,7 +145,6 @@ typedef struct {
     // Generally, we have one protocol specified
     uint64_t messageIdOffset;
 } BREthereumMessageCoder;
-
 
 #ifdef __cplusplus
 }

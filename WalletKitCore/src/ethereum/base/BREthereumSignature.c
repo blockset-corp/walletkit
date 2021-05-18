@@ -1,6 +1,6 @@
 //
 //  BREthereumSignature.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/17/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -122,7 +122,7 @@ ethSignatureExtractAddress(const BREthereumSignature signature,
     }
 
     return (0 == *success
-            ? (BREthereumAddress) EMPTY_ADDRESS_INIT
+            ? (BREthereumAddress) ETHEREUM_EMPTY_ADDRESS_INIT
             : ethAddressCreateKey(&key));
 }
 

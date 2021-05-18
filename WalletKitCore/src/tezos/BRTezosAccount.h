@@ -1,6 +1,6 @@
 //
 //  BRTezosAccount.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -65,9 +65,9 @@ tezosAccountFree (BRTezosAccount account);
  *
  * @return signature
 */
-extern BRCryptoData
+extern WKData
 tezosAccountSignData (BRTezosAccount account,
-                      BRCryptoData data,
+                      WKData data,
                       UInt512 seed);
 
 /**

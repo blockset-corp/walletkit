@@ -1,6 +1,6 @@
 //
 //  BBREthereumEther.c
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/21/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -25,7 +25,7 @@
 //    > (ether #e1e27) -> 54210108, 11515845246265065472
 //    > (ether #e1e30) -> 54210108624, 5076944270305263616
 
-static UInt256 etherUnitScaleFactor [NUMBER_OF_ETHER_UNITS] = {   /* LITTLE ENDIAN    */
+static UInt256 etherUnitScaleFactor [ETHEREUM_NUMBER_OF_ETHER_UNITS] = {   /* LITTLE ENDIAN    */
     { .u64 = {                     1,            0, 0, 0 } }, /* wei       - 1    */
     { .u64 = {                  1000,            0, 0, 0 } }, /* kwei      - 1e3  */
     { .u64 = {               1000000,            0, 0, 0 } }, /* mwei      - 1e6  */

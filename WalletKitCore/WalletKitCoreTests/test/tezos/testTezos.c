@@ -1,6 +1,6 @@
 //
 //  testTezos.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -309,13 +309,13 @@ static void testWalletBalance() {
 
 static void
 testZarithNumberEncode(int64_t input, const char* expectedHex) {
-    BRCryptoData encoded = encodeZarith(input);
+    WKData encoded = encodeZarith(input);
     char encodedOutput[64] = {0};
     bin2HexString(encoded.bytes, encoded.size, encodedOutput);
 //    printf("input: %" PRIx64 "\n", input);
 //    printByteString(0, encoded.bytes, encoded.size);
     assert (0 == strcasecmp(expectedHex, encodedOutput));
-    cryptoDataFree(encoded);
+    wkDataFree(encoded);
 }
 
 static void
@@ -363,13 +363,13 @@ testTransactionSerialize() {
     size_t opCount = 1;
     opList[0] = tx;
     
-    BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    WKData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
 
     tezosTransferFree(transfer);
-    cryptoDataFree(unsignedBytes);
+    wkDataFree(unsignedBytes);
     
     // reveal
     uint8_t *pubKey = tezosAccountGetPublicKey(account).pubKey;
@@ -383,7 +383,7 @@ testTransactionSerialize() {
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", serializedHex));
     
-    cryptoDataFree(unsignedBytes);
+    wkDataFree(unsignedBytes);
     tezosTransactionFree(tx);
     
     // delegation on
@@ -403,7 +403,7 @@ testTransactionSerialize() {
     //                                                                                                                                   ******
     
     tezosTransferFree(transfer);
-    cryptoDataFree(unsignedBytes);
+    wkDataFree(unsignedBytes);
     
     // delegation off
     tezosAddressFree(targetAddress);
@@ -420,7 +420,7 @@ testTransactionSerialize() {
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200", serializedHex));
     
     tezosTransferFree(transfer);
-    cryptoDataFree(unsignedBytes);
+    wkDataFree(unsignedBytes);
 
     
     tezosAddressFree(sourceAddress);
@@ -461,14 +461,14 @@ testBatchOperationSerialize() {
     opList[0] = reveal;
     opList[1] = tx;
 
-    BRCryptoData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    WKData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
 //    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
     bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
     assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d42946c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
 
     tezosTransferFree(transfer);
     tezosTransactionFree(reveal);
-    cryptoDataFree(unsignedBytes);
+    wkDataFree(unsignedBytes);
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
     tezosAccountFree(account);

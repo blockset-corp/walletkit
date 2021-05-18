@@ -1,6 +1,6 @@
 //
 //  BREthereumLES.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Lamont Samuels on 5/01/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -127,27 +127,27 @@ struct BREthereumNodeConfigRecord {
 };
 
 extern void
-nodeConfigRelease (BREthereumNodeConfig config) {
+ethNodeConfigRelease (BREthereumNodeConfig config) {
     free (config);
 }
 
 extern BREthereumHash
-nodeConfigGetHash (BREthereumNodeConfig config) {
+ethNodeConfigGetHash (BREthereumNodeConfig config) {
     return config->hash;
 }
 
 extern BRRlpItem
-nodeConfigEncode (BREthereumNodeConfig config,
+ethNodeConfigEncode (BREthereumNodeConfig config,
                      BRRlpCoder coder) {
     return rlpEncodeList (coder, 4,
                           rlpEncodeBytes(coder, config->key.pubKey, 65),
                           endpointDISEncode(&config->endpoint, coder),
-                          nodeStateEncode(&config->state, coder),
+                          ethNodeStateEncode(&config->state, coder),
                           rlpEncodeUInt64(coder, config->priority, 0));
 }
 
 extern BREthereumNodeConfig
-nodeConfigDecode (BRRlpItem item,
+ethNodeConfigDecode (BRRlpItem item,
                      BRRlpCoder coder) {
     BREthereumNodeConfig config = calloc (1, sizeof (struct BREthereumNodeConfigRecord));
 
@@ -159,7 +159,7 @@ nodeConfigDecode (BRRlpItem item,
     BRKeySetPubKey(&config->key, keyData.bytes, keyData.bytesCount);
 
     config->endpoint = endpointDISDecode(items[1], coder);
-    config->state    = nodeStateDecode (items[2], coder);
+    config->state    = ethNodeStateDecode (items[2], coder);
     config->priority = (BREthereumNodePriority) rlpDecodeUInt64(coder, items[3], 0);
 
     config->hash = ethHashCreateFromData((BRRlpData) { 64, &config->key.pubKey[1] });
@@ -168,15 +168,15 @@ nodeConfigDecode (BRRlpItem item,
 }
 
 static BREthereumNodeConfig
-nodeConfigCreate (BREthereumNode node) {
+ethNodeConfigCreate (BREthereumNode node) {
     BREthereumNodeConfig config = calloc (1, sizeof (struct BREthereumNodeConfigRecord));
 
-    BREthereumNodeEndpoint ne = nodeGetRemoteEndpoint(node);
+    BREthereumNodeEndpoint ne = ethNodeGetRemoteEndpoint(node);
 
-    config->key = nodeEndpointGetDISNeighbor(ne).key;
-    config->endpoint = nodeEndpointGetDISNeighbor(ne).node;
-    config->state = nodeGetState(node, NODE_ROUTE_TCP);
-    config->priority = nodeGetPriority (node);
+    config->key = ethNodeEndpointGetDISNeighbor(ne).key;
+    config->endpoint = ethNodeEndpointGetDISNeighbor(ne).node;
+    config->state = ethNodeGetState(node, ETHEREUM_NODE_ROUTE_TCP);
+    config->priority = ethNodeGetPriority (node);
 
     config->hash = ethHashCreateFromData((BRRlpData) { 64, &config->key.pubKey[1] });
 
@@ -185,32 +185,32 @@ nodeConfigCreate (BREthereumNode node) {
 
 #if !defined(LES_BOOTSTRAP_LCL_ONLY)
 static BREthereumNodeEndpoint
-nodeConfigCreateEndpoint (BREthereumNodeConfig config) {
-    return nodeEndpointCreate ((BREthereumDISNeighbor) { config->endpoint, config->key });
+ethNodeConfigCreateEndpoint (BREthereumNodeConfig config) {
+    return ethNodeEndpointCreate ((BREthereumDISNeighbor) { config->endpoint, config->key });
 }
 #endif
 
 extern size_t
-nodeConfigHashValue (const void *t)
+ethNodeConfigHashValue (const void *t)
 {
     return ethHashSetValue(&((BREthereumNodeConfig) t)->hash);
 }
 
 extern int
-nodeConfigHashEqual (const void *t1, const void *t2) {
+ethNodeConfigHashEqual (const void *t1, const void *t2) {
     return t1 == t2 || ethHashSetEqual (&((BREthereumNodeConfig) t1)->hash,
                                      &((BREthereumNodeConfig) t2)->hash);
 }
 
 #if defined (INCLUDE_UNUSED_FUNCTION)
 static inline void
-nodeConfigReleaseForSet (void *ignore, void *item) {
-    nodeConfigRelease ((BREthereumNodeConfig) item);
+ethNodeConfigReleaseForSet (void *ignore, void *item) {
+    ethNodeConfigRelease ((BREthereumNodeConfig) item);
 }
 #endif
 
 extern BREthereumNodeState
-nodeGetPreferredState (BREthereumNodeState state) {
+ethNodeGetPreferredState (BREthereumNodeState state) {
     // If `state` is an error state with an error of NODE_PROTOCOL_RLP_PARSE or
     // NODE_PROTOCOL_CAPABILITIES_MISMATCH, then DO NOT return a preferred state of
     // NODE_AVAILABLE.  A 'RLP_PARSE' error is serious; a 'CAPABILITIES_MISMATCH' will *never* be
@@ -260,7 +260,7 @@ requestRelease (BREthereumLESRequest *request) {
 
     // Don't release a provision if it is 'owned' by a `node` - the node will release it.
     if (NULL == request->node)
-        provisionRelease(&request->provision, ETHEREUM_BOOLEAN_TRUE);
+        ethProvisionRelease(&request->provision, ETHEREUM_BOOLEAN_TRUE);
 }
 
 static void
@@ -321,13 +321,13 @@ struct BREthereumLESRecord {
     BRSetOf(BREthereumNode) nodes;
 
     /** Available Nodes - subset of `nodes`, ordered by 'DIS Distance'.  All have a TCP status of
-     * 'AVAILABLE'; none are in `activeNodesByRoute[NODE_ROUTE_TCP]`.  Because these are ordered,
+     * 'AVAILABLE'; none are in `activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]`.  Because these are ordered,
      * we can just select the first one for use */
     BRArrayOf(BREthereumNode) availableNodes;
 
     /** Active Nodes - a subset of `nodes` in a state of 'CONNECTED' or 'CONNECTING'.  We actively
      * `select()` on these nodes to handle send/recv needs */
-    BRArrayOf(BREthereumNode) activeNodesByRoute[NUMBER_OF_NODE_ROUTES];
+    BRArrayOf(BREthereumNode) activeNodesByRoute[ETHEREUM_NUMBER_OF_NODE_ROUTES];
 
     /** Requests - pending, have not been provisioned to a node */
     BRArrayOf (BREthereumLESRequest) requests;
@@ -365,12 +365,12 @@ struct BREthereumLESRecord {
 static void
 lesInsertNodeAsAvailable (BREthereumLES les,
                           BREthereumNode node) {
-    assert (nodeHasState(node, NODE_ROUTE_TCP, NODE_AVAILABLE));
+    assert (ethNodeHasState(node, ETHEREUM_NODE_ROUTE_TCP, NODE_AVAILABLE));
 
     BREthereumBoolean inserted = ETHEREUM_BOOLEAN_FALSE;
     for (size_t index = 0; index < array_count(les->availableNodes); index++)
         // A simple, slow, linear-sort insert.
-        if (ETHEREUM_COMPARISON_LT == nodeCompare(node, les->availableNodes[index])) {
+        if (ETHEREUM_COMPARISON_LT == ethNodeCompare(node, les->availableNodes[index])) {
             array_insert (les->availableNodes, index, node);
             inserted = ETHEREUM_BOOLEAN_TRUE;
             break;
@@ -393,7 +393,7 @@ lesEnsureNodeForEndpoint (BREthereumLES les,
         return;
     }
 
-    BREthereumHash hash = nodeEndpointGetHash(endpoint);
+    BREthereumHash hash = ethNodeEndpointGetHash(endpoint);
 
     pthread_mutex_lock (&les->lock);
 
@@ -406,7 +406,7 @@ lesEnsureNodeForEndpoint (BREthereumLES les,
     // ... and then actually add it.
     if (NULL == node) {
         // This endpoint is new so we'll create a node and then ...
-        node = nodeCreate (priority,
+        node = ethNodeCreate (priority,
                            les->network,
                            les->localEndpoint,
                            endpoint,
@@ -416,16 +416,16 @@ lesEnsureNodeForEndpoint (BREthereumLES les,
                            (BREthereumNodeCallbackProvide) lesHandleProvision,
                            (BREthereumNodeCallbackNeighbor) lesHandleNeighbor,
                            les->handleSync);
-        nodeSetStateInitial (node, NODE_ROUTE_TCP, state);
+        ethNodeSetStateInitial (node, ETHEREUM_NODE_ROUTE_TCP, state);
 
         // ... add it to 'all nodes'
         BRSetAdd(les->nodes, node);
 
         // .... and then, if warranted, make it available
-        if (nodeHasState(node, NODE_ROUTE_TCP, NODE_AVAILABLE))
+        if (ethNodeHasState(node, ETHEREUM_NODE_ROUTE_TCP, NODE_AVAILABLE))
             lesInsertNodeAsAvailable(les, node);
     }
-    else nodeEndpointRelease(endpoint);  // we own it; release if not passed to nodeCreate()
+    else ethNodeEndpointRelease(endpoint);  // we own it; release if not passed to ethNodeCreate()
 
     pthread_mutex_unlock (&les->lock);
 }
@@ -490,7 +490,7 @@ lesSeedQuery (BREthereumLESSeedContext *context) {
 
             context->tried += 1;
             lesEnsureNodeForEndpoint(les,
-                                     nodeEndpointCreateEnode(enode),
+                                     ethNodeEndpointCreateEnode(enode),
                                      (BREthereumNodeState) { NODE_AVAILABLE },
                                      context->priority,
                                      &added);
@@ -573,7 +573,7 @@ lesCreate (BREthereumNetwork network,
         BREthereumLESRandomContext randomContext =  randomCreate (les->key.secret.u8, 32);
 
         // Create a local endpoint; when creating nodes we'll use this local endpoint repeatedly.
-        les->localEndpoint = nodeEndpointCreateLocal(randomContext);
+        les->localEndpoint = ethNodeEndpointCreateLocal(randomContext);
 
         randomRelease (randomContext);
     }
@@ -581,8 +581,8 @@ lesCreate (BREthereumNetwork network,
     // The 'hello' message is fixed; assign it to the local endpoint. We'll support local
     // capabilities as [ { "les", 2 }, { "pip", 1 } ] - but then require the remote to have one of
     // the two.  Depending on the shared capability, we'll assign the node type as GETH or PARITY.
-    nodeEndpointDefineHello (les->localEndpoint, LES_LOCAL_ENDPOINT_NAME, capabilities);
-    nodeEndpointShowHello   (les->localEndpoint);
+    ethNodeEndpointDefineHello (les->localEndpoint, LES_LOCAL_ENDPOINT_NAME, capabilities);
+    ethNodeEndpointShowHello   (les->localEndpoint);
 
     // The 'status' message is not fixed; create one and assign it to the local endpoint.  The
     // status message likely depends on the node type, GETH or PARITY. Specifically the
@@ -595,7 +595,7 @@ lesCreate (BREthereumNetwork network,
     //
     // This is the only place where { headNumber, headHash, headTotalDifficult, genesitHash} are
     // preserved.
-    nodeEndpointSetStatus (les->localEndpoint,
+    ethNodeEndpointSetStatus (les->localEndpoint,
                            messageP2PStatusCreate (0x00,  // ignored
                                                    (uint64_t) ethNetworkGetChainId(network),
                                                    les->head.number,
@@ -603,7 +603,7 @@ lesCreate (BREthereumNetwork network,
                                                    les->head.totalDifficulty,
                                                    les->genesisHash,
                                                    LES_SUPPORT_GETH_ANNOUNCE_TYPE));
-    nodeEndpointShowStatus (les->localEndpoint);
+    ethNodeEndpointShowStatus (les->localEndpoint);
 
     // Create the PTHREAD LOCK variable
     pthread_mutex_init_brd (&les->lock, PTHREAD_MUTEX_RECURSIVE);
@@ -637,8 +637,8 @@ lesCreate (BREthereumNetwork network,
         FOR_SET (BREthereumNodeConfig, config, configs)
             if (!bootstrapBRDOnly || NODE_PRIORITY_BRD == config->priority)
                 lesEnsureNodeForEndpoint (les,
-                                          nodeConfigCreateEndpoint (config),
-                                          nodeGetPreferredState (config->state),
+                                          ethNodeConfigCreateEndpoint (config),
+                                          ethNodeGetPreferredState (config->state),
                                           config->priority,
                                           NULL);
 #endif // !defined(LES_BOOTSTRAP_LCL_ONLY)
@@ -692,7 +692,7 @@ lesRelease(BREthereumLES les) {
     BRSetApply(les->nodes, NULL, nodeReleaseForSet);
     BRSetFree(les->nodes);
 
-    nodeEndpointRelease (les->localEndpoint);
+    ethNodeEndpointRelease (les->localEndpoint);
 
     requestsRelease(les->requests);
 
@@ -731,29 +731,29 @@ lesUpdateBlockHead (BREthereumLES les,
 static BREthereumNode
 lesNodeFindDiscovery (BREthereumLES les) {
     // Look from among connected TCP nodes
-    for (size_t index = 0; index < array_count (les->activeNodesByRoute[NODE_ROUTE_TCP]); index++) {
-        BREthereumNode node = (les->activeNodesByRoute[NODE_ROUTE_TCP])[index];
-        if (ETHEREUM_BOOLEAN_IS_FALSE(nodeGetDiscovered(node)) && nodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
+    for (size_t index = 0; index < array_count (les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]); index++) {
+        BREthereumNode node = (les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP])[index];
+        if (ETHEREUM_BOOLEAN_IS_FALSE(ethNodeGetDiscovered(node)) && ethNodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
             return node;
     }
 
     // Look from among available nodes
     for (size_t index = 0; index < array_count (les->availableNodes); index++) {
         BREthereumNode node = les->availableNodes[index];
-        if (ETHEREUM_BOOLEAN_IS_FALSE(nodeGetDiscovered(node)) && nodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
+        if (ETHEREUM_BOOLEAN_IS_FALSE(ethNodeGetDiscovered(node)) && ethNodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
             return node;
     }
 
     // Otherwise, look for any node
     FOR_NODES(les, node) {
-        if (ETHEREUM_BOOLEAN_IS_FALSE(nodeGetDiscovered(node)) && nodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
+        if (ETHEREUM_BOOLEAN_IS_FALSE(ethNodeGetDiscovered(node)) && ethNodeHasState(node, NODE_ROUTE_UDP, NODE_AVAILABLE))
             return node;
     }
 
     // And now.... we have nothing... mark all nodes as as UNDISCOVERED and AVAILABLE and try again.
     FOR_NODES(les, node) {
-        nodeSetDiscovered (node, ETHEREUM_BOOLEAN_FALSE);
-        nodeSetStateInitial (node, NODE_ROUTE_UDP, (BREthereumNodeState) { NODE_AVAILABLE });
+        ethNodeSetDiscovered (node, ETHEREUM_BOOLEAN_FALSE);
+        ethNodeSetStateInitial (node, NODE_ROUTE_UDP, (BREthereumNodeState) { NODE_AVAILABLE });
     }
 
     // And if we have no nodes...  add the bookstrap ones back, again - how did they disappear?
@@ -764,11 +764,11 @@ lesNodeFindDiscovery (BREthereumLES les) {
 
 extern BREthereumNodeReference
 lesGetNodePrefer (BREthereumLES les) {
-    BREthereumNodeReference node = NODE_REFERENCE_NIL;
+    BREthereumNodeReference node = LES_NODE_REFERENCE_NIL;
     pthread_mutex_lock (&les->lock);
     // Our preferredNode is an active TCP (P2P, ETH, LES, PIP) node at index 0;
-    if (array_count(les->activeNodesByRoute[NODE_ROUTE_TCP]) > 0)
-        node = (BREthereumNodeReference) les->activeNodesByRoute[NODE_ROUTE_TCP][0];
+    if (array_count(les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]) > 0)
+        node = (BREthereumNodeReference) les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP][0];
     pthread_mutex_unlock (&les->lock);
     return node;
 }
@@ -798,7 +798,7 @@ lesSetNodePrefer (BREthereumLES les,
 extern const char *
 lesGetNodeHostname (BREthereumLES les,
                     BREthereumNodeReference node) {
-    return nodeEndpointGetHostname (nodeGetRemoteEndpoint ((BREthereumNode) node));
+    return ethNodeEndpointGetHostname (ethNodeGetRemoteEndpoint ((BREthereumNode) node));
 }
 
 /// MARK: - LES Node Callbacks
@@ -898,15 +898,15 @@ lesHandleProvision (BREthereumLES les,
                     // be reassigned to another node.
                     //
                     // Note that the provision might be filled with some data
-                    provisionReleaseResults (&request->provision);
+                    ethProvisionReleaseResults (&request->provision);
 
                     // Provide an explanation.
                     char explanation[256];
                     sprintf (explanation, "Provision Error: %s, Type: %s",
-                             provisionErrorGetReasonName(result.u.error.reason),
-                             provisionGetTypeName(result.type));
+                             ethProvisionErrorGetReasonName(result.u.error.reason),
+                             ethProvisionGetTypeName(result.type));
 
-                    lesDeactivateNode (les, NODE_ROUTE_TCP, node, explanation);
+                    lesDeactivateNode (les, ETHEREUM_NODE_ROUTE_TCP, node, explanation);
                     return;
                 }
             }
@@ -940,14 +940,14 @@ lesHandleNeighbor (BREthereumLES les,
                    BRArrayOf(BREthereumDISNeighbor) neighbors) {
     for (size_t index = 0; index < array_count(neighbors); index++)
         lesEnsureNodeForEndpoint (les,
-                                  nodeEndpointCreate(neighbors[index]),
+                                  ethNodeEndpointCreate(neighbors[index]),
                                   (BREthereumNodeState) { NODE_AVAILABLE },
                                   NODE_PRIORITY_DIS,
                                   NULL);
     // array_free (neighbors);
 
     // Sometimes we receive multiple callbacks for one FIND_NEIGHBORS - how to deal?
-    nodeSetDiscovered(node, ETHEREUM_BOOLEAN_TRUE);
+    ethNodeSetDiscovered(node, ETHEREUM_BOOLEAN_TRUE);
 }
 
 /// MARK: - LES (Main) Thread
@@ -960,13 +960,13 @@ lesLogNodeActivate (BREthereumLES les,
                     const char *path) {
     char desc[128];
 
-    BREthereumNodeState state = nodeGetState(node, route);
+    BREthereumNodeState state = ethNodeGetState(node, route);
     eth_log (LES_LOG_TOPIC, "Conn: [ %s @ %3zu, %9s ]    %15s (%s)%s%s",
-             (NODE_ROUTE_TCP == route ? "TCP" : "UDP"),
+             (ETHEREUM_NODE_ROUTE_TCP == route ? "TCP" : "UDP"),
              array_count(les->activeNodesByRoute[route]),
              path,
-             nodeEndpointGetHostname (nodeGetRemoteEndpoint(node)),
-             nodeStateDescribe (&state, desc),
+             ethNodeEndpointGetHostname (ethNodeGetRemoteEndpoint(node)),
+             ethNodeStateDescribe (&state, desc),
              (NULL == explain ? "" : " - "),
              (NULL == explain ? "" : explain));
 }
@@ -983,8 +983,8 @@ lesDeactivateNodeAtIndex (BREthereumLES les,
     lesLogNodeActivate(les, node, route, explain, "<=|=>");
 
     // Reassign provisions back as requests if this is a TCP route
-    if (NODE_ROUTE_TCP == route) {
-        BRArrayOf(BREthereumProvision) provisions = nodeUnhandleProvisions(node);
+    if (ETHEREUM_NODE_ROUTE_TCP == route) {
+        BRArrayOf(BREthereumProvision) provisions = ethNodeUnhandleProvisions(node);
         for (size_t pi = 0; pi < array_count(provisions); pi++) {
             ssize_t requestIndex = lesFindRequestForProvision (les, &provisions[pi]);
             assert (-1 != requestIndex);
@@ -1113,7 +1113,7 @@ lesThreadBootstrapSeeds (BREthereumLES les) {
                 (useParity && type == NODE_TYPE_PARITY) ||
                 (useGeth   && type == NODE_TYPE_GETH))
                 lesEnsureNodeForEndpoint (les,
-                                          nodeEndpointCreateEnode(enodes[index]),
+                                          ethNodeEndpointCreateEnode(enodes[index]),
                                           (BREthereumNodeState) { NODE_AVAILABLE },
                                           enodesDecl[indexDecl].priority,
                                           &added);
@@ -1126,7 +1126,7 @@ lesThreadBootstrapSeeds (BREthereumLES les) {
     // Report on the bootstrap results.
     eth_log (LES_LOG_TOPIC, "Nodes Bootstrapped: %zu", bootstrappedEndpointsCount);
     for (size_t index = 0; index < 5 && index < array_count(les->availableNodes); index++) {
-        BREthereumDISNeighborEnode enode = neighborDISAsEnode (nodeEndpointGetDISNeighbor (nodeGetRemoteEndpoint (les->availableNodes[index])), 1);
+        BREthereumDISNeighborEnode enode = neighborDISAsEnode (ethNodeEndpointGetDISNeighbor (ethNodeGetRemoteEndpoint (les->availableNodes[index])), 1);
         eth_log (LES_LOG_TOPIC, "  @ %zu: %s", index, enode.chars);
     }
 }
@@ -1173,10 +1173,10 @@ lesThread (BREthereumLES les) {
             BRArrayOf(BREthereumNode) nodes = les->activeNodesByRoute[route];
             for (size_t index = 0; index < array_count(nodes); index++) {
                 BREthereumNode node = nodes[index];
-                BREthereumBoolean tryPing = AS_ETHEREUM_BOOLEAN (NODE_ROUTE_TCP == route &&
-                                                                 nodeHasState (node, NODE_ROUTE_TCP, NODE_CONNECTED));
-                if (ETHEREUM_BOOLEAN_IS_TRUE (nodeHandleTime (node, route, now, tryPing))) {
-                    // Note: `nodeHandleTime()` will have disconnected.
+                BREthereumBoolean tryPing = AS_ETHEREUM_BOOLEAN (ETHEREUM_NODE_ROUTE_TCP == route &&
+                                                                 ethNodeHasState (node, ETHEREUM_NODE_ROUTE_TCP, NODE_CONNECTED));
+                if (ETHEREUM_BOOLEAN_IS_TRUE (ethNodeHandleTime (node, route, now, tryPing))) {
+                    // Note: `ethNodeHandleTime()` will have disconnected.
                     array_add (nodesToRemove, node);
                     // TODO: Reassign provisions
                 }
@@ -1204,19 +1204,19 @@ lesThread (BREthereumLES les) {
 
                 // We require all arbitary references to have been resolved when the
                 // provision was added as a request.  An `arbitary` reference is something like
-                // NODE_REFERENCE_{ANY,ALL} where the request did not specify a specific node
-                assert (!NODE_REFERENCE_IS_ARBITRARY(nodeRef));
+                // LES_NODE_REFERENCE_{ANY,ALL} where the request did not specify a specific node
+                assert (!LES_NODE_REFERENCE_IS_ARBITRARY(nodeRef));
 
                 // The request will be handled based on the `nodeReference` - if the reference is
                 // 'generic' we'll get a node from `activeNodesByRoute`; otherwise we'll use the
                 // specific node.
 
 #define ACTIVE_NODE(ref)                                                 \
-    (((int)(ref)) < array_count(les->activeNodesByRoute[NODE_ROUTE_TCP]) \
-     ? les->activeNodesByRoute[NODE_ROUTE_TCP][(int)(ref)]               \
+    (((int)(ref)) < array_count(les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]) \
+     ? les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP][(int)(ref)]               \
      : NULL)
 
-                BREthereumNode nodeToUse = (NODE_REFERENCE_IS_GENERIC (nodeRef)
+                BREthereumNode nodeToUse = (LES_NODE_REFERENCE_IS_GENERIC (nodeRef)
                                             ? ACTIVE_NODE (nodeRef)
                                             : (BREthereumNode) les->requests[index].nodeReference);
 #undef ACTIVE_NODE
@@ -1227,7 +1227,7 @@ lesThread (BREthereumLES les) {
                 //
                 // TODO: Consider a timeout on a request beging handled?
 
-                if (NULL != nodeToUse && nodeHasState (nodeToUse, NODE_ROUTE_TCP, NODE_CONNECTED)) {
+                if (NULL != nodeToUse && ethNodeHasState (nodeToUse, ETHEREUM_NODE_ROUTE_TCP, NODE_CONNECTED)) {
 
                     les->requests[index].node = nodeToUse;
 
@@ -1249,7 +1249,7 @@ lesThread (BREthereumLES les) {
                     // defining the messages needed to provide the data) and adding it to the
                     // node's list of provisions.  Later, we'll select() on this node to send the
                     // messages and to recv results.
-                    nodeHandleProvision (les->requests[index].node,
+                    ethNodeHandleProvision (les->requests[index].node,
                                          les->requests[index].provision);
                 }
 
@@ -1299,7 +1299,7 @@ lesThread (BREthereumLES les) {
             BRArrayOf(BREthereumNode) nodes = les->activeNodesByRoute[route];
             for (size_t index = 0; index < array_count(nodes); index++)
                 maximumDescriptor = maximum (maximumDescriptor,
-                                             nodeUpdateDescriptors (nodes[index],
+                                             ethNodeUpdateDescriptors (nodes[index],
                                                                     route,
                                                                     &readDescriptors,
                                                                     &writeDesciptors));
@@ -1315,7 +1315,7 @@ lesThread (BREthereumLES les) {
         if (les->theTimeToCleanIsNow) {
             eth_log (LES_LOG_TOPIC, "Cleaning%s", "");
             FOR_NODES(les, node)
-                nodeClean(node);
+                ethNodeClean(node);
             rlpCoderReclaim(les->coder);
             les->theTimeToCleanIsNow = 0;
         }
@@ -1328,7 +1328,7 @@ lesThread (BREthereumLES les) {
         if (les->theTimeToUpdateBlockHeadIsNow) {
             eth_log (LES_LOG_TOPIC, "Updating Status%s", "");
 
-            BREthereumP2PMessageStatus status = nodeEndpointGetStatus(les->localEndpoint);
+            BREthereumP2PMessageStatus status = ethNodeEndpointGetStatus(les->localEndpoint);
             // Nothing can be holding the localEndpoint's status directly; all 'holders' are
             // nodes holding through localEndpoint.  The status itself includes possible references
             // to allocated memory.  We modify the above status and then set is in the local
@@ -1336,13 +1336,13 @@ lesThread (BREthereumLES les) {
             status.headHash = les->head.hash;
             status.headNum  = les->head.number;
             status.headTd   = les->head.totalDifficulty;
-            nodeEndpointSetStatus (les->localEndpoint, status);
+            ethNodeEndpointSetStatus (les->localEndpoint, status);
 
             // This will possibly change the state of nodes are are not available by making them
             // available and inserting them, prioritized in `availableNodes`.  Importantly,
             // `connectedNodes` does not change.
             FOR_NODES (les, node)
-                if (ETHEREUM_BOOLEAN_IS_TRUE (nodeUpdatedLocalStatus(node, NODE_ROUTE_TCP)))
+                if (ETHEREUM_BOOLEAN_IS_TRUE (ethNodeUpdatedLocalStatus(node, ETHEREUM_NODE_ROUTE_TCP)))
                     lesInsertNodeAsAvailable (les, node);
 
             les->theTimeToUpdateBlockHeadIsNow = 0;
@@ -1357,14 +1357,14 @@ lesThread (BREthereumLES les) {
                 for (size_t index = 0; index < array_count(nodes); index++) {
                     BREthereumNode node = nodes[index];
 
-                    int isConnected = nodeHasState (node, route, NODE_CONNECTED);
+                    int isConnected = ethNodeHasState (node, route, NODE_CONNECTED);
 
                     // Process the node - based on the read/write descriptors.
-                    nodeProcess (node, route, now, &readDescriptors, &writeDesciptors);
+                    ethNodeProcess (node, route, now, &readDescriptors, &writeDesciptors);
 
                     // Any node that is not CONNECTING or CONNECTED is no longer active.  Note that
                     // we can't just remove `node` at `index` because we are iterating on the array.
-                    switch (nodeGetState(node, route).type) {
+                    switch (ethNodeGetState(node, route).type) {
                         case NODE_AVAILABLE:
                         case NODE_ERROR:
                             array_add (nodesToRemove, node);
@@ -1374,7 +1374,7 @@ lesThread (BREthereumLES les) {
                             break;
 
                         case NODE_CONNECTED:
-                            if (!isConnected && NODE_ROUTE_TCP == route)
+                            if (!isConnected && ETHEREUM_NODE_ROUTE_TCP == route)
                                 lesLogNodeActivate(les, node, route, "", "<===>");
                             break;
                     }
@@ -1397,16 +1397,16 @@ lesThread (BREthereumLES les) {
                 // discovery, the UPD node will will go inactive and we'll look again.
                 array_count(les->activeNodesByRoute[NODE_ROUTE_UDP]) < LES_ACTIVE_NODE_UDP_LIMIT) {
 
-                // Find a 'discovery' node by looking in: activeNodesByRoute[NODE_ROUTE_TCP],
+                // Find a 'discovery' node by looking in: activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP],
                 // availableNodes and then finally allNodes.  If that fails, try harder (see
                 // details in lesNodeFindDiscovery()
                 BREthereumNode node = lesNodeFindDiscovery(les);
 
                 // Try to connect...
-                nodeConnect (node, NODE_ROUTE_UDP, now);
+                ethNodeConnect (node, NODE_ROUTE_UDP, now);
 
                 // On success, make active
-                switch (nodeGetState(node, NODE_ROUTE_UDP).type) {
+                switch (ethNodeGetState(node, NODE_ROUTE_UDP).type) {
                     case NODE_AVAILABLE:
                     case NODE_ERROR:
                         break;
@@ -1424,10 +1424,10 @@ lesThread (BREthereumLES les) {
             // If we don't have enough connectedNodes, try to add one.  Note: when we created
             // the node (as part of UDP discovery) we give it our endpoint info (like headNum).
             // But now that is likely out of date as we've synced/progressed/chained.  I think the
-            // upcoming `nodeConnect()` needs a new `status` - but how do we update the status as
+            // upcoming `ethNodeConnect()` needs a new `status` - but how do we update the status as
             // only BCS knows where we are?
 
-            if (array_count(les->activeNodesByRoute[NODE_ROUTE_TCP]) < LES_ACTIVE_NODE_COUNT &&
+            if (array_count(les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]) < LES_ACTIVE_NODE_COUNT &&
                 array_count(les->availableNodes) > 0) {
                 BREthereumNode node = les->availableNodes[0];
 
@@ -1435,15 +1435,15 @@ lesThread (BREthereumLES les) {
                 // Really, really we need NODE_CONNECT_OPEN_SOCKET_IN_PROGRESS with a small
                 // timeout on connect().
                 
-                nodeConnect (node, NODE_ROUTE_TCP, now);
+                ethNodeConnect (node, ETHEREUM_NODE_ROUTE_TCP, now);
 
-                switch (nodeGetState(node, NODE_ROUTE_TCP).type) {
+                switch (ethNodeGetState(node, ETHEREUM_NODE_ROUTE_TCP).type) {
                     case NODE_AVAILABLE:
                         break;
 
                     case NODE_ERROR:
                         // On error; no longer available
-                        lesLogNodeActivate(les, node, NODE_ROUTE_TCP, "", "<=|=>");
+                        lesLogNodeActivate(les, node, ETHEREUM_NODE_ROUTE_TCP, "", "<=|=>");
                         array_rm (les->availableNodes, 0);
 
                         // TODO: Restore to 'AVAILABLE'
@@ -1453,7 +1453,7 @@ lesThread (BREthereumLES les) {
                         // viable LES/PIP nodes is so rare that we simply cannot afford to
                         // eliminate options that we trust.
                         //
-                        // Note: We attempted doing just the above in `nodeDisconnect()`.  With
+                        // Note: We attempted doing just the above in `ethNodeDisconnect()`.  With
                         // that we returned to this code and immediately retried to connect to
                         // the same node - failing again and again, forever.  Thus if we consider
                         // returning to available, at the very least we must put the node at the
@@ -1463,8 +1463,8 @@ lesThread (BREthereumLES les) {
 
                     case NODE_CONNECTING:
                         array_rm (les->availableNodes, 0);
-                        array_add(les->activeNodesByRoute[NODE_ROUTE_TCP], node);
-                        lesLogNodeActivate(les, node, NODE_ROUTE_TCP, "", "<...>");
+                        array_add(les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP], node);
+                        lesLogNodeActivate(les, node, ETHEREUM_NODE_ROUTE_TCP, "", "<...>");
                         break;
 
                     case NODE_CONNECTED:
@@ -1489,7 +1489,7 @@ lesThread (BREthereumLES les) {
              BRSetCount(les->nodes),
              array_count (les->availableNodes),
              array_count (les->activeNodesByRoute[NODE_ROUTE_UDP]),
-             array_count (les->activeNodesByRoute[NODE_ROUTE_TCP]));
+             array_count (les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]));
 
     // Callback on Node Config.  Create the set of configs based on the current node -in
     // particular the node's state.  When we load these configs (see lesCreate()) many of the
@@ -1497,7 +1497,7 @@ lesThread (BREthereumLES les) {
     BRArrayOf(BREthereumNodeConfig) configs;
     array_new (configs, BRSetCount(les->nodes));
     FOR_NODES (les, node)
-        array_add (configs, nodeConfigCreate(node));
+        array_add (configs, ethNodeConfigCreate(node));
     les->callbackSaveNodes (les->callbackContext, configs);
 
     // Disconnect all active nodes
@@ -1512,20 +1512,20 @@ lesThread (BREthereumLES les) {
     // Available nodes...
 
     FOR_NODES (les, node) {
-        nodeShow (node);
-        nodeDisconnect (node, NODE_ROUTE_UDP, (BREthereumNodeState) { NODE_AVAILABLE }, ETHEREUM_BOOLEAN_FALSE);
+        ethNodeShow (node);
+        ethNodeDisconnect (node, NODE_ROUTE_UDP, (BREthereumNodeState) { NODE_AVAILABLE }, ETHEREUM_BOOLEAN_FALSE);
 
         // For the TCP route, reset the node with its preferred state.  This will change many nodes
         // that are in an error state, back to NODE_AVAILABLE - when LES connects again we'll then
         // attempt to connect to that node.  That connection might be futile; we'll try anyways.
-        BREthereumNodeState oldState = nodeGetState(node, NODE_ROUTE_TCP);
+        BREthereumNodeState oldState = ethNodeGetState(node, ETHEREUM_NODE_ROUTE_TCP);
 
         // Always restore BRD and LCL nodes to 'NODE_AVAILABLE'
-        BREthereumNodeState newState = (NODE_PRIORITY_BRD == nodeGetPriority(node) || NODE_PRIORITY_LCL == nodeGetPriority(node)
+        BREthereumNodeState newState = (NODE_PRIORITY_BRD == ethNodeGetPriority(node) || NODE_PRIORITY_LCL == ethNodeGetPriority(node)
                                         ? ((BREthereumNodeState) { NODE_AVAILABLE })
-                                        : nodeGetPreferredState(oldState));
+                                        : ethNodeGetPreferredState(oldState));
 
-        nodeDisconnect (node, NODE_ROUTE_TCP, newState, ETHEREUM_BOOLEAN_FALSE);
+        ethNodeDisconnect (node, ETHEREUM_NODE_ROUTE_TCP, newState, ETHEREUM_BOOLEAN_FALSE);
         if (NODE_AVAILABLE != oldState.type && NODE_AVAILABLE == newState.type)
             lesInsertNodeAsAvailable (les, node);
     }
@@ -1576,24 +1576,24 @@ lesAddRequest (BREthereumLES les,
                BREthereumLESProvisionContext context,
                BREthereumLESProvisionCallback callback,
                OwnershipGiven BREthereumProvision provision) {
-    assert (PROVISION_IDENTIFIER_UNDEFINED == provision.identifier);
+    assert (ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED == provision.identifier);
 
-    if (NODE_REFERENCE_NIL == node) node = NODE_REFERENCE_0;
-    if (NODE_REFERENCE_ANY == node) node = NODE_REFERENCE_0;
+    if (LES_NODE_REFERENCE_NIL == node) node = LES_NODE_REFERENCE_0;
+    if (LES_NODE_REFERENCE_ANY == node) node = LES_NODE_REFERENCE_0;
 
     pthread_mutex_lock (&les->lock);
-    if (NODE_REFERENCE_ALL != node)
+    if (LES_NODE_REFERENCE_ALL != node)
         lesAddRequestSpecifically (les, node, context, callback, provision);
     else {
-        // We'll make NODE_REFERENCE_MAX - NODE_REFERENCE_MIN specific requests.  Since we have at
+        // We'll make LES_NODE_REFERENCE_MAX - LES_NODE_REFERENCE_MIN specific requests.  Since we have at
         // most LES_ACTIVE_NODE_COUNT active nodes, we might not get (MAX - MIN) actual requests
         // but only as many as the number of active nodes.  See ACTIVE_NODE above (which might
         // discard node reference over the active nodes).
-        for (BREthereumNodeReference ns = NODE_REFERENCE_MIN; ns <= NODE_REFERENCE_MAX; ns++)
+        for (BREthereumNodeReference ns = LES_NODE_REFERENCE_MIN; ns <= LES_NODE_REFERENCE_MAX; ns++)
             lesAddRequestSpecifically (les, ns, context, callback,
-                                       provisionCopy (&provision, ETHEREUM_BOOLEAN_FALSE));
+                                       ethProvisionCopy (&provision, ETHEREUM_BOOLEAN_FALSE));
         // Handle `OwnershipGiven`
-        provisionRelease (&provision, ETHEREUM_BOOLEAN_TRUE);
+        ethProvisionRelease (&provision, ETHEREUM_BOOLEAN_TRUE);
     }
     pthread_mutex_unlock (&les->lock);
 }
@@ -1602,7 +1602,7 @@ static ssize_t
 lesFindRequestForProvision (BREthereumLES les,
                             BREthereumProvision *provision) {
     for (ssize_t index = 0; index < array_count (les->requests); index++)
-        if (ETHEREUM_BOOLEAN_IS_TRUE (provisionMatches(provision, &les->requests[index].provision)))
+        if (ETHEREUM_BOOLEAN_IS_TRUE (ethProvisionMatches(provision, &les->requests[index].provision)))
             return index;
     return -1;
 }
@@ -1627,7 +1627,7 @@ lesProvideBlockHeaders (BREthereumLES les,
                         BREthereumBoolean reverse) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_BLOCK_HEADERS,
                        { .headers = { start, skip, limit, reverse, NULL }}
                    });
@@ -1641,7 +1641,7 @@ lesProvideBlockProofs (BREthereumLES les,
                        OwnershipGiven BRArrayOf(uint64_t) blockNumbers) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_BLOCK_PROOFS,
                        { .proofs = { blockNumbers, NULL }}
                    });
@@ -1667,7 +1667,7 @@ lesProvideBlockBodies (BREthereumLES les,
                        OwnershipGiven BRArrayOf(BREthereumHash) blockHashes) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_BLOCK_BODIES,
                        { .bodies = { blockHashes, NULL }}
                    });
@@ -1691,7 +1691,7 @@ lesProvideReceipts (BREthereumLES les,
                     OwnershipGiven BRArrayOf(BREthereumHash) blockHashes) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_TRANSACTION_RECEIPTS,
                        { .receipts = { blockHashes, NULL }}
                    });
@@ -1716,7 +1716,7 @@ lesProvideAccountStates (BREthereumLES les,
                          OwnershipGiven BRArrayOf(BREthereumHash) blockHashes) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_ACCOUNTS,
                        { .accounts = { address, blockHashes, NULL }}
                    });
@@ -1741,7 +1741,7 @@ lesProvideTransactionStatus (BREthereumLES les,
                              OwnershipGiven BRArrayOf(BREthereumHash) transactionHashes) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_TRANSACTION_STATUSES,
                        { .statuses = { transactionHashes, NULL }}
                    });
@@ -1765,7 +1765,7 @@ lesSubmitTransaction (BREthereumLES les,
                       OwnershipGiven BREthereumTransaction transaction) {
     lesAddRequest (les, node, context, callback,
                    (BREthereumProvision) {
-                       PROVISION_IDENTIFIER_UNDEFINED,
+                       ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED,
                        PROVISION_SUBMIT_TRANSACTION,
                        { .submission = { transaction, {} }}
                    });
@@ -1777,7 +1777,7 @@ lesRetryProvision (BREthereumLES les,
                    BREthereumLESProvisionContext context,
                    BREthereumLESProvisionCallback callback,
                    OwnershipGiven BREthereumProvision *provision) {
-    provision->identifier = PROVISION_IDENTIFIER_UNDEFINED;
+    provision->identifier = ETHEREUM_PROVISION_IDENTIFIER_UNDEFINED;
     lesAddRequest (les, node, context, callback, *provision);
 }
 
@@ -1816,11 +1816,11 @@ lesRetryProvision (BREthereumLES les,
 //        // Cache the node - again 'belt-and-suspenders'
 //        BREthereumNode node = les->connectedNodes[index];
 //
-//        nodeEstablishProvisioner(node, &provisioner);
+//        ethNodeEstablishProvisioner(node, &provisioner);
 //        
 //        // And send the request's LES message
-//        BREthereumNodeStatus status = nodeSend (node,
-//                                                   NODE_ROUTE_TCP,
+//        BREthereumNodeStatus status = ethNodeSend (node,
+//                                                   ETHEREUM_NODE_ROUTE_TCP,
 //                                                   (BREthereumMessage) {
 //                                                       MESSAGE_LES,
 //                                                       { .les = request.message }});
@@ -1911,8 +1911,8 @@ lesRetryProvision (BREthereumLES les,
 //        BREthereumNode node = les->connectedNodes[index];
 //
 //        // And send the request's LES message
-//        BREthereumNodeStatus status = nodeSend (node,
-//                                                   NODE_ROUTE_TCP,
+//        BREthereumNodeStatus status = ethNodeSend (node,
+//                                                   ETHEREUM_NODE_ROUTE_TCP,
 //                                                   (BREthereumMessage) {
 //                                                       MESSAGE_LES,
 //                                                       { .les = request.message }});
