@@ -77,15 +77,20 @@ size_t btcMerkleBlockTxHashes(const BRBitcoinMerkleBlock *block, UInt256 *txHash
 void btcMerkleBlockSetTxHashes(BRBitcoinMerkleBlock *block, const UInt256 hashes[], size_t hashesCount,
                               const uint8_t *flags, size_t flagsLen);
 
-// true if merkle tree and timestamp are valid, and proof-of-work matches the stated difficulty target
-// NOTE: this only checks if the block difficulty matches the difficulty target in the header, it does not check if the
-// target is correct for the block's height in the chain - use btcMerkleBlockVerifyDifficulty() for that
-int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime);
-
 // true if the given tx hash is known to be included in the block
 int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHash);
 
-// verifies the block difficulty target is correct for the block's position in the chain
+// true if merkle tree and timestamp are valid, and difficulty target is in range
+// NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime);
+
+// true if proof-of-work meets the stated difficulty target in the header
+// NOTE: this does not check if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockVerifyProofOfWork(const BRBitcoinMerkleBlock *block);
+
+// verifies proof-of-work and that the block difficulty target is correct for the block's position in the chain
 // transitionTime is the timestamp of the block at the previous difficulty transition
 // transitionTime may be 0 if block->height is not a multiple of BLOCK_DIFFICULTY_INTERVAL
 int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBitcoinMerkleBlock *previous, uint32_t transitionTime);

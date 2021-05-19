@@ -102,13 +102,14 @@ static int bsvMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
 {
     const BRBitcoinMerkleBlock *b, *first, *last;
     int i, sz, size = 0x1d;
-    uint64_t t, target, w, work = 0;
+    uint64_t target, w, work = 0;
     int64_t timespan;
 
     assert(block != NULL);
     assert(blockSet != NULL);
+    if (! block) return 0;
 
-    if (block && block->height >= 504032) { // D601 hard fork height: https://reviews.bitcoinabc.org/D601
+    if (block->height >= 504032) { // D601 hard fork height: https://reviews.bitcoinabc.org/D601
         last = BRSetGet(blockSet, &block->prevBlock);
         last = _medianBlock(last, blockSet);
 
@@ -126,10 +127,10 @@ static int bsvMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
         for (b = last; b != first;) {
             // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
             // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-            sz = b->target >> 24, t = b->target & 0x007fffff;
+            sz = b->target >> 24, target = b->target & 0x007fffff;
 
             // work += 2^256/(target + 1)
-            w = (t) ? ~0ULL/t : ~0ULL;
+            w = (target) ? ~0ULL/target : ~0ULL;
             while (sz < size) work >>= 8, size--;
             while (size < sz) w >>= 8, sz--;
             while (work + w < w) w >>= 8, work >>= 8, size--;
@@ -152,8 +153,8 @@ static int bsvMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
         if (target > 0x1d00ffff) target = 0x1d00ffff; // max proof-of-work
         if (target - block->target > 1) return 0;
     }
-
-    return 1;
+    
+    return btcMerkleBlockVerifyProofOfWork(block);
 }
 
 static int bsvTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)

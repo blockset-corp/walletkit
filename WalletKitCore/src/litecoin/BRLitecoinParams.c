@@ -24,7 +24,7 @@
 
 #include "support/BRInt.h"
 #include "support/BRSet.h"
-#include "bitcoin/BRPeer.h"
+#include "bitcoin/BRBitcoinPeer.h"
 #include "BRLitecoinParams.h"
 
 #define LTC_PUBKEY_PREFIX       48
@@ -38,22 +38,22 @@
 #define LTC_BECH32_PREFIX_TEST  "tltc"
 
 #define LTC_TARGET_TIMESPAN     (14*24*60*60/4)
-#define LTC_MAX_PROOF_OF_WORK   0x1d00ffff    // highest value for difficulty target (higher values are less difficult)
+#define LTC_MAX_PROOF_OF_WORK   0x1e0ffff0 // highest value for difficulty target (higher values are less difficult)
 
-static const char *BRLitecoinDNSSeeds[] = {
+static const char *litecoinDNSSeeds[] = {
     "dnsseed.litecoinpool.org.", "seed-a.litecoin.loshan.co.uk.", "dnsseed.thrasher.io.",
     "dnsseed.koin-project.com.", "dnsseed.litecointools.com.", NULL
 };
 
-static const char *BRLitecoinTestNetDNSSeeds[] = {
+static const char *litecoinTestNetDNSSeeds[] = {
     "testnet-seed.ltc.xurious.com.", "seed-b.litecoin.loshan.co.uk.", "dnsseed-testnet.thrasher.io.", NULL
 };
 
-static const BRCheckPoint BRLitecoinTestNetCheckpoints[] = {
+static const BRBitcoinCheckPoint litecoinTestNetCheckpoints[] = {
     {       0, uint256("4966625a4b2851d9fdee139e56211a0d88575f59ed816ff5e6a63deb4e3e29a0"), 1486949366, 0x1e0ffff0 }
 };
 
-static const BRCheckPoint BRLitecoinCheckpoints[] = {
+static const BRBitcoinCheckPoint litecoinCheckpoints[] = {
     {       0, uint256("12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2"), 1317972665, 0x1e0ffff0 },
     {   20160, uint256("633036c8df655531c2449b2d09b264cc0b49d945a89be23fd3c1a97361ca198c"), 1319798300, 0x1d055262 },
     {   40320, uint256("d148cdd2cf44069cef4b63f0feaf30a8d291ca9ea9ba7e83f226b9738c1d5e9c"), 1322522019, 0x1d018053 },
@@ -83,24 +83,65 @@ static const BRCheckPoint BRLitecoinCheckpoints[] = {
     { 1411200, uint256("92c85b76f3d4bffca76b23717e4eb1b667c77c96fd52d4dd5dd843bbee64cd73"), 1524838967, 0x1a0203a7 }
 };
 
-static int BRLitecoinVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int litecoinVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
 {
-    const BRMerkleBlock *previous, *b = NULL;
-    int size, r = 1;
-    uint32_t i;
-    uint64_t target;
+    assert(block != NULL);
+    
+    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
+    uint8_t buf[80];
+    size_t off = 0;
+    int i;
+    UInt256 w, t = UINT256_ZERO;
+    
+    UInt32SetLE(&buf[off], block->version);
+    off += sizeof(uint32_t);
+    UInt256Set(&buf[off], block->prevBlock);
+    off += sizeof(UInt256);
+    UInt256Set(&buf[off], block->merkleRoot);
+    off += sizeof(UInt256);
+    UInt32SetLE(&buf[off], block->timestamp);
+    off += sizeof(uint32_t);
+    UInt32SetLE(&buf[off], block->target);
+    off += sizeof(uint32_t);
+    UInt32SetLE(&buf[off], block->nonce);
+    off += sizeof(uint32_t);
+    BRScrypt(w.u8, 32, buf, off, buf, off, 1024, 1, 1);
+
+    if (size - 3 >= sizeof(t) - sizeof(uint32_t)) return 0;
+    
+    if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
+    else UInt32SetLE(t.u8, target >> (3 - size)*8);
+        
+    for (i = sizeof(t) - 1; i >= 0; i--) { // check proof-of-work
+        if (w.u8[i] < t.u8[i]) break;
+        if (w.u8[i] > t.u8[i]) return 0;
+    }
+    
+    return 1;
+}
+
+static int litecoinVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
+{
+    const BRBitcoinMerkleBlock *previous, *b = NULL;
+    int i, size = 0, r = 1;
+    uint64_t target = 0;
     int64_t timespan;
 
     assert(block != NULL);
     assert(blockSet != NULL);
-
     previous = BRSetGet(blockSet, &block->prevBlock);
-    if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
+
+    if (previous && UInt256Eq(block->prevBlock, previous->blockHash) && block->height == previous->height + 1) {
+    }
+    else r = 0;
         
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) { // check if we hit a difficulty transition
         // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
         // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-        size = previous->target >> 24, target = previous->target & 0x007fffff;
+        size = previous->target >> 24;
+        target = previous->target & 0x007fffff;
 
         for (i = 0, b = block; b && b->height > 0 && i < BLOCK_DIFFICULTY_INTERVAL + 1; i++) { // litecoin timewarp fix
             b = BRSetGet(blockSet, &b->prevBlock);
@@ -116,9 +157,9 @@ static int BRLitecoinVerifyDifficulty(const BRMerkleBlock *block, const BRSet *b
         // don't lose precision when target is multiplied by timespan*4 and then divided by LTC_TARGET_TIMESPAN/64
         target *= (uint64_t)timespan*4;
         target /= LTC_TARGET_TIMESPAN >> 6;
-        size--; // decrement size since we multiplied timespan by 4 and only divided by TARGET_TIMESPAN/64
+        size--; // decrement size since we multiplied timespan by 4 and only divided by LTC_TARGET_TIMESPAN/64
     
-        while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
+        while (size < 1 || target > 0x007fffff) { target >>= 8; size++; } // normalize target for "compact" format
         target |= (uint64_t)size << 24;
     
         if (target > LTC_MAX_PROOF_OF_WORK) target = LTC_MAX_PROOF_OF_WORK; // limit to LTC_MAX_PROOF_OF_WORK
@@ -126,36 +167,36 @@ static int BRLitecoinVerifyDifficulty(const BRMerkleBlock *block, const BRSet *b
     }
     else if (r && block->target != previous->target) r = 0;
     
-    return r;
+    return r && litecoinVerifyProofOfWork(block);
 }
 
-static int BRLitecoinTestNetVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
+static int litecoinTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
     return 1; // skipping difficulty check
 }
 
-static const BRChainParams BRLitecoinParamsRecord = {
-    BRLitecoinDNSSeeds,
+static const BRBitcoinChainParams litecoinParamsRecord = {
+    litecoinDNSSeeds,
     9333,
     0xdbb6c0fb,
     0,
-    BRLitecoinVerifyDifficulty,
-    BRLitecoinCheckpoints,
-    sizeof(BRLitecoinCheckpoints)/sizeof(*BRLitecoinCheckpoints),
+    litecoinVerifyDifficulty,
+    litecoinCheckpoints,
+    sizeof(litecoinCheckpoints)/sizeof(*litecoinCheckpoints),
     { LTC_PUBKEY_PREFIX, LTC_SCRIPT_PREFIX, LTC_PRIVKEY_PREFIX, LTC_BECH32_PREFIX },
     0
 };
-const BRChainParams *BRLitecoinParams = &BRLitecoinParamsRecord;
+const BRBitcoinChainParams *litecoinParams = &litecoinParamsRecord;
 
-static const BRChainParams BRLitecoinTestNetParamsRecord = {
-    BRLitecoinTestNetDNSSeeds,
+static const BRBitcoinChainParams litecoinTestNetParamsRecord = {
+    litecoinTestNetDNSSeeds,
     19335,
     0xf1c8d2fd,
     0,
-    BRLitecoinTestNetVerifyDifficulty,
-    BRLitecoinTestNetCheckpoints,
-    sizeof(BRLitecoinTestNetCheckpoints)/sizeof(*BRLitecoinTestNetCheckpoints),
+    litecoinTestNetVerifyDifficulty,
+    litecoinTestNetCheckpoints,
+    sizeof(litecoinTestNetCheckpoints)/sizeof(*litecoinTestNetCheckpoints),
     { LTC_PUBKEY_PREFIX_TEST, LTC_SCRIPT_PREFIX_TEST, LTC_PRIVKEY_PREFIX_TEST, LTC_BECH32_PREFIX_TEST },
     0
 };
-const BRChainParams *BRLitecoinTestNetParams = &BRLitecoinTestNetParamsRecord;
+const BRBitcoinChainParams *litecoinTestNetParams = &litecoinTestNetParamsRecord;

@@ -25,21 +25,21 @@
 #ifndef BRLitecoinParams_h
 #define BRLitecoinParams_h
 
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern const BRChainParams *BRLitecoinParams;
-extern const BRChainParams *BRLitecoinTestNetParams;
+extern const BRBitcoinChainParams *litecoinParams;
+extern const BRBitcoinChainParams *litecoinTestNetParams;
 
-static inline const BRChainParams *BRChainParamsGetLitecoin(int mainnet) {
-    return mainnet ? BRLitecoinParams : BRLitecoinTestNetParams;
+static inline const BRBitcoinChainParams *BRChainParamsGetLitecoin(int mainnet) {
+    return mainnet ? litecoinParams : litecoinTestNetParams;
 }
 
-static inline int BRChainParamsIsLitecoin(const BRChainParams *params) {
-    return BRLitecoinParams == params || BRLitecoinTestNetParams == params;
+static inline int btcChainParamsIsLitecoin(const BRBitcoinChainParams *params) {
+    return litecoinParams == params || litecoinTestNetParams == params;
 }
 
 #ifdef __cplusplus

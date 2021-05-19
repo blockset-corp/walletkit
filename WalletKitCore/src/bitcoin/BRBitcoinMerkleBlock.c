@@ -189,8 +189,8 @@ size_t btcMerkleBlockSerialize(const BRBitcoinMerkleBlock *block, uint8_t *buf, 
     return (! buf || len <= bufLen) ? len : 0;
 }
 
-static size_t _btcMerkleBlockTxHashesR(const BRBitcoinMerkleBlock *block, UInt256 *txHashes, size_t hashesCount, size_t *idx,
-                                      size_t *hashIdx, size_t *flagIdx, uint32_t depth)
+static size_t _btcMerkleBlockTxHashesR(const BRBitcoinMerkleBlock *block, UInt256 *txHashes, size_t hashesCount,
+                                       size_t *idx, size_t *hashIdx, size_t *flagIdx, uint32_t depth)
 {
     uint8_t flag;
     
@@ -270,40 +270,6 @@ static UInt256 _btcMerkleBlockRootR(const BRBitcoinMerkleBlock *block, size_t *h
     return md;
 }
 
-// true if merkle tree and timestamp are valid, and proof-of-work matches the stated difficulty target
-// NOTE: this only checks if the block difficulty matches the difficulty target in the header, it does not check if the
-// target is correct for the block's height in the chain - use btcMerkleBlockVerifyDifficulty() for that
-int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime)
-{
-    assert(block != NULL);
-    
-    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
-    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
-    size_t hashIdx = 0, flagIdx = 0;
-    UInt256 merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0), t = UINT256_ZERO;
-    int r = 1;
-    
-    // check if merkle root is correct
-    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) r = 0;
-    
-    // check if timestamp is too far in future
-    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
-    
-    // check if proof-of-work target is out of range
-    if (target == 0 || (block->target & 0x00800000) || block->target > MAX_PROOF_OF_WORK) r = 0;
-    
-    if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
-    else UInt32SetLE(t.u8, target >> (3 - size)*8);
-    
-    for (int i = sizeof(t) - 1; r && i >= 0; i--) { // check proof-of-work
-        if (block->blockHash.u8[i] < t.u8[i]) break;
-        if (block->blockHash.u8[i] > t.u8[i]) r = 0;
-    }
-    
-    return r;
-}
-
 // true if the given tx hash is known to be included in the block
 int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHash)
 {
@@ -319,7 +285,59 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
     return r;
 }
 
-// verifies the block difficulty target is correct for the block's position in the chain
+// true if merkle tree and timestamp are valid, and difficulty target is in range
+// NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime)
+{
+    assert(block != NULL);
+    
+    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
+    size_t hashIdx = 0, flagIdx = 0;
+    UInt256 merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0);
+    int r = 1;
+    
+    // check if merkle root is correct
+    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) r = 0;
+    
+    // check if timestamp is too far in future
+    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
+    
+    // check if proof-of-work target is out of range
+    if (size == 0 || target == 0 || (block->target & 0x00800000) || block->target > MAX_PROOF_OF_WORK) r = 0;
+        
+    return r;
+}
+
+// true if proof-of-work meets the stated difficulty target in the header
+// NOTE: this does not check if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
+{
+    assert(block != NULL);
+
+    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
+    int i;
+    UInt256 t = UINT256_ZERO;
+    
+    if (size - 3 >= sizeof(t) - sizeof(uint32_t)) return 0;
+
+    if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
+    else UInt32SetLE(t.u8, target >> (3 - size)*8);
+        
+    for (i = sizeof(t) - 1; i >= 0; i--) { // check proof-of-work
+        if (block->blockHash.u8[i] < t.u8[i]) break;
+        if (block->blockHash.u8[i] > t.u8[i]) return 0;
+    }
+    
+    return 1;
+}
+
+// verifies proof-of-work, and that the difficulty target is correct for the block's position in the chain
 // transitionTime is the timestamp of the block at the previous difficulty transition
 // transitionTime may be 0 if block->height is not a multiple of BLOCK_DIFFICULTY_INTERVAL
 //
@@ -332,20 +350,20 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
 // intuitively named MAX_PROOF_OF_WORK... since larger values are less difficult.
 int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBitcoinMerkleBlock *previous, uint32_t transitionTime)
 {
-    int size, r = 1;
-    uint64_t target;
+    int r = 1, size = 0;
+    uint64_t target = 0;
     int64_t timespan;
     
     assert(block != NULL);
     assert(previous != NULL);
-    
-    if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
-    if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0 && transitionTime == 0) r = 0;
+
+    if (! previous && !UInt256Eq(block->prevBlock, previous->blockHash) && block->height != previous->height + 1) r = 0;
         
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) {
         // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
         // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-        size = previous->target >> 24, target = previous->target & 0x007fffff;
+        size = previous->target >> 24;
+        target = previous->target & 0x007fffff;
         timespan = (int64_t)previous->timestamp - transitionTime;
         
         // limit difficulty transition to -75% or +400%
@@ -358,15 +376,15 @@ int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBi
         target /= TARGET_TIMESPAN >> 8;
         size--; // decrement size since we only divided by TARGET_TIMESPAN/256
     
-        while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-        target |= (uint64_t) (size << 24);
+        while (size < 1 || target > 0x007fffff) { target >>= 8; size++; } // normalize target for "compact" format
+        target |= (uint64_t)size << 24;
     
         if (target > MAX_PROOF_OF_WORK) target = MAX_PROOF_OF_WORK; // limit to MAX_PROOF_OF_WORK
-        if (block->target != target) r = 0;
+        if (block->target != target || transitionTime == 0) r = 0;
     }
     else if (r && block->target != previous->target) r = 0;
-    
-    return r;
+        
+    return r && btcMerkleBlockVerifyProofOfWork(block);
 }
 
 // frees memory allocated by BRMerkleBlockParse
