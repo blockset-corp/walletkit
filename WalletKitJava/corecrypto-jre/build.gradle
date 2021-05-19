@@ -22,7 +22,7 @@ dependencies {
 
     implementation project(':corenative-jre')
     implementation deps.guavaJre
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAppcompat
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind

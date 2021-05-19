@@ -1,7 +1,7 @@
 package com.breadwallet.corecrypto;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import com.breadwallet.crypto.utility.TestConfiguration;
 

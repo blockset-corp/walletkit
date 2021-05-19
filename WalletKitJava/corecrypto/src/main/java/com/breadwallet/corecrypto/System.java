@@ -7,9 +7,8 @@
  */
 package com.breadwallet.corecrypto;
 
-import android.support.annotation.Nullable;
-import android.support.v4.util.ArrayMap;
-
+import androidx.annotation.Nullable;
+import androidx.collection.ArrayMap;
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoClientCallbackState;
