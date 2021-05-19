@@ -74,7 +74,8 @@ runPerfTestsCoder (int repeat, int many);
 typedef enum {
     BITCOIN_CHAIN_BTC,
     BITCOIN_CHAIN_BCH,
-    BITCOIN_CHAIN_BSV
+    BITCOIN_CHAIN_BSV,
+    BITCOIN_CHAIN_LTC
 } BRBitcoinChain;
 
 extern const BRBitcoinChainParams*

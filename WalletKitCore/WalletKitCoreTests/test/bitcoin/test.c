@@ -40,6 +40,8 @@
 
 #include "bsv/BRBSVParams.h"
 
+#include "litecoin/BRLitecoinParams.h"
+
 #include "bitcoin/BRBitcoinBloomFilter.h"
 #include "bitcoin/BRBitcoinMerkleBlock.h"
 #include "bitcoin/BRBitcoinWallet.h"
@@ -81,7 +83,10 @@ extern const BRBitcoinChainParams* getChainParams (BRBitcoinChain chain, int isM
             
         case BITCOIN_CHAIN_BSV:
             return isMainnet ? bsvMainNetParams : bsvTestNetParams;
-            
+
+        case BITCOIN_CHAIN_LTC:
+            return isMainnet ? ltcMainNetParams : ltcTestNetParams;
+
         default:
             assert(0);
             return NULL;
@@ -98,6 +103,9 @@ extern const char * getChainName (BRBitcoinChain chain) {
             
         case BITCOIN_CHAIN_BSV:
             return "bsv";
+
+        case BITCOIN_CHAIN_LTC:
+            return "ltc";
             
         default:
             assert(0);

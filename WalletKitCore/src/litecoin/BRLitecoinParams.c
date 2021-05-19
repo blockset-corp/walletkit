@@ -40,20 +40,20 @@
 #define LTC_TARGET_TIMESPAN     (14*24*60*60/4)
 #define LTC_MAX_PROOF_OF_WORK   0x1e0ffff0 // highest value for difficulty target (higher values are less difficult)
 
-static const char *litecoinDNSSeeds[] = {
+static const char *ltcMainNetDNSSeeds[] = {
     "dnsseed.litecoinpool.org.", "seed-a.litecoin.loshan.co.uk.", "dnsseed.thrasher.io.",
     "dnsseed.koin-project.com.", "dnsseed.litecointools.com.", NULL
 };
 
-static const char *litecoinTestNetDNSSeeds[] = {
+static const char *ltcTestNetDNSSeeds[] = {
     "testnet-seed.ltc.xurious.com.", "seed-b.litecoin.loshan.co.uk.", "dnsseed-testnet.thrasher.io.", NULL
 };
 
-static const BRBitcoinCheckPoint litecoinTestNetCheckpoints[] = {
+static const BRBitcoinCheckPoint ltcTestNetCheckpoints[] = {
     {       0, uint256("4966625a4b2851d9fdee139e56211a0d88575f59ed816ff5e6a63deb4e3e29a0"), 1486949366, 0x1e0ffff0 }
 };
 
-static const BRBitcoinCheckPoint litecoinCheckpoints[] = {
+static const BRBitcoinCheckPoint ltcMainNetCheckpoints[] = {
     {       0, uint256("12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2"), 1317972665, 0x1e0ffff0 },
     {   20160, uint256("633036c8df655531c2449b2d09b264cc0b49d945a89be23fd3c1a97361ca198c"), 1319798300, 0x1d055262 },
     {   40320, uint256("d148cdd2cf44069cef4b63f0feaf30a8d291ca9ea9ba7e83f226b9738c1d5e9c"), 1322522019, 0x1d018053 },
@@ -83,7 +83,7 @@ static const BRBitcoinCheckPoint litecoinCheckpoints[] = {
     { 1411200, uint256("92c85b76f3d4bffca76b23717e4eb1b667c77c96fd52d4dd5dd843bbee64cd73"), 1524838967, 0x1a0203a7 }
 };
 
-static int litecoinVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
+static int ltcVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
 {
     assert(block != NULL);
     
@@ -122,7 +122,7 @@ static int litecoinVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
     return 1;
 }
 
-static int litecoinVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
+static int ltcMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
     const BRBitcoinMerkleBlock *previous, *b = NULL;
     int i, size = 0, r = 1;
@@ -167,36 +167,36 @@ static int litecoinVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRS
     }
     else if (r && block->target != previous->target) r = 0;
     
-    return r && litecoinVerifyProofOfWork(block);
+    return r && ltcVerifyProofOfWork(block);
 }
 
-static int litecoinTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
+static int ltcTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
 {
     return 1; // skipping difficulty check
 }
 
-static const BRBitcoinChainParams litecoinParamsRecord = {
-    litecoinDNSSeeds,
+static const BRBitcoinChainParams ltcMainNetParamsRecord = {
+    ltcMainNetDNSSeeds,
     9333,
     0xdbb6c0fb,
     0,
-    litecoinVerifyDifficulty,
-    litecoinCheckpoints,
-    sizeof(litecoinCheckpoints)/sizeof(*litecoinCheckpoints),
+    ltcMainNetVerifyDifficulty,
+    ltcMainNetCheckpoints,
+    sizeof(ltcMainNetCheckpoints)/sizeof(*ltcMainNetCheckpoints),
     { LTC_PUBKEY_PREFIX, LTC_SCRIPT_PREFIX, LTC_PRIVKEY_PREFIX, LTC_BECH32_PREFIX },
     0
 };
-const BRBitcoinChainParams *litecoinParams = &litecoinParamsRecord;
+const BRBitcoinChainParams *ltcMainNetParams = &ltcMainNetParamsRecord;
 
-static const BRBitcoinChainParams litecoinTestNetParamsRecord = {
-    litecoinTestNetDNSSeeds,
+static const BRBitcoinChainParams ltcTestNetParamsRecord = {
+    ltcTestNetDNSSeeds,
     19335,
     0xf1c8d2fd,
     0,
-    litecoinTestNetVerifyDifficulty,
-    litecoinTestNetCheckpoints,
-    sizeof(litecoinTestNetCheckpoints)/sizeof(*litecoinTestNetCheckpoints),
+    ltcTestNetVerifyDifficulty,
+    ltcTestNetCheckpoints,
+    sizeof(ltcTestNetCheckpoints)/sizeof(*ltcTestNetCheckpoints),
     { LTC_PUBKEY_PREFIX_TEST, LTC_SCRIPT_PREFIX_TEST, LTC_PRIVKEY_PREFIX_TEST, LTC_BECH32_PREFIX_TEST },
     0
 };
-const BRBitcoinChainParams *litecoinTestNetParams = &litecoinTestNetParamsRecord;
+const BRBitcoinChainParams *ltcTestNetParams = &ltcTestNetParamsRecord;

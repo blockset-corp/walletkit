@@ -31,15 +31,11 @@
 extern "C" {
 #endif
 
-extern const BRBitcoinChainParams *litecoinParams;
-extern const BRBitcoinChainParams *litecoinTestNetParams;
-
-static inline const BRBitcoinChainParams *BRChainParamsGetLitecoin(int mainnet) {
-    return mainnet ? litecoinParams : litecoinTestNetParams;
-}
+extern const BRBitcoinChainParams *ltcMainNetParams;
+extern const BRBitcoinChainParams *ltcTestNetParams;
 
 static inline int btcChainParamsIsLitecoin(const BRBitcoinChainParams *params) {
-    return litecoinParams == params || litecoinTestNetParams == params;
+    return ltcMainNetParams == params || ltcTestNetParams == params;
 }
 
 #ifdef __cplusplus
