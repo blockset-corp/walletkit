@@ -17,10 +17,12 @@
 
 private_extern WKHash
 wkHashCreateAsETH (BREthereumHash eth) {
-    return wkHashCreateInternal ((uint32_t) ethHashSetValue (&eth),
-                                     ETHEREUM_HASH_BYTES,
-                                     eth.bytes,
-                                     WK_NETWORK_TYPE_ETH);
+    return (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (eth, ETHEREUM_EMPTY_HASH_INIT)
+            ? NULL
+            : wkHashCreateInternal ((uint32_t) ethHashSetValue (&eth),
+                                    ETHEREUM_HASH_BYTES,
+                                    eth.bytes,
+                                    WK_NETWORK_TYPE_ETH));
 }
 
 private_extern BREthereumHash

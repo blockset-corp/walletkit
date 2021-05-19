@@ -183,6 +183,8 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
     // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.
+    //
+    // The created `ethTransaction` is unsigned and thus doesn't have a hash.
     BREthereumTransaction ethTransaction =
     ethTransactionCreate (ethSourceAddress,
                        wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
@@ -199,7 +201,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     WKTransferState state = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
 
     WKTransfer transfer = wkTransferCreateAsETH (wallet->listenerTransfer,
-                                                           NULL,
+                                                           NULL, // w/o hash
                                                            unit,
                                                            unitForFee,
                                                            estimatedFeeBasis,  // w/o margin

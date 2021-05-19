@@ -91,10 +91,9 @@ wkTransferReleaseHBAR (WKTransfer transfer) {
 static WKHash
 wkTransferGetHashHBAR (WKTransfer transfer) {
     WKTransferHBAR transferHBAR = wkTransferCoerceHBAR(transfer);
-    if (! hederaTransactionHashExists(transferHBAR->hbarTransaction)) return NULL;
-
-    BRHederaTransactionHash hash = hederaTransactionGetHash (transferHBAR->hbarTransaction);
-    return wkHashCreateAsHBAR (hash);
+    return (! hederaTransactionHashExists (transferHBAR->hbarTransaction)
+            ? NULL
+            : wkHashCreateAsHBAR (hederaTransactionGetHash (transferHBAR->hbarTransaction)));
 }
 
 extern bool

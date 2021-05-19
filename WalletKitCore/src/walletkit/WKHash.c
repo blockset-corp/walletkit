@@ -19,9 +19,9 @@ IMPLEMENT_WK_GIVE_TAKE (WKHash, wkHash)
 
 extern WKHash
 wkHashCreateInternal (uint32_t setValue,
-                          size_t   bytesCount,
-                          uint8_t *bytes,
-                          WKNetworkType type) {
+                      size_t   bytesCount,
+                      uint8_t *bytes,
+                      WKNetworkType type) {
     assert (bytesCount <= WK_HASH_BYTES);
     WKHash hash = calloc (1, sizeof (struct WKHashRecord));
 
@@ -37,6 +37,7 @@ wkHashCreateInternal (uint32_t setValue,
 
 static void
 wkHashRelease (WKHash hash) {
+    assert (NULL != hash);
     memset (hash, 0, sizeof(*hash));
     free (hash);
 }
@@ -44,14 +45,15 @@ wkHashRelease (WKHash hash) {
 extern WKBoolean
 wkHashEqual (WKHash h1, WKHash h2) {
     return AS_WK_BOOLEAN (h1 == h2 ||
-                              (h1->setValue   == h2->setValue   &&
-                               h1->bytesCount == h2->bytesCount &&
-                               0 == memcmp (h1->bytes, h2->bytes, h1->bytesCount)));
+                          (NULL != h1     && NULL != h2     &&
+                           h1->setValue   == h2->setValue   &&
+                           h1->bytesCount == h2->bytesCount &&
+                           0 == memcmp (h1->bytes, h2->bytes, h1->bytesCount)));
 }
 
 extern OwnershipGiven char *
 wkHashEncodeString (WKHash hash) {
-    return wkNetworkEncodeHash (hash);
+    return (NULL == hash ? NULL : wkNetworkEncodeHash (hash));
 }
 
 static char *
@@ -65,6 +67,8 @@ _wkHashAddPrefix (char *hash, int freeHash) {
 
 private_extern OwnershipGiven char *
 wkHashStringAsHex (WKHash hash, bool includePrefix) {
+    if (NULL == hash) return NULL;
+    
     size_t stringLength = 2 * hash->bytesCount + 1;
     char string [stringLength];
 
@@ -74,5 +78,6 @@ wkHashStringAsHex (WKHash hash, bool includePrefix) {
 
 extern int
 wkHashGetHashValue (WKHash hash) {
+    assert (NULL != hash);
     return (int) hash->setValue;
 }

@@ -65,6 +65,7 @@ tezosTransferCreateNew(BRTezosAddress from,
     transfer->targetAddress = tezosAddressClone (to);
     transfer->amount = amount;
     transfer->fee = tezosFeeBasisGetFee (&feeBasis);
+    transfer->transactionId = TEZOS_HASH_EMPTY;
     if (delegationOp)
         transfer->transaction = tezosTransactionCreateDelegation (from, to, feeBasis, counter);
     else

@@ -97,7 +97,9 @@ static WKHash
 wkTransferGetHashXRP (WKTransfer transfer) {
     WKTransferXRP transferXRP = wkTransferCoerceXRP(transfer);
     BRRippleTransactionHash hash = rippleTransactionGetHash(transferXRP->xrpTransaction);
-    return wkHashCreateAsXRP (hash);
+    return (rippleTransactionHashIsEmpty (hash)
+            ? NULL
+            : wkHashCreateAsXRP (hash));
 }
 
 static uint8_t *
