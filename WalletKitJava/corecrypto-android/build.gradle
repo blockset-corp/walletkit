@@ -16,7 +16,7 @@ android {
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -59,13 +59,13 @@ dependencies {
 
     implementation project(':corenative-android')
     implementation deps.guavaAndroid
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAppcompat
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind
 
     testImplementation deps.junit
 
-    androidTestImplementation deps.androidTestRunner
-    androidTestImplementation deps.androidTestEspresso
+    androidTestImplementation deps.androidxTestRunner
+    androidTestImplementation deps.androidxTestEspresso
 }
