@@ -7,7 +7,7 @@
  */
 package com.breadwallet.cryptodemo;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.crypto.Account;
 import com.breadwallet.crypto.Address;

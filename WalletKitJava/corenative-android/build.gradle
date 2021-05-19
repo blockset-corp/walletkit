@@ -16,7 +16,7 @@ android {
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         externalNativeBuild.cmake.arguments "-DANDROID_STL=none", "-DANDROID_TOOLCHAIN=clang"
         ndk.abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
@@ -72,6 +72,6 @@ dependencies {
 
     testImplementation deps.junit
 
-    androidTestImplementation deps.androidTestRunner
-    androidTestImplementation deps.androidTestEspresso
+    androidTestImplementation deps.androidxTestRunner
+    androidTestImplementation deps.androidxTestEspresso
 }
