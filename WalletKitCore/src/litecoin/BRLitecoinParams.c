@@ -163,7 +163,7 @@ static int ltcMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
         target |= (uint64_t)size << 24;
     
         if (target > LTC_MAX_PROOF_OF_WORK) target = LTC_MAX_PROOF_OF_WORK; // limit to LTC_MAX_PROOF_OF_WORK
-        if (block->target != target) r = 0;
+        if (b && block->target != target) r = 0;
     }
     else if (r && block->target != previous->target) r = 0;
     
