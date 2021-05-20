@@ -79,7 +79,7 @@ wkAddressAsStringHBAR (WKAddress address) {
 static bool
 wkAddressIsEqualHBAR (WKAddress address1, WKAddress address2) {
     WKAddressHBAR a1 = wkAddressCoerce (address1);
-    WKAddressHBAR a2 = wkAddressCoerce (address1);
+    WKAddressHBAR a2 = wkAddressCoerce (address2);
 
     return hederaAddressEqual (a1->addr, a2->addr);
 }
