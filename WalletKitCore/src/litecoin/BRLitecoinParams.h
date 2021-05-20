@@ -1,7 +1,7 @@
 //
 //  BRLitecoinParams.h
 //
-//  Created by Aaron Voisine on 4/18/21.
+//  Created by Aaron Voisine on 5/18/21.
 //  Copyright (c) 2021 breadwallet LLC
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy

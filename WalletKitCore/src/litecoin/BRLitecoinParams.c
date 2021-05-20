@@ -133,9 +133,7 @@ static int ltcMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
     assert(blockSet != NULL);
     previous = BRSetGet(blockSet, &block->prevBlock);
 
-    if (previous && UInt256Eq(block->prevBlock, previous->blockHash) && block->height == previous->height + 1) {
-    }
-    else r = 0;
+    if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
         
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) { // check if we hit a difficulty transition
         // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
@@ -179,12 +177,12 @@ static const BRBitcoinChainParams ltcMainNetParamsRecord = {
     ltcMainNetDNSSeeds,
     9333,
     0xdbb6c0fb,
-    0,
+    SERVICES_NODE_WITNESS,
     ltcMainNetVerifyDifficulty,
     ltcMainNetCheckpoints,
     sizeof(ltcMainNetCheckpoints)/sizeof(*ltcMainNetCheckpoints),
     { LTC_PUBKEY_PREFIX, LTC_SCRIPT_PREFIX, LTC_PRIVKEY_PREFIX, LTC_BECH32_PREFIX },
-    0
+    BITCOIN_FORKID
 };
 const BRBitcoinChainParams *ltcMainNetParams = &ltcMainNetParamsRecord;
 
@@ -192,11 +190,11 @@ static const BRBitcoinChainParams ltcTestNetParamsRecord = {
     ltcTestNetDNSSeeds,
     19335,
     0xf1c8d2fd,
-    0,
+    SERVICES_NODE_WITNESS,
     ltcTestNetVerifyDifficulty,
     ltcTestNetCheckpoints,
     sizeof(ltcTestNetCheckpoints)/sizeof(*ltcTestNetCheckpoints),
     { LTC_PUBKEY_PREFIX_TEST, LTC_SCRIPT_PREFIX_TEST, LTC_PRIVKEY_PREFIX_TEST, LTC_BECH32_PREFIX_TEST },
-    0
+    BITCOIN_FORKID
 };
 const BRBitcoinChainParams *ltcTestNetParams = &ltcTestNetParamsRecord;

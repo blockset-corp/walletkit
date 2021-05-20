@@ -48,7 +48,7 @@
 #define MAX_MSG_LENGTH     0x02000000
 #define MAX_GETDATA_HASHES 50000
 #define ENABLED_SERVICES   0ULL  // we don't provide full blocks to remote nodes
-#define PROTOCOL_VERSION   70013
+#define PROTOCOL_VERSION   70015
 #define MIN_PROTO_VERSION  70002 // peers earlier than this protocol version not supported (need v0.9 txFee relay rules)
 #define LOCAL_HOST         ((UInt128) { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01 })
 #define CONNECT_TIMEOUT    3.0
@@ -1163,7 +1163,7 @@ BRBitcoinPeer *btcPeerNew(uint32_t magicNumber)
 // void rejectedTx(void *, UInt256 txHash, uint8_t) - called when a "reject" message is received from peer
 // void relayedBlock(void *, BRMerkleBlock *) - called when a "merkleblock" or "headers" message is received from peer
 // void notfound(void *, const UInt256[], size_t, const UInt256[], size_t) - called when "notfound" message is received
-// BRBitcoinTransaction *requestedTx(void *, UInt256) - called when "getdata" message with a tx hash is received from peer
+// BRBitcoinTransaction *requestedTx(void *, UInt256) - called when "getdata" message with tx hash is received from peer
 // int networkIsReachable(void *) - must return true when networking is available, false otherwise
 // void threadCleanup(void *) - called before a thread terminates to faciliate any needed cleanup
 void btcPeerSetCallbacks(BRBitcoinPeer *peer, void *info,
@@ -1460,7 +1460,7 @@ void btcPeerSendFilterload(BRBitcoinPeer *peer, const uint8_t *filter, size_t fi
 }
 
 void btcPeerSendMempool(BRBitcoinPeer *peer, const UInt256 knownTxHashes[], size_t knownTxCount, void *info,
-                       void (*completionCallback)(void *info, int success))
+                        void (*completionCallback)(void *info, int success))
 {
     BRBitcoinPeerContext *ctx = (BRBitcoinPeerContext *)peer;
     struct timeval tv;
@@ -1566,7 +1566,7 @@ void btcPeerSendInv(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCoun
 }
 
 void btcPeerSendGetdata(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCount, const UInt256 blockHashes[],
-                       size_t blockCount)
+                        size_t blockCount)
 {
     size_t i, off = 0, count = txCount + blockCount;
     
@@ -1576,11 +1576,12 @@ void btcPeerSendGetdata(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t tx
     else if (count > 0) {
         size_t msgLen = BRVarIntSize(count) + (sizeof(uint32_t) + sizeof(UInt256))*(count);
         uint8_t msg[msgLen];
-
+        uint32_t flag = ((peer->services & SERVICES_NODE_WITNESS) == SERVICES_NODE_WITNESS) ? WITNESS_FLAG : 0;
+        
         off += BRVarIntSet(&msg[off], (off <= msgLen ? msgLen - off : 0), count);
         
         for (i = 0; i < txCount; i++) {
-            UInt32SetLE(&msg[off], inv_witness_tx);
+            UInt32SetLE(&msg[off], inv_tx | flag);
             off += sizeof(uint32_t);
             UInt256Set(&msg[off], txHashes[i]);
             off += sizeof(UInt256);
