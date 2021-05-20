@@ -285,7 +285,7 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
     return r;
 }
 
-// true if merkle tree and timestamp are valid, and difficulty target is in range
+// true if merkle tree, timestamp and difficulty target are valid
 // NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
 // - use BRMerkleBlockVerifyDifficulty() for that
 int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime)
@@ -305,8 +305,8 @@ int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTim
     // check if timestamp is too far in future
     if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
     
-    // check if proof-of-work target is out of range
-    if (size == 0 || target == 0 || (block->target & 0x00800000) || block->target > MAX_PROOF_OF_WORK) r = 0;
+    // check if proof-of-work target is valid
+    if (size == 0 || target == 0 || (block->target & 0x00800000)) r = 0;
         
     return r;
 }

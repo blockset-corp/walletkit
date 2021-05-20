@@ -80,7 +80,7 @@ void btcMerkleBlockSetTxHashes(BRBitcoinMerkleBlock *block, const UInt256 hashes
 // true if the given tx hash is known to be included in the block
 int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHash);
 
-// true if merkle tree and timestamp are valid, and difficulty target is in range
+// true if merkle tree, timestamp and difficulty target are valid
 // NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
 // - use BRMerkleBlockVerifyDifficulty() for that
 int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime);
