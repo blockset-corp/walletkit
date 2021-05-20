@@ -79,7 +79,7 @@ cryptoAddressAsStringHBAR (BRCryptoAddress address) {
 static bool
 cryptoAddressIsEqualHBAR (BRCryptoAddress address1, BRCryptoAddress address2) {
     BRCryptoAddressHBAR a1 = cryptoAddressCoerce (address1);
-    BRCryptoAddressHBAR a2 = cryptoAddressCoerce (address1);
+    BRCryptoAddressHBAR a2 = cryptoAddressCoerce (address2);
 
     return hederaAddressEqual (a1->addr, a2->addr);
 }
