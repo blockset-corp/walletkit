@@ -56,6 +56,7 @@ tezosTransactionCreateTransaction (BRTezosAddress source,
                                    BRTezosFeeBasis feeBasis,
                                    int64_t counter) {
     BRTezosTransaction transaction = createTransactionObject();
+    transaction->hash   = TEZOS_HASH_EMPTY;
     transaction->source = tezosAddressClone (source);
     transaction->operation.kind = TEZOS_OP_TRANSACTION;
     transaction->operation.u.transaction.amount = amount;
@@ -72,6 +73,7 @@ tezosTransactionCreateDelegation (BRTezosAddress source,
                                   BRTezosFeeBasis feeBasis,
                                   int64_t counter) {
     BRTezosTransaction transaction = createTransactionObject();
+    transaction->hash   = TEZOS_HASH_EMPTY;
     transaction->source = tezosAddressClone (source);
     transaction->operation.kind = TEZOS_OP_DELEGATION;
     bool endDelegation = tezosAddressEqual(source, target);
@@ -88,6 +90,7 @@ tezosTransactionCreateReveal (BRTezosAddress source,
                               BRTezosFeeBasis feeBasis,
                               int64_t counter) {
     BRTezosTransaction transaction = createTransactionObject();
+    transaction->hash   = TEZOS_HASH_EMPTY;
     transaction->source = tezosAddressClone (source);
     transaction->operation.kind = TEZOS_OP_REVEAL;
     memcpy(transaction->operation.u.reveal.publicKey, pubKey, TEZOS_PUBLIC_KEY_SIZE);

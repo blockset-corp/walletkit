@@ -416,36 +416,27 @@ wkTransferGetIdentifier (WKTransfer transfer) {
         // If there is a transfer specific `updateIdentifer`, then invoke it.  Think 'HBAR'
         if (NULL != transfer->handlers->updateIdentifier)
             transfer->handlers->updateIdentifier (transfer);
-        
+
         // Otherwise, base the identifier on the string representation of the hash; which will
-        // exist once the transfer is signed.  Except in certain cases; think 'HBAR'.
+        // exist once the transfer is signed, generally.  In certain cases, think 'HBAR', the
+        // hash won't necessarily exist.
+        //
+        // Note that BTC segwit transaction have a `txHash` and a `wtxHash`; BTC nodes
+        // call the `txHash` the `hash` and the `wtxHash` the `identifier`.  WE DO NOT
+        // adopt that definition of `identifer`.  In WalletKit a BTC Transfer's `hash`
+        // and `identifer` are both the string representation of the `txHash`.  See
+        // BRTransaction.{hc}
+        //
         else {
-            switch (transfer->state->type) {
-                case WK_TRANSFER_STATE_CREATED:
-                    break;
+            WKHash hash = wkTransferGetHash (transfer);
 
-                case WK_TRANSFER_STATE_SIGNED:
-                case WK_TRANSFER_STATE_SUBMITTED:
-                case WK_TRANSFER_STATE_INCLUDED:
-                case WK_TRANSFER_STATE_ERRORED: {
-                    //
-                    // Note that BTC segwit transaction have a `txHash` and a `wtxHash`; BTC nodes
-                    // call the `txHash` the `hash` and the `wtxHash` the `identifier`.  WE DO NOT
-                    // adopt that definition of `identifer`.  In WalletKit a BTC Transfer's `hash`
-                    // and `identifer` are both the string representation of the `txHash`.  See
-                    // BRTransaction.{hc}
-                    //
-                    WKHash hash = wkTransferGetHash (transfer);
-                    pthread_mutex_lock (&transfer->lock);
-                    transfer->identifier = wkHashEncodeString(hash);
-                    pthread_mutex_unlock (&transfer->lock);
-                    wkHashGive(hash);
-                    break;
-                }
-
-                case WK_TRANSFER_STATE_DELETED:
-                    break;
+            if (NULL != hash) {
+                pthread_mutex_lock (&transfer->lock);
+                transfer->identifier = wkHashEncodeString(hash);
+                pthread_mutex_unlock (&transfer->lock);
             }
+
+            wkHashGive(hash);
         }
     }
 

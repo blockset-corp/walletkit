@@ -54,6 +54,17 @@ typedef struct {
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0  \
 })
 
+static inline bool
+rippleTransactionHashIsEqual (BRRippleTransactionHash h1,
+                              BRRippleTransactionHash h2) {
+    return 0 == memcmp (h1.bytes, h2.bytes, 32);
+}
+
+static inline bool
+rippleTransactionHashIsEmpty (BRRippleTransactionHash hash) {
+    return rippleTransactionHashIsEqual (hash, RIPPLE_TRANSACTION_HASH_EMPTY);
+}
+
 typedef struct {
     int currencyType; // 0 - ripple, 1 - other, -1 unknown/invalid
     uint8_t currencyCode[20];

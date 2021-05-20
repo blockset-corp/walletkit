@@ -94,7 +94,9 @@ static WKHash
 wkTransferGetHashXTZ (WKTransfer transfer) {
     WKTransferXTZ transferXTZ = wkTransferCoerceXTZ(transfer);
     BRTezosHash hash = tezosTransferGetTransactionId (transferXTZ->xtzTransfer);
-    return wkHashCreateAsXTZ (hash);
+    return (tezosHashIsEmpty(hash)
+            ? NULL
+            : wkHashCreateAsXTZ (hash));
 }
 
 static uint8_t *

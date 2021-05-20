@@ -27,6 +27,13 @@ typedef struct {
     uint8_t bytes[TEZOS_HASH_BYTES];
 } BRTezosHash;
 
+#define TEZOS_HASH_EMPTY  ((BRTezosHash) { \
+    0, 0,                       \
+    0, 0, 0, 0,     0, 0, 0, 0, \
+    0, 0, 0, 0,     0, 0, 0, 0, \
+    0, 0, 0, 0,     0, 0, 0, 0, \
+    0, 0, 0, 0,     0, 0, 0, 0, \
+})
 
 typedef int64_t BRTezosUnitMutez;
 
@@ -44,6 +51,11 @@ static inline bool
 tezosHashIsEqual (const BRTezosHash h1,
                   const BRTezosHash h2) {
     return 0 == memcmp (h1.bytes, h2.bytes, TEZOS_HASH_BYTES);
+}
+
+static inline bool
+tezosHashIsEmpty (BRTezosHash hash) {
+    return tezosHashIsEqual (hash, TEZOS_HASH_EMPTY);
 }
 
 static inline BRTezosHash
