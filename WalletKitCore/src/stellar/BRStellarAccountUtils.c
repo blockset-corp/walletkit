@@ -70,30 +70,6 @@ BRKey createStellarKeyFromSeed(UInt512 seed)
     return deriveStellarKeyFromSeed(seed, 0);
 }
 
-extern BRStellarAddress createStellarAddressFromPublicKey(BRKey * key)
-{
-    BRStellarAddress address;
-    
-    assert(key);
-
-    // The public key is 32 bytes, we need 3 additional bytes
-    uint8_t rawBytes[35];
-    rawBytes[0] = 0x30; // account prefix
-    memcpy(&rawBytes[1], key->pubKey, 32); // public key bytes
-    
-    // Create a CRC16-XMODEM checksum and append to bytes
-    uint16_t checksum = crc16((const char*)rawBytes, 33);
-    rawBytes[33] = (checksum & 0x00FF);
-    rawBytes[34] = (checksum & 0xFF00) >> 8;
-    
-    // Base32 the result
-    unsigned char encoded_bytes[STELLAR_ADDRESS_BYTES + 1] = {0};
-    base32_encode(rawBytes, 35, encoded_bytes);
-    
-    memcpy(address.bytes, encoded_bytes, sizeof(address.bytes));
-    return(address);
-}
-
 BRStellarAccountID createStellarAccountIDFromStellarAddress(const char *stellarAddress)
 {
     // Decode the address which should take no more than 35 bytes

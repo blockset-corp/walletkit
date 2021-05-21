@@ -12,6 +12,8 @@
 #define BRStellar_transaction_h
 
 #include "BRStellarBase.h"
+#include "BRStellarAddress.h"
+#include "BRStellarFeeBasis.h"
 #include "support/BRKey.h"
 #include "support/BRArray.h"
 
@@ -30,14 +32,22 @@ typedef struct BRStellarSerializedTransactionRecord *BRStellarSerializedTransact
  *
  * @return transaction    a stellar transaction
  */
-extern BRStellarTransaction /* caller must free - stellarTransactionFree */
+extern BRStellarTransaction
+stellarTransactionCreate(BRStellarAddress sourceAddress,
+                         BRStellarAddress targetAddress,
+                         BRStellarAmount amount, // For now assume XLM drops.
+                         BRStellarFeeBasis feeBasis);
+
+
+/*
+extern BRStellarTransaction // caller must free - stellarTransactionFree
 stellarTransactionCreate(BRStellarAccountID *accountID,
                         BRStellarFee fee,
                         BRStellarTimeBounds *timeBounds,
                         int numTimeBounds,
                         BRStellarMemo *memo,
                         BRArrayOf(BRStellarOperation) operations);
-
+*/
 /**
  * Create a Stellar transaction
  *
@@ -81,34 +91,22 @@ stellarGetSerializedBytes(BRStellarSerializedTransaction s);
  */
 extern BRStellarTransactionHash stellarTransactionGetHash(BRStellarTransaction transaction);
 
-/**
- * Get the result code of the transaction
- *
- * This may change - but the thinking here is that the caller should have both the
- * transaction XDR and the result XDR.  So, first they create a transaction from bytes
- * then send it in here with the result XDR string and we can parse the results
- *
- * @param  transaction   a valid stellar transaction
- * @param  result_xdr    a base64 string result that was returned from the server
- * @return result        BRStellarTXResultCode value
- */
-extern BRStellarTransactionResult
-stellarTransactionGetResult(BRStellarTransaction transaction, const char* result_xdr);
+extern int stellarTransactionHasSource (BRStellarTransaction transaction,
+                                       BRStellarAddress source);
+extern int stellarTransactionHasTarget (BRStellarTransaction transaction,
+                                       BRStellarAddress target);
 
-/**
- * Various getter methods for the transaction - useful after we deserialize a transaction
- * from the server (or for testing)
- */
-extern BRStellarAccountID stellarTransactionGetAccountID(BRStellarTransaction transaction);
-extern size_t stellarTransactionGetOperationCount(BRStellarTransaction transaction);
-extern uint32_t stellarTransactionGetSignatureCount(BRStellarTransaction transaction);
+extern BRStellarAddress
+stellarTransactionGetSource(BRStellarTransaction transaction);
+extern BRStellarAddress
+stellarTransactionGetTarget(BRStellarTransaction transaction);
+extern BRStellarAmount
+stellarTransactionGetAmount(BRStellarTransaction transaction);
 
-extern BRStellarOperation * /* DO NOT FREE - owned by the transaction object */
-stellarTransactionGetOperation(BRStellarTransaction transaction, uint32_t operationIndex);
+extern BRStellarFee
+stellarTransactionGetFee(BRStellarTransaction transaction);
 
-extern BRStellarMemo * /* DO NOT FREE - owned by the transaction object */
-stellarTransactionGetMemo(BRStellarTransaction transaction);
-
+extern uint8_t* stellarTransactionSerialize(BRStellarTransaction transaction, size_t * bufferSize);
 
 #ifdef __cplusplus
 }

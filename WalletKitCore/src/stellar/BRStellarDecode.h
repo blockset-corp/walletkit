@@ -23,18 +23,6 @@ extern "C" {
 #define ST_XDR_SUCCESS                  ( 0)
 #define ST_XDR_FAILURE                  (-1)
 #define ST_XDR_UNSUPPORTED_OPERATION    (-2)
-    
-extern size_t stellarSerializeTransaction(BRStellarAccountID *accountID,
-                                       BRStellarFee fee,
-                                       BRStellarSequence sequence,
-                                       BRStellarTimeBounds *timeBounds,
-                                       int numTimeBounds,
-                                       BRStellarMemo *memo,
-                                       BRArrayOf(BRStellarOperation) operations,
-                                       uint32_t version,
-                                       uint8_t *signature,
-                                       int signatureLength,
-                                       uint8_t **buffer);
 
 bool stellarDeserializeTransaction(BRStellarAccountID *accountID,
                                                    BRStellarFee *fee,

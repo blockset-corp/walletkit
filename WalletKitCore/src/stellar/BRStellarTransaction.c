@@ -16,7 +16,7 @@
 #include "BRStellarBase.h"
 #include "BRStellarPrivateStructs.h"
 #include "BRStellarAccountUtils.h"
-#include "BRStellarSerialize.h"
+#include "BRStellarEncode.h"
 #include "BRStellarAccount.h"
 #include "support/BRCrypto.h"
 #include "support/BRInt.h"
@@ -32,14 +32,17 @@ struct BRStellarSerializedTransactionRecord {
 
 struct BRStellarTransactionRecord {
     // The address of the account "doing" the transaction
-    BRStellarAccountID accountID; // sender
+    BRStellarAddress from;
+    BRStellarAddress to;
+    BRStellarFeeBasis feeBasis;
     BRStellarFee fee;
+    BRStellarAmount amount;
+    BRStellarAsset asset;
     BRStellarSequence sequence;
     BRStellarTimeBounds *timeBounds;
     uint32_t numTimeBounds;
     BRStellarMemo *memo;
     uint32_t numSignatures;
-    BRArrayOf(BRStellarOperation) operations;
 
     BRStellarSerializedTransaction signedBytes; // Set after signing
 
@@ -57,62 +60,19 @@ void stellarSerializedTransactionRecordFree(BRStellarSerializedTransaction * sig
     free(*signedBytes);
 }
 
-static BRStellarTransaction createTransactionObject(BRStellarAccountID *accountID,
-                                                    BRStellarFee fee,
-                                                    BRStellarTimeBounds *timeBounds,
-                                                    int numTimeBounds,
-                                                    BRStellarMemo *memo,
-                                                    BRArrayOf(BRStellarOperation) operations)
+extern BRStellarTransaction
+stellarTransactionCreate(BRStellarAddress sourceAddress,
+                         BRStellarAddress targetAddress,
+                         BRStellarAmount amount, // For now assume XLM drops.
+                         BRStellarFeeBasis feeBasis)
 {
     // Called when the user is actually creating a fully populated transaction
     BRStellarTransaction transaction = calloc (1, sizeof (struct BRStellarTransactionRecord));
     assert(transaction);
-    transaction->accountID = *accountID;
-    transaction->fee = fee;
-    transaction->timeBounds = timeBounds;
-    transaction->numTimeBounds = numTimeBounds;
-    transaction->memo = memo;
-    transaction->operations = operations;
-    transaction->signedBytes = NULL;
-    transaction->numSignatures = 0;
-    return transaction;
-}
-
-extern BRStellarTransaction
-stellarTransactionCreate(BRStellarAccountID *accountID,
-                         BRStellarFee fee,
-                         BRStellarTimeBounds *timeBounds,
-                         int numTimeBounds,
-                         BRStellarMemo *memo,
-                         BRArrayOf(BRStellarOperation) operations)
-{
-    return createTransactionObject(accountID, fee, timeBounds, numTimeBounds,
-                                memo, operations);
-}
-
-extern BRStellarTransaction /* caller must free - stellarTransactionFree */
-stellarTransactionCreateFromBytes(uint8_t *tx_bytes, size_t tx_length)
-{
-    BRStellarTransaction transaction = calloc (1, sizeof (struct BRStellarTransactionRecord));
-    array_new(transaction->operations, 0);
-
-    // If we have some bytes then deserialize - otherwize the caller gets an empty tx
-    if (tx_length > 0) // envelope_xdr
-    {
-        int32_t version = 0;
-        uint8_t *signatures = NULL;
-        stellarDeserializeTransaction(&transaction->accountID,
-                                       &transaction->fee,
-                                       &transaction->sequence,
-                                       &transaction->timeBounds,
-                                       &transaction->numTimeBounds,
-                                       &transaction->memo,
-                                       &transaction->operations,
-                                       &version,
-                                       &signatures,
-                                       &transaction->numSignatures,
-                                      tx_bytes, tx_length);
-    }
+    transaction->from = sourceAddress;
+    transaction->to = targetAddress;
+    transaction->amount = amount;
+    transaction->feeBasis = feeBasis;
     return transaction;
 }
 
@@ -122,37 +82,9 @@ extern void stellarTransactionFree(BRStellarTransaction transaction)
     if (transaction->signedBytes) {
         stellarSerializedTransactionRecordFree(&transaction->signedBytes);
     }
-    // There could be some embeded arrays in the results
-    if (transaction->operations) {
-        for (int i = 0; i < array_count(transaction->operations); i++) {
-            BRStellarOperation *op = &transaction->operations[i];
-            if (op->type == ST_OP_MANAGE_BUY_OFFER) {
-                // If we parsed a result_xdr there could be an array of ClaimedOffers
-                if (op->operation.manageBuyOffer.offerResult.claimOfferAtom) {
-                    array_free(op->operation.manageBuyOffer.offerResult.claimOfferAtom);
-                }
-            }
-            if (op->type == ST_OP_MANAGE_SELL_OFFER) {
-                // If we parsed a result_xdr there could be an array of ClaimedOffers
-                if (op->operation.manageSellOffer.offerResult.claimOfferAtom) {
-                    array_free(op->operation.manageSellOffer.offerResult.claimOfferAtom);
-                }
-            }
-            if (op->type == ST_OP_CREATE_PASSIVE_SELL_OFFER) {
-                // If we parsed a result_xdr there could be an array of ClaimedOffers
-                if (op->operation.passiveSellOffer.offerResult.claimOfferAtom) {
-                    array_free(op->operation.passiveSellOffer.offerResult.claimOfferAtom);
-                }
-            }
-            if (op->type == ST_OP_INFLATION) {
-                // If we parsed a result_xdr there could be an array of ClaimedOffers
-                if (op->operation.inflation.payouts) {
-                    array_free(op->operation.inflation.payouts);
-                }
-            }
-        }
-        array_free(transaction->operations);
-    }
+    stellarAddressFree(transaction->from);
+    stellarAddressFree(transaction->to);
+
     free(transaction);
 }
 
@@ -202,7 +134,7 @@ static BRStellarSignatureRecord stellarTransactionSign(uint8_t * tx_hash, size_t
 
 extern BRStellarSerializedTransaction
 stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *privateKey,
-                                  uint8_t *publicKey, uint64_t sequence, BRStellarNetworkType networkType)
+                                  uint8_t *publicKey, int64_t sequence, BRStellarNetworkType networkType)
 {
     // If this transaction was previously signed - delete that info
     if (transaction->signedBytes) {
@@ -215,12 +147,15 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
 
     // Serialize the bytes
     uint8_t * buffer = NULL;
-    size_t length = stellarSerializeTransaction(&transaction->accountID, transaction->fee, sequence,
+    size_t length = stellarSerializeTransaction(transaction->from,
+                                                transaction->to,
+                                                transaction->fee,
+                                                transaction->amount,
+                                                sequence,
                                                 transaction->timeBounds,
                                                 transaction->numTimeBounds,
                                                 transaction->memo,
-                                                transaction->operations,
-                                                0, NULL, 0, &buffer);
+                                                0, NULL, &buffer);
 
     // Create the transaction hash that needs to be signed
     uint8_t tx_hash[32];
@@ -231,12 +166,15 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
 
     // Serialize the bytes and sign
     free(buffer);
-    length = stellarSerializeTransaction(&transaction->accountID, transaction->fee, sequence,
-                                                transaction->timeBounds,
-                                                transaction->numTimeBounds,
-                                                transaction->memo,
-                                                transaction->operations,
-                                                0, sig.signature, 1, &buffer);
+    length = stellarSerializeTransaction(transaction->from,
+                                         transaction->to,
+                                         transaction->fee,
+                                         transaction->amount,
+                                         sequence,
+                                         transaction->timeBounds,
+                                         transaction->numTimeBounds,
+                                         transaction->memo,
+                                         0, sig.signature, &buffer);
 
     if (length) {
         transaction->signedBytes = calloc(1, sizeof(struct BRStellarSerializedTransactionRecord));
@@ -276,58 +214,60 @@ extern uint8_t* stellarGetSerializedBytes(BRStellarSerializedTransaction s)
     return (s->buffer);
 }
 
-extern BRStellarAccountID stellarTransactionGetAccountID(BRStellarTransaction transaction)
+extern int stellarTransactionHasSource (BRStellarTransaction transaction,
+                                       BRStellarAddress source)
 {
-    assert(transaction);
-    return transaction->accountID;
+    // TODO - Carl
+    return 0;
 }
 
-extern size_t stellarTransactionGetOperationCount(BRStellarTransaction transaction)
+extern int stellarTransactionHasTarget (BRStellarTransaction transaction,
+                                       BRStellarAddress target)
 {
-    assert(transaction);
-    return array_count(transaction->operations);
-}
-extern uint32_t stellarTransactionGetSignatureCount(BRStellarTransaction transaction)
-{
-    assert(transaction);
-    return transaction->numSignatures;
+    // TODO - Carl
+    return 0;
 }
 
-extern BRStellarMemo * /* DO NOT FREE - owned by the transaction object */
-stellarTransactionGetMemo(BRStellarTransaction transaction)
+extern BRStellarAddress
+stellarTransactionGetSource(BRStellarTransaction transaction)
 {
     assert(transaction);
-    return transaction->memo;
+    return transaction->from;
 }
 
-extern BRStellarOperation * /* DO NOT FREE - owned by the transaction object */
-stellarTransactionGetOperation(BRStellarTransaction transaction, uint32_t operationIndex)
+extern BRStellarAddress
+stellarTransactionGetTarget(BRStellarTransaction transaction)
 {
     assert(transaction);
-    if (operationIndex >= array_count(transaction->operations)) {
-        return NULL;
+    return transaction->to;
+}
+
+extern BRStellarAmount
+stellarTransactionGetAmount(BRStellarTransaction transaction)
+{
+    assert(transaction);
+    return transaction->amount;
+}
+extern BRStellarFee
+stellarTransactionGetFee(BRStellarTransaction transaction)
+{
+    assert(transaction);
+    return transaction->fee;
+}
+
+extern uint8_t* stellarTransactionSerialize(BRStellarTransaction transaction, size_t * bufferSize)
+{
+    assert(transaction);
+    assert(bufferSize);
+    // If we have serialized and signed this transaction then copy the bytes to the caller
+    if (transaction->signedBytes) {
+        uint8_t * buffer = calloc(1, transaction->signedBytes->size);
+        memcpy(buffer, transaction->signedBytes->buffer, transaction->signedBytes->size);
+        *bufferSize = transaction->signedBytes->size;
+        return buffer;
     } else {
-        return &transaction->operations[operationIndex];
+        // Not yet seralialize and signed
+        *bufferSize = 0;
+        return NULL;
     }
 }
-
-extern BRStellarTransactionResult
-stellarTransactionGetResult(BRStellarTransaction transaction, const char* result_xdr)
-{
-    // Convert the result_xdr to bytes
-    assert(result_xdr);
-    assert(strlen(result_xdr) > 0);
-    assert(transaction);
-    // Convert the base64 string returned from the server to a byte array
-    size_t byteSize = 0;
-    uint8_t * bytes = b64_decode_ex(result_xdr, strlen(result_xdr), &byteSize);
-    // The result may (or may not) have any operations, depending on at what level
-    // any error occurred. If there are operations in the result then the assumption
-    // is that results are in the same order as they were in the transaction. Since
-    // there are no operation identifiers this must be the case.
-    stellarDeserializeResultXDR(bytes, byteSize, &transaction->operations, &transaction->result);
-    free(bytes);
-    transaction->result.resultParsed = 1;
-    return transaction->result;
-}
-

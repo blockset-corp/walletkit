@@ -21,8 +21,6 @@
 extern "C" {
 #endif
 
-#define STELLAR_ADDRESS_BYTES   (56)
-
 typedef enum st_network_type {
     STELLAR_NETWORK_PUBLIC = 0,
     STELLAR_NETWORK_TESTNET = 1
@@ -92,11 +90,6 @@ typedef uint32_t BRStellarFee;
 typedef int64_t  BRStellarSequence;
 typedef uint64_t TimePoint;
 typedef double   BRStellarAmount;
-
-// A Stellar Address - 56 bytes
-typedef struct {
-    char bytes[STELLAR_ADDRESS_BYTES + 1]; // NULL terminated string
-} BRStellarAddress;
 
 // A Stellar Transaction Hash
 typedef struct {

@@ -38,7 +38,7 @@ wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_XRP,
         WK_NETWORK_CURRENCY_HBAR,
         WK_NETWORK_CURRENCY_XTZ,
-        // "Stellar"
+        WK_NETWORK_CURRENCY_XLM,
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];

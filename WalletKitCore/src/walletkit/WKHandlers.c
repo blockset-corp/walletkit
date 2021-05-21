@@ -118,6 +118,19 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &wkFeeBasisHandlersXTZ,
         &wkWalletManagerHandlersXTZ
     },
+
+    {
+        WK_NETWORK_TYPE_XLM,
+        &wkNetworkHandlersXLM,
+        &wkAddressHandlersXLM,
+        &wkTransferHandlersXLM,
+        &wkWalletHandlersXLM,
+        NULL,//WKWalletSweeperHandlers not supported
+        NULL,//WKExportablePaperWalletHandlers
+        NULL,//WKPaymentProtocolHandlers not supported
+        &wkFeeBasisHandlersXLM,
+        &wkWalletManagerHandlersXLM
+    },
 };
 
 extern const WKHandlers *

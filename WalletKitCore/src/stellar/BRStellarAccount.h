@@ -18,6 +18,8 @@ extern "C" {
 #include "support/BRKey.h"
 #include "BRStellarBase.h"
 #include "BRStellarTransaction.h"
+#include "BRStellarAddress.h"
+#include "BRStellarFeeBasis.h"
 
 typedef struct BRStellarAccountRecord *BRStellarAccount;
 
@@ -47,6 +49,12 @@ stellarAccountCreateWithSeed(UInt512 seed);
  */
 extern BRStellarAccount /* caller must free - stellarAccountFree */
 stellarAccountCreateWithKey(BRKey key);
+
+
+extern BRStellarAccount
+stellarAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount);
+extern uint8_t * // Caller owns memory and must delete calling "free"
+stellarAccountGetSerialization (BRStellarAccount account, size_t *bytesCount);
 
 /**
  * Free the memory for a stellar account object
@@ -82,6 +90,10 @@ stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction tra
 extern BRStellarAddress
 stellarAccountGetAddress(BRStellarAccount account);
 
+extern int
+stellarAccountHasAddress (BRStellarAccount account,
+                         BRStellarAddress address);
+
 /**
  * Get the stellar address for this account
  *
@@ -91,18 +103,6 @@ stellarAccountGetAddress(BRStellarAccount account);
 extern BRStellarAccountID
 stellarAccountGetAccountID(BRStellarAccount account);
     
-/**
- * Compare 2 stellar addresses
- *
- * @param a1  first address
- * @param a2  second address
- *
- * @return 1 - if addresses are equal
- *         0 - if not equal
- */
-extern int
-stellarAddressEqual (BRStellarAddress a1, BRStellarAddress a2);
-
 /**
  * Get the account's primary address
  *
@@ -131,7 +131,7 @@ extern BRKey stellarAccountGetPublicKey(BRStellarAccount account);
  * @param sequence  a 64-bit unsigned number. It should be retrieved from network
  *                  or should be set to 1 more that the value in the lastest transaction
  */
-extern void stellarAccountSetSequence(BRStellarAccount account, uint64_t sequence);
+extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence);
 
 /**
  * Set the network type being used for this account
@@ -151,6 +151,23 @@ extern void stellarAccountSetNetworkType(BRStellarAccount account, BRStellarNetw
  * @return accountID  a BRStellarAccountID object
  */
 extern BRStellarAccountID stellerAccountCreateStellarAccountID(const char * stellarAddress);
+
+/**
+ * Return the balance limit, either asMaximum or asMinimum
+ *
+ * @param account   tezos account
+ * @param asMaximum - if true, return the wallet maximum limit; otherwise minimum limit
+ * @param hasLimit  - must be non-NULL; assigns if wallet as the specified limit
+ *
+ * @return balance limit - in mutez units
+ */
+extern BRStellarAmount
+stellarAccountGetBalanceLimit (BRStellarAccount account,
+                            int asMaximum,
+                            int *hasLimit);
+
+extern BRStellarFeeBasis
+stellarAccountGetDefaultFeeBasis (BRStellarAccount account);
 
 #ifdef __cplusplus
 }

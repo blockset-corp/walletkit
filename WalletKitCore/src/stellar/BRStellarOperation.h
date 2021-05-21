@@ -12,6 +12,7 @@
 #define BRStellar_operation_h
 
 #include "BRStellarBase.h"
+#include "BRStellarPrivateStructs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +28,7 @@ extern "C" {
  * @return operation     an operation of type Payment
  */
 extern BRStellarOperation
-stellarOperationCreatePayment(BRStellarAccountID *destination, BRStellarAsset asset, BRStellarAmount amount);
+stellarOperationCreatePayment(struct BRStellarAddressRecord *destination, BRStellarAsset asset, BRStellarAmount amount);
 
 /*
  * Create an Asset object
@@ -39,7 +40,8 @@ stellarOperationCreatePayment(BRStellarAccountID *destination, BRStellarAsset as
  *
  * @return asset
  */
-extern BRStellarAsset stellarAssetCreateAsset(const char* assetCode, BRStellarAccountID *issuer);
+extern BRStellarAsset stellarAssetCreateAsset(const char* assetCode,
+                                              struct BRStellarAddressRecord *issuer);
 
 #ifdef __cplusplus
 }

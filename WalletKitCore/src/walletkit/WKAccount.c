@@ -32,7 +32,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
 // Version 4: XTZ
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  4
+// VERSION 5: XLM
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  5
 
 IMPLEMENT_WK_GIVE_TAKE (WKAccount, wkAccount);
 
@@ -79,6 +80,7 @@ wkAccountCreateInternal (BRMasterPubKey btc,
                              BRRippleAccount xrp,
                              BRHederaAccount hbar,
                              BRTezosAccount xtz,
+                             BRStellarAccount xlm,
                              WKTimestamp timestamp,
                              const char *uids) {
     WKAccount account = malloc (sizeof (struct WKAccountRecord));
@@ -88,6 +90,7 @@ wkAccountCreateInternal (BRMasterPubKey btc,
     account->xrp = xrp;
     account->hbar = hbar;
     account->xtz = xtz;
+    account->xlm = xlm;
     account->uids = strdup (uids);
     account->timestamp = timestamp;
     account->ref = WK_REF_ASSIGN(wkAccountRelease);
@@ -104,6 +107,7 @@ wkAccountCreateFromSeedInternal (UInt512 seed,
                                         rippleAccountCreateWithSeed (seed),
                                         hederaAccountCreateWithSeed(seed),
                                         tezosAccountCreateWithSeed(seed),
+                                        stellarAccountCreateWithSeed(seed),
                                         timestamp,
                                         uids);
 }
@@ -222,7 +226,15 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     assert (NULL != xtz);
     BYTES_PTR_INCR_AND_CHECK (xtzSize); // Move the pointer to then end of the Tezos account
 
-    return wkAccountCreateInternal (mpk, eth, xrp, hbar, xtz, AS_WK_TIMESTAMP (timestamp), uids);
+    // XLM
+    size_t xlmSize = UInt32GetBE(bytesPtr);
+    BYTES_PTR_INCR_AND_CHECK (szSize);
+
+    BRStellarAccount xlm = stellarAccountCreateWithSerialization (bytesPtr, xlmSize);
+    assert (NULL != xlm);
+    BYTES_PTR_INCR_AND_CHECK (xlmSize); // Move the pointer to then end of the Stellar account
+
+    return wkAccountCreateInternal (mpk, eth, xrp, hbar, xtz, xlm, AS_WK_TIMESTAMP (timestamp), uids);
 #undef BYTES_PTR_INCR_AND_CHECK
 }
 
@@ -283,13 +295,18 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     size_t   xtzSize = 0;
     uint8_t *xtzBytes = tezosAccountGetSerialization (account->xtz, &xtzSize);
 
+    // XLM
+    size_t   xlmSize = 0;
+    uint8_t *xlmBytes = stellarAccountGetSerialization (account->xlm, &xtzSize);
+
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize
                    + (szSize + mpkSize)
                    + (szSize + ethSize)
                    + (szSize + xrpSize)
                    + (szSize + hbarSize)
-                   + (szSize + xtzSize));
+                   + (szSize + xtzSize)
+                   + (szSize + xlmSize));
     uint8_t *bytes = calloc (1, *bytesCount);
     uint8_t *bytesPtr = bytes;
 
@@ -345,6 +362,13 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     memcpy (bytesPtr, xtzBytes, xtzSize);
     bytesPtr += xtzSize;
 
+    // XLM
+    UInt32SetBE (bytesPtr, (uint32_t) xlmSize);
+    bytesPtr += szSize;
+
+    memcpy (bytesPtr, xlmBytes, xlmSize);
+    bytesPtr += xlmSize;
+
     // Avoid static analysis warning
     (void) bytesPtr;
 
@@ -355,6 +379,7 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     free (xrpBytes);
     free (hbarBytes);
     free (xtzBytes);
+    free (xlmBytes);
 
     return bytes;
 }

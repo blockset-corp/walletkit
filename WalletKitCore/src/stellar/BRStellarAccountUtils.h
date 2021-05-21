@@ -31,15 +31,6 @@ extern "C" {
 BRKey createStellarKeyFromPaperKey(const char* paperKey);
 BRKey createStellarKeyFromSeed(UInt512 seed);
 
-/*
- * Generate the Stellar account address from the public key
- *
- * @param publicKey  users public key (32 bytes)
- *
- * @return address   Stellar address object
- */
-extern BRStellarAddress createStellarAddressFromPublicKey(BRKey * key);
-
 BRStellarAccountID createStellarAccountIDFromStellarAddress(const char *stellarAddress);
 
 

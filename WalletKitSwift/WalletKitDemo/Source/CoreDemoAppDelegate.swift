@@ -132,7 +132,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
             "eth" : .api_only,
             "xrp" : .api_only,
             "hbar": .api_only,
-            "xtz" : .api_only
+            "xtz" : .api_only,
+            "xlm" : .api_only
             ]
 
         registerCurrencyCodes = (mainnet

@@ -12,18 +12,20 @@
 #include <stdlib.h>
 
 extern BRStellarOperation
-stellarOperationCreatePayment(BRStellarAccountID *destination, BRStellarAsset asset, BRStellarAmount amount)
+stellarOperationCreatePayment(struct BRStellarAddressRecord *destination, BRStellarAsset asset, BRStellarAmount amount)
 {
     BRStellarOperation op;
     memset(&op, 0x00, sizeof(BRStellarOperation));
     op.type = ST_OP_PAYMENT;
-    op.operation.payment.destination = *destination;
+    op.operation.payment.destination.accountType = PUBLIC_KEY_TYPE_ED25519;
+    memcpy(op.operation.payment.destination.accountID, destination->bytes, STELLAR_ADDRESS_BYTES);
     op.operation.payment.amount = amount;
     op.operation.payment.asset = asset;
     return op;
 }
 
-extern BRStellarAsset stellarAssetCreateAsset(const char* assetCode, BRStellarAccountID *issuer)
+extern BRStellarAsset stellarAssetCreateAsset(const char* assetCode,
+                                              struct BRStellarAddressRecord *issuer)
 {
     BRStellarAsset asset;
     memset(&asset, 0x00, sizeof(BRStellarAsset));
@@ -40,16 +42,17 @@ extern BRStellarAsset stellarAssetCreateAsset(const char* assetCode, BRStellarAc
             asset.type = ASSET_TYPE_CREDIT_ALPHANUM4;
             strncpy(asset.assetCode, assetCode, strlen(assetCode));
             // We need an issuer in this case
-            asset.issuer = *issuer;
-        }
-        else {
+            asset.issuer.accountType = PUBLIC_KEY_TYPE_ED25519;
+            memcpy(asset.issuer.accountID, issuer->bytes, STELLAR_ADDRESS_BYTES);
+        } else {
             // If the caller passes in a code larger that 12 chacters just copy
             // the first 12 and let the Stellar server respond with an error if
             // the asset type is unknown
             size_t amountToCopy = strlen(assetCode) <= 12 ? strlen(assetCode) : 12;
             asset.type = ASSET_TYPE_CREDIT_ALPHANUM12;
             strncpy(asset.assetCode, assetCode, amountToCopy);
-            asset.issuer = *issuer;
+            asset.issuer.accountType = PUBLIC_KEY_TYPE_ED25519;
+            memcpy(asset.issuer.accountID, issuer->bytes, STELLAR_ADDRESS_BYTES);
         }
     }
     return asset;

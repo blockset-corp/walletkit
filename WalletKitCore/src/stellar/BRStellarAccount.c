@@ -23,7 +23,8 @@
 #include "ed25519/ed25519.h"
 #include "utils/crc16.h"
 #include "BRStellarAccountUtils.h"
-#include "BRStellarSerialize.h"
+
+#define STELLAR_ACCOUNT_MINIMUM   (1000)
 
 struct BRStellarAccountRecord {
     BRStellarAddress address;
@@ -32,7 +33,7 @@ struct BRStellarAccountRecord {
     // The public key - needed when sending 
     BRKey publicKey;
 
-    uint64_t sequence;
+    int64_t sequence;
     BRStellarNetworkType networkType;
 };
 
@@ -43,7 +44,7 @@ extern void stellarAccountSetNetworkType(BRStellarAccount account, BRStellarNetw
     account->networkType = networkType;
 }
 
-static BRStellarAccount createAccountObject(BRKey * key)
+static BRStellarAccount createStellarAccountObject(BRKey * key)
 {
     // Create an initialize a BRStellarAccountRecord object
     BRStellarAccount account = (BRStellarAccount) calloc (1, sizeof (struct BRStellarAccountRecord));
@@ -58,6 +59,8 @@ static BRStellarAccount createAccountObject(BRKey * key)
     account->networkType = STELLAR_NETWORK_PUBLIC;
     account->accountID.accountType = PUBLIC_KEY_TYPE_ED25519;
     memcpy(account->accountID.accountID, publicKey, 32);
+    // The address is the public key
+    account->address = stellarAddressCreate(&account->publicKey);
     return account;
 }
 
@@ -65,14 +68,14 @@ static BRStellarAccount createAccountObject(BRKey * key)
 extern BRStellarAccount stellarAccountCreate (const char *paperKey)
 {
     BRKey key = createStellarKeyFromPaperKey(paperKey);
-    return createAccountObject(&key);
+    return createStellarAccountObject(&key);
 }
 
 // Create an account object with the seed
 extern BRStellarAccount stellarAccountCreateWithSeed(UInt512 seed)
 {
     BRKey key = createStellarKeyFromSeed(seed);
-    return createAccountObject(&key);
+    return createStellarAccountObject(&key);
 }
 
 // Create an account object using the key
@@ -80,7 +83,21 @@ extern BRStellarAccount stellarAccountCreateWithKey(BRKey key)
 {
     // NOTE: since this is a public function that passes in a copy
     // of the key/secret it is up to the caller to wipe the secret from memory
-    return createAccountObject(&key);
+    return createStellarAccountObject(&key);
+}
+
+extern BRStellarAccount
+stellarAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
+{
+    // TODO - Carl
+    return NULL;
+}
+
+extern uint8_t * // Caller owns memory and must delete calling "free"
+stellarAccountGetSerialization (BRStellarAccount account, size_t *bytesCount)
+{
+    // TODO - Carl
+    return NULL;
 }
 
 extern BRStellarAddress stellarAccountGetAddress(BRStellarAccount account)
@@ -88,7 +105,7 @@ extern BRStellarAddress stellarAccountGetAddress(BRStellarAccount account)
     assert(account);
     // The account object should already have a public key - so generate the
     // stellar address from the public key.
-    return createStellarAddressFromPublicKey(&account->publicKey);
+    return stellarAddressClone(account->address);
 }
 
 extern BRStellarAccountID stellarAccountGetAccountID(BRStellarAccount account)
@@ -106,8 +123,9 @@ extern BRKey stellarAccountGetPublicKey(BRStellarAccount account)
 
 extern void stellarAccountFree(BRStellarAccount account)
 {
-    // Currently there is not any allocated memory inside the account
-    // so just delete the account itself
+    assert(account);
+    assert(account->address);
+    stellarAddressFree(account->address);
     free(account);
 }
 
@@ -120,7 +138,7 @@ extern BRStellarAddress stellarAccountGetPrimaryAddress (BRStellarAccount accoun
 // Private function implemented in BRStellarTransaction.c
 extern BRStellarSerializedTransaction
 stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *privateKey,
-                                   uint8_t *publicKey, uint64_t sequence, BRStellarNetworkType networkType);
+                                   uint8_t *publicKey, int64_t sequence, BRStellarNetworkType networkType);
 
 extern const BRStellarSerializedTransaction
 stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction transaction, const char *paperKey)
@@ -141,12 +159,7 @@ stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction tra
     return s;
 }
 
-extern int // 1 if equal
-stellarAddressEqual (BRStellarAddress a1, BRStellarAddress a2) {
-    return 0 == memcmp (a1.bytes, a2.bytes, 20);
-}
-
-extern void stellarAccountSetSequence(BRStellarAccount account, uint64_t sequence)
+extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence)
 {
     assert(account);
     // The sequence is very important as it must be 1 greater than the previous
@@ -159,3 +172,28 @@ extern BRStellarAccountID stellerAccountCreateStellarAccountID(const char * stel
     BRStellarAccountID accountID = createStellarAccountIDFromStellarAddress(stellarAddress);
     return accountID;
 }
+
+extern BRStellarAmount
+stellarAccountGetBalanceLimit (BRStellarAccount account,
+                            int asMaximum,
+                            int *hasLimit)
+{
+    assert (NULL != hasLimit);
+
+    *hasLimit = !asMaximum;
+    return asMaximum ? 0 : STELLAR_ACCOUNT_MINIMUM;
+}
+
+extern BRStellarFeeBasis
+stellarAccountGetDefaultFeeBasis (BRStellarAccount account) {
+    return (BRStellarFeeBasis) {
+        100.0, 1
+    };
+}
+
+extern int
+stellarAccountHasAddress (BRStellarAccount account,
+                         BRStellarAddress address) {
+    return stellarAddressEqual (account->address, address);
+}
+
