@@ -381,7 +381,7 @@ extension Network {
         case .xrp: return "ripple"
         case .hbar: return "hedera"
         case .xtz: return "tezos"
-//        case .xlm:  return "stellar"
+        case .xlm: return "stellar"
         }
     }
 }
