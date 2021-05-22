@@ -135,8 +135,8 @@ wkAddressAsStringBSV (WKAddress address) {
 
 static char *
 wkAddressAsStringLTC (WKAddress address) {
-    WKAddressBTC addressBSV = wkAddressCoerce (address, WK_NETWORK_TYPE_LTC);
-    return strdup (addressBSV->addr.s);
+    WKAddressBTC addressLTC = wkAddressCoerce (address, WK_NETWORK_TYPE_LTC);
+    return strdup (addressLTC->addr.s);
 }
 
 static bool
