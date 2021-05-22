@@ -53,6 +53,18 @@ extern WKWalletSweeperHandlers wkWalletSweeperHandlersBSV;
 extern WKFeeBasisHandlers wkFeeBasisHandlersBSV;
 extern WKWalletManagerHandlers wkWalletManagerHandlersBSV;
 
+// MARK: - LTC Handlers
+
+extern WKAddressHandlers wkAddressHandlersLTC;
+extern WKNetworkHandlers wkNetworkHandlersLTC;
+extern WKTransferHandlers wkTransferHandlersLTC;
+extern WKWalletHandlers wkWalletHandlersLTC;
+extern WKWalletSweeperHandlers wkWalletSweeperHandlersLTC;
+// ExportablePaperHandlers
+// Payment Protocol
+extern WKFeeBasisHandlers wkFeeBasisHandlersLTC;
+extern WKWalletManagerHandlers wkWalletManagerHandlersLTC;
+
 // MARK: - ETH Handlers
 
 extern WKAddressHandlers wkAddressHandlersETH;

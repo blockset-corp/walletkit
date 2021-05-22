@@ -425,3 +425,13 @@ WKWalletSweeperHandlers wkWalletSweeperHandlersBSV = {
     wkWalletSweeperCreateTransferForWalletSweepBTC,
     wkWalletSweeperValidateBTC
 };
+
+WKWalletSweeperHandlers wkWalletSweeperHandlersLTC = {
+    wkWalletSweeperReleaseBTC,
+    wkWalletSweeperGetAddressBTC,
+    wkWalletSweeperGetBalanceBTC,
+    wkWalletSweeperAddTransactionFromBundleBTC,
+    wkWalletSweeperEstimateFeeBasisForWalletSweepBTC,
+    wkWalletSweeperCreateTransferForWalletSweepBTC,
+    wkWalletSweeperValidateBTC
+};

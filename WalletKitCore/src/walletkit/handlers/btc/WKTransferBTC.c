@@ -342,3 +342,14 @@ WKTransferHandlers wkTransferHandlersBSV = {
     NULL, // getBytesForFeeEstimate
     wkTransferIsEqualBTC
 };
+
+WKTransferHandlers wkTransferHandlersLTC = {
+    wkTransferReleaseBTC,
+    wkTransferGetHashBTC,
+    NULL, // setHash
+    NULL, // updateIdentifier
+   wkTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
+    wkTransferIsEqualBTC
+};
+

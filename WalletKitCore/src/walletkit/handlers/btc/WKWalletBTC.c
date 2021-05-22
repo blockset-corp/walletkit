@@ -19,7 +19,8 @@ private_extern WKWalletBTC
 wkWalletCoerceBTC (WKWallet wallet) {
     assert (WK_NETWORK_TYPE_BTC == wallet->type ||
             WK_NETWORK_TYPE_BCH == wallet->type ||
-            WK_NETWORK_TYPE_BSV == wallet->type);
+            WK_NETWORK_TYPE_BSV == wallet->type ||
+            WK_NETWORK_TYPE_LTC == wallet->type);
     return (WKWalletBTC) wallet;
 }
 
@@ -178,7 +179,8 @@ wkWalletGetAddressBTC (WKWallet wallet,
             WK_ADDRESS_SCHEME_BTC_SEGWIT == addressScheme);
 
     assert (WK_ADDRESS_SCHEME_BTC_SEGWIT != addressScheme ||
-            WK_NETWORK_TYPE_BTC == wallet->type);
+            (WK_NETWORK_TYPE_BTC == wallet->type ||
+             WK_NETWORK_TYPE_LTC == wallet->type));
 
     WKWalletBTC walletBTC = wkWalletCoerceBTC(wallet);
 
@@ -399,6 +401,20 @@ WKWalletHandlers wkWalletHandlersBCH = {
 };
 
 WKWalletHandlers wkWalletHandlersBSV = {
+    wkWalletReleaseBTC,
+    wkWalletGetAddressBTC,
+    wkWalletHasAddressBTC,
+    wkWalletGetTransferAttributeCountBTC,
+    wkWalletGetTransferAttributeAtBTC,
+    wkWalletValidateTransferAttributeBTC,
+    wkWalletCreateTransferBTC,
+    wkWalletCreateTransferMultipleBTC,
+    wkWalletGetAddressesForRecoveryBTC,
+    NULL,
+    wkWalletIsEqualBTC
+};
+
+WKWalletHandlers wkWalletHandlersLTC = {
     wkWalletReleaseBTC,
     wkWalletGetAddressBTC,
     wkWalletHasAddressBTC,
