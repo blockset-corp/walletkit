@@ -11,6 +11,7 @@
 #define HAS_BTC_TESTNET     1
 #define HAS_BCH_TESTNET     1
 #define HAS_BSV_TESTNET     0
+#define HAS_LTC_TESTNET     0
 #define HAS_ETH_TESTNET     1
 #define HAS_XRP_TESTNET     0
 #define HAS_HBAR_TESTNET    0
@@ -129,7 +130,7 @@ DEFINE_CURRENCY ("litecoin-testnet",     "litecoin-testnet:__native__",   NETWOR
     DEFINE_UNIT ("litecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-testnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
 DEFINE_ADDRESS_SCHEMES  ("litecoin-testnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_ADDRESS_SCHEME_BTC_LEGACY)
-#if HAS_BSV_TESTNET
+#if HAS_LTC_TESTNET
 DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MODE_P2P_ONLY)
 #else
 DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_P2P_ONLY)

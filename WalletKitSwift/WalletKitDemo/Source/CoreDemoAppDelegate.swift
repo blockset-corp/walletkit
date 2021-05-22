@@ -125,14 +125,14 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
         print ("APP: Mainnet           : \(mainnet)")
 
         currencyCodesToMode = [
-            "btc" : .api_only,
-            "bch" : .api_only,
-            "bsv" : .api_only,
-            "ltc" : .api_only,
-            "eth" : .api_only,
-            "xrp" : .api_only,
-            "hbar": .api_only,
-            "xtz" : .api_only
+//            "btc" : .api_only,
+//            "bch" : .api_only,
+//            "bsv" : .api_only,
+            "ltc" : .p2p_only,
+//            "eth" : .api_only,
+//            "xrp" : .api_only,
+//            "hbar": .api_only,
+//            "xtz" : .api_only
             ]
 
         registerCurrencyCodes = (mainnet
