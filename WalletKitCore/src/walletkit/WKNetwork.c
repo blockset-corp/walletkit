@@ -1001,7 +1001,7 @@ wkNetworkInstallBuiltins (WKCount *networksCount,
         nativeCurrency = NULL;
 
         // Create the Network Fees
-        WKUnit feeUnit = wkNetworkGetUnitAsDefault (network, network->currency);
+        WKUnit feeUnit = wkNetworkGetUnitAsBase (network, network->currency);
         for (size_t networkFeeIndex = 0; networkFeeIndex < NUMBER_OF_FEES; networkFeeIndex++) {
             struct NetworkFeeSpecification *networkFeeSpec = &networkFeeSpecifications[networkFeeIndex];
             if (0 == strcmp (networkSpec->networkId, networkFeeSpec->networkId)) {
