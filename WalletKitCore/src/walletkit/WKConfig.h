@@ -121,7 +121,7 @@ DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "2", "10m", 20 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-mainnet",     "litecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-mainnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
-DEFINE_ADDRESS_SCHEMES  ("litecoin-mainnet", WK_ADDRESS_SCHEME_BTC_LEGACY, WK_ADDRESS_SCHEME_BTC_SEGWIT)
+DEFINE_ADDRESS_SCHEMES  ("litecoin-mainnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_ADDRESS_SCHEME_BTC_LEGACY)
 DEFINE_MODES            ("litecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
 
 DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-testnet", NETWORK_NAME, "testnet", false, 1903181, 6, 10 * 60)
@@ -129,7 +129,7 @@ DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "2", "10m", 20 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-testnet",     "litecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-testnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
-DEFINE_ADDRESS_SCHEMES  ("litecoin-testnet", WK_ADDRESS_SCHEME_BTC_LEGACY, WK_ADDRESS_SCHEME_BTC_SEGWIT)
+DEFINE_ADDRESS_SCHEMES  ("litecoin-testnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_ADDRESS_SCHEME_BTC_LEGACY)
 #if HAS_LTC_TESTNET
 DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MODE_P2P_ONLY)
 #else
