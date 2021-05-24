@@ -20,7 +20,7 @@ import java.io.InputStreamReader;
 public class TestConfigurationLoader {
     public static TestConfiguration getTestConfiguration() {
         final Context context = InstrumentationRegistry.getContext();
-        try (final InputStream inputStream = context.getAssets().open("WalletKitTestConfig.json");
+        try (final InputStream inputStream = context.getAssets().open("WalletKitTestsConfig.json");
              final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             return TestConfiguration.loadFrom(reader);
         }

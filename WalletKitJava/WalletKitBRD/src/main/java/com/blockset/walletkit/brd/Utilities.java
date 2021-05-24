@@ -208,6 +208,7 @@ final class Utilities {
             case BTC: return WKNetworkType.BTC;
             case BCH: return WKNetworkType.BCH;
             case BSV: return WKNetworkType.BSV;
+            case LTC: return WKNetworkType.LTC;
             case ETH: return WKNetworkType.ETH;
             case XRP: return WKNetworkType.XRP;
             case HBAR:return WKNetworkType.HBAR;
@@ -222,6 +223,7 @@ final class Utilities {
             case BTC: return NetworkType.BTC;
             case BCH: return NetworkType.BCH;
             case BSV: return NetworkType.BSV;
+            case LTC: return NetworkType.LTC;
             case ETH: return NetworkType.ETH;
             case XRP: return NetworkType.XRP;
             case HBAR:return NetworkType.HBAR;
