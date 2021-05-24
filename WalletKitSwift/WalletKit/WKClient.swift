@@ -241,26 +241,7 @@ public protocol SystemClient {
     // TODO: Temporary?
     func subscribe (walletId: String, subscription: Subscription)
     
-    // Address
-    
-    typealias Address = (
-        blockchainID: String,
-        address: String,
-        nonce: UInt64?,
-        timestamp: UInt64,
-        metaData: Dictionary<String,String>?,
-        balances: [Amount]
-    )
-    
-    func getAddresses (blockchainId: String, publicKey: String,
-                       completion: @escaping (Result<[Address],SystemClientError>) -> Void)
-    
-    func getAddress (blockchainId: String, address: String, timestamp: UInt64?,
-                     completion: @escaping (Result<Address,SystemClientError>) -> Void)
-    
-    func createAddress (blockchainId: String, data: Data,
-                        completion: @escaping (Result<Address, SystemClientError>) -> Void)
-    
+    // Hedera Account (Experimental) 
     typealias HederaAccount = (
         id: String,
         balance: UInt64?,

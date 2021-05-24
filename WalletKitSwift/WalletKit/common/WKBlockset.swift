@@ -577,26 +577,6 @@ public class BlocksetSystemClient: SystemClient {
             ]
         }
 
-        /// Address
-
-        static internal func asAddress (json: JSON) -> SystemClient.Address? {
-            guard let bid     = json.asString (name: "blockchain_id"),
-                let address   = json.asString (name: "address"),
-                let timestamp = json.asUInt64 (name: "timestamp"),
-                let balances = json.asArray (name: "balances")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0)}) as? [SystemClient.Amount]
-                else { return nil }
-
-            let nonce = json.asUInt64 (name: "nonce")
-            let meta  = json.asDict(name: "meta")?.mapValues { return $0 as! String }
-
-            return (blockchainID: bid, address: address,
-                    nonce: nonce, timestamp: timestamp,
-                    metaData: meta,
-                    balances: balances)
-        }
-
         /// Hedera Account
 
         static internal func asHederaAccount (json: JSON) -> SystemClient.HederaAccount? {
@@ -1072,59 +1052,6 @@ public class BlocksetSystemClient: SystemClient {
             completion (res.flatMap {
                 BlocksetSystemClient.getOneExpected (id: blockId, data: $0, transform: Model.asBlock)
             })
-        }
-    }
-
-    // Address
-
-    public func getAddresses (blockchainId: String, publicKey: String,
-                              completion: @escaping (Result<[SystemClient.Address],SystemClientError>) -> Void) {
-        let queryKeys = ["blockchain_id", "public_key"]
-        let queryVals = [ blockchainId,    publicKey]
-
-        bdbMakeRequest (path: "addresses", query: zip (queryKeys, queryVals)) {
-            (more: URL?, res: Result<[JSON], SystemClientError>) in
-            precondition (nil == more)
-            completion (res.flatMap {
-                BlocksetSystemClient.getManyExpected(data: $0, transform: Model.asAddress)
-            })
-        }
-    }
-
-    public func getAddress (blockchainId: String, address: String, timestamp: UInt64? = nil,
-                            completion: @escaping (Result<SystemClient.Address,SystemClientError>) -> Void) {
-        let queryKeys = ["blockchain_id", timestamp.map { (ignore) in "timestamp" }].compactMap { $0 }
-        let queryVals = [ blockchainId,   timestamp?.description].compactMap { $0 }
-
-        bdbMakeRequest (path: "addresses/\(address)", query: zip (queryKeys, queryVals), embedded: false) {
-            (more: URL?, res: Result<[JSON], SystemClientError>) in
-            precondition (nil == more)
-            completion (res.flatMap {
-                BlocksetSystemClient.getOneExpected(id: address, data: $0, transform: Model.asAddress)
-            })
-        }
-    }
-
-    public func createAddress (blockchainId: String, data: Data,
-                               completion: @escaping (Result<SystemClient.Address, SystemClientError>) -> Void) {
-        let json: JSON.Dict = [
-            "blockchain_id": blockchainId,
-            "data" : data.base64EncodedString()
-        ]
-
-        makeRequest (bdbDataTaskFunc, bdbBaseURL,
-                     path: "/addresses",
-                     data: json,
-                     httpMethod: "POST") {
-                        self.bdbHandleResult ($0, embedded: false, embeddedPath: "") {
-                            (more: URL?, res: Result<[JSON], SystemClientError>) in
-                            precondition (nil == more)
-                            completion (res.flatMap {
-                                BlocksetSystemClient.getOneExpected (id: "POST /addresses",
-                                                             data: $0,
-                                                             transform: Model.asAddress)
-                            })
-                        }
         }
     }
 
