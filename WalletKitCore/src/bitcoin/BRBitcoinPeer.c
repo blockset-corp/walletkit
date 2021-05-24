@@ -459,63 +459,49 @@ static int _btcPeerAcceptTxMessage(BRBitcoinPeer *peer, const uint8_t *msg, size
 static int _btcPeerAcceptHeadersMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen)
 {
     BRBitcoinPeerContext *ctx = (BRBitcoinPeerContext *)peer;
-    size_t off = 0, count = (size_t)BRVarInt(msg, msgLen, &off);
-    int r = 1;
-
-    if (off == 0 || off + 81*count > msgLen) {
-        peer_log(peer, "malformed headers message, length is %zu, should be %zu for %zu header(s)", msgLen,
-                 BRVarIntSize(count) + 81*count, count);
+    size_t i, off = 0, count = (size_t)BRVarInt(msg, msgLen, &off);
+    int sentRequest = 0, r = 1;
+    uint32_t timestamp = (count > 0 && msgLen >= 81) ? UInt32GetLE(&msg[(msgLen - 81) + 68]) : 0;
+    time_t now = time(NULL); // TODO: use estimated network time instead of system time (avoids timejacking attacks)
+    UInt256 locators[2];
+    BRBitcoinMerkleBlock *block;
+    
+    peer_log(peer, "got %zu header(s)", count);
+    
+    if (count < 2000 && (timestamp == 0 || timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT < ctx->earliestKeyTime)) {
+        peer_log(peer, "non-standard headers message, %zu is fewer header(s) than expected", count);
         r = 0;
     }
-    else {
-        peer_log(peer, "got %zu header(s)", count);
-    
-        // To improve chain download performance, if this message contains 2000 headers then request the next 2000
-        // headers immediately, and switch to requesting blocks when we receive a header newer than earliestKeyTime
-        uint32_t timestamp = (count > 0) ? UInt32GetLE(&msg[off + 81*(count - 1) + 68]) : 0;
-    
-        if (count >= 2000 || (timestamp > 0 && timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT >= ctx->earliestKeyTime)) {
-            size_t last = 0;
-            time_t now = time(NULL);
-            UInt256 locators[2];
-            
-            BRSHA256_2(&locators[0], &msg[off + 81*(count - 1)], 80);
-            BRSHA256_2(&locators[1], &msg[off], 80);
-
-            if (timestamp > 0 && timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT >= ctx->earliestKeyTime) {
-                // request blocks for the remainder of the chain
-                timestamp = (++last < count) ? UInt32GetLE(&msg[off + 81*last + 68]) : 0;
-
-                while (timestamp > 0 && timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT < ctx->earliestKeyTime) {
-                    timestamp = (++last < count) ? UInt32GetLE(&msg[off + 81*last + 68]) : 0;
-                }
                 
-                BRSHA256_2(&locators[0], &msg[off + 81*(last - 1)], 80);
-                btcPeerSendGetblocks(peer, locators, 2, UINT256_ZERO);
-            }
-            else btcPeerSendGetheaders(peer, locators, 2, UINT256_ZERO);
-
-            for (size_t i = 0; r && i < count; i++) {
-                BRBitcoinMerkleBlock *block = btcMerkleBlockParse(&msg[off + 81*i], 81);
-                
-                if (! block) {
-                    peer_log(peer, "malformed headers message with length: %zu", msgLen);
-                    r = 0;
-                }
-                else if (! btcMerkleBlockIsValid(block, (uint32_t)now)) {
-                    peer_log(peer, "invalid block header: %s", u256hex(block->blockHash));
-                    btcMerkleBlockFree(block);
-                    r = 0;
-                }
-                else if (ctx->relayedBlock) {
-                    ctx->relayedBlock(ctx->info, block);
-                }
-                else btcMerkleBlockFree(block);
-            }
+    for (i = 0; r && i < count && off + 80 <= msgLen; i++) {
+        block = btcMerkleBlockParse(&msg[off], msgLen - off);
+        
+        if (! block) {
+            peer_log(peer, "malformed headers message with length: %zu", msgLen);
+            r = 0;
+        }
+        else if (! btcMerkleBlockIsValid(block, (uint32_t)now)) {
+            peer_log(peer, "invalid block header: %s", u256hex(block->blockHash));
+            btcMerkleBlockFree(block);
+            r = 0;
         }
         else {
-            peer_log(peer, "non-standard headers message, %zu is fewer header(s) than expected", count);
-            r = 0;
+            if (i == 0) locators[1] = block->blockHash;
+            
+            if (! sentRequest && block->timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT >= ctx->earliestKeyTime) {
+                locators[0] = block->blockHash;
+                btcPeerSendGetblocks(peer, locators, 2, UINT256_ZERO); // switch to requesting filtered blocks
+                sentRequest = 1;
+            }
+            else if (! sentRequest && i + 1 == count) {
+                locators[0] = block->blockHash;
+                btcPeerSendGetheaders(peer, locators, 2, UINT256_ZERO); // request next 2000 headers
+                sentRequest = 1;
+            }
+                
+            off += (block->version >> 16 != 0) ? btcMerkleBlockSerialize(block, NULL, 0) + 1 : 81;
+            if (ctx->relayedBlock) ctx->relayedBlock(ctx->info, block);
+            else btcMerkleBlockFree(block);
         }
     }
     
