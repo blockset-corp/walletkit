@@ -27,6 +27,12 @@
 extern "C" {
 #endif
 
+/// MARK: - Network Type
+
+
+private_extern bool
+wkNetworkTypeIsBitcoinBased (WKNetworkType type);
+
 /// MARK: - Network Fee
 
 struct WKNetworkFeeRecord {

@@ -24,10 +24,7 @@ wkNetworkCoerce (WKNetwork network, WKNetworkType type) {
 
 static WKNetworkBTC
 wkNetworkCoerceANY (WKNetwork network) {
-    assert (WK_NETWORK_TYPE_BTC == network->type ||
-            WK_NETWORK_TYPE_BCH == network->type ||
-            WK_NETWORK_TYPE_BSV == network->type ||
-            WK_NETWORK_TYPE_LTC == network->type);
+    assert (wkNetworkTypeIsBitcoinBased(network->type));
     return (WKNetworkBTC) network;
 }
 

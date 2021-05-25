@@ -22,10 +22,7 @@ wkAddressCoerce (WKAddress address, WKNetworkType type) {
 
 static WKAddressBTC
 wkAddressCoerceANY (WKAddress address) {
-    assert (WK_NETWORK_TYPE_BTC == address->type ||
-            WK_NETWORK_TYPE_BCH == address->type ||
-            WK_NETWORK_TYPE_BSV == address->type ||
-            WK_NETWORK_TYPE_LTC == address->type);
+    assert (wkNetworkTypeIsBitcoinBased(address->type));
     return (WKAddressBTC) address;
 }
 

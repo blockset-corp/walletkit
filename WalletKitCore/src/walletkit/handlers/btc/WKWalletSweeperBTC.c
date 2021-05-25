@@ -34,10 +34,7 @@ btcWalletSweeperGetBalance (WKWalletSweeperBTC sweeper);
 
 static WKWalletSweeperBTC
 wkWalletSweeperCoerce (WKWalletSweeper sweeper) {
-    assert (WK_NETWORK_TYPE_BTC == sweeper->type ||
-            WK_NETWORK_TYPE_BCH == sweeper->type ||
-            WK_NETWORK_TYPE_BSV == sweeper->type ||
-            WK_NETWORK_TYPE_LTC == sweeper->type);
+    assert (wkNetworkTypeIsBitcoinBased (sweeper->type));
     return (WKWalletSweeperBTC) sweeper;
 }
 

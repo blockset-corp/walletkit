@@ -45,6 +45,23 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
     return currencies[type];
 }
 
+private_extern bool
+wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
+    switch (type) {
+        case WK_NETWORK_TYPE_BTC:
+        case WK_NETWORK_TYPE_BCH:
+        case WK_NETWORK_TYPE_BSV:
+        case WK_NETWORK_TYPE_LTC:
+        case WK_NETWORK_TYPE_DOGE:
+            return true;
+        case WK_NETWORK_TYPE_ETH:
+        case WK_NETWORK_TYPE_XRP:
+        case WK_NETWORK_TYPE_HBAR:
+        case WK_NETWORK_TYPE_XTZ:
+            return false;
+    }
+}
+
 /// MARK: - Network Fee
 
 IMPLEMENT_WK_GIVE_TAKE (WKNetworkFee, wkNetworkFee)
