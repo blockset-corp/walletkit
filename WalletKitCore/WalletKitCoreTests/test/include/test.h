@@ -75,7 +75,8 @@ typedef enum {
     BITCOIN_CHAIN_BTC,
     BITCOIN_CHAIN_BCH,
     BITCOIN_CHAIN_BSV,
-    BITCOIN_CHAIN_LTC
+    BITCOIN_CHAIN_LTC,
+    BITCOIN_CHAIN_DOGE
 } BRBitcoinChain;
 
 extern const BRBitcoinChainParams*

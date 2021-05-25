@@ -44,6 +44,12 @@ inline static uint32_t _ceil_log2(uint32_t x)
     return r;
 }
 
+inline static int _txIsCoinbase(const BRBitcoinTransaction *tx)
+{
+    return (tx && tx->inCount == 1 && UInt256IsZero(tx->inputs->txHash) && tx->inputs->index == 0xffffffff &&
+            tx->inputs->sigLen >= 2 && tx->inputs->sigLen <= 100);
+}
+
 // from https://en.bitcoin.it/wiki/Protocol_specification#Merkle_Trees
 // Merkle trees are binary trees of hashes. Merkle trees in bitcoin use a double SHA-256, the SHA-256 hash of the
 // SHA-256 hash of something. If, when forming a row in the tree (other than the root of the tree), it would have an odd
@@ -111,8 +117,8 @@ static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, size_t *off)
     assert(buf != NULL || bufLen == 0);
     
     if (ap) {
-        ap->coinbaseTx = (o <= bufLen) ? btcTransactionParse(&buf[o], bufLen - o) : NULL;
-        o = (ap->coinbaseTx) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen + 1;
+        ap->coinbaseTx = btcTransactionParse(&buf[o], bufLen - o);
+        o = (_txIsCoinbase(ap->coinbaseTx)) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen + 1;
         if (o + sizeof(UInt256) <= bufLen) ap->parentHash = UInt256Get(&buf[o]);
         o += sizeof(UInt256);
         ap->cbHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
@@ -387,7 +393,6 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
     return r;
 }
 
-#include <stdio.h>
 // true if merkle tree, timestamp and difficulty target are valid
 // NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
 // - use BRMerkleBlockVerifyDifficulty() for that

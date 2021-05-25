@@ -237,11 +237,17 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.h
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.c)
                 
-# LTC
+# Litecoin
 target_sources (corecrypto
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.h
                 ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.c)
+
+# Dogecoin
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.h
+                ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.c)
                 
 # Ethereum
 target_sources (corecrypto
