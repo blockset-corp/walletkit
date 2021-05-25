@@ -12,6 +12,7 @@
 #define HAS_BCH_TESTNET     1
 #define HAS_BSV_TESTNET     0
 #define HAS_LTC_TESTNET     0
+#define HAS_DOGE_TESTNET    0
 #define HAS_ETH_TESTNET     1
 #define HAS_XRP_TESTNET     0
 #define HAS_HBAR_TESTNET    0
@@ -136,6 +137,31 @@ DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MOD
 DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_P2P_ONLY)
 #endif
 #undef NETWORK_NAME
+
+// MARK: - DOGE
+
+#define NETWORK_NAME    "Dogecoin"
+DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-mainnet", NETWORK_NAME, "mainnet", true, 3744046, 6, 1 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-mainnet", "550000", "1m", 1 * 60 * 1000) // 1 DOGE / 1000 bytes = 10^8/1000 bytes = 100,000/byte
+DEFINE_CURRENCY ("dogecoin-mainnet",     "dogecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_DOGE,  "native",   NULL,   true)
+DEFINE_UNIT ("dogecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
+DEFINE_UNIT ("dogecoin-mainnet:__native__",      NETWORK_NAME, "doge",     8,      "Ð")
+DEFINE_ADDRESS_SCHEMES  ("dogecoin-mainnet", WK_ADDRESS_SCHEME_BTC_LEGACY)
+DEFINE_MODES            ("dogecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
+
+DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-testnet", NETWORK_NAME, "testnet", false, 3194118, 6, 1 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-testnet", "550000", "1m", 1 * 60 * 1000)
+DEFINE_CURRENCY ("dogecoin-testnet",     "dogecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_DOGE,  "native",   NULL,   true)
+DEFINE_UNIT ("dogecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
+DEFINE_UNIT ("dogecoin-testnet:__native__",      NETWORK_NAME, "doge",     8,      "Ð")
+DEFINE_ADDRESS_SCHEMES  ("dogecoin-testnet", WK_ADDRESS_SCHEME_BTC_LEGACY)
+#if HAS_BSV_TESTNET
+DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MODE_P2P_ONLY)
+#else
+DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_P2P_ONLY)
+#endif
+#undef NETWORK_NAME
+
 
 // MARK: - ETH
 

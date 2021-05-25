@@ -106,6 +106,17 @@ wkAddressCreateFromStringAsLTC (BRAddressParams params, const char *ltcAddress) 
             : NULL);
 }
 
+extern WKAddress
+wkAddressCreateFromStringAsDOGE (BRAddressParams params, const char *dogeAddress) {
+    assert (dogeAddress);
+
+    return (BRAddressIsValid (params, dogeAddress)
+            ? wkAddressCreateAsBTC (WK_NETWORK_TYPE_DOGE,
+                                    BRAddressFill(params, dogeAddress))
+            : NULL);
+}
+
+
 static void
 wkAddressReleaseBTC (WKAddress address) {
     WKAddressBTC addressANY = wkAddressCoerceANY (address);
@@ -137,6 +148,12 @@ static char *
 wkAddressAsStringLTC (WKAddress address) {
     WKAddressBTC addressLTC = wkAddressCoerce (address, WK_NETWORK_TYPE_LTC);
     return strdup (addressLTC->addr.s);
+}
+
+static char *
+wkAddressAsStringDOGE (WKAddress address) {
+    WKAddressBTC addressDOGE = wkAddressCoerce (address, WK_NETWORK_TYPE_DOGE);
+    return strdup (addressDOGE->addr.s);
 }
 
 static bool
@@ -179,5 +196,11 @@ WKAddressHandlers wkAddressHandlersBSV = {
 WKAddressHandlers wkAddressHandlersLTC = {
     wkAddressReleaseBTC,
     wkAddressAsStringLTC,
+    wkAddressIsEqualBTC
+};
+
+WKAddressHandlers wkAddressHandlersDOGE = {
+    wkAddressReleaseBTC,
+    wkAddressAsStringDOGE,
     wkAddressIsEqualBTC
 };

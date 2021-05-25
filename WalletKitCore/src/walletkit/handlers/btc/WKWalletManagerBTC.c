@@ -731,3 +731,22 @@ WKWalletManagerHandlers wkWalletManagerHandlersLTC = {
     wkWalletManagerCreateWalletSweeperBTC
 };
 
+WKWalletManagerHandlers wkWalletManagerHandlersDOGE = {
+    wkWalletManagerCreateBTC,
+    wkWalletManagerReleaseBTC,
+    crytpWalletManagerCreateFileServiceBTC,
+    wkWalletManagerGetEventTypesBTC,
+    wkWalletManagerCreateP2PManagerBTC,
+    wkWalletManagerCreateWalletBTC,
+    wkWalletManagerSignTransactionWithSeedBTC,
+    wkWalletManagerSignTransactionWithKeyBTC,
+    wkWalletManagerEstimateLimitBTC,
+    wkWalletManagerEstimateFeeBasisBTC,
+    wkWalletManagerSaveTransactionBundleBTC,
+    NULL, // WKWalletManagerSaveTransactionBundleHandler
+    wkWalletManagerRecoverTransfersFromTransactionBundleBTC,
+    wkWalletManagerRecoverTransferFromTransferBundleBTC,
+    NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
+    wkWalletManagerWalletSweeperValidateSupportedBTC,
+    wkWalletManagerCreateWalletSweeperBTC
+};

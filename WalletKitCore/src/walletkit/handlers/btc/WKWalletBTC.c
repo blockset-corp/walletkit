@@ -427,3 +427,17 @@ WKWalletHandlers wkWalletHandlersLTC = {
     NULL,
     wkWalletIsEqualBTC
 };
+
+WKWalletHandlers wkWalletHandlersDOGE = {
+    wkWalletReleaseBTC,
+    wkWalletGetAddressBTC,
+    wkWalletHasAddressBTC,
+    wkWalletGetTransferAttributeCountBTC,
+    wkWalletGetTransferAttributeAtBTC,
+    wkWalletValidateTransferAttributeBTC,
+    wkWalletCreateTransferBTC,
+    wkWalletCreateTransferMultipleBTC,
+    wkWalletGetAddressesForRecoveryBTC,
+    NULL,
+    wkWalletIsEqualBTC
+};

@@ -278,6 +278,11 @@ public class SystemAIT {
     }
 
     @Test
+    public void testSystemDoge() {
+        testSystemForCurrency("doge", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+    }
+
+    @Test
     public void testSystemEth() {
         testSystemForCurrency("eth", true, WalletManagerMode.API_ONLY, AddressScheme.NATIVE, 0);
     }

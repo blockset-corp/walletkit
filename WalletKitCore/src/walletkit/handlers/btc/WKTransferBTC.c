@@ -349,7 +349,17 @@ WKTransferHandlers wkTransferHandlersLTC = {
     wkTransferGetHashBTC,
     NULL, // setHash
     NULL, // updateIdentifier
-   wkTransferSerializeBTC,
+    wkTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
+    wkTransferIsEqualBTC
+};
+
+WKTransferHandlers wkTransferHandlersDOGE = {
+    wkTransferReleaseBTC,
+    wkTransferGetHashBTC,
+    NULL, // setHash
+    NULL, // updateIdentifier
+    wkTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     wkTransferIsEqualBTC
 };
