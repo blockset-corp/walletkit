@@ -279,7 +279,7 @@ typedef enum {
 #define WK_NETWORK_CURRENCY_XTZ     "xtz"
 
 extern const char *
-wkBlockChainTypeGetCurrencyCode (WKNetworkType type);
+wkNetworkTypeGetCurrencyCode (WKNetworkType type);
 
 // MARK: - Status
 

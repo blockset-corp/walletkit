@@ -341,7 +341,7 @@ public enum NetworkType: CustomStringConvertible {
     }
 
     public var description: String {
-        return "WK_NETWORK_TYPE_" + asUTF8String (wkBlockChainTypeGetCurrencyCode (core)).uppercased()
+        return "WK_NETWORK_TYPE_" + asUTF8String (wkNetworkTypeGetCurrencyCode (core)).uppercased()
     }
 }
 

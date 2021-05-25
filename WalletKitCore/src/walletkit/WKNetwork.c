@@ -28,7 +28,7 @@ wkUnitGiveAll (BRArrayOf(WKUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
+wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         WK_NETWORK_CURRENCY_BTC,
         WK_NETWORK_CURRENCY_BCH,
