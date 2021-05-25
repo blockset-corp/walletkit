@@ -25,7 +25,8 @@ extern WKTransferBTC
 wkTransferCoerceBTC (WKTransfer transfer) {
     assert (WK_NETWORK_TYPE_BTC == transfer->type ||
             WK_NETWORK_TYPE_BCH == transfer->type ||
-            WK_NETWORK_TYPE_BSV == transfer->type);
+            WK_NETWORK_TYPE_BSV == transfer->type ||
+            WK_NETWORK_TYPE_LTC == transfer->type);
     return (WKTransferBTC) transfer;
 }
 
@@ -342,3 +343,14 @@ WKTransferHandlers wkTransferHandlersBSV = {
     NULL, // getBytesForFeeEstimate
     wkTransferIsEqualBTC
 };
+
+WKTransferHandlers wkTransferHandlersLTC = {
+    wkTransferReleaseBTC,
+    wkTransferGetHashBTC,
+    NULL, // setHash
+    NULL, // updateIdentifier
+   wkTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
+    wkTransferIsEqualBTC
+};
+

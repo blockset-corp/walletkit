@@ -12,6 +12,7 @@
 #include "bitcoin/BRBitcoinChainParams.h"
 #include "bcash/BRBCashParams.h"
 #include "bsv/BRBSVParams.h"
+#include "litecoin/BRLitecoinParams.h"
 #include "walletkit/WKHashP.h"
 
 static WKNetworkBTC
@@ -24,7 +25,8 @@ static WKNetworkBTC
 wkNetworkCoerceANY (WKNetwork network) {
     assert (WK_NETWORK_TYPE_BTC == network->type ||
             WK_NETWORK_TYPE_BCH == network->type ||
-            WK_NETWORK_TYPE_BSV == network->type);
+            WK_NETWORK_TYPE_BSV == network->type ||
+            WK_NETWORK_TYPE_LTC == network->type);
     return (WKNetworkBTC) network;
 }
 
@@ -139,6 +141,37 @@ wkNetworkCreateBSV (WKNetworkListener listener,
                                       wkNetworkCreateCallbackBTC);
 }
 
+static WKNetwork
+wkNetworkCreateLTC (WKNetworkListener listener,
+                        const char *uids,
+                        const char *name,
+                        const char *desc,
+                        bool isMainnet,
+                        uint32_t confirmationPeriodInSeconds,
+                        WKAddressScheme defaultAddressScheme,
+                        WKSyncMode defaultSyncMode,
+                        WKCurrency nativeCurrency) {
+    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
+
+    WKNetworkCreateContextBTC contextBTC = {
+        (isMainnet ? ltcMainNetParams : ltcTestNetParams)
+    };
+
+    return wkNetworkAllocAndInit (sizeof (struct WKNetworkBTCRecord),
+                                      WK_NETWORK_TYPE_LTC,
+                                      listener,
+                                      uids,
+                                      name,
+                                      desc,
+                                      isMainnet,
+                                      confirmationPeriodInSeconds,
+                                      defaultAddressScheme,
+                                      defaultSyncMode,
+                                      nativeCurrency,
+                                      &contextBTC,
+                                      wkNetworkCreateCallbackBTC);
+}
+
 static void
 wkNetworkReleaseBTC (WKNetwork network) {
     WKNetworkBTC networkBTC = wkNetworkCoerceANY (network);
@@ -167,6 +200,14 @@ wkNetworkCreateAddressBSV (WKNetwork network,
     WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_BSV);
     assert (btcChainParamsIsBSV (networkBTC->params));
     return wkAddressCreateFromStringAsBSV (networkBTC->params->addrParams, addressAsString);
+}
+
+static WKAddress
+wkNetworkCreateAddressLTC (WKNetwork network,
+                                const char *addressAsString) {
+    WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_LTC);
+    assert (btcChainParamsIsLitecoin (networkBTC->params));
+    return wkAddressCreateFromStringAsLTC (networkBTC->params->addrParams, addressAsString);
 }
 
 static WKBlockNumber
@@ -259,6 +300,18 @@ WKNetworkHandlers wkNetworkHandlersBSV = {
     wkNetworkCreateBSV,
     wkNetworkReleaseBTC,
     wkNetworkCreateAddressBSV,
+    wkNetworkGetBlockNumberAtOrBeforeTimestampBTC,
+    wkNetworkIsAccountInitializedBTC,
+    wkNetworkGetAccountInitializationDataBTC,
+    wkNetworkInitializeAccountBTC,
+    wkNetworkCreateHashFromStringBTC,
+    wkNetworkEncodeHashBTC
+};
+
+WKNetworkHandlers wkNetworkHandlersLTC = {
+    wkNetworkCreateLTC,
+    wkNetworkReleaseBTC,
+    wkNetworkCreateAddressLTC,
     wkNetworkGetBlockNumberAtOrBeforeTimestampBTC,
     wkNetworkIsAccountInitializedBTC,
     wkNetworkGetAccountInitializationDataBTC,

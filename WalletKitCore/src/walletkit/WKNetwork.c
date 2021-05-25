@@ -33,6 +33,7 @@ wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_BTC,
         WK_NETWORK_CURRENCY_BCH,
         WK_NETWORK_CURRENCY_BSV,
+        WK_NETWORK_CURRENCY_LTC,
         WK_NETWORK_CURRENCY_ETH,
         WK_NETWORK_CURRENCY_XRP,
         WK_NETWORK_CURRENCY_HBAR,
@@ -1000,7 +1001,7 @@ wkNetworkInstallBuiltins (WKCount *networksCount,
         nativeCurrency = NULL;
 
         // Create the Network Fees
-        WKUnit feeUnit = wkNetworkGetUnitAsDefault (network, network->currency);
+        WKUnit feeUnit = wkNetworkGetUnitAsBase (network, network->currency);
         for (size_t networkFeeIndex = 0; networkFeeIndex < NUMBER_OF_FEES; networkFeeIndex++) {
             struct NetworkFeeSpecification *networkFeeSpec = &networkFeeSpecifications[networkFeeIndex];
             if (0 == strcmp (networkSpec->networkId, networkFeeSpec->networkId)) {

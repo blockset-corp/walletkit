@@ -245,7 +245,7 @@ static size_t _btcPeerManagerBlockLocators(BRBitcoinPeerManager *manager, UInt25
     BRBitcoinMerkleBlock *block = manager->lastBlock;
     size_t step = 1, height = 0, i = 0, j;
     
-    while (block && block->height > 0) {
+    while (block) {
         if (locators && i < locatorsCount) locators[i] = block->blockHash, height = block->height;
         if (++i >= 10) step *= 2;
         
@@ -755,6 +755,7 @@ static void _peerConnected(void *info)
             peerInfo->manager = manager;
             btcPeerSendPing(peer, peerInfo, _loadBloomFilterDone);
         }
+        else btcPeerSendPing(peer, NULL, NULL);
     }
     else { // select the peer with the lowest ping time to download the chain from if we're behind
         // BUG: XXX a malicious peer can report a higher lastblock to make us select them as the download peer, if

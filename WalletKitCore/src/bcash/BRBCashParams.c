@@ -153,11 +153,12 @@ static int bchMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
 {
     const BRBitcoinMerkleBlock *prev;
     int64_t timeDelta, heightDelta;
-
+    
     assert(block != NULL);
     assert(blockSet != NULL);
-
-    if (block && block->height > ASERT_REF_HEIGHT) { // axion activation height
+    if (! block) return 0;
+    
+    if (block->height > ASERT_REF_HEIGHT) { // axion activation height
         prev = BRSetGet(blockSet, &block->prevBlock);
         if (! prev) return 1;
         timeDelta = prev->timestamp - ASERT_REF_TIME;
@@ -165,7 +166,7 @@ static int bchMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
         if (aserti3_2d(ASERT_REF_BITS, timeDelta, heightDelta) != block->target) return 0;
     }
 
-    return 1;
+    return btcMerkleBlockVerifyProofOfWork(block);
 }
 
 static int bchTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)

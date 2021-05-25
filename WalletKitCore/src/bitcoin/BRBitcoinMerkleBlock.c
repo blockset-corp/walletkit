@@ -23,6 +23,7 @@
 //  THE SOFTWARE.
 
 #include "BRBitcoinMerkleBlock.h"
+#include "BRBitcoinTransaction.h"
 #include "support/BRBase.h"
 #include "support/BRCrypto.h"
 #include "support/BRAddress.h"
@@ -41,6 +42,12 @@ inline static uint32_t _ceil_log2(uint32_t x)
     
     while ((x >>= 1) != 0) r++;
     return r;
+}
+
+inline static int _txIsCoinbase(const BRBitcoinTransaction *tx)
+{
+    return (tx && tx->inCount == 1 && UInt256IsZero(tx->inputs->txHash) && tx->inputs->index == 0xffffffff &&
+            tx->inputs->sigLen >= 2 && tx->inputs->sigLen <= 100);
 }
 
 // from https://en.bitcoin.it/wiki/Protocol_specification#Merkle_Trees
@@ -73,10 +80,102 @@ inline static uint32_t _ceil_log2(uint32_t x)
 // NOTE: this merkle tree design has a security vulnerability (CVE-2012-2459), which can be defended against by
 // considering the merkle root invalid if there are duplicate hashes in any rows with an even number of elements
 
+// AuxPow merge-mined block: https://en.bitcoin.it/wiki/Merged_mining_specification
+typedef struct {
+    BRBitcoinTransaction *coinbaseTx;
+    UInt256 parentHash;
+    UInt256 *cbHashes;
+    size_t cbHashesCount;
+    uint32_t cbMask;
+    UInt256 *chainHashes;
+    size_t chainHashesCount;
+    uint32_t chainMask;
+    BRBitcoinMerkleBlock *parent;
+} _BRAuxPow;
+
+typedef struct {
+    BRBitcoinMerkleBlock block;
+    _BRAuxPow *ap;
+} _BRAuxPowBlock;
+
+static void _BRAuxPowFree(_BRAuxPow *ap)
+{
+    if (ap) {
+        if (ap->coinbaseTx) btcTransactionFree(ap->coinbaseTx);
+        if (ap->cbHashes) free(ap->cbHashes);
+        if (ap->chainHashes) free(ap->chainHashes);
+        if (ap->parent) btcMerkleBlockFree(ap->parent);
+        free(ap);
+    }
+}
+
+static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, size_t *off)
+{
+    size_t len, o = (off) ? *off : 0;
+    _BRAuxPow *ap = (o < bufLen) ? calloc(1, sizeof(*ap)) : NULL;
+
+    assert(buf != NULL || bufLen == 0);
+    
+    if (ap) {
+        ap->coinbaseTx = btcTransactionParse(&buf[o], bufLen - o);
+        o = (_txIsCoinbase(ap->coinbaseTx)) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen + 1;
+        if (o + sizeof(UInt256) <= bufLen) ap->parentHash = UInt256Get(&buf[o]);
+        o += sizeof(UInt256);
+        ap->cbHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
+        o += len;
+        len = ap->cbHashesCount*sizeof(UInt256);
+        ap->cbHashes = (o + len <= bufLen) ? malloc(len) : NULL;
+        if (ap->cbHashes) memcpy(ap->cbHashes, &buf[o], len);
+        o += len;
+        if (o + sizeof(uint32_t) <= bufLen) ap->cbMask = UInt32GetLE(&buf[o]);
+        o += sizeof(uint32_t);
+        ap->chainHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
+        o += len;
+        len = ap->chainHashesCount*sizeof(UInt256);
+        ap->chainHashes = (o + len <= bufLen) ? malloc(len) : NULL;
+        if (ap->chainHashes) memcpy(ap->chainHashes, &buf[o], len);
+        o += len;
+        if (o + sizeof(uint32_t) <= bufLen) ap->chainMask = UInt32GetLE(&buf[o]);
+        o += sizeof(uint32_t);
+        if (o + 80 <= bufLen) ap->parent = btcMerkleBlockParse(&buf[o], 80);
+        o += 80;
+        if (o > bufLen) { _BRAuxPowFree(ap); ap = NULL; }
+    }
+    
+    if (ap && off) *off = o;
+    return ap;
+}
+
+static size_t _BRAuxPowSerialize(const _BRAuxPow *ap, uint8_t *buf, size_t bufLen, size_t *off)
+{
+    size_t len, o = (off) ? *off : 0;
+
+    if (! ap || ! ap->coinbaseTx || ! ap->parent) return 0;
+    o += btcTransactionSerialize(ap->coinbaseTx, (buf ? &buf[o] : NULL), (o <= bufLen ? bufLen - o : 0));
+    if (buf && o + sizeof(UInt256) <= bufLen) UInt256Set(&buf[o], ap->parentHash);
+    o += sizeof(UInt256);
+    o += BRVarIntSet((buf ? &buf[o] : NULL), (o <= bufLen ? bufLen - o : 0), ap->cbHashesCount);
+    len = ap->cbHashesCount*sizeof(UInt256);
+    if (buf && o + len <= bufLen) memcpy(&buf[o], ap->cbHashes, len);
+    o += len;
+    if (buf && o + sizeof(uint32_t) <= bufLen) UInt32SetLE(&buf[o], ap->cbMask);
+    o += sizeof(uint32_t);
+    o += BRVarIntSet((buf ? &buf[o] : NULL), (o <= bufLen ? bufLen - o : 0), ap->chainHashesCount);
+    len = ap->chainHashesCount*sizeof(UInt256);
+    if (buf && o + len <= bufLen) memcpy(&buf[o], ap->chainHashes, len);
+    o += len;
+    if (buf && o + sizeof(uint32_t) <= bufLen) UInt32SetLE(&buf[o], ap->chainMask);
+    o += sizeof(uint32_t);
+    o += btcMerkleBlockSerialize(ap->parent, (buf ? &buf[o] : NULL), (o <= bufLen ? bufLen - o : 0));
+    len = (off) ? o - *off : o;
+    if (off && (! buf || o <= bufLen)) *off = o;
+    return (! buf || o <= bufLen) ? len : 0;
+}
+
 // returns a newly allocated merkle block struct that must be freed by calling btcMerkleBlockFree()
 BRBitcoinMerkleBlock *btcMerkleBlockNew(void)
 {
-    BRBitcoinMerkleBlock *block = calloc(1, sizeof(*block));
+    BRBitcoinMerkleBlock *block = calloc(1, sizeof(_BRAuxPowBlock));
 
     assert(block != NULL);
     
@@ -87,13 +186,19 @@ BRBitcoinMerkleBlock *btcMerkleBlockNew(void)
 // returns a deep copy of block and that must be freed by calling btcMerkleBlockFree()
 BRBitcoinMerkleBlock *btcMerkleBlockCopy(const BRBitcoinMerkleBlock *block)
 {
-    BRBitcoinMerkleBlock *cpy = btcMerkleBlockNew();
-
     assert(block != NULL);
+    
+    BRBitcoinMerkleBlock *cpy = btcMerkleBlockNew();
+    size_t len = _BRAuxPowSerialize(((_BRAuxPowBlock *)block)->ap, NULL, 0, NULL);
+    uint8_t _buf[0x1000], *buf = (len <= 0x1000) ? _buf : malloc(len);
+
     *cpy = *block;
     cpy->hashes = NULL;
     cpy->flags = NULL;
     btcMerkleBlockSetTxHashes(cpy, block->hashes, block->hashesCount, block->flags, block->flagsLen);
+    len = _BRAuxPowSerialize(((_BRAuxPowBlock *)block)->ap, buf, len, NULL);
+    ((_BRAuxPowBlock *)cpy)->ap = _BRAuxPowParse(buf, len, NULL);
+    if (buf != _buf) free(buf);
     return cpy;
 }
 
@@ -102,7 +207,7 @@ BRBitcoinMerkleBlock *btcMerkleBlockCopy(const BRBitcoinMerkleBlock *block)
 BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
 {
     BRBitcoinMerkleBlock *block = (buf && 80 <= bufLen) ? btcMerkleBlockNew() : NULL;
-    size_t off = 0, len = 0;
+    size_t off = 0, len = 0, l = 0;
     
     assert(buf != NULL || bufLen == 0);
     
@@ -119,26 +224,29 @@ BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
         off += sizeof(uint32_t);
         block->nonce = UInt32GetLE(&buf[off]);
         off += sizeof(uint32_t);
-        
-        if (off + sizeof(uint32_t) <= bufLen) {
-            block->totalTx = UInt32GetLE(&buf[off]);
-            off += sizeof(uint32_t);
-            block->hashesCount = (size_t)BRVarInt(&buf[off], (off <= bufLen ? bufLen - off : 0), &len);
-            off += len;
-            len = block->hashesCount*sizeof(UInt256);
-            block->hashes = (off + len <= bufLen) ? malloc(len) : NULL;
-            if (block->hashes) memcpy(block->hashes, &buf[off], len);
-            off += len;
-            block->flagsLen = (size_t)BRVarInt(&buf[off], (off <= bufLen ? bufLen - off : 0), &len);
-            off += len;
-            len = block->flagsLen;
-            block->flags = (off + len <= bufLen) ? malloc(len) : NULL;
-            if (block->flags) memcpy(block->flags, &buf[off], len);
-            off += len;
-        }
-        
         BRSHA256_2(&block->blockHash, buf, 80);
 
+        if (block->version >> 16 != 0) ((_BRAuxPowBlock *)block)->ap = _BRAuxPowParse(buf, bufLen, &off);
+
+        block->totalTx = (off + sizeof(uint32_t) <= bufLen) ? UInt32GetLE(&buf[off]) : 0;
+        block->hashesCount = (size_t)BRVarInt(&buf[off + 4], (off + 4 <= bufLen ? bufLen - (off + 4) : 0), &l);
+        len = 4 + l + block->hashesCount*sizeof(UInt256);
+        block->flagsLen = (size_t)BRVarInt(&buf[off + len], (off + len <= bufLen ? bufLen - (off + len) : 0), &l);
+        
+        if (block->totalTx > 0 && off + len + l + block->flagsLen == bufLen) {
+            block->hashes = malloc(block->hashesCount*sizeof(UInt256));
+            memcpy(block->hashes, &buf[off + 4 + BRVarIntSize(block->hashesCount)], block->hashesCount*sizeof(UInt256));
+            block->flags = malloc(block->flagsLen);
+            memcpy(block->flags, &buf[off + len + l], block->flagsLen);
+
+            if (! btcMerkleBlockIsValid(block, block->timestamp + BLOCK_MAX_TIME_DRIFT)) { // parse as header
+                btcMerkleBlockFree(block);
+                block = btcMerkleBlockParse(buf, off);
+            }
+            else off = bufLen;
+        }
+        else block->totalTx = block->hashesCount = block->flagsLen = 0;
+        
         if (off > bufLen) {
             btcMerkleBlockFree(block);
             block = NULL;
@@ -151,16 +259,11 @@ BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
 // returns number of bytes written to buf, or total bufLen needed if buf is NULL (block->height is not serialized)
 size_t btcMerkleBlockSerialize(const BRBitcoinMerkleBlock *block, uint8_t *buf, size_t bufLen)
 {
-    size_t off = 0, len = 80;
+    size_t len, off = 0;
     
     assert(block != NULL);
     
-    if (block->totalTx > 0) {
-        len += sizeof(uint32_t) + BRVarIntSize(block->hashesCount) + block->hashesCount*sizeof(UInt256) +
-               BRVarIntSize(block->flagsLen) + block->flagsLen;
-    }
-    
-    if (buf && len <= bufLen) {
+    if (buf && 80 <= bufLen) {
         UInt32SetLE(&buf[off], block->version);
         off += sizeof(uint32_t);
         UInt256Set(&buf[off], block->prevBlock);
@@ -173,24 +276,29 @@ size_t btcMerkleBlockSerialize(const BRBitcoinMerkleBlock *block, uint8_t *buf, 
         off += sizeof(uint32_t);
         UInt32SetLE(&buf[off], block->nonce);
         off += sizeof(uint32_t);
-    
-        if (block->totalTx > 0) {
-            UInt32SetLE(&buf[off], block->totalTx);
-            off += sizeof(uint32_t);
-            off += BRVarIntSet(&buf[off], (off <= bufLen ? bufLen - off : 0), block->hashesCount);
-            if (block->hashes) memcpy(&buf[off], block->hashes, block->hashesCount*sizeof(UInt256));
-            off += block->hashesCount*sizeof(UInt256);
-            off += BRVarIntSet(&buf[off], (off <= bufLen ? bufLen - off : 0), block->flagsLen);
-            if (block->flags) memcpy(&buf[off], block->flags, block->flagsLen);
-            off += block->flagsLen; ANALYZER_IGNORE_UNREAD_VARIABLE(off);
-        }
     }
+    else off = 80;
     
-    return (! buf || len <= bufLen) ? len : 0;
+    _BRAuxPowSerialize(((_BRAuxPowBlock *)block)->ap, buf, bufLen, &off);
+    
+    if (block->totalTx > 0) {
+        if (buf && off + sizeof(uint32_t) <= bufLen) UInt32SetLE(&buf[off], block->totalTx);
+        off += sizeof(uint32_t);
+        off += BRVarIntSet((buf ? &buf[off] : NULL), (off <= bufLen ? bufLen - off : 0), block->hashesCount);
+        len = block->hashesCount*sizeof(UInt256);
+        if (buf && off + len <= bufLen) memcpy(&buf[off], block->hashes, len);
+        off += len;
+        off += BRVarIntSet((buf ? &buf[off] : NULL), (off <= bufLen ? bufLen - off : 0), block->flagsLen);
+        len = block->flagsLen;
+        if (buf && off + len <= bufLen) memcpy(&buf[off], block->flags, len);
+        off += len;
+    }
+
+    return (! buf || off <= bufLen) ? off : 0;
 }
 
-static size_t _btcMerkleBlockTxHashesR(const BRBitcoinMerkleBlock *block, UInt256 *txHashes, size_t hashesCount, size_t *idx,
-                                      size_t *hashIdx, size_t *flagIdx, uint32_t depth)
+static size_t _btcMerkleBlockTxHashesR(const BRBitcoinMerkleBlock *block, UInt256 *txHashes, size_t hashesCount,
+                                       size_t *idx, size_t *hashIdx, size_t *flagIdx, uint32_t depth)
 {
     uint8_t flag;
     
@@ -228,7 +336,7 @@ size_t btcMerkleBlockTxHashes(const BRBitcoinMerkleBlock *block, UInt256 *txHash
 
 // sets the hashes and flags fields for a block created with btcMerkleBlockNew()
 void btcMerkleBlockSetTxHashes(BRBitcoinMerkleBlock *block, const UInt256 hashes[], size_t hashesCount,
-                              const uint8_t *flags, size_t flagsLen)
+                               const uint8_t *flags, size_t flagsLen)
 {
     assert(block != NULL);
     assert(hashes != NULL || hashesCount == 0);
@@ -270,40 +378,6 @@ static UInt256 _btcMerkleBlockRootR(const BRBitcoinMerkleBlock *block, size_t *h
     return md;
 }
 
-// true if merkle tree and timestamp are valid, and proof-of-work matches the stated difficulty target
-// NOTE: this only checks if the block difficulty matches the difficulty target in the header, it does not check if the
-// target is correct for the block's height in the chain - use btcMerkleBlockVerifyDifficulty() for that
-int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime)
-{
-    assert(block != NULL);
-    
-    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
-    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
-    size_t hashIdx = 0, flagIdx = 0;
-    UInt256 merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0), t = UINT256_ZERO;
-    int r = 1;
-    
-    // check if merkle root is correct
-    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) r = 0;
-    
-    // check if timestamp is too far in future
-    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
-    
-    // check if proof-of-work target is out of range
-    if (target == 0 || (block->target & 0x00800000) || block->target > MAX_PROOF_OF_WORK) r = 0;
-    
-    if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
-    else UInt32SetLE(t.u8, target >> (3 - size)*8);
-    
-    for (int i = sizeof(t) - 1; r && i >= 0; i--) { // check proof-of-work
-        if (block->blockHash.u8[i] < t.u8[i]) break;
-        if (block->blockHash.u8[i] > t.u8[i]) r = 0;
-    }
-    
-    return r;
-}
-
 // true if the given tx hash is known to be included in the block
 int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHash)
 {
@@ -319,7 +393,87 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
     return r;
 }
 
-// verifies the block difficulty target is correct for the block's position in the chain
+// true if merkle tree, timestamp and difficulty target are valid
+// NOTE: this does not check proof-of-work, or if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTime)
+{
+    assert(block != NULL);
+    
+    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
+    size_t i, hashIdx = 0, flagIdx = 0;
+    UInt256 pair[2], merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0);
+    _BRAuxPow *ap = ((_BRAuxPowBlock *)block)->ap;
+    int r = 1;
+    
+    // check if merkle root is correct
+    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) r = 0;
+    
+    // check if timestamp is too far in future
+    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
+    
+    // check if proof-of-work target is valid
+    if (size == 0 || target == 0 || (block->target & 0x00800000)) r = 0;
+    
+    if (ap) { // check if auxPow is valid
+        for (i = 0, merkleRoot = ap->coinbaseTx->txHash; i < ap->cbHashesCount; i++) {
+            pair[(ap->cbMask >> i) & 0x01] = merkleRoot;
+            pair[(~ap->cbMask >> i) & 0x01] = ap->cbHashes[i];
+            BRSHA256_2(merkleRoot.u8, pair, sizeof(pair));
+        }
+
+        // check if coinbaseTx is included in parent block
+        if (! UInt256Eq(merkleRoot, ap->parent->merkleRoot)) r = 0;
+        
+        for (i = 0, merkleRoot = block->blockHash; i < ap->chainHashesCount; i++) {
+            pair[(ap->chainMask >> i) & 0x01] = merkleRoot;
+            pair[(~ap->chainMask >> i) & 0x01] = ap->chainHashes[i];
+            BRSHA256_2(merkleRoot.u8, pair, sizeof(pair));
+        }
+
+        // scan for chain merkle root in coinbase input
+        for (i = 0, merkleRoot = UInt256Reverse(merkleRoot); r && i + 32 <= ap->coinbaseTx->inputs->sigLen; i++) {
+            if (memcmp(&ap->coinbaseTx->inputs->signature[i], merkleRoot.u8, 32) == 0) break;
+        }
+        
+        if (r && i + 32 > ap->coinbaseTx->inputs->sigLen) r = 0;
+        
+        // check if parent block is valid
+        if (r && ! btcMerkleBlockIsValid(ap->parent, currentTime)) r = 0;
+    }
+
+    return r;
+}
+
+// true if proof-of-work meets the stated difficulty target in the header
+// NOTE: this does not check if the target is correct for the block's height in the chain
+// - use BRMerkleBlockVerifyDifficulty() for that
+int btcMerkleBlockVerifyProofOfWork(const BRBitcoinMerkleBlock *block)
+{
+    assert(block != NULL);
+
+    // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+    const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
+    int i;
+    UInt256 t = UINT256_ZERO;
+    
+    if (size - 3 >= sizeof(t) - sizeof(uint32_t)) return 0;
+
+    if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
+    else UInt32SetLE(t.u8, target >> (3 - size)*8);
+        
+    for (i = sizeof(t) - 1; i >= 0; i--) { // check proof-of-work
+        if (block->blockHash.u8[i] < t.u8[i]) break;
+        if (block->blockHash.u8[i] > t.u8[i]) return 0;
+    }
+    
+    return 1;
+}
+
+// verifies proof-of-work, and that the difficulty target is correct for the block's position in the chain
 // transitionTime is the timestamp of the block at the previous difficulty transition
 // transitionTime may be 0 if block->height is not a multiple of BLOCK_DIFFICULTY_INTERVAL
 //
@@ -330,22 +484,23 @@ int btcMerkleBlockContainsTxHash(const BRBitcoinMerkleBlock *block, UInt256 txHa
 // targeted time between transitions (14*24*60*60 seconds). If the new difficulty is more than 4x or less than 1/4 of
 // the previous difficulty, the change is limited to either 4x or 1/4. There is also a minimum difficulty value
 // intuitively named MAX_PROOF_OF_WORK... since larger values are less difficult.
-int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBitcoinMerkleBlock *previous, uint32_t transitionTime)
+int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBitcoinMerkleBlock *previous,
+                                   uint32_t transitionTime)
 {
-    int size, r = 1;
-    uint64_t target;
+    int r = 1, size = 0;
+    uint64_t target = 0;
     int64_t timespan;
     
     assert(block != NULL);
     assert(previous != NULL);
-    
-    if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
-    if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0 && transitionTime == 0) r = 0;
+
+    if (! previous && !UInt256Eq(block->prevBlock, previous->blockHash) && block->height != previous->height + 1) r = 0;
         
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) {
         // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
         // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-        size = previous->target >> 24, target = previous->target & 0x007fffff;
+        size = previous->target >> 24;
+        target = previous->target & 0x007fffff;
         timespan = (int64_t)previous->timestamp - transitionTime;
         
         // limit difficulty transition to -75% or +400%
@@ -358,23 +513,29 @@ int btcMerkleBlockVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRBi
         target /= TARGET_TIMESPAN >> 8;
         size--; // decrement size since we only divided by TARGET_TIMESPAN/256
     
-        while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-        target |= (uint64_t) (size << 24);
+        while (size < 1 || target > 0x007fffff) { target >>= 8; size++; } // normalize target for "compact" format
+        target |= (uint64_t)size << 24;
     
         if (target > MAX_PROOF_OF_WORK) target = MAX_PROOF_OF_WORK; // limit to MAX_PROOF_OF_WORK
-        if (block->target != target) r = 0;
+        if (block->target != target || transitionTime == 0) r = 0;
     }
     else if (r && block->target != previous->target) r = 0;
-    
-    return r;
+        
+    return r && btcMerkleBlockVerifyProofOfWork(block);
+}
+
+// returns parent block if block uses AuxPow merge-mining: https://en.bitcoin.it/wiki/Merged_mining_specification
+const BRBitcoinMerkleBlock *btcMerkleBlockAuxPowParent(const BRBitcoinMerkleBlock *block)
+{
+    return (((_BRAuxPowBlock *)block)->ap) ? ((_BRAuxPowBlock *)block)->ap->parent : NULL;
 }
 
 // frees memory allocated by BRMerkleBlockParse
 void btcMerkleBlockFree(BRBitcoinMerkleBlock *block)
 {
     assert(block != NULL);
-    
     if (block->hashes) free(block->hashes);
     if (block->flags) free(block->flags);
+    _BRAuxPowFree(((_BRAuxPowBlock *)block)->ap);
     free(block);
 }
