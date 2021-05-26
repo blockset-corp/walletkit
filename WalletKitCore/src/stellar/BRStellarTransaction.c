@@ -73,6 +73,7 @@ stellarTransactionCreate(BRStellarAddress sourceAddress,
     transaction->to = targetAddress;
     transaction->amount = amount;
     transaction->feeBasis = feeBasis;
+    transaction->fee = (BRStellarFee)stellarFeeBasisGetFee(&transaction->feeBasis);
     return transaction;
 }
 
@@ -270,4 +271,11 @@ extern uint8_t* stellarTransactionSerialize(BRStellarTransaction transaction, si
         *bufferSize = 0;
         return NULL;
     }
+}
+
+extern void
+stellarTransactionSetMemo(BRStellarTransaction transaction, BRStellarMemo * memo)
+{
+    assert(transaction);
+    transaction->memo = memo;
 }

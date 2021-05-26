@@ -22,8 +22,9 @@
 #include "support/BRKey.h"
 #include "support/BRBase58.h"
 #include "stellar/BRStellar.h"
+#include "stellar/utils/b64.h"
 
-static int debug_log = 0;
+static int debug_log = 1;
 
 static uint8_t char2int(char input)
 {
@@ -94,6 +95,21 @@ static BRStellarAccount createTestAccount(const char* paper_key,
     free(addressAsString);
     stellarAddressFree(address);
     stellarAccountFree(account);
+
+    // Now work backwards from the string
+    if (expected_address && public_key_string) {
+        BRStellarAddress stellarAddress = stellarAddressCreateFromString(expected_address, true);
+        size_t rawAddressSize = stellarAddressGetRawSize (stellarAddress);
+        uint8_t *rawAddress = calloc(1, rawAddressSize);
+        stellarAddressGetRawBytes(stellarAddress, rawAddress, rawAddressSize);
+        // Convert the incoming public key string to bytes and compare
+        uint8_t *expectedRawAddress = calloc(1, strlen(public_key_string) / 2);
+        hex2bin(public_key_string, expectedRawAddress);
+        assert(0 == memcmp(rawAddress, expectedRawAddress, rawAddressSize));
+        free(expectedRawAddress);
+        free(rawAddress);
+        stellarAddressFree(stellarAddress);
+    }
 }
 
 static void runAccountTests()
@@ -133,11 +149,71 @@ static void runAccountTests()
                                 NULL, "GDSTAICFVBHMGZ4HI6YEKZSGDR7QGEM4PPREYW2JV3XW7STVM7L5EDYZ");
 }
 
-// MARK: -
+// MARK: - Transaction Tests
+
+static void serializeAndSign()
+{
+    char targetAddress[128];
+    memset(targetAddress, 0x00, 128);
+    strcpy(targetAddress, "GBKWF42EWZDRISFXW3V6WW5OTQOOZSJQ54UINC7CXN4LW5BIGHTRB3BB");
+    //const char * targetAddress = "GBKWF42EWZDRISFXW3V6WW5OTQOOZSJQ54UINC7CXN4LW5BIGHTRB3BB";
+    BRStellarAddress destination = stellarAddressCreateFromString(targetAddress, true);
+
+    BRStellarAccount account = stellarAccountCreate("off enjoy fatal deliver team nothing auto canvas oak brass fashion happy");
+    stellarAccountSetSequence(account, 2001274371309576);
+    stellarAccountSetNetworkType(account, STELLAR_NETWORK_TESTNET);
+    BRStellarAddress sourceAddress = stellarAccountGetPrimaryAddress(account);
+
+    BRStellarMemo memo;
+    memo.memoType = 1;
+    strcpy(memo.text, "Buy yourself a beer!");
+
+    // Add the single operation to the array
+    BRArrayOf(BRStellarOperation) operations;
+    array_new(operations, 1);
+    array_add(operations, stellarOperationCreatePayment(destination,
+                                                        stellarAssetCreateAsset("XML", NULL),
+                                                        10.5));
+
+    BRStellarFeeBasis fee;
+    fee.costFactor = 1;
+    fee.pricePerCostFactor = 100;
+    BRStellarAmount amount = 10.5;
+    BRStellarTransaction transaction = stellarTransactionCreate(sourceAddress, destination,
+                                                                amount, fee);
+    stellarTransactionSetMemo(transaction, &memo);
+    BRStellarSerializedTransaction s = stellarAccountSignTransaction(account, transaction,
+                                  "off enjoy fatal deliver team nothing auto canvas oak brass fashion happy");
+
+    size_t sSize = stellarGetSerializedSize(s);
+    uint8_t *sBytes = stellarGetSerializedBytes(s);
+    assert(sSize > 0);
+    assert(sBytes);
+
+    // Base64 the bytes
+    char * encoded = b64_encode(sBytes, sSize);
+    if (debug_log) {
+        printf("encoded bytes: %s\n", encoded);
+        printBytes("sBytes:", sBytes, sSize);
+    }
+    // Compare with what we are expecting
+    const char* expected_b64 = "AAAAACQP/rfPQXGBsLCTIDX4vAhrBNFsGLHbjGKfEQXiaHrRAAAAZAAHHCYAAAAIAAAAAAAAAAEAAAAUQnV5IHlvdXJzZWxmIGEgYmVlciEAAAABAAAAAAAAAAEAAAAAVWLzRLZHFEi3tuvrW66cHOzJMO8ohoviu3i7dCgx5xAAAAAAAAAAAAZCLEAAAAAAAAAAAeJoetEAAABAzBQpbrqpbfFozHnwpIATkErUPcb5xesMeFClf5dyd4X0kBw3c6gZUVTtHh3iCZ6eUAEge/lCft6NfXzsHy1HBQ==";
+    assert(0 == memcmp(encoded, expected_b64, strlen(expected_b64)));
+    assert(strlen(encoded) == strlen(expected_b64));
+    free(encoded);
+
+    stellarTransactionFree(transaction);
+}
+
+static void runTransactionTests()
+{
+    serializeAndSign();
+}
 
 extern void
 runStellarTest (void /* ... */) {
     printf("Running stellar unit tests...\n");
     runAccountTests();
+    runTransactionTests();
 }
 

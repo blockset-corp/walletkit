@@ -73,7 +73,7 @@ BRStellarAddress stellarAddressStringToAddress(const char* input)
 {
     BRStellarAddress address = calloc(1, sizeof(struct BRStellarAddressRecord));
 
-    uint8_t rawBytes[35];
+    uint8_t rawBytes[36];
     base32_decode((const unsigned char*)input, rawBytes);
     memcpy(address->bytes, &rawBytes[1], 32);
     return address;
@@ -141,5 +141,18 @@ stellarAddressEqual (BRStellarAddress a1, BRStellarAddress a2) {
 extern size_t
 stellarAddressHashValue (BRStellarAddress address) {
     return *((size_t*) address->bytes);
+}
+
+extern size_t
+stellarAddressGetRawSize (BRStellarAddress address)
+{
+    return STELLAR_ADDRESS_BYTES;
+}
+
+extern void stellarAddressGetRawBytes (BRStellarAddress address, uint8_t *buffer, size_t bufferSize)
+{
+    assert(buffer);
+    assert(bufferSize >= STELLAR_ADDRESS_BYTES);
+    memcpy(buffer, address->bytes, STELLAR_ADDRESS_BYTES);
 }
 

@@ -108,6 +108,9 @@ stellarTransactionGetFee(BRStellarTransaction transaction);
 
 extern uint8_t* stellarTransactionSerialize(BRStellarTransaction transaction, size_t * bufferSize);
 
+extern void
+stellarTransactionSetMemo(BRStellarTransaction transaction, BRStellarMemo * memo);
+
 #ifdef __cplusplus
 }
 #endif

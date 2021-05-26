@@ -43,4 +43,8 @@ stellarAddressHashValue (BRStellarAddress address);
 extern int
 stellarAddressEqual (BRStellarAddress a1, BRStellarAddress a2);
 
+extern size_t
+stellarAddressGetRawSize (BRStellarAddress address);
+extern void stellarAddressGetRawBytes (BRStellarAddress address, uint8_t *buffer, size_t bufferSize);
+
 #endif /* BRStellarAddress_h */
