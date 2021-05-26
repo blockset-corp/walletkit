@@ -77,9 +77,8 @@ extern void stellarAccountFree(BRStellarAccount account);
  *                        NOTE: is the handle is NULL then the serialization failed AND the sequence
  *                              was not incremented
  */
-extern
-const BRStellarSerializedTransaction /* do NOT free, owned by transaction */
-stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction transaction, const char *paperKey);
+extern size_t
+stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction transaction, UInt512 seed);
 
 /**
  * Get the stellar address for this account
@@ -132,6 +131,7 @@ extern BRKey stellarAccountGetPublicKey(BRStellarAccount account);
  *                  or should be set to 1 more that the value in the lastest transaction
  */
 extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence);
+extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, int64_t blockNumber);
 
 /**
  * Set the network type being used for this account

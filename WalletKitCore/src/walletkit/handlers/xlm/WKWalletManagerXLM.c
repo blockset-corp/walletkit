@@ -177,39 +177,32 @@ wkWalletManagerRecoverTransfersFromTransactionBundleXLM (WKWalletManager manager
 
 static void
 wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
-                                                          OwnershipKept WKClientTransferBundle bundle)
-{
-
-}
-/*
-static void
-wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
                                                           OwnershipKept WKClientTransferBundle bundle) {
     // create BRStellarTransaction
     
     BRStellarAccount xlmAccount = wkAccountAsXLM (manager->account);
     
-    BRStellarAmount amount, fee = 0;
-    sscanf(bundle->amount, "%" PRIi64, &amount);
-    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIi64, &fee);
+    BRStellarAmount amount = 0;
+    sscanf(bundle->amount, "%lf", &amount);
+    BRStellarFee fee = 0;
+    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIi32, &fee);
+    BRStellarFeeBasis stellarFeeBasis = { fee, 1};
     BRStellarAddress toAddress   = stellarAddressCreateFromString(bundle->to,   false);
     BRStellarAddress fromAddress = stellarAddressCreateFromString(bundle->from, false);
     // Convert the hash string to bytes
     BRStellarTransactionHash txHash;
     memset(txHash.bytes, 0x00, sizeof(txHash.bytes));
     if (bundle->hash != NULL) {
-        assert(96 == strlen(bundle->hash));
         hexDecode(txHash.bytes, sizeof(txHash.bytes), bundle->hash, strlen(bundle->hash));
     }
 
     int error = (WK_TRANSFER_STATE_ERRORED == bundle->status);
 
     bool xlmTransactionNeedFree = true;
-    BRStellarTransaction xlmTransaction = stellarTransactionCreate(fromAddress,
+    BRStellarTransaction xlmTransaction = stellarTransactionCreateFull(fromAddress,
                                                                   toAddress,
                                                                   amount,
-                                                                  fee,
-                                                                  bundle->identifier,
+                                                                  stellarFeeBasis,
                                                                   txHash,
                                                                   bundle->blockTimestamp,
                                                                   bundle->blockNumber,
@@ -226,7 +219,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
     WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
     wkHashGive(hash);
 
-    WKFeeBasis      feeBasis = wkFeeBasisCreateAsXLM (wallet->unit, stellarTransactionGetFeeBasis(xlmTransaction));
+    WKFeeBasis      feeBasis = wkFeeBasisCreateAsXLM (wallet->unit, stellarTransactionGetFee(xlmTransaction));
     WKTransferState state    = wkClientTransferBundleGetTransferState (bundle, feeBasis);
 
     if (NULL == baseTransfer) {
@@ -253,7 +246,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
     if (xlmTransactionNeedFree)
         stellarTransactionFree (xlmTransaction);
 }
-*/
+
 extern WKWalletSweeperStatus
 wkWalletManagerWalletSweeperValidateSupportedXLM (WKWalletManager manager,
                                                        WKWallet wallet,

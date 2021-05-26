@@ -24,7 +24,7 @@
 #include "stellar/BRStellar.h"
 #include "stellar/utils/b64.h"
 
-static int debug_log = 1;
+static int debug_log = 0;
 
 static uint8_t char2int(char input)
 {
@@ -160,7 +160,11 @@ static void serializeAndSign()
     BRStellarAddress destination = stellarAddressCreateFromString(targetAddress, true);
 
     BRStellarAccount account = stellarAccountCreate("off enjoy fatal deliver team nothing auto canvas oak brass fashion happy");
-    stellarAccountSetSequence(account, 2001274371309576);
+    stellarAccountSetBlockNumberAtCreation(account, 465958);
+    // 2001274371309568 = 465958 << 32
+    // which means to get orginal sequenc number 2001274371309576 we will need
+    // to use a block number of 465958 and a sequence number of 7 (since it get's incremented)
+    stellarAccountSetSequence(account, 7);
     stellarAccountSetNetworkType(account, STELLAR_NETWORK_TESTNET);
     BRStellarAddress sourceAddress = stellarAccountGetPrimaryAddress(account);
 
@@ -168,33 +172,28 @@ static void serializeAndSign()
     memo.memoType = 1;
     strcpy(memo.text, "Buy yourself a beer!");
 
-    // Add the single operation to the array
-    BRArrayOf(BRStellarOperation) operations;
-    array_new(operations, 1);
-    array_add(operations, stellarOperationCreatePayment(destination,
-                                                        stellarAssetCreateAsset("XML", NULL),
-                                                        10.5));
-
     BRStellarFeeBasis fee;
     fee.costFactor = 1;
     fee.pricePerCostFactor = 100;
-    BRStellarAmount amount = 10.5;
+    BRStellarAmount amount = 105000000;
     BRStellarTransaction transaction = stellarTransactionCreate(sourceAddress, destination,
                                                                 amount, fee);
     stellarTransactionSetMemo(transaction, &memo);
-    BRStellarSerializedTransaction s = stellarAccountSignTransaction(account, transaction,
-                                  "off enjoy fatal deliver team nothing auto canvas oak brass fashion happy");
+    // Generate the 512bit private key using a BIP39 paperKey
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, "off enjoy fatal deliver team nothing auto canvas oak brass fashion happy", NULL); // no passphrase
 
-    size_t sSize = stellarGetSerializedSize(s);
-    uint8_t *sBytes = stellarGetSerializedBytes(s);
-    assert(sSize > 0);
-    assert(sBytes);
+    size_t tx_size = stellarAccountSignTransaction(account, transaction, seed);
+
+    uint8_t *tx_bytes = stellarTransactionSerialize(transaction, &tx_size);
+    assert(tx_size > 0);
+    assert(tx_bytes);
 
     // Base64 the bytes
-    char * encoded = b64_encode(sBytes, sSize);
+    char * encoded = b64_encode(tx_bytes, tx_size);
     if (debug_log) {
         printf("encoded bytes: %s\n", encoded);
-        printBytes("sBytes:", sBytes, sSize);
+        printBytes("sBytes:", tx_bytes, tx_size);
     }
     // Compare with what we are expecting
     const char* expected_b64 = "AAAAACQP/rfPQXGBsLCTIDX4vAhrBNFsGLHbjGKfEQXiaHrRAAAAZAAHHCYAAAAIAAAAAAAAAAEAAAAUQnV5IHlvdXJzZWxmIGEgYmVlciEAAAABAAAAAAAAAAEAAAAAVWLzRLZHFEi3tuvrW66cHOzJMO8ohoviu3i7dCgx5xAAAAAAAAAAAAZCLEAAAAAAAAAAAeJoetEAAABAzBQpbrqpbfFozHnwpIATkErUPcb5xesMeFClf5dyd4X0kBw3c6gZUVTtHh3iCZ6eUAEge/lCft6NfXzsHy1HBQ==";

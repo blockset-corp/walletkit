@@ -32,7 +32,7 @@ wkFeeBasisCreateCallbackXLM (WKFeeBasisCreateContext context,
 }
 
 private_extern WKFeeBasis
-wkFeeBasisCreateAsXLM (WKUnit unit, BRStellarAmount fee) {
+wkFeeBasisCreateAsXLM (WKUnit unit, BRStellarFee fee) {
     BRStellarFeeBasis xlmFeeBasis;
     xlmFeeBasis.costFactor = 1;
     xlmFeeBasis.pricePerCostFactor = fee;

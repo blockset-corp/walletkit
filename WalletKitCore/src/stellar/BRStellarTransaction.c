@@ -39,6 +39,7 @@ struct BRStellarTransactionRecord {
     BRStellarAmount amount;
     BRStellarAsset asset;
     BRStellarSequence sequence;
+    BRStellarTransactionHash hash;
     BRStellarTimeBounds *timeBounds;
     uint32_t numTimeBounds;
     BRStellarMemo *memo;
@@ -47,6 +48,10 @@ struct BRStellarTransactionRecord {
     BRStellarSerializedTransaction signedBytes; // Set after signing
 
     BRStellarTransactionResult result;
+
+    uint64_t timestamp;
+    uint64_t blockHeight;
+    int error;
 };
 
 void stellarSerializedTransactionRecordFree(BRStellarSerializedTransaction * signedBytes)
@@ -74,6 +79,26 @@ stellarTransactionCreate(BRStellarAddress sourceAddress,
     transaction->amount = amount;
     transaction->feeBasis = feeBasis;
     transaction->fee = (BRStellarFee)stellarFeeBasisGetFee(&transaction->feeBasis);
+    return transaction;
+}
+
+extern BRStellarTransaction /* caller must free - stellarTransferFree */
+stellarTransactionCreateFull (BRStellarAddress sourceAddress,
+                             BRStellarAddress targetAddress,
+                             BRStellarAmount amount, // For now assume XRP drops.
+                             BRStellarFeeBasis feeBasis,
+                             BRStellarTransactionHash hash,
+                             uint64_t timestamp,
+                             uint64_t blockHeight,
+                             int error) {
+
+    BRStellarTransaction transaction = stellarTransactionCreate (sourceAddress, targetAddress, amount, feeBasis);
+
+    transaction->hash        = hash;
+    transaction->timestamp   = timestamp;
+    transaction->blockHeight = blockHeight;
+    transaction->error       = error;
+
     return transaction;
 }
 
@@ -133,7 +158,7 @@ static BRStellarSignatureRecord stellarTransactionSign(uint8_t * tx_hash, size_t
     return sig;
 }
 
-extern BRStellarSerializedTransaction
+extern size_t
 stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *privateKey,
                                   uint8_t *publicKey, int64_t sequence, BRStellarNetworkType networkType)
 {
@@ -185,8 +210,8 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
         memcpy(transaction->signedBytes->txHash, tx_hash, 32);
     }
     
-    // Return the pointer to the signed byte object (or perhaps NULL)
-    return transaction->signedBytes;
+    // Return the number of bytes written to the buffer
+    return length;
 
 }
 
@@ -278,4 +303,27 @@ stellarTransactionSetMemo(BRStellarTransaction transaction, BRStellarMemo * memo
 {
     assert(transaction);
     transaction->memo = memo;
+}
+
+extern int
+stellarTransactionHasError(BRStellarTransaction transaction) {
+    return transaction->error;
+}
+
+extern int
+stellarTransactionIsInBlock (BRStellarTransaction transaction) {
+    assert(transaction);
+    return transaction->blockHeight == 0 ? 0 : 1;
+}
+
+extern uint64_t stellarTransactionGetBlockHeight (BRStellarTransaction transaction) {
+    assert(transaction);
+    return transaction->blockHeight;
+}
+
+extern BRStellarFeeBasis
+stellarTransactionGetFeeBasis (BRStellarTransaction transaction)
+{
+    assert(transaction);
+    return transaction->feeBasis;
 }

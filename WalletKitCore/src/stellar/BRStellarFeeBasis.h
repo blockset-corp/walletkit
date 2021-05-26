@@ -17,8 +17,8 @@
 
 typedef struct
 {
-    BRStellarAmount     pricePerCostFactor;
-    uint32_t            costFactor;
+    BRStellarFee     pricePerCostFactor;
+    uint32_t         costFactor;
 } BRStellarFeeBasis;
 
 extern BRStellarAmount stellarFeeBasisGetPricePerCostFactor(BRStellarFeeBasis *feeBasis);

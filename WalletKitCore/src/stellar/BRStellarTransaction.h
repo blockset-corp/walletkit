@@ -39,15 +39,16 @@ stellarTransactionCreate(BRStellarAddress sourceAddress,
                          BRStellarFeeBasis feeBasis);
 
 
-/*
-extern BRStellarTransaction // caller must free - stellarTransactionFree
-stellarTransactionCreate(BRStellarAccountID *accountID,
-                        BRStellarFee fee,
-                        BRStellarTimeBounds *timeBounds,
-                        int numTimeBounds,
-                        BRStellarMemo *memo,
-                        BRArrayOf(BRStellarOperation) operations);
-*/
+extern BRStellarTransaction /* caller must free - stellarTransferFree */
+stellarTransactionCreateFull (BRStellarAddress sourceAddress,
+                             BRStellarAddress targetAddress,
+                             BRStellarAmount amount, // For now assume XRP drops.
+                             BRStellarFeeBasis feeBasis,
+                             BRStellarTransactionHash hash,
+                             uint64_t timestamp,
+                             uint64_t blockHeight,
+                              int error);
+
 /**
  * Create a Stellar transaction
  *
@@ -110,6 +111,14 @@ extern uint8_t* stellarTransactionSerialize(BRStellarTransaction transaction, si
 
 extern void
 stellarTransactionSetMemo(BRStellarTransaction transaction, BRStellarMemo * memo);
+
+extern int stellarTransactionHasError(BRStellarTransaction transaction);
+
+extern int stellarTransactionIsInBlock (BRStellarTransaction transaction);
+extern uint64_t stellarTransactionGetBlockHeight (BRStellarTransaction transaction);
+
+extern BRStellarFeeBasis
+stellarTransactionGetFeeBasis (BRStellarTransaction transaction);
 
 #ifdef __cplusplus
 }

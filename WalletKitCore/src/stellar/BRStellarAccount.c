@@ -33,6 +33,7 @@ struct BRStellarAccountRecord {
     // The public key - needed when sending 
     BRKey publicKey;
 
+    int64_t blockNumberAtCreation;
     int64_t sequence;
     BRStellarNetworkType networkType;
 };
@@ -136,27 +137,35 @@ extern BRStellarAddress stellarAccountGetPrimaryAddress (BRStellarAccount accoun
 }
 
 // Private function implemented in BRStellarTransaction.c
-extern BRStellarSerializedTransaction
+extern size_t
 stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *privateKey,
                                    uint8_t *publicKey, int64_t sequence, BRStellarNetworkType networkType);
 
-extern const BRStellarSerializedTransaction
-stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction transaction, const char *paperKey)
+extern size_t
+stellarAccountSignTransaction(BRStellarAccount account, BRStellarTransaction transaction, UInt512 seed)
 {
     assert(account);
     assert(transaction);
-    assert(paperKey);
 
-    BRKey key = createStellarKeyFromPaperKey(paperKey);
+    BRKey key = deriveStellarKeyFromSeed(seed, 0);
     unsigned char privateKey[64] = {0};
     unsigned char publicKey[32] = {0};
     ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
 
+    // Update the sequence number for this request
+    int64_t sequence = (account->blockNumberAtCreation << 32) + account->sequence + 1;
+
     // Send it off to the transaction code to serialize and sign since we don't know
     // the internal details of a transaction
-    BRStellarSerializedTransaction s =  stellarTransactionSerializeAndSign(transaction, privateKey, publicKey, account->sequence, account->networkType);
+    size_t tx_size = stellarTransactionSerializeAndSign(transaction, privateKey,
+                                                        publicKey, sequence,
+                                                        account->networkType);
 
-    return s;
+    if (tx_size > 0) {
+        account->sequence++;
+    }
+
+    return tx_size;
 }
 
 extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence)
@@ -165,6 +174,14 @@ extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence
     // The sequence is very important as it must be 1 greater than the previous
     // transaction sequence.
     account->sequence = sequence;
+}
+
+extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, int64_t blockNumber)
+{
+    assert(account);
+    // The sequence is very important as it must be 1 greater than the previous
+    // transaction sequence.
+    account->blockNumberAtCreation = blockNumber;
 }
 
 extern BRStellarAccountID stellerAccountCreateStellarAccountID(const char * stellarAddress)

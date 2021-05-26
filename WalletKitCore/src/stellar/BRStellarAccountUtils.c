@@ -52,8 +52,6 @@ SOFTWARE.
 
 #define ED25519_SEED_KEY "ed25519 seed"
 
-static BRKey deriveStellarKeyFromSeed (UInt512 seed, uint32_t index);
-
 BRKey createStellarKeyFromPaperKey(const char* paperKey)
 {
     assert(paperKey);
@@ -143,7 +141,7 @@ static void _stellarDeriveKey(BRKey *key, const void *seed, size_t seedLen, int 
     va_end(ap);
 }
 
-static BRKey deriveStellarKeyFromSeed (UInt512 seed, uint32_t index)
+BRKey deriveStellarKeyFromSeed (UInt512 seed, uint32_t index)
 {
     BRKey privateKey;
     

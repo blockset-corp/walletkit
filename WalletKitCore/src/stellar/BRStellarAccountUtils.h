@@ -33,6 +33,8 @@ BRKey createStellarKeyFromSeed(UInt512 seed);
 
 BRStellarAccountID createStellarAccountIDFromStellarAddress(const char *stellarAddress);
 
+BRKey deriveStellarKeyFromSeed (UInt512 seed, uint32_t index);
+
 
 #ifdef __cplusplus
 }

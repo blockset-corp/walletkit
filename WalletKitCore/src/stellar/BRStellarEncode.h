@@ -32,7 +32,7 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
                                           BRStellarTimeBounds *timeBounds,
                                           int numTimeBounds,
                                           BRStellarMemo *memo,
-                                          uint32_t version,
+                                          int32_t version,
                                           uint8_t *signature,
                                           uint8_t **buffer);
 

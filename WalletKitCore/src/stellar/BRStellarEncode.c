@@ -24,6 +24,19 @@
 #include "support/BRKey.h"
 #include "BRStellarAccount.h"
 
+inline static void Int64SetBE(void *b8, int64_t u)
+{
+    *(union _u64 { uint8_t u8[64/8]; } *)b8 =
+        (union _u64) { (u >> 56) & 0xff, (u >> 48) & 0xff, (u >> 40) & 0xff, (u >> 32) & 0xff,
+                       (u >> 24) & 0xff, (u >> 16) & 0xff, (u >> 8) & 0xff, u & 0xff };
+}
+
+inline static void Int32SetBE(void *b4, int32_t u)
+{
+    *(union _u32 { uint8_t u8[32/8]; } *)b4 =
+        (union _u32) { (u >> 24) & 0xff, (u >> 16) & 0xff, (u >> 8) & 0xff, u & 0xff };
+}
+
 bool validAccountID(BRStellarAccountID * account)
 {
     for(int i = 0; i < 32; i++) {
@@ -35,6 +48,12 @@ bool validAccountID(BRStellarAccountID * account)
 
 uint8_t * pack_int(int32_t value, uint8_t * buffer)
 {
+    Int32SetBE(buffer, value);
+    return buffer + 4;
+}
+
+uint8_t * pack_uint(uint32_t value, uint8_t * buffer)
+{
     UInt32SetBE(buffer, value);
     return buffer + 4;
 }
@@ -45,12 +64,18 @@ uint8_t * pack_uint64(uint64_t i, uint8_t* buffer)
     return buffer+8;
 }
 
-uint8_t * pack_fopaque(uint8_t *data, int dataSize, uint8_t *buffer)
+uint8_t * pack_int64(int64_t i, uint8_t* buffer)
+{
+    Int64SetBE(buffer, i);
+    return buffer+8;
+}
+
+uint8_t * pack_fopaque(uint8_t *data, size_t dataSize, uint8_t *buffer)
 {
     // See if the datasize is a multiple of 4 - and determine how many
     // bytes we need to pad at the end of this opaque data
-    int paddedSize = ((dataSize+3)/4) * 4;
-    int padding = paddedSize - dataSize;
+    size_t paddedSize = ((dataSize+3)/4) * 4;
+    size_t padding = paddedSize - dataSize;
     memcpy(buffer, data, dataSize);
     return (buffer + dataSize + padding);
 }
@@ -156,8 +181,7 @@ uint8_t * pack_Op(BRStellarOperation *op, uint8_t *buffer)
     // Amount See `Stellar's documentation on Asset Precision
     // <https://www.stellar.org/developers/guides/concepts/assets.html#amount-precision-and-representation>`_
     // for more information.
-    uint64_t amount = (uint64_t)(op->operation.payment.amount * (double)10000000);
-    buffer = pack_uint64(amount, buffer);
+    buffer = pack_int64(op->operation.payment.amount, buffer);
     return buffer;
 }
 
@@ -196,7 +220,7 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
                                           BRStellarTimeBounds *timeBounds,
                                           int numTimeBounds,
                                           BRStellarMemo *memo,
-                                          uint32_t version,
+                                          int32_t version,
                                           uint8_t *signature,
                                           uint8_t **buffer)
 {
@@ -211,10 +235,10 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
     pCurrent = pack_Address(from, pCurrent);
 
     // Fee - uint32
-    pCurrent = pack_int(fee, pCurrent);
+    pCurrent = pack_uint(fee, pCurrent);
     
     // Sequence - SequenceNumber object
-    pCurrent = pack_uint64(sequence, pCurrent);
+    pCurrent = pack_int64(sequence, pCurrent);
 
     // TimeBounds - TimeBounds (array of TimePoints)
     pCurrent = pack_TimeBounds(timeBounds, numTimeBounds,pCurrent);

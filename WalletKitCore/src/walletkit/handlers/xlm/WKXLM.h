@@ -102,7 +102,7 @@ typedef struct WKFeeBasisXLMRecord {
 } *WKFeeBasisXLM;
 
 private_extern WKFeeBasis
-wkFeeBasisCreateAsXLM (WKUnit unit, BRStellarAmount fee);
+wkFeeBasisCreateAsXLM (WKUnit unit, BRStellarFee fee);
 
 private_extern BRStellarFeeBasis
 wkFeeBasisAsXLM (WKFeeBasis feeBasis);

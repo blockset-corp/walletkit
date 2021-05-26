@@ -86,10 +86,10 @@ typedef enum st_manage_offer_type
     ST_MANAGE_OFFER_DELETED = 2
 } BRStellarManageOfferType;
 
-typedef uint32_t BRStellarFee;
+typedef uint32_t  BRStellarFee;
 typedef int64_t  BRStellarSequence;
 typedef uint64_t TimePoint;
-typedef double   BRStellarAmount;
+typedef int64_t  BRStellarAmount;
 
 // A Stellar Transaction Hash
 typedef struct {
@@ -164,12 +164,12 @@ typedef struct st_claim_offer_atom
     uint64_t           offerID;
 
     // amount and asset taken from the owner
-    BRStellarAsset assetSold;
-    double         amountSold;
+    BRStellarAsset  assetSold;
+    BRStellarAmount amountSold;
 
     // amount and asset sent to the owner
     BRStellarAsset assetBought;
-    double         amountBought;
+    BRStellarAmount         amountBought;
 } BRStellarClaimOfferAtom;
 
 typedef struct st_offer_entry
@@ -178,7 +178,7 @@ typedef struct st_offer_entry
     uint64_t           offerID;
     BRStellarAsset     selling; // A
     BRStellarAsset     buying;  // B
-    double             amount;  // amount of A
+    BRStellarAmount             amount;  // amount of A
 
     /* price for this offer:
      price of A in terms of B
@@ -307,7 +307,7 @@ typedef struct st_manage_data
 typedef struct st_inflation_payout
 {
     BRStellarAccountID  destination;
-    double              amount;
+    BRStellarAmount              amount;
 } BRStellarInflationPayout;
 
 typedef struct st_inflation {

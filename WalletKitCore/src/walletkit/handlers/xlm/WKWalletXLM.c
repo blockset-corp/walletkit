@@ -277,11 +277,29 @@ wkWalletAnnounceTransferXLM (WKWallet wallet,
     // The address for comparison with `transfer` source and target addresses.
     BRStellarAddress accountAddress = stellarAccountGetAddress (walletXLM->xlmAccount);
 
-    // We need to keep track of the first block where this account shows up due to a
-    // change in how stellar assigns the sequence number to new accounts
-    // TODO - Carl - do we need to do anything with the sequence number here
+    // We need to keep track of the first block number where this account shows up to do this:
+    // initial_sequence = blockNumber << 32;
+    int64_t minBlockHeight = INT64_MAX;
+    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
+        BRStellarTransaction xlmTransfer = wkTransferAsXLM (wallet->transfers[index]);
+
+        // If we are the source of the transfer then we might want to update our sequence number
+        if (stellarTransactionHasSource (xlmTransfer, accountAddress)) {
+            // Update the sequence number if in a block OR successful
+            if (stellarTransactionIsInBlock(xlmTransfer) || !stellarTransactionHasError(xlmTransfer))
+                sequence += 1;
+        } else if (!stellarTransactionHasError(xlmTransfer) && stellarTransactionHasTarget (xlmTransfer, accountAddress)) {
+            // We are the target of the transfer - so we need to find the very first (successful) transfer where
+            // our account received some XRP as this can affect our beginning sequence number. Ignore failed
+            // transfers as Bockset could create a failed transfer for us before our account is created
+            uint64_t blockHeight = stellarTransactionGetBlockHeight(xlmTransfer);
+            minBlockHeight = blockHeight < minBlockHeight ? blockHeight : minBlockHeight;
+        }
+    }
 
     stellarAddressFree (accountAddress);
+    stellarAccountSetBlockNumberAtCreation(walletXLM->xlmAccount, minBlockHeight);
+    stellarAccountSetSequence (walletXLM->xlmAccount, sequence);
 }
 
 static bool

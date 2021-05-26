@@ -23,13 +23,27 @@
 #include "support/BRKey.h"
 #include "BRStellarAccount.h"
 
+inline static int32_t Int32GetBE(const void *b4)
+{
+    return (((int32_t)((const uint8_t *)b4)[0] << 24) | ((int32_t)((const uint8_t *)b4)[1] << 16) |
+            ((int32_t)((const uint8_t *)b4)[2] << 8)  | ((int32_t)((const uint8_t *)b4)[3]));
+}
+
+inline static int64_t Int64GetBE(const void *b8)
+{
+    return (((int64_t)((const uint8_t *)b8)[0] << 56) | ((int64_t)((const uint8_t *)b8)[1] << 48) |
+            ((int64_t)((const uint8_t *)b8)[2] << 40) | ((int64_t)((const uint8_t *)b8)[3] << 32) |
+            ((int64_t)((const uint8_t *)b8)[4] << 24) | ((int64_t)((const uint8_t *)b8)[5] << 16) |
+            ((int64_t)((const uint8_t *)b8)[6] << 8)  | ((int64_t)((const uint8_t *)b8)[7]));
+}
+
 uint8_t * unpack_int(uint8_t * buffer, int32_t *value)
 {
     assert(value);
     // Stellar does send result code as negative numbers. It should work
     // just to unpack it as a unsigned int and it will get converted to
     // a signed int in the assignment below.
-    *value = UInt32GetBE(buffer);
+    *value = Int32GetBE(buffer);
     return buffer+4;
 }
 
@@ -78,8 +92,7 @@ uint8_t * unpack_uint64(uint8_t * buffer, uint64_t * value)
 // 64-bit signed integer
 uint8_t * unpack_int64(uint8_t * buffer, int64_t * value)
 {
-    uint64_t tmpValue = UInt64GetBE(buffer);
-    *value = tmpValue;
+    *value = Int64GetBE(buffer);
     return buffer+8;
     // TODO - figure out what this code does - if a signed 64-bit
     // integer has the sign bit set then this magic happens
@@ -90,10 +103,9 @@ uint8_t * unpack_int64(uint8_t * buffer, int64_t * value)
     //    return x
 }
 
-uint8_t * unpack_amount(uint8_t* buffer, double* value)
+uint8_t * unpack_amount(uint8_t* buffer, int64_t * value)
 {
-    uint64_t amount = UInt64GetBE(buffer);
-    *value = (double)amount / (double)10000000;
+    *value = Int64GetBE(buffer);
     return (buffer + 8);
 }
 
