@@ -16,8 +16,6 @@
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRKey.h"
-#include "litecoin/BRLitecoinParams.h"
-#include "dogecoin/BRDogecoinParams.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
 #include "ripple/BRRippleAccount.h"
 #include "hedera/BRHederaAccount.h"
@@ -68,6 +66,16 @@ wkAccountDeriveSeed (const char *phrase);
 static inline BRMasterPubKey
 wkAccountAsBTC (WKAccount account) {
     return account->btc;
+}
+
+static inline BRMasterPubKey
+wkAccountAsLTC (WKAccount account) {
+    return account->ltc;
+}
+
+static inline BRMasterPubKey
+wkAccountAsDOGE (WKAccount account) {
+    return account->doge;
 }
 
 static inline BREthereumAccount

@@ -97,9 +97,9 @@ wkWalletManagerGetEventTypesBTC (WKWalletManager manager,
 
 static WKBoolean
 wkWalletManagerSignTransactionWithSeedBTC (WKWalletManager manager,
-                                                      WKWallet wallet,
-                                                      WKTransfer transfer,
-                                                      UInt512 seed) {
+                                           WKWallet wallet,
+                                           WKTransfer transfer,
+                                           UInt512 seed) {
     BRBitcoinWallet      *btcWallet       = wkWalletAsBTC   (wallet);
     BRBitcoinTransaction *btcTransaction  = wkTransferAsBTC (transfer);         // OWN/REF ?
     const BRBitcoinChainParams *btcParams = wkNetworkAsBTC  (manager->network);
@@ -176,15 +176,33 @@ wkWalletManagerEstimateFeeBasisBTC (WKWalletManager cwm,
     return wkFeeBasisCreateAsBTC (wallet->unitForFee, btcFee, btcFeePerKB, WK_FEE_BASIS_BTC_SIZE_UNKNOWN);
 }
 
+static BRMasterPubKey
+wkWalletManagerGetMPK (WKWalletManager manager) {
+    assert (wkNetworkTypeIsBitcoinBased(manager->type));
+    switch (manager->type) {
+        case WK_NETWORK_TYPE_BTC:
+        case WK_NETWORK_TYPE_BCH:
+        case WK_NETWORK_TYPE_BSV:
+            return wkAccountAsBTC (manager->account);
+        case WK_NETWORK_TYPE_LTC:
+            return wkAccountAsLTC (manager->account);
+        case WK_NETWORK_TYPE_DOGE:
+            return wkAccountAsDOGE (manager->account);
+        default:
+            assert (false);
+            return (BRMasterPubKey) { 0 };
+    }
+}
+
 static WKWallet
 wkWalletManagerCreateWalletBTC (WKWalletManager manager,
-                                    WKCurrency currency,
-                                    Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) initialTransactionsBundles,
-                                    Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) initialTransferBundles) {
+                                WKCurrency currency,
+                                Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) initialTransactionsBundles,
+                                Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) initialTransferBundles) {
     assert (NULL == manager->wallet);
     
     // Get the btcMasterPublicKey
-    BRMasterPubKey btcMPK = wkAccountAsBTC(manager->account);
+    BRMasterPubKey btcMPK = wkWalletManagerGetMPK (manager);
 
     // Get the btcChainParams
     const BRBitcoinChainParams *btcChainParams = wkNetworkAsBTC(manager->network);
