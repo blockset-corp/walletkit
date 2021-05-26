@@ -224,12 +224,12 @@ testCreateRippleAccountWithKey (void /* ... */) {
     // Create the private key from the seed
     BRKey key;
     // The BIP32 privateKey for m/44'/60'/0'/0/index
-    BRBIP32PrivKeyPath(&key, &seed, sizeof(UInt512), 5,
+    BRBIP32PrivKeyPath(&key, &seed, sizeof(UInt512), 5, (const uint32_t []){
                        44 | BIP32_HARD,          // purpose  : BIP-44
                        144 | BIP32_HARD,        // coin_type: Ripple
                        0 | BIP32_HARD,          // account  : <n/a>
                        0,                        // change   : not change
-                       0);                   // index    :
+                       0 });                   // index    :
 
     key.compressed = 1;
     BRKeyPubKey(&key, &key.pubKey, 33);

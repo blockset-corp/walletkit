@@ -183,7 +183,9 @@ static const BRBitcoinChainParams dogeMainNetParamsRecord = {
     dogeMainNetCheckpoints,
     sizeof(dogeMainNetCheckpoints)/sizeof(*dogeMainNetCheckpoints),
     { DOGE_PUBKEY_PREFIX, DOGE_SCRIPT_PREFIX, DOGE_PRIVKEY_PREFIX, NULL },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    DOGE_BIP32_DEPTH,
+    DOGE_BIP32_CHILD
 };
 const BRBitcoinChainParams *dogeMainNetParams = &dogeMainNetParamsRecord;
 
@@ -196,6 +198,8 @@ static const BRBitcoinChainParams dogeTestNetParamsRecord = {
     dogeTestNetCheckpoints,
     sizeof(dogeTestNetCheckpoints)/sizeof(*dogeTestNetCheckpoints),
     { DOGE_PUBKEY_PREFIX_TEST, DOGE_SCRIPT_PREFIX_TEST, DOGE_PRIVKEY_PREFIX_TEST, NULL },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 const BRBitcoinChainParams *dogeTestNetParams = &dogeTestNetParamsRecord;

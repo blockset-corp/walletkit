@@ -104,7 +104,9 @@ wkWalletManagerSignTransactionWithSeedBTC (WKWalletManager manager,
     BRBitcoinTransaction *btcTransaction  = wkTransferAsBTC (transfer);         // OWN/REF ?
     const BRBitcoinChainParams *btcParams = wkNetworkAsBTC  (manager->network);
 
-    return AS_WK_BOOLEAN (1 == btcWalletSignTransaction (btcWallet, btcTransaction, btcParams->forkId, seed.u8, sizeof(UInt512)));
+    return AS_WK_BOOLEAN (1 == btcWalletSignTransaction (btcWallet, btcTransaction, btcParams->forkId,
+                                                         btcParams->bip32depth, btcParams->bip32child,
+                                                         seed.u8, sizeof(UInt512)));
 }
 
 static WKBoolean

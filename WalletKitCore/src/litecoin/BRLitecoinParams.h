@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+#define LTC_BIP32_DEPTH 3
+#define LTC_BIP32_CHILD ((const uint32_t []){ 44 | BIP32_HARD, 2 | BIP32_HARD, 0 | BIP32_HARD })
+
 extern const BRBitcoinChainParams *ltcMainNetParams;
 extern const BRBitcoinChainParams *ltcTestNetParams;
 

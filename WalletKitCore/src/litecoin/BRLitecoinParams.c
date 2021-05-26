@@ -187,7 +187,9 @@ static const BRBitcoinChainParams ltcMainNetParamsRecord = {
     ltcMainNetCheckpoints,
     sizeof(ltcMainNetCheckpoints)/sizeof(*ltcMainNetCheckpoints),
     { LTC_PUBKEY_PREFIX, LTC_SCRIPT_PREFIX, LTC_PRIVKEY_PREFIX, LTC_BECH32_PREFIX },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    LTC_BIP32_DEPTH,
+    LTC_BIP32_CHILD
 };
 const BRBitcoinChainParams *ltcMainNetParams = &ltcMainNetParamsRecord;
 
@@ -200,6 +202,8 @@ static const BRBitcoinChainParams ltcTestNetParamsRecord = {
     ltcTestNetCheckpoints,
     sizeof(ltcTestNetCheckpoints)/sizeof(*ltcTestNetCheckpoints),
     { LTC_PUBKEY_PREFIX_TEST, LTC_SCRIPT_PREFIX_TEST, LTC_PRIVKEY_PREFIX_TEST, LTC_BECH32_PREFIX_TEST },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 const BRBitcoinChainParams *ltcTestNetParams = &ltcTestNetParamsRecord;

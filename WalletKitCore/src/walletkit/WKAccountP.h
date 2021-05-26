@@ -16,6 +16,8 @@
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRKey.h"
+#include "litecoin/BRLitecoinParams.h"
+#include "dogecoin/BRDogecoinParams.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
 #include "ripple/BRRippleAccount.h"
 #include "hedera/BRHederaAccount.h"
@@ -27,6 +29,8 @@ extern "C" {
 
 struct WKAccountRecord {
     BRMasterPubKey btc;
+    BRMasterPubKey ltc;
+    BRMasterPubKey doge;
     BREthereumAccount eth;
     BRRippleAccount xrp;
     BRHederaAccount hbar;

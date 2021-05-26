@@ -52,14 +52,16 @@ inline static size_t btcUTXOHash(const void *utxo)
 
 inline static int btcUTXOEq(const void *utxo, const void *otherUtxo)
 {
-    return (utxo == otherUtxo || (UInt256Eq(((const BRBitcoinUTXO *)utxo)->hash, ((const BRBitcoinUTXO *)otherUtxo)->hash) &&
-                                  ((const BRBitcoinUTXO *)utxo)->n == ((const BRBitcoinUTXO *)otherUtxo)->n));
+    return (utxo == otherUtxo ||
+            (UInt256Eq(((const BRBitcoinUTXO *)utxo)->hash, ((const BRBitcoinUTXO *)otherUtxo)->hash) &&
+             ((const BRBitcoinUTXO *)utxo)->n == ((const BRBitcoinUTXO *)otherUtxo)->n));
 }
 
 typedef struct BRBitcoinWalletStruct BRBitcoinWallet;
 
 // allocates and populates a BRBitcoinWallet struct that must be freed by calling btcWalletFree()
-BRBitcoinWallet *btcWalletNew(BRAddressParams addrParams, BRBitcoinTransaction *transactions[], size_t txCount, BRMasterPubKey mpk);
+BRBitcoinWallet *btcWalletNew(BRAddressParams addrParams, BRBitcoinTransaction *transactions[], size_t txCount,
+                              BRMasterPubKey mpk);
 
 // not thread-safe, set callbacks once after btcWalletNew(), before calling other BRBitcoinWallet functions
 // info is a void pointer that will be passed along with each callback call
@@ -111,7 +113,7 @@ size_t btcWalletTransactions(BRBitcoinWallet *wallet, BRBitcoinTransaction *tran
 // writes transactions registered in the wallet, and that were unconfirmed before blockHeight, to the transactions array
 // returns the number of transactions written, or total number available if transactions is NULL
 size_t btcWalletTxUnconfirmedBefore(BRBitcoinWallet *wallet, BRBitcoinTransaction *transactions[], size_t txCount,
-                                   uint32_t blockHeight);
+                                    uint32_t blockHeight);
 
 // current wallet balance, not including transactions known to be invalid
 uint64_t btcWalletBalance(BRBitcoinWallet *wallet);
@@ -142,22 +144,26 @@ BRBitcoinTransaction *btcWalletCreateTransaction(BRBitcoinWallet *wallet, uint64
 // returns an unsigned transaction that sends the specified amount from the wallet to the given address
 // result must be freed using btcTransactionFree()
 // use feePerKb UINT64_MAX to indicate that the wallet feePerKb should be used
-BRBitcoinTransaction *btcWalletCreateTransactionWithFeePerKb(BRBitcoinWallet *wallet, uint64_t feePerKb, uint64_t amount, const char *addr);
+BRBitcoinTransaction *btcWalletCreateTransactionWithFeePerKb(BRBitcoinWallet *wallet, uint64_t feePerKb,
+                                                             uint64_t amount, const char *addr);
 
 // returns an unsigned transaction that satisifes the given transaction outputs
 // result must be freed using btcTransactionFree()
-BRBitcoinTransaction *btcWalletCreateTxForOutputs(BRBitcoinWallet *wallet, const BRBitcoinTxOutput outputs[], size_t outCount);
+BRBitcoinTransaction *btcWalletCreateTxForOutputs(BRBitcoinWallet *wallet, const BRBitcoinTxOutput outputs[],
+                                                  size_t outCount);
 
 // returns an unsigned transaction that satisifes the given transaction outputs
 // result must be freed using btcTransactionFree()
 // use feePerKb UINT64_MAX to indicate that the wallet feePerKb should be used
-BRBitcoinTransaction *btcWalletCreateTxForOutputsWithFeePerKb(BRBitcoinWallet *wallet, uint64_t feePerKb, const BRBitcoinTxOutput outputs[], size_t outCount);
+BRBitcoinTransaction *btcWalletCreateTxForOutputsWithFeePerKb(BRBitcoinWallet *wallet, uint64_t feePerKb,
+                                                              const BRBitcoinTxOutput outputs[], size_t outCount);
 
 // signs any inputs in tx that can be signed using private keys from the wallet
 // forkId is 0 for bitcoin, 0x40 for b-cash
 // seed is the master private key (wallet seed) corresponding to the master public key given when the wallet was created
 // returns true if all inputs were signed, or false if there was an error or not all inputs were able to be signed
-int btcWalletSignTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx, uint8_t forkId, const void *seed, size_t seedLen);
+int btcWalletSignTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx, uint8_t forkId,
+                             int depth, const uint32_t child[], const void *seed, size_t seedLen);
 
 // true if the given transaction is associated with the wallet (even if it hasn't been registered)
 int btcWalletContainsTransaction(BRBitcoinWallet *wallet, const BRBitcoinTransaction *tx);
@@ -188,8 +194,8 @@ int btcWalletTransactionIsResolved (BRBitcoinWallet *wallet, const BRBitcoinTran
 
 // set the block heights and timestamps for the given transactions
 // use height TX_UNCONFIRMED and timestamp 0 to indicate a tx should remain marked as unverified (not 0-conf safe)
-void btcWalletUpdateTransactions(BRBitcoinWallet *wallet, const UInt256 txHashes[], size_t txCount, uint32_t blockHeight,
-                                uint32_t timestamp);
+void btcWalletUpdateTransactions(BRBitcoinWallet *wallet, const UInt256 txHashes[], size_t txCount,
+                                 uint32_t blockHeight, uint32_t timestamp);
     
 // marks all transactions confirmed after blockHeight as unconfirmed (useful for chain re-orgs)
 void btcWalletSetTxUnconfirmedAfter(BRBitcoinWallet *wallet, uint32_t blockHeight);

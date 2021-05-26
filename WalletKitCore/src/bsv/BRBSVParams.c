@@ -171,7 +171,9 @@ static const BRBitcoinChainParams bsvMainNetParamsRecord = {
     bsvMainNetCheckpoints,
     sizeof(bsvMainNetCheckpoints)/sizeof(*bsvMainNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL },
-    BSV_FORKID
+    BSV_FORKID,
+    BITCOIN_BIP32_DEPTH,
+    BITCOIN_BIP32_CHILD
 };
 const BRBitcoinChainParams *bsvMainNetParams = &bsvMainNetParamsRecord;
 
@@ -184,6 +186,8 @@ static const BRBitcoinChainParams bsvTestNetParamsRecord = {
     bsvTestNetCheckpoints,
     sizeof(bsvTestNetCheckpoints)/sizeof(*bsvTestNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL },
-    BSV_FORKID
+    BSV_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 const BRBitcoinChainParams *bsvTestNetParams = &bsvTestNetParamsRecord;
