@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply from: '../gradle/copy-test-config.gradle'
 
 android {
     compileSdkVersion androidConfig.compileSdkVersion
@@ -15,7 +16,7 @@ android {
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         applicationId "com.breadwallet.cryptodemo"
     }
@@ -26,13 +27,11 @@ android {
             debuggable true
             jniDebuggable true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            buildConfigField 'String', 'BDB_AUTH_TOKEN', '"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg"'
 
         }
         debug {
             debuggable true
             jniDebuggable true
-            buildConfigField 'String', 'BDB_AUTH_TOKEN', '"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YjQ1M2VhOC1iOGMxLTQwNTEtODk1MC1jMzE5YmQzMjNiMzQiLCJpYXQiOjE1ODUzNDczMzAsImV4cCI6MTkwMDkzMjAzMCwiYnJkOmN0IjoidXNyIiwiYnJkOmNsaSI6IjY1MTNkOGVjLWM2NDUtNGNkNi1iNDZlLTM3MzM4NGYxMTczMCJ9.PEDGBTSOYaqylQ6Kf6wIdwrNvswneziLO61XTS1AXagjFNkGA_OANGYqw0E-ztOFQAyey4DsOhmUlTQLX5Y3yg"'
         }
     }
 
@@ -47,14 +46,14 @@ android {
 
 dependencies {
     implementation project(':corecrypto-android')
-    implementation deps.androidAppCompatV7
-    implementation deps.androidRecyclerView
-    implementation deps.androidConstraintLayout
+    implementation deps.androidxAppcompat
+    implementation deps.androidxRecyclerView
+    implementation deps.androidxConstraintLayout
     implementation deps.guavaAndroid
     implementation deps.okhttp
 
     testImplementation deps.junit
 
-    androidTestImplementation deps.androidTestRunner
-    androidTestImplementation deps.androidTestEspresso
+    androidTestImplementation deps.androidxTestRunner
+    androidTestImplementation deps.androidxTestEspresso
 }

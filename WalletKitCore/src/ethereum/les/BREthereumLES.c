@@ -19,7 +19,7 @@
 #include "support/BRInt.h"
 #include "support/BRArray.h"
 #include "support/BROSCompat.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "ethereum/util/BRUtil.h"
 #include "ethereum/base/BREthereumBase.h"
 #include "BREthereumLES.h"
@@ -81,7 +81,7 @@ static inline int maximum (int a, int b) { return a > b ? a : b; }
 static inline int minimum (int a, int b) { return a < b ? a : b; }
 #pragma clang diagnostic pop
 
-#define LES_THREAD_NAME    "Core Ethereum LES"
+#define LES_THREAD_NAME    "Core ETH, LES"
 #define LES_PTHREAD_STACK_SIZE (512 * 1024)
 #define LES_PTHREAD_NULL   PTHREAD_NULL
 
@@ -606,14 +606,7 @@ lesCreate (BREthereumNetwork network,
     nodeEndpointShowStatus (les->localEndpoint);
 
     // Create the PTHREAD LOCK variable
-    {
-        // The cacheLock is a normal, non-recursive lock
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); // overkill, but needed still
-        pthread_mutex_init(&les->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&les->lock, PTHREAD_MUTEX_RECURSIVE);
     les->thread = LES_PTHREAD_NULL;
 
     // Initialize requests
@@ -1292,7 +1285,7 @@ lesThread (BREthereumLES les) {
         }
 
         // ... and then remove them in reverse order.
-        for (ssize_t index = requestsToFailCount - 1; index >= 0; index--)
+        for (ssize_t index = (ssize_t) (requestsToFailCount - 1); index >= 0; index--)
             array_rm (les->requests, requestsToFail[index]);
 
         //

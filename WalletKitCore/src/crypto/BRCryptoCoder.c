@@ -13,8 +13,9 @@
 #include <string.h>
 
 #include "BRCryptoCoder.h"
-#include "ethereum/util/BRUtilHex.h"
+#include "support/util/BRHex.h"
 #include "support/BRBase58.h"
+#include "ripple/BRRippleBase.h"
 
 struct BRCryptoCoderRecord {
     BRCryptoCoderType type;
@@ -30,7 +31,8 @@ cryptoCoderCreate(BRCryptoCoderType type) {
     switch (type) {
         case CRYPTO_CODER_HEX:
         case CRYPTO_CODER_BASE58:
-        case CRYPTO_CODER_BASE58CHECK: {
+        case CRYPTO_CODER_BASE58CHECK:
+        case CRYPTO_CODER_BASE58RIPPLE: {
             coder = calloc (1, sizeof(struct BRCryptoCoderRecord));
             coder->type = type;
             coder->ref = CRYPTO_REF_ASSIGN(cryptoCoderRelease);
@@ -76,6 +78,10 @@ cryptoCoderEncodeLength (BRCryptoCoder coder,
             length = BRBase58CheckEncode (NULL, 0, src, srcLen);
             break;
         }
+        case CRYPTO_CODER_BASE58RIPPLE: {
+            length = BRBase58EncodeEx (NULL, 0, src, srcLen, rippleAlphabet);
+            break;
+        }
         default: {
             assert (0);
             break;
@@ -115,6 +121,10 @@ cryptoCoderEncode (BRCryptoCoder coder,
             result = AS_CRYPTO_BOOLEAN (BRBase58CheckEncode (dst, dstLen, src, srcLen));
             break;
         }
+        case CRYPTO_CODER_BASE58RIPPLE: {
+            result = AS_CRYPTO_BOOLEAN (BRBase58EncodeEx (dst, dstLen, src, srcLen, rippleAlphabet));
+            break;
+        }
         default: {
             assert (0);
             break;
@@ -147,6 +157,10 @@ cryptoCoderDecodeLength (BRCryptoCoder coder,
         }
         case CRYPTO_CODER_BASE58CHECK: {
             length = BRBase58CheckDecode (NULL, 0, src);
+            break;
+        }
+        case CRYPTO_CODER_BASE58RIPPLE: {
+            length = BRBase58DecodeEx (NULL, 0, src, rippleAlphabet);
             break;
         }
         default: {
@@ -186,6 +200,10 @@ cryptoCoderDecode (BRCryptoCoder coder,
         }
         case CRYPTO_CODER_BASE58CHECK: {
             result = AS_CRYPTO_BOOLEAN (BRBase58CheckDecode (dst, dstLen, src));
+            break;
+        }
+        case CRYPTO_CODER_BASE58RIPPLE: {
+            result = AS_CRYPTO_BOOLEAN (BRBase58DecodeEx (dst, dstLen, src, rippleAlphabet));
             break;
         }
         default: {

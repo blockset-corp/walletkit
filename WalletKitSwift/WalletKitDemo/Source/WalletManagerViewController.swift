@@ -14,15 +14,6 @@ import WalletKit
 
 class WalletManagerViewController: UIViewController, WalletManagerListener {
     var manager: WalletManager!
-    let modes = [WalletManagerMode.api_only,
-                 WalletManagerMode.api_with_p2p_submit,
-                 WalletManagerMode.p2p_with_api_sync,
-                 WalletManagerMode.p2p_only]
-
-    let addressSchemes = [AddressScheme.btcLegacy,
-                          AddressScheme.btcSegwit,
-                          AddressScheme.ethDefault,
-                          AddressScheme.genDefault]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,19 +28,19 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
     }
 
     func modeSegmentIsSelected (_ index: Int) -> Bool {
-        return manager.mode == modes[index]
+        return manager.mode == WalletManagerMode.all[index]
     }
 
     func modeSegmentIsEnabled (_ index: Int) -> Bool {
-        return manager.network.supportsMode(modes[index])
+        return manager.network.supportsMode(WalletManagerMode.all[index])
     }
 
     func addressSchemeIsSelected (_ index: Int) -> Bool {
-        return manager.addressScheme == addressSchemes[index]
+        return manager.addressScheme == AddressScheme.all[index]
     }
 
     func addressSchemeIsEnabled (_ index: Int) -> Bool {
-        return manager.network.supportsAddressScheme(addressSchemes[index])
+        return manager.network.supportsAddressScheme(AddressScheme.all[index])
    }
 
     func connectStateIsSelected (_ index: Int, _ state: WalletManagerState? = nil) -> Bool {
@@ -64,7 +55,7 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
     func connectStateIsEnabled (_ index: Int, _ state: WalletManagerState? = nil) -> Bool {
         switch state ?? manager.state {
         case .created:      return 1 == index
-        case .disconnected: return 1 == index
+        case .disconnected: return 1 == index || 2 == index
         case .connected:    return 0 == index || 2 == index
         case .syncing:      return 1 == index
         default: return false
@@ -78,14 +69,14 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
             listener.add (managerListener: self)
         }
         
-        for index in 0..<modes.count {
+        for index in 0..<WalletManagerMode.all.count {
             modeSegmentedControl.setEnabled (modeSegmentIsEnabled(index), forSegmentAt: index)
             if modeSegmentIsSelected(index) {
                 modeSegmentedControl.selectedSegmentIndex = index
             }
         }
 
-        for index in 0..<addressSchemes.count {
+        for index in 0..<AddressScheme.all.count {
             addressSchemeSegmentedControl.setEnabled(addressSchemeIsEnabled(index), forSegmentAt: index)
             if addressSchemeIsSelected(index) {
                 addressSchemeSegmentedControl.selectedSegmentIndex = index
@@ -118,14 +109,14 @@ class WalletManagerViewController: UIViewController, WalletManagerListener {
     */
     @IBOutlet var modeSegmentedControl: UISegmentedControl!
     @IBAction func selectMode(_ sender: UISegmentedControl) {
-        print ("WMVC: Mode: \(modes[sender.selectedSegmentIndex].description)")
-        manager.mode = modes [sender.selectedSegmentIndex]
+        print ("WMVC: Mode: \(WalletManagerMode.all[sender.selectedSegmentIndex].description)")
+        manager.mode = WalletManagerMode.all [sender.selectedSegmentIndex]
     }
     
     @IBOutlet var addressSchemeSegmentedControl: UISegmentedControl!
     @IBAction func selectAddressScheme(_ sender: UISegmentedControl) {
-        print ("WMVC: AddressScheme: \(addressSchemes[sender.selectedSegmentIndex].description)")
-        manager.addressScheme = addressSchemes[sender.selectedSegmentIndex]
+        print ("WMVC: AddressScheme: \(AddressScheme.all[sender.selectedSegmentIndex].description)")
+        manager.addressScheme = AddressScheme.all[sender.selectedSegmentIndex]
     }
     @IBOutlet var connectStateSegmentedControl: UISegmentedControl!
     @IBAction func selectConnectState(_ sender: UISegmentedControl) {

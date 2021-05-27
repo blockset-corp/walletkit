@@ -7,7 +7,7 @@
  */
 package com.breadwallet.crypto.blockchaindb.apis.bdb;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.apis.PagedData;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
@@ -45,6 +45,9 @@ public class TransferApi {
                              @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
                              CompletionHandler<List<Transfer>, QueryError> handler) {
+        if (addresses.isEmpty())
+            throw new IllegalArgumentException("Empty `addresses`");
+
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transfer> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 

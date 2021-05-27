@@ -12,6 +12,7 @@
 #define BRCryptoAmountP_h
 
 #include "BRCryptoAmount.h"
+#include "support/BRInt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,12 +22,6 @@ private_extern BRCryptoAmount
 cryptoAmountCreate (BRCryptoUnit unit,
                     BRCryptoBoolean isNegative,
                     UInt256 value);
-
-private_extern BRCryptoAmount
-cryptoAmountCreateInternal (BRCryptoUnit unit,
-                            BRCryptoBoolean isNegative,
-                            UInt256 value,
-                            int takeCurrency);
 
 private_extern UInt256
 cryptoAmountGetValue (BRCryptoAmount amount);

@@ -185,35 +185,6 @@ final class WalletKitCoreTests: XCTestCase {
         runTests (0)
     }
 
-    func testLESETH () {
-        runLESTests(paperKey)
-        runNodeTests()
-    }
-
-    func testEWM () {
-        runEWMTests(paperKey, storagePath)
-    }
-
-    /// Run an Etheruem Sync.  Two syncs are run back-to-back with the second sync meant to
-    /// start from the saved state of the first sync.
-    ///
-    /// Note: The first sync saves state to the file system..
-    ///
-    /// - Throws: something
-    ///
-    func testEthereumSyncStorage () throws {
-        let mode = CRYPTO_SYNC_MODE_P2P_ONLY;
-        let timestamp : UInt64 = 0
-
-        let network = (isMainnet ? ethNetworkMainnet : ethNetworkTestnet)
-
-        print ("ETH: TST: Core Dir: \(storagePath!)")
-        storagePathClear()
-        runSyncTest (network, ethAccount, mode, timestamp, 5 * 60, storagePath);
-        runSyncTest (network, ethAccount, mode, timestamp, 1 * 60, storagePath);
-    }
-
-
     // MARK: - Ripple
 
     func testRipple () {
@@ -224,6 +195,12 @@ final class WalletKitCoreTests: XCTestCase {
     func testHedera () {
         runHederaTest()
     }
+    
+    // MARK: - Tezos
+    func testTezos () {
+        runTezosTest()
+    }
+    
     // MARK: - Bitcoin
 
     func testBitcoinSupport () {
@@ -232,7 +209,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     func testBitcoin () {
         XCTAssert(1 == BRRunTests())
-        XCTAssert(1 == BRRunTestsBWM (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0)));
+//        XCTAssert(1 == BRRunTestsBWM (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0)));
     }
 
     func testBitcoinSyncOne() {
@@ -272,40 +249,41 @@ final class WalletKitCoreTests: XCTestCase {
     /// Run a bitcoin sync using the (new) BRWalletManager which encapsulates BRWallet and
     /// BRPeerManager with 'save' callbacks using the file system.
     ///
+    #if REFACTOR
     func testBitcoinWalletManagerSync () {
         print ("BTC: TST: Core Dir: \(storagePath!)")
         storagePathClear()
-        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0));
-        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0));
+        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (onMainnet ? 1 : 0));
+        BRRunTestWalletManagerSync (paperKey, storagePath, bitcoinChain, (onMainnet ? 1 : 0));
     }
 
     func XtestBitcoinWalletManagerSyncStressBTC() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BTC, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BTC, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
 
     func XtestBitcoinWalletManagerSyncStressBCH() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BCH, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BCH, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
     
     func XtestBitcoinWalletManagerSyncStressBSV() {
         let configurations: [(Int32, UInt64)] = [(1, 500_000), (0, 1_500_000),]
-        configurations.forEach { (isMainnet, blockHeight) in
+        configurations.forEach { (onMainnet, blockHeight) in
             storagePathClear();
-            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BSV, isMainnet);
+            let success = BRRunTestWalletManagerSyncStress(paperKey, storagePath, 0, blockHeight, BITCOIN_CHAIN_BSV, onMainnet);
             XCTAssertEqual(1, success)
         }
     }
-
+    #endif
     func XtestPerformanceExample() {
         //        runTests(0);
         self.measure {
@@ -315,7 +293,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin", "bitcoin", "btc", "native", nil)
@@ -335,7 +313,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -348,7 +325,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createBitcoinCashNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoincash-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin-cash", "bitcoin cash", "bch", "native", nil)
@@ -368,7 +345,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -381,7 +357,7 @@ final class WalletKitCoreTests: XCTestCase {
     
     private func createBitcoinSVNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "bitcoinsv-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids);
+        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("bitcoin-sv", "bitcoin sv", "bsv", "native", nil)
@@ -401,7 +377,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
@@ -414,7 +389,7 @@ final class WalletKitCoreTests: XCTestCase {
 
     private func createEthereumNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
         let uids = "ethereum-" + (isMainnet ? "mainnet" : "ropsten")
-        let network = cryptoNetworkFindBuiltin (uids)
+        let network = cryptoNetworkFindBuiltin (uids, isMainnet)
         defer { cryptoNetworkGive (network) }
 
         let currency = cryptoCurrencyCreate ("ethereum", "ethereum", "eth", "native", nil)
@@ -437,7 +412,6 @@ final class WalletKitCoreTests: XCTestCase {
 
         cryptoNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkSetCurrency (network, currency)
         cryptoNetworkAddCurrency (network, currency, weiUnit, etherUnit)
 
         cryptoNetworkAddCurrencyUnit(network, currency, weiUnit)
@@ -464,19 +438,20 @@ final class WalletKitCoreTests: XCTestCase {
         ("testBC",              testBlockchainETH),
         ("testContracdt",       testContractETH),
         ("testBasics",          testBasicsETH),
-        ("testLES",             testLESETH),
-        ("testEWM",             testEWM),
 
         // Ripple
         ("testRipple",          testRipple),
 
         // Hedera
         ("testHedera",          testHedera),
+        
+        // Tezos
+        ("testTezos",           testTezos),
 
         // Bitcoin
         ("testSupportBTC",      testBitcoinSupport),
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
-        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
+//        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
     ]
 }

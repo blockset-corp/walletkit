@@ -1,5 +1,5 @@
 //
-//  BRHederaTransaction.h
+//  BRHederaCrypto.h
 //  Core
 //
 //  Created by Carl Cherry on Oct. 16, 2019.

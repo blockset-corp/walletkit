@@ -19,154 +19,19 @@
 #include "BRCryptoTransfer.h"
 #include "BRCryptoWallet.h"
 #include "BRCryptoSync.h"
-#include "BRCryptoWalletManagerClient.h"
+#include "BRCryptoClient.h"
+#include "BRCryptoWalletSweeper.h"
+#include "BRCryptoListener.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    /// MARK: - Wallet Manager Disconnect Reason
-
-    typedef enum {
-        CRYPTO_WALLET_MANAGER_DISCONNECT_REASON_REQUESTED,
-        CRYPTO_WALLET_MANAGER_DISCONNECT_REASON_UNKNOWN,
-        CRYPTO_WALLET_MANAGER_DISCONNECT_REASON_POSIX
-    } BRCryptoWalletManagerDisconnectReasonType;
-
-    typedef struct {
-        BRCryptoWalletManagerDisconnectReasonType type;
-        union {
-            struct {
-                int errnum;
-            } posix;
-        } u;
-    } BRCryptoWalletManagerDisconnectReason;
-
-    extern BRCryptoWalletManagerDisconnectReason
-    cryptoWalletManagerDisconnectReasonRequested (void);
-
-    extern BRCryptoWalletManagerDisconnectReason
-    cryptoWalletManagerDisconnectReasonUnknown (void);
-
-    extern BRCryptoWalletManagerDisconnectReason
-    cryptoWalletManagerDisconnectReasonPosix (int errnum);
-
-    /**
-     * Return a descriptive message as to why the disconnect occurred.
-     *
-     *@return the detailed reason as a string or NULL
-     */
-    extern char *
-    cryptoWalletManagerDisconnectReasonGetMessage (BRCryptoWalletManagerDisconnectReason *reason);
-
-    /// MARK: Wallet Manager Event
-
-    typedef enum {
-        CRYPTO_WALLET_MANAGER_STATE_CREATED,
-        CRYPTO_WALLET_MANAGER_STATE_DISCONNECTED,
-        CRYPTO_WALLET_MANAGER_STATE_CONNECTED,
-        CRYPTO_WALLET_MANAGER_STATE_SYNCING,
-        CRYPTO_WALLET_MANAGER_STATE_DELETED
-    } BRCryptoWalletManagerStateType;
-
-    typedef struct {
-        BRCryptoWalletManagerStateType type;
-        union {
-            struct {
-                BRCryptoWalletManagerDisconnectReason reason;
-            } disconnected;
-        } u;
-    } BRCryptoWalletManagerState;
-
-    extern const BRCryptoWalletManagerState CRYPTO_WALLET_MANAGER_STATE_CREATED_INIT;
-
-    typedef enum {
-        CRYPTO_WALLET_MANAGER_EVENT_CREATED,
-        CRYPTO_WALLET_MANAGER_EVENT_CHANGED,
-        CRYPTO_WALLET_MANAGER_EVENT_DELETED,
-
-        CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED,
-        CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED,
-        CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED,
-
-        // wallet: added, ...
-        CRYPTO_WALLET_MANAGER_EVENT_SYNC_STARTED,
-        CRYPTO_WALLET_MANAGER_EVENT_SYNC_CONTINUES,
-        CRYPTO_WALLET_MANAGER_EVENT_SYNC_STOPPED,
-        CRYPTO_WALLET_MANAGER_EVENT_SYNC_RECOMMENDED,
-
-        CRYPTO_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
-    } BRCryptoWalletManagerEventType;
-
-    extern const char *
-    cryptoWalletManagerEventTypeString (BRCryptoWalletManagerEventType t);
-
-    typedef struct {
-        BRCryptoWalletManagerEventType type;
-        union {
-            struct {
-                BRCryptoWalletManagerState oldValue;
-                BRCryptoWalletManagerState newValue;
-            } state;
-
-            struct {
-                /// Handler must 'give'
-                BRCryptoWallet value;
-            } wallet;
-
-            struct {
-                BRCryptoSyncTimestamp timestamp;
-                BRCryptoSyncPercentComplete percentComplete;
-            } syncContinues;
-
-            struct {
-                BRCryptoSyncStoppedReason reason;
-            } syncStopped;
-
-            struct {
-                BRCryptoSyncDepth depth;
-            } syncRecommended;
-
-            struct {
-                uint64_t value;
-            } blockHeight;
-        } u;
-    } BRCryptoWalletManagerEvent;
-
-    /// MARK: Listener
-
-    typedef void *BRCryptoCWMListenerContext;
-
-    /// Handler must 'give': manager, event.wallet.value
-    typedef void (*BRCryptoCWMListenerWalletManagerEvent) (BRCryptoCWMListenerContext context,
-                                                           BRCryptoWalletManager manager,
-                                                           BRCryptoWalletManagerEvent event);
-
-    /// Handler must 'give': manager, wallet, event.*
-    typedef void (*BRCryptoCWMListenerWalletEvent) (BRCryptoCWMListenerContext context,
-                                                    BRCryptoWalletManager manager,
-                                                    BRCryptoWallet wallet,
-                                                    BRCryptoWalletEvent event);
-
-    /// Handler must 'give': manager, wallet, transfer
-    typedef void (*BRCryptoCWMListenerTransferEvent) (BRCryptoCWMListenerContext context,
-                                                      BRCryptoWalletManager manager,
-                                                      BRCryptoWallet wallet,
-                                                      BRCryptoTransfer transfer,
-                                                      BRCryptoTransferEvent event);
-
-    typedef struct {
-        BRCryptoCWMListenerContext context;
-        BRCryptoCWMListenerWalletManagerEvent walletManagerEventCallback;
-        BRCryptoCWMListenerWalletEvent walletEventCallback;
-        BRCryptoCWMListenerTransferEvent transferEventCallback;
-    } BRCryptoCWMListener;
-
-    /// MARK: Wallet Manager
+/// MARK: Wallet Manager
 
     /// Can return NULL
     extern BRCryptoWalletManager
-    cryptoWalletManagerCreate (BRCryptoCWMListener listener,
+    cryptoWalletManagerCreate (BRCryptoWalletManagerListener listener,
                                BRCryptoClient client,
                                BRCryptoAccount account,
                                BRCryptoNetwork network,
@@ -177,8 +42,16 @@ extern "C" {
     extern BRCryptoNetwork
     cryptoWalletManagerGetNetwork (BRCryptoWalletManager cwm);
 
+    extern BRCryptoBoolean
+    cryptoWalletManagerHasNetwork (BRCryptoWalletManager cwm,
+                                   BRCryptoNetwork network);
+
     extern BRCryptoAccount
     cryptoWalletManagerGetAccount (BRCryptoWalletManager cwm);
+
+    extern BRCryptoBoolean
+    cryptoWalletManagerHasAccount (BRCryptoWalletManager cwm,
+                                   BRCryptoAccount account);
 
     extern BRCryptoSyncMode
     cryptoWalletManagerGetMode (BRCryptoWalletManager cwm);
@@ -203,20 +76,13 @@ extern "C" {
     cryptoWalletManagerSetNetworkReachable (BRCryptoWalletManager cwm,
                                             BRCryptoBoolean isNetworkReachable);
 
-    extern BRCryptoBoolean
-    cryptoWalletManagerHasWallet (BRCryptoWalletManager cwm,
-                                  BRCryptoWallet wallet);
+
+    extern BRCryptoWallet
+    cryptoWalletManagerCreateWallet (BRCryptoWalletManager cwm,
+                                     BRCryptoCurrency currency);
 
     extern BRCryptoWallet
     cryptoWalletManagerGetWallet (BRCryptoWalletManager cwm);
-
-    extern void
-    cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
-                                  BRCryptoWallet wallet);
-
-    extern void
-    cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
-                                  BRCryptoWallet wallet);
 
     /**
      * Returns a newly allocated array of the managers's wallets.
@@ -238,10 +104,31 @@ extern "C" {
     cryptoWalletManagerGetWalletForCurrency (BRCryptoWalletManager cwm,
                                              BRCryptoCurrency currency);
 
-    extern BRCryptoWallet
-    cryptoWalletManagerRegisterWallet (BRCryptoWalletManager cwm,
-                                       BRCryptoCurrency currency);
+    extern BRCryptoBoolean
+    cryptoWalletManagerHasWallet (BRCryptoWalletManager cwm,
+                                  BRCryptoWallet wallet);
 
+    extern void
+    cryptoWalletManagerAddWallet (BRCryptoWalletManager cwm,
+                                  BRCryptoWallet wallet);
+
+    extern void
+    cryptoWalletManagerRemWallet (BRCryptoWalletManager cwm,
+                                  BRCryptoWallet wallet);
+
+    /**
+     * Start the WalletManager; allows for handling of events.  This does not connect to an
+     * associated P2P network or a QRY interface. The WalletManger is started once created.  There
+     * is no harm calling this multiple times - it is a noop if already started.
+     */
+    extern void
+    cryptoWalletManagerStart (BRCryptoWalletManager cwm);
+
+    /**
+     * Stop the WalletManager; ends handling of events and stops any sync by disconnecting .  In
+     * practice this should only be called when the WalletManger is to be disposed of.  There is
+     * no harm calling this multiple times - it is a noop if already stopped.
+     */
     extern void
     cryptoWalletManagerStop (BRCryptoWalletManager cwm);
 
@@ -258,23 +145,6 @@ extern "C" {
     extern void
     cryptoWalletManagerSyncToDepth (BRCryptoWalletManager cwm,
                                     BRCryptoSyncDepth depth);
-
-    // TODO: Workaround to create a TransferEvent.created for GEN (required CWM)
-    extern BRCryptoTransfer
-    cryptoWalletManagerCreateTransfer (BRCryptoWalletManager cwm,
-                                       BRCryptoWallet wallet,
-                                       BRCryptoAddress target,
-                                       BRCryptoAmount amount,
-                                       BRCryptoFeeBasis estimatedFeeBasis,
-                                       size_t attributesCount,
-                                       OwnershipKept BRCryptoTransferAttribute *attributes);
-
-    extern BRCryptoTransfer
-    cryptoWalletManagerCreateTransferMultiple (BRCryptoWalletManager cwm,
-                                               BRCryptoWallet wallet,
-                                               size_t outputsCount,
-                                               BRCryptoTransferOutput *outputs,
-                                               BRCryptoFeeBasis estimatedFeeBasis);
 
     extern BRCryptoBoolean
     cryptoWalletManagerSign (BRCryptoWalletManager cwm,
@@ -329,14 +199,19 @@ extern "C" {
                                          BRCryptoCookie cookie,
                                          BRCryptoAddress target,
                                          BRCryptoAmount  amount,
-                                         BRCryptoNetworkFee fee);
+                                         BRCryptoNetworkFee fee,
+                                         size_t attributesCount,
+                                         OwnershipKept BRCryptoTransferAttribute *attributes);
 
-    extern void
-    cryptoWalletManagerEstimateFeeBasisForWalletSweep (BRCryptoWalletManager manager,
+    extern BRCryptoWalletSweeperStatus
+    cryptoWalletManagerWalletSweeperValidateSupported (BRCryptoWalletManager cwm,
                                                        BRCryptoWallet wallet,
-                                                       BRCryptoCookie cookie,
-                                                       BRCryptoWalletSweeper sweeper,
-                                                       BRCryptoNetworkFee fee);
+                                                       BRCryptoKey key);
+
+    extern BRCryptoWalletSweeper
+    cryptoWalletManagerCreateWalletSweeper (BRCryptoWalletManager manager,
+                                            BRCryptoWallet wallet,
+                                            BRCryptoKey key);
 
     extern void
     cryptoWalletManagerEstimateFeeBasisForPaymentProtocolRequest (BRCryptoWalletManager manager,
@@ -351,62 +226,6 @@ extern "C" {
 
     DECLARE_CRYPTO_GIVE_TAKE (BRCryptoWalletManager, cryptoWalletManager);
 
-    /// MARK: Wallet Migrator
-
-    typedef struct BRCryptoWalletMigratorRecord *BRCryptoWalletMigrator;
-
-    typedef enum {
-        CRYPTO_WALLET_MIGRATOR_SUCCESS,
-        CRYPTO_WALLET_MIGRATOR_ERROR_TRANSACTION,
-        CRYPTO_WALLET_MIGRATOR_ERROR_BLOCK,
-        CRYPTO_WALLET_MIGRATOR_ERROR_PEER
-    } BRCryptoWalletMigratorStatusType;
-
-    typedef struct {
-        BRCryptoWalletMigratorStatusType type;
-        // union {} u;
-    } BRCryptoWalletMigratorStatus;
-
-    extern BRCryptoWalletMigrator // NULL on error
-    cryptoWalletMigratorCreate (BRCryptoNetwork network,
-                                const char *storagePath);
-
-    extern void
-    cryptoWalletMigratorRelease (BRCryptoWalletMigrator migrator);
-
-    extern BRCryptoWalletMigratorStatus
-    cryptoWalletMigratorHandleTransactionAsBTC (BRCryptoWalletMigrator migrator,
-                                                const uint8_t *bytes,
-                                                size_t bytesCount,
-                                                uint32_t blockHeight,
-                                                uint32_t timestamp);
-
-    extern BRCryptoWalletMigratorStatus
-    cryptoWalletMigratorHandleBlockAsBTC (BRCryptoWalletMigrator migrator,
-                                          BRCryptoData32 hash,
-                                          uint32_t height,
-                                          uint32_t nonce,
-                                          uint32_t target,
-                                          uint32_t txCount,
-                                          uint32_t version,
-                                          uint32_t timestamp,
-                                          uint8_t *flags,  size_t flagsLen,
-                                          BRCryptoData32 *hashes, size_t hashesCount,
-                                          BRCryptoData32 merkleRoot,
-                                          BRCryptoData32 prevBlock);
-
-    extern BRCryptoWalletMigratorStatus
-    cryptoWalletMigratorHandleBlockBytesAsBTC (BRCryptoWalletMigrator migrator,
-                                               const uint8_t *bytes,
-                                               size_t bytesCount,
-                                               uint32_t height);
-
-    extern BRCryptoWalletMigratorStatus
-    cryptoWalletMigratorHandlePeerAsBTC (BRCryptoWalletMigrator migrator,
-                                         uint32_t address,
-                                         uint16_t port,
-                                         uint64_t services,
-                                         uint32_t timestamp);
 
 #ifdef __cplusplus
 }

@@ -7,12 +7,22 @@
  */
 package com.breadwallet.corecrypto;
 
-import android.support.annotation.Nullable;
-
+import androidx.annotation.Nullable;
+import androidx.collection.ArrayMap;
+import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
 import com.breadwallet.corenative.crypto.BRCryptoClientCallbackState;
-import com.breadwallet.corenative.crypto.BRCryptoCWMListener;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyBundle;
+import com.breadwallet.corenative.crypto.BRCryptoClientCurrencyDenominationBundle;
+import com.breadwallet.corenative.crypto.BRCryptoCurrency;
+import com.breadwallet.corenative.crypto.BRCryptoListener;
+import com.breadwallet.corenative.crypto.BRCryptoClientTransactionBundle;
+import com.breadwallet.corenative.crypto.BRCryptoClientTransferBundle;
+import com.breadwallet.corenative.crypto.BRCryptoNetwork;
+import com.breadwallet.corenative.crypto.BRCryptoNetworkEvent;
 import com.breadwallet.corenative.crypto.BRCryptoStatus;
+import com.breadwallet.corenative.crypto.BRCryptoSystem;
+import com.breadwallet.corenative.crypto.BRCryptoSystemEvent;
 import com.breadwallet.corenative.crypto.BRCryptoTransfer;
 import com.breadwallet.corenative.crypto.BRCryptoTransferEvent;
 import com.breadwallet.corenative.crypto.BRCryptoTransferStateType;
@@ -23,6 +33,8 @@ import com.breadwallet.corenative.crypto.BRCryptoWalletManagerEvent;
 import com.breadwallet.corenative.support.BRConstants;
 import com.breadwallet.corenative.utility.Cookie;
 import com.breadwallet.crypto.AddressScheme;
+import com.breadwallet.crypto.NetworkType;
+import com.breadwallet.crypto.SystemState;
 import com.breadwallet.crypto.TransferState;
 import com.breadwallet.crypto.WalletManagerMode;
 import com.breadwallet.crypto.WalletManagerState;
@@ -34,27 +46,25 @@ import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.errors.QueryNoDataError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Blockchain;
 import com.breadwallet.crypto.blockchaindb.models.bdb.BlockchainFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.CurrencyDenomination;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier;
 import com.breadwallet.crypto.errors.AccountInitializationAlreadyInitializedError;
 import com.breadwallet.crypto.errors.AccountInitializationCantCreateError;
 import com.breadwallet.crypto.errors.AccountInitializationError;
 import com.breadwallet.crypto.errors.AccountInitializationMultipleHederaAccountsError;
 import com.breadwallet.crypto.errors.AccountInitializationQueryError;
+import com.breadwallet.crypto.errors.CurrencyUpdateCurrenciesUnavailableError;
+import com.breadwallet.crypto.errors.CurrencyUpdateError;
 import com.breadwallet.crypto.errors.FeeEstimationError;
-import com.breadwallet.crypto.errors.MigrateBlockError;
-import com.breadwallet.crypto.errors.MigrateCreateError;
-import com.breadwallet.crypto.errors.MigrateError;
-import com.breadwallet.crypto.errors.MigrateInvalidError;
-import com.breadwallet.crypto.errors.MigratePeerError;
-import com.breadwallet.crypto.errors.MigrateTransactionError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateFeesUnavailableError;
-import com.breadwallet.crypto.events.network.NetworkCreatedEvent;
 import com.breadwallet.crypto.events.network.NetworkEvent;
-import com.breadwallet.crypto.events.network.NetworkFeesUpdatedEvent;
+import com.breadwallet.crypto.events.system.SystemChangedEvent;
 import com.breadwallet.crypto.events.system.SystemCreatedEvent;
+import com.breadwallet.crypto.events.system.SystemDeletedEvent;
 import com.breadwallet.crypto.events.system.SystemDiscoveredNetworksEvent;
 import com.breadwallet.crypto.events.system.SystemEvent;
 import com.breadwallet.crypto.events.system.SystemListener;
@@ -86,9 +96,6 @@ import com.breadwallet.crypto.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.breadwallet.crypto.events.walletmanager.WalletManagerWalletDeletedEvent;
-import com.breadwallet.crypto.migration.BlockBlob;
-import com.breadwallet.crypto.migration.PeerBlob;
-import com.breadwallet.crypto.migration.TransactionBlob;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -106,7 +113,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,6 +122,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.breadwallet.corenative.crypto.BRCryptoTransferEventType.CRYPTO_TRANSFER_EVENT_CHANGED;
 import static com.google.common.base.Preconditions.checkState;
 
 /* package */
@@ -148,9 +155,11 @@ final class System implements com.breadwallet.crypto.System {
     // Keep a static reference to the callbacks so that they are never GC'ed
     //
 
-    private static final BRCryptoCWMListener.WalletManagerEventCallback CWM_LISTENER_WALLET_MANAGER_CALLBACK = System::walletManagerEventCallback;
-    private static final BRCryptoCWMListener.WalletEventCallback CWM_LISTENER_WALLET_CALLBACK = System::walletEventCallback;
-    private static final BRCryptoCWMListener.TransferEventCallback CWM_LISTENER_TRANSFER_CALLBACK = System::transferEventCallback;
+    private static final BRCryptoListener.SystemEventCallback CWM_LISTENER_SYSTEM_CALLBACK = System::systemEventCallback;
+    private static final BRCryptoListener.NetworkEventCallback CWM_LISTENER_NETWORK_CALLBACK = System::networkEventCallback;
+    private static final BRCryptoListener.WalletManagerEventCallback CWM_LISTENER_WALLET_MANAGER_CALLBACK = System::walletManagerEventCallback;
+    private static final BRCryptoListener.WalletEventCallback CWM_LISTENER_WALLET_CALLBACK = System::walletEventCallback;
+    private static final BRCryptoListener.TransferEventCallback CWM_LISTENER_TRANSFER_CALLBACK = System::transferEventCallback;
 
     private static final boolean DEFAULT_IS_NETWORK_REACHABLE = true;
 
@@ -175,12 +184,16 @@ final class System implements com.breadwallet.crypto.System {
 
         Cookie context = new Cookie(SYSTEM_IDS.incrementAndGet());
 
-        BRCryptoCWMListener cwmListener = new BRCryptoCWMListener(context,
+        BRCryptoListener cwmListener = BRCryptoListener.create(
+                context,
+                CWM_LISTENER_SYSTEM_CALLBACK,
+                CWM_LISTENER_NETWORK_CALLBACK,
                 CWM_LISTENER_WALLET_MANAGER_CALLBACK,
                 CWM_LISTENER_WALLET_CALLBACK,
                 CWM_LISTENER_TRANSFER_CALLBACK);
 
-        BRCryptoClient cwmClient = new BRCryptoClient(context,
+        BRCryptoClient cwmClient = new BRCryptoClient(
+                context,
                 System::getBlockNumber,
                 System::getTransactions,
                 System::getTransfers,
@@ -196,8 +209,11 @@ final class System implements com.breadwallet.crypto.System {
                 context,
                 cwmListener,
                 cwmClient);
+        ReferenceCleaner.register(system, system.core::give);
 
         SYSTEMS_ACTIVE.put(context, system);
+
+        system.core.start();
 
         return system;
     }
@@ -276,7 +292,7 @@ final class System implements com.breadwallet.crypto.System {
         SYSTEMS_ACTIVE.remove(sys.context);
 
         // Disconnect all wallet managers
-        sys.disconnectAll();
+        sys.pause();
 
         // Stop
         sys.stopAll();
@@ -319,6 +335,7 @@ final class System implements com.breadwallet.crypto.System {
         throw new IllegalArgumentException("Unsupported system instance");
     }
 
+    private final BRCryptoSystem core;
     private final ExecutorService executor;
     private final SystemListener listener;
     private final SystemCallbackCoordinator callbackCoordinator;
@@ -327,13 +344,8 @@ final class System implements com.breadwallet.crypto.System {
     private final String storagePath;
     private final BlockchainDb query;
     private final Cookie context;
-    private final BRCryptoCWMListener cwmListener;
+    private final BRCryptoListener cwmListener;
     private final BRCryptoClient cwmClient;
-
-    private final Set<Network> networks;
-    private final Set<WalletManager> walletManagers;
-
-    private boolean isNetworkReachable;
 
     private System(ScheduledExecutorService executor,
                    SystemListener listener,
@@ -342,7 +354,7 @@ final class System implements com.breadwallet.crypto.System {
                    String storagePath,
                    BlockchainDb query,
                    Cookie context,
-                   BRCryptoCWMListener cwmListener,
+                   BRCryptoListener cwmListener,
                    BRCryptoClient cwmClient) {
         this.executor = executor;
         this.listener = listener;
@@ -355,30 +367,37 @@ final class System implements com.breadwallet.crypto.System {
         this.cwmListener = cwmListener;
         this.cwmClient = cwmClient;
 
-        this.networks = new CopyOnWriteArraySet<>();
-        this.walletManagers = new CopyOnWriteArraySet<>();
-
-        this.isNetworkReachable = DEFAULT_IS_NETWORK_REACHABLE;
-
-        announceSystemEvent(new SystemCreatedEvent());
+        this.core = BRCryptoSystem.create(
+                this.cwmClient,
+                this.cwmListener,
+                this.account.getCoreBRCryptoAccount(),
+                storagePath,
+                isMainnet).get();
     }
 
     @Override
-    public void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies) {
-        NetworkDiscovery.discoverNetworks(query, isMainnet, appCurrencies, new NetworkDiscovery.Callback() {
-            @Override
-            public void discovered(Network network) {
-                if (addNetwork(network)) {
-                    announceNetworkEvent(network, new NetworkCreatedEvent());
-                    announceSystemEvent(new SystemNetworkAddedEvent(network));
-                }
-            }
+    public void configure() {
+        Log.log(Level.FINE, "Configure");
+        updateNetworkFees(null);
+        updateCurrencies(null);
 
-            @Override
-            public void complete(List<com.breadwallet.crypto.Network> networks) {
-                announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
-            }
-        });
+//        NetworkDiscovery.discoverNetworks(query, isMainnet, getNetworks(), appCurrencies, new NetworkDiscovery.Callback() {
+//            @Override
+//            public void discovered(Network network) {
+//                announceNetworkEvent(network, new NetworkCreatedEvent());
+//                announceSystemEvent(new SystemNetworkAddedEvent(network));
+//            }
+//
+//            @Override
+//            public void updated(Network network) {
+//                announceNetworkEvent(network, new NetworkUpdatedEvent());
+//            }
+//
+//            @Override
+//            public void complete(List<Network> networks) {
+//                announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
+//            }
+//        });
     }
 
     @Override
@@ -389,42 +408,22 @@ final class System implements com.breadwallet.crypto.System {
         checkState(network.supportsWalletManagerMode(mode));
         checkState(network.supportsAddressScheme(scheme));
 
-        if (!account.isInitialized(network)) {
-            return false;
-        }
+        List<BRCryptoCurrency> currenciesList = new ArrayList<>();
+        for (com.breadwallet.crypto.Currency currency : currencies)
+            currenciesList.add(Currency.from(currency).getCoreBRCryptoCurrency());
 
-        Optional<WalletManager> maybeWalletManager = WalletManager.create(
-                cwmListener,
-                cwmClient,
-                account,
-                Network.from(network),
-                mode,
-                scheme,
-                storagePath,
-                this,
-                callbackCoordinator);
-        if (!maybeWalletManager.isPresent()) {
-            return false;
-        }
-
-        WalletManager walletManager = maybeWalletManager.get();
-        for (com.breadwallet.crypto.Currency currency: currencies) {
-            if (network.hasCurrency(currency)) {
-                walletManager.registerWalletFor(currency);
-            }
-        }
-
-        walletManager.setNetworkReachable(isNetworkReachable);
-
-        addWalletManager(walletManager);
-        announceSystemEvent(new SystemManagerAddedEvent(walletManager));
-        return true;
+        return core.createManager(core,
+                        Network.from(network).getCoreBRCryptoNetwork(),
+                        Utilities.walletManagerModeToCrypto(mode),
+                        Utilities.addressSchemeToCrypto(scheme),
+                        currenciesList)
+                .isPresent();
     }
 
     @Override
     public void wipe(com.breadwallet.crypto.Network network) {
         boolean found = false;
-        for (WalletManager walletManager: walletManagers) {
+        for (WalletManager walletManager: getWalletManagers()) {
             if (walletManager.getNetwork().equals(network)) {
                 found = true;
                 break;
@@ -438,17 +437,24 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
-    public void connectAll() {
-        for (WalletManager manager: getWalletManagers()) {
+    public void resume () {
+        Log.log(Level.FINE, "Resume");
+
+        updateNetworkFees(null);
+        updateCurrencies(null);
+
+        for (WalletManager manager : getWalletManagers()) {
             manager.connect(null);
         }
     }
 
     @Override
-    public void disconnectAll() {
-        for (WalletManager manager: getWalletManagers()) {
+    public void pause() {
+        Log.log(Level.FINE, "Pause");
+        for (WalletManager manager : getWalletManagers()) {
             manager.disconnect();
         }
+        query.cancelAll();
     }
 
     @Override
@@ -470,13 +476,28 @@ final class System implements com.breadwallet.crypto.System {
                     if (null == network) continue;
 
                     // We always have a feeUnit for network
-                    Optional<Unit> maybeFeeUnit = network.baseUnitFor(network.getCurrency());
-                    checkState(maybeFeeUnit.isPresent());
+                    Optional<Unit> maybeFeeUnitBase = network.baseUnitFor(network.getCurrency());
+                    checkState(maybeFeeUnitBase.isPresent());
+
+                    Optional<Unit> maybeFeeUnitDefault = network.defaultUnitFor(network.getCurrency());
+                    checkState(maybeFeeUnitDefault.isPresent());
+
+                    // Set the blockHeight
+                    UnsignedLong blockHeight = blockChainModel.getBlockHeight().orNull();
+                    if (null != blockHeight)
+                        network.setHeight(blockHeight);
+
+                    // Set the verifiedBlockHash
+                    String verifiedBlockHash = blockChainModel.getVerifiedBlockHash().orNull();
+                    if (null != verifiedBlockHash)
+                        network.setVerifiedBlockHashAsString(verifiedBlockHash);;
 
                     List<NetworkFee> fees = new ArrayList<>();
                     for (BlockchainFee feeEstimate: blockChainModel.getFeeEstimates()) {
                         // Well, quietly ignore a fee if we can't parse the amount.
-                        Optional<Amount> maybeFeeAmount = Amount.create(feeEstimate.getAmount(), false, maybeFeeUnit.get());
+                        Optional<Amount> maybeFeeAmount =
+                                Amount.create(feeEstimate.getAmount(), false, maybeFeeUnitBase.get())
+                                        .transform(a -> a.convert(maybeFeeUnitDefault.get()).or(a));
                         if (!maybeFeeAmount.isPresent()) continue;
 
                         fees.add(NetworkFee.create(feeEstimate.getConfirmationTimeInMilliseconds(), maybeFeeAmount.get()));
@@ -484,7 +505,6 @@ final class System implements com.breadwallet.crypto.System {
 
                     // The fees are unlikely to change; but we'll announce feesUpdated anyways.
                     network.setFees(fees);
-                    announceNetworkEvent(network, new NetworkFeesUpdatedEvent());
                     networks.add(network);
                 }
 
@@ -500,11 +520,52 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     @Override
+    public <T extends com.breadwallet.crypto.Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> handler) {
+        query.getCurrencies(isMainnet, new CompletionHandler<List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency>, QueryError>() {
+            @Override
+            public void handleData(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> currencyModels) {
+                List<BRCryptoClientCurrencyBundle> bundles = new ArrayList<>();
+
+                for (com.breadwallet.crypto.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
+                    List<BRCryptoClientCurrencyDenominationBundle> denominationBundles = new ArrayList<>();
+                    for (CurrencyDenomination currencyDenomination : currencyModel.getDenominations())
+                        denominationBundles.add(
+                                BRCryptoClientCurrencyDenominationBundle.create(
+                                        currencyDenomination.getName(),
+                                        currencyDenomination.getCode(),
+                                        currencyDenomination.getSymbol(),
+                                        currencyDenomination.getDecimals()));
+
+                    bundles.add(BRCryptoClientCurrencyBundle.create(
+                            currencyModel.getId(),
+                            currencyModel.getName(),
+                            currencyModel.getCode(),
+                            currencyModel.getType(),
+                            currencyModel.getBlockchainId(),
+                            currencyModel.getAddressValue(),
+                            currencyModel.getVerified(),
+                            denominationBundles));
+                }
+
+                getCoreBRCryptoSystem().announceCurrencies(bundles);
+                for (BRCryptoClientCurrencyBundle bundle : bundles) bundle.release();
+
+                if (null != handler) {
+                    handler.handleData((List<T>) getNetworks());
+                }
+            }
+
+            @Override
+            public void handleError(QueryError error) {
+                if (null != handler)
+                    handler.handleError(new CurrencyUpdateCurrenciesUnavailableError());
+            }
+        });
+    }
+
+    @Override
     public void setNetworkReachable(boolean isNetworkReachable) {
-        this.isNetworkReachable = isNetworkReachable;
-        for (WalletManager manager: getWalletManagers()) {
-            manager.setNetworkReachable(isNetworkReachable);
-        }
+        core.setIsReachable(isNetworkReachable);
     }
 
     @Override
@@ -534,125 +595,66 @@ final class System implements com.breadwallet.crypto.System {
 
     // Network management
 
-    @Override
-    public List<Network> getNetworks() {
-        return new ArrayList<>(networks);
+    private UnsignedLong getNetworksCount () {
+        return core.getNetworksCount();
     }
 
-    private boolean addNetwork(Network network) {
-        return networks.add(network);
+    @Override
+    public List<? extends Network> getNetworks() {
+        List<Network> networks = new ArrayList<>();
+        for (BRCryptoNetwork coreNetwork: core.getNetworks())
+            networks.add (Network.create(coreNetwork));
+        return networks;
+    }
+
+    private Optional<Network> getNetwork(BRCryptoNetwork coreNetwork) {
+        return (core.hasNetwork(coreNetwork)
+                ? Optional.of (createNetwork(coreNetwork, true))
+                : Optional.absent());
+    }
+
+    private Network createNetwork (BRCryptoNetwork coreNetwork, boolean needTake) {
+        return Network.create(needTake ? coreNetwork.take() : coreNetwork);
     }
 
     // WalletManager management
 
+    private UnsignedLong getWalletManagersCount () {
+        return core.getManagersCount();
+    }
+
     @Override
     public List<WalletManager> getWalletManagers() {
-        return new ArrayList<>(walletManagers);
+        List<WalletManager> managers = new ArrayList<>();
+        for (BRCryptoWalletManager coreManager: core.getManagers())
+            managers.add(createWalletManager(coreManager, false));
+        return managers;
     }
 
-    private void addWalletManager(WalletManager walletManager) {
-        walletManagers.add(walletManager);
+    private Optional<WalletManager> getWalletManager(BRCryptoWalletManager coreManager) {
+        return (core.hasManager(coreManager)
+                ? Optional.of (createWalletManager(coreManager, true))
+                : Optional.absent());
     }
 
-    private Optional<WalletManager> getWalletManager(BRCryptoWalletManager coreWalletManager) {
-        WalletManager walletManager = WalletManager.takeAndCreate(coreWalletManager, this, callbackCoordinator);
-        return walletManagers.contains(walletManager) ? Optional.of(walletManager) : Optional.absent();
-    }
-
-    private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager) {
-        WalletManager walletManager = WalletManager.takeAndCreate(coreWalletManager, this, callbackCoordinator);
-        walletManagers.add(walletManager);
-        return walletManager;
+    private WalletManager createWalletManager(BRCryptoWalletManager coreWalletManager, boolean needTake) {
+        return WalletManager.create(
+                coreWalletManager,
+                needTake,
+                this,
+                callbackCoordinator);
     }
 
     // Miscellaneous
 
-    @Override
-    public boolean migrateRequired(com.breadwallet.crypto.Network network) {
-        return network.requiresMigration();
-    }
-
-    @Override
-    public void migrateStorage (com.breadwallet.crypto.Network network,
-                                List<TransactionBlob> transactionBlobs,
-                                List<BlockBlob> blockBlobs,
-                                List<PeerBlob> peerBlobs) throws MigrateError {
-        if (!migrateRequired(network)) {
-            throw new MigrateInvalidError();
-        }
-
-         migrateStorageAsBtc(network, transactionBlobs, blockBlobs, peerBlobs);
-    }
-
-    private void migrateStorageAsBtc (com.breadwallet.crypto.Network network,
-                                      List<TransactionBlob> transactionBlobs,
-                                      List<BlockBlob> blockBlobs,
-                                      List<PeerBlob> peerBlobs) throws MigrateError {
-        Optional<WalletMigrator> maybeMigrator = WalletMigrator.create(network, storagePath);
-        if (!maybeMigrator.isPresent()) {
-            throw new MigrateCreateError();
-        }
-
-        WalletMigrator migrator = maybeMigrator.get();
-
-        try {
-            for (TransactionBlob blob : transactionBlobs) {
-                Optional<TransactionBlob.Btc> maybeBtc = blob.asBtc();
-                if (!maybeBtc.isPresent()) {
-                    throw new MigrateTransactionError();
-                }
-
-                TransactionBlob.Btc btc = maybeBtc.get();
-
-                if (!migrator.handleTransactionAsBtc(
-                        btc.bytes,
-                        btc.blockHeight,
-                        btc.timestamp)) {
-                    throw new MigrateTransactionError();
-                }
-            }
-
-            for (BlockBlob blob : blockBlobs) {
-                Optional<BlockBlob.Btc> maybeBtc = blob.asBtc();
-                if (!maybeBtc.isPresent()) {
-                    throw new MigrateBlockError();
-                }
-
-                BlockBlob.Btc btc = maybeBtc.get();
-
-                if (!migrator.handleBlockAsBtc(
-                        btc.block,
-                        btc.height)) {
-                    throw new MigrateBlockError();
-                }
-            }
-
-            for (PeerBlob blob : peerBlobs) {
-                Optional<PeerBlob.Btc> maybeBtc = blob.asBtc();
-                if (!maybeBtc.isPresent()) {
-                    throw new MigratePeerError();
-                }
-
-                PeerBlob.Btc btc = maybeBtc.get();
-                // On a `nil` timestamp, by definition skip out, don't migrate this blob
-                if (btc.timestamp == null) continue;
-
-                if (!migrator.handlePeerAsBtc(
-                        btc.address,
-                        btc.port,
-                        btc.services,
-                        btc.timestamp)) {
-                    throw new MigratePeerError();
-                }
-            }
-        } finally {
-            migrator.release();
-        }
-    }
-
     /* package */
     BlockchainDb getBlockchainDb() {
         return query;
+    }
+
+    /* package */
+    BRCryptoSystem getCoreBRCryptoSystem() {
+        return core;
     }
 
     // Event announcements
@@ -680,6 +682,168 @@ final class System implements com.breadwallet.crypto.System {
     //
     // WalletManager Events
     //
+
+    private static void systemEventCallback(Cookie context,
+                                            BRCryptoSystem coreSystem,
+                                            BRCryptoSystemEvent event) {
+        EXECUTOR_LISTENER.execute(() -> {
+            try {
+                Log.log(Level.FINE, "SystemEventCallback");
+
+                switch (event.type()) {
+                    case CRYPTO_SYSTEM_EVENT_CREATED:
+                        handleSystemCreated(context, coreSystem);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_CHANGED:
+                        handleSystemChanged(context, coreSystem, event);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_DELETED:
+                        handleSystemDeleted(context, coreSystem);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_ADDED:
+                        handleSystemNetworkAdded(context, coreSystem, event);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_ADDED:
+                        handleSystemManagerAdded(context, coreSystem, event);
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_DISCOVERED_NETWORKS:
+                        handleSystemDiscoveredNetworks(context, coreSystem);
+                        break;
+                }
+            } finally {
+                coreSystem.give();
+            }
+        });
+    }
+
+    private static void handleSystemCreated(Cookie context, BRCryptoSystem coreSystem) {
+        Log.log(Level.FINE, "SystemCreated");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            system.announceSystemEvent(new SystemCreatedEvent());
+        } else {
+            Log.log(Level.SEVERE, "SystemCreated: missed system");
+        }
+    }
+
+    private static void handleSystemChanged(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
+        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState());
+        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState());
+
+        Log.log(Level.FINE, String.format("SystemChanged (%s -> %s)", oldState, newState));
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            system.announceSystemEvent(new SystemChangedEvent(oldState, newState));
+        } else {
+            Log.log(Level.SEVERE, "SystemChanged: missed system");
+        }
+    }
+
+    private static void handleSystemDeleted(Cookie context, BRCryptoSystem coreSystem) {
+        Log.log(Level.FINE, "System Deleted");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            system.announceSystemEvent(new SystemDeletedEvent());
+
+        } else {
+            Log.log(Level.SEVERE, "SystemCreated: missed system");
+        }
+
+    }
+
+    private static void handleSystemNetworkAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
+        BRCryptoNetwork coreNetwork = event.u.network;
+
+        Log.log(Level.FINE, "System Network Added");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            Optional<Network> optional = system.getNetwork(coreNetwork);
+            if (optional.isPresent()) {
+                Network network = optional.get();
+                system.announceSystemEvent(new SystemNetworkAddedEvent(network));
+            } else {
+                Log.log(Level.SEVERE, "SystemNetworkAdded: missed network");
+            }
+        } else {
+            Log.log(Level.SEVERE, "SystemNetworkAdded: missed system");
+        }
+    }
+
+    private static void handleSystemManagerAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
+        BRCryptoWalletManager coreManagar = event.u.walletManager;
+
+        Log.log(Level.FINE, "System WalletManager Added");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            Optional<WalletManager> optional = system.getWalletManager(coreManagar);
+            if (optional.isPresent()) {
+                WalletManager manager = optional.get();
+                system.announceSystemEvent(new SystemManagerAddedEvent(manager));
+            } else {
+                Log.log(Level.SEVERE, "SystemManagerAdded: missed manager");
+            }
+        } else {
+            Log.log(Level.SEVERE, "SystemManagerAdded: missed system");
+        }
+    }
+
+
+    private static void handleSystemDiscoveredNetworks(Cookie context, BRCryptoSystem coreSystem) {
+        Log.log(Level.FINE, "System Discovered Networks");
+
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+
+            system.announceSystemEvent(new SystemDiscoveredNetworksEvent(system.getNetworks()));
+
+        } else {
+            Log.log(Level.SEVERE, "SystemDiscoveredNetworks: missed system");
+        }
+    }
+
+    private static void networkEventCallback(Cookie context,
+                                             BRCryptoNetwork coreNetwork,
+                                             BRCryptoNetworkEvent event) {
+        EXECUTOR_LISTENER.execute(() -> {
+            try {
+                Log.log(Level.FINE, "NetworkEventCallback");
+
+                switch (event.type()) {
+                    case CRYPTO_NETWORK_EVENT_CREATED:
+                        break;
+                    case CRYPTO_NETWORK_EVENT_FEES_UPDATED:
+                        break;
+                    case CRYPTO_NETWORK_EVENT_CURRENCIES_UPDATED:
+                        break;
+                    case CRYPTO_NETWORK_EVENT_DELETED:
+                        break;
+                    }
+            } finally {
+                coreNetwork.give();
+            }
+        });
+    }
 
     private static void walletManagerEventCallback(Cookie context,
                                                    BRCryptoWalletManager coreWalletManager,
@@ -747,7 +911,7 @@ final class System implements com.breadwallet.crypto.System {
         if (optSystem.isPresent()) {
             System system = optSystem.get();
 
-            WalletManager walletManager = system.createWalletManager(coreWalletManager);
+            WalletManager walletManager = system.createWalletManager (coreWalletManager, true);
             system.announceWalletManagerEvent(walletManager, new WalletManagerCreatedEvent());
 
         } else {
@@ -801,7 +965,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletAdded");
 
@@ -836,7 +1000,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletChanged");
 
@@ -871,7 +1035,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet.value;
+        BRCryptoWallet coreWallet = event.u.wallet;
         try {
             Log.log(Level.FINE, "WalletManagerWalletDeleted");
 
@@ -995,7 +1159,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerBlockHeightUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight.value);
+        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight);
 
         Log.log(Level.FINE, String.format("WalletManagerBlockHeightUpdated (%s)", blockHeight));
 
@@ -1024,18 +1188,18 @@ final class System implements com.breadwallet.crypto.System {
     private static void walletEventCallback(Cookie context,
                                             BRCryptoWalletManager coreWalletManager,
                                             BRCryptoWallet coreWallet,
-                                            BRCryptoWalletEvent event) {
+                                            BRCryptoWalletEvent coreEvent) {
         EXECUTOR_LISTENER.execute(() -> {
             try {
                 Log.log(Level.FINE, "WalletEventCallback");
 
-                switch (event.type()) {
+                switch (coreEvent.type()) {
                     case CRYPTO_WALLET_EVENT_CREATED: {
                         handleWalletCreated(context, coreWalletManager, coreWallet);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_CHANGED: {
-                        handleWalletChanged(context, coreWalletManager, coreWallet, event);
+                        handleWalletChanged(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_DELETED: {
@@ -1043,35 +1207,36 @@ final class System implements com.breadwallet.crypto.System {
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_ADDED: {
-                        handleWalletTransferAdded(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferAdded(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED: {
-                        handleWalletTransferChanged(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferChanged(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED: {
-                        handleWalletTransferSubmitted(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferSubmitted(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_TRANSFER_DELETED: {
-                        handleWalletTransferDeleted(context, coreWalletManager, coreWallet, event);
+                        handleWalletTransferDeleted(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_BALANCE_UPDATED: {
-                        handleWalletBalanceUpdated(context, coreWalletManager, coreWallet, event);
+                        handleWalletBalanceUpdated(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED: {
-                        handleWalletFeeBasisUpdated(context, coreWalletManager, coreWallet, event);
+                        handleWalletFeeBasisUpdated(context, coreWalletManager, coreWallet, coreEvent);
                         break;
                     }
                     case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED: {
-                        handleWalletFeeBasisEstimated(context, event);
+                        handleWalletFeeBasisEstimated(context, coreEvent);
                         break;
                     }
                 }
             } finally {
+                coreEvent.give();
                 coreWallet.give();
                 coreWalletManager.give();
             }
@@ -1102,8 +1267,10 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        WalletState oldState = Utilities.walletStateFromCrypto(event.u.state.oldState());
-        WalletState newState = Utilities.walletStateFromCrypto(event.u.state.newState());
+        BRCryptoWalletEvent.States states = event.states();
+
+        WalletState oldState = Utilities.walletStateFromCrypto(states.oldState);
+        WalletState newState = Utilities.walletStateFromCrypto(states.newState);
 
         Log.log(Level.FINE, String.format("WalletChanged (%s -> %s)", oldState, newState));
 
@@ -1163,7 +1330,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.transfer();
         try {
             Log.log(Level.FINE, "WalletTransferAdded");
 
@@ -1205,7 +1372,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.transfer();
         try {
             Log.log(Level.FINE, "WalletTransferChanged");
 
@@ -1247,7 +1414,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferSubmitted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.transferSubmit();
         try {
             Log.log(Level.FINE, "WalletTransferSubmitted");
 
@@ -1289,7 +1456,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.u.transfer.value;
+        BRCryptoTransfer coreTransfer = event.transfer();
         try {
             Log.log(Level.FINE, "WalletTransferDeleted");
 
@@ -1333,7 +1500,7 @@ final class System implements com.breadwallet.crypto.System {
     private static void handleWalletBalanceUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletBalanceUpdated");
 
-        Amount amount = Amount.create(event.u.balanceUpdated.amount);
+        Amount amount = Amount.create(event.balance());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
@@ -1366,7 +1533,7 @@ final class System implements com.breadwallet.crypto.System {
     private static void handleWalletFeeBasisUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletFeeBasisUpdate");
 
-        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.u.feeBasisUpdated.basis);
+        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
@@ -1397,23 +1564,25 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletFeeBasisEstimated(Cookie context, BRCryptoWalletEvent event) {
-        BRCryptoStatus status = event.u.feeBasisEstimated.status();
+        BRCryptoWalletEvent.FeeBasisEstimate estimate = event.feeBasisEstimate();
+        // estimate.basis needs to be given
 
-        Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)", status));
+        Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)", estimate.status));
 
-        boolean success = status == BRCryptoStatus.CRYPTO_SUCCESS;
-        TransferFeeBasis feeBasis = success ? TransferFeeBasis.create(event.u.feeBasisEstimated.basis) : null;
+        boolean success = estimate.status == BRCryptoStatus.CRYPTO_SUCCESS;
+        TransferFeeBasis feeBasis = success ? TransferFeeBasis.create(estimate.basis) : null;
+        if (null == feeBasis) estimate.basis.give();
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
-            Cookie opCookie = new Cookie(event.u.feeBasisEstimated.cookie);
+            Cookie opCookie = new Cookie(estimate.cookie);
 
             if (success) {
                 Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", feeBasis));
                 system.callbackCoordinator.completeFeeBasisEstimateHandlerWithSuccess(opCookie, feeBasis);
             } else {
-                FeeEstimationError error = Utilities.feeEstimationErrorFromStatus(status);
+                FeeEstimationError error = Utilities.feeEstimationErrorFromStatus(estimate.status);
                 Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", error));
                 system.callbackCoordinator.completeFeeBasisEstimateHandlerWithError(opCookie, error);
             }
@@ -1451,6 +1620,10 @@ final class System implements com.breadwallet.crypto.System {
                     }
                 }
             } finally {
+                if (CRYPTO_TRANSFER_EVENT_CHANGED == event.type()) {
+                    event.u.state.oldState.give();
+                    event.u.state.newState.give();
+                }
                 coreTransfer.give();
                 coreWallet.give();
                 coreWalletManager.give();
@@ -1587,20 +1760,22 @@ final class System implements com.breadwallet.crypto.System {
                             @Override
                             public void handleData(Blockchain blockchain) {
                                 Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                                if (maybeBlockHeight.isPresent()) {
+                                Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
                                     UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s)", blockchainHeight));
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberSuccess(callbackState, blockchainHeight);
+                                    String verifiedBlockHash = maybeVerifiedBlockHash.get();
+                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
+                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
                                 } else {
                                     Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberFailure(callbackState);
+                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
                                 }
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumberFailure(callbackState);
+                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
                             }
                         });
                     } else {
@@ -1612,7 +1787,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceGetBlockNumberFailure(callbackState);
+                coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
             } finally {
                 coreWalletManager.give();
             }
@@ -1635,8 +1810,49 @@ final class System implements com.breadwallet.crypto.System {
         }
     }
 
-    private static void getTransactions(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                        List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
+    private static List<String> canonicalAddresses(List<String> addresses, NetworkType networkType) {
+        switch (networkType) {
+            case ETH:
+                List<String> canonicalAddresses = new ArrayList<>(addresses.size());
+                for (String address : addresses) {
+                    canonicalAddresses.add(address.toLowerCase());
+                }
+                return canonicalAddresses;
+
+            default:
+                return addresses;
+        }
+    }
+
+    protected static Optional<BRCryptoClientTransactionBundle> makeTransactionBundle(Transaction transaction) {
+        Optional<byte[]> optRaw = transaction.getRaw();
+        if (!optRaw.isPresent()) {
+            Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
+            return Optional.absent();
+        }
+        UnsignedLong blockHeight =
+                transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
+        UnsignedLong timestamp =
+                transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
+
+        BRCryptoTransferStateType status = getTransferStatus(transaction.getStatus());
+
+        if (status != BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED) {
+            Log.log(Level.FINE,"BRCryptoCWMGetTransactionsCallback announcing " + transaction.getId());
+        } else {
+            Log.log(Level.SEVERE,"BRCryptoCWMGetTransactionsCallback received an unknown status, completing with failure");
+            return Optional.absent();
+        }
+
+        return Optional.of(BRCryptoClientTransactionBundle.create(
+                status,
+                optRaw.get(),
+                timestamp,
+                blockHeight));
+    }
+
+     private static void getTransactions(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
+                                        List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
@@ -1652,11 +1868,14 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
+                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+
                         system.query.getTransactions(walletManager.getNetwork().getUids(),
-                                addresses,
+                                canonicalAddresses,
                                 begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 true,
+                                false,
                                 false,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
@@ -1664,41 +1883,24 @@ final class System implements com.breadwallet.crypto.System {
                                         boolean success = false;
                                         Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
 
-                                        try {
-                                            for (Transaction transaction : transactions) {
-                                                Optional<byte[]> optRaw = transaction.getRaw();
-                                                if (!optRaw.isPresent()) {
-                                                    Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback completing with missing raw bytes");
-                                                    return;
-                                                }
-
-                                                UnsignedLong blockHeight = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
-                                                UnsignedLong timestamp =
-                                                        transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
-
-                                                BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
-
-                                                if (status != BRCryptoTransferStateType.CRYPTO_TRANSFER_STATE_DELETED) {
-                                                    Log.log(Level.FINE,
-                                                            "BRCryptoCWMGetTransactionsCallback announcing " + transaction.getId());
-                                                    walletManager.getCoreBRCryptoWalletManager().announceGetTransactionsItem(callbackState, status, optRaw.get(), timestamp, blockHeight);
-                                                } else {
-                                                    Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an unknown status, completing with failure");
-                                                    return;
-                                                }
+                                        List<BRCryptoClientTransactionBundle> bundles = new ArrayList<>();
+                                        for (Transaction transaction : transactions) {
+                                            Optional<BRCryptoClientTransactionBundle> bundle = makeTransactionBundle(transaction);
+                                            if (bundle.isPresent()) {
+                                                bundles.add(bundle.get());
                                             }
-
-                                            success = true;
-                                            Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
-                                        } finally {
-                                            walletManager.getCoreBRCryptoWalletManager().announceGetTransactionsComplete(callbackState, success);
                                         }
+                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, true, bundles);
+
+                                        success = true;
+                                        Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
                                     }
 
                                     @Override
                                     public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceGetTransactionsComplete(callbackState, false);
+                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
+                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, false, new ArrayList<>());
+
                                     }
                                 });
 
@@ -1711,15 +1913,54 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceGetTransactionsComplete(callbackState, false);
+                coreWalletManager.announceTransactions(callbackState, false, new ArrayList<>());
             } finally {
                 coreWalletManager.give();
             }
         });
     }
 
+    protected static List<BRCryptoClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
+        List<BRCryptoClientTransferBundle> result = new ArrayList<>();
+
+        UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
+        UnsignedLong blockTimestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
+        UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
+        UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
+        String blockHash = transaction.getHash();
+
+        BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
+
+        for (ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String> o : System.mergeTransfers(transaction, addresses)) {
+            Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback  announcing " + o.o1.getId());
+
+            // Merge Transfer 'meta' into Transaction' meta; duplicates from Transfer
+            Map<String,String> meta = new HashMap<>(transaction.getMeta());
+            meta.putAll(o.o1.getMeta());
+
+            result.add (BRCryptoClientTransferBundle.create(
+                    status,
+                    o.o1.getId(),
+                    transaction.getHash(),
+                    transaction.getIdentifier(),
+                    o.o1.getFromAddress().orNull(),
+                    o.o1.getToAddress().orNull(),
+                    o.o1.getAmount().getAmount(),
+                    o.o1.getAmount().getCurrencyId(),
+                    o.o2,
+                    blockTimestamp,
+                    blockHeight,
+                    blockConfirmations,
+                    blockTransactionIndex,
+                    blockHash,
+                    meta));
+        }
+
+        return result;
+    }
+
     private static void getTransfers(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                     List<String> addresses, String currency, long begBlockNumber, long endBlockNumber) {
+                                     List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
@@ -1735,69 +1976,38 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), addresses,
+                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+
+                        system.query.getTransactions(walletManager.getNetwork().getUids(), canonicalAddresses,
                                 begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                true,
                                 false,
+                                false,
+                                true,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
                                         boolean success = false;
                                         Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
 
+                                        List<BRCryptoClientTransferBundle> bundles = new ArrayList<>();
+
                                         try {
-                                            List<ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String>> merged;
-
                                             for (Transaction transaction : transactions) {
-                                                UnsignedLong blockHeight    = transaction.getBlockHeight().or(BRConstants.BLOCK_HEIGHT_UNBOUND);
-                                                UnsignedLong blockTimestamp = transaction.getTimestamp().transform(Utilities::dateAsUnixTimestamp).or(UnsignedLong.ZERO);
-                                                UnsignedLong blockConfirmations = transaction.getConfirmations().or(UnsignedLong.ZERO);
-                                                UnsignedLong blockTransactionIndex = transaction.getIndex().or(UnsignedLong.ZERO);
-                                                String blockHash = transaction.getHash();
-                                                String transactionBytes = transaction.getRaw()
-                                                        .transform((data) -> Coder.createForAlgorithm(com.breadwallet.crypto.Coder.Algorithm.HEX).encode(data).orNull())
-                                                        .orNull();
-
-                                                BRCryptoTransferStateType status = getTransferStatus (transaction.getStatus());
-
-                                                merged = System.mergeTransfers(transaction, addresses);
-                                                for (ObjectPair<com.breadwallet.crypto.blockchaindb.models.bdb.Transfer, String> o : merged) {
-                                                    Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback  announcing " + o.o1.getId());
-
-                                                    // Merge Transfer 'meta' into Transaction' meta; duplicates from Transfer
-                                                    Map<String,String> meta = new HashMap<>(transaction.getMeta());
-                                                    meta.putAll(o.o1.getMeta());
-
-                                                    walletManager.getCoreBRCryptoWalletManager().announceGetTransfersItem(callbackState, status,
-                                                            transaction.getHash(),
-                                                            o.o1.getId(),
-                                                            o.o1.getFromAddress().orNull(),
-                                                            o.o1.getToAddress().orNull(),
-                                                            o.o1.getAmount().getAmount(),
-                                                            o.o1.getAmount().getCurrencyId(),
-                                                            o.o2,
-                                                            transactionBytes,
-                                                            blockTimestamp,
-                                                            blockHeight,
-                                                            blockConfirmations,
-                                                            blockTransactionIndex,
-                                                            blockHash,
-                                                            meta);
-                                                }
-                                            }
+                                                bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
+                                             }
 
                                             success = true;
                                             Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
                                         } finally {
-                                            walletManager.getCoreBRCryptoWalletManager().announceGetTransfersComplete(callbackState, success);
+                                            walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, true, bundles);
                                         }
                                     }
 
                                     @Override
                                     public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceGetTransfersComplete(callbackState, false);
+                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
+                                        walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, false, new ArrayList<>());
                                     }
                                 });
                     } else {
@@ -1809,7 +2019,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceGetTransfersComplete(callbackState, false);
+                coreWalletManager.announceTransfers(callbackState,false, new ArrayList<>());
             } finally {
                 coreWalletManager.give();
             }
@@ -1817,7 +2027,8 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void submitTransaction(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                          byte[] transaction, String hashAsHex) {
+                                          String identifier,
+                                          byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback");
@@ -1830,19 +2041,20 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.createTransaction(walletManager.getNetwork().getUids(), hashAsHex, transaction, new CompletionHandler<Void, QueryError>() {
-                            @Override
-                            public void handleData(Void data) {
-                                Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferSuccess(callbackState, hashAsHex);
-                            }
+                        system.query.createTransaction(walletManager.getNetwork().getUids(), transaction, identifier,
+                                new CompletionHandler<TransactionIdentifier, QueryError>() {
+                                    @Override
+                                    public void handleData(TransactionIdentifier tid) {
+                                        Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash().orNull(), true);
+                                    }
 
-                            @Override
-                            public void handleError(QueryError error) {
-                                Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceSubmitTransferFailure(callbackState);
-                            }
-                        });
+                                    @Override
+                                    public void handleError(QueryError error) {
+                                        Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
+                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
+                                    }
+                                });
 
                     } else {
                         throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing manager");
@@ -1853,7 +2065,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceSubmitTransferFailure(callbackState);
+                coreWalletManager.announceSubmitTransfer(callbackState, null, null, false);
             } finally {
                 coreWalletManager.give();
             }
@@ -1861,7 +2073,7 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void estimateTransactionFee(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState,
-                                               byte[] transaction, String hashAsHex) {
+                                               byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
             try {
                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback");
@@ -1874,17 +2086,17 @@ final class System implements com.breadwallet.crypto.System {
                     if (optWalletManager.isPresent()) {
                         WalletManager walletManager = optWalletManager.get();
 
-                        system.query.estimateTransactionFee(walletManager.getNetwork().getUids(), hashAsHex, transaction, new CompletionHandler<TransactionFee, QueryError>() {
+                        system.query.estimateTransactionFee(walletManager.getNetwork().getUids(), transaction, new CompletionHandler<TransactionFee, QueryError>() {
                             @Override
                             public void handleData(TransactionFee fee) {
                                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFeeSuccess(callbackState, hashAsHex, fee.getCostUnits());
+                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFeeFailure(callbackState);
+                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
                             }
                         });
                     } else {
@@ -1896,7 +2108,7 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceSubmitTransferFailure(callbackState);
+                coreWalletManager.announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
             } finally {
                 coreWalletManager.give();
             }
@@ -1948,7 +2160,8 @@ final class System implements com.breadwallet.crypto.System {
             // We may or may not have a non-fee transfer matching `transferWithFee`.  We
             // may or may not have more than one non-fee transfers matching `transferWithFee`
 
-            // Find the first of the non-fee transfers matching `transferWithFee`
+            // Find the first of the non-fee transfers matching `transferWithFee` that also matches
+            // the amount's currency.
             com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
             for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
@@ -1958,6 +2171,16 @@ final class System implements com.breadwallet.crypto.System {
                     break;
                 }
             }
+
+            // If there is still no `transferWithFee`, find the first w/o matching the amount's currency
+            if (null == transferMatchingFee)
+                for (com.breadwallet.crypto.blockchaindb.models.bdb.Transfer transfer : transfersWithoutFee) {
+                    if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
+                            transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
+                        transferMatchingFee = transfer;
+                        break;
+                    }
+                }
 
             // We must have a transferMatchingFee; if we don't add one
             transfers = new ArrayList<>(transfersWithoutFee);
@@ -2017,7 +2240,7 @@ final class System implements com.breadwallet.crypto.System {
                         return;
                     }
 
-                    Log.log(Level.INFO, "HBAR accountInitialize: publicKey: %s", publicKey.get());
+                    Log.log(Level.INFO, String.format ("HBAR accountInitialize: publicKey: %s", publicKey.get()));
 
                     // We'll recursively reference this 'hederaHandler' - put it in a 'final box' so
                     // that the compiler permits references w/o 'perhaps not initialized' errors.
@@ -2075,12 +2298,12 @@ final class System implements com.breadwallet.crypto.System {
 
     @Override
     public Optional<byte[]> accountInitializeUsingData(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network, byte[] data) {
-        return Optional.of (account.initialize (network, data));
+        return Optional.fromNullable (account.initialize (network, data));
     }
 
     @Override
     public Optional<byte[]> accountInitializeUsingHedera(com.breadwallet.crypto.Account account, com.breadwallet.crypto.Network network, HederaAccount hedera) {
-        return Optional.of (account.initialize (network, hedera.getAccountId().getBytes()));
+        return Optional.fromNullable (account.initialize (network, hedera.getAccountId().getBytes()));
     }
 
     private void accountInitializeReportError(AccountInitializationError error,

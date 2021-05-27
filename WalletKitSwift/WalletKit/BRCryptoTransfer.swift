@@ -59,10 +59,18 @@ public final class Transfer: Equatable {
     /// The amount to transfer - always positive (from source to target)
     public let amount: Amount
 
-    /// The amount to transfer after considering the direction.  If we received the transfer,
-    /// the amount will be positive; if we sent the transfer, the amount will be negative; if
-    /// the transfer is 'self directed', the amount will be zero.
-    public let amountDirected: Amount
+    ///
+    /// The amount to transfer after considering the direction and the state.  This value may change
+    /// when the transfer's state changed; notably when .included.  If the transfer's state is
+    /// '.failed', then the amount will be zero.  Otherwise if we received the transfer, the amount
+    /// will be positive; if we sent the transfer, the amount will be negative; ifthe transfer is
+    /// 'self directed', the amount will be zero.
+    ///
+    /// The `amountDirected` might change on a Transfer state change.
+    ///
+    public var amountDirected: Amount {
+        return Amount (core: cryptoTransferGetAmountDirected(core), take: false)
+    }
 
     /// TODO: Determine if the estimatedFeeBasis applies across program instantiations
     ///
@@ -93,10 +101,15 @@ public final class Transfer: Equatable {
         else { return nil }
     }
 
-    /// An optional hash
+    public var identifier: String? {
+        return cryptoTransferGetIdentifier(core)
+            .map { asUTF8String($0) }
+    }
+    
+    /// An optional hash.  This only exists if the TransferState is .included or .submitted
     public var hash: TransferHash? {
         return cryptoTransferGetHash (core)
-            .map { TransferHash (core: $0) }
+            .map { TransferHash (core: $0, take: false) }
     }
 
     /// The current state
@@ -137,7 +150,6 @@ public final class Transfer: Equatable {
 
         // Other properties
         self.amount         = Amount (core: cryptoTransferGetAmount (core),        take: false)
-        self.amountDirected = Amount (core: cryptoTransferGetAmountDirected(core), take: false)
     }
 
 
@@ -240,8 +252,8 @@ public class TransferFeeBasis: Equatable {
     internal init (core: BRCryptoFeeBasis, take: Bool) {
         self.core = take ? cryptoFeeBasisTake (core) : core
 
-        self.unit = Unit (core: cryptoFeeBasisGetPricePerCostFactorUnit(core), take: false)
         self.pricePerCostFactor = Amount (core: cryptoFeeBasisGetPricePerCostFactor(core), take: false)
+        self.unit = self.pricePerCostFactor.unit
         self.costFactor  = cryptoFeeBasisGetCostFactor (core)
 
         // TODO: The Core fee calculation might overflow.
@@ -257,7 +269,7 @@ public class TransferFeeBasis: Equatable {
     }
 
     public static func == (lhs: TransferFeeBasis, rhs: TransferFeeBasis) -> Bool {
-        return CRYPTO_TRUE == cryptoFeeBasisIsIdentical (lhs.core, rhs.core)
+        return CRYPTO_TRUE == cryptoFeeBasisIsEqual (lhs.core, rhs.core)
     }
 }
 
@@ -279,8 +291,8 @@ public struct TransferConfirmation: Equatable {
 public class TransferHash: Hashable, CustomStringConvertible {
     internal let core: BRCryptoHash
 
-    init (core: BRCryptoHash) {
-        self.core = core
+    init (core: BRCryptoHash, take: Bool) {
+        self.core = take ? cryptoHashTake (core) : core
     }
 
     deinit {
@@ -296,7 +308,7 @@ public class TransferHash: Hashable, CustomStringConvertible {
     }
 
     public var description: String {
-        return asUTF8String (cryptoHashString (core), true)
+        return asUTF8String (cryptoHashEncodeString (core), true)
     }
 }
 
@@ -421,27 +433,43 @@ public enum TransferState {
     case deleted
 
     internal init (core: BRCryptoTransferState) {
-        defer {  var mutableCore = core; cryptoTransferStateRelease (&mutableCore) }
-        switch core.type {
+        defer { cryptoTransferStateGive (core) }
+        switch cryptoTransferStateGetType (core) {
         case CRYPTO_TRANSFER_STATE_CREATED:   self = .created
         case CRYPTO_TRANSFER_STATE_SIGNED:    self = .signed
         case CRYPTO_TRANSFER_STATE_SUBMITTED: self = .submitted
         case CRYPTO_TRANSFER_STATE_INCLUDED:
-            var coreError = core.u.included.error
-            let error = CRYPTO_TRUE == core.u.included.success
-                ? nil
-                : asUTF8String(&coreError.0)
+            var coreBlockNumber      : UInt64 = 0
+            var coreBlockTimestamp   : UInt64 = 0
+            var coreTransactionIndex : UInt64 = 0
+            var coreFeeBasis         : BRCryptoFeeBasis!
+            var coreSuccess          : BRCryptoBoolean = CRYPTO_TRUE
+            var coreErrorString      : UnsafeMutablePointer<Int8>!
+
+            cryptoTransferStateExtractIncluded (core,
+                                                &coreBlockNumber,
+                                                &coreBlockTimestamp,
+                                                &coreTransactionIndex,
+                                                &coreFeeBasis,
+                                                &coreSuccess,
+                                                &coreErrorString);
+            defer { cryptoMemoryFree (coreErrorString) }
 
             self = .included (
-                confirmation: TransferConfirmation (blockNumber: core.u.included.blockNumber,
-                                                    transactionIndex: core.u.included.transactionIndex,
-                                                    timestamp: core.u.included.timestamp,
-                                                    fee: core.u.included.feeBasis
+                confirmation: TransferConfirmation (blockNumber:      coreBlockNumber,
+                                                    transactionIndex: coreTransactionIndex,
+                                                    timestamp:        coreBlockTimestamp,
+                                                    fee: coreFeeBasis
                                                         .map { cryptoFeeBasisGetFee ($0) }
                                                         .map { Amount (core: $0, take: false) },
-                                                    success: CRYPTO_TRUE == core.u.included.success,
-                                                    error: error))
-        case CRYPTO_TRANSFER_STATE_ERRORED:   self = .failed(error: TransferSubmitError (core: core.u.errored.error))
+                                                    success: CRYPTO_TRUE == coreSuccess,
+                                                    error: coreErrorString.map { asUTF8String ($0)} ))
+
+        case CRYPTO_TRANSFER_STATE_ERRORED:
+            var error = BRCryptoTransferSubmitError()
+            cryptoTransferStateExtractError (core, &error)
+            self = .failed(error: TransferSubmitError (core: error))
+
         case CRYPTO_TRANSFER_STATE_DELETED:   self = .deleted
         default: /* ignore this */ self = .pending; preconditionFailure()
         }
@@ -471,6 +499,24 @@ public enum TransferEvent {
     case created
     case changed (old: TransferState, new: TransferState)
     case deleted
+
+    // unused - caution on {old,new}State ownership - will be given
+    init (core: BRCryptoTransferEvent) {
+        switch core.type {
+        case CRYPTO_TRANSFER_EVENT_CREATED:
+            self = .created
+
+        case CRYPTO_TRANSFER_EVENT_CHANGED:
+            self = .changed (old: TransferState (core: core.u.state.old),
+                             new: TransferState (core: core.u.state.new))
+
+        case CRYPTO_TRANSFER_EVENT_DELETED:
+            self = .deleted
+
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 ///

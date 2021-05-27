@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <stdint.h>
 #include "BRCryptoBase.h"
 
 // Even though we only support the Payment type - plan for
@@ -50,6 +49,11 @@ typedef struct {
     uint8_t bytes[32];
 } BRRippleTransactionHash;
 
+#define RIPPLE_TRANSACTION_HASH_EMPTY   ((const BRRippleTransactionHash) { \
+0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0, \
+0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0  \
+})
+
 typedef struct {
     int currencyType; // 0 - ripple, 1 - other, -1 unknown/invalid
     uint8_t currencyCode[20];
@@ -79,7 +83,10 @@ typedef uint32_t BRRippleFlags;
 typedef uint32_t BRRippleLastLedgerSequence;
 typedef uint32_t BRRippleSourceTag;
 typedef uint32_t BRRippleDestinationTag;
+typedef  int64_t BRRippleBalance;
 
 #define RIPPLE_XRP_TO_DROPS(xrp)   (1000000 * (xrp))   // 1e6 drops/xrp
-#define RIPPLE_SEQUENCE_UNKNOWN    (UINT32_MAX)
+
+extern char *rippleAlphabet;
+
 #endif

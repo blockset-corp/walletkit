@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include "support/BROSCompat.h"
+
 #include "../vendor/sqlite3/sqlite3.h"
 typedef int sqlite3_status_code;
 
@@ -253,14 +255,7 @@ fileServiceCreate (const char *basePath,
     // Create the file service itself
     BRFileService fs = calloc (1, sizeof (struct BRFileServiceRecord));
 
-    {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-
-        pthread_mutex_init(&fs->lock, &attr);
-        pthread_mutexattr_destroy(&attr);
-    }
+    pthread_mutex_init_brd (&fs->lock, PTHREAD_MUTEX_NORMAL);
 
     // Set the error handler - early
     fileServiceSetErrorHandler (fs, context, handler);
@@ -521,14 +516,22 @@ fileServiceFailedUnix(BRFileService fs,
 #pragma GCC diagnostic pop
 
 static int
+fileServiceFailedSDBWithBufferFree (BRFileService fs,
+                                    int releaseLock,
+                                    void *bufferToFree,
+                                    sqlite3_status_code code) {
+    return fileServiceFailedInternal (fs, releaseLock, bufferToFree, NULL,
+                                      (BRFileServiceError) {
+        FILE_SERVICE_SDB,
+        { .sdb = { code, sqlite3_errstr(code) }}
+    });
+}
+
+static int
 fileServiceFailedSDB (BRFileService fs,
                       int releaseLock,
                       sqlite3_status_code code) {
-    return fileServiceFailedInternal (fs, releaseLock, NULL, NULL,
-                                      (BRFileServiceError) {
-                                          FILE_SERVICE_SDB,
-                                          { .sdb = { code, sqlite3_errstr(code) }}
-                                      });
+    return fileServiceFailedSDBWithBufferFree (fs, releaseLock, NULL, code);
 }
 
 static int
@@ -753,7 +756,11 @@ fileServiceLoad (BRFileService fs,
                                             type, "reader");
 
         // Update restuls with the newly restored entity
-        BRSetAdd (results, entity);
+        void *oldEntity = BRSetAdd (results, entity);
+        assert (NULL == oldEntity);  // DEBUG builds
+        if (NULL != oldEntity)
+            return fileServiceFailedEntity (fs, 1, (dataBytes == dataBytesBuffer ? NULL : dataBytes), NULL,
+                                            type, "duplicate set entry");
 
         // If the read version is not the current version, update
         if (updateVersion &&
@@ -781,7 +788,16 @@ fileServiceLoad (BRFileService fs,
 extern int
 fileServiceRemove (BRFileService fs,
                    const char *type,
-                   UInt256 identifier) {
+                   const void *entity) {
+    UInt256 identiifer = fileServiceGetIdentifier (fs, type, entity);
+
+    return !UInt256Eq (identiifer, UINT256_ZERO) && fileServiceRemoveByIdentifier (fs, type, identiifer);
+}
+
+extern int
+fileServiceRemoveByIdentifier (BRFileService fs,
+                               const char *type,
+                               UInt256 identifier) {
     BRFileServiceEntityType *entityType = fileServiceLookupType (fs, type);
     if (NULL == entityType)
         return fileServiceFailedImpl (fs, 0, NULL, NULL, "missed type");
@@ -915,6 +931,81 @@ fileServiceReplace (BRFileService fs,
     return 1;
 }
 
+static char * // called while locked
+fileServicePurgeCreateSQL (BRFileService fs) {
+    size_t typeCount = array_count(fs->entityTypes);
+
+    static char *sqlFormatter = "DELETE FROM Entity WHERE Type NOT IN (%s);";
+
+    char *sqlArgs;
+    size_t sqlArgsLength = 1;
+
+    char *sqlArgPrefix = "\"";
+
+    // Find the args length
+    for (size_t index = 0; index < typeCount; index++) {
+        sqlArgsLength += strlen (sqlArgPrefix);
+        sqlArgsLength += strlen (fs->entityTypes[index].type) + 2; // quotes
+        sqlArgPrefix = "\",\"";
+    }
+    sqlArgsLength += strlen ("\"");
+
+    sqlArgPrefix = "\"";
+
+    sqlArgs = malloc (sqlArgsLength);
+    for (size_t index = 0; index < typeCount; index++) {
+        strcat (sqlArgs, sqlArgPrefix);
+        strcat (sqlArgs, fs->entityTypes[index].type);
+        sqlArgPrefix = "\",\"";
+    }
+    strcat (sqlArgs, "\"");
+
+    char *sql = NULL;
+    asprintf (&sql, sqlFormatter, sqlArgs);
+
+    return sql;
+}
+
+extern int
+fileServicePurge (BRFileService fs) {
+    if (NULL == fs) return 0;
+
+    pthread_mutex_lock (&fs->lock);
+
+    size_t typeCount = array_count(fs->entityTypes);
+    if (0 == typeCount) {
+        pthread_mutex_unlock (&fs->lock);
+        return 0;
+    }
+
+    char *sql = fileServicePurgeCreateSQL (fs);
+    printf ("DBG: FileServicePurge: SQL: %s\n", sql);
+
+#if !defined(NEUTER_FILE_SERVICE)
+    sqlite3_status_code status;
+
+    if (fs->sdbClosed)
+        return fileServiceFailedImpl (fs, 1, sql, NULL, "closed");
+
+    status = sqlite3_exec (fs->sdb, "BEGIN", NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+    status = sqlite3_exec(fs->sdb, sql, NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+    status = sqlite3_exec (fs->sdb, "COMMIT", NULL, NULL, NULL);
+    if (SQLITE_OK != status)
+        return fileServiceFailedSDBWithBufferFree (fs, 1, sql, status);
+
+#endif // !defined(NEUTER_FILE_SERVICE)
+    pthread_mutex_unlock (&fs->lock);
+
+    free (sql);
+    return 1;
+}
+
 extern int
 fileServiceWipe (const char *basePath,
                  const char *currency,
@@ -931,6 +1022,12 @@ fileServiceWipe (const char *basePath,
 #endif
 
     return result;
+}
+
+extern bool
+fileServiceHasType (BRFileService fs,
+                    const char *type) {
+    return NULL != fs && NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256
@@ -1005,7 +1102,7 @@ fileServiceDefineCurrentVersion (BRFileService fs,
 }
 
 extern BRFileService
-fileServiceCreateFromTypeSpecfications (const char *basePath,
+fileServiceCreateFromTypeSpecifications(const char *basePath,
                                         const char *currency,
                                         const char *network,
                                         BRFileServiceContext context,

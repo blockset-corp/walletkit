@@ -13,15 +13,24 @@
 
 #include "BRCryptoBase.h"
 
+#if !defined (MAX)
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+#if !defined (MIN)
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 /// Private-ish
 ///
 /// This is an implementation detail
 ///
-typedef enum {
-    BLOCK_CHAIN_TYPE_BTC,
-    BLOCK_CHAIN_TYPE_ETH,
-    BLOCK_CHAIN_TYPE_GEN
-} BRCryptoBlockChainType;
+#define free_const(pointer)    free((void*) (pointer))
+
+#define assign_const(type, lval, rval) do { \
+  type *__ptr = (type *) &(lval);           \
+  *__ptr = (rval);                          \
+} while (0)
 
 
 #endif /* BRCryptoBaseP_h */

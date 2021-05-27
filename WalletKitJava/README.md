@@ -13,6 +13,7 @@ Development is primarily done in a macOS environment (10.14.6 confirmed) but sho
 The Java language binding is broken down into three major components:
 * **corenative:** contains a thin layer exposing the underlying C core functionality (via JNA)
 * **crypto:** contains the BlockchainDB client and core interfaces
+* **crypto-ktx:** contains idiomatic kotlin extensions for corecrypto apis
 * **corecrypto:** contains the implementation of the **crypto** interfaces using the **corenative** primitives
 
 For the **corenative** and **corecrypto** projects, there are bindings for both Android and JRE that can be used for the appropriate platform.
@@ -62,6 +63,8 @@ dependencies {
     implementation 'com.breadwallet.core:corecrypto-jre:<version>'
     // For Android targets:
     implementation 'com.breadwallet.core:corecrypto-android:<version>'
+    // Kotlin extensions
+    implementation 'com.breadwallet.core:crypto-ktx:<version>'
 }
 
 ```

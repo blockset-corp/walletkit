@@ -25,7 +25,6 @@
 #include "bitcoin/BRPeerManager.h"
 #include "bitcoin/BRTransaction.h"
 #include "bitcoin/BRWallet.h"
-#include "bitcoin/BRWalletManager.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -38,7 +37,7 @@
 ///
 ///
 ///
-
+#if REFACTOR
 static void
 _testTransactionEventCallback (BRWalletManagerClientContext context,
                                BRWalletManager manager,
@@ -1506,3 +1505,4 @@ extern int BRRunTestsBWM (const char *paperKey,
 
     return success;
 }
+#endif

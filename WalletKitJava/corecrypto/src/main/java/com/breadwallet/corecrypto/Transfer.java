@@ -59,7 +59,6 @@ final class Transfer implements com.breadwallet.crypto.Transfer {
     private final Supplier<Optional<Address>> sourceSupplier;
     private final Supplier<Optional<Address>> targetSupplier;
     private final Supplier<Amount> amountSupplier;
-    private final Supplier<Amount> directedSupplier;
     private final Supplier<TransferDirection> directionSupplier;
     private final Supplier<Set<TransferAttribute>> attributesSupplier;
 
@@ -74,7 +73,6 @@ final class Transfer implements com.breadwallet.crypto.Transfer {
         this.sourceSupplier = Suppliers.memoize(() -> core.getSourceAddress().transform(Address::create));
         this.targetSupplier = Suppliers.memoize(() -> core.getTargetAddress().transform(Address::create));
         this.amountSupplier = Suppliers.memoize(() -> Amount.create(core.getAmount()));
-        this.directedSupplier = Suppliers.memoize(() -> Amount.create(core.getAmountDirected()));
         this.directionSupplier = Suppliers.memoize(() -> Utilities.transferDirectionFromCrypto(core.getDirection()));
 
         attributesSupplier = Suppliers.memoize(() -> {
@@ -112,7 +110,7 @@ final class Transfer implements com.breadwallet.crypto.Transfer {
 
     @Override
      public Amount getAmountDirected() {
-        return directedSupplier.get();
+        return Amount.create(core.getAmountDirected());
     }
 
     @Override
@@ -135,6 +133,11 @@ final class Transfer implements com.breadwallet.crypto.Transfer {
     @Override
     public TransferDirection getDirection() {
         return directionSupplier.get();
+    }
+
+    @Override
+    public Optional<String> getIdentifier() {
+        return core.getIdentifier();
     }
 
     @Override

@@ -32,6 +32,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var system: System!
     var mainnet = true
 
+    var initInProgress: Bool = true
+
     var storagePath: String!
 
     var accountSpecification: AccountSpecification!
@@ -39,14 +41,16 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
     var accountSerialization: Data!
     var accountUids: String!
 
-    var query: BlockChainDB!
+    var blocksetAccess: BlocksetAccess!
+
+    var client: SystemClient!
 
     var currencyCodesToMode: [String:WalletManagerMode]!
     var registerCurrencyCodes: [String]!
 
-    var btcPeerSpec = (address: "103.99.168.100", port: UInt16(8333))
-    var btcPeer: NetworkPeer? = nil
-    var btcPeerUse = false
+    let peerSpecs = [NetworkType.btc : (use: false, address: "103.99.168.100", port: UInt16(8333)),
+                     NetworkType.bch : (use: false, address: "18.182.43.60",   port: UInt16(8333))]
+    var peers = [NetworkType:NetworkPeer]()
 
     var clearPersistentData: Bool = false
 
@@ -61,17 +65,20 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
         let summaryNavigationController = splitViewController.viewControllers[0] as! UINavigationController
         summaryController = (summaryNavigationController.topViewController as! SummaryViewController)
 
-        print ("APP: Bundle Path       : \(Bundle(for: CoreDemoAppDelegate.self).bundlePath)")
+        let appBundle = Bundle(for: CoreDemoAppDelegate.self)
 
-        let accountSpecificationsPath = Bundle(for: CoreDemoAppDelegate.self).path(forResource: "CoreTestsConfig", ofType: "json")!
-        let accountSpecifications     = AccountSpecification.loadFrom(configPath: accountSpecificationsPath)
-        let accountIdentifier         = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
+        print ("APP: Bundle Path       : \(appBundle.bundlePath)")
+
+        let testConfiguration     = TestConfiguration.loadFrom (bundle: appBundle, resource: "WalletKitTestsConfig")!
+        let accountSpecifications = testConfiguration.accountSpecifications
+        let accountIdentifier     = (CommandLine.argc >= 2 ? CommandLine.arguments[1] : "ginger")
 
         guard let accountSpecification = accountSpecifications.first (where: { $0.identifier == accountIdentifier })
             ?? (accountSpecifications.count > 0 ? accountSpecifications[0] : nil)
             else { preconditionFailure ("APP: No AccountSpecification: \(accountIdentifier)"); }
 
         self.accountSpecification = accountSpecification
+        self.blocksetAccess = testConfiguration.blocksetAccess
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -119,23 +126,17 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         currencyCodesToMode = [
             "btc" : .api_only,
-            "eth" : .api_only,
             "bch" : .api_only,
-            "bsv" : .p2p_only,
+            "bsv" : .api_only,
+            "eth" : .api_only,
             "xrp" : .api_only,
-            "hbar" : .api_only
+            "hbar": .api_only,
+            "xtz" : .api_only
             ]
-        if mainnet {
 
-        }
-        else {
-
-        }
-
-        registerCurrencyCodes = [
-//            "zla",
-//            "adt"
-        ]
+        registerCurrencyCodes = (mainnet
+                                        ? [ /* "zla", "adt" */ ]
+                                        : [ "brd", "tst" ])
 
         print ("APP: CurrenciesToMode  : \(currencyCodesToMode!)")
 
@@ -145,52 +146,51 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
                                      isMainnet: mainnet)
 
         // Create the BlockChainDB
-        query = BlockChainDB.createForTest ()
+        client = BlocksetSystemClient.createForTest (bdbBaseURL: self.blocksetAccess.baseURL,
+                                                    bdbToken:   self.blocksetAccess.token)
 
         // Create the system
-        self.system = System.create (listener: listener,
+        self.system = System.create (client: client,
+                                     listener: listener,
                                      account: account,
                                      onMainnet: mainnet,
-                                     path: storagePath,
-                                     query: query)
+                                     path: storagePath)
 
         System.wipeAll (atPath: storagePath, except: [self.system])
         
         // Subscribe to notificiations or not (Provide an endpoint if notifications are enabled).
         let subscriptionId = UIDevice.current.identifierForVendor!.uuidString
-        let subscription = BlockChainDB.Subscription (id: subscriptionId, endpoint: nil);
+        let subscriptionEp = BlocksetSystemClient.SubscriptionEndpoint (environment: "env", kind: "knd", value: "val")
+        let subscription = BlocksetSystemClient.Subscription (id: subscriptionId,
+                                                              device: "ignore",
+                                                              endpoint: subscriptionEp,
+                                                              currencies: []);
         self.system.subscribe (using: subscription)
 
-        self.system.configure(withCurrencyModels: [])
+        self.system.configure()
 
         return true
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        system.pause()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-        system.disconnectAll()
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can
-        // undo many of the changes made on entering the background.
-        system.connectAll()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was
-        // inactive. If the application was previously in the background, optionally refresh the
-        // user interface.
+        guard !initInProgress
+        else { initInProgress = false; return }
+
+        system.resume()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        system.pause ()
     }
 
     // MARK: - Split view
@@ -271,14 +271,14 @@ extension UIApplication {
         print ("APP: Mainnet           : \(app.mainnet)")
 
         // Create a new system
-        app.system = System.create (listener: app.listener!,
+        app.system = System.create (client: app.client,
+                                    listener: app.listener!,
                                     account: account,
                                     onMainnet: app.listener.isMainnet,  // Wipe might change.
-                                    path: app.storagePath,
-                                    query: app.query)
+                                    path: app.storagePath)
 
         // Passing `[]`... it is a demo app...
-        app.system.configure(withCurrencyModels: [])
+        app.system.configure()
 
         // Too soon...
         app.summaryController.update()
@@ -288,8 +288,11 @@ extension UIApplication {
         guard let app = UIApplication.shared.delegate as? CoreDemoAppDelegate else { return }
         print ("APP: Wiping")
 
-        let accountSpecificationsPath = Bundle(for: CoreDemoAppDelegate.self).path(forResource: "CoreTestsConfig", ofType: "json")!
-        let accountSpecifications     = AccountSpecification.loadFrom(configPath: accountSpecificationsPath)
+
+        let appBundle = Bundle(for: CoreDemoAppDelegate.self)
+
+        let testConfiguration     = TestConfiguration.loadFrom (bundle: appBundle, resource: "WalletKitTestsConfig")!
+        let accountSpecifications = testConfiguration.accountSpecifications
 
         let alert = UIAlertController (title: "Select Paper Key",
                                        message: nil,
@@ -319,13 +322,13 @@ extension UIApplication {
                     // Create the listener
                     app.listener.isMainnet = mainnet
 
-                    app.system = System.create (listener: app.listener!,
+                    app.system = System.create (client: app.client,
+                                                listener: app.listener!,
                                                 account: app.account,
                                                 onMainnet: mainnet,
-                                                path: app.storagePath,
-                                                query: app.query)
+                                                path: app.storagePath)
 
-                    app.system.configure(withCurrencyModels: [])
+                    app.system.configure()
                     alert.dismiss (animated: true) {
                         app.summaryController.reset()
                         app.summaryController.update()
@@ -354,16 +357,14 @@ extension UIApplication {
 
     static func peer (network: Network) -> NetworkPeer? {
         guard let app = UIApplication.shared.delegate as? CoreDemoAppDelegate else { return nil }
-        guard "btc" == network.currency.code else { return nil }
-        guard app.btcPeerUse else { return nil }
 
-        if nil == app.btcPeer {
-            app.btcPeer = network.createPeer (address: app.btcPeerSpec.address,
-                                              port: app.btcPeerSpec.port,
-                                              publicKey: nil)
+        if nil == app.peers[network.type],
+           let (use, address, port) = app.peerSpecs[network.type],
+           use {
+            app.peers[network.type] = network.createPeer(address: address, port: port, publicKey: nil)
         }
 
-        return app.btcPeer
+        return app.peers[network.type]
     }
 }
 
@@ -371,11 +372,12 @@ extension Network {
     var scheme: String? {
         switch type {
         case .btc: return "bitcoin"
-        case .bch: return (isMainnet ? "bitcoincash" : "bchtest")
+        case .bch: return (onMainnet ? "bitcoincash" : "bchtest")
         case .bsv: return "bitcoinsv"
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"
+        case .xtz: return "tezos"
 //        case .xlm:  return "stellar"
         }
     }

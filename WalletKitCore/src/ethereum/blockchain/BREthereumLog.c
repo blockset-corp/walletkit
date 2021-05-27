@@ -237,6 +237,13 @@ logExtractIdentifier (BREthereumLog log,
     return ETHEREUM_BOOLEAN_TRUE;
 }
 
+extern BREthereumHash
+logGetIdentifier (BREthereumLog log) {
+    return (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex
+            ? EMPTY_HASH_INIT
+            : log->identifier.transactionHash);
+}
+
 static inline int
 logHasStatus (BREthereumLog log,
               BREthereumTransactionStatusType type) {
@@ -370,7 +377,7 @@ logHashEqual (const void *l1, const void *l2) {
     assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l1)->identifier.transactionReceiptIndex);
     assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l2)->identifier.transactionReceiptIndex);
     return ethHashSetEqual (&((BREthereumLog) l1)->hash,
-                         &((BREthereumLog) l2)->hash);
+                            &((BREthereumLog) l2)->hash);
 }
 
 /// MARK: - Release // Copy

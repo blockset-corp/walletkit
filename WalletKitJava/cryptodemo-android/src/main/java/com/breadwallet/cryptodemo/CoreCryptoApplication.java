@@ -22,8 +22,13 @@ import com.breadwallet.crypto.DispatchingSystemListener;
 import com.breadwallet.crypto.WalletManagerMode;
 import com.breadwallet.crypto.blockchaindb.BlockchainDb;
 import com.breadwallet.crypto.System;
+import com.breadwallet.crypto.utility.TestConfiguration;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,8 +49,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class CoreCryptoApplication extends Application {
 
     private static final Logger Log = Logger.getLogger(CoreCryptoApplication.class.getName());
-
-    private static final String BDB_AUTH_TOKEN = BuildConfig.BDB_AUTH_TOKEN;
 
     private static final String EXTRA_TIMESTAMP = "TIMESTAMP";
     private static final String EXTRA_PAPER_KEY = "PAPER_KEY";
@@ -72,6 +75,8 @@ public class CoreCryptoApplication extends Application {
     private File storageFile;
 
     private AtomicBoolean runOnce = new AtomicBoolean(false);
+
+    private TestConfiguration testConfiguration;
 
     public static void initialize(Activity launchingActivity) {
         instance.initFromLaunchIntent(launchingActivity.getIntent());
@@ -109,6 +114,7 @@ public class CoreCryptoApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+        this.testConfiguration = getTestConfiguration();
         StrictMode.enableDefaults();
     }
 
@@ -144,7 +150,9 @@ public class CoreCryptoApplication extends Application {
                     "bsv",
                     "eth",
                     "xrp",
-                    "hbar"
+                    "hbar",
+                    "xtz",
+                    "ignore - end-of-array, w/o comma"
             );
             systemListener = new DispatchingSystemListener();
             systemListener.addSystemListener(new CoreSystemListener(mode, isMainnet, currencyCodesNeeded));
@@ -152,10 +160,13 @@ public class CoreCryptoApplication extends Application {
             String uids = UUID.randomUUID().toString();
             account = Account.createFromPhrase(paperKey, new Date(TimeUnit.SECONDS.toMillis(timestamp)), uids).get();
 
-            blockchainDb = BlockchainDb.createForTest (new OkHttpClient(), BDB_AUTH_TOKEN);
+            blockchainDb = BlockchainDb.createForTest (new OkHttpClient(),
+                    testConfiguration.getBlocksetAccess().getToken(),
+                    testConfiguration.getBlocksetAccess().getBaseURL(),
+                    null);
             system = System.create(systemExecutor, systemListener, account,
                     isMainnet, storageFile.getAbsolutePath(), blockchainDb);
-            system.configure(Collections.emptyList());
+            system.configure();
 
             System.wipeAll(storageFile.getAbsolutePath(), Collections.singletonList(system));
 
@@ -180,6 +191,16 @@ public class CoreCryptoApplication extends Application {
                 blockchainDb);
 
         // Passing empty list... it is a demo app...
-        system.configure(Collections.emptyList());
+        system.configure();
+    }
+
+    public TestConfiguration getTestConfiguration() {
+        try (final InputStream inputStream = getAssets().open("WalletKitTestsConfig.json");
+             final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            return TestConfiguration.loadFrom(reader);
+        }
+        catch (IOException e) {
+            throw new RuntimeException (e);
+        }
     }
 }

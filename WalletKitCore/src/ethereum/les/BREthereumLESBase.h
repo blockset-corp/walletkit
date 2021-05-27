@@ -14,7 +14,7 @@
 #include "support/BRSet.h"
 #include "support/BRArray.h"
 #include "ethereum/util/BRUtil.h"
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "ethereum/base/BREthereumHash.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 

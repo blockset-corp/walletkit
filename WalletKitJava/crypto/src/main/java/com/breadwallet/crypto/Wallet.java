@@ -27,7 +27,7 @@ public interface Wallet {
      * Note: This is 'private' until the parameters are described.  Meant for testing for now.
      *
      */
-    Optional<? extends TransferFeeBasis> createTransferFeeBasis(Amount pricePerCostFactor, double costFactor);
+    //Optional<? extends TransferFeeBasis> createTransferFeeBasis(Amount pricePerCostFactor, double costFactor);
 
     Optional<? extends Transfer> createTransfer(Address target, Amount amount, TransferFeeBasis estimatedFeeBasis, @Nullable Set<TransferAttribute> attributes);
 
@@ -38,9 +38,10 @@ public interface Wallet {
      * @param target the transfer's target address
      * @param amount the transfer amount MUST BE GREATER THAN 0
      * @param fee the network fee (aka priority)
+     * @param attributes transfer attributes
      * @param completion handler function
      */
-    void estimateFee(Address target, Amount amount, NetworkFee fee, CompletionHandler<TransferFeeBasis, FeeEstimationError> completion);
+    void estimateFee(Address target, Amount amount, NetworkFee fee, @Nullable Set<TransferAttribute> attributes, CompletionHandler<TransferFeeBasis, FeeEstimationError> completion);
 
     /**
      * Estimate the maximum amount that can be transfered from Wallet.

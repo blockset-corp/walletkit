@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'digital.wup.android-maven-publish'
 apply from: '../gradle/publish.gradle'
 
 android {
@@ -17,7 +16,7 @@ android {
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -49,7 +48,7 @@ android {
         }
         androidTest {
             java {
-                srcDirs = [project(':corecrypto').javaTestSrcDir]
+                srcDirs += [project(':corecrypto').javaTestSrcDir]
             }
         }
     }
@@ -60,21 +59,13 @@ dependencies {
 
     implementation project(':corenative-android')
     implementation deps.guavaAndroid
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAppcompat
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind
 
     testImplementation deps.junit
 
-    androidTestImplementation deps.androidTestRunner
-    androidTestImplementation deps.androidTestEspresso
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.android
-        }
-    }
+    androidTestImplementation deps.androidxTestRunner
+    androidTestImplementation deps.androidxTestEspresso
 }

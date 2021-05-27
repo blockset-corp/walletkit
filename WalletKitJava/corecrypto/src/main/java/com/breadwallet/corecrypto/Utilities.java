@@ -8,13 +8,15 @@
 package com.breadwallet.corecrypto;
 
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
-import com.breadwallet.corenative.crypto.BRCryptoNetworkCanonicalType;
+import com.breadwallet.corenative.crypto.BRCryptoNetworkType;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolError;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolType;
 import com.breadwallet.corenative.crypto.BRCryptoStatus;
+import com.breadwallet.corenative.crypto.BRCryptoSystemState;
 import com.breadwallet.corenative.crypto.BRCryptoTransferAttributeValidationError;
 import com.breadwallet.corenative.crypto.BRCryptoTransferDirection;
 import com.breadwallet.corenative.crypto.BRCryptoTransferState;
+import com.breadwallet.corenative.crypto.BRCryptoTransferSubmitError;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManagerState;
 import com.breadwallet.corenative.crypto.BRCryptoWalletState;
 import com.breadwallet.corenative.crypto.BRCryptoSyncDepth;
@@ -23,6 +25,7 @@ import com.breadwallet.corenative.crypto.BRCryptoSyncStoppedReason;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.NetworkType;
 import com.breadwallet.crypto.PaymentProtocolRequestType;
+import com.breadwallet.crypto.SystemState;
 import com.breadwallet.crypto.TransferConfirmation;
 import com.breadwallet.crypto.TransferDirection;
 import com.breadwallet.crypto.TransferState;
@@ -51,6 +54,15 @@ import java.util.concurrent.TimeUnit;
 
 /* package */
 final class Utilities {
+
+    /* package */
+    static SystemState systemStateFromCrypto (BRCryptoSystemState state) {
+        switch (state) {
+            case CRYPTO_SYSTEM_STATE_CREATED: return SystemState.CREATED();
+            case CRYPTO_SYSTEM_STATE_DELETED: return SystemState.DELETED();
+            default: throw new IllegalArgumentException("Unsupported state");
+        }
+    }
 
     /* package */
     static BRCryptoSyncMode walletManagerModeToCrypto(WalletManagerMode mode) {
@@ -141,31 +153,39 @@ final class Utilities {
             case CRYPTO_TRANSFER_STATE_DELETED: return TransferState.DELETED();
             case CRYPTO_TRANSFER_STATE_SIGNED: return TransferState.SIGNED();
             case CRYPTO_TRANSFER_STATE_SUBMITTED: return TransferState.SUBMITTED();
-            case CRYPTO_TRANSFER_STATE_ERRORED:
-                switch (state.u.errored.error.type()) {
-                    case CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN: return TransferState.FAILED(
-                            new TransferSubmitUnknownError()
-                    );
-                    case CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX: return TransferState.FAILED(
-                            new TransferSubmitPosixError(
-                                    state.u.errored.error.u.posix.errnum,
-                                    state.u.errored.error.getMessage().orNull()
-                            )
-                    );
-                    default: throw new IllegalArgumentException("Unsupported error");
+            case CRYPTO_TRANSFER_STATE_ERRORED: {
+                BRCryptoTransferSubmitError error = state.errored();
+
+                switch (error.type()) {
+                    case CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN:
+                        return TransferState.FAILED(
+                                new TransferSubmitUnknownError()
+                        );
+                    case CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX:
+                        return TransferState.FAILED(
+                                new TransferSubmitPosixError(
+                                        error.u.posix.errnum,
+                                        error.getMessage().orNull()
+                                ));
+                    default:
+                        throw new IllegalArgumentException("Unsupported error");
                 }
-            case CRYPTO_TRANSFER_STATE_INCLUDED: return TransferState.INCLUDED(
+            }
+
+            case CRYPTO_TRANSFER_STATE_INCLUDED:
+                BRCryptoTransferState.Included included = state.included();
+
+                return TransferState.INCLUDED(
                     new TransferConfirmation(
-                            UnsignedLong.fromLongBits(state.u.included.blockNumber),
-                            UnsignedLong.fromLongBits(state.u.included.transactionIndex),
-                            UnsignedLong.fromLongBits(state.u.included.timestamp),
-                            Optional.fromNullable(state.u.included.feeBasis)
+                            included.blockNumber,
+                            included.transactionIndex,
+                            included.blockTimestamp,
+                            Optional.fromNullable(included.feeBasis)
                                     .transform(TransferFeeBasis::create)
                                     .transform(TransferFeeBasis::getFee),
-                            Boolean.valueOf(state.u.included.getSuccess()),
-                            Optional.fromNullable(state.u.included.getError())
-                    )
-            );
+                            included.success,
+                            included.error));
+
             default: throw new IllegalArgumentException("Unsupported state");
         }
     }
@@ -183,20 +203,21 @@ final class Utilities {
     }
 
     /* package */
-    static BRCryptoNetworkCanonicalType networkTypeToCrypto(NetworkType type) {
+    static BRCryptoNetworkType networkTypeToCrypto(NetworkType type) {
         switch (type) {
-            case BTC: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BTC;
-            case BCH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BCH;
-            case BSV: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_BSV;
-            case ETH: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_ETH;
-            case XRP: return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_XRP;
-            case HBAR:return BRCryptoNetworkCanonicalType.CRYPTO_NETWORK_TYPE_HBAR;
+            case BTC: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BTC;
+            case BCH: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BCH;
+            case BSV: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_BSV;
+            case ETH: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_ETH;
+            case XRP: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_XRP;
+            case HBAR:return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_HBAR;
+            case XTZ: return BRCryptoNetworkType.CRYPTO_NETWORK_TYPE_XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
 
     /* package */
-    static NetworkType networkTypeFromCrypto(BRCryptoNetworkCanonicalType type) {
+    static NetworkType networkTypeFromCrypto(BRCryptoNetworkType type) {
         switch (type) {
             case CRYPTO_NETWORK_TYPE_BTC: return NetworkType.BTC;
             case CRYPTO_NETWORK_TYPE_BCH: return NetworkType.BCH;
@@ -204,6 +225,7 @@ final class Utilities {
             case CRYPTO_NETWORK_TYPE_ETH: return NetworkType.ETH;
             case CRYPTO_NETWORK_TYPE_XRP: return NetworkType.XRP;
             case CRYPTO_NETWORK_TYPE_HBAR:return NetworkType.HBAR;
+            case CRYPTO_NETWORK_TYPE_XTZ: return NetworkType.XTZ;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -213,8 +235,7 @@ final class Utilities {
         switch (scheme) {
             case BTC_LEGACY: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_BTC_LEGACY;
             case BTC_SEGWIT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT;
-            case ETH_DEFAULT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT;
-            case GEN_DEFAULT: return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT;
+            case NATIVE:     return BRCryptoAddressScheme.CRYPTO_ADDRESS_SCHEME_NATIVE;
             default: throw new IllegalArgumentException("Unsupported scheme");
         }
     }
@@ -224,8 +245,7 @@ final class Utilities {
         switch (scheme) {
             case CRYPTO_ADDRESS_SCHEME_BTC_LEGACY: return AddressScheme.BTC_LEGACY;
             case CRYPTO_ADDRESS_SCHEME_BTC_SEGWIT: return AddressScheme.BTC_SEGWIT;
-            case CRYPTO_ADDRESS_SCHEME_ETH_DEFAULT: return AddressScheme.ETH_DEFAULT;
-            case CRYPTO_ADDRESS_SCHEME_GEN_DEFAULT: return AddressScheme.GEN_DEFAULT;
+            case CRYPTO_ADDRESS_SCHEME_NATIVE:     return AddressScheme.NATIVE;
             default: throw new IllegalArgumentException("Unsupported scheme");
         }
     }

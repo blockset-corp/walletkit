@@ -38,7 +38,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -60,11 +60,10 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         XCTAssertEqual (wallet.target, wallet.targetForScheme(manager.addressScheme))
         XCTAssertEqual (wallet, wallet)
 
-        let feeBasisPricePerCostFactor = Amount.create (integer: 5000, unit: network.baseUnitFor(currency: network.currency)!)
-        let feeBasisCostFactor = 1.0
-        let feeBasis: TransferFeeBasis! =
-            wallet.createTransferFeeBasis (pricePerCostFactor: feeBasisPricePerCostFactor,
-                                           costFactor: feeBasisCostFactor)
+        let feeBasisPricePerCostFactor = Amount.create (integer: 1000, unit: network.baseUnitFor(currency: network.currency)!)
+        let feeBasisCostFactor = 0.2
+        let feeBasis: TransferFeeBasis! = wallet.defaultFeeBasis()
+        
         XCTAssertNotNil(feeBasis)
         XCTAssertEqual (feeBasis.currency, wallet.unitForFee.currency)
         XCTAssertEqual (feeBasis.pricePerCostFactor, feeBasisPricePerCostFactor)
@@ -134,7 +133,8 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         var feeEstimateResult: Result<TransferFeeBasis, Wallet.FeeEstimationError>!
         wallet.estimateFee (target: transferTargetAddress,
                             amount: transferAmount,
-                            fee: network.minimumFee) { (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
+                            fee: network.minimumFee,
+                            attributes: nil) { (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                                 feeEstimateResult = res
                                 feeEstimateExpectation.fulfill()
         }
@@ -185,7 +185,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -217,7 +217,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
                 }
             }]
 
-        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { networkType == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -259,7 +259,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
 
         prepareSystem(listener: listener)
 
-        let network: Network! = system.networks.first { .eth == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { .eth == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -338,7 +338,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         // Connect and wait for a number of transfers
-        let network: Network! = system.networks.first { "xrp" == $0.currency.code && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { "xrp" == $0.currency.code && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         let manager: WalletManager! = system.managers.first { $0.network == network }
@@ -427,9 +427,7 @@ class BRCryptoWalletTests: BRCryptoSystemBaseTests {
         /// Transfer
         let feeBasisPricePerCostFactor = Amount.create (integer: 10, unit: network.baseUnitFor(currency: network.currency)!)
         let feeBasisCostFactor = 1.0
-        let feeBasis: TransferFeeBasis! =
-            wallet.createTransferFeeBasis (pricePerCostFactor: feeBasisPricePerCostFactor,
-                                           costFactor: feeBasisCostFactor)
+        let feeBasis: TransferFeeBasis! = wallet.defaultFeeBasis()
 
         attributes = Set(wallet.transferAttributesFor(target: coinbase)
             .compactMap {

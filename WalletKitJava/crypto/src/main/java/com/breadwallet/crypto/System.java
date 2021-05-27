@@ -9,11 +9,12 @@
  */
 package com.breadwallet.crypto;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.BlockchainDb;
 import com.breadwallet.crypto.blockchaindb.models.bdb.HederaAccount;
 import com.breadwallet.crypto.errors.AccountInitializationError;
+import com.breadwallet.crypto.errors.CurrencyUpdateError;
 import com.breadwallet.crypto.errors.MigrateError;
 import com.breadwallet.crypto.errors.NetworkFeeUpdateError;
 import com.breadwallet.crypto.events.system.SystemListener;
@@ -125,7 +126,8 @@ public interface System {
      * @param appCurrencies If the BlockChainDB does not return any currencies, then
      *                      use `applicationCurrencies` merged into the defaults.
      */
-    void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies);
+    // void configure(List<com.breadwallet.crypto.blockchaindb.models.bdb.Currency> appCurrencies);
+    void configure();
 
     /**
      * Create a wallet manager for `network` using `mode.
@@ -160,16 +162,15 @@ public interface System {
     void wipe(Network network);
 
     /**
-     * Connect all wallet managers.
-     *
-     * They will be connected w/o an explict NetworkPeer.
+     * Resume System.  This will connect all wallet managers.  (They will be connected w/o
+     * an explicit NetworkPeer
      */
-    void connectAll();
+    void resume ();
 
     /**
-     * Disconnect all wallet managers.
+     * Pause System.  This will disconnect all the wallet managers
      */
-    void disconnectAll();
+    void pause ();
 
     void subscribe(String subscriptionToken);
 
@@ -188,6 +189,8 @@ public interface System {
      * @param completion An optional completion handler
      */
     void updateNetworkFees(@Nullable CompletionHandler<List<Network>, NetworkFeeUpdateError> completion);
+
+    <T extends Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> completion);
 
     /**
      * Set the network reachable flag for all managers.
@@ -208,26 +211,6 @@ public interface System {
     List<? extends WalletManager> getWalletManagers();
 
     List<? extends Wallet> getWallets();
-
-    /**
-     * If migration is required, return the currency code; otherwise, return nil.
-     *
-     * Note: it is not an error not to migrate.
-     */
-    boolean migrateRequired(Network network);
-
-    /**
-     * Migrate the storage for a network given transaction, block and peer blobs.
-     *
-     * Support for persistent storage migration to allow prior App versions to migrate their SQLite
-     * database representations of BTC/BTC transations, blocks and peers into 'Generic Crypto' - where
-     * these entities are persistently
-     *
-     * The provided blobs must be consistent with `network`.  For exmaple, if `network` represents BTC or BCH
-     * then the blobs must be of type {@link TransactionBlob.Btc}; otherwise a MigrateError is thrown.
-     */
-    void migrateStorage (Network network, List<TransactionBlob> transactionBlobs, List<BlockBlob> blockBlobs,
-                         List<PeerBlob> peerBlobs) throws MigrateError;
 
 
     boolean accountIsInitialized (Account account, Network nework);

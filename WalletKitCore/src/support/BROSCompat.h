@@ -56,6 +56,9 @@ typedef void* (*ThreadRoutine) (void*);         // pthread_create
 extern int
 pthread_setname_brd(pthread_t,  const char *name);
 
+extern int
+pthread_mutex_init_brd (pthread_mutex_t *mutex, int type);
+
 extern void
 pthread_yield_brd (void);
 
@@ -69,6 +72,10 @@ arc4random_buf_brd (void *bytes, size_t bytesCount);
 
 extern uint32_t
 arc4random_uniform_brd(uint32_t upperBbound);
+
+extern int
+mergesort_brd (void *__base, size_t __nel, size_t __width,
+               int (*__compar)(const void *, const void *));
 
 #ifdef __cplusplus
 }

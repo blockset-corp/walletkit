@@ -48,7 +48,6 @@
 #include "bitcoin/BRChainParams.h"
 #include "bitcoin/BRPaymentProtocol.h"
 #include "bitcoin/BRTransaction.h"
-#include "bitcoin/BRWalletManager.h"
 
 #include "test.h"
 
@@ -474,6 +473,94 @@ int BRBCashAddrTests()
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRAddressIsValid() test 5", __func__);
 
     if (! r) fprintf(stderr, "\n                                    ");
+    return r;
+}
+
+int BRBCashAsertTests()
+{
+    int r = 1;
+    
+    if (aserti3_2d(0x1d00ffff, 1200, 1) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 1\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 6600, 10) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 2\n", __func__);
+
+    if (aserti3_2d(0x1a2b3c4d, 6600, 10) != 0x1a2b3c4d)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 3\n", __func__);
+
+    if (aserti3_2d(0x01010000, 6600, 10) != 0x01010000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 4\n", __func__);
+
+    if (aserti3_2d(0x01010000, 174000, 1) != 0x01020000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 5\n", __func__);
+
+    if (aserti3_2d(0x01010000, 38668800, 223) != 0x1d008000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 6\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 1) != 0x1d00fec5)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 7\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 289) != 0x1c7f62c0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 8\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 28513) != 0x101fd8b0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 9\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 42913) != 0x0a07f62c)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 10\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 57313) != 0x0401fd8b)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 11\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 60193) != 0x027f6200)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 12\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 63937) != 0x01030000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 13\n", __func__);
+
+    if (aserti3_2d(0x1d00ffff, 0, 64513) != 0x01010000)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 14\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1200, 1) != 0x1802aee8)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 15\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 589738, 1000) != 0x180291ad)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 16\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 33365, 1000) != 0x17469789)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 17\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 2114311, 250) != 0x191ba03b)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 18\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 6930238, 483) != 0x1d00e688)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 19\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 7462933, 500) != 0x1d00ffff)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 20\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234568190 - 1234567290, 2147483643 - 2147483642) != 0x1802ae16)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 21\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234570890 - 1234567290, 2147483652 - 2147483642) != 0x1802a6b7)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 22\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1234570890 - 1234567290, 2147483652 - 2147483642) != 0x1802a6b7)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 22\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 293713, 1000) != 0x1800c896)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 23\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 11200 - 10000, 1) != 0x1802aee8)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 24\n", __func__);
+
+    if (aserti3_2d(0x1802aee8, 1201 - 10000, 10000) != 0x13643f64)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 25\n", __func__);
+
+    if (aserti3_2d(0x1804dafe, 1605449609 - 1605447844, 0) != 0x1804e0d0)
+        r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 26\n", __func__);
+    
     return r;
 }
 
@@ -1681,6 +1768,17 @@ int BRKeyTests()
     
     if (pkLen5 != pkLen || memcmp(pubKey, pubKey5, pkLen) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRPubKeyRecover() test 3\n", __func__);
+    
+    // paper wallet key pair
+    BRKeyGenerateRandom (&key, 1);
+    
+    BRKeyPrivKey(&key, privKey1, sizeof(privKey1), BRMainNetParams->addrParams);
+    printf("privKey:%s\n", privKey1);
+    // compressed private key
+    if (! BRPrivKeyIsValid(BRMainNetParams->addrParams, privKey1))
+        r = 0, fprintf(stderr, "***FAILED*** %s: BRPrivKeyIsValid() test 8\n", __func__);
+    BRKeyLegacyAddr(&key, addr.s, sizeof(addr), BRMainNetParams->addrParams);
+    printf("privKey:%s = %s\n", privKey1, addr.s);
 
     printf("                                    ");
     return r;
@@ -2389,7 +2487,32 @@ int BRTransactionTests()
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRTransactionCopy() test 3", __func__);
     BRTransactionFree(tgt);
     BRTransactionFree(src);
-    
+
+    // coinbase input :: "transactions/bitcoin-mainnet:4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b?include_raw=true"
+    char buf10[] =
+    "\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x4d\x04\xff\xff\x00\x1d\x01\x04\x45\x54\x68\x65\x20\x54\x69"
+    "\x6d\x65\x73\x20\x30\x33\x2f\x4a\x61\x6e\x2f\x32\x30\x30\x39\x20\x43\x68\x61\x6e\x63\x65\x6c\x6c\x6f\x72\x20\x6f"
+    "\x6e\x20\x62\x72\x69\x6e\x6b\x20\x6f\x66\x20\x73\x65\x63\x6f\x6e\x64\x20\x62\x61\x69\x6c\x6f\x75\x74\x20\x66\x6f"
+    "\x72\x20\x62\x61\x6e\x6b\x73\xff\xff\xff\xff\x01\x00\xf2\x05\x2a\x01\x00\x00\x00\x43\x41\x04\x67\x8a\xfd\xb0\xfe"
+    "\x55\x48\x27\x19\x67\xf1\xa6\x71\x30\xb7\x10\x5c\xd6\xa8\x28\xe0\x39\x09\xa6\x79\x62\xe0\xea\x1f\x61\xde\xb6\x49"
+    "\xf6\xbc\x3f\x4c\xef\x38\xc4\xf3\x55\x04\xe5\x1e\xc1\x12\xde\x5c\x38\x4d\xf7\xba\x0b\x8d\x57\x8a\x4c\x70\x2b\x6b"
+    "\xf1\x1d\x5f\xac\x00\x00\x00\x00";
+
+    BRTransaction *txCoinbase     = BRTransactionParse((uint8_t *) buf10, sizeof(buf10) - 1);
+    BRTransaction *txCoinbaseCopy = BRTransactionCopy(txCoinbase); // No assert
+
+    if (1 != txCoinbase->inCount || 1 != txCoinbaseCopy->inCount)
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRTransaction w/ Coinbase inCount test 5", __func__);
+
+    if (1 == txCoinbase->inCount) {
+        BRTxInput txInput0 = txCoinbase->inputs[0];
+        if (! UInt256IsZero(txInput0.txHash))
+            r = 0, fprintf(stderr, "\n***FAILED*** %s: BRTransaction w/ Coinbase input txHash not empty test 5", __func__);
+    }
+    BRTransactionFree(txCoinbase);
+    BRTransactionFree(txCoinbaseCopy);
+
     if (! r) fprintf(stderr, "\n                                    ");
     return r;
 }
@@ -2766,6 +2889,17 @@ int BRMerkleBlockTests()
 
 
     if (b) BRMerkleBlockFree(b);
+    
+//    b = BRMerkleBlockNew();
+//    b->timestamp = 1607600095;
+//    b->target = 0x180458b3;
+//    b->height = 665280;
+//
+//    if (! BRBCashParams->verifyDifficulty(b, NULL))
+//        r = 0, fprintf(stderr, "***FAILED*** %s: BRBCashVerifyDifficulty() test 1\n", __func__);
+//
+//    BRMerkleBlockFree(b);
+
     return r;
 }
 
@@ -3233,6 +3367,8 @@ int BRRunTests()
     printf("%s\n", (BRBech32Tests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRBCashAddrTests...                 ");
     printf("%s\n", (BRBCashAddrTests()) ? "success" : (fail++, "***FAIL***"));
+    printf("BRBCashAsertTests...                ");
+    printf("%s\n", (BRBCashAsertTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRHashTests...                      ");
     printf("%s\n", (BRHashTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRMacTests...                       ");

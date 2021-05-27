@@ -29,22 +29,21 @@
 #include "BRBCashParams.h"
 
 static const char *BRBCashDNSSeeds[] = {
-    "seed-abc.breadwallet.com.",
-    "seed.bitcoinabc.org.",
+    "seed-bch.breadwallet.com.",
+    "seed.flowee.cash.",
     "seed-bch.bitcoinforks.org.",
-    "seed.bitcoinunlimited.info.",
-    "seed.bitprim.org.",
-    "seed.deadalnix.me.",
+    "btccash-seeder.bitcoinunlimited.info.",
+    "seed.bchd.cash.",
+    "seed.bch.loping.net.",
+    "dnsseed.electroncash.de.",
     NULL
 };
 
 static const char *BRBCashTestNetDNSSeeds[] = {
-    "testnet-seed-abc.breadwallet.com",
-    "testnet-seed.bitcoinabc.org",
-    "testnet-seed-bch.bitcoinforks.org",
-    "testnet-seed.bitprim.org",
-    "testnet-seed.deadalnix.me",
-    "testnet-seeder.criptolayer.net",
+    "testnet-seed-bch.breadwallet.com.",
+    "testnet-seed-bch.bitcoinforks.org.",
+    "testnet-seed.bchd.cash.",
+    "seed.tbch.loping.net.",
     NULL
 };
 
@@ -62,8 +61,11 @@ static const BRCheckPoint BRBCashTestNetCheckpoints[] = {
     { 1008000, uint256("000000000000390aca616746a9456a0d64c1bd73661fd60a51b5bf1c92bae5a0"), 1476926743, 0x1a52ccc0 },
     { 1108800, uint256("00000000000288d9a219419d0607fb67cc324d4b6d2945ca81eaa5e739fab81e"), 1490751239, 0x1b09ecf0 },
     { 1209600, uint256("0000000000083e8da119a0dee60f7d8925488f43a9f3591fef0cf8c3b1a86887"), 1517992679, 0x1c01bbf5 },
-    { 1310400, uint256("00000000066c529e690ef631773ff540866188a6c6509c73dfc87bc2979322c2"), 1561313963, 0x1c096cde }
-    // 1411200
+    { 1310400, uint256("00000000066c529e690ef631773ff540866188a6c6509c73dfc87bc2979322c2"), 1561313963, 0x1c096cde },
+    { 1411200, uint256("000000000011a7d78a28f9822f07e8a931dd9a4de1892670665b10f2c81f7c5a"), 1600929524, 0x1b309a2b },
+    { 1421484, uint256("00000000289d6afe7e55fe62a7b21b5d0d5481189bb6d9e8dad5e194078e434a"), 1605446610, 0x1d00e466 }  // BCHN Hard Fork vv
+    // 1512000
+    // 1612800
 };
 
 // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
@@ -93,82 +95,74 @@ static const BRCheckPoint BRBCashCheckpoints[] = {
     { 423360, uint256("000000000000000001630546cde8482cc183708f076a5e4d6f51cd24518e8f85"), 1470163842, 0x18057228 },
     { 443520, uint256("00000000000000000345d0c7890b2c81ab5139c6e83400e5bed00d23a1f8d239"), 1481765313, 0x18038b85 },
     { 463680, uint256("000000000000000000431a2f4619afe62357cd16589b638bb638f2992058d88e"), 1493259601, 0x18021b3e },
+    { 478559, uint256("000000000000000000651ef99cb9fcbe0dadde1d424bd9f15ff20136191a5eec"), 1501611161, 0x18014735 }, // BCH Hard Fork vv
     { 483840, uint256("00000000000000000098963251fcfc19d0fa2ef05cf22936a182609f8d650346"), 1503802540, 0x1803c5d5 },
     { 504000, uint256("0000000000000000006cdeece5716c9c700f34ad98cb0ed0ad2c5767bbe0bc8c"), 1510516839, 0x18021abd },
     { 524160, uint256("0000000000000000003f40db0a3ed4b4d82b105e212166b2db498d5688bac60f"), 1522711454, 0x18033b64 },
     { 544320, uint256("000000000000000001619f65f7d5ef7a06ee50d2b459cdf727d74b2a7a762268"), 1534794998, 0x18022f7e },
+    { 556767, uint256("0000000000000000004626ff6e3b936941d341c5932ece4357eeccac44e6d56c"), 1542304936, 0x18021fdb }, // BSV Hard Fork >>
     { 564480, uint256("0000000000000000020f6ec365b859c7160fbab65652dfc8b52a2664f8ba1e48"), 1546969567, 0x18058b4b },
     { 584640, uint256("000000000000000001d07b1281321b5aa04506e6630dc1e66cf0ad0324d0533c"), 1559087892, 0x18039060 },
     { 604800, uint256("0000000000000000014c579c6ec5dcaf3ed526c5391509c9860b34ed465500a0"), 1571195602, 0x18033efa },
-    { 624960, uint256("00000000000000000124d45a12cf1c35cfacc9886216a297fbb5e115c8bd942a"), 1583318442, 0x1801f8db }
-    // 645120
+    { 624960, uint256("00000000000000000124d45a12cf1c35cfacc9886216a297fbb5e115c8bd942a"), 1583318442, 0x1801f8db },
+    { 645120, uint256("000000000000000001498214c105c8f077879ade00a126a0d4d3aef98cdff2dd"), 1595490461, 0x1802ad71 },
+    { 661648, uint256("0000000000000000029e471c41818d24b8b74c911071c4ef0b4a0509f9b5a8ce"), 1605449817, 0x1804e0d0 }, // BCHN Hard Fork vv
+    { 665280, uint256("000000000000000001b2c74d7a603fb04c227c83cd935088eb65917070bacb83"), 1607600095, 0x180458b3 }
+    // 685440
 };
 
-static const BRMerkleBlock *_medianBlock(const BRMerkleBlock *b, const BRSet *blockSet)
-{
-    const BRMerkleBlock *b0 = NULL, *b1 = NULL, *b2 = b;
+#define ASERT_REF_BITS   0x1804dafe
+#define ASERT_REF_HEIGHT 661647
+#define ASERT_REF_TIME   1605447844
+#define ASERT_HALFLIFE   (2*24*60*60)
 
-    b1 = (b2) ? BRSetGet(blockSet, &b2->prevBlock) : NULL;
-    b0 = (b1) ? BRSetGet(blockSet, &b1->prevBlock) : NULL;
-    if (b0 && b2 && b0->timestamp > b2->timestamp) b = b0, b0 = b2, b2 = b;
-    if (b0 && b1 && b0->timestamp > b1->timestamp) b = b0, b0 = b1, b1 = b;
-    if (b1 && b2 && b1->timestamp > b2->timestamp) b = b1, b1 = b2, b2 = b;
-    return (b0 && b1 && b2) ? b1 : NULL;
+// aserti3-2d difficulty algorithm: https://upgradespecs.bitcoincashnode.org/2020-11-15-asert/
+uint32_t aserti3_2d(uint32_t refBits, int64_t timeDelta, int64_t heightDelta)
+{
+    // refBits is in "compact" format, where the most significant byte is the size of the value in bytes, next
+    // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
+
+    // next_target = old_target * 2^((time_delta - ideal_block_time * (height_delta + 1)) / halflife)
+    int64_t exponent = ((timeDelta - 600*(heightDelta + 1))*65536)/ASERT_HALFLIFE;
+    int64_t size = refBits >> 24, shifts = exponent >> 16;
+    uint64_t factor, target = refBits & 0x007fffff, exp = exponent & 0xffff;
+
+    factor = 65536 + ((195766423245049ULL*exp + 971821376ULL*exp*exp + 5127ULL*exp*exp*exp + (1ULL << 47)) >> 48);
+    while (factor && target > ~0ULL/factor) target >>= 8, size++;
+    target *= factor;
+    shifts -= 16;
+    while (size > 3 && shifts < 0) shifts += 8, size--;
+    while (shifts >= 8) shifts -= 8, size++;
+
+    if (shifts > 0) {
+        while (target > ~0ULL >> shifts) target >>= 8, size++;
+        target <<= shifts;
+    }
+    else target >>= -shifts;
+    
+    if (target == 0) target = 1;
+    while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
+    while (size > 1 && target <= 0x7fff) target <<= 8, size--;
+    target |= (uint64_t)size << 24;
+    if (target > 0x1d00ffff) target = 0x1d00ffff;
+    
+    return (uint32_t)target;
 }
 
 static int BRBCashVerifyDifficulty(const BRMerkleBlock *block, const BRSet *blockSet)
 {
-    const BRMerkleBlock *b, *first, *last;
-    int i, sz, size = 0x1d;
-    uint64_t t, target, w, work = 0;
-    int64_t timespan;
+    const BRMerkleBlock *prev;
+    int64_t timeDelta, heightDelta;
 
     assert(block != NULL);
     assert(blockSet != NULL);
 
-    if (block && block->height >= 504032) { // D601 hard fork height: https://reviews.bitcoinabc.org/D601
-        last = BRSetGet(blockSet, &block->prevBlock);
-        last = _medianBlock(last, blockSet);
-
-        for (i = 0, first = block; first && i <= 144; i++) {
-            first = BRSetGet(blockSet, &first->prevBlock);
-        }
-
-        first = _medianBlock(first, blockSet);
-
-        if (! first) return 1;
-        timespan = (int64_t)last->timestamp - first->timestamp;
-        if (timespan > 288*10*60) timespan = 288*10*60;
-        if (timespan < 72*10*60) timespan = 72*10*60;
-
-        for (b = last; b != first;) {
-            // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
-            // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
-            sz = b->target >> 24, t = b->target & 0x007fffff;
-
-            // work += 2^256/(target + 1)
-            w = (t) ? ~0ULL/t : ~0ULL;
-            while (sz < size) work >>= 8, size--;
-            while (size < sz) w >>= 8, sz--;
-            while (work + w < w) w >>= 8, work >>= 8, size--;
-            work += w;
-
-            b = BRSetGet(blockSet, &b->prevBlock);
-        }
-
-        // work = work*10*60/timespan
-        while (work > ~0ULL/(10*60)) work >>= 8, size--;
-        work = work*10*60/timespan;
-
-        // target = (2^256/work) - 1
-        while (work && ~0ULL/work < 0x8000) work >>= 8, size--;
-        target = (work) ? ~0ULL/work : ~0ULL;
-
-        while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-        target |= size << 24;
-
-        if (target > 0x1d00ffff) target = 0x1d00ffff; // max proof-of-work
-        if (target - block->target > 1) return 0;
+    if (block && block->height > ASERT_REF_HEIGHT) { // axion activation height
+        prev = BRSetGet(blockSet, &block->prevBlock);
+        if (! prev) return 1;
+        timeDelta = prev->timestamp - ASERT_REF_TIME;
+        heightDelta = prev->height - ASERT_REF_HEIGHT;
+        if (aserti3_2d(ASERT_REF_BITS, timeDelta, heightDelta) != block->target) return 0;
     }
 
     return 1;

@@ -133,4 +133,12 @@ extern BRRippleSequence rippleAccountGetSequence (BRRippleAccount account);
 // Internal
 extern void rippleAccountSetBlockNumberAtCreation (BRRippleAccount account, uint64_t blockHeight);
 
+extern BRRippleUnitDrops
+rippleAccountGetBalanceLimit (BRRippleAccount account,
+                              int asMaximum,
+                              int *hasLimit);
+
+extern BRRippleFeeBasis
+rippleAccountGetDefaultFeeBasis (BRRippleAccount account);
+
 #endif

@@ -20,7 +20,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
     var minimum: Amount!
     var maximum: Amount!
     
-     override func viewDidLoad() {
+    override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
     }
@@ -43,6 +43,29 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
     var isTokCurrency: Bool {
         return !isEthCurrency && !isBitCurrency
     }
+    
+    private var transferAttributes: Set<TransferAttribute> {
+        var attributes: Set<TransferAttribute> = Set()
+
+        if let destinationTagAttribute = self.wallet.transferAttributesFor (target: target)
+            .first (where: { "DestinationTag" == $0.key }) {
+            destinationTagAttribute.value = (self.recvField.text! == "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg"
+                ? "739376465"
+                : nil)
+            attributes.insert (destinationTagAttribute)
+        }
+
+        if let memoAttribute = self.wallet.transferAttributesFor(target: target)
+            .first (where: { "Memo" == $0.key }) {
+            memoAttribute.value = (self.recvField.text! == "0.0.16952" // Binance
+                ? "1009554437"
+                : nil)
+            attributes.insert(memoAttribute)
+        }
+        
+        return attributes
+    }
+
 
     //
     // Can't select gasPrice, gasLimit nor SAT/KB because we can't create a TransferFeeBasis
@@ -65,9 +88,9 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
         target = Address.create (string: self.recvField.text!, network: self.wallet.manager.network)
 
-        gasPriceSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        gasLimitSegmentedController.isEnabled = isEthCurrency && canUseFeeBasis
-        satPerKBSegmentedController.isEnabled = isBitCurrency && canUseFeeBasis
+        gasPriceSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        gasLimitSegmentedController.isEnabled = false//isEthCurrency && canUseFeeBasis
+        satPerKBSegmentedController.isEnabled = false//isBitCurrency && canUseFeeBasis
 
         priorityPicker.dataSource = self
         priorityPicker.delegate = self
@@ -94,7 +117,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
         self.present (alert, animated: true) {}
     }
-
+    
     @IBAction func submit(_ sender: UIBarButtonItem) {
         print ("APP: TCC: Want to submit")
         let value = amount()
@@ -109,33 +132,15 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let unit = self.wallet.unit
             let amount = Amount.create (double: Double(value), unit: unit)
-            print ("APP: TVV: Submit \(self.isBitCurrency ? "BTC/BCH" : "ETH") Amount: \(amount)");
+            print ("APP: TVV: Submit Amount: \(amount)");
 
             guard let transferFeeBasis = self.feeBasis
                 else { self.submitTransferFailed ("no fee basis"); return }
 
-            var attributes: Set<TransferAttribute> = Set()
-
-            if let destinationTagAttribute = self.wallet.transferAttributesFor (target: target)
-                .first (where: { "DestinationTag" == $0.key }) {
-                destinationTagAttribute.value = (self.recvField.text! == "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg"
-                    ? "739376465"
-                    : nil)
-                attributes.insert (destinationTagAttribute)
-            }
-
-            if let memoAttribute = self.wallet.transferAttributesFor(target: target)
-                .first (where: { "Memo" == $0.key }) {
-                memoAttribute.value = (self.recvField.text! == "0.0.16952" // Binance
-                    ? "1009554437"
-                    : nil)
-                attributes.insert(memoAttribute)
-            }
-
             guard let transfer = self.wallet.createTransfer (target: target,
                                                              amount: amount,
                                                              estimatedFeeBasis: transferFeeBasis,
-                                                             attributes: attributes)
+                                                             attributes: self.transferAttributes)
                 else { self.submitTransferFailed("balance too low?"); return }
 
             // Will generate a WalletEvent.transferSubmitted (transfer, success)
@@ -163,12 +168,12 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let minimum = res.getWithRecovery { (reason) in
                 print ("APP: TCC: Missed estimateLimitMinimum: \(reason)")
-                return Amount.create(double: 0.0, unit: self.wallet.unitForFee)
+                return Amount.create(double: 0.0, unit: self.wallet.unit)
             }
             DispatchQueue.main.async {
                 self.minimum = minimum
 
-                self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unitForFee) ?? 0.0)
+                self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unit) ?? 0.0)
                 self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
 
                 self.amountSlider.value = max (self.amountSlider.minimumValue, self.amountSlider.value)
@@ -181,12 +186,12 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let maximum = res.getWithRecovery { (reason) in
                 print ("APP: TCC: Missed estimateLimitMaximum: \(reason)")
-                return Amount.create(double: 0.0, unit: self.wallet.unitForFee)
+                return self.wallet.balance
             }
             DispatchQueue.main.async {
                 self.maximum = maximum
 
-                self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unitForFee) ?? 0.0)
+                self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unit) ?? 0.0)
                 self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
 
                 self.amountSlider.value = min (self.amountSlider.maximumValue, self.amountSlider.value)
@@ -206,7 +211,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
         let amount = Amount.create (double: Double(self.amount()), unit: wallet.unit)
 
-        wallet.estimateFee (target: target, amount: amount, fee: fee) {
+        wallet.estimateFee (target: target, amount: amount, fee: fee, attributes: transferAttributes) {
             (result: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
             guard case let .success(feeBasis) = result
                 else { return }
@@ -263,6 +268,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         }
     }
 
+    //TODO:FEEBASIS
+    /*
     func updateFeeBasisETH () {
         guard let pricePerCostFactorUnit = wallet.manager.network.baseUnitFor (currency: wallet.unitForFee.currency)
             else { return }
@@ -311,6 +318,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
             }
         }
     }
+ */
+    
 
     @IBAction func doUseCoinbase(_ sender: Any) {
         recvField.text = "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg";

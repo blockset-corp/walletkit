@@ -88,6 +88,13 @@ class BRCryptoAccountTests: XCTestCase {
 
         let _ = Address (core: e3!.core, take: true)
         let _ = Address (core: e3!.core)
+
+        XCTAssertNil(Address.create(string: "ethereum:0xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "1xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "0xWWW225defEc7625C6B5E43126bdDE398bD90eF62", network: network));
+        XCTAssertNil(Address.create(string: "", network: network));
+        XCTAssertNil(Address.create(string: "0xb0F225defEc7625C6B5E43126bdDE398bD90eF6",  network: network));
+        XCTAssertNil(Address.create(string: "0xb0F225defEc7625C6B5E43126bdDE398bD90eF",   network: network));
     }
 
     func testAddressBTC () {
@@ -148,16 +155,57 @@ class BRCryptoAccountTests: XCTestCase {
         let network = Network.findBuiltin (uids: "ripple-mainnet")!
 
         XCTAssertEqual (Address.create (string: "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network)?.description,
-                       "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a")
+                        "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a")
+
+        XCTAssertNil (Address.create (string: "w41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network))
+
+        let a1 = Address.create (string: "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a", network: network);
+        let a2 = Address.create (string: "rKKR566YfiTJFVKqJfTX8rHsot9pESQJbb", network: network);
+        let a3 = Address.create (string: "rKKR566YfiTJFVKqJfTX8rHsot9pESQJbb", network: network);
+
+        XCTAssertNotNil (a1); XCTAssertNotNil (a2); XCTAssertNotNil (a3);
+        XCTAssertTrue  (a1 == a1)
+        XCTAssertFalse (a1 == a2)
+        XCTAssertTrue  (a2 == a3)
     }
 
     func testAddressHBAR () {
         let network = Network.findBuiltin (uids: "hedera-mainnet")!
 
         XCTAssertEqual (Address.create (string: "0.0.14222", network: network)?.description,
-                       "0.0.14222")
+                        "0.0.14222")
 
+        XCTAssertNil (Address.create (string: "0.0.x14222", network: network))
+
+        let a1 = Address.create(string: "0.0.14222", network: network);
+        let a2 = Address.create(string: "0.0.14223", network: network);
+        let a3 = Address.create(string: "0.0.14223", network: network);
+
+        XCTAssertNotNil (a1); XCTAssertNotNil (a2); XCTAssertNotNil (a3);
+        XCTAssertTrue  (a1 == a1)
+        XCTAssertFalse (a1 == a2)
+        XCTAssertTrue  (a2 == a3)
     }
+
+    func testAddressXTZ () {
+        let network = Network.findBuiltin (uids: "tezos-mainnet")!
+
+        XCTAssertEqual (Address.create (string: "tz1i5JJDhq7x8gVkpWq2Fwef3k7NEcBj2nJS", network: network)?.description,
+                        "tz1i5JJDhq7x8gVkpWq2Fwef3k7NEcBj2nJS")
+
+        XCTAssertNil (Address.create (string: "xz1i5JJDhq7x8gVkpWq2Fwef3k7NEcBj2nJS", network: network))
+
+        let a1 = Address.create(string: "tz1i5JJDhq7x8gVkpWq2Fwef3k7NEcBj2nJS", network: network);
+        let a2 = Address.create(string: "tz2TSvNTh2epDMhZHrw73nV9piBX7kLZ9K9m", network: network);
+        let a3 = Address.create(string: "tz2TSvNTh2epDMhZHrw73nV9piBX7kLZ9K9m", network: network);
+
+        XCTAssertNotNil (a1); XCTAssertNotNil (a2); XCTAssertNotNil (a3);
+        XCTAssertTrue  (a1 == a1)
+        XCTAssertFalse (a1 == a2)
+        XCTAssertTrue  (a2 == a3)
+    }
+
+
 /*
         let addr1 = bch.addressFor("bitcoincash:qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v") // cashaddr with prefix is valid
         let addr2 = bch.addressFor("qp0k6fs6q2hzmpyps3vtwmpx80j9w0r0acmp8l6e9v") // cashaddr without prefix is valid
@@ -171,13 +219,13 @@ class BRCryptoAccountTests: XCTestCase {
     func testAddressScheme () {
         XCTAssertEqual (AddressScheme.btcLegacy,  AddressScheme(core: AddressScheme.btcLegacy.core))
         XCTAssertEqual (AddressScheme.btcSegwit,  AddressScheme(core: AddressScheme.btcSegwit.core))
-        XCTAssertEqual (AddressScheme.ethDefault, AddressScheme(core: AddressScheme.ethDefault.core))
-        XCTAssertEqual (AddressScheme.genDefault, AddressScheme(core: AddressScheme.genDefault.core))
+        XCTAssertEqual (AddressScheme.native, AddressScheme(core: AddressScheme.native.core))
+        XCTAssertEqual (AddressScheme.native, AddressScheme(core: AddressScheme.native.core))
 
         XCTAssertEqual("BTC Legacy",  AddressScheme.btcLegacy.description)
         XCTAssertEqual("BTC Segwit",  AddressScheme.btcSegwit.description)
-        XCTAssertEqual("ETH Default", AddressScheme.ethDefault.description)
-        XCTAssertEqual("GEN Default", AddressScheme.genDefault.description)
+        XCTAssertEqual("Native", AddressScheme.native.description)
+        XCTAssertEqual("Native", AddressScheme.native.description)
 
     }
 
@@ -189,6 +237,9 @@ class BRCryptoAccountTests: XCTestCase {
         ("testAddressBCH",        testAddressBCH),
         ("testAddressBCHTestnet", testAddressBCHTestnet),
         ("testAddressBSV",        testAddressBSV),
+        ("testAddressXRP",        testAddressXRP),
+        ("testAddressHBAR",       testAddressHBAR),
+        ("testAddressXTZ",        testAddressXTZ),
         ("testAddressScheme",     testAddressScheme),
     ]
 

@@ -42,6 +42,18 @@ pthread_setname_brd(pthread_t thread,  const char *name) {
 #endif
 }
 
+extern int
+pthread_mutex_init_brd (pthread_mutex_t *mutex, int type) {
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, type);
+
+    int result = pthread_mutex_init(mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+
+    return result;
+}
+
 extern void
 pthread_yield_brd (void) {
 #if defined (__ANDROID__) || defined (__linux__)
@@ -91,4 +103,17 @@ arc4random_buf_brd (void *bytes, size_t bytesCount) {
 extern uint32_t
 arc4random_uniform_brd(uint32_t upperBbound) {
     return arc4random_uniform(upperBbound);
+}
+
+extern int
+mergesort_brd (void *__base, size_t __nel, size_t __width,
+               int (*__compar)(const void *, const void *)) {
+#if defined (__ANDROID__)
+    qsort (__base, __nel, __width, __compar);
+    return 0;
+#elif defined (__APPLE__) || defined (__linux__) // IOS, MacOS
+    return mergesort (__base, __nel, __width, __compar);
+#else
+#  error Undefined mergesort_brd()
+#endif
 }

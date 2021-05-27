@@ -19,6 +19,7 @@ class TransferTableViewCell: UITableViewCell {
             updateView()
         }
     }
+    var currency : Currency?
 
     var dateFormatter : DateFormatter!
 
@@ -42,8 +43,8 @@ class TransferTableViewCell: UITableViewCell {
         switch state {
         case .created: return UIColor.gray
         case .submitted: return UIColor.yellow
-        case .included: return
-            transfer!.confirmation!.success ? UIColor.green : UIColor.red
+        case .included (let confirmation):
+            return confirmation.success ? UIColor.green : UIColor.red
         case .deleted: return UIColor.black
 
         case .signed: return UIColor.yellow
@@ -58,10 +59,11 @@ class TransferTableViewCell: UITableViewCell {
                 Date (timeIntervalSince1970: TimeInterval ($0.timestamp))
             }
             let hash = transfer.hash
+            let amount = transfer.amountDirected
 
             dateLabel.text = date.map { dateFormatter.string(from: $0) } ?? "<pending>"
             addrLabel.text = hash.map { $0.description } ?? "<pending>"
-            amountLabel.text = transfer.amountDirected.description
+            amountLabel.text = currency.flatMap { $0 == amount.currency ? amount.description : nil } ?? ""
             feeLabel.text = "Fee: \(transfer.fee)"
             dotView.mainColor = colorForState()
             dotView.setNeedsDisplay()

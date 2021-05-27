@@ -55,8 +55,8 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
         switch state {
         case .created: return UIColor.gray
         case .submitted: return UIColor.yellow
-        case .included:
-            return transfer!.confirmation!.success ? UIColor.green : UIColor.red
+        case .included (let confirmation):
+            return confirmation.success ? UIColor.green : UIColor.red
         case .deleted: return UIColor.black
 
         case .signed: return UIColor.yellow
@@ -70,7 +70,6 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
 //        let address = UIApplication.sharedClient.node.address
         let date: Date? = (nil == transfer.confirmation ? nil
             : Date (timeIntervalSince1970: TimeInterval(transfer.confirmation!.timestamp)))
-        let hash = transfer.hash
 
         amountLabel.text = transfer.amountDirected.description
         feeLabel.text  =  transfer.fee.description
@@ -78,7 +77,7 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
         sendButton.setTitle(transfer.source?.description ?? "<unknown>", for: .normal)
         recvButton.setTitle(transfer.target?.description ?? "<unknown>", for: .normal)
 
-        identifierButton.setTitle(hash.map { $0.description } ?? "<pending>", for: .normal)
+        identifierButton.setTitle(transfer.identifier ?? "<pending>", for: .normal)
 
         confLabel.text = transfer.confirmation.map { "Yes @ \($0.blockNumber)" } ?? "No"
         confCountLabel.text = transfer.confirmations?.description ?? ""
@@ -93,6 +92,10 @@ class TransferViewController: UIViewController, TransferListener, WalletManagerL
             .joined(separator: ", ")
 
         switch transfer.state {
+        case .included (let confirmation):
+            stateLabel.text = (confirmation.success
+                ? transfer.state.description
+                : "\(transfer.state.description): \(confirmation.error ?? "missed")")
         case .failed(let reason):
             stateLabel.text = "\(transfer.state.description): \(reason)"
         default:

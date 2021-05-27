@@ -38,7 +38,7 @@ class TransferCreateSweepController: TransferCreateController {
         else {
             switch wallet.currency.code.lowercased() {
             case "btc":
-                if !wallet.manager.network.isMainnet {
+                if !wallet.manager.network.onMainnet {
                     privateKeyTextField.text = bitcoinTestnetPrivateKey
                 }
             default: break
@@ -72,6 +72,7 @@ class TransferCreateSweepController: TransferCreateController {
                 self.feeLabel.text = nil
             }
 
+//            self.walletSweeper = nil
             self.wallet.manager.createSweeper (wallet: wallet, key: key) {
                 (res: Result<WalletSweeper, WalletSweeperError>) in
                 guard case let .success (sweeper) = res

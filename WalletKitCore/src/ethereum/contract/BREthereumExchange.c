@@ -99,6 +99,14 @@ ethExchangeExtractIdentifier (BREthereumExchange exchange,
 }
 
 extern BREthereumHash
+ethExchangeGetIdentifier (BREthereumExchange exchange) {
+    return (EXCHANGE_INDEX_UNKNOWN == exchange->identifier.exchangeIndex
+            ? EMPTY_HASH_INIT
+            : exchange->identifier.transactionHash);
+}
+
+
+extern BREthereumHash
 ethExchangeGetHash (BREthereumExchange exchange) {
     assert (EXCHANGE_INDEX_UNKNOWN != exchange->identifier.exchangeIndex);
     return exchange->hash;

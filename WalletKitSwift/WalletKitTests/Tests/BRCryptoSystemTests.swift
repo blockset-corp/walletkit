@@ -26,7 +26,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         let network: Network! = system.networks.first {
             networkType == $0.type
                 && currencyCode == $0.currency.code
-                && isMainnet == $0.isMainnet
+                && isMainnet == $0.onMainnet
         }
         XCTAssertNotNil (network)
 
@@ -36,9 +36,11 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         XCTAssertTrue (system     === manager.system)
         //      XCTAssertTrue (account === manager.account)
         XCTAssertTrue (network  == manager.network)
-        XCTAssertTrue (query   === manager.query)
+        // XCTAssertTrue (query   === manager.query)
 
+        #if false
         XCTAssertTrue (manager === system.managerBy(core: manager.core))
+        #endif
 
         let wallet = manager.primaryWallet
         XCTAssertNotNil (wallet)
@@ -102,7 +104,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
 
         // We need the UIDS to contain a valid ETH address BUT not be a default.  Since we are
         // using `isMainnet = false` use a mainnet address.
-        currencyModels = [System.asBlockChainDBModelCurrency (uids: "ethereum-ropsten" + ":" + BlockChainDB.Model.addressBRDMainnet,
+        currencyModels = [System.asBlockChainDBModelCurrency (uids: "ethereum-ropsten" + ":" + BlocksetSystemClient.Model.addressBRDMainnet,
                                                               name: "FOO Token",
                                                               code: "foo",
                                                               type: "ERC20",
@@ -111,10 +113,10 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareAccount()
 
         // Create a query that fails (no authentication)
-        prepareSystem (query: BlockChainDB())
+        prepareSystem (client: BlocksetSystemClient())
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.eth == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.eth == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
 
         XCTAssertNotNil (network.currencyBy(code: "eth"))
@@ -147,7 +149,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
         XCTAssertTrue (network.supportsMode(network.defaultMode))
 
@@ -165,7 +167,7 @@ class BRCryptoSystemTests: BRCryptoSystemBaseTests {
         prepareSystem()
 
         XCTAssertTrue (system.networks.count >= 1)
-        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.isMainnet }
+        let network: Network! = system.networks.first { NetworkType.btc == $0.type && isMainnet == $0.onMainnet }
         XCTAssertNotNil (network)
         XCTAssertTrue (network.supportsAddressScheme (network.defaultAddressScheme))
 

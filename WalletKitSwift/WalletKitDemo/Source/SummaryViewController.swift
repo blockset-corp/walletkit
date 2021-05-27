@@ -204,18 +204,22 @@ class SummaryViewController: UITableViewController, WalletListener {
                             wallet: Wallet,
                             event: WalletEvent) {
         DispatchQueue.main.async {
-            print ("APP: SVC: WalletEvent (\(manager.name):\(wallet.name)): \(event)")
             // if visible ...
             switch event {
             case .created:
-                precondition (!self.wallets.contains (wallet))
+                print ("APP: SVC: WalletEvent (\(manager.name):\(wallet.name)): Created")
+
+                guard !self.wallets.contains (wallet)
+                else { return }
 
                 self.wallets.append (wallet)
 
                 let path = IndexPath (row: (self.wallets.count - 1), section: 0)
                 self.tableView.insertRows (at: [path], with: .automatic)
 
-            case .balanceUpdated:
+            case let .balanceUpdated (amount):
+                print ("APP: SVC: WalletEvent (\(manager.name):\(wallet.name)): BalanceUpdated: \(amount)")
+
                 if let index = self.wallets.firstIndex (of: wallet) {
                     let path = IndexPath (row: index, section: 0)
                     if let cell = self.tableView.cellForRow(at: path) as? WalletTableViewCell {
@@ -224,6 +228,7 @@ class SummaryViewController: UITableViewController, WalletListener {
                 }
 
             case .deleted:
+                print ("APP: SVC: WalletEvent (\(manager.name):\(wallet.name)): Deleted")
                 if let index = self.wallets.firstIndex (of: wallet) {
                     self.wallets.remove (at: index)
 

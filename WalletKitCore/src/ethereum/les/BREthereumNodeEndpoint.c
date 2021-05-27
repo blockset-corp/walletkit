@@ -411,7 +411,7 @@ nodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
                       size_t *bytesCount,
                       int needBytesCount) {
 
-    ssize_t totalCount = 0;
+    size_t totalCount = 0;
     int error = 0;
 
     int socket = endpoint->sockets[route];
@@ -424,7 +424,8 @@ nodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
         else if (n < 0 && errno != EWOULDBLOCK) error = errno;
         else if (n < 0 && errno == EWOULDBLOCK) continue;
         else {
-            totalCount += n;
+            assert (n > 0);
+            totalCount += (size_t) n;
             if (!needBytesCount) break;
         }
 
@@ -473,7 +474,7 @@ nodeEndpointSendData (BREthereumNodeEndpoint endpoint,
 
     while (socket >= 0 && !error && totalCount < bytesCount) {
         ssize_t n = send (socket, &bytes[totalCount], bytesCount - totalCount, MSG_NOSIGNAL);
-        if (n >= 0) totalCount += n;
+        if (n >= 0) totalCount += (size_t) n;
         if (n < 0 && errno != EWOULDBLOCK) error = errno;
 
         socket = endpoint->sockets[route];
@@ -596,8 +597,8 @@ openSocket(BREthereumNodeEndpoint endpoint, int *socketToAssign, int port, int d
     if (errno == EINPROGRESS) {
         err = 0;
         optLen = sizeof(err);
-        tv.tv_sec = timeout;
-        tv.tv_usec = (long)(timeout*1000000) % 1000000;
+        tv.tv_sec  = (long) timeout;
+        tv.tv_usec = (long) (timeout*1000000) % 1000000;
         FD_ZERO(&fds);
         FD_SET(*socketToAssign, &fds);
         count = select (*socketToAssign + 1, NULL, &fds, NULL, &tv);

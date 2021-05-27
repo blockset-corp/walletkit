@@ -940,7 +940,8 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
                                                      outputs[index].u.transactionIndex.blockNumber,
                                                      outputs[index].u.transactionIndex.transactionIndex,
                                                      TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
-                                                     ethGasCreate(0));
+                                                     ethGasCreate(0),
+                                                     1);
 
                 }
             }
@@ -966,7 +967,8 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
                                                      outputs[0].u.transactionIndex.blockNumber,
                                                      outputs[0].u.transactionIndex.transactionIndex,
                                                      TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
-                                                     ethGasCreate (0));
+                                                     ethGasCreate (0),
+                                                     1);
                     break;
 
                 default:

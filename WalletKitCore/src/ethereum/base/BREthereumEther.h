@@ -11,7 +11,7 @@
 #ifndef BR_Ethereum_Ether_H
 #define BR_Ethereum_Ether_H
 
-#include "ethereum/rlp/BRRlp.h"
+#include "support/rlp/BRRlp.h"
 #include "ethereum/util/BRUtil.h"
 #include "BREthereumLogic.h"
 

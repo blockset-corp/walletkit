@@ -13,9 +13,10 @@
 #include <unistd.h>
 #include "support/BROSCompat.h"
 #include "support/BRBIP39WordsEn.h"
-#include "ethereum/BREthereum.h"
+#include "ethereum/blockchain/BREthereumAccount.h"
 #include "test.h"  // runSyncTest
 
+#if defined (NEVER_EWM)
 extern BREthereumClient
 runEWM_createClient (void);
 
@@ -79,7 +80,7 @@ runSyncMany (BREthereumNetwork newtork,
     }
 //    alarmClockDestroy(alarmClock);
 }
-
+#endif
 
 int main(int argc, const char * argv[]) {
     BRCryptoSyncMode mode = CRYPTO_SYNC_MODE_API_WITH_P2P_SEND;
@@ -89,10 +90,9 @@ int main(int argc, const char * argv[]) {
     BREthereumTimestamp timestamp = 1539330275; // ETHEREUM_TIMESTAMP_UNKNOWN;
     const char *path = "core";
 
-
+#if defined (NEVER_EWM)
     runSyncTest (ethNetworkMainnet,  account, mode, timestamp,  5 * 60, path);
-
 //    runSyncMany(ethereumMainnet, mode, 10 * 60, 1000);
-
+#endif
     return 0;
 }

@@ -104,7 +104,9 @@ public class AddressAIT {
 
     @Test
     public void testAddressCreateAsEthOnTestnet() {
-        Network network = Network.findBuiltin("ethereum-ropsten").get();
+        Network network = Network.findBuiltin("ethereum-ropsten").orNull();
+        // If there is no ethereum-ropsten, then there are no tests to run
+        if (null == network) return;
 
         Optional<Address> oe1 = Address.create("0xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network);
         assertTrue(oe1.isPresent());
@@ -168,7 +170,9 @@ public class AddressAIT {
         //
         // ETH
         //
-        Network network_eth = Network.findBuiltin("ethereum-ropsten").get();
+        Network network_eth = Network.findBuiltin("ethereum-ropsten").orNull();
+        // If there is no ethereum-ropsten, then there are no tests to run
+        if (null == network_eth) return;
 
         Address e1 = Address.create("0xb0F225defEc7625C6B5E43126bdDE398bD90eF62", network_eth).get();
         Address b1 = Address.create("mm7DDqVkFd35XcWecFipfTYM5dByBzn7nq", network_btc).get();
@@ -181,7 +185,6 @@ public class AddressAIT {
     public void testAddressScheme() {
         assertEquals("BTC Legacy",  AddressScheme.BTC_LEGACY.toString());
         assertEquals("BTC Segwit",  AddressScheme.BTC_SEGWIT.toString());
-        assertEquals("ETH Default", AddressScheme.ETH_DEFAULT.toString());
-        assertEquals("GEN Default", AddressScheme.GEN_DEFAULT.toString());
+        assertEquals("Native", AddressScheme.NATIVE.toString());
     }
 }

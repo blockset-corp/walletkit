@@ -40,4 +40,6 @@
 .build/
 .git-re*
 .swiftpm/
-CoreTestsConfig.json
+*TestsConfig.json
+/WalletKitTestsConfig.env
+.cxx/

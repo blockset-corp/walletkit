@@ -7,17 +7,18 @@
  */
 package com.breadwallet.corecrypto;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.corenative.cleaner.ReferenceCleaner;
 import com.breadwallet.corenative.crypto.BRCryptoClient;
-import com.breadwallet.corenative.crypto.BRCryptoCWMListener;
+import com.breadwallet.corenative.crypto.BRCryptoListener;
 import com.breadwallet.corenative.crypto.BRCryptoWallet;
 import com.breadwallet.corenative.crypto.BRCryptoWalletManager;
 import com.breadwallet.crypto.AddressScheme;
 import com.breadwallet.crypto.WalletManagerMode;
 import com.breadwallet.crypto.WalletManagerState;
 import com.breadwallet.crypto.WalletManagerSyncDepth;
+import com.breadwallet.crypto.errors.ExportablePaperWalletError;
 import com.breadwallet.crypto.errors.WalletSweeperError;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
@@ -39,7 +40,7 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
     }
 
     /* package */
-    static Optional<WalletManager> create(BRCryptoCWMListener listener,
+    static Optional<WalletManager> create(BRCryptoListener listener,
                                           BRCryptoClient client,
                                           Account account,
                                           Network network,
@@ -49,6 +50,7 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                                           System system,
                                           SystemCallbackCoordinator callbackCoordinator) {
         return BRCryptoWalletManager.create(
+                system.getCoreBRCryptoSystem(),
                 listener,
                 client,
                 account.getCoreBRCryptoAccount(),
@@ -57,18 +59,16 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                 Utilities.addressSchemeToCrypto(addressScheme),
                 storagePath
         ).transform(
-                cwm -> WalletManager.create(cwm, system, callbackCoordinator)
+                cwm -> WalletManager.create(cwm, false, system, callbackCoordinator)
         );
     }
 
     /* package */
-    static WalletManager takeAndCreate(BRCryptoWalletManager core, System system, SystemCallbackCoordinator callbackCoordinator) {
-        return WalletManager.create(core.take(), system, callbackCoordinator);
-    }
-
-    /* package */
-    static WalletManager create(BRCryptoWalletManager core, System system, SystemCallbackCoordinator callbackCoordinator) {
-        WalletManager manager = new WalletManager(core, system, callbackCoordinator);
+    static WalletManager create (BRCryptoWalletManager core, boolean needTake, System system, SystemCallbackCoordinator callbackCoordinator) {
+        WalletManager manager = new WalletManager(
+                (needTake ? core.take() : core),
+                system,
+                callbackCoordinator);
         ReferenceCleaner.register(manager, core::give);
         return manager;
     }
@@ -113,6 +113,11 @@ final class WalletManager implements com.breadwallet.crypto.WalletManager {
                               com.breadwallet.crypto.Key key,
                               CompletionHandler<com.breadwallet.crypto.WalletSweeper, WalletSweeperError> completion) {
         WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getBlockchainDb(), completion);
+    }
+
+    @Override
+    public void createExportablePaperWallet(CompletionHandler<com.breadwallet.crypto.ExportablePaperWallet, ExportablePaperWalletError> completion) {
+        ExportablePaperWallet.create(this, completion);
     }
 
     @Override

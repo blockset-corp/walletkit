@@ -7,13 +7,14 @@
  */
 package com.breadwallet.crypto.blockchaindb.apis.bdb;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.crypto.blockchaindb.apis.PagedData;
 import com.breadwallet.crypto.blockchaindb.errors.QueryError;
 import com.breadwallet.crypto.blockchaindb.errors.QueryJsonParseError;
 import com.breadwallet.crypto.blockchaindb.models.bdb.Transaction;
 import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionFee;
+import com.breadwallet.crypto.blockchaindb.models.bdb.TransactionIdentifier;
 import com.breadwallet.crypto.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
@@ -49,12 +50,16 @@ public class TransactionApi {
                                 @Nullable UnsignedLong endBlockNumber,
                                 boolean includeRaw,
                                 boolean includeProof,
+                                boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
+        if (addresses.isEmpty())
+            throw new IllegalArgumentException("Empty `addresses`");
+
         List<List<String>> chunkedAddressesList = Lists.partition(addresses, ADDRESS_COUNT);
         GetChunkedCoordinator<String, Transaction> coordinator = new GetChunkedCoordinator<>(chunkedAddressesList, handler);
 
-        if (null == maxPageSize) maxPageSize = DEFAULT_MAX_PAGE_SIZE;
+        if (null == maxPageSize) maxPageSize = (includeTransfers ? 1 : 3) * DEFAULT_MAX_PAGE_SIZE;
 
         for (int i = 0; i < chunkedAddressesList.size(); i++) {
             List<String> chunkedAddresses = chunkedAddressesList.get(i);
@@ -63,6 +68,8 @@ public class TransactionApi {
             paramsBuilder.put("blockchain_id", id);
             paramsBuilder.put("include_proof", String.valueOf(includeProof));
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
+            paramsBuilder.put("include_transfers", String.valueOf(includeTransfers));
+            paramsBuilder.put("include_calls", "false");
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
@@ -77,42 +84,45 @@ public class TransactionApi {
     public void getTransaction(String id,
                                boolean includeRaw,
                                boolean includeProof,
+                               boolean includeTransfers,
                                CompletionHandler<Transaction, QueryError> handler) {
         Multimap<String, String> params = ImmutableListMultimap.of(
                 "include_proof", String.valueOf(includeProof),
-                "include_raw", String.valueOf(includeRaw));
+                "include_raw", String.valueOf(includeRaw),
+                "include_transfers", String.valueOf(includeTransfers),
+                "include_calls", "false");
 
         jsonClient.sendGetWithId("transactions", id, params, Transaction.class, handler);
     }
 
     public void createTransaction(String id,
-                                  String hashAsHex,
                                   byte[] tx,
-                                  CompletionHandler<Void, QueryError> handler) {
-        Map json = ImmutableMap.of(
+                                  String identifier,
+                                  CompletionHandler<TransactionIdentifier, QueryError> handler) {
+        String data = BaseEncoding.base64().encode(tx);
+        Map    json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", hashAsHex,
-                "data", BaseEncoding.base64().encode(tx));
+                "submit_context", String.format ("WalletKit:%s:%s", id, (null != identifier ? identifier : ("Data:" + data.substring(0,20)))),
+                "data", data);
 
-        jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, handler);
+        jsonClient.sendPost("transactions", ImmutableMultimap.of(), json, TransactionIdentifier.class, handler);
     }
 
     public void estimateTransactionFee(String id,
-                                  String hashAsHex,
-                                  byte[] tx,
-                                  CompletionHandler<TransactionFee, QueryError> handler) {
+                                       byte[] tx,
+                                       CompletionHandler<TransactionFee, QueryError> handler) {
 
         Multimap<String, String> params = ImmutableListMultimap.of(
                 "estimate_fee", "true");
 
+        String data = BaseEncoding.base64().encode(tx);
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "transaction_id", hashAsHex,
-                "data", BaseEncoding.base64().encode(tx));
+                "submit_context", String.format("WalletKit:%s:Data:%s (FeeEstimate)", id, data.substring(0, 20)),
+                "data", data);
 
         jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);
     }
-
 
     private CompletionHandler<PagedData<Transaction>, QueryError> createPagedResultsHandler(GetChunkedCoordinator<String, Transaction> coordinator,
                                                                                        List<String> chunkedAddresses) {

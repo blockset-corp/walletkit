@@ -30,17 +30,22 @@ ethFeeBasisGetGasPrice (BREthereumFeeBasis basis) {
 }
 
 extern BREthereumEther
-ethFeeBasisGetFee (BREthereumFeeBasis feeBasis, int *overflow) {  // BREthereumBoolean
-    *overflow = 0;
+ethFeeBasisGetFee (BREthereumFeeBasis feeBasis,
+                   BREthereumBoolean *overflow) {
+    *overflow = ETHEREUM_BOOLEAN_FALSE;
 
     switch (feeBasis.type) {
         case FEE_BASIS_NONE:
             return ethEtherCreateZero();
 
-        case FEE_BASIS_GAS:
-            return ethEtherCreate (uint256Mul_Overflow (feeBasis.u.gas.price.etherPerGas.valueInWEI,
-                                                     uint256Create (feeBasis.u.gas.limit.amountOfGas),
-                                                     overflow));
+        case FEE_BASIS_GAS: {
+            int mathOverflow = 0;
+            BREthereumEther fee = ethEtherCreate (uint256Mul_Overflow (feeBasis.u.gas.price.etherPerGas.valueInWEI,
+                                                                       uint256Create (feeBasis.u.gas.limit.amountOfGas),
+                                                                       &mathOverflow));
+            *overflow = AS_ETHEREUM_BOOLEAN(mathOverflow);
+            return (!mathOverflow ? fee : ethEtherCreateZero());
+        }
     }
 }
 

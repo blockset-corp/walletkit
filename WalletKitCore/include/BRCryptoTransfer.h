@@ -15,121 +15,13 @@
 #include "BRCryptoAddress.h"
 #include "BRCryptoAmount.h"
 #include "BRCryptoFeeBasis.h"
+#include "BRCryptoNetwork.h"
+#include "BRCryptoListener.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    typedef struct BRCryptoTransferRecord *BRCryptoTransfer;
-
-    /// MARK: Transfer Submission Result
-
-    typedef enum {
-        CRYPTO_TRANSFER_SUBMIT_ERROR_UNKNOWN,
-        CRYPTO_TRANSFER_SUBMIT_ERROR_POSIX,
-    } BRCryptoTransferSubmitErrorType;
-
-    typedef struct {
-        BRCryptoTransferSubmitErrorType type;
-        union {
-            struct {
-                int errnum;
-            } posix;
-        } u;
-    } BRCryptoTransferSubmitError;
-
-    extern BRCryptoTransferSubmitError
-    cryptoTransferSubmitErrorUnknown(void);
-
-    extern BRCryptoTransferSubmitError
-    cryptoTransferSubmitErrorPosix(int errnum);
-
-    /**
-     * Return a descriptive message as to why the error occurred.
-     *
-     *@return the detailed reason as a string or NULL
-     */
-    extern char *
-    cryptoTransferSubmitErrorGetMessage(BRCryptoTransferSubmitError *e);
-
-    /// MARK: - Transfer State
-
-    typedef enum {
-        CRYPTO_TRANSFER_STATE_CREATED,
-        CRYPTO_TRANSFER_STATE_SIGNED,
-        CRYPTO_TRANSFER_STATE_SUBMITTED,
-        CRYPTO_TRANSFER_STATE_INCLUDED,
-        CRYPTO_TRANSFER_STATE_ERRORED,
-        CRYPTO_TRANSFER_STATE_DELETED,
-    } BRCryptoTransferStateType;
-
-    extern const char *
-    cryptoTransferStateTypeString (BRCryptoTransferStateType type);
-
-    #define CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE     16
-
-    typedef struct {
-        BRCryptoTransferStateType type;
-        union {
-            struct {
-                uint64_t blockNumber;
-                uint64_t transactionIndex;
-                // This is not assuredly the including block's timestamp; it is the transaction's
-                // timestamp which varies depending on how the transaction was discovered.
-                uint64_t timestamp;
-                BRCryptoFeeBasis feeBasis;
-
-                // transfer that have failed can be included too
-                BRCryptoBoolean success;
-                char error[CRYPTO_TRANSFER_INCLUDED_ERROR_SIZE + 1];
-            } included;
-
-            struct {
-                BRCryptoTransferSubmitError error;
-            } errored;
-        } u;
-    } BRCryptoTransferState;
-
-    extern BRCryptoTransferState
-    cryptoTransferStateInit (BRCryptoTransferStateType type);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateIncludedInit (uint64_t blockNumber,
-                                     uint64_t transactionIndex,
-                                     uint64_t timestamp,
-                                     BRCryptoFeeBasis feeBasis,
-                                     BRCryptoBoolean success,
-                                     const char *error);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateErroredInit (BRCryptoTransferSubmitError error);
-
-    extern BRCryptoTransferState
-    cryptoTransferStateCopy (BRCryptoTransferState *state);
-
-    extern void
-    cryptoTransferStateRelease (BRCryptoTransferState *state);
-
-    /// MARK: - Transfer Event
-
-    typedef enum {
-        CRYPTO_TRANSFER_EVENT_CREATED,
-        CRYPTO_TRANSFER_EVENT_CHANGED,
-        CRYPTO_TRANSFER_EVENT_DELETED,
-    } BRCryptoTransferEventType;
-
-    extern const char *
-    cryptoTransferEventTypeString (BRCryptoTransferEventType t);
-
-    typedef struct {
-        BRCryptoTransferEventType type;
-        union {
-            struct {
-                BRCryptoTransferState old;
-                BRCryptoTransferState new;
-            } state;
-        } u;
-    } BRCryptoTransferEvent;
 
     /// MARK: - Transfer Direction
 
@@ -217,16 +109,6 @@ extern "C" {
     cryptoTransferGetAmountDirected (BRCryptoTransfer transfer);
 
     /**
-     * Returns the transfers amount after considering the direction and fee
-     *
-     * @param transfer the transfer
-     *
-     * @return the signed, net amoount
-     */
-    extern BRCryptoAmount
-    cryptoTransferGetAmountDirectedNet (BRCryptoTransfer transfer);
-
-    /**
      * Returns the transfer's fee.  Note that the `fee` and the `amount` may be in different
      * currencies.
      *
@@ -257,10 +139,34 @@ extern "C" {
     cryptoTransferGetDirection (BRCryptoTransfer transfer);
 
     /**
-     * Returns the transfer's hash.  This is the unique identifier for this transfer on the
-     * associated network's blockchain.
+     * Returns the unique identifier for a transaction.  The identifer is unique within the
+     * scope of the Transfer's wallet.  In WalletKit it is possible for two Transfers to have
+     * the same identifier if and only if the Transfers are in a different wallet.  This will
+     * happen, for example, with send ERC-20 wallets whereby both the asset transfer and the fee
+     * will have the same identifer.
      *
-     * @note: Uniqueness is TBD for Ethereum TOKEN transfers
+     * @Note In general, the identifier will not exist until the Transfer has been successfully
+     * submitted to its Blockchain; before then the return value is `NULL`.  However, the actual
+     * time of existence is blockchain specific.
+     *
+     * @param transfer the transfer
+     * @return the identifier as a string.
+     */
+    extern const char *
+    cryptoTransferGetIdentifier (BRCryptoTransfer transfer);
+
+    /**
+     * Returns the transfer's hash.  The hash is determined by applying a blockchain-specific hash
+     * function to a blockchain-specific byte-serialized representation of a Transfer.  A hash is
+     * generally a unique identifier of Transfers in a wallet and also, but not always, on a
+     * blockchain.
+     *
+     * This value may be NULL; notably before a Transfer is signed; and, in the case of HBAR,
+     * before it is successfully submitted (the HBAR hash depends on the HBAR node handling the
+     * Transfer).
+     *
+     * @note: One should expect all Transfers in a Wallet to have a unique hash.  However, in
+     * WalletKit, a hash might be shared by two Transfers if and only if in different wallets.
      *
      * @param transfer the transfer
      *
@@ -268,6 +174,18 @@ extern "C" {
      */
     extern BRCryptoHash
     cryptoTransferGetHash (BRCryptoTransfer transfer);
+
+    /**
+     * Generally a Transfer's hash is derived by applying a Blockchain-specific hash function to a
+     * Blockchain-specific byte representation of a Transfer.
+     *
+     * @Note: Some Blockchains, notablely Hedera, produce a hash the depends on the Hedera Node the
+     * processes the Transfer.  Hence, we don't
+     * know the hash until after
+     */
+    extern BRCryptoBoolean
+    cryptoTransferSetHash (BRCryptoTransfer transfer,
+                           OwnershipKept BRCryptoHash hash);
 
     extern BRCryptoUnit
     cryptoTransferGetUnitForAmount (BRCryptoTransfer transfer);
@@ -288,12 +206,34 @@ extern "C" {
     extern BRCryptoFeeBasis
     cryptoTransferGetConfirmedFeeBasis (BRCryptoTransfer transfer);
 
+    ///
+    /// Return the transfer's fee.  If the transfer's fee is paid in a different currency from the
+    /// transfer's amount, such as an ERC20 transfer being paid in ETHER, then NULL is returned.  If
+    /// the transfers is not SEND by our User, then NULL is returned.
+    ///
+    /// TODO: The Transfer's Fee should be independent of the direction
+    ///
+    /// @param transfer the transfer
+    ///
+    extern BRCryptoAmount
+    cryptoTransferGetFee (BRCryptoTransfer transfer);
+
     extern size_t
     cryptoTransferGetAttributeCount (BRCryptoTransfer transfer);
 
     extern BRCryptoTransferAttribute
     cryptoTransferGetAttributeAt (BRCryptoTransfer transfer,
                                   size_t index);
+
+    extern uint8_t *
+    cryptoTransferSerializeForSubmission (BRCryptoTransfer transfer,
+                                          BRCryptoNetwork  network,
+                                          size_t *serializationCount);
+
+    extern uint8_t *
+    cryptoTransferSerializeForFeeEstimation (BRCryptoTransfer transfer,
+                                             BRCryptoNetwork  network,
+                                             size_t *serializationCount);
 
     extern BRCryptoBoolean
     cryptoTransferEqual (BRCryptoTransfer transfer1, BRCryptoTransfer transfer2);
@@ -343,7 +283,7 @@ extern "C" {
     typedef struct {
         BRCryptoAddress target;
         BRCryptoAmount  amount;
-    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH supported
+    // TODO: This does not handle BRCryptoTransferAttribute; only BTC, BCH, BSV supported
     } BRCryptoTransferOutput;
 
 #ifdef __cplusplus

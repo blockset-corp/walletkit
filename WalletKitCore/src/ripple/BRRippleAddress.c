@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <memory.h>
 
-static char rippleAlphabet[] = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
+char *rippleAlphabet = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 
 // A Ripple Address - 20 bytes
 #define ADDRESS_BYTES   (20)
@@ -209,6 +209,11 @@ rippleAddressCreateFromString(const char * rippleAddressString, bool strict)
 extern int // 1 if equal
 rippleAddressEqual (BRRippleAddress a1, BRRippleAddress a2) {
     return 0 == memcmp (a1->bytes, a2->bytes, 20);
+}
+
+extern size_t
+rippleAddressHashValue (BRRippleAddress address) {
+    return *((size_t*) address->bytes);
 }
 
 extern int

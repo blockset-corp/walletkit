@@ -12,9 +12,9 @@
 #include <time.h>
 #include <assert.h>
 #include <unistd.h>
-#include "ethereum/event/BREventAlarm.h"
-#include "ethereum/ewm/BREthereumEWMPrivate.h"
+#include "support/event/BREventAlarm.h"
 
+#if REFACTOR
 //
 // EWM Tests
 //
@@ -192,7 +192,7 @@ clientEstimateGas (BREthereumClientContext context,
     char *gasPriceStr = ethEtherGetValueString (gasPrice.etherPerGas, WEI);
     char *gasLimitStr = "0x77";
 
-    ewmAnnounceGasEstimateSuccess(ewm, wid, cookie, gasLimitStr, gasPriceStr, rid);
+    ewmAnnounceGasEstimateSuccess(ewm, wid, tid, cookie, gasLimitStr, gasPriceStr, rid);
     free (gasPriceStr);
 }
 
@@ -924,3 +924,5 @@ runEWMTests (const char *paperKey,
     runEWM_TOKEN_test (paperKey, storagePath);
     runEWM_PUBLIC_KEY_test (ethNetworkMainnet, paperKey, storagePath);
 }
+
+#endif

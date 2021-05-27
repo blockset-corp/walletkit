@@ -229,7 +229,7 @@ bcsCreate (BREthereumNetwork network,
 
     // Create but don't start the event handler.  Ensure that a fast-acting lesCreate()
     // can signal events (by queuing; they won't be handled until the event queue is started).
-    bcs->handler = eventHandlerCreate ("Core Ethereum BCS",
+    bcs->handler = eventHandlerCreate ("Core ETH, BCS",
                                        bcsEventTypes,
                                        bcsEventTypesCount,
                                        NULL);
@@ -1551,7 +1551,8 @@ bcsHandleBlockBody (BREthereumBCS bcs,
                                                                       blockGetNumber(block),
                                                                       i,
                                                                       blockGetTimestamp(block),
-                                                                      transactionGetGasLimit(tx)));
+                                                                      transactionGetGasLimit(tx),
+                                                                      1));
 
             if (NULL == neededTransactions) array_new (neededTransactions, 3);
             array_add(neededTransactions, tx);
@@ -1770,7 +1771,8 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
                                                                         blockGetNumber(block),
                                                                         ti,
                                                                         blockGetTimestamp(block),
-                                                                        ethGasCreate(0)));
+                                                                        ethGasCreate(0),
+                                                                        1));
                     
                     if (NULL == neededLogs) array_new(neededLogs, 3);
                     array_add(neededLogs, log);

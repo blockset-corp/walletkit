@@ -254,7 +254,7 @@ static size_t _BRTransactionWitnessData(const BRTransaction *tx, uint8_t *data, 
     off += sizeof(UInt256);
     if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], tx->lockTime); // locktime
     off += sizeof(uint32_t);
-    if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], hashType); // hash type
+    if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], (uint32_t) hashType); // hash type
     off += sizeof(uint32_t);
     return (! data || off <= dataLen) ? off : 0;
 }
@@ -318,7 +318,7 @@ static size_t _BRTransactionData(const BRTransaction *tx, uint8_t *data, size_t 
         off += BRVarIntSet((data ? &data[off] : NULL), (off <= dataLen ? dataLen - off : 0), index + 1);
         
         for (i = 0; i < index; i++)  {
-            if (data && off + sizeof(uint64_t) <= dataLen) UInt64SetLE(&data[off], -1LL);
+            if (data && off + sizeof(uint64_t) <= dataLen) UInt64SetLE(&data[off], (uint32_t) -1LL);
             off += sizeof(uint64_t);
             off += BRVarIntSet((data ? &data[off] : NULL), (off <= dataLen ? dataLen - off : 0), 0);
         }
@@ -344,7 +344,7 @@ static size_t _BRTransactionData(const BRTransaction *tx, uint8_t *data, size_t 
     off += sizeof(uint32_t);
     
     if (index != SIZE_MAX) {
-        if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], hashType); // hash type
+        if (data && off + sizeof(uint32_t) <= dataLen) UInt32SetLE(&data[off], (uint32_t) hashType); // hash type
         off += sizeof(uint32_t);
     }
     
@@ -510,7 +510,6 @@ void BRTransactionAddInput(BRTransaction *tx, UInt256 txHash, uint32_t index, ui
     BRTxInput input = { txHash, index, amount, NULL, 0, NULL, 0, NULL, 0, sequence };
 
     assert(tx != NULL);
-    assert(! UInt256IsZero(txHash));
     assert(script != NULL || scriptLen == 0);
     assert(signature != NULL || sigLen == 0);
     assert(witness != NULL || witLen == 0);
@@ -572,10 +571,11 @@ size_t BRTransactionSize(const BRTransaction *tx)
             size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(input->sigLen) + input->sigLen + sizeof(uint32_t);
             witSize += input->witLen;
         }
-        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH signature size
-            witSize += TX_INPUT_SIZE;
+        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH input size
+            size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t);
+            witSize += TX_INPUT_SIZE - (sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t));
         }
-        else size += TX_INPUT_SIZE; // estimated P2PKH signature size
+        else size += TX_INPUT_SIZE; // estimated P2PKH input size
     }
     
     for (size_t i = 0; tx && i < tx->outCount; i++) {
@@ -602,10 +602,11 @@ size_t BRTransactionVSize(const BRTransaction *tx)
             size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(input->sigLen) + input->sigLen + sizeof(uint32_t);
             witSize += tx->inputs[i].witLen;
         }
-        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH signature size
-            witSize += TX_INPUT_SIZE;
+        else if (input->script && input->scriptLen > 0 && input->script[0] == OP_0) { // estimated P2WPKH input size
+            size += sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t);
+            witSize += TX_INPUT_SIZE - (sizeof(UInt256) + sizeof(uint32_t) + BRVarIntSize(0) + sizeof(uint32_t));
         }
-        else size += TX_INPUT_SIZE; // estimated P2PKH signature size
+        else size += TX_INPUT_SIZE; // estimated P2PKH input size
     }
     
     for (size_t i = 0; i < tx->outCount; i++) {

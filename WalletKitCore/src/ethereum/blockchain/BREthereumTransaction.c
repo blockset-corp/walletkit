@@ -61,9 +61,9 @@ struct BREthereumTransactionRecord {
     BREthereumGas gasLimit;
 
     /**
-     * The gas estimate
+     * The gas used, if included, otherwise zero.
      */
-    BREthereumGas gasEstimate;
+    BREthereumGas gasUsed;
 
     /**
      * The nonce
@@ -106,12 +106,12 @@ transactionCreate(BREthereumAddress sourceAddress,
     transaction->targetAddress = targetAddress;
     transaction->amount = amount;
     transaction->gasPrice = gasPrice;
-    transaction->gasLimit = gasLimit;           // Must not be changed.
+    transaction->gasLimit = gasLimit;
+    transaction->gasUsed  = ethGasCreate (0);
     transaction->data = (NULL == data ? NULL : strdup (data));
     transaction->nonce = nonce;
     transaction->chainId = 0;
     transaction->hash = ethHashCreateEmpty();
-    transaction->gasEstimate = gasLimit;
 
     // Ensure that `transactionIsSigned()` returns FALSE.
     ethSignatureClear (&transaction->signature, SIGNATURE_TYPE_RECOVERABLE_VRS_EIP);
@@ -175,36 +175,6 @@ transactionGetAmount(BREthereumTransaction transaction) {
     return transaction->amount;
 }
 
-extern BREthereumFeeBasis
-transactionGetFeeBasis (BREthereumTransaction transaction) {
-    BREthereumGas gas = (ETHEREUM_BOOLEAN_IS_TRUE(transactionIsConfirmed(transaction))
-                         ? transaction->status.u.included.gasUsed
-                         : transaction->gasLimit);
-
-    return (BREthereumFeeBasis) {
-        FEE_BASIS_GAS,
-        { gas, transaction->gasPrice }
-    };
-}
-
-extern BREthereumEther
-transactionGetFee (BREthereumTransaction transaction, int *overflow) {
-    return ethFeeBasisGetFee (transactionGetFeeBasis(transaction), overflow);
-}
-
-extern BREthereumFeeBasis
-transactionGetFeeBasisLimit (BREthereumTransaction transaction) {
-    return (BREthereumFeeBasis) {
-        FEE_BASIS_GAS,
-        { transaction-> gasLimit, transaction->gasPrice }
-    };
-}
-
-extern BREthereumEther
-transactionGetFeeLimit (BREthereumTransaction transaction, int *overflow) {
-    return ethFeeBasisGetFee (transactionGetFeeBasisLimit(transaction), overflow);
-}
-
 extern BREthereumGasPrice
 transactionGetGasPrice (BREthereumTransaction transaction) {
     return transaction->gasPrice;
@@ -215,26 +185,51 @@ transactionGetGasLimit (BREthereumTransaction transaction) {
     return transaction->gasLimit;
 }
 
-static BREthereumGas
-gasLimitApplyMargin (BREthereumGas gas) {
-    return ethGasCreate(((100 + GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
-}
-
 extern BREthereumGas
-transactionGetGasEstimate (BREthereumTransaction transaction) {
-    return transaction->gasEstimate;
+transactionGetGasUsed (BREthereumTransaction transaction,
+                       BREthereumBoolean *isValid) {
+    assert (isValid);
+
+    *isValid = transactionIsConfirmed(transaction);
+    return (ETHEREUM_BOOLEAN_IS_TRUE(*isValid)
+            ? transaction->gasUsed
+            : ethGasCreate(0));
 }
 
-extern void
-transactionSetGasEstimate (BREthereumTransaction transaction,
-                           BREthereumGas gasEstimate) {
-    transaction->gasEstimate = gasEstimate;
+extern BREthereumFeeBasis
+transactionGetFeeBasisEstimated (BREthereumTransaction transaction) {
+    return (BREthereumFeeBasis) {
+        FEE_BASIS_GAS,
+        { transaction->gasLimit, transaction->gasPrice }
+    };
+}
 
-    // Ensure that the gasLimit is at least 20% more than the gasEstimate
-    BREthereumGas gasLimitWithMargin = gasLimitApplyMargin (gasEstimate);
+extern BREthereumFeeBasis
+transactionGetFeeBasisConfirmed (BREthereumTransaction transaction,
+                                 BREthereumBoolean *isValid) {
+    BREthereumGas      gasUsed  = transactionGetGasUsed (transaction, isValid);
+    BREthereumGasPrice gasPrice = (ETHEREUM_BOOLEAN_IS_TRUE(*isValid)
+                                   ? transaction->gasPrice
+                                   : ethGasPriceCreate(ethEtherCreateZero()));
 
-    if (gasLimitWithMargin.amountOfGas > transaction->gasLimit.amountOfGas)
-        transaction->gasLimit = gasLimitWithMargin;
+    return (BREthereumFeeBasis) {
+        FEE_BASIS_GAS,
+        { gasUsed, gasPrice }
+    };
+}
+extern BREthereumFeeBasis
+transactionGetFeeBasis (BREthereumTransaction transaction) {
+    BREthereumBoolean isValid = ETHEREUM_BOOLEAN_FALSE;
+    BREthereumFeeBasis feeBasisConfirmed = transactionGetFeeBasisConfirmed (transaction, &isValid);
+    return (ETHEREUM_BOOLEAN_IS_TRUE(isValid)
+            ? feeBasisConfirmed
+            : transactionGetFeeBasisEstimated(transaction));
+}
+
+extern BREthereumEther
+transactionGetFee (BREthereumTransaction transaction,
+                   BREthereumBoolean *overflow) {
+    return ethFeeBasisGetFee (transactionGetFeeBasis (transaction), overflow);
 }
 
 extern uint64_t
@@ -375,8 +370,7 @@ transactionRlpEncode(BREthereumTransaction transaction,
         case RLP_TYPE_TRANSACTION_SIGNED: // aka NETWORK
         case RLP_TYPE_ARCHIVE:
             // For EIP-155, encode v with the chainID.
-            items[6] = rlpEncodeUInt64(coder, transaction->signature.sig.vrs.v + 8 +
-                                       2 * transaction->chainId, 1);
+            items[6] = rlpEncodeUInt64(coder, (uint64_t) (transaction->signature.sig.vrs.v + 8 + 2 * transaction->chainId), 1);
 
             items[7] = rlpEncodeBytesPurgeLeadingZeros (coder,
                                                         transaction->signature.sig.vrs.r,
@@ -454,7 +448,7 @@ transactionRlpDecode (BRRlpItem item,
         // If we are RLP decoding a transactino prior to EIP-xxx, then the eipChainId will
         // not be encoded with the chainId.  In that case, just use the eipChainId
         transaction->signature.sig.vrs.v = (eipChainId > 30
-                                            ? eipChainId - 8 - 2 * transaction->chainId
+                                            ? eipChainId - 8 - (uint64_t) (2 * transaction->chainId)
                                             : eipChainId);
         
         BRRlpData rData = rlpDecodeBytesSharedDontRelease (coder, items[7]);
@@ -546,6 +540,8 @@ extern void
 transactionSetStatus (BREthereumTransaction transaction,
                       BREthereumTransactionStatus status) {
     transaction->status = status;
+    if (TRANSACTION_STATUS_INCLUDED == transaction->status.type)
+        transaction->gasUsed = transaction->status.u.included.gasUsed;
 }
 
 extern BREthereumBoolean
@@ -616,7 +612,7 @@ transactionCompare(BREthereumTransaction t1,
 
 extern void
 transactionShow (BREthereumTransaction transaction, const char *topic) {
-    int overflow;
+    BREthereumBoolean overflow;
 
     char *hash = ethHashAsString (transaction->hash);
     char *source = ethAddressGetEncodedString(transaction->sourceAddress, 1);
@@ -625,7 +621,8 @@ transactionShow (BREthereumTransaction transaction, const char *topic) {
     char *gasP   = ethEtherGetValueString (transactionGetGasPrice(transaction).etherPerGas, GWEI);
     char *fee    = ethEtherGetValueString (transactionGetFee(transaction, &overflow), ETHER);
 
-    BREthereumEther totalEth = ethEtherCreate(uint256Add_Overflow(transaction->amount.valueInWEI, transactionGetFee(transaction, &overflow).valueInWEI, &overflow));
+    int mathOverflow = 0;
+    BREthereumEther totalEth = ethEtherCreate(uint256Add_Overflow(transaction->amount.valueInWEI, transactionGetFee(transaction, &overflow).valueInWEI, &mathOverflow));
     char *total  = ethEtherGetValueString (totalEth, ETHER);
     char *totalWEI = ethEtherGetValueString (totalEth, WEI);
 

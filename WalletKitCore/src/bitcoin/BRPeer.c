@@ -230,7 +230,7 @@ static int _BRPeerAcceptVersionMessage(BRPeer *peer, const uint8_t *msg, size_t 
         }
         else {
             array_clear(ctx->useragent);
-            array_add_array(ctx->useragent, &msg[off], strLen);
+            array_add_array(ctx->useragent, (char*) &msg[off], strLen);
             array_add(ctx->useragent, '\0');
             off += strLen;
             ctx->lastblock = UInt32GetLE(&msg[off]);
@@ -301,7 +301,7 @@ static int _BRPeerAcceptAddrMessage(BRPeer *peer, const uint8_t *msg, size_t msg
             if (! _BRPeerIsIPv4(&p)) continue; // ignore IPv6 for now
         
             // if address time is more than 10 min in the future or unknown, set to 5 days old
-            if (p.timestamp > now + 10*60 || p.timestamp == 0) p.timestamp = now - 5*24*60*60;
+            if (p.timestamp > now + 10*60 || p.timestamp == 0) p.timestamp = (uint64_t) (now - 5*24*60*60);
             p.timestamp -= 2*60*60; // subtract two hours
             peers[peersCount++] = p; // add it to the list
         }
@@ -918,8 +918,8 @@ static int _BRPeerOpenSocket(BRPeer *peer, int domain, double timeout, int *erro
         if (err == EINPROGRESS) {
             err = 0;
             optLen = sizeof(err);
-            tv.tv_sec = timeout;
-            tv.tv_usec = (long)(timeout*1000000) % 1000000;
+            tv.tv_sec  = (long)  timeout;
+            tv.tv_usec = (long) (timeout*1000000) % 1000000;
             FD_ZERO(&fds);
             FD_SET(sock, &fds);
             count = select(sock + 1, NULL, &fds, NULL, &tv);
@@ -993,7 +993,11 @@ static void *_peerThreadRoutine(void *arg)
     int socket, error = 0;
 
     pthread_cleanup_push(ctx->threadCleanup, ctx->info);
-    
+
+    char name[9 + 1 + INET6_ADDRSTRLEN + 1];
+    sprintf (name, "Core BTX, %s", ctx->host);
+    pthread_setname_brd (pthread_self(), name);
+
     if (_BRPeerOpenSocket(peer, PF_INET6, CONNECT_TIMEOUT, &error)) {
         struct timeval tv;
         double time = 0, msgTimeout;
@@ -1011,7 +1015,7 @@ static void *_peerThreadRoutine(void *arg)
 
             while (socket >= 0 && ! error && len < HEADER_LENGTH) {
                 n = read(socket, &header[len], sizeof(header) - len);
-                if (n > 0) len += n;
+                if (n > 0) len += (size_t) n;
                 if (n == 0) error = ECONNRESET;
                 if (n < 0 && errno != EWOULDBLOCK) error = errno;
                 gettimeofday(&tv, NULL);
@@ -1061,7 +1065,7 @@ static void *_peerThreadRoutine(void *arg)
                     
                     while (socket >= 0 && ! error && len < msgLen) {
                         n = read(socket, &payload[len], msgLen - len);
-                        if (n > 0) len += n;
+                        if (n > 0) len += (size_t) n;
                         if (n == 0) error = ECONNRESET;
                         if (n < 0 && errno != EWOULDBLOCK) error = errno;
                         gettimeofday(&tv, NULL);
@@ -1383,7 +1387,7 @@ void BRPeerSendMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen, const ch
         
         while (socket >= 0 && ! error && msgLen < sizeof(buf)) {
             n = send(socket, &buf[msgLen], sizeof(buf) - msgLen, MSG_NOSIGNAL);
-            if (n >= 0) msgLen += n;
+            if (n >= 0) msgLen += (size_t) n;
             if (n < 0 && errno != EWOULDBLOCK) error = errno;
             gettimeofday(&tv, NULL);
             if (! error && tv.tv_sec + (double)tv.tv_usec/1000000 >= _peerGetDisconnectTime(ctx)) error = ETIMEDOUT;
@@ -1407,7 +1411,7 @@ void BRPeerSendVersionMessage(BRPeer *peer)
     off += sizeof(uint32_t);
     UInt64SetLE(&msg[off], ENABLED_SERVICES); // services
     off += sizeof(uint64_t);
-    UInt64SetLE(&msg[off], time(NULL)); // timestamp
+    UInt64SetLE(&msg[off], (uint64_t) time(NULL)); // timestamp
     off += sizeof(uint64_t);
     UInt64SetLE(&msg[off], peer->services); // services of remote peer
     off += sizeof(uint64_t);

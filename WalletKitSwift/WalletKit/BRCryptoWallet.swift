@@ -87,7 +87,7 @@ public final class Wallet: Equatable {
     /// - Parameter address: the address to check
     ///
     public func hasAddress (_ address: Address) -> Bool {
-        return CRYPTO_TRUE == cryptoWalletHasAddress (core, address.core);
+        return cryptoWalletHasAddress (core, address.core);
     }
 
     ///
@@ -149,9 +149,10 @@ public final class Wallet: Equatable {
         let transfersPtr = cryptoWalletGetTransfers(core, &transfersCount);
         defer { if let ptr = transfersPtr { cryptoMemoryFree (ptr) } }
         
-        let transfers: [BRCryptoTransfer] = transfersPtr?.withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
-            Array(UnsafeBufferPointer (start: $0, count: transfersCount))
-        } ?? []
+        let transfers: [BRCryptoTransfer] = transfersPtr?
+            .withMemoryRebound(to: BRCryptoTransfer.self, capacity: transfersCount) {
+                Array(UnsafeBufferPointer (start: $0, count: transfersCount))
+            } ?? []
         
         return transfers
             .map { Transfer (core: $0,
@@ -192,11 +193,9 @@ public final class Wallet: Equatable {
     /// Generates events: TransferEvent.created and WalletEvent.transferAdded(transfer).
     ///
     /// - Parameters:
-    ///   - listener: The transfer listener
-    ///   - source: The source spends 'amount + fee'
     ///   - target: The target receives 'amount
     ///   - amount: The amount
-    ///   - feeBasis: The basis for 'fee'
+    ///   - estimatedFeeBasis: The basis for 'fee'
     ///   - attributes: Optional transfer attributes.
     ///
     /// - Returns: A new transfer
@@ -211,15 +210,17 @@ public final class Wallet: Equatable {
 
         let coreAttributesCount = attributes?.count ?? 0
         var coreAttributes: [BRCryptoTransferAttribute?] = attributes?.map { $0.core } ?? []
-
-        return cryptoWalletManagerCreateTransfer (manager.core, core, target.core, amount.core,
-                                                  estimatedFeeBasis.core,
-                                                  coreAttributesCount,
-                                                  &coreAttributes)
+        
+        return cryptoWalletCreateTransfer (core,
+                                           target.core,
+                                           amount.core,
+                                           estimatedFeeBasis.core,
+                                           coreAttributesCount,
+                                           &coreAttributes)
             .map { Transfer (core: $0,
                              wallet: self,
                              take: false)
-        }
+            }
     }
 
     public func createTransfer (outputs: [TransferOutput],
@@ -233,21 +234,21 @@ public final class Wallet: Equatable {
                                        estimatedFeeBasis: estimatedFeeBasis)
         default:
             var coreOutputs = outputs.map { $0.core }
-
-            return cryptoWalletManagerCreateTransferMultiple (manager.core, core,
-                                                              coreOutputsCount,
-                                                              &coreOutputs,
-                                                              estimatedFeeBasis.core)
+            
+            return cryptoWalletCreateTransferMultiple (core,
+                                                       coreOutputsCount,
+                                                       &coreOutputs,
+                                                       estimatedFeeBasis.core)
                 .map { Transfer (core: $0,
                                  wallet: self,
                                  take: false)
-            }
+                }
         }
     }
 
     internal func createTransfer(sweeper: WalletSweeper,
                                  estimatedFeeBasis: TransferFeeBasis) -> Transfer? {
-        return cryptoWalletCreateTransferForWalletSweep(self.core, sweeper.core, estimatedFeeBasis.core)
+        return cryptoWalletSweeperCreateTransferForWalletSweep(sweeper.core, manager.core, self.core, estimatedFeeBasis.core)
             .map { Transfer (core: $0,
                              wallet: self,
                              take: false)
@@ -262,7 +263,7 @@ public final class Wallet: Equatable {
                              take: false)
         }
     }
-
+    
     /// MARK: Estimate Limit
 
     ///
@@ -295,7 +296,7 @@ public final class Wallet: Equatable {
     public func estimateLimitMaximum (target: Address,
                                       fee: NetworkFee,
                                       completion: @escaping Wallet.EstimateLimitHandler) {
-        estimateLimit (asMaximum: true, target: target, fee: fee, completion: completion)
+        estimateLimit (asMaximum: true, target: target, fee: fee, attributes: nil, completion: completion)
     }
 
     ///
@@ -320,7 +321,7 @@ public final class Wallet: Equatable {
     public func estimateLimitMinimum (target: Address,
                                       fee: NetworkFee,
                                       completion: @escaping Wallet.EstimateLimitHandler) {
-        estimateLimit (asMaximum: false, target: target, fee: fee, completion: completion)
+        estimateLimit (asMaximum: false, target: target, fee: fee, attributes: nil, completion: completion)
     }
 
     ///
@@ -329,6 +330,7 @@ public final class Wallet: Equatable {
     internal func estimateLimit (asMaximum: Bool,
                                  target: Address,
                                  fee: NetworkFee,
+                                 attributes: Set<TransferAttribute>?,
                                  completion: @escaping Wallet.EstimateLimitHandler) {
         var needFeeEstimate: BRCryptoBoolean = CRYPTO_TRUE
         var isZeroIfInsuffientFunds: BRCryptoBoolean = CRYPTO_FALSE;
@@ -386,7 +388,7 @@ public final class Wallet: Equatable {
         if self != walletForFee {
             // This `amount` will not unusually be zero.
             // TODO: Does ETH fee estimation work if the ERC20 amount is zero?
-            self.estimateFee (target: target, amount: amount, fee: fee) {
+            self.estimateFee (target: target, amount: amount, fee: fee, attributes: attributes) {
                 (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                 switch res {
                 case .success (let feeBasis):
@@ -408,7 +410,7 @@ public final class Wallet: Equatable {
         // balance is enough to cover the (minimum) amount plus the fee
         //
         if !asMaximum {
-            self.estimateFee (target: target, amount: amount, fee: fee) {
+            self.estimateFee (target: target, amount: amount, fee: fee, attributes: attributes) {
                 (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) in
                 switch res {
                 case .success (let feeBasis):
@@ -463,7 +465,7 @@ public final class Wallet: Equatable {
                 else if estimationCompleterRecurseCount < estimationCompleterRecurseLimit {
                     // but is they haven't converged try again with the new amount
                     transferFee = newTransferFee
-                    self.estimateFee (target: target, amount: newTransferAmount, fee: fee, completion: estimationCompleter)
+                    self.estimateFee (target: target, amount: newTransferAmount, fee: fee, attributes: attributes, completion: estimationCompleter)
                 }
 
                 else {
@@ -476,7 +478,7 @@ public final class Wallet: Equatable {
             }
         }
 
-        estimateFee (target: target, amount: amount, fee: fee, completion: estimationCompleter)
+        estimateFee (target: target, amount: amount, fee: fee, attributes: attributes, completion: estimationCompleter)
     }
 
     private func estimateLimitCompleteInQueue (_ completion: @escaping Wallet.EstimateLimitHandler,
@@ -526,23 +528,33 @@ public final class Wallet: Equatable {
     public func estimateFee (target: Address,
                              amount: Amount,
                              fee: NetworkFee,
+                             attributes: Set<TransferAttribute>?,
                              completion: @escaping Wallet.EstimateFeeHandler) {
+        if nil != attributes && nil != self.validateTransferAttributes(attributes!) {
+            assertionFailure()
+        }
+
+        let coreAttributesCount = attributes?.count ?? 0
+        var coreAttributes: [BRCryptoTransferAttribute?] = attributes?.map { $0.core } ?? []
+        
         // 'Redirect' up to the 'manager'
         cryptoWalletManagerEstimateFeeBasis (self.manager.core,
                                              self.core,
                                              callbackCoordinator.addWalletFeeEstimateHandler(completion),
                                              target.core,
                                              amount.core,
-                                             fee.core)
+                                             fee.core,
+                                             coreAttributesCount,
+                                             &coreAttributes)
     }
-    
+
     internal func estimateFee (sweeper: WalletSweeper,
                                fee: NetworkFee,
                                completion: @escaping EstimateFeeHandler) {
-        cryptoWalletManagerEstimateFeeBasisForWalletSweep (self.manager.core,
+        cryptoWalletManagerEstimateFeeBasisForWalletSweep (sweeper.core,
+                                                           self.manager.core,
                                                            self.core,
                                                            callbackCoordinator.addWalletFeeEstimateHandler(completion),
-                                                           sweeper.core,
                                                            fee.core)
     }
     
@@ -568,21 +580,9 @@ public final class Wallet: Equatable {
             }
         }
     }
-
-    ///
-    /// Create a `TransferFeeBasis` using a `pricePerCostFactor` and `costFactor`.
-    ///
-    /// - Note: This is 'private' until the parameters are described.  Meant for testing for now.
-    ///
-    /// - Parameters:
-    ///   - pricePerCostFactor:
-    ///   - costFactor:
-    ///
-    /// - Returns: An optional TransferFeeBasis
-    ///
-    public func createTransferFeeBasis (pricePerCostFactor: Amount,
-                                        costFactor: Double) -> TransferFeeBasis? {
-        return cryptoWalletCreateFeeBasis (core, pricePerCostFactor.core, costFactor)
+    
+    internal func defaultFeeBasis () -> TransferFeeBasis? {
+        return cryptoWalletGetDefaultFeeBasis (core)
             .map { TransferFeeBasis (core: $0, take: false) }
     }
     
@@ -679,12 +679,88 @@ public enum WalletEvent {
 
     case transferAdded     (transfer: Transfer)
     case transferChanged   (transfer: Transfer)
-    case transferDeleted   (transfer: Transfer)
     case transferSubmitted (transfer: Transfer, success: Bool)
+    case transferDeleted   (transfer: Transfer)
 
     case balanceUpdated    (amount: Amount)
     case feeBasisUpdated   (feeBasis: TransferFeeBasis)
     case feeBasisEstimated (feeBasis: TransferFeeBasis)
+
+    init? (wallet: Wallet, core: BRCryptoWalletEvent) {
+        switch cryptoWalletEventGetType(core) {
+        case CRYPTO_WALLET_EVENT_CREATED:
+            self = .created
+            
+        case CRYPTO_WALLET_EVENT_CHANGED:
+            var oldState: BRCryptoWalletState!
+            var newState: BRCryptoWalletState!
+
+            cryptoWalletEventExtractState(core, &oldState, &newState)
+            self = .changed (oldState: WalletState (core: oldState),
+                             newState: WalletState (core: newState))
+            
+        case CRYPTO_WALLET_EVENT_DELETED:
+            self = .deleted
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_ADDED:
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferAdded (transfer: Transfer (core: transfer,
+                                                       wallet: wallet,
+                                                       take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_CHANGED:
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferChanged (transfer: Transfer (core: transfer,
+                                                         wallet: wallet,
+                                                         take: false))
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_SUBMITTED:
+            var transfer: BRCryptoTransfer!
+            cryptoWalletEventExtractTransferSubmit (core, &transfer);
+
+            self = .transferSubmitted (transfer: Transfer (core: transfer,
+                                                           wallet: wallet,
+                                                           take: false),
+                                       success: true);
+            
+        case CRYPTO_WALLET_EVENT_TRANSFER_DELETED:
+            var transfer: BRCryptoTransfer!
+
+            cryptoWalletEventExtractTransfer (core, &transfer);
+            self = .transferDeleted (transfer: Transfer (core: transfer,
+                                                         wallet: wallet,
+                                                         take: false))
+            
+        case CRYPTO_WALLET_EVENT_BALANCE_UPDATED:
+            var balance: BRCryptoAmount!
+
+            cryptoWalletEventExtractBalanceUpdate (core, &balance);
+            self = .balanceUpdated (amount: Amount (core: balance, take: false))
+            
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_UPDATED:
+            var feeBasis: BRCryptoFeeBasis!
+
+            cryptoWalletEventExtractFeeBasisUpdate (core, &feeBasis);
+
+            guard nil != feeBasis else { return nil }
+            self = .feeBasisUpdated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
+
+        case CRYPTO_WALLET_EVENT_FEE_BASIS_ESTIMATED:
+            var feeBasis: BRCryptoFeeBasis!
+
+            cryptoWalletEventExtractFeeBasisEstimate (core, nil, nil, &feeBasis);
+            
+            guard nil != feeBasis else { return nil }
+            self = .feeBasisEstimated (feeBasis: TransferFeeBasis (core: feeBasis, take: false))
+            
+        default:
+            preconditionFailure()
+        }
+    }
 }
 
 extension WalletEvent: CustomStringConvertible {

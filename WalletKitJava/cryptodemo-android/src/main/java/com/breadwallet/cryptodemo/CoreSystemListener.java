@@ -7,7 +7,7 @@
  */
 package com.breadwallet.cryptodemo;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.breadwallet.crypto.Account;
 import com.breadwallet.crypto.Address;
@@ -171,7 +171,9 @@ public class CoreSystemListener implements SystemListener {
                             if (error instanceof AccountInitializationMultipleHederaAccountsError) {
                                 List<HederaAccount> accounts = ((AccountInitializationMultipleHederaAccountsError) error).getAccounts();
 
-                                // Sort accounts....
+                                // Find the account with the largest balance
+                                Collections.sort (accounts, HederaAccount.BALANCE_COMPARATOR.reversed());
+
                                 system.accountInitializeUsingHedera (system.getAccount(), network, accounts.get(0))
                                         .transform((bytes) -> { serializationData.add(bytes); return true; });
                             }

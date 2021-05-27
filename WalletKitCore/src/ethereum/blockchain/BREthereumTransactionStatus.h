@@ -50,6 +50,9 @@ typedef enum {
     TRANSACTION_STATUS_ERRORED = 4,
 } BREthereumTransactionStatusType;
 
+extern const char *
+transactionGetStatusTypeName (BREthereumTransactionStatusType type);
+
 /**
  * Extracted from observation of Geth error reports, from Geth source code, and from Parity
  * source code (see below for Geth+Parity declaration).  Currently Parity, in PIPv1, provides
@@ -89,6 +92,7 @@ typedef struct BREthereumTransactionStatusLESRecord {
             uint64_t transactionIndex;
             uint64_t blockTimestamp;
             BREthereumGas gasUsed;      // Internal
+            uint64_t success; // 1 = success, 0 = included w/ error
         } included;
 
         struct {
@@ -108,7 +112,8 @@ transactionStatusCreateIncluded (BREthereumHash blockHash,
                                  uint64_t blockNumber,
                                  uint64_t transactionIndex,
                                  uint64_t blockTimestamp,
-                                 BREthereumGas gasUsed);
+                                 BREthereumGas gasUsed,
+                                 uint64_t success);
 
 extern BREthereumTransactionStatus
 transactionStatusCreateErrored (BREthereumTransactionErrorType type,

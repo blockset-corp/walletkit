@@ -136,7 +136,7 @@ public final class Account {
     /// - Returns: `true` if initialized; `false` otherwise
     ///
     internal func isInitialized (onNetwork network: Network) -> Bool {
-        return CRYPTO_TRUE == cryptoAccountIsInitialized (core, network.core)
+        return CRYPTO_TRUE == cryptoNetworkIsAccountInitialized(network.core, core)
     }
 
     ///
@@ -159,10 +159,8 @@ public final class Account {
             let dataAddr  = dataBytes.baseAddress?.assumingMemoryBound(to: UInt8.self)
             let dataCount = dataBytes.count
 
-            cryptoAccountInitialize (core,
-                                     network.core,
-                                     dataAddr,
-                                     dataCount)
+            cryptoNetworkInitializeAccount (network.core, core, dataAddr, dataCount);
+
             return serialize
         }
     }
@@ -180,9 +178,7 @@ public final class Account {
     ///
     internal func getInitializationdData (onNetwork network: Network) -> Data? {
         var bytesCount: BRCryptoCount = 0
-        return cryptoAccountGetInitializationData (core,
-                                                   network.core,
-                                                   &bytesCount)
+        return cryptoNetworkGetAccountInitializationData (network.core, core, &bytesCount)
             .map {
                 let bytes = $0
                 defer { cryptoMemoryFree (bytes) }

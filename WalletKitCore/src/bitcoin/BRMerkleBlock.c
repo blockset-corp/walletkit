@@ -359,7 +359,7 @@ int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBloc
         size--; // decrement size since we only divided by TARGET_TIMESPAN/256
     
         while (size < 1 || target > 0x007fffff) target >>= 8, size++; // normalize target for "compact" format
-        target |= size << 24;
+        target |= (uint64_t) (size << 24);
     
         if (target > MAX_PROOF_OF_WORK) target = MAX_PROOF_OF_WORK; // limit to MAX_PROOF_OF_WORK
         if (block->target != target) r = 0;

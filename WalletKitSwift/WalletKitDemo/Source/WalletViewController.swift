@@ -12,7 +12,7 @@
 import UIKit
 import WalletKit
 
-class WalletViewController: UITableViewController, TransferListener, WalletManagerListener {
+class WalletViewController: UITableViewController, WalletListener, WalletManagerListener {
 
     /// The wallet viewed.
     var wallet : Wallet! {
@@ -46,8 +46,8 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
         }
         
         if let listener = UIApplication.sharedSystem.listener as? CoreDemoListener {
-            listener.add (managerListener: self)
-            listener.add (transferListener: self)
+            listener.add (managerListener:  self)
+            listener.add (walletListener:   self)
         }
         
         super.viewWillAppear(animated)
@@ -55,8 +55,8 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
 
     override func viewWillDisappear(_ animated: Bool) {
         if let listener = UIApplication.sharedSystem.listener as? CoreDemoListener {
-            listener.remove (managerListener: self)
-            listener.remove (transferListener: self)
+            listener.remove (managerListener:  self)
+            listener.remove (walletListener:   self)
         }
         
         super.viewWillDisappear(animated)
@@ -105,17 +105,22 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
     }
 
     func showCreateTransferController (named: String) {
-        if let navigationController = self.storyboard?.instantiateViewController(withIdentifier: named) as? UINavigationController,
-            let controller = navigationController.topViewController as? TransferCreateController {
-            controller.wallet = self.wallet
-            controller.fee    = self.wallet.manager.defaultNetworkFee
-            self.present (navigationController, animated: true, completion: nil)
+        if let navigationController = self.storyboard?.instantiateViewController(withIdentifier: named) as? UINavigationController {
+            if let controller = navigationController.topViewController as? TransferCreateController {
+                controller.wallet = self.wallet
+                controller.fee    = self.wallet.manager.defaultNetworkFee
+                self.present (navigationController, animated: true, completion: nil)
+            }
+            else if let controller = navigationController.topViewController as? ExportablePaperWalletController {
+                controller.walletManager = self.wallet.manager
+                self.present(navigationController, animated: true, completion: nil)
+            }
         }
     }
 
-    func addAlertAction (alert: UIAlertController, _ canDisable: Bool, _ action: UIAlertAction) {
-        if canDisable {
-            action.isEnabled = (NetworkType.btc == wallet.manager.network.type)
+    func addAlertAction (alert: UIAlertController, networkTypes: [NetworkType]? = nil, _ action: UIAlertAction) {
+        if let networkTypes = networkTypes {
+            action.isEnabled = networkTypes.contains(wallet.manager.network.type)
         }
         alert.addAction(action);
     }
@@ -125,28 +130,40 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
                                        message: nil,
                                        preferredStyle: UIAlertController.Style.actionSheet)
 
-        addAlertAction(alert: alert, false, UIAlertAction (title: "Send", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, UIAlertAction (title: "Send", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Send")
             self.showCreateTransferController(named: "createTransferSendNC")
             alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, false, UIAlertAction (title: "Receive", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, UIAlertAction (title: "Receive", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Receive")
             self.showCreateTransferController(named: "createTransferRecvNC")
            alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, true, UIAlertAction (title: "Payment", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Payment", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Pay")
             self.showCreateTransferController(named: "createTransferPayNC")
            alert.dismiss(animated: true) {}
         })
 
-        addAlertAction(alert: alert, true, UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
+        addAlertAction(alert: alert, networkTypes: [.btc, .bch], UIAlertAction (title: "Sweep", style: UIAlertAction.Style.default) { (action) in
             print ("APP: WVC: Want to Sweep")
             self.showCreateTransferController(named: "createTransferSweepNC")
            alert.dismiss(animated: true) {}
+        })
+        
+        addAlertAction(alert: alert, networkTypes: [.xtz], UIAlertAction (title: "Delegate", style: UIAlertAction.Style.default) { (action) in
+            print ("APP: WVC: Want to Delegate")
+            self.showCreateTransferController(named: "createTransferDelegateNC")
+            alert.dismiss(animated: true) {}
+        })
+
+        addAlertAction(alert: alert, networkTypes: [.btc], UIAlertAction (title: "Exportable Paper Wallet", style: UIAlertAction.Style.default) { (action) in
+            print ("APP: WVC: Want to Create Exportable Paper Wallet")
+            self.showCreateTransferController(named: "createExportablePaperWalletNC")
+            alert.dismiss(animated: true) {}
         })
 
         alert.addAction (UIAlertAction (title: "Cancel", style: UIAlertAction.Style.cancel))
@@ -157,8 +174,8 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
     override func tableView (_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TransferCell", for: indexPath) as! TransferTableViewCell
 
+        cell.currency = wallet.currency
         cell.transfer = transfers[indexPath.row]
-        cell.updateView()
 
         return cell
      }
@@ -176,12 +193,16 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
         }
     }
 
-    func handleTransferEvent(system: System, manager: WalletManager, wallet: Wallet, transfer: Transfer, event: TransferEvent) {
+    func handleWalletEvent (system: System,
+                            manager: WalletManager,
+                            wallet: Wallet,
+                            event: WalletEvent) {
         DispatchQueue.main.async {
-            print ("APP: WVC: TransferEvent: \(event)")
+            print ("APP: WVC: WalletEvent: \(event)")
             guard self.wallet == wallet /* && view is visible */  else { return }
+
             switch event {
-            case .created:
+             case .transferAdded(transfer: let transfer):
                 precondition(!self.transfers.contains(transfer))
 
                 // Simple, but inefficient
@@ -194,19 +215,26 @@ class WalletViewController: UITableViewController, TransferListener, WalletManag
                 let path = IndexPath (row: index, section: 0)
                 self.tableView.insertRows (at: [path], with: .automatic)
 
-            case .changed: //  (let old, let new)
+
+            case .transferChanged(transfer: let transfer):
                 if let index = self.transfers.firstIndex (of: transfer) {
                     let path = IndexPath (row: index, section: 0)
                     self.tableView.reloadRows(at: [path], with: .automatic)
                 }
 
-            case .deleted:
+//            case .transferSubmitted(transfer: let transfer, success: let success):
+//                break
+
+            case .transferDeleted(transfer: let transfer):
                 if let index = self.transfers.firstIndex (of: transfer) {
                     self.transfers.remove(at: index)
 
                     let path = IndexPath (row: index, section: 0)
                     self.tableView.deleteRows(at: [path], with: .automatic)
                 }
+
+            default:
+                break;
             }
         }
     }

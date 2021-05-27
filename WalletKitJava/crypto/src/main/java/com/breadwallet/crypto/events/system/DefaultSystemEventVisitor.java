@@ -7,12 +7,22 @@
  */
 package com.breadwallet.crypto.events.system;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public abstract class DefaultSystemEventVisitor<T> implements SystemEventVisitor<T> {
 
     @Nullable
     public T visit(SystemCreatedEvent event) {
+        return null;
+    }
+
+    @Nullable
+    public T visit(SystemChangedEvent event) {
+        return null;
+    }
+
+    @Nullable
+    public T visit(SystemDeletedEvent event) {
         return null;
     }
 

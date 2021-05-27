@@ -9,11 +9,11 @@ package com.breadwallet.cryptodemo;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
@@ -222,7 +222,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         }
 
         Amount amount = calculateValue(amountView.getProgress());
-        wallet.estimateFee(target.get(), amount, fee, new CompletionHandler<TransferFeeBasis,
+        wallet.estimateFee(target.get(), amount, fee, null, new CompletionHandler<TransferFeeBasis,
                 FeeEstimationError>() {
             @Override
             public void handleData(TransferFeeBasis data) {
