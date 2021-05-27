@@ -145,7 +145,7 @@ static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, UInt256 bloc
     
     if (ap) {
         if (buf[o + 4] == 1 && UInt256IsZero(UInt256Get(&buf[o + 5])) && UInt32GetLE(&buf[o + 37]) == 0xffffffff &&
-            buf[o + 41] >= 2 && buf[o + 41] <= 100 && o + 42 + buf[o + 41] <= bufLen) {
+            o + 42 + BRVarInt(&buf[o + 41], bufLen - (o + 41), NULL) <= bufLen) {
             ap->coinbaseTx = btcTransactionParse(&buf[o], bufLen - o);
         }
         
@@ -260,7 +260,6 @@ BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
 
         if (block->version >> 16 != 0) apBlock->ap = _BRAuxPowParse(buf, bufLen, block->blockHash, &off);
 
-        
         block->totalTx = (off + sizeof(uint32_t) <= bufLen) ? UInt32GetLE(&buf[off]) : 0;
         block->hashesCount = (size_t)BRVarInt(&buf[off + 4], (off + 4 <= bufLen ? bufLen - (off + 4) : 0), &l);
         len = 4 + l + block->hashesCount*sizeof(UInt256);
