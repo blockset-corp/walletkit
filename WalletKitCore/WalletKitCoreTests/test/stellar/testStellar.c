@@ -62,6 +62,23 @@ static void printBytes(const char* message, uint8_t * bytes, size_t byteSize)
     printf("\n");
 }
 
+static void printURLValidString(const char *input)
+{
+    int length = strlen(input);
+    for (int i = 0; i < length; i++) {
+        switch (input[i]) {
+            case '+':
+                printf("%%2b");
+                break;
+            case '/':
+                printf("%%2f");
+                break;
+            default:
+                printf("%c", input[i]);
+        }
+    }
+}
+
 static void printByteString(const char* message, uint8_t * bytes, size_t byteSize)
 {
     if (message) printf("%s\n", message);
@@ -209,10 +226,58 @@ static void runTransactionTests()
     serializeAndSign();
 }
 
+static void createSubmittableTransaction(const char * sourcePaperKey,
+                                         const char * destinationAddressString,
+                                         BRStellarAmount amount,
+                                         int64_t accountCreateLedger,
+                                         int64_t numPreviousSentTransactions)
+{
+    if (!sourcePaperKey) return;
+
+    BRStellarAccount account = stellarAccountCreate(sourcePaperKey);
+    BRStellarAddress sourceAddress = stellarAccountGetPrimaryAddress(account);
+    BRStellarAddress destinationAddress =
+        stellarAddressCreateFromString(destinationAddressString,true);
+
+    // You need to know the block number where you account was created
+    stellarAccountSetBlockNumberAtCreation(account, accountCreateLedger);
+    // Now how many transactions have you sent from this account?
+    stellarAccountSetSequence(account, numPreviousSentTransactions);
+
+    // Create the transaction
+    BRStellarFeeBasis fee;
+    fee.costFactor = 1;
+    fee.pricePerCostFactor = 100;
+    BRStellarTransaction transaction = stellarTransactionCreate(sourceAddress,
+                                                                destinationAddress,
+                                                                amount,
+                                                                fee);
+
+    // Get ready to sign
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, sourcePaperKey, NULL); // no passphrase
+
+    size_t tx_size = stellarAccountSignTransaction(account, transaction, seed);
+
+    uint8_t *tx_bytes = stellarTransactionSerialize(transaction, &tx_size);
+
+    // Base64 the bytes and print to the console
+    char * encoded = b64_encode(tx_bytes, tx_size);
+    printf("encoded bytes: \n");
+    printURLValidString(encoded);
+    printf("\n");
+}
+
 extern void
 runStellarTest (void /* ... */) {
     printf("Running stellar unit tests...\n");
     runAccountTests();
     runTransactionTests();
+
+    createSubmittableTransaction(NULL,
+                                 NULL,
+                                 5000000,
+                                 35514776,
+                                 1);
 }
 
