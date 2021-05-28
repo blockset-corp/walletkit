@@ -147,7 +147,9 @@ static const BRBitcoinChainParams btcMainNetParamsRecord = {
     btcMainNetCheckpoints,
     sizeof(btcMainNetCheckpoints)/sizeof(*btcMainNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, BITCOIN_BECH32_PREFIX },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH,
+    BITCOIN_BIP32_CHILD
 };
 const BRBitcoinChainParams *btcMainNetParams = &btcMainNetParamsRecord;
 
@@ -160,7 +162,9 @@ static const BRBitcoinChainParams btcTestNetParamsRecord = {
     btcTestNetCheckpoints,
     sizeof(btcTestNetCheckpoints)/sizeof(*btcTestNetCheckpoints),
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, BITCOIN_BECH32_PREFIX_TEST },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 
 const BRBitcoinChainParams *btcTestNetParams = &btcTestNetParamsRecord;

@@ -12,6 +12,9 @@
 #include "WKAccountP.h"
 #include "WKNetworkP.h"
 
+#include "litecoin/BRLitecoinParams.h"
+#include "dogecoin/BRDogecoinParams.h"
+
 static pthread_once_t  _accounts_once = PTHREAD_ONCE_INIT;
 
 static void _accounts_init (void) {
@@ -31,8 +34,9 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 1: BTC (w/ BCH), ETH
 // Version 2: BTC (w/ BCH), ETH, XRP
 // Version 3: V2 + HBAR
-// Version 4: XTZ
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  4
+// Version 4: V3 + XTZ
+// Version 5: V4 + LTC, DOGE
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  5
 
 IMPLEMENT_WK_GIVE_TAKE (WKAccount, wkAccount);
 
@@ -75,15 +79,19 @@ wkAccountValidateWordsList (size_t wordsCount) {
 
 static WKAccount
 wkAccountCreateInternal (BRMasterPubKey btc,
-                             BREthereumAccount eth,
-                             BRRippleAccount xrp,
-                             BRHederaAccount hbar,
-                             BRTezosAccount xtz,
-                             WKTimestamp timestamp,
-                             const char *uids) {
+                         BRMasterPubKey ltc,
+                         BRMasterPubKey doge,
+                         BREthereumAccount eth,
+                         BRRippleAccount xrp,
+                         BRHederaAccount hbar,
+                         BRTezosAccount xtz,
+                         WKTimestamp timestamp,
+                         const char *uids) {
     WKAccount account = malloc (sizeof (struct WKAccountRecord));
 
     account->btc = btc;
+    account->ltc = ltc;
+    account->doge = doge;
     account->eth = eth;
     account->xrp = xrp;
     account->hbar = hbar;
@@ -97,15 +105,17 @@ wkAccountCreateInternal (BRMasterPubKey btc,
 
 static WKAccount
 wkAccountCreateFromSeedInternal (UInt512 seed,
-                                     WKTimestamp timestamp,
-                                     const char *uids) {
+                                 WKTimestamp timestamp,
+                                 const char *uids) {
     return wkAccountCreateInternal (BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8)),
-                                        ethAccountCreateWithBIP32Seed(seed),
-                                        rippleAccountCreateWithSeed (seed),
-                                        hederaAccountCreateWithSeed(seed),
-                                        tezosAccountCreateWithSeed(seed),
-                                        timestamp,
-                                        uids);
+                                    BRBIP32MasterPubKeyPath(seed.u8, sizeof(seed.u8), LTC_BIP32_DEPTH, LTC_BIP32_CHILD),
+                                    BRBIP32MasterPubKeyPath(seed.u8, sizeof(seed.u8), DOGE_BIP32_DEPTH, DOGE_BIP32_CHILD),
+                                    ethAccountCreateWithBIP32Seed(seed),
+                                    rippleAccountCreateWithSeed (seed),
+                                    hederaAccountCreateWithSeed(seed),
+                                    tezosAccountCreateWithSeed(seed),
+                                    timestamp,
+                                    uids);
 }
 
 extern WKAccount
@@ -184,8 +194,18 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     // off the end of the provided `bytes`.  Must be REALLY UNLIKELY.
     //
     // TODO: Add `bytesCount` to BRBIP32ParseMasterPubKey()
-    BRMasterPubKey mpk = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
-    if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, 0, mpk)) return NULL;
+    BRMasterPubKey btc = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
+    if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, btc)) return NULL;
+    BYTES_PTR_INCR_AND_CHECK (mpkSize);
+
+    // LTC
+    BRMasterPubKey ltc = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
+    if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, ltc)) return NULL;
+    BYTES_PTR_INCR_AND_CHECK (mpkSize);
+
+    // DOGE
+    BRMasterPubKey doge = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
+    if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, doge)) return NULL;
     BYTES_PTR_INCR_AND_CHECK (mpkSize);
 
     // ETH
@@ -222,12 +242,13 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     assert (NULL != xtz);
     BYTES_PTR_INCR_AND_CHECK (xtzSize); // Move the pointer to then end of the Tezos account
 
-    return wkAccountCreateInternal (mpk, eth, xrp, hbar, xtz, AS_WK_TIMESTAMP (timestamp), uids);
+    return wkAccountCreateInternal (btc, ltc, doge, eth, xrp, hbar, xtz, AS_WK_TIMESTAMP (timestamp), uids);
 #undef BYTES_PTR_INCR_AND_CHECK
 }
 
 static void
 wkAccountRelease (WKAccount account) {
+    // MPK {BTC, LTC, DOGE) - nothing
     ethAccountRelease(account->eth);
     rippleAccountFree(account->xrp);
     hederaAccountFree(account->hbar);
@@ -264,7 +285,13 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     uint16_t version = ACCOUNT_SERIALIZE_DEFAULT_VERSION;
 
     // BTC/BCH
-    size_t mpkSize = BRBIP32SerializeMasterPubKey (NULL, 0, account->btc);
+    size_t btcSize = BRBIP32SerializeMasterPubKey (NULL, account->btc);
+
+    // LTC
+    size_t ltcSize = BRBIP32SerializeMasterPubKey (NULL, account->ltc);
+
+    // DOGE
+    size_t dogeSize = BRBIP32SerializeMasterPubKey (NULL, account->doge);
 
     // ETH
     BRKey ethPublicKey = ethAccountGetPrimaryAddressPublicKey (account->eth);
@@ -285,7 +312,9 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
 
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize
-                   + (szSize + mpkSize)
+                   + (szSize + btcSize)
+                   + (szSize + ltcSize)
+                   + (szSize + dogeSize)
                    + (szSize + ethSize)
                    + (szSize + xrpSize)
                    + (szSize + hbarSize)
@@ -311,11 +340,25 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     bytesPtr += tsSize;
 
     // BTC
-    UInt32SetBE (bytesPtr, (uint32_t) mpkSize);
+    UInt32SetBE (bytesPtr, (uint32_t) btcSize);
     bytesPtr += szSize;
 
-    BRBIP32SerializeMasterPubKey ((char *) bytesPtr, mpkSize, account->btc);
-    bytesPtr += mpkSize;
+    BRBIP32SerializeMasterPubKey ((char *) bytesPtr, account->btc);
+    bytesPtr += btcSize;
+
+    // LTC
+    UInt32SetBE (bytesPtr, (uint32_t) ltcSize);
+    bytesPtr += szSize;
+
+    BRBIP32SerializeMasterPubKey ((char *) bytesPtr, account->ltc);
+    bytesPtr += ltcSize;
+
+    // DOGE
+    UInt32SetBE (bytesPtr, (uint32_t) dogeSize);
+    bytesPtr += szSize;
+
+    BRBIP32SerializeMasterPubKey ((char *) bytesPtr, account->doge);
+    bytesPtr += dogeSize;
 
     // ETH
     UInt32SetBE (bytesPtr, (uint32_t) ethSize);
@@ -386,9 +429,9 @@ wkAccountValidateSerialization (WKAccount account,
     uint8_t *mpkBytesToCheck = bytesPtr;
 
     // Generate a serialization from account->btc
-    size_t mpkBytesCount = BRBIP32SerializeMasterPubKey (NULL, 0, account->btc);
+    size_t mpkBytesCount = BRBIP32SerializeMasterPubKey (NULL, account->btc);
     uint8_t mpkBytes[mpkBytesCount];
-    BRBIP32SerializeMasterPubKey ((char *) mpkBytes, mpkBytesCount, account->btc);
+    BRBIP32SerializeMasterPubKey ((char *) mpkBytes, account->btc);
 
     if (mpkSize != mpkBytesCount) return WK_FALSE;
 
@@ -403,9 +446,9 @@ wkAccountGetTimestamp (WKAccount account) {
 extern char *
 wkAccountGetFileSystemIdentifier (WKAccount account) {
     // Seriailize the master public key
-    size_t   mpkSize  = BRBIP32SerializeMasterPubKey (NULL, 0, account->btc);
+    size_t   mpkSize  = BRBIP32SerializeMasterPubKey (NULL, account->btc);
     uint8_t *mpkBytes = malloc (mpkSize);
-    BRBIP32SerializeMasterPubKey ((char*) mpkBytes, mpkSize, account->btc);
+    BRBIP32SerializeMasterPubKey ((char*) mpkBytes, account->btc);
 
     // Double SHA the serialization
     UInt256 hash;

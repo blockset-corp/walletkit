@@ -29,13 +29,19 @@
 #include "BRBitcoinPeer.h"
 #include "support/BRSet.h"
 #include "support/BRAddress.h"
+#include "support/BRBIP32Sequence.h"
 #include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     
-#define BITCOIN_FORKID 0x00
+#define BITCOIN_FORKID      0x00
+#define BITCOIN_BIP32_DEPTH 1
+#define BITCOIN_BIP32_CHILD ((const uint32_t []){ 0 | BIP32_HARD })
+
+#define BITCOIN_BIP32_DEPTH_TEST 3
+#define BITCOIN_BIP32_CHILD_TEST ((const uint32_t []){ 44 | BIP32_HARD, 1 | BIP32_HARD, 0 | BIP32_HARD })
 
 typedef struct {
     uint32_t height;
@@ -54,6 +60,8 @@ typedef struct {
     size_t checkpointsCount;
     BRAddressParams addrParams;
     uint8_t forkId;
+    int bip32depth;             // bip32 wallet derivation path depth
+    const uint32_t *bip32child; // bip32 path child list: m/child[0]/child[1]...child[depth - 1]
 } BRBitcoinChainParams;
 
 extern const BRBitcoinChainParams *btcMainNetParams;

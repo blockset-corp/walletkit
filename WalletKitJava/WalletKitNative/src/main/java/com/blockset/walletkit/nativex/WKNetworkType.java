@@ -37,6 +37,13 @@ public enum WKNetworkType {
         }
     },
 
+    DOGE {
+        @Override
+        public int toCore() {
+            return DOGE_VALUE;
+        }
+    },
+
     ETH {
         @Override
         public int toCore() {
@@ -69,10 +76,11 @@ public enum WKNetworkType {
     private static final int BCH_VALUE = 1;
     private static final int BSV_VALUE = 2;
     private static final int LTC_VALUE = 3;
-    private static final int ETH_VALUE = 4;
-    private static final int XRP_VALUE = 5;
-    private static final int HBAR_VALUE = 6;
-    private static final int XTZ_VALUE = 7;
+    private static final int DOGE_VALUE = 4;
+    private static final int ETH_VALUE = 5;
+    private static final int XRP_VALUE = 6;
+    private static final int HBAR_VALUE = 7;
+    private static final int XTZ_VALUE = 8;
 
     public static WKNetworkType fromCore(int nativeValue) {
         switch (nativeValue) {
@@ -80,6 +88,7 @@ public enum WKNetworkType {
             case BCH_VALUE: return BCH;
             case BSV_VALUE: return BSV;
             case LTC_VALUE: return LTC;
+            case DOGE_VALUE:return DOGE;
             case ETH_VALUE: return ETH;
             case XRP_VALUE: return XRP;
             case HBAR_VALUE:return HBAR;

@@ -2240,7 +2240,7 @@ int BRBIP32SequenceTests()
 
     uint8_t pubKey[33];
 
-    BRBIP32PubKey(pubKey, sizeof(pubKey), mpk, SEQUENCE_EXTERNAL_CHAIN, 0);
+    BRBIP32PubKey(pubKey, mpk, SEQUENCE_EXTERNAL_CHAIN, 0);
     printf("000102030405060708090a0b0c0d0e0f/0H/0/0 pub = %02x%s\n", pubKey[0], u256hex(*(UInt256 *)&pubKey[1]));
     if (pubKey[0] != 0x02 ||
         ! UInt256Eq(*(UInt256 *)&pubKey[1],
@@ -2266,11 +2266,11 @@ int BRBIP32SequenceTests()
     char s[sizeof(mpks)];
     
     mpk = BRBIP32ParseMasterPubKey(mpks);
-    BRBIP32SerializeMasterPubKey(s, sizeof(s), mpk);
+    BRBIP32SerializeMasterPubKey(s, mpk);
     if (strncmp(s, mpks, sizeof(mpks)) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRBIP32ParseMasterPubKey() test\n", __func__);
 
-    BRBIP32SerializeMasterPrivKey(s, sizeof(s), &seed, sizeof(seed));
+    BRBIP32SerializeMasterPrivKey(s, &seed, sizeof(seed));
     if (strncmp(s, "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk"
                 "33yuGBxrMPHi", sizeof(s)) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRBIP32SerializeMasterPrivKey() test\n", __func__);
@@ -2712,7 +2712,8 @@ int btcWalletTests()
     tx = btcWalletCreateTransaction(w, SATOSHIS/2, addr.s);
     if (! tx) r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletCreateTransaction() test 4\n", __func__);
 
-    if (tx) btcWalletSignTransaction(w, tx, 0x00, &seed, sizeof(seed));
+    if (tx) btcWalletSignTransaction(w, tx, 0x00, btcMainNetParams->bip32depth, btcMainNetParams->bip32child,
+                                     &seed, sizeof(seed));
     if (tx && ! btcTransactionIsSigned(tx))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletSignTransaction() test\n", __func__);
     

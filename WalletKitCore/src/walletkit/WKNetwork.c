@@ -28,12 +28,13 @@ wkUnitGiveAll (BRArrayOf(WKUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
+wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
     static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
         WK_NETWORK_CURRENCY_BTC,
         WK_NETWORK_CURRENCY_BCH,
         WK_NETWORK_CURRENCY_BSV,
         WK_NETWORK_CURRENCY_LTC,
+        WK_NETWORK_CURRENCY_DOGE,
         WK_NETWORK_CURRENCY_ETH,
         WK_NETWORK_CURRENCY_XRP,
         WK_NETWORK_CURRENCY_HBAR,
@@ -42,6 +43,23 @@ wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
+}
+
+private_extern bool
+wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
+    switch (type) {
+        case WK_NETWORK_TYPE_BTC:
+        case WK_NETWORK_TYPE_BCH:
+        case WK_NETWORK_TYPE_BSV:
+        case WK_NETWORK_TYPE_LTC:
+        case WK_NETWORK_TYPE_DOGE:
+            return true;
+        case WK_NETWORK_TYPE_ETH:
+        case WK_NETWORK_TYPE_XRP:
+        case WK_NETWORK_TYPE_HBAR:
+        case WK_NETWORK_TYPE_XTZ:
+            return false;
+    }
 }
 
 /// MARK: - Network Fee

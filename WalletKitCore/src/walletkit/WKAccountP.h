@@ -27,6 +27,8 @@ extern "C" {
 
 struct WKAccountRecord {
     BRMasterPubKey btc;
+    BRMasterPubKey ltc;
+    BRMasterPubKey doge;
     BREthereumAccount eth;
     BRRippleAccount xrp;
     BRHederaAccount hbar;
@@ -64,6 +66,16 @@ wkAccountDeriveSeed (const char *phrase);
 static inline BRMasterPubKey
 wkAccountAsBTC (WKAccount account) {
     return account->btc;
+}
+
+static inline BRMasterPubKey
+wkAccountAsLTC (WKAccount account) {
+    return account->ltc;
+}
+
+static inline BRMasterPubKey
+wkAccountAsDOGE (WKAccount account) {
+    return account->doge;
 }
 
 static inline BREthereumAccount
