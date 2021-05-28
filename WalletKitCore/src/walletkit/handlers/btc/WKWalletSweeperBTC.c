@@ -34,10 +34,7 @@ btcWalletSweeperGetBalance (WKWalletSweeperBTC sweeper);
 
 static WKWalletSweeperBTC
 wkWalletSweeperCoerce (WKWalletSweeper sweeper) {
-    assert (WK_NETWORK_TYPE_BTC == sweeper->type ||
-            WK_NETWORK_TYPE_BCH == sweeper->type ||
-            WK_NETWORK_TYPE_BSV == sweeper->type ||
-            WK_NETWORK_TYPE_LTC == sweeper->type);
+    assert (wkNetworkTypeIsBitcoinBased (sweeper->type));
     return (WKWalletSweeperBTC) sweeper;
 }
 
@@ -53,6 +50,8 @@ wkWalletSweeperGetAddressBTC (WKWalletSweeper sweeper) {
             return wkAddressCreateFromLegacyStringAsBCH (sweeperBTC->addrParams, sweeperBTC->sourceAddress);
         case WK_NETWORK_TYPE_LTC:
             return wkAddressCreateFromStringAsLTC(sweeperBTC->addrParams, sweeperBTC->sourceAddress);
+        case WK_NETWORK_TYPE_DOGE:
+            return wkAddressCreateFromStringAsDOGE(sweeperBTC->addrParams, sweeperBTC->sourceAddress);
         default:
             assert (0);
             return NULL;
@@ -428,6 +427,16 @@ WKWalletSweeperHandlers wkWalletSweeperHandlersBSV = {
 };
 
 WKWalletSweeperHandlers wkWalletSweeperHandlersLTC = {
+    wkWalletSweeperReleaseBTC,
+    wkWalletSweeperGetAddressBTC,
+    wkWalletSweeperGetBalanceBTC,
+    wkWalletSweeperAddTransactionFromBundleBTC,
+    wkWalletSweeperEstimateFeeBasisForWalletSweepBTC,
+    wkWalletSweeperCreateTransferForWalletSweepBTC,
+    wkWalletSweeperValidateBTC
+};
+
+WKWalletSweeperHandlers wkWalletSweeperHandlersDOGE = {
     wkWalletSweeperReleaseBTC,
     wkWalletSweeperGetAddressBTC,
     wkWalletSweeperGetBalanceBTC,

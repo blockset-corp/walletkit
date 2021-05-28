@@ -157,14 +157,14 @@ wkWalletManagerInitialTransferBundlesLoad (WKWalletManager manager) {
         1 != fileServiceLoad (manager->fileService, bundles, WK_FILE_SERVICE_TYPE_TRANSFER, 1)) {
         wkClientTransferBundleSetRelease (bundles);
         printf ("CRY: %4s: failed to load transfer bundles",
-                wkBlockChainTypeGetCurrencyCode (manager->type));
+                wkNetworkTypeGetCurrencyCode (manager->type));
         wkClientTransferBundleSetRelease(bundles);
         return;
     }
     size_t sortedBundlesCount = BRSetCount(bundles);
 
     printf ("CRY: %4s: loaded %4zu transfer bundles\n",
-            wkBlockChainTypeGetCurrencyCode (manager->type),
+            wkNetworkTypeGetCurrencyCode (manager->type),
             sortedBundlesCount);
 
     if (0 != sortedBundlesCount) {
@@ -211,13 +211,13 @@ wkWalletManagerInitialTransactionBundlesLoad (WKWalletManager manager) {
         1 != fileServiceLoad (manager->fileService, bundles, WK_FILE_SERVICE_TYPE_TRANSACTION, 1)) {
         wkClientTransactionBundleSetRelease (bundles);
         printf ("CRY: %4s: failed to load transaction bundles",
-                wkBlockChainTypeGetCurrencyCode (manager->type));
+                wkNetworkTypeGetCurrencyCode (manager->type));
         return;
     }
     size_t sortedBundlesCount = BRSetCount(bundles);
 
     printf ("CRY: %4s: loaded %4zu transaction bundles\n",
-            wkBlockChainTypeGetCurrencyCode (manager->type),
+            wkNetworkTypeGetCurrencyCode (manager->type),
             sortedBundlesCount);
 
     if (0 != sortedBundlesCount) {
@@ -289,7 +289,7 @@ wkWalletManagerAllocAndInit (size_t sizeInBytes,
     array_new (manager->wallets, 1);
 
     // File Service
-    const char *currencyName = wkBlockChainTypeGetCurrencyCode (manager->type);
+    const char *currencyName = wkNetworkTypeGetCurrencyCode (manager->type);
     const char *networkName  = wkNetworkGetDesc(network);
 
     // TODO: Replace `createFileService` with `getFileServiceSpecifications`
@@ -820,7 +820,7 @@ extern void
 wkWalletManagerWipe (WKNetwork network,
                          const char *path) {
 
-    const char *currencyName = wkBlockChainTypeGetCurrencyCode (wkNetworkGetType(network));
+    const char *currencyName = wkNetworkTypeGetCurrencyCode (wkNetworkGetType(network));
     const char *networkName  = wkNetworkGetDesc(network);
 
     pthread_mutex_lock (&network->lock);

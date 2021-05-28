@@ -44,12 +44,6 @@ inline static uint32_t _ceil_log2(uint32_t x)
     return r;
 }
 
-inline static int _txIsCoinbase(const BRBitcoinTransaction *tx)
-{
-    return (tx && tx->inCount == 1 && UInt256IsZero(tx->inputs->txHash) && tx->inputs->index == 0xffffffff &&
-            tx->inputs->sigLen >= 2 && tx->inputs->sigLen <= 100);
-}
-
 // from https://en.bitcoin.it/wiki/Protocol_specification#Merkle_Trees
 // Merkle trees are binary trees of hashes. Merkle trees in bitcoin use a double SHA-256, the SHA-256 hash of the
 // SHA-256 hash of something. If, when forming a row in the tree (other than the root of the tree), it would have an odd
@@ -109,16 +103,53 @@ static void _BRAuxPowFree(_BRAuxPow *ap)
     }
 }
 
-static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, size_t *off)
+static int _BRAuxPowIsValid(const _BRAuxPow *ap, UInt256 blockHash)
+{
+    UInt256 pair[2], root;
+    int i = 0;
+    
+    if (! ap || ! ap->parent || ! ap->coinbaseTx) return 0;
+    
+    for (i = 0, root = ap->coinbaseTx->txHash; i < ap->cbHashesCount; i++) {
+        pair[(ap->cbMask >> i) & 0x01] = root;
+        pair[(~ap->cbMask >> i) & 0x01] = ap->cbHashes[i];
+        BRSHA256_2(&root, pair, sizeof(pair));
+    }
+
+    // check if coinbaseTx is included in parent block
+    if (! UInt256Eq(root, ap->parent->merkleRoot)) return 0;
+        
+    for (i = 0, root = blockHash; i < ap->chainHashesCount; i++) {
+        pair[(ap->chainMask >> i) & 0x01] = root;
+        pair[(~ap->chainMask >> i) & 0x01] = ap->chainHashes[i];
+        BRSHA256_2(&root, pair, sizeof(pair));
+    }
+
+    // scan for chain merkle root in coinbase input
+    for (i = 0, root = UInt256Reverse(root); i + 32 <= ap->coinbaseTx->inputs->sigLen; i++) {
+        if (memcmp(&ap->coinbaseTx->inputs->signature[i], &root, 32) == 0) break;
+    }
+        
+    if (i + 32 > ap->coinbaseTx->inputs->sigLen) return 0;
+    
+    // check if parent block is valid
+    return (btcMerkleBlockIsValid(ap->parent, ap->parent->timestamp + BLOCK_MAX_TIME_DRIFT));
+}
+
+static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, UInt256 blockHash, size_t *off)
 {
     size_t len, o = (off) ? *off : 0;
-    _BRAuxPow *ap = (o < bufLen) ? calloc(1, sizeof(*ap)) : NULL;
+    _BRAuxPow *ap = (o + 41 < bufLen) ? calloc(1, sizeof(*ap)) : NULL;
 
     assert(buf != NULL || bufLen == 0);
     
     if (ap) {
-        ap->coinbaseTx = btcTransactionParse(&buf[o], bufLen - o);
-        o = (_txIsCoinbase(ap->coinbaseTx)) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen + 1;
+        if (buf[o + 4] == 1 && UInt256IsZero(UInt256Get(&buf[o + 5])) && UInt32GetLE(&buf[o + 37]) == 0xffffffff &&
+            o + 42 + BRVarInt(&buf[o + 41], bufLen - (o + 41), NULL) <= bufLen) {
+            ap->coinbaseTx = btcTransactionParse(&buf[o], bufLen - o);
+        }
+        
+        o = (ap->coinbaseTx) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen;
         if (o + sizeof(UInt256) <= bufLen) ap->parentHash = UInt256Get(&buf[o]);
         o += sizeof(UInt256);
         ap->cbHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
@@ -139,7 +170,7 @@ static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, size_t *off)
         o += sizeof(uint32_t);
         if (o + 80 <= bufLen) ap->parent = btcMerkleBlockParse(&buf[o], 80);
         o += 80;
-        if (o > bufLen) { _BRAuxPowFree(ap); ap = NULL; }
+        if (o > bufLen || ! _BRAuxPowIsValid(ap, blockHash)) { _BRAuxPowFree(ap); ap = NULL; }
     }
     
     if (ap && off) *off = o;
@@ -197,7 +228,7 @@ BRBitcoinMerkleBlock *btcMerkleBlockCopy(const BRBitcoinMerkleBlock *block)
     cpy->flags = NULL;
     btcMerkleBlockSetTxHashes(cpy, block->hashes, block->hashesCount, block->flags, block->flagsLen);
     len = _BRAuxPowSerialize(((_BRAuxPowBlock *)block)->ap, buf, len, NULL);
-    ((_BRAuxPowBlock *)cpy)->ap = _BRAuxPowParse(buf, len, NULL);
+    ((_BRAuxPowBlock *)cpy)->ap = _BRAuxPowParse(buf, len, block->blockHash, NULL);
     if (buf != _buf) free(buf);
     return cpy;
 }
@@ -207,6 +238,7 @@ BRBitcoinMerkleBlock *btcMerkleBlockCopy(const BRBitcoinMerkleBlock *block)
 BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
 {
     BRBitcoinMerkleBlock *block = (buf && 80 <= bufLen) ? btcMerkleBlockNew() : NULL;
+    _BRAuxPowBlock *apBlock = (_BRAuxPowBlock *)block;
     size_t off = 0, len = 0, l = 0;
     
     assert(buf != NULL || bufLen == 0);
@@ -226,7 +258,7 @@ BRBitcoinMerkleBlock *btcMerkleBlockParse(const uint8_t *buf, size_t bufLen)
         off += sizeof(uint32_t);
         BRSHA256_2(&block->blockHash, buf, 80);
 
-        if (block->version >> 16 != 0) ((_BRAuxPowBlock *)block)->ap = _BRAuxPowParse(buf, bufLen, &off);
+        if (block->version >> 16 != 0) apBlock->ap = _BRAuxPowParse(buf, bufLen, block->blockHash, &off);
 
         block->totalTx = (off + sizeof(uint32_t) <= bufLen) ? UInt32GetLE(&buf[off]) : 0;
         block->hashesCount = (size_t)BRVarInt(&buf[off + 4], (off + 4 <= bufLen ? bufLen - (off + 4) : 0), &l);
@@ -403,8 +435,8 @@ int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTim
     // target is in "compact" format, where the most significant byte is the size of the value in bytes, next
     // bit is the sign, and the last 23 bits is the value after having been right shifted by (size - 3)*8 bits
     const uint32_t size = block->target >> 24, target = block->target & 0x007fffff;
-    size_t i, hashIdx = 0, flagIdx = 0;
-    UInt256 pair[2], merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0);
+    size_t hashIdx = 0, flagIdx = 0;
+    UInt256 merkleRoot = _btcMerkleBlockRootR(block, &hashIdx, &flagIdx, 0);
     _BRAuxPow *ap = ((_BRAuxPowBlock *)block)->ap;
     int r = 1;
     
@@ -416,33 +448,9 @@ int btcMerkleBlockIsValid(const BRBitcoinMerkleBlock *block, uint32_t currentTim
     
     // check if proof-of-work target is valid
     if (size == 0 || target == 0 || (block->target & 0x00800000)) r = 0;
-    
-    if (ap) { // check if auxPow is valid
-        for (i = 0, merkleRoot = ap->coinbaseTx->txHash; i < ap->cbHashesCount; i++) {
-            pair[(ap->cbMask >> i) & 0x01] = merkleRoot;
-            pair[(~ap->cbMask >> i) & 0x01] = ap->cbHashes[i];
-            BRSHA256_2(merkleRoot.u8, pair, sizeof(pair));
-        }
-
-        // check if coinbaseTx is included in parent block
-        if (! UInt256Eq(merkleRoot, ap->parent->merkleRoot)) r = 0;
-        
-        for (i = 0, merkleRoot = block->blockHash; i < ap->chainHashesCount; i++) {
-            pair[(ap->chainMask >> i) & 0x01] = merkleRoot;
-            pair[(~ap->chainMask >> i) & 0x01] = ap->chainHashes[i];
-            BRSHA256_2(merkleRoot.u8, pair, sizeof(pair));
-        }
-
-        // scan for chain merkle root in coinbase input
-        for (i = 0, merkleRoot = UInt256Reverse(merkleRoot); r && i + 32 <= ap->coinbaseTx->inputs->sigLen; i++) {
-            if (memcmp(&ap->coinbaseTx->inputs->signature[i], merkleRoot.u8, 32) == 0) break;
-        }
-        
-        if (r && i + 32 > ap->coinbaseTx->inputs->sigLen) r = 0;
-        
-        // check if parent block is valid
-        if (r && ! btcMerkleBlockIsValid(ap->parent, currentTime)) r = 0;
-    }
+            
+    // check if auxPow parent block is valid
+    if (ap && (! ap->parent || ! btcMerkleBlockIsValid(ap->parent, currentTime))) r = 0;
 
     return r;
 }

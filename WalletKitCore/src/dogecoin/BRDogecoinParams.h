@@ -70,6 +70,9 @@
 extern "C" {
 #endif
 
+#define DOGE_BIP32_DEPTH 3
+#define DOGE_BIP32_CHILD ((const uint32_t []){ 44 | BIP32_HARD, 3 | BIP32_HARD, 0 | BIP32_HARD })
+
 extern const BRBitcoinChainParams *dogeMainNetParams;
 extern const BRBitcoinChainParams *dogeTestNetParams;
 

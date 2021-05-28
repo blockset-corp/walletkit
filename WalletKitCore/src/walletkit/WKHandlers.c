@@ -68,6 +68,19 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
+        WK_NETWORK_TYPE_DOGE,
+        &wkNetworkHandlersDOGE,
+        &wkAddressHandlersDOGE,
+        &wkTransferHandlersDOGE,
+        &wkWalletHandlersDOGE,
+        &wkWalletSweeperHandlersDOGE,
+        NULL,//WKExportablePaperWalletHandlers
+        &wkPaymentProtocolHandlersBTC,
+        &wkFeeBasisHandlersBTC,
+        &wkWalletManagerHandlersDOGE
+    },
+
+    {
         WK_NETWORK_TYPE_ETH,
         &wkNetworkHandlersETH,
         &wkAddressHandlersETH,

@@ -305,6 +305,7 @@ public enum NetworkType: CustomStringConvertible {
     case bch
     case bsv
     case ltc
+    case doge
     case eth
     case xrp
     case hbar
@@ -317,6 +318,7 @@ public enum NetworkType: CustomStringConvertible {
         case WK_NETWORK_TYPE_BCH:  self = .bch
         case WK_NETWORK_TYPE_BSV:  self = .bsv
         case WK_NETWORK_TYPE_LTC:  self = .ltc
+        case WK_NETWORK_TYPE_DOGE: self = .doge
         case WK_NETWORK_TYPE_ETH:  self = .eth
         case WK_NETWORK_TYPE_XRP:  self = .xrp
         case WK_NETWORK_TYPE_HBAR: self = .hbar
@@ -332,6 +334,7 @@ public enum NetworkType: CustomStringConvertible {
         case .bch: return WK_NETWORK_TYPE_BCH
         case .bsv: return WK_NETWORK_TYPE_BSV
         case .ltc: return WK_NETWORK_TYPE_LTC
+        case .doge: return WK_NETWORK_TYPE_DOGE
         case .eth: return WK_NETWORK_TYPE_ETH
         case .xrp: return WK_NETWORK_TYPE_XRP
         case .hbar: return WK_NETWORK_TYPE_HBAR
@@ -341,7 +344,7 @@ public enum NetworkType: CustomStringConvertible {
     }
 
     public var description: String {
-        return "WK_NETWORK_TYPE_" + asUTF8String (wkBlockChainTypeGetCurrencyCode (core)).uppercased()
+        return "WK_NETWORK_TYPE_" + asUTF8String (wkNetworkTypeGetCurrencyCode (core)).uppercased()
     }
 }
 

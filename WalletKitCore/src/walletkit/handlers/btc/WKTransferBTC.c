@@ -23,10 +23,7 @@ wkTransferComputeAmountBTC (WKTransferDirection direction,
 
 extern WKTransferBTC
 wkTransferCoerceBTC (WKTransfer transfer) {
-    assert (WK_NETWORK_TYPE_BTC == transfer->type ||
-            WK_NETWORK_TYPE_BCH == transfer->type ||
-            WK_NETWORK_TYPE_BSV == transfer->type ||
-            WK_NETWORK_TYPE_LTC == transfer->type);
+    assert (wkNetworkTypeIsBitcoinBased (transfer->type));
     return (WKTransferBTC) transfer;
 }
 
@@ -349,7 +346,17 @@ WKTransferHandlers wkTransferHandlersLTC = {
     wkTransferGetHashBTC,
     NULL, // setHash
     NULL, // updateIdentifier
-   wkTransferSerializeBTC,
+    wkTransferSerializeBTC,
+    NULL, // getBytesForFeeEstimate
+    wkTransferIsEqualBTC
+};
+
+WKTransferHandlers wkTransferHandlersDOGE = {
+    wkTransferReleaseBTC,
+    wkTransferGetHashBTC,
+    NULL, // setHash
+    NULL, // updateIdentifier
+    wkTransferSerializeBTC,
     NULL, // getBytesForFeeEstimate
     wkTransferIsEqualBTC
 };

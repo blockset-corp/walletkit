@@ -17,10 +17,7 @@
 
 private_extern WKWalletBTC
 wkWalletCoerceBTC (WKWallet wallet) {
-    assert (WK_NETWORK_TYPE_BTC == wallet->type ||
-            WK_NETWORK_TYPE_BCH == wallet->type ||
-            WK_NETWORK_TYPE_BSV == wallet->type ||
-            WK_NETWORK_TYPE_LTC == wallet->type);
+    assert (wkNetworkTypeIsBitcoinBased (wallet->type));
     return (WKWalletBTC) wallet;
 }
 
@@ -415,6 +412,20 @@ WKWalletHandlers wkWalletHandlersBSV = {
 };
 
 WKWalletHandlers wkWalletHandlersLTC = {
+    wkWalletReleaseBTC,
+    wkWalletGetAddressBTC,
+    wkWalletHasAddressBTC,
+    wkWalletGetTransferAttributeCountBTC,
+    wkWalletGetTransferAttributeAtBTC,
+    wkWalletValidateTransferAttributeBTC,
+    wkWalletCreateTransferBTC,
+    wkWalletCreateTransferMultipleBTC,
+    wkWalletGetAddressesForRecoveryBTC,
+    NULL,
+    wkWalletIsEqualBTC
+};
+
+WKWalletHandlers wkWalletHandlersDOGE = {
     wkWalletReleaseBTC,
     wkWalletGetAddressBTC,
     wkWalletHasAddressBTC,

@@ -12,6 +12,7 @@ public enum NetworkType {
     BCH,
     BSV,
     LTC,
+    DOGE,
     ETH,
     XRP,
     HBAR,
