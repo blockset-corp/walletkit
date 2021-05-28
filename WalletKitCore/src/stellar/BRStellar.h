@@ -15,7 +15,6 @@
 #include "BRStellarBase.h"
 #include "BRStellarAccount.h"
 #include "BRStellarTransaction.h"
-#include "BRStellarWallet.h"
 #include "BRStellarOperation.h"
 #include "BRStellarFeeBasis.h"
 #include "BRStellarAddress.h"

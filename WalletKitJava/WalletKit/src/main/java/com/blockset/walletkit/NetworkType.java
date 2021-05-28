@@ -15,5 +15,6 @@ public enum NetworkType {
     ETH,
     XRP,
     HBAR,
-    XTZ
+    XTZ,
+    XLM
 }
