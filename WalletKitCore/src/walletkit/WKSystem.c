@@ -259,7 +259,7 @@ wkSystemCreate (WKClient client,
 
     system->ref = WK_REF_ASSIGN (wkSystemRelease);
 
-    pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
+    pthread_mutex_init_brd (&system->lock, PTHREAD_MUTEX_NORMAL_BRD);  // PTHREAD_MUTEX_RECURSIVE
 
     // Extract currency bundles
     BRSetOf (WKClientCurrencyBundle) currencyBundles = wkSystemInitialCurrencyBundlesLoad (system);

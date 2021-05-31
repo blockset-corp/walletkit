@@ -1146,7 +1146,7 @@ BRBitcoinPeer *btcPeerNew(uint32_t magicNumber)
     {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL_BRD);
         pthread_mutex_init(&ctx->lock, &attr);
         pthread_mutexattr_destroy(&attr);
     }

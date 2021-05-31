@@ -19,11 +19,10 @@ extern "C" {
     
 #define BSV_FORKID 0x40
 
-extern const BRBitcoinChainParams *bsvMainNetParams;
-extern const BRBitcoinChainParams *bsvTestNetParams;
+extern const BRBitcoinChainParams *bsvChainParams(bool mainnet);
 
-static inline int btcChainParamsIsBSV (const BRBitcoinChainParams *params) {
-    return bsvMainNetParams == params || bsvTestNetParams == params;
+static inline int bsvChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return bsvChainParams(true) == params || bsvChainParams(false) == params;
 }
 
 #ifdef __cplusplus

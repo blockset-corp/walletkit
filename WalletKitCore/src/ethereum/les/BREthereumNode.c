@@ -717,7 +717,7 @@ ethNodeCreate (BREthereumNodePriority priority,
     node->timeout = (time_t) -1;
     node->timeoutPingAllowed = ETHEREUM_BOOLEAN_TRUE;
 
-    pthread_mutex_init_brd (&node->lock, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init_brd (&node->lock, PTHREAD_MUTEX_NORMAL_BRD);
 
     return node;
 }

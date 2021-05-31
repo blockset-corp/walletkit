@@ -59,7 +59,7 @@ wkNetworkCreateBTC (WKNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     WKNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? btcMainNetParams : btcTestNetParams)
+        btcChainParams(isMainnet)
     };
 
     return wkNetworkAllocAndInit (sizeof (struct WKNetworkBTCRecord),
@@ -90,7 +90,7 @@ wkNetworkCreateBCH (WKNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     WKNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? bchMainNetParams : bchTestNetParams)
+        bchChainParams(isMainnet)
     };
 
     return wkNetworkAllocAndInit (sizeof (struct WKNetworkBTCRecord),
@@ -121,7 +121,7 @@ wkNetworkCreateBSV (WKNetworkListener listener,
     assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
 
     WKNetworkCreateContextBTC contextBTC = {
-        (isMainnet ? bsvMainNetParams : bsvTestNetParams)
+        bsvChainParams(isMainnet)
     };
 
     return wkNetworkAllocAndInit (sizeof (struct WKNetworkBTCRecord),
@@ -165,7 +165,7 @@ static WKAddress
 wkNetworkCreateAddressBSV (WKNetwork network,
                                 const char *addressAsString) {
     WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_BSV);
-    assert (btcChainParamsIsBSV (networkBTC->params));
+    assert (bsvChainParamsHasParams (networkBTC->params));
     return wkAddressCreateFromStringAsBSV (networkBTC->params->addrParams, addressAsString);
 }
 

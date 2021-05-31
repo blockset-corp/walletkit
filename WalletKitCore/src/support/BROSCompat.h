@@ -47,6 +47,29 @@ extern "C" {
 
     extern int pthread_setname_np (pthread_t __target_thread, const char *__name)
     __THROW __nonnull ((2));
+
+
+#if defined (__GNUC__)
+
+// For missing ssize_t inclusion through stdlib.h w/o _XOPEN_SOURCE
+#include <sys/types.h>
+
+// For missing pthread.h defines w/o POSIX_C_SOURCE >= 200809L
+#define PTHREAD_MUTEX_RECURSIVE_BRD (PTHREAD_MUTEX_RECURSIVE_NP)
+#define PTHREAD_MUTEX_NORMAL_BRD (PTHREAD_MUTEX_TIMED_NP)
+
+// For missing M_LN2 w/o _XOPEN_SOURCE
+#define M_LN2          0.69314718055994530942  /* log_e 2 */
+
+
+#else // !__GNUC__
+
+#define PTHREAD_MUTEX_RECURSIVE_BRD (PTHREAD_MUTEX_RECURSIVE)
+#define PTHREAD_MUTEX_NORMAL_BRD (PTHREAD_MUTEX_NORMAL)
+
+
+#endif
+
 #endif // defined(__linux__)
 
 #define PTHREAD_NULL   ((pthread_t) NULL)

@@ -102,7 +102,7 @@ wkClientP2PManagerCreate (size_t sizeInBytes,
     p2pManager->handlers    = handlers;
     p2pManager->sizeInBytes = sizeInBytes;
 
-    pthread_mutex_init_brd (&p2pManager->lock, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init_brd (&p2pManager->lock, PTHREAD_MUTEX_NORMAL_BRD);
 
     return p2pManager;
 }
@@ -189,7 +189,7 @@ wkClientQRYManagerCreate (WKClient client,
 
     qry->connected = false;
 
-    pthread_mutex_init_brd (&qry->lock, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init_brd (&qry->lock, PTHREAD_MUTEX_NORMAL_BRD);
     return qry;
 }
 

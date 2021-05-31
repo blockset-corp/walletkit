@@ -206,7 +206,7 @@ wkTransferAllocAndInit (size_t sizeInBytes,
 
     transfer->ref = WK_REF_ASSIGN (wkTransferRelease);
 
-    pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init_brd (&transfer->lock, PTHREAD_MUTEX_NORMAL_BRD);
 
     if (NULL != createContext) createCallback (createContext, transfer);
     

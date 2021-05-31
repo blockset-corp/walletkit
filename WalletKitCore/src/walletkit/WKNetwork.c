@@ -158,7 +158,7 @@ wkNetworkAllocAndInit (size_t sizeInBytes,
 
     network->ref = WK_REF_ASSIGN(wkNetworkRelease);
 
-    pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE_BRD);
 
     if (NULL != createCallback) createCallback (createContext, network);
 

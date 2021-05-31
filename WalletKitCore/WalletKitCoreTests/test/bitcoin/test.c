@@ -74,13 +74,13 @@
 extern const BRBitcoinChainParams* getChainParams (BRBitcoinChain chain, int isMainnet) {
     switch (chain) {
         case BITCOIN_CHAIN_BTC:
-            return isMainnet ? btcMainNetParams : btcTestNetParams;
+            return btcChainParams(isMainnet);
             
         case BITCOIN_CHAIN_BCH:
-            return isMainnet ? bchMainNetParams : bchTestNetParams;
+            return bsvChainParams(isMainnet);
             
         case BITCOIN_CHAIN_BSV:
-            return isMainnet ? bsvMainNetParams : bsvTestNetParams;
+            return bsvChainParams(isMainnet);
             
         default:
             assert(0);
@@ -1339,6 +1339,9 @@ int BRKeyTests()
     UInt256 md;
     uint8_t sig[72], pubKey[65];
     size_t sigLen, pkLen;
+
+    BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+    BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
 
     if (BRPrivKeyIsValid(btcMainNetParams->addrParams, "S6c56bnXQiBjk9mqSYE7ykVQ7NzrRz"))
         r = 0, fprintf(stderr, "***FAILED*** %s: BRPrivKeyIsValid() test 0\n", __func__);

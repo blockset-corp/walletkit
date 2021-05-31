@@ -36,6 +36,8 @@ run:	test
 cmake:	FORCE
 	(mkdir cmake; cd cmake; cmake ../; make clean; make)
 
+cmake_gcc: FORCE
+	(export CC=gcc; export CXX=g++; rm -rf cmake-gcc; mkdir cmake-gcc; cd cmake-gcc; cmake ../; make clean; make VERBOSE=1)	
 
 clean:
 	rm -f *.o */*.o */*/*.o test

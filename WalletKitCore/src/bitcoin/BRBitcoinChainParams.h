@@ -29,6 +29,7 @@
 #include "BRBitcoinPeer.h"
 #include "support/BRSet.h"
 #include "support/BRAddress.h"
+#include <stdbool.h>
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -56,15 +57,14 @@ typedef struct {
     uint8_t forkId;
 } BRBitcoinChainParams;
 
-extern const BRBitcoinChainParams *btcMainNetParams;
-extern const BRBitcoinChainParams *btcTestNetParams;
+extern const BRBitcoinChainParams *btcChainParams(bool mainnet);
 
-static inline const BRBitcoinChainParams *btcChainParamsGetBitcoin (int mainnet) {
-    return mainnet ? btcMainNetParams : btcTestNetParams;
+static inline int btcChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return btcChainParams(true) == params || btcChainParams(true) == params;
 }
 
 static inline int btcChainParamsIsBitcoin (const BRBitcoinChainParams *params) {
-    return btcMainNetParams == params || btcTestNetParams == params;
+    return btcChainParamsHasParams(params);
 }
 
 extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBefore (const BRBitcoinChainParams *params, uint32_t timestamp);

@@ -199,8 +199,8 @@ alarmClockCreate (void) {
     }
 
     // Create the PTHREAD LOCK variable
-    pthread_mutex_init_brd (&clock->lock,            PTHREAD_MUTEX_NORMAL);
-    pthread_mutex_init_brd (&clock->lockOnStartStop, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init_brd (&clock->lock,            PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&clock->lockOnStartStop, PTHREAD_MUTEX_NORMAL_BRD);
 
     // No thread.
     clock->thread = PTHREAD_NULL;
