@@ -17,6 +17,7 @@
 #define HAS_XRP_TESTNET     0
 #define HAS_HBAR_TESTNET    0
 #define HAS_XTZ_TESTNET     0
+#define HAS_XLM_TESTNET     0
 
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)
@@ -263,6 +264,25 @@ DEFINE_MODES            ("tezos-testnet", WK_SYNC_MODE_API_ONLY)
 #undef NETWORK_NAME
 
 // MARK: XLM Mainnet
+
+#define NETWORK_NAME    "Stellar"
+DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-mainnet", NETWORK_NAME, "mainnet", true, 35516170, 1, 5)
+DEFINE_NETWORK_FEE_ESTIMATE ("stellar-mainnet", "100", "5s", 5 * 1000)
+DEFINE_CURRENCY ("stellar-mainnet",     "stellar-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
+DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "XLM_I")
+DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen",       "xlm",     7,  "XLM")
+DEFINE_ADDRESS_SCHEMES  ("stellar-mainnet", WK_ADDRESS_SCHEME_NATIVE)
+DEFINE_MODES            ("stellar-mainnet", WK_SYNC_MODE_API_ONLY)
+#if HAS_XLM_TESTNET
+DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-testnet", NETWORK_NAME, "testnet", false, 1075721, 1, 5)
+DEFINE_NETWORK_FEE_ESTIMATE ("stellar-testnet", "100", "5s", 5 * 1000)
+DEFINE_CURRENCY ("stellar-testnet",     "stellar-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
+DEFINE_UNIT ("stellar-testnet:__native__",  "lumen_i",     "txlm_i",   0,  "tXLM_I")
+DEFINE_UNIT ("stellar-testnet:__native__",  "lumen",       "txlm",     7,  "tXLM")
+DEFINE_ADDRESS_SCHEMES  ("stellar-testnet", WK_ADDRESS_SCHEME_NATIVE)
+DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
+#endif
+#undef NETWORK_NAME
 
 #undef DEFINE_NETWORK
 #undef DEFINE_NETWORK_FEE_ESTIMATE

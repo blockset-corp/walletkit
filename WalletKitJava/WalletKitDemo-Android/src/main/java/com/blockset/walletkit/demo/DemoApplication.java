@@ -152,6 +152,7 @@ public class DemoApplication extends Application {
                     "xrp",
                     "hbar",
                     "xtz",
+                    "xlm",
                     "ignore - end-of-array, w/o comma"
             );
             systemListener = new DispatchingSystemListener();

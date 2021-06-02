@@ -214,6 +214,7 @@ final class Utilities {
             case XRP: return WKNetworkType.XRP;
             case HBAR:return WKNetworkType.HBAR;
             case XTZ: return WKNetworkType.XTZ;
+            case XLM: return WKNetworkType.XLM;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -230,6 +231,7 @@ final class Utilities {
             case XRP: return NetworkType.XRP;
             case HBAR:return NetworkType.HBAR;
             case XTZ: return NetworkType.XTZ;
+            case XLM: return NetworkType.XLM;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

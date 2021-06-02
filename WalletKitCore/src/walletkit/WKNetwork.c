@@ -29,7 +29,7 @@ wkUnitGiveAll (BRArrayOf(WKUnit) units);
 
 extern const char *
 wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
-    static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
+    static const char *currencies [NUMBER_OF_NETWORK_TYPES] = {
         WK_NETWORK_CURRENCY_BTC,
         WK_NETWORK_CURRENCY_BCH,
         WK_NETWORK_CURRENCY_BSV,
@@ -39,7 +39,7 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_XRP,
         WK_NETWORK_CURRENCY_HBAR,
         WK_NETWORK_CURRENCY_XTZ,
-        // "Stellar"
+        WK_NETWORK_CURRENCY_XLM,
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
@@ -47,19 +47,21 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
 
 private_extern bool
 wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
-    switch (type) {
-        case WK_NETWORK_TYPE_BTC:
-        case WK_NETWORK_TYPE_BCH:
-        case WK_NETWORK_TYPE_BSV:
-        case WK_NETWORK_TYPE_LTC:
-        case WK_NETWORK_TYPE_DOGE:
-            return true;
-        case WK_NETWORK_TYPE_ETH:
-        case WK_NETWORK_TYPE_XRP:
-        case WK_NETWORK_TYPE_HBAR:
-        case WK_NETWORK_TYPE_XTZ:
-            return false;
-    }
+    static const char isBitcoinBased [NUMBER_OF_NETWORK_TYPES] = {
+        true,       // BTC
+        true,       // BCH
+        true,       // BSV
+        true,       // LTC
+        true,       // DOGE
+
+        false,      // ETH
+        false,      // XRP
+        false,      // HBAR
+        false,      // XTZ
+        false       // XLM
+    };
+    assert (type < NUMBER_OF_NETWORK_TYPES);
+    return isBitcoinBased[type];
 }
 
 /// MARK: - Network Fee
