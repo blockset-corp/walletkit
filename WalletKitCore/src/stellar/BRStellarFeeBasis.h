@@ -2,7 +2,7 @@
 //  BRStellarFeeBasis.h
 //  WalletKitCore
 //
-//  Created by Carl Cherry on 25/11/19.
+//  Created by Carl Cherry on 2021-06-02.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.

@@ -1,4 +1,7 @@
-#pragma once
+
+#ifndef __STELLAR_CRC_32_H_
+#define __STELLAR_CRC_32_H_
+
 #include <stdlib.h>
 
 /*
@@ -31,3 +34,5 @@
  */
 
 uint16_t crc16(const char *buf, int len);
+
+#endif __CRC_32_H_

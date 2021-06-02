@@ -1,6 +1,6 @@
 //
 //  BRStellarDecode.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 5/21/2019.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -172,18 +172,8 @@ uint8_t * unpack_Memo(uint8_t *buffer, size_t bufferLength, BRStellarMemo **memo
     }
     assert(bufferLength > sizeof(BRStellarMemo));
     *memo = calloc(1, sizeof(BRStellarMemo));
-    switch (memoType) {
-        case MEMO_NONE:
-            break;
-        case MEMO_TEXT:
-            buffer = unpack_string(buffer, (*memo)->text, sizeof((*memo)->text));
-            break;
-        case MEMO_ID:
-            break;
-        case MEMO_HASH:
-            break;
-        case MEMO_RETURN:
-            break;
+    if (memoType == MEMO_TEXT) {
+        buffer = unpack_string(buffer, (*memo)->text, sizeof((*memo)->text));
     }
     return buffer;
 }
@@ -397,7 +387,6 @@ uint8_t * unpack_Op(uint8_t *buffer, BRStellarOperation *op)
             return unpack_ManageBuyOffer(buffer, &op->operation.manageBuyOffer);
         case ST_OP_INFLATION:
             return buffer; // Nothing to do here. The inflation request has no data.
-            break;
         default:
             // Log and quit now.
             break;

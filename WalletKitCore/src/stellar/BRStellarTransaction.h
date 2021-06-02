@@ -1,6 +1,6 @@
 //
 //  BRStellarTransaction.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 5/21/2019
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

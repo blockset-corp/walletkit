@@ -1,9 +1,12 @@
 //
-//  File.c
-//  
+//  BRStellarAddress.c
+//  WalletKitCore
 //
-//  Created by Carl Cherry on 2021-05-19.
+//  Created by Carl Cherry on 2021-06-02.
+//  Copyright © 2021 Breadwinner AG.  All rights reserved.
 //
+//  See the LICENSE file at the project root for license information.
+//  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "BRStellarAddress.h"
 #include "BRStellarPrivateStructs.h"
