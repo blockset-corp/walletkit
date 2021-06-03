@@ -8,6 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
+#include <strings.h>
+
 #include "WKWalletP.h"
 
 #include "WKAmountP.h"
@@ -338,7 +340,7 @@ wkWalletAllocAndInit (size_t sizeInBytes,
 
     wallet->listenerTransfer = wkListenerCreateTransferListener (&wallet->listener, wallet, wkWalletUpdTransfer);
 
-    pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL_BRD);  // PTHREAD_MUTEX_RECURSIVE
+    pthread_mutex_init_brd (&wallet->lock, PTHREAD_MUTEX_NORMAL);  // PTHREAD_MUTEX_RECURSIVE
 
     if (NULL != createCallback) createCallback (createContext, wallet);
 

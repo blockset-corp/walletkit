@@ -606,7 +606,7 @@ lesCreate (BREthereumNetwork network,
     ethNodeEndpointShowStatus (les->localEndpoint);
 
     // Create the PTHREAD LOCK variable
-    pthread_mutex_init_brd (&les->lock, PTHREAD_MUTEX_RECURSIVE_BRD);
+    pthread_mutex_init_brd (&les->lock, PTHREAD_MUTEX_RECURSIVE);
     les->thread = LES_PTHREAD_NULL;
 
     // Initialize requests

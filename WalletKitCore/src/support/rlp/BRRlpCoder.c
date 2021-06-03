@@ -120,7 +120,7 @@ rlpCoderCreate (void) {
     coder->free = NULL;
     coder->busy = NULL;
 
-    pthread_mutex_init_brd (&coder->lock, PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&coder->lock, PTHREAD_MUTEX_NORMAL);
 
     return coder;
 }

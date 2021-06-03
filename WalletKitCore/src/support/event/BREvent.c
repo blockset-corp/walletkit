@@ -102,7 +102,7 @@ eventHandlerCreate (const char *name,
     handler->lockOnDispatch = lockOnDispatch;
 
     // Create the PTHREAD LOCK variable
-    pthread_mutex_init_brd (&handler->lock, PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&handler->lock, PTHREAD_MUTEX_NORMAL);
 
     handler->thread = PTHREAD_NULL;
 

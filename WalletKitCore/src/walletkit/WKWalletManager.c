@@ -328,7 +328,7 @@ wkWalletManagerAllocAndInit (size_t sizeInBytes,
 
     manager->listenerWallet = wkListenerCreateWalletListener (&manager->listener, manager);
 
-    pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE_BRD);
+    pthread_mutex_init_brd (&manager->lock, PTHREAD_MUTEX_RECURSIVE);
 
     WKTimestamp   earliestAccountTime = wkAccountGetTimestamp (account);
     WKBlockNumber earliestBlockNumber = wkNetworkGetBlockNumberAtOrBeforeTimestamp(network, earliestAccountTime);

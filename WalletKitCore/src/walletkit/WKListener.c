@@ -243,7 +243,7 @@ wkListenerCreate (WKListenerContext context,
     WKListener listener = calloc (1, sizeof (struct WKListenerRecord));
 
     listener->ref = WK_REF_ASSIGN (wkListenerRelease);
-    pthread_mutex_init_brd (&listener->lock, PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&listener->lock, PTHREAD_MUTEX_NORMAL);
 
     listener->context          = context;
     listener->systemCallback   = systemCallback;

@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include <ctype.h>
+#include <strings.h>
 
 #include "WKNetworkP.h"
 #include "WKUnit.h"
@@ -18,6 +19,7 @@
 #include "WKHashP.h"
 
 #include "WKHandlersP.h"
+#include "support/BROSCompat.h"
 
 // If '1' then display a detailed list of the builting currencies for each network
 #define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
@@ -158,7 +160,7 @@ wkNetworkAllocAndInit (size_t sizeInBytes,
 
     network->ref = WK_REF_ASSIGN(wkNetworkRelease);
 
-    pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE_BRD);
+    pthread_mutex_init_brd (&network->lock, PTHREAD_MUTEX_RECURSIVE);
 
     if (NULL != createCallback) createCallback (createContext, network);
 

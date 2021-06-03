@@ -8,6 +8,8 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
+#include <strings.h>
+
 #include "WKHBAR.h"
 #include "hedera/BRHederaBase.h"
 #include "walletkit/WKAmountP.h"

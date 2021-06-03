@@ -54,19 +54,12 @@ extern "C" {
 // For missing ssize_t inclusion through stdlib.h w/o _XOPEN_SOURCE
 #include <sys/types.h>
 
-// For missing pthread.h defines w/o POSIX_C_SOURCE >= 200809L
-#define PTHREAD_MUTEX_RECURSIVE_BRD (PTHREAD_MUTEX_RECURSIVE_NP)
-#define PTHREAD_MUTEX_NORMAL_BRD (PTHREAD_MUTEX_TIMED_NP)
-
 // For missing M_LN2 w/o _XOPEN_SOURCE
 #define M_LN2          0.69314718055994530942  /* log_e 2 */
 
-
-#else // !__GNUC__
-
-#define PTHREAD_MUTEX_RECURSIVE_BRD (PTHREAD_MUTEX_RECURSIVE)
-#define PTHREAD_MUTEX_NORMAL_BRD (PTHREAD_MUTEX_NORMAL)
-
+// For missing _tolower, _toupper defns
+#define _tolower        tolower
+#define _toupper        toupper
 
 #endif
 
@@ -99,6 +92,9 @@ arc4random_uniform_brd(uint32_t upperBbound);
 extern int
 mergesort_brd (void *__base, size_t __nel, size_t __width,
                int (*__compar)(const void *, const void *));
+
+extern char*
+strsep_brd(char **restrict stringp, const char *restrict delim);
 
 #ifdef __cplusplus
 }

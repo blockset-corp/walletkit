@@ -61,7 +61,7 @@ eventQueueCreate (size_t size) {
     }
 
 
-    pthread_mutex_init_brd (&queue->lock, PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&queue->lock, PTHREAD_MUTEX_NORMAL);
 
     return queue;
 }

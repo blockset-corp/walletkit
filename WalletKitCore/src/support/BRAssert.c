@@ -182,7 +182,7 @@ BRAssertInstall (BRAssertInfo info, BRAssertHandler handler) {
         pthread_condattr_destroy(&attr);
     }
 
-    pthread_mutex_init_brd (&context.lock, PTHREAD_MUTEX_RECURSIVE_BRD);
+    pthread_mutex_init_brd (&context.lock, PTHREAD_MUTEX_RECURSIVE);
 
     {
         pthread_attr_t attr;

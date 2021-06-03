@@ -255,7 +255,7 @@ fileServiceCreate (const char *basePath,
     // Create the file service itself
     BRFileService fs = calloc (1, sizeof (struct BRFileServiceRecord));
 
-    pthread_mutex_init_brd (&fs->lock, PTHREAD_MUTEX_NORMAL_BRD);
+    pthread_mutex_init_brd (&fs->lock, PTHREAD_MUTEX_NORMAL);
 
     // Set the error handler - early
     fileServiceSetErrorHandler (fs, context, handler);
