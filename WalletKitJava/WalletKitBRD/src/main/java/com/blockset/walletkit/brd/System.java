@@ -43,7 +43,7 @@ import com.blockset.walletkit.WalletManagerState;
 import com.blockset.walletkit.WalletManagerSyncDepth;
 import com.blockset.walletkit.WalletManagerSyncStoppedReason;
 import com.blockset.walletkit.WalletState;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.blockchaindb.errors.QueryError;
 import com.blockset.walletkit.blockchaindb.errors.QueryNoDataError;
 import com.blockset.walletkit.blockchaindb.models.bdb.Blockchain;
@@ -178,7 +178,7 @@ final class System implements com.blockset.walletkit.System {
                          com.blockset.walletkit.Account account,
                          boolean isMainnet,
                          String storagePath,
-                         BlockchainDb query) {
+                         SystemClient query) {
         Account cryptoAccount = Account.from(account);
 
         storagePath = storagePath + (storagePath.endsWith(File.separator) ? "" : File.separator) + cryptoAccount.getFilesystemIdentifier();
@@ -344,7 +344,7 @@ final class System implements com.blockset.walletkit.System {
     private final Account account;
     private final boolean isMainnet;
     private final String storagePath;
-    private final BlockchainDb query;
+    private final SystemClient query;
     private final Cookie context;
     private final WKListener cwmListener;
     private final WKClient cwmClient;
@@ -354,7 +354,7 @@ final class System implements com.blockset.walletkit.System {
                    Account account,
                    boolean isMainnet,
                    String storagePath,
-                   BlockchainDb query,
+                   SystemClient query,
                    Cookie context,
                    WKListener cwmListener,
                    WKClient cwmClient) {
@@ -523,7 +523,7 @@ final class System implements com.blockset.walletkit.System {
 
     @Override
     public <T extends com.blockset.walletkit.Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> handler) {
-        query.getCurrencies(isMainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(null, isMainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
             @Override
             public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencyModels) {
                 List<WKClientCurrencyBundle> bundles = new ArrayList<>();
@@ -650,7 +650,7 @@ final class System implements com.blockset.walletkit.System {
     // Miscellaneous
 
     /* package */
-    BlockchainDb getBlockchainDb() {
+    SystemClient getSystemClient() {
         return query;
     }
 
@@ -1879,6 +1879,7 @@ final class System implements com.blockset.walletkit.System {
                                 true,
                                 false,
                                 false,
+                                null,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
@@ -1980,12 +1981,15 @@ final class System implements com.blockset.walletkit.System {
 
                         final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), canonicalAddresses,
+                        system.query.getTransactions(
+                                walletManager.getNetwork().getUids(),
+                                canonicalAddresses,
                                 begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 false,
                                 false,
                                 true,
+                                null,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {

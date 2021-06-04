@@ -9,6 +9,7 @@ package com.blockset.walletkit.blockchaindb;
 
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.blockchaindb.apis.bdb.BlockApi;
 import com.blockset.walletkit.blockchaindb.apis.bdb.BlockchainApi;
 import com.blockset.walletkit.blockchaindb.apis.bdb.CurrencyApi;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
-public class BlockchainDb {
+public class BlocksetSystemClient implements SystemClient {
 
     private static final String DEFAULT_BDB_BASE_URL = "https://api.blockset.com";
     private static final DataTask DEFAULT_DATA_TASK = (cli, request, callback) -> cli.newCall(request).enqueue(callback);
@@ -57,15 +58,15 @@ public class BlockchainDb {
     private final TransactionApi transactionApi;
     private final ExperimentalApi experimentalApi;
 
-    public BlockchainDb(OkHttpClient client) {
+    public BlocksetSystemClient(OkHttpClient client) {
         this(client, null, null);
     }
 
-    public BlockchainDb(OkHttpClient client, String bdbBaseURL) {
+    public BlocksetSystemClient(OkHttpClient client, String bdbBaseURL) {
         this(client, bdbBaseURL, null);
     }
 
-    public BlockchainDb(OkHttpClient client,
+    public BlocksetSystemClient(OkHttpClient client,
                         @Nullable String bdbBaseURL,
                         @Nullable DataTask bdbDataTask) {
         bdbBaseURL = bdbBaseURL == null ? DEFAULT_BDB_BASE_URL : bdbBaseURL;
@@ -90,12 +91,12 @@ public class BlockchainDb {
         this.experimentalApi = new ExperimentalApi(bdbClient, scheduledExecutorService);
     }
 
-    public static BlockchainDb createForTest (OkHttpClient client,
+    public static BlocksetSystemClient createForTest (OkHttpClient client,
                                               String bdbAuthToken) {
         return createForTest(client, bdbAuthToken, null);
     }
 
-    public static BlockchainDb createForTest (OkHttpClient client,
+    public static BlocksetSystemClient createForTest (OkHttpClient client,
                                               String bdbAuthToken,
                                               @Nullable String bdbBaseURL) {
         DataTask brdDataTask = (cli, request, callback) -> {
@@ -104,11 +105,11 @@ public class BlockchainDb {
                     .build();
             cli.newCall(decoratedRequest).enqueue(callback);
         };
-        return new BlockchainDb (client, bdbBaseURL, brdDataTask);
+        return new BlocksetSystemClient (client, bdbBaseURL, brdDataTask);
     }
 
     /**
-     * Cancel all BlockchainDb requests that are currently enqueued or executing
+     * Cancel all client requests that are currently enqueued or executing
      */
     public void cancelAll () {
         client.dispatcher().cancelAll();
@@ -119,7 +120,7 @@ public class BlockchainDb {
 
     // Blockchain
 
-    public void getBlockchains(CompletionHandler<List<Blockchain>, QueryError> handler) {
+    private void getBlockchains(CompletionHandler<List<Blockchain>, QueryError> handler) {
         blockchainApi.getBlockchains(
                 true,
                 handler
@@ -134,23 +135,23 @@ public class BlockchainDb {
         );
     }
 
-    public void getBlockchain(String id,
+    public void getBlockchain(String blockchainId,
                               CompletionHandler<Blockchain, QueryError> handler) {
         blockchainApi.getBlockchain(
-                id,
+                blockchainId,
                 handler
         );
     }
 
     // Currency
 
-    public void getCurrencies(CompletionHandler<List<Currency>, QueryError> handler) {
+    private void getCurrencies(CompletionHandler<List<Currency>, QueryError> handler) {
         currencyApi.getCurrencies(
                 handler
         );
     }
 
-    public void getCurrencies(@Nullable String id,
+    private void getCurrencies(@Nullable String id,
                               CompletionHandler<List<Currency>, QueryError> handler) {
         currencyApi.getCurrencies(
                 id,
@@ -158,18 +159,28 @@ public class BlockchainDb {
         );
     }
 
-    public void getCurrencies(boolean mainnet,
+    public void getCurrencies(@Nullable String blockchainId,
+                              @Nullable Boolean isMainnet,
                               CompletionHandler<List<Currency>, QueryError> handler) {
-        currencyApi.getCurrencies(
-                mainnet,
-                handler
-        );
+
+        if (isMainnet != null) {
+            currencyApi.getCurrencies(
+                    blockchainId,
+                    handler
+            );
+        } else {
+            currencyApi.getCurrencies(
+                    blockchainId,
+                    isMainnet.booleanValue(),
+                    handler
+            );
+        }
     }
 
-    public void getCurrency(String id,
+    public void getCurrency(String currencyId,
                             CompletionHandler<Currency, QueryError> handler) {
         currencyApi.getCurrency(
-                id,
+                currencyId,
                 handler
         );
     }
@@ -184,10 +195,10 @@ public class BlockchainDb {
         );
     }
 
-    public void getSubscription(String id,
+    public void getSubscription(String subscriptionId,
                                 CompletionHandler<Subscription, QueryError> handler) {
         subscriptionApi.getSubscription(
-                id,
+                subscriptionId,
                 handler
         );
     }
@@ -229,7 +240,7 @@ public class BlockchainDb {
     // Transfer
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-    public void getTransfers(String id,
+    private void getTransfers(String id,
                              List<String> addresses,
                              UnsignedLong beginBlockNumber,
                              UnsignedLong endBlockNumber,
@@ -245,14 +256,14 @@ public class BlockchainDb {
     }
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-    public void getTransfers(String id,
+    public void getTransfers(String blockchainId,
                              List<String> addresses,
                              @Nullable UnsignedLong beginBlockNumber,
                              @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
                              CompletionHandler<List<Transfer>, QueryError> handler) {
         transferApi.getTransfers(
-                id,
+                blockchainId,
                 addresses,
                 beginBlockNumber,
                 endBlockNumber,
@@ -261,10 +272,10 @@ public class BlockchainDb {
         );
     }
 
-    public void getTransfer(String id,
+    public void getTransfer(String transferId,
                             CompletionHandler<Transfer, QueryError> handler) {
         transferApi.getTransfer(
-                id,
+                transferId,
                 handler
         );
     }
@@ -272,7 +283,7 @@ public class BlockchainDb {
     // Transactions
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-    public void getTransactions(String id,
+    private void getTransactions(String id,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
                                 @Nullable UnsignedLong endBlockNumber,
@@ -294,7 +305,7 @@ public class BlockchainDb {
     }
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-    public void getTransactions(String id,
+    public void getTransactions(String blockchainId,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
                                 @Nullable UnsignedLong endBlockNumber,
@@ -304,7 +315,7 @@ public class BlockchainDb {
                                 @Nullable Integer maxPageSize,
                                 CompletionHandler<List<Transaction>, QueryError> handler) {
         transactionApi.getTransactions(
-                id,
+                blockchainId,
                 addresses,
                 beginBlockNumber,
                 endBlockNumber,
@@ -316,13 +327,13 @@ public class BlockchainDb {
         );
     }
 
-    public void getTransaction(String id,
+    public void getTransaction(String transactionId,
                                boolean includeRaw,
                                boolean includeProof,
                                boolean includeTransfers,
                                CompletionHandler<Transaction, QueryError> handler) {
         transactionApi.getTransaction(
-                id,
+                transactionId,
                 includeRaw,
                 includeProof,
                 includeTransfers,
@@ -330,24 +341,24 @@ public class BlockchainDb {
         );
     }
 
-    public void createTransaction(String id,
+    public void createTransaction(String blockchainId,
                                   byte[] tx,
                                   String identifier,
                                   CompletionHandler<TransactionIdentifier, QueryError> handler) {
         transactionApi.createTransaction(
-                id,
+                blockchainId,
                 tx,
                 identifier,
                 handler
         );
     }
 
-    public void estimateTransactionFee(String id,
-                                       byte[] tx,
+    public void estimateTransactionFee(String blockchainId,
+                                       byte[] data,
                                        CompletionHandler<TransactionFee, QueryError> handler) {
         transactionApi.estimateTransactionFee(
-                id,
-                tx,
+                blockchainId,
+                data,
                 handler
         );
     }
@@ -357,23 +368,26 @@ public class BlockchainDb {
     public void getBlocks(String id,
                           UnsignedLong beginBlockNumber,
                           UnsignedLong endBlockNumber,
-                          boolean includeTx,
+                          boolean includeRaw,
                           boolean includeTxRaw,
+                          boolean includeTx,
                           boolean includeTxProof,
+                          int maxPageSize,
                           CompletionHandler<List<Block>, QueryError> handler) {
-        getBlocks(
+
+        blockApi.getBlocks(
                 id,
                 beginBlockNumber,
                 endBlockNumber,
+                includeRaw,
                 includeTx,
                 includeTxRaw,
                 includeTxProof,
-                null,
-                handler)
-        ;
+                maxPageSize,
+                handler);
     }
 
-    public void getBlocks(String id,
+   /* public void getBlocks(String id,
                           UnsignedLong beginBlockNumber,
                           UnsignedLong endBlockNumber,
                           boolean includeTx,
@@ -391,8 +405,9 @@ public class BlockchainDb {
                 includeTxProof,
                 maxPageSize,
                 handler);
-    }
+    }*/
 
+    /* NO USAGES ??
     public void getBlocksWithRaw(String id,
                                  UnsignedLong beginBlockNumber,
                                  UnsignedLong endBlockNumber,
@@ -409,7 +424,7 @@ public class BlockchainDb {
                 maxPageSize,
                 handler
         );
-    }
+    } */
 
     public void getBlock(String id,
                          boolean includeTx,
@@ -426,6 +441,7 @@ public class BlockchainDb {
         );
     }
 
+    /* NO USAGES ??
     public void getBlockWithRaw(String id,
                                 CompletionHandler<Block, QueryError> handler) {
         blockApi.getBlock(
@@ -436,7 +452,7 @@ public class BlockchainDb {
                 false,
                 handler
         );
-    }
+    } */
 
     // Addresses
 

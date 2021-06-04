@@ -109,16 +109,16 @@ public class TransactionApi {
     }
 
     public void estimateTransactionFee(String id,
-                                       byte[] tx,
+                                       byte[] data,
                                        CompletionHandler<TransactionFee, QueryError> handler) {
 
         Multimap<String, String> params = ImmutableListMultimap.of(
                 "estimate_fee", "true");
 
-        String data = BaseEncoding.base64().encode(tx);
+        String sdata = BaseEncoding.base64().encode(data);
         Map json = ImmutableMap.of(
                 "blockchain_id", id,
-                "submit_context", String.format("WalletKit:%s:Data:%s (FeeEstimate)", id, data.substring(0, 20)),
+                "submit_context", String.format("WalletKit:%s:Data:%s (FeeEstimate)", id, sdata.substring(0, 20)),
                 "data", data);
 
         jsonClient.sendPost("transactions", params, json, TransactionFee.class, handler);

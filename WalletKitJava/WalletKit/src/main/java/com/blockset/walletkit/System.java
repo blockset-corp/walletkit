@@ -11,7 +11,7 @@ package com.blockset.walletkit;
 
 import android.support.annotation.Nullable;
 
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.blockchaindb.BlocksetSystemClient;
 import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.CurrencyUpdateError;
@@ -39,7 +39,7 @@ public interface System {
      *                    logs.
      * @param query the BlockchainDB query engine.
      */
-    static System create(ScheduledExecutorService executor, SystemListener listener, Account account, boolean isMainnet, String storagePath, BlockchainDb query) {
+    static System create(ScheduledExecutorService executor, SystemListener listener, Account account, boolean isMainnet, String storagePath, SystemClient query) {
         return Api.getProvider().systemProvider().create(executor, listener, account, isMainnet,storagePath, query);
     }
 

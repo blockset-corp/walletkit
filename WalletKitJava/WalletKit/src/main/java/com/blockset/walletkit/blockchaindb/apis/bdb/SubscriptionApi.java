@@ -48,9 +48,9 @@ public class SubscriptionApi {
                 Subscription.class, handler);
     }
 
-    public void getSubscription(String id,
+    public void getSubscription(String subscriptionId,
                                 CompletionHandler<Subscription, QueryError> handler) {
-        jsonClient.sendGetWithId("subscriptions", id, ImmutableMultimap.of(), Subscription.class, handler);
+        jsonClient.sendGetWithId("subscriptions", subscriptionId, ImmutableMultimap.of(), Subscription.class, handler);
     }
 
     public void getSubscriptions(CompletionHandler<List<Subscription>, QueryError> handler) {

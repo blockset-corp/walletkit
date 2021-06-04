@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd;
 
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.blockchaindb.errors.QueryError;
 import com.blockset.walletkit.blockchaindb.models.bdb.Blockchain;
 import com.blockset.walletkit.blockchaindb.models.bdb.BlockchainFee;
@@ -41,7 +41,7 @@ final class NetworkDiscovery {
     }
 
     /* package */
-    static void discoverNetworks(BlockchainDb query,
+    static void discoverNetworks(SystemClient query,
                                  boolean isMainnet,
                                  List<Network> networks,
                                  List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> appCurrencies,
@@ -162,7 +162,7 @@ final class NetworkDiscovery {
     }
 
     private static void getBlockChains(CountUpAndDownLatch latch,
-                                       BlockchainDb query,
+                                       SystemClient query,
                                        boolean isMainnet,
                                        Function<Collection<Blockchain>, Void> func) {
         latch.countUp();
@@ -194,12 +194,12 @@ final class NetworkDiscovery {
     }
 
     private static void getCurrencies(CountUpAndDownLatch latch,
-                                      BlockchainDb query,
+                                      SystemClient query,
                                       String blockchainId,
                                       Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency> applicationCurrencies,
                                       Function<Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(blockchainId, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(blockchainId, null, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
             @Override
             public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> newCurrencies) {
                 try {
@@ -241,12 +241,12 @@ final class NetworkDiscovery {
     }
 
     private static void getCurrencies(CountUpAndDownLatch latch,
-                                      BlockchainDb query,
+                                      SystemClient query,
                                       boolean mainnet,
                                       Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency> applicationCurrencies,
                                       Function<Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(mainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(null, mainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
             @Override
             public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> newCurrencies) {
                 try {

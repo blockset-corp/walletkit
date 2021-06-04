@@ -34,7 +34,7 @@ public class BlockApi {
         this.executorService = executorService;
     }
 
-    public void getBlocks(String id,
+    public void getBlocks(String blockchainId,
                           UnsignedLong beginBlockNumber,
                           UnsignedLong endBlockNumber,
                           boolean includeRaw,
@@ -44,7 +44,7 @@ public class BlockApi {
                           @Nullable Integer maxPageSize,
                           CompletionHandler<List<Block>, QueryError> handler) {
         ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
-        paramsBuilder.put("blockchain_id", id);
+        paramsBuilder.put("blockchain_id", blockchainId);
         paramsBuilder.put("include_raw", String.valueOf(includeRaw));
         paramsBuilder.put("include_tx", String.valueOf(includeTx));
         paramsBuilder.put("include_tx_raw", String.valueOf(includeTxRaw));

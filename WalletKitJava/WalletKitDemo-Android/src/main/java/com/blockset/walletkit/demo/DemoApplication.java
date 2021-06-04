@@ -20,7 +20,8 @@ import com.blockset.walletkit.Account;
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.DispatchingSystemListener;
 import com.blockset.walletkit.WalletManagerMode;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.blockchaindb.BlocksetSystemClient;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.utility.TestConfiguration;
 
@@ -70,7 +71,7 @@ public class DemoApplication extends Application {
     private ConnectivityBroadcastReceiver connectivityReceiver;
     private ScheduledExecutorService systemExecutor;
     private boolean isMainnet;
-    private BlockchainDb blockchainDb;
+    private SystemClient blockchainDb;
     private byte[] paperKey;
     private File storageFile;
 
@@ -160,7 +161,7 @@ public class DemoApplication extends Application {
             String uids = UUID.randomUUID().toString();
             account = Account.createFromPhrase(paperKey, new Date(TimeUnit.SECONDS.toMillis(timestamp)), uids).get();
 
-            blockchainDb = BlockchainDb.createForTest (new OkHttpClient(),
+            blockchainDb = BlocksetSystemClient.createForTest (new OkHttpClient(),
                     testConfiguration.getBlocksetAccess().getToken(),
                     testConfiguration.getBlocksetAccess().getBaseURL());
             system = System.create(systemExecutor, systemListener, account,
