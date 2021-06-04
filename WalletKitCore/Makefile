@@ -17,6 +17,10 @@ ifeq "$(OS_BRD)" "Darwin"
     CFLAGS_OS_BRD := -framework Security $(CFLAGS_OS_BRD)
 endif
 
+LIBS_OS_BRD := -lpthread -lm
+ifeq "$(OS_BRD)" "Linux"
+    LIBS_OS_BRD := $(LIBS_OS_BRD) -lbsd
+endif
 #
 # Targets
 #
@@ -35,6 +39,15 @@ run:	test
 # cmake (libcorecrypto.dylib, etc)
 cmake:	FORCE
 	(mkdir cmake; cd cmake; cmake ../; make clean; make)
+
+cmake_test: cmake
+	cc -o test -I./include -I./src               \
+		-I./vendor -I./vendor/secp256k1      \
+		$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD)   \
+		-rpath @executable_path/cmake -L./cmake	   	     \
+		-IWalletKitCoreTests/test/include WalletKitCoreTests/test/bitcoin/test.c \
+		-lcorecrypto $(LIBS_OS_BRD)
+
 
 cmake_gcc: FORCE
 	(export CC=gcc; export CXX=g++; rm -rf cmake-gcc; mkdir cmake-gcc; cd cmake-gcc; cmake ../; make clean; make VERBOSE=1)	

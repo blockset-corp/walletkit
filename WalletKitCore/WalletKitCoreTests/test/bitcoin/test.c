@@ -3499,7 +3499,6 @@ extern int BRRunTestsSync (const char *paperKey,
                            BRBitcoinChain bitcoinChain,
                            int isMainnet) {
     const BRBitcoinChainParams *params = getChainParams(bitcoinChain, isMainnet);
-    const const BRBitcoinChainParams *btcMainNetParams = params;
 
     uint32_t epoch;
     int needPaperKey = NULL == paperKey;
@@ -3528,7 +3527,7 @@ extern int BRRunTestsSync (const char *paperKey,
     BRBIP39DeriveKey (seed.u8, paperKey, NULL);
     BRMasterPubKey mpk = BRBIP32MasterPubKey(&seed, sizeof (seed));
 
-    BRBitcoinWallet *wallet = btcWalletNew (btcMainNetParams->addrParams, NULL, 0, mpk);
+    BRBitcoinWallet *wallet = btcWalletNew (params->addrParams, NULL, 0, mpk);
     // BRWalletSetCallbacks
 
     BRBitcoinPeerManager *pm = btcPeerManagerNew (params, wallet, epoch, NULL, 0, NULL, 0);

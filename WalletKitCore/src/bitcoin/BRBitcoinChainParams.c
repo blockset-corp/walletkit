@@ -100,6 +100,8 @@ static BRBitcoinChainParams btcTestNetParamsRecord = {
 // Run once initializer for bsv checkpoints
 static void btcChainParamsInit(void) {
 
+    // BTC MainNet
+
     // blockchain checkpoints - these are also used as starting points for partial chain downloads, so they must be at
     // difficulty transition boundaries in order to verify the block difficulty at the immediately following transition
     BRBitcoinCheckPoint btcMainNetCheckpoints[] = {
@@ -141,6 +143,15 @@ static void btcChainParamsInit(void) {
         // 705600
     };
 
+    // Initialize btc mainnet checkpoints
+    btcMainNetParamsRecord.checkpointsCount = sizeof(btcMainNetCheckpoints) / sizeof(BRBitcoinCheckPoint);
+    btcMainNetParamsRecord.checkpoints = calloc (btcMainNetParamsRecord.checkpointsCount, sizeof(BRBitcoinCheckPoint));
+    memcpy ((BRBitcoinCheckPoint *) btcMainNetParamsRecord.checkpoints,
+            btcMainNetCheckpoints,
+            sizeof(btcMainNetCheckpoints));
+
+    // BTC TestNet
+
     BRBitcoinCheckPoint btcTestNetCheckpoints[] = {
         {       0, uint256("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"), 1296688602, 0x1d00ffff },
         {  100800, uint256("0000000000a33112f86f3f7b0aa590cb4949b84c2d9c673e9e303257b3be9000"), 1376543922, 0x1c00d907 },
@@ -168,20 +179,15 @@ static void btcChainParamsInit(void) {
     // Initialize btc testnet checkpoints
     btcTestNetParamsRecord.checkpointsCount = sizeof(btcTestNetCheckpoints) / sizeof(BRBitcoinCheckPoint);
     btcTestNetParamsRecord.checkpoints = calloc (btcTestNetParamsRecord.checkpointsCount, sizeof(BRBitcoinCheckPoint));
-    memcpy (btcTestNetParamsRecord.checkpoints,
+    memcpy ((BRBitcoinCheckPoint *) btcTestNetParamsRecord.checkpoints,
             btcTestNetCheckpoints,
             sizeof(btcTestNetCheckpoints));
 
-    // Initialize btc mainnet checkpoints
-    btcMainNetParamsRecord.checkpointsCount = sizeof(btcMainNetCheckpoints) / sizeof(BRBitcoinCheckPoint);
-    btcMainNetParamsRecord.checkpoints = calloc (btcMainNetParamsRecord.checkpointsCount, sizeof(BRBitcoinCheckPoint));
-    memcpy (btcMainNetParamsRecord.checkpoints,
-            btcMainNetCheckpoints,
-            sizeof(btcMainNetCheckpoints));
 }
 
 // Run once initializer guarantees
 static pthread_once_t btcChainParamsInitOnce = PTHREAD_ONCE_INIT;
+
 const BRBitcoinChainParams *btcChainParams(bool mainnet) {
     pthread_once (&btcChainParamsInitOnce, btcChainParamsInit);
     return (mainnet ? &btcMainNetParamsRecord : &btcTestNetParamsRecord);

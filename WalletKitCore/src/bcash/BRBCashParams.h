@@ -39,10 +39,6 @@ static inline int bchChainParamsHasParams (const BRBitcoinChainParams *params) {
     return bchChainParams(true) == params || bchChainParams(false) == params;
 }
 
-static inline int btcChainParamsIsBitcash (const BRBitcoinChainParams *params) {
-    return bchChainParamsHasParams(params);
-}
-
 // aserti3-2d difficulty algorithm: https://upgradespecs.bitcoincashnode.org/2020-11-15-asert/
 uint32_t aserti3_2d(uint32_t refBits, int64_t timeDelta, int64_t heightDelta);
 

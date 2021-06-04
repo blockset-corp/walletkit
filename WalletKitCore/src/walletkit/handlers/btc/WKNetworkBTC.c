@@ -149,7 +149,7 @@ static WKAddress
 wkNetworkCreateAddressBTC (WKNetwork network,
                                 const char *addressAsString) {
     WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_BTC);
-    assert (btcChainParamsIsBitcoin (networkBTC->params));
+    assert (btcChainParamsHasParams (networkBTC->params));
     return wkAddressCreateFromStringAsBTC (networkBTC->params->addrParams, addressAsString);
 }
 
@@ -157,7 +157,7 @@ static WKAddress
 wkNetworkCreateAddressBCH (WKNetwork network,
                                 const char *addressAsString) {
     WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_BCH);
-    assert (!btcChainParamsIsBitcoin (networkBTC->params));
+    assert (!bchChainParamsHasParams (networkBTC->params));
     return wkAddressCreateFromStringAsBCH (networkBTC->params->addrParams, addressAsString);
 }
 

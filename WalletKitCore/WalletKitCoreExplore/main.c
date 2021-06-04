@@ -23,7 +23,7 @@
 #include "bcash/BRBCashAddr.h"
 
 #include "support/rlp/BRRlp.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
 //#include "ethereum/ewm/BREthereumTransfer.h"
@@ -209,11 +209,11 @@ void assertHandle(void *info) {
 }
 
 void assertRecover (void *info) {
-    printf ("AssertRecover: %d\n", (int) info);
+    printf ("AssertRecover: %p\n", info);
 }
 
-int work (int option) {
-    if (0 == option % 2) {
+int work (void *option) {
+    if (0 == ((unsigned long) option) % 2) {
         printf ("Assert\n");
         BRAssert(0);
     }
@@ -227,7 +227,7 @@ int work (int option) {
 void *assertThread (void *ignore) {
     pthread_setname_brd (pthread_self(), "Asserter");
     sleep (2);
-    work ((int) ignore);
+    work (ignore);
 
     return NULL;
 }

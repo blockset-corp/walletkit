@@ -63,10 +63,6 @@ static inline int btcChainParamsHasParams (const BRBitcoinChainParams *params) {
     return btcChainParams(true) == params || btcChainParams(true) == params;
 }
 
-static inline int btcChainParamsIsBitcoin (const BRBitcoinChainParams *params) {
-    return btcChainParamsHasParams(params);
-}
-
 extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBefore (const BRBitcoinChainParams *params, uint32_t timestamp);
 
 extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBeforeBlockNumber (const BRBitcoinChainParams *params, uint32_t blockNumber);
