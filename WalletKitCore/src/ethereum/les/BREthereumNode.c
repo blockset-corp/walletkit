@@ -76,11 +76,11 @@ ethNodeSend (BREthereumNode node,
 #define HEPUBLIC_BYTES      32
 #define NONCE_BYTES         32
 
-static const ssize_t authBufLen = SIG_SIZE_BYTES + HEPUBLIC_BYTES + PUBLIC_SIZE_BYTES + NONCE_BYTES + 1;
-static const ssize_t authCipherBufLen =  authBufLen + 65 + 16 + 32;
+#define AUTH_BUF_LEN        (SIG_SIZE_BYTES + HEPUBLIC_BYTES + PUBLIC_SIZE_BYTES + NONCE_BYTES + 1)
+#define AUTH_CIPHER_BUF_LEN (AUTH_BUF_LEN + 65 + 16 + 32)
 
-static const ssize_t ackBufLen = PUBLIC_SIZE_BYTES + NONCE_BYTES + 1;
-static const ssize_t ackCipherBufLen =  ackBufLen + 65 + 16 + 32;
+#define ACK_BUF_LEN         (PUBLIC_SIZE_BYTES + NONCE_BYTES + 1)
+#dwfine ACK_CIPHER_BUF_LEN  (ACK_BUF_LEN + 65 + 16 + 32)
 
 //
 static int _sendAuthInitiator(BREthereumNode node);
@@ -513,10 +513,10 @@ struct BREthereumNodeRecord {
 
     /** Frame Coder */
     BREthereumLESFrameCoder frameCoder;
-    uint8_t authBuf[authBufLen];
-    uint8_t authBufCipher[authCipherBufLen];
-    uint8_t ackBuf[ackBufLen];
-    uint8_t ackBufCipher[ackCipherBufLen];
+    uint8_t authBuf[AUTH_BUF_LEN];
+    uint8_t authBufCipher[AUTH_CIPHER_BUF_LEN];
+    uint8_t ackBuf[ACK_BUF_LEN];
+    uint8_t ackBufCipher[ACK_CIPHER_BUF_LEN];
 
     // Provision
     size_t messageIdentifier;
@@ -1398,7 +1398,7 @@ ethNodeProcess (BREthereumNode node,
 
                     eth_log (LES_LOG_TOPIC, "Send: [ WIP, %15s ] => %15s", "Auth", ethNodeEndpointGetHostname(node->remote));
 
-                    error = ethNodeEndpointSendData (node->remote, ETHEREUM_NODE_ROUTE_TCP, node->authBufCipher, authCipherBufLen); //  "auth initiator");
+                    error = ethNodeEndpointSendData (node->remote, ETHEREUM_NODE_ROUTE_TCP, node->authBufCipher, AUTH_CIPHER_BUF_LEN); //  "auth initiator");
                     if (error)
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorUnix(error));
 
@@ -1409,13 +1409,13 @@ ethNodeProcess (BREthereumNode node,
                     if (!FD_ISSET (socket, recv)) return node->states[route];
                     ethNodeUpdateTimeout(node, now);
 
-                    ackCipherBufCount = ackCipherBufLen;
+                    ackCipherBufCount = ACK_CIPHER_BUF_LEN;
                     error = ethNodeEndpointRecvData (node->remote, ETHEREUM_NODE_ROUTE_TCP, node->ackBufCipher, &ackCipherBufCount, 1); // "auth ack from receivier"
                     if (error)
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorUnix(error));
 
                     eth_log (LES_LOG_TOPIC, "Recv: [ WIP, %15s ] <= %15s", "Auth Ack", ethNodeEndpointGetHostname(node->remote));
-                    if (ackCipherBufCount != ackCipherBufLen)
+                    if (ackCipherBufCount != ACK_CIPHER_BUF_LEN)
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorProtocol(NODE_PROTOCOL_TCP_AUTHENTICATION));
 
                     if (0 != _readAuthAckFromRecipient (node)) {
@@ -1427,8 +1427,8 @@ ethNodeProcess (BREthereumNode node,
                     frameCoderInit(node->frameCoder,
                                    ethNodeEndpointGetEphemeralKey(node->remote), ethNodeEndpointGetNonce(node->remote),
                                    ethNodeEndpointGetEphemeralKey(node->local), ethNodeEndpointGetNonce(node->local),
-                                   node->ackBufCipher, ackCipherBufLen,
-                                   node->authBufCipher, authCipherBufLen,
+                                   node->ackBufCipher, ACK_CIPHER_BUF_LEN,
+                                   node->authBufCipher, AUTH_CIPHER_BUF_LEN,
                                    ETHEREUM_BOOLEAN_TRUE);
 
                     return ethNodeProcessSuccess (node, route, NULL, ethNodeStateCreateConnecting(NODE_CONNECT_HELLO));
@@ -2382,10 +2382,10 @@ _sendAuthInitiator(BREthereumNode node) {
     // || nonce ||
     memcpy(nonce, localNonce->u8, sizeof(localNonce->u8));
     // || 0x0   ||
-    authBuf[authBufLen - 1] = 0x0;
+    authBuf[AUTH_BUF_LEN - 1] = 0x0;
 
     // E(remote-pubk, S(ephemeral-privk, static-shared-secret ^ nonce) || H(ephemeral-pubk) || pubk || nonce || 0x0)
-    BRKeyECIESAES128SHA256Encrypt(remoteKey, authBufCipher, authCipherBufLen, localEphemeral, authBuf, authBufLen);
+    BRKeyECIESAES128SHA256Encrypt(remoteKey, authBufCipher, AUTH_CIPHER_BUF_LEN, localEphemeral, authBuf, AUTH_BUF_LEN);
     return 0;
 }
 
@@ -2394,9 +2394,9 @@ _sendAuthInitiator(BREthereumNode node) {
 //    BRKey* nodeKey = &node->local.key; // ethNodeGetKey(node);
 //    eth_log (LES_LOG_TOPIC, "%s", "received auth from initiator");
 //
-//    size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->authBuf, authBufLen, node->authBufCipher, authCipherBufLen);
+//    size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->authBuf, AUTH_BUF_LEN, node->authBufCipher, AUTH_CIPHER_BUF_LEN);
 //
-//    if (len != authBufLen) {
+//    if (len != AUTH_BUF_LEN) {
 //        //TODO: call _readAuthFromInitiatorEIP8...
 //    }
 //    else {
@@ -2447,10 +2447,10 @@ _sendAuthInitiator(BREthereumNode node) {
 //    UInt256* localNonce = &node->local.nonce; // ethNodeGetNonce(node);
 //    memcpy(nonce, localNonce->u8, sizeof(localNonce->u8));
 //    // || 0x0   ||
-//    ackBuf[ackBufLen- 1] = 0x0;
+//    ackBuf[ACK_BUF_LEN- 1] = 0x0;
 //
 //    //E(remote-pubk, epubK || nonce || 0x0)
-//    BRKeyECIESAES128SHA256Encrypt(remoteKey, ackBufCipher, ackCipherBufLen, localEphemeral, ackBuf, ackBufLen);
+//    BRKeyECIESAES128SHA256Encrypt(remoteKey, ackBufCipher, ACK_CIPHER_BUF_LEN, localEphemeral, ackBuf, ACK_BUF_LEN);
 //
 //}
 
@@ -2461,9 +2461,9 @@ _readAuthAckFromRecipient(BREthereumNode node) {
 
     // eth_log (LES_LOG_TOPIC,"%s", "received auth ack from recipient");
 
-    size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->ackBuf, ackBufLen, node->ackBufCipher, ackCipherBufLen);
+    size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->ackBuf, ACK_BUF_LEN, node->ackBufCipher, ACK_CIPHER_BUF_LEN);
 
-    if (len != ackBufLen) {
+    if (len != ACK_BUF_LEN) {
         //TODO: call _readAckAuthFromRecipientEIP8...
         return 1;
     }
