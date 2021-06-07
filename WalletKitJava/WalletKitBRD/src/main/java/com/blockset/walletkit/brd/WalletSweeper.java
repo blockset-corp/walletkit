@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.TransferFeeBasis;
+import com.blockset.walletkit.errors.QueryError;
 import com.blockset.walletkit.nativex.WKClientTransactionBundle;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKAddress;
@@ -18,8 +19,8 @@ import com.blockset.walletkit.nativex.WKWalletSweeper;
 import com.blockset.walletkit.nativex.WKWalletSweeperStatus;
 import com.blockset.walletkit.NetworkFee;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.blockchaindb.errors.QueryError;
-import com.blockset.walletkit.blockchaindb.models.bdb.Transaction;
+import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.systemclient.Transaction;
 import com.blockset.walletkit.errors.FeeEstimationError;
 import com.blockset.walletkit.errors.WalletSweeperError;
 import com.blockset.walletkit.errors.WalletSweeperInsufficientFundsError;

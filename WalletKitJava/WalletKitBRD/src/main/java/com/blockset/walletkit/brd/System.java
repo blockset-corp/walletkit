@@ -44,15 +44,15 @@ import com.blockset.walletkit.WalletManagerSyncDepth;
 import com.blockset.walletkit.WalletManagerSyncStoppedReason;
 import com.blockset.walletkit.WalletState;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.blockchaindb.errors.QueryError;
-import com.blockset.walletkit.blockchaindb.errors.QueryNoDataError;
-import com.blockset.walletkit.blockchaindb.models.bdb.Blockchain;
-import com.blockset.walletkit.blockchaindb.models.bdb.BlockchainFee;
-import com.blockset.walletkit.blockchaindb.models.bdb.CurrencyDenomination;
-import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
-import com.blockset.walletkit.blockchaindb.models.bdb.Transaction;
-import com.blockset.walletkit.blockchaindb.models.bdb.TransactionFee;
-import com.blockset.walletkit.blockchaindb.models.bdb.TransactionIdentifier;
+import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.QueryNoDataError;
+import com.blockset.walletkit.systemclient.Blockchain;
+import com.blockset.walletkit.systemclient.BlockchainFee;
+import com.blockset.walletkit.systemclient.CurrencyDenomination;
+import com.blockset.walletkit.systemclient.HederaAccount;
+import com.blockset.walletkit.systemclient.Transaction;
+import com.blockset.walletkit.systemclient.TransactionFee;
+import com.blockset.walletkit.systemclient.TransactionIdentifier;
 import com.blockset.walletkit.errors.AccountInitializationAlreadyInitializedError;
 import com.blockset.walletkit.errors.AccountInitializationCantCreateError;
 import com.blockset.walletkit.errors.AccountInitializationError;
@@ -221,11 +221,11 @@ final class System implements com.blockset.walletkit.System {
     }
 
     /* package */
-    static Optional<com.blockset.walletkit.blockchaindb.models.bdb.Currency> asBDBCurrency(String uids,
-                                                                                           String name,
-                                                                                           String code,
-                                                                                           String type,
-                                                                                           UnsignedInteger decimals) {
+    static Optional<com.blockset.walletkit.systemclient.Currency> asBDBCurrency(String uids,
+                                                                                String name,
+                                                                                String code,
+                                                                                String type,
+                                                                                UnsignedInteger decimals) {
         int index = uids.indexOf(':');
         if (index == -1) return Optional.absent();
 
@@ -237,7 +237,7 @@ final class System implements com.blockset.walletkit.System {
         String address = uids.substring(index);
 
         return Optional.of(
-                com.blockset.walletkit.blockchaindb.models.bdb.Currency.create(
+                com.blockset.walletkit.systemclient.Currency.create(
                         uids,
                         name,
                         code,
@@ -523,12 +523,12 @@ final class System implements com.blockset.walletkit.System {
 
     @Override
     public <T extends com.blockset.walletkit.Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> handler) {
-        query.getCurrencies(null, isMainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(null, isMainnet, new CompletionHandler<List<com.blockset.walletkit.systemclient.Currency>, QueryError>() {
             @Override
-            public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencyModels) {
+            public void handleData(List<com.blockset.walletkit.systemclient.Currency> currencyModels) {
                 List<WKClientCurrencyBundle> bundles = new ArrayList<>();
 
-                for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
+                for (com.blockset.walletkit.systemclient.Currency currencyModel : currencyModels) {
                     List<WKClientCurrencyDenominationBundle> denominationBundles = new ArrayList<>();
                     for (CurrencyDenomination currencyDenomination : currencyModel.getDenominations())
                         denominationBundles.add(
@@ -1934,7 +1934,7 @@ final class System implements com.blockset.walletkit.System {
 
         WKTransferStateType status = getTransferStatus (transaction.getStatus());
 
-        for (ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String> o : System.mergeTransfers(transaction, addresses)) {
+        for (ObjectPair<com.blockset.walletkit.systemclient.Transfer, String> o : System.mergeTransfers(transaction, addresses)) {
             Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback  announcing " + o.o1.getId());
 
             // Merge Transfer 'meta' into Transaction' meta; duplicates from Transfer
@@ -2131,12 +2131,12 @@ final class System implements com.blockset.walletkit.System {
         }
     }
 
-    private static List<ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String>> mergeTransfers(Transaction transaction, List<String> addresses) {
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfers;
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfersWithFee;
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfersWithoutFee;
-        List<ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String>> transfersMerged;
-        com.blockset.walletkit.blockchaindb.models.bdb.Transfer transferWithFee;
+    private static List<ObjectPair<com.blockset.walletkit.systemclient.Transfer, String>> mergeTransfers(Transaction transaction, List<String> addresses) {
+        List<com.blockset.walletkit.systemclient.Transfer> transfers;
+        List<com.blockset.walletkit.systemclient.Transfer> transfersWithFee;
+        List<com.blockset.walletkit.systemclient.Transfer> transfersWithoutFee;
+        List<ObjectPair<com.blockset.walletkit.systemclient.Transfer, String>> transfersMerged;
+        com.blockset.walletkit.systemclient.Transfer transferWithFee;
 
         // Only consider transfers w/ `address`
         transfers = new ArrayList<>(Collections2.filter(transaction.getTransfers(),
@@ -2157,7 +2157,7 @@ final class System implements com.blockset.walletkit.System {
         // There is no "__fee__" entry
         if (transferWithFee == null) {
             // Announce transfers with no fee
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfers) {
+            for (com.blockset.walletkit.systemclient.Transfer transfer: transfers) {
                 transfersMerged.add(new ObjectPair<>(transfer, null));
             }
 
@@ -2168,8 +2168,8 @@ final class System implements com.blockset.walletkit.System {
 
             // Find the first of the non-fee transfers matching `transferWithFee` that also matches
             // the amount's currency.
-            com.blockset.walletkit.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
+            com.blockset.walletkit.systemclient.Transfer transferMatchingFee = null;
+            for (com.blockset.walletkit.systemclient.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
                     transferWithFee.getFromAddress().equals(transfer.getFromAddress()) &&
                     transferWithFee.getAmount().getCurrencyId().equals(transfer.getAmount().getCurrencyId())) {
@@ -2180,7 +2180,7 @@ final class System implements com.blockset.walletkit.System {
 
             // If there is still no `transferWithFee`, find the first w/o matching the amount's currency
             if (null == transferMatchingFee)
-                for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer : transfersWithoutFee) {
+                for (com.blockset.walletkit.systemclient.Transfer transfer : transfersWithoutFee) {
                     if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
                             transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
                         transferMatchingFee = transfer;
@@ -2192,11 +2192,11 @@ final class System implements com.blockset.walletkit.System {
             transfers = new ArrayList<>(transfersWithoutFee);
             if (null == transferMatchingFee) {
                 transfers.add(
-                        com.blockset.walletkit.blockchaindb.models.bdb.Transfer.create(
+                        com.blockset.walletkit.systemclient.Transfer.create(
                                 transferWithFee.getId(),
                                 transferWithFee.getBlockchainId(),
                                 transferWithFee.getIndex(),
-                                com.blockset.walletkit.blockchaindb.models.bdb.Amount.create(transferWithFee.getAmount().getCurrencyId(), "0"),
+                                com.blockset.walletkit.systemclient.Amount.create(transferWithFee.getAmount().getCurrencyId(), "0"),
                                 transferWithFee.getMeta(),
                                 transferWithFee.getFromAddress().orNull(),
                                 "unknown",
@@ -2209,7 +2209,7 @@ final class System implements com.blockset.walletkit.System {
             String transferForFeeId = transferMatchingFee != null ? transferMatchingFee.getId() : transferWithFee.getId();
 
             // Announce transfers adding the fee to the `transferforFeeId`
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfers) {
+            for (com.blockset.walletkit.systemclient.Transfer transfer: transfers) {
                 String fee = transfer.getId().equals(transferForFeeId) ? transferWithFee.getAmount().getAmount() : null;
 
                 transfersMerged.add(new ObjectPair<>(transfer, fee));

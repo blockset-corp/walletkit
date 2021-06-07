@@ -5,12 +5,14 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.errors;
+package com.blockset.walletkit.systemclient.brd;
 
 import com.blockset.walletkit.errors.QueryError;
 
-public final class WalletSweeperQueryError extends WalletSweeperError {
-    public WalletSweeperQueryError(QueryError e) {
-        super(e);
+// HTTP URL build failed
+public class QueryUrlError extends QueryError {
+
+    public QueryUrlError(String message) {
+        super(message);
     }
 }

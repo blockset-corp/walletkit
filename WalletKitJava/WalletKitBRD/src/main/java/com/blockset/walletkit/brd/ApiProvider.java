@@ -12,7 +12,7 @@ import com.blockset.walletkit.Network;
 import com.blockset.walletkit.Unit;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.blockchaindb.models.bdb.Currency;
+import com.blockset.walletkit.systemclient.Currency;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
@@ -87,7 +87,7 @@ public final class ApiProvider implements Api.Provider {
         }
 
         @Override
-        public Optional<Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
+        public Optional<com.blockset.walletkit.systemclient.Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
             return System.asBDBCurrency(uids, name, code, type, decimals);
         }
 

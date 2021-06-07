@@ -10,7 +10,8 @@ package com.blockset.walletkit.brd;
 
 import java.util.List;
 import java.util.Locale;
-import com.blockset.walletkit.blockchaindb.models.bdb.CurrencyDenomination;
+import com.blockset.walletkit.systemclient.CurrencyDenomination;
+import com.blockset.walletkit.systemclient.CurrencyDenomination;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedInteger;
 

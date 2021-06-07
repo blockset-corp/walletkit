@@ -20,7 +20,7 @@ import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
 import com.blockset.walletkit.WalletManagerMode;
-import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
+import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.AccountInitializationMultipleHederaAccountsError;
 import com.blockset.walletkit.events.network.NetworkEvent;
@@ -35,6 +35,7 @@ import com.blockset.walletkit.events.wallet.DefaultWalletEventVisitor;
 import com.blockset.walletkit.events.wallet.WalletCreatedEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
+import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 

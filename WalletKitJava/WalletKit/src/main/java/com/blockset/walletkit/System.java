@@ -11,12 +11,13 @@ package com.blockset.walletkit;
 
 import android.support.annotation.Nullable;
 
-import com.blockset.walletkit.blockchaindb.BlocksetSystemClient;
-import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
+import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
+import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.CurrencyUpdateError;
 import com.blockset.walletkit.errors.NetworkFeeUpdateError;
 import com.blockset.walletkit.events.system.SystemListener;
+import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
@@ -44,7 +45,7 @@ public interface System {
     }
 
     /**
-     * Create a BlockChainDB.Model.Currency to be used in the event that the BlockChainDB does
+     * Create a systemclient.Currency to be used in the event that the BlockChainDB does
      * not provide its own currency model.
      *
      * @param uids the currency uids (ex: "ethereum-mainnet:0x558ec3152e2eb2174905cd19aea4e34a23de9ad6")
@@ -52,13 +53,13 @@ public interface System {
      * @param code the currency code (ex: "code")
      * @param type the currency type (ex: "erc20" or "native")
      * @param decimals the number of decimals for the currency's default unit (ex: 18)
-     * @return a currency mode for us with {@link #configure(List)}; {@link Optional#absent()} otherwise
+     * @return a currency mode for us with {@link #configure()}; {@link Optional#absent()} otherwise
      */
-    static Optional<com.blockset.walletkit.blockchaindb.models.bdb.Currency> asBlockChainDBModelCurrency(String uids,
-                                                                                                         String name,
-                                                                                                         String code,
-                                                                                                         String type,
-                                                                                                         UnsignedInteger decimals) {
+    static Optional<com.blockset.walletkit.systemclient.Currency> asBlockChainDBModelCurrency(String uids,
+                                                                                              String name,
+                                                                                              String code,
+                                                                                              String type,
+                                                                                              UnsignedInteger decimals) {
         return Api.getProvider().systemProvider().asBDBCurrency(uids, name, code, type, decimals);
 
     }
@@ -119,8 +120,6 @@ public interface System {
      * `Network` there will be `SystemEvent` which can be used by the App to create a
      * `WalletManager`.
      *
-     * @param appCurrencies If the BlockChainDB does not return any currencies, then
-     *                      use `applicationCurrencies` merged into the defaults.
      */
     // void configure(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> appCurrencies);
     void configure();

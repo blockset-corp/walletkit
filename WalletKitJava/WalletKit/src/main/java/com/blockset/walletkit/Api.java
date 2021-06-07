@@ -8,7 +8,7 @@
 package com.blockset.walletkit;
 
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.blockchaindb.models.bdb.Currency;
+import com.blockset.walletkit.systemclient.Currency;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
