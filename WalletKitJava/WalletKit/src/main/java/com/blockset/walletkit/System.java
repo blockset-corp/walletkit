@@ -10,14 +10,11 @@
 package com.blockset.walletkit;
 
 import android.support.annotation.Nullable;
-
-import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
 import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.CurrencyUpdateError;
 import com.blockset.walletkit.errors.NetworkFeeUpdateError;
 import com.blockset.walletkit.events.system.SystemListener;
-import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;

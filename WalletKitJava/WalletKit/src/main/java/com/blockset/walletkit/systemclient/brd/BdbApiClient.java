@@ -9,7 +9,7 @@ package com.blockset.walletkit.systemclient.brd;
 
 import android.support.annotation.Nullable;
 
-import com.blockset.walletkit.blockchaindb.DataTask;
+import com.blockset.walletkit.systemclient.brd.DataTask;
 import com.blockset.walletkit.errors.QueryError;
 import com.blockset.walletkit.errors.QueryNoDataError;
 import com.blockset.walletkit.systemclient.brd.ObjectCoder;

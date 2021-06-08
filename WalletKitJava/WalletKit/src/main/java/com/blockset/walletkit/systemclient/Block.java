@@ -9,7 +9,6 @@ package com.blockset.walletkit.systemclient;
 
 import android.support.annotation.Nullable;
 
-import com.blockset.walletkit.systemclient.Transaction;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

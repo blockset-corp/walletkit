@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
 
 import java.util.Comparator;
-import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

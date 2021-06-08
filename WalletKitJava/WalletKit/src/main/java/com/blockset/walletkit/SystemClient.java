@@ -12,11 +12,9 @@ package com.blockset.walletkit;
 import android.support.annotation.Nullable;
 
 import com.blockset.walletkit.errors.QueryError;
-import com.blockset.walletkit.errors.QueryError;
 import com.blockset.walletkit.systemclient.Block;
 import com.blockset.walletkit.systemclient.Blockchain;
 import com.blockset.walletkit.systemclient.Currency;
-import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.systemclient.HederaAccount;
 import com.blockset.walletkit.systemclient.Subscription;
 import com.blockset.walletkit.systemclient.SubscriptionCurrency;

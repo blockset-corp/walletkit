@@ -12,7 +12,6 @@ import com.blockset.walletkit.Network;
 import com.blockset.walletkit.Unit;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.systemclient.Currency;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
