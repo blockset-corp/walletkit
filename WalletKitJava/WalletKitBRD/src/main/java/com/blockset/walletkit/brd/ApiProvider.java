@@ -86,7 +86,7 @@ public final class ApiProvider implements Api.Provider {
         }
 
         @Override
-        public Optional<com.blockset.walletkit.systemclient.Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
+        public Optional<SystemClient.Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
             return System.asBDBCurrency(uids, name, code, type, decimals);
         }
 

@@ -8,7 +8,7 @@
 package com.blockset.walletkit;
 
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.systemclient.Currency;
+import com.blockset.walletkit.SystemClient.Currency;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
@@ -40,7 +40,7 @@ public final class Api {
 
     public interface SystemProvider {
         System create(ScheduledExecutorService executor, SystemListener listener, Account account, boolean isMainnet, String path, SystemClient query);
-        Optional<Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals);
+        Optional<SystemClient.Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals);
         Optional<byte[]> migrateBRCoreKeyCiphertext(Key key, byte[] nonce12, byte[] authenticatedData, byte[] ciphertext);
         void wipe(System system);
         void wipeAll(String path, List<System> exemptSystems);

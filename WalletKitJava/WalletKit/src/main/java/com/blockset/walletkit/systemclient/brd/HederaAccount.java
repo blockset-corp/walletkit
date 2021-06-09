@@ -5,8 +5,9 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
@@ -15,31 +16,31 @@ import java.util.Comparator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class HederaAccount {
+public class HederaAccount implements SystemClient.HederaAccount {
     @JsonCreator
-    public static HederaAccount create(@JsonProperty("account_id") String accountId,
+    public static HederaAccount create(@JsonProperty("account_id") String id,
                                        @JsonProperty("hbar_balance") Long balance,
                                        @JsonProperty("account_status") String status) {
         return new HederaAccount(
-                checkNotNull(accountId),
+                checkNotNull(id),
                 balance,
                 checkNotNull(status)
         );
     }
 
-    private final String accountId;
+    private final String id;
     private final Optional<Long> balance;
     private final String status;
 
-    private HederaAccount (String accountId, Long balance, String status) {
-        this.accountId = accountId;
+    private HederaAccount (String id, Long balance, String status) {
+        this.id = id;
         this.balance = Optional.fromNullable(balance);
         this.status = status;
         }
 
     @JsonProperty("account_id")
-    public String getAccountId () {
-        return accountId;
+    public String getId () {
+        return id;
     }
 
     @JsonProperty("hbar_balance")
@@ -52,10 +53,7 @@ public class HederaAccount {
         return status;
     }
 
-    public boolean isDeleted() {
+    public Boolean isDeleted() {
         return !"active".equalsIgnoreCase(status);
     }
-
-    public static final Comparator<HederaAccount> BALANCE_COMPARATOR =
-            (HederaAccount a1, HederaAccount a2) -> Long.compare(a1.getBalance().or(0L), a2.getBalance().or(0L));
 }

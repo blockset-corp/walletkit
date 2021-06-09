@@ -5,14 +5,15 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Amount {
+public class Amount implements SystemClient.Amount {
 
     // creators
 
@@ -25,30 +26,30 @@ public class Amount {
     }
 
     @JsonCreator
-    public static Amount create(@JsonProperty("currency_id") String currencyId,
+    public static Amount create(@JsonProperty("currency_id") String currency,
                                 @JsonProperty("amount") String amount) {
         return new Amount(
-                checkNotNull(currencyId),
+                checkNotNull(currency),
                 checkNotNull(amount)
         );
     }
 
     // fields
 
-    private final String currencyId;
+    private final String currency;
     private final String amount;
 
     private Amount(String currencyId,
                    String amount) {
-        this.currencyId = currencyId;
+        this.currency = currencyId;
         this.amount= amount;
     }
 
     // getters
 
     @JsonProperty("currency_id")
-    public String getCurrencyId() {
-        return currencyId;
+    public String getCurrency() {
+        return currency;
     }
 
     @JsonProperty("amount")

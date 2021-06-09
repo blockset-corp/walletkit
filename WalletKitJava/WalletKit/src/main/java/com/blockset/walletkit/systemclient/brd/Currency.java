@@ -5,10 +5,12 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.CurrencyDenomination;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -18,23 +20,23 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Currency {
+public class Currency implements SystemClient.Currency {
 
     private static final String ADDRESS_INTERNAL = "__native__";
 
     // creators
 
-    public static Currency create(String currencyId,
+    public static Currency create(String id,
                                   String name,
                                   String code,
                                   String type,
                                   String blockchainId,
                                   @Nullable String address,
                                   Boolean verified,
-                                  List<com.blockset.walletkit.systemclient.CurrencyDenomination> denominations) {
+                                  List<CurrencyDenomination> denominations) {
         // TODO(fix): What should the supply values be here?
         return create(
-                currencyId,
+                id,
                 name,
                 code,
                 "0",
@@ -48,7 +50,7 @@ public class Currency {
     }
 
     @JsonCreator
-    public static Currency create(@JsonProperty("currency_id") String currencyId,
+    public static Currency create(@JsonProperty("currency_id") String id,
                                   @JsonProperty("name") String name,
                                   @JsonProperty("code") String code,
                                   @JsonProperty("initial_supply") String initialSupply,
@@ -57,9 +59,9 @@ public class Currency {
                                   @JsonProperty("blockchain_id") String blockchainId,
                                   @JsonProperty("address") String address,
                                   @JsonProperty("verified") Boolean verified,
-                                  @JsonProperty("denominations") List<com.blockset.walletkit.systemclient.CurrencyDenomination> denominations) {
+                                  @JsonProperty("denominations") List<CurrencyDenomination> denominations) {
         return new Currency(
-                checkNotNull(currencyId),
+                checkNotNull(id),
                 checkNotNull(name),
                 checkNotNull(code),
                 checkNotNull(initialSupply),
@@ -74,7 +76,7 @@ public class Currency {
 
     // fields
 
-    private final String currencyId;
+    private final String id;
     private final String name;
     private final String code;
     private final String initialSupply;
@@ -82,7 +84,7 @@ public class Currency {
     private final String blockchainId;
     private final String address;
     private final String type;
-    private final List<com.blockset.walletkit.systemclient.CurrencyDenomination> denominations;
+    private final List<CurrencyDenomination> denominations;
     private final Boolean verified;
 
     private Currency(String currencyId,
@@ -94,8 +96,8 @@ public class Currency {
                      String blockchainId,
                      String address,
                      Boolean verified,
-                     List<com.blockset.walletkit.systemclient.CurrencyDenomination> denominations) {
-        this.currencyId = currencyId;
+                     List<CurrencyDenomination> denominations) {
+        this.id = currencyId;
         this.name = name;
         this.code = code;
         this.initialSupply = initialSupply;
@@ -111,7 +113,7 @@ public class Currency {
 
     @JsonProperty("currency_id")
     public String getId() {
-        return currencyId;
+        return id;
     }
 
     @JsonProperty("name")
@@ -145,12 +147,12 @@ public class Currency {
     }
 
     @JsonProperty("denominations")
-    public List<com.blockset.walletkit.systemclient.CurrencyDenomination> getDenominations() {
+    public List<SystemClient.CurrencyDenomination> getDenominations() {
         return denominations;
     }
 
     @JsonProperty("verified")
-    public boolean getVerified() {
+    public Boolean getVerified() {
         return verified;
     }
 

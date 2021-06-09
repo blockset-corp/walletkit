@@ -7,19 +7,18 @@
  */
 package com.blockset.walletkit;
 
-import com.blockset.walletkit.blockchaindb.DataTask;
-import com.blockset.walletkit.systemclient.Blockchain;
+import com.blockset.walletkit.systemclient.brd.DataTask;
+import com.blockset.walletkit.SystemClient.Blockchain;
 import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
 import com.blockset.walletkit.errors.QueryError;
-import com.blockset.walletkit.systemclient.Block;
-import com.blockset.walletkit.systemclient.Blockchain;
-import com.blockset.walletkit.systemclient.Currency;
-import com.blockset.walletkit.systemclient.Subscription;
-import com.blockset.walletkit.systemclient.SubscriptionCurrency;
-import com.blockset.walletkit.systemclient.SubscriptionEndpoint;
-import com.blockset.walletkit.systemclient.SubscriptionEvent;
-import com.blockset.walletkit.systemclient.Transaction;
-import com.blockset.walletkit.systemclient.Transfer;
+import com.blockset.walletkit.SystemClient.Block;
+import com.blockset.walletkit.SystemClient.Currency;
+import com.blockset.walletkit.SystemClient.Subscription;
+import com.blockset.walletkit.SystemClient.SubscriptionCurrency;
+import com.blockset.walletkit.SystemClient.SubscriptionEndpoint;
+import com.blockset.walletkit.SystemClient.SubscriptionEvent;
+import com.blockset.walletkit.SystemClient.Transaction;
+import com.blockset.walletkit.SystemClient.Transfer;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.blockset.walletkit.utility.TestConfiguration;
 import com.google.common.base.Optional;
@@ -312,19 +311,19 @@ public class BlockchainDbIT {
 
         String deviceId = UUID.randomUUID().toString();
 
-        SubscriptionEndpoint endpoint = SubscriptionEndpoint.create(
+        SubscriptionEndpoint endpoint = com.blockset.walletkit.systemclient.brd.SubscriptionEndpoint.create(
                 "fcm",
                 "development",
                 "fcm registration token");
 
         List<SubscriptionCurrency> currencies = Collections.singletonList(
-                SubscriptionCurrency.create(
+                com.blockset.walletkit.systemclient.brd.SubscriptionCurrency.create(
                         "bitcoin-testnet:__native__",
                         Arrays.asList(
                                 "2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT",
                                 "mvnSpXB1Vizfg3uodBx418APVK1jQXScvW"),
                         Collections.singletonList(
-                                SubscriptionEvent.create(
+                                com.blockset.walletkit.systemclient.brd.SubscriptionEvent.create(
                                         "confirmed",
                                         Collections.singletonList(UnsignedInteger.ONE)
                                 )
@@ -367,12 +366,12 @@ public class BlockchainDbIT {
         // subscription update
 
         List<SubscriptionCurrency> updatedCurrencies = Collections.singletonList(
-                SubscriptionCurrency.create(
+                com.blockset.walletkit.systemclient.brd.SubscriptionCurrency.create(
                         "bitcoin-testnet:__native__",
                         Collections.singletonList(
                                 "2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"),
                         Collections.singletonList(
-                                SubscriptionEvent.create(
+                                com.blockset.walletkit.systemclient.brd.SubscriptionEvent.create(
                                         "confirmed",
                                         Collections.singletonList(UnsignedInteger.ONE)
                                 )
@@ -380,7 +379,7 @@ public class BlockchainDbIT {
                 )
         );
 
-        Subscription updatedSubscription = Subscription.create(
+        Subscription updatedSubscription = com.blockset.walletkit.systemclient.brd.Subscription.create(
                 createSubscription.getId(),
                 createSubscription.getDevice(),
                 createSubscription.getEndpoint(),

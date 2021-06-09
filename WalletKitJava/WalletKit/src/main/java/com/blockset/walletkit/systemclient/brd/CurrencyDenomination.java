@@ -5,8 +5,9 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -18,17 +19,17 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class CurrencyDenomination {
+public class CurrencyDenomination implements SystemClient.CurrencyDenomination {
 
     // creators
 
     public static CurrencyDenomination create(String name,
-                                              String shortName,
+                                              String code,
                                               UnsignedInteger decimals,
                                               String symbol) {
         return new CurrencyDenomination(
                 checkNotNull(name),
-                checkNotNull(shortName),
+                checkNotNull(code),
                 checkNotNull(decimals),
                 checkNotNull(symbol)
         );
@@ -36,29 +37,29 @@ public class CurrencyDenomination {
 
     @JsonCreator
     public static CurrencyDenomination create(@JsonProperty("name") String name,
-                                              @JsonProperty("short_name") String shortName,
+                                              @JsonProperty("short_name") String code,
                                               @JsonProperty("decimals") UnsignedInteger decimals) {
         return create(
                 name,
-                shortName,
+                code,
                 decimals,
-                lookupSymbol(shortName)
+                lookupSymbol(code)
         );
     }
 
     // fields
 
     private final String name;
-    private final String shortName;
+    private final String code;
     private final UnsignedInteger decimals;
     private final String symbol;
 
     private CurrencyDenomination(String name,
-                                 String shortName,
+                                 String code,
                                  UnsignedInteger decimals,
                                  String symbol) {
         this.name = name;
-        this.shortName = shortName;
+        this.code = code;
         this.decimals = decimals;
         this.symbol = symbol;
     }
@@ -72,7 +73,7 @@ public class CurrencyDenomination {
 
     @JsonProperty("short_name")
     public String getCode() {
-        return shortName;
+        return code;
     }
 
     @JsonProperty("decimals")
@@ -82,7 +83,7 @@ public class CurrencyDenomination {
 
     @JsonIgnore
     public String getSymbol() {
-        return symbol == null ? lookupSymbol(shortName) : symbol;
+        return symbol == null ? lookupSymbol(code) : symbol;
     }
 
     // internals

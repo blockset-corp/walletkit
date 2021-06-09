@@ -10,7 +10,7 @@
 package com.blockset.walletkit;
 
 import android.support.annotation.Nullable;
-import com.blockset.walletkit.systemclient.HederaAccount;
+import com.blockset.walletkit.SystemClient.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.CurrencyUpdateError;
 import com.blockset.walletkit.errors.NetworkFeeUpdateError;
@@ -52,7 +52,7 @@ public interface System {
      * @param decimals the number of decimals for the currency's default unit (ex: 18)
      * @return a currency mode for us with {@link #configure()}; {@link Optional#absent()} otherwise
      */
-    static Optional<com.blockset.walletkit.systemclient.Currency> asBlockChainDBModelCurrency(String uids,
+    static Optional<SystemClient.Currency> asBlockChainDBModelCurrency(String uids,
                                                                                               String name,
                                                                                               String code,
                                                                                               String type,

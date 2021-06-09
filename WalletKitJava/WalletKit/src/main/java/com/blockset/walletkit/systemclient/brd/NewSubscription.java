@@ -5,8 +5,9 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -20,8 +21,8 @@ public class NewSubscription {
 
     @JsonCreator
     public static NewSubscription create(@JsonProperty("device_id") String deviceId,
-                                         @JsonProperty("endpoint") com.blockset.walletkit.systemclient.SubscriptionEndpoint endpoint,
-                                         @JsonProperty("currencies") List<com.blockset.walletkit.systemclient.SubscriptionCurrency> currencies) {
+                                         @JsonProperty("endpoint") SystemClient.SubscriptionEndpoint endpoint,
+                                         @JsonProperty("currencies") List<SystemClient.SubscriptionCurrency> currencies) {
         return new NewSubscription(
                 checkNotNull(deviceId),
                 checkNotNull(endpoint),
@@ -32,12 +33,12 @@ public class NewSubscription {
     // fields
 
     private final String deviceId;
-    private final com.blockset.walletkit.systemclient.SubscriptionEndpoint endpoint;
-    private final List<com.blockset.walletkit.systemclient.SubscriptionCurrency> currencies;
+    private final SystemClient.SubscriptionEndpoint endpoint;
+    private final List<SystemClient.SubscriptionCurrency> currencies;
 
     private NewSubscription(String deviceId,
-                            com.blockset.walletkit.systemclient.SubscriptionEndpoint endpoint,
-                            List<com.blockset.walletkit.systemclient.SubscriptionCurrency> currencies) {
+                            SystemClient.SubscriptionEndpoint endpoint,
+                            List<SystemClient.SubscriptionCurrency> currencies) {
         this.deviceId = deviceId;
         this.endpoint = endpoint;
         this.currencies = currencies;
@@ -50,12 +51,12 @@ public class NewSubscription {
     }
 
     @JsonProperty("endpoint")
-    public com.blockset.walletkit.systemclient.SubscriptionEndpoint getEndpoint() {
+    public SystemClient.SubscriptionEndpoint getEndpoint() {
         return endpoint;
     }
 
     @JsonProperty("currencies")
-    public List<com.blockset.walletkit.systemclient.SubscriptionCurrency> getCurrencies() {
+    public List<SystemClient.SubscriptionCurrency> getCurrencies() {
         return currencies;
     }
 }

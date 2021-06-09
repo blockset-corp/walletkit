@@ -5,10 +5,12 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
+import com.blockset.walletkit.SystemClient.Transfer;
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,11 +26,11 @@ import java.util.Comparator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Transaction {
+public class Transaction implements SystemClient.Transaction {
     // creator
 
     @JsonCreator
-    public static Transaction create(@JsonProperty("transaction_id") String transactionId,
+    public static Transaction create(@JsonProperty("transaction_id") String id,
                                      @JsonProperty("identifier") String identifier,
                                      @JsonProperty("hash") String hash,
                                      @JsonProperty("blockchain_id") String blockchainId,
@@ -45,9 +47,9 @@ public class Transaction {
                                      @JsonProperty("confirmations") @Nullable UnsignedLong confirmations,
                                      @JsonProperty("raw") @Nullable String raw,
                                      @JsonProperty("proof") @Nullable String proof,
-                                     @JsonProperty("meta") Map<String, String> meta) {
+                                     @JsonProperty("meta") Map<String, String> metaData) {
         return new Transaction(
-                checkNotNull(transactionId),
+                checkNotNull(id),
                 checkNotNull(identifier),
                 checkNotNull(hash),
                 checkNotNull(blockchainId),
@@ -64,13 +66,13 @@ public class Transaction {
                 confirmations,
                 raw,
                 proof,
-                meta
+                metaData
         );
     }
 
     // fields
 
-    private final String transactionId;
+    private final String id;
     private final String identifier;
     private final String hash;
     private final String blockchainId;
@@ -87,9 +89,9 @@ public class Transaction {
     private final @Nullable UnsignedLong confirmations;
     private final @Nullable String raw;
     private final @Nullable String proof;
-    private final Map<String, String> meta;
+    private final Map<String, String> metaData;
 
-    private Transaction(String transactionId,
+    private Transaction(String id,
                         String identifier,
                         String hash,
                         String blockchainId,
@@ -106,8 +108,8 @@ public class Transaction {
                         @Nullable UnsignedLong confirmations,
                         @Nullable String raw,
                         @Nullable String proof,
-                        Map<String, String> meta) {
-        this.transactionId = transactionId;
+                        Map<String, String> metaData) {
+        this.id = id;
         this.identifier = identifier;
         this.hash = hash;
         this.blockchainId = blockchainId;
@@ -124,13 +126,13 @@ public class Transaction {
         this.confirmations = confirmations;
         this.raw = raw;
         this.proof = proof;
-        this.meta = meta;
+        this.metaData = metaData;
     }
     // getters
 
     @JsonProperty("transaction_id")
     public String getId() {
-        return transactionId;
+        return id;
     }
 
     @JsonProperty("identifier")
@@ -214,9 +216,7 @@ public class Transaction {
     }
 
     @JsonProperty("meta")
-    public Map<String, String> getMeta() {
-        return meta;
-    }
+    public Map<String, String> getMetaData() { return metaData; }
 
     @JsonProperty("_embedded")
     public Optional<Embedded> getEmbedded() {

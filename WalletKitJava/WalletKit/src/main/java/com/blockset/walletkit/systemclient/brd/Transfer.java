@@ -5,9 +5,10 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
@@ -17,27 +18,27 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Transfer {
+public class Transfer implements SystemClient.Transfer {
     // creators
 
     @JsonCreator
-    public static Transfer create(@JsonProperty("transfer_id") String transferId,
+    public static Transfer create(@JsonProperty("transfer_id") String id,
                                   @JsonProperty("blockchain_id") String blockchainId,
                                   @JsonProperty("index") UnsignedLong index,
                                   @JsonProperty("amount") Amount amount,
-                                  @JsonProperty("meta") Map<String, String> meta,
-                                  @JsonProperty("from_address") @Nullable String fromAddress,
-                                  @JsonProperty("to_address") @Nullable String toAddress,
+                                  @JsonProperty("meta") Map<String, String> metaData,
+                                  @JsonProperty("from_address") @Nullable String source,
+                                  @JsonProperty("to_address") @Nullable String target,
                                   @JsonProperty("transaction_id") @Nullable String transactionId,
                                   @JsonProperty("acknowledgements") @Nullable UnsignedLong acknowledgements) {
         return new Transfer(
-                checkNotNull(transferId),
+                checkNotNull(id),
                 checkNotNull(blockchainId),
                 checkNotNull(index),
                 checkNotNull(amount),
-                checkNotNull(meta),
-                fromAddress,
-                toAddress,
+                checkNotNull(metaData),
+                source,
+                target,
                 transactionId,
                 acknowledgements
         );
@@ -45,32 +46,32 @@ public class Transfer {
 
     // fields
 
-    private final String transferId;
+    private final String id;
     private final String blockchainId;
     private final UnsignedLong index;
     private final Amount amount;
-    private final Map<String, String> meta;
-    private final @Nullable String fromAddress;
-    private final @Nullable String toAddress;
+    private final Map<String, String> metaData;
+    private final @Nullable String source;
+    private final @Nullable String target;
     private final @Nullable String transactionId;
     private final @Nullable UnsignedLong acknowledgements;
 
-    private Transfer(String transferId,
+    private Transfer(String id,
                      String blockchainId,
                      UnsignedLong index,
                      Amount amount,
-                     Map<String, String> meta,
-                     @Nullable String fromAddress,
-                     @Nullable String toAddress,
+                     Map<String, String> metaData,
+                     @Nullable String source,
+                     @Nullable String target,
                      @Nullable String transactionId,
                      @Nullable UnsignedLong acknowledgements) {
-        this.transferId = transferId;
+        this.id = id;
         this.blockchainId = blockchainId;
         this.index = index;
         this.amount = amount;
-        this.meta = meta;
-        this.fromAddress = fromAddress;
-        this.toAddress = toAddress;
+        this.metaData = metaData;
+        this.source = source;
+        this.target = target;
         this.transactionId = transactionId;
         this.acknowledgements = acknowledgements;
     }
@@ -79,7 +80,7 @@ public class Transfer {
 
     @JsonProperty("transfer_id")
     public String getId() {
-        return transferId;
+        return id;
     }
 
     @JsonProperty("blockchain_id")
@@ -98,18 +99,18 @@ public class Transfer {
     }
 
     @JsonProperty("meta")
-    public Map<String, String> getMeta() {
-        return meta;
+    public Map<String, String> getMetaData() {
+        return metaData;
     }
 
     @JsonProperty("from_address")
-    public Optional<String> getFromAddress() {
-        return Optional.fromNullable(fromAddress);
+    public Optional<String> getSource() {
+        return Optional.fromNullable(source);
     }
 
     @JsonProperty("to_address")
-    public Optional<String> getToAddress() {
-        return Optional.fromNullable(toAddress);
+    public Optional<String> getTarget() {
+        return Optional.fromNullable(target);
     }
 
     @JsonProperty("transaction_id")

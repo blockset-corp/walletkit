@@ -5,10 +5,11 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,9 +21,7 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Blockchain {
-
-    private static final UnsignedLong BLOCK_HEIGHT_UNSPECIFIED = UnsignedLong.MAX_VALUE;
+public class Blockchain implements SystemClient.Blockchain {
 
     // creators
 
@@ -33,7 +32,7 @@ public class Blockchain {
                                     @JsonProperty("is_mainnet") Boolean isMainNet,
                                     @JsonProperty("native_currency_id") String currencyId,
                                     @JsonProperty("verified_height") UnsignedLong blockHeight,
-                                    @JsonProperty("fee_estimates") List<com.blockset.walletkit.systemclient.BlockchainFee> feeEstimates,
+                                    @JsonProperty("fee_estimates") List<SystemClient.BlockchainFee> feeEstimates,
                                     @JsonProperty("confirmations_until_final") UnsignedInteger confirmationsUntilFinal,
                                     @JsonProperty("verified_block_hash") @Nullable String verifiedBlockHash) {
         return new Blockchain(
@@ -54,7 +53,7 @@ public class Blockchain {
     private final String name;
     private final String id;
     private final String currencyId;
-    private final List<com.blockset.walletkit.systemclient.BlockchainFee> feeEstimates;
+    private final List<SystemClient.BlockchainFee> feeEstimates;
     private final Boolean isMainNet;
     private final String network;
     private final UnsignedLong blockHeight;
@@ -67,7 +66,7 @@ public class Blockchain {
                        boolean isMainNet,
                        String currencyId,
                        UnsignedLong blockHeight,
-                       List<com.blockset.walletkit.systemclient.BlockchainFee> feeEstimates,
+                       List<SystemClient.BlockchainFee> feeEstimates,
                        UnsignedInteger confirmationsUntilFinal,
                        @Nullable String verifiedBlockHash) {
         this.id = id;
@@ -99,12 +98,12 @@ public class Blockchain {
     }
 
     @JsonProperty("fee_estimates")
-    public List<com.blockset.walletkit.systemclient.BlockchainFee> getFeeEstimates() {
+    public List<SystemClient.BlockchainFee> getFeeEstimates() {
         return feeEstimates;
     }
 
     @JsonProperty("is_mainnet")
-    public boolean isMainnet() {
+    public Boolean isMainnet() {
         return isMainNet;
     }
 
@@ -130,6 +129,6 @@ public class Blockchain {
 
     @JsonIgnore
     public Optional<UnsignedLong> getBlockHeight() {
-        return BLOCK_HEIGHT_UNSPECIFIED.equals(blockHeight) ? Optional.absent() : Optional.of(blockHeight);
+        return SystemClient.Blockchain.BLOCK_HEIGHT_UNSPECIFIED.equals(blockHeight) ? Optional.absent() : Optional.of(blockHeight);
     }
 }

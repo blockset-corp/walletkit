@@ -5,10 +5,11 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.systemclient;
+package com.blockset.walletkit.systemclient.brd;
 
 import android.support.annotation.Nullable;
 
+import com.blockset.walletkit.SystemClient;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,12 +22,12 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Block {
+public class Block implements SystemClient.Block {
 
     // creator
 
     @JsonCreator
-    public static Block create(@JsonProperty("block_id") String blockId,
+    public static Block create(@JsonProperty("block_id") String id,
                                @JsonProperty("hash") String hash,
                                @JsonProperty("blockchain_id") String blockchainId,
                                @JsonProperty("height") UnsignedLong height,
@@ -42,7 +43,7 @@ public class Block {
                                @JsonProperty("header") @Nullable String header,
                                @JsonProperty("raw") @Nullable String raw) {
         return new Block(
-                checkNotNull(blockId),
+                checkNotNull(id),
                 checkNotNull(hash),
                 checkNotNull(blockchainId),
                 checkNotNull(height),
@@ -63,7 +64,7 @@ public class Block {
 
     // fields
 
-    private final String blockId;
+    private final String id;
     private final String hash;
     private final String blockchainId;
     private final UnsignedLong height;
@@ -79,7 +80,7 @@ public class Block {
     private final @Nullable String header;
     private final @Nullable String raw;
 
-    private Block(String blockId,
+    private Block(String id,
                   String hash,
                   String blockchainId,
                   UnsignedLong height,
@@ -94,7 +95,7 @@ public class Block {
                   @Nullable String nextHash,
                   @Nullable String header,
                   @Nullable String raw) {
-        this.blockId = blockId;
+        this.id = id;
         this.hash = hash;
         this.blockchainId = blockchainId;
         this.embedded = embedded;
@@ -115,7 +116,7 @@ public class Block {
 
     @JsonProperty("block_id")
     public String getId() {
-        return blockId;
+        return id;
     }
 
     @JsonProperty("hash")
@@ -189,7 +190,7 @@ public class Block {
     }
 
     @JsonIgnore
-    public List<Transaction> getTransactions() {
+    public List<SystemClient.Transaction> getTransactions() {
         return embedded == null ? Collections.emptyList() : embedded.transactions;
     }
 
@@ -198,6 +199,6 @@ public class Block {
     public static class Embedded {
 
         @JsonProperty
-        public List<Transaction> transactions;
+        public List<SystemClient.Transaction> transactions;
     }
 }
