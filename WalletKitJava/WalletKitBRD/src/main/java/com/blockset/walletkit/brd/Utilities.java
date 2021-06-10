@@ -208,10 +208,13 @@ final class Utilities {
             case BTC: return WKNetworkType.BTC;
             case BCH: return WKNetworkType.BCH;
             case BSV: return WKNetworkType.BSV;
+            case LTC: return WKNetworkType.LTC;
+            case DOGE:return WKNetworkType.DOGE;
             case ETH: return WKNetworkType.ETH;
             case XRP: return WKNetworkType.XRP;
             case HBAR:return WKNetworkType.HBAR;
             case XTZ: return WKNetworkType.XTZ;
+            case XLM: return WKNetworkType.XLM;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -222,10 +225,13 @@ final class Utilities {
             case BTC: return NetworkType.BTC;
             case BCH: return NetworkType.BCH;
             case BSV: return NetworkType.BSV;
+            case LTC: return NetworkType.LTC;
+            case DOGE:return NetworkType.DOGE;
             case ETH: return NetworkType.ETH;
             case XRP: return NetworkType.XRP;
             case HBAR:return NetworkType.HBAR;
             case XTZ: return NetworkType.XTZ;
+            case XLM: return NetworkType.XLM;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

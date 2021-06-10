@@ -21,6 +21,14 @@ LIBS_OS_BRD := -lpthread -lm
 ifeq "$(OS_BRD)" "Linux"
     LIBS_OS_BRD := $(LIBS_OS_BRD) -lbsd
 endif
+
+LFLAGS_OS_BRD  := -L./cmake
+ifeq "$(OS_BRD)" "Darwin"
+    LFLAGS_OS_BRD := $(LFLAGS_OS_BRD) -rpath @executable_path/cmake
+else
+    LFLAGS_OS_BRD := $(LFLAGS_OS_BRD) -Wl,-rpath,`pwd`/cmake
+endif
+
 #
 # Targets
 #
@@ -30,8 +38,8 @@ test:	clean
 	cc -o $@ -I./include -I./src               \
 		-I./vendor -I./vendor/secp256k1    \
 		$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD) \
-		./src/bitcoin/*.c ./src/bcash/*.c ./src/bsv/*.c  ./src/support/event/*.c ./src/support/*.c ./vendor/sqlite3/sqlite3.c \
-		-IWalletKitCoreTests/test/include WalletKitCoreTests/test/bitcoin/test.c
+		./src/bitcoin/*.c ./src/bcash/*.c ./src/bsv/*.c ./src/litecoin/*.c ./src/dogecoin/*.c ./src/support/event/*.c ./src/support/*.c ./vendor/sqlite3/sqlite3.c \
+		-IWalletKitCoreTests/test/include WalletKitCoreTests/test/bitcoin/test.c $(LIBS_OS_BRD)
 
 run:	test
 	./test
@@ -43,8 +51,7 @@ cmake:	FORCE
 cmake_test: cmake
 	cc -o test -I./include -I./src               \
 		-I./vendor -I./vendor/secp256k1      \
-		$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD)   \
-		-rpath @executable_path/cmake -L./cmake	   	     \
+		$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD) $(LFLAGS_OS_BRD) \
 		-IWalletKitCoreTests/test/include WalletKitCoreTests/test/bitcoin/test.c \
 		-lcorecrypto $(LIBS_OS_BRD)
 

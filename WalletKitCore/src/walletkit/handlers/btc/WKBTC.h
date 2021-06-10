@@ -50,6 +50,12 @@ wkAddressCreateFromStringAsBCH (BRAddressParams params, const char *bchAddress);
 extern WKAddress
 wkAddressCreateFromStringAsBSV (BRAddressParams params, const char *bsvAddress);
 
+extern WKAddress
+wkAddressCreateFromStringAsLTC (BRAddressParams params, const char *ltcAddress);
+
+extern WKAddress
+wkAddressCreateFromStringAsDOGE (BRAddressParams params, const char *dogeAddress);
+
 private_extern BRAddress
 wkAddressAsBTC (WKAddress address,
                     WKNetworkType *type);

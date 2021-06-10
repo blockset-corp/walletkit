@@ -182,12 +182,12 @@ double btcPeerPingTime(BRBitcoinPeer *peer);
 void btcPeerSendMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen, const char *type);
 void btcPeerSendFilterload(BRBitcoinPeer *peer, const uint8_t *filter, size_t filterLen);
 void btcPeerSendMempool(BRBitcoinPeer *peer, const UInt256 knownTxHashes[], size_t knownTxCount, void *info,
-                       void (*completionCallback)(void *info, int success));
+                        void (*completionCallback)(void *info, int success));
 void btcPeerSendGetheaders(BRBitcoinPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
 void btcPeerSendGetblocks(BRBitcoinPeer *peer, const UInt256 locators[], size_t locatorsCount, UInt256 hashStop);
 void btcPeerSendInv(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCount);
 void btcPeerSendGetdata(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t txCount, const UInt256 blockHashes[],
-                       size_t blockCount);
+                        size_t blockCount);
 void btcPeerSendGetaddr(BRBitcoinPeer *peer);
 void btcPeerSendPing(BRBitcoinPeer *peer, void *info, void (*pongCallback)(void *info, int success));
 

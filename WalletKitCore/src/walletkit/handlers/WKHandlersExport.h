@@ -53,6 +53,30 @@ extern WKWalletSweeperHandlers wkWalletSweeperHandlersBSV;
 extern WKFeeBasisHandlers wkFeeBasisHandlersBSV;
 extern WKWalletManagerHandlers wkWalletManagerHandlersBSV;
 
+// MARK: - LTC Handlers
+
+extern WKAddressHandlers wkAddressHandlersLTC;
+extern WKNetworkHandlers wkNetworkHandlersLTC;
+extern WKTransferHandlers wkTransferHandlersLTC;
+extern WKWalletHandlers wkWalletHandlersLTC;
+extern WKWalletSweeperHandlers wkWalletSweeperHandlersLTC;
+// ExportablePaperHandlers
+// Payment Protocol
+extern WKFeeBasisHandlers wkFeeBasisHandlersLTC;
+extern WKWalletManagerHandlers wkWalletManagerHandlersLTC;
+
+// MARK: - DOGE Handlers
+
+extern WKAddressHandlers wkAddressHandlersDOGE;
+extern WKNetworkHandlers wkNetworkHandlersDOGE;
+extern WKTransferHandlers wkTransferHandlersDOGE;
+extern WKWalletHandlers wkWalletHandlersDOGE;
+extern WKWalletSweeperHandlers wkWalletSweeperHandlersDOGE;
+// ExportablePaperHandlers
+// Payment Protocol
+extern WKFeeBasisHandlers wkFeeBasisHandlersDOGE;
+extern WKWalletManagerHandlers wkWalletManagerHandlersDOGE;
+
 // MARK: - ETH Handlers
 
 extern WKAddressHandlers wkAddressHandlersETH;
@@ -100,6 +124,18 @@ extern WKWalletHandlers wkWalletHandlersXTZ;
 // Payment Protocol
 extern WKFeeBasisHandlers wkFeeBasisHandlersXTZ;
 extern WKWalletManagerHandlers wkWalletManagerHandlersXTZ;
+
+// MARK: - XLM Handlers
+
+extern WKAddressHandlers wkAddressHandlersXLM;
+extern WKNetworkHandlers wkNetworkHandlersXLM;
+extern WKTransferHandlers wkTransferHandlersXLM;
+extern WKWalletHandlers wkWalletHandlersXLM;
+// Wallet Sweep
+// ExportablePaperHandlers
+// Payment Protocol
+extern WKFeeBasisHandlers wkFeeBasisHandlersXLM;
+extern WKWalletManagerHandlers wkWalletManagerHandlersXLM;
 
 #ifdef __cplusplus
 }

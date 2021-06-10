@@ -304,22 +304,26 @@ public enum NetworkType: CustomStringConvertible {
     case btc
     case bch
     case bsv
+    case ltc
+    case doge
     case eth
     case xrp
     case hbar
     case xtz
-//    case xlm
+    case xlm
 
     internal init (core: WKNetworkType) {
         switch core {
         case WK_NETWORK_TYPE_BTC:  self = .btc
         case WK_NETWORK_TYPE_BCH:  self = .bch
         case WK_NETWORK_TYPE_BSV:  self = .bsv
+        case WK_NETWORK_TYPE_LTC:  self = .ltc
+        case WK_NETWORK_TYPE_DOGE: self = .doge
         case WK_NETWORK_TYPE_ETH:  self = .eth
         case WK_NETWORK_TYPE_XRP:  self = .xrp
         case WK_NETWORK_TYPE_HBAR: self = .hbar
         case WK_NETWORK_TYPE_XTZ:  self = .xtz
-//        case WK_NETWORK_TYPE_XLM:  self = .xlm
+        case WK_NETWORK_TYPE_XLM:  self = .xlm
         default: preconditionFailure()
         }
     }
@@ -329,16 +333,18 @@ public enum NetworkType: CustomStringConvertible {
         case .btc: return WK_NETWORK_TYPE_BTC
         case .bch: return WK_NETWORK_TYPE_BCH
         case .bsv: return WK_NETWORK_TYPE_BSV
+        case .ltc: return WK_NETWORK_TYPE_LTC
+        case .doge: return WK_NETWORK_TYPE_DOGE
         case .eth: return WK_NETWORK_TYPE_ETH
         case .xrp: return WK_NETWORK_TYPE_XRP
         case .hbar: return WK_NETWORK_TYPE_HBAR
         case .xtz: return WK_NETWORK_TYPE_XTZ
-//        case .xml: return WK_NETWORK_TYPE_XLM
+        case .xlm: return WK_NETWORK_TYPE_XLM
         }
     }
 
     public var description: String {
-        return "WK_NETWORK_TYPE_" + asUTF8String (wkBlockChainTypeGetCurrencyCode (core)).uppercased()
+        return "WK_NETWORK_TYPE_" + asUTF8String (wkNetworkTypeGetCurrencyCode (core)).uppercased()
     }
 }
 

@@ -55,6 +55,32 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     },
 
     {
+        WK_NETWORK_TYPE_LTC,
+        &wkNetworkHandlersLTC,
+        &wkAddressHandlersLTC,
+        &wkTransferHandlersLTC,
+        &wkWalletHandlersLTC,
+        &wkWalletSweeperHandlersLTC,
+        NULL,//WKExportablePaperWalletHandlers
+        &wkPaymentProtocolHandlersBTC,
+        &wkFeeBasisHandlersBTC,
+        &wkWalletManagerHandlersLTC
+    },
+
+    {
+        WK_NETWORK_TYPE_DOGE,
+        &wkNetworkHandlersDOGE,
+        &wkAddressHandlersDOGE,
+        &wkTransferHandlersDOGE,
+        &wkWalletHandlersDOGE,
+        &wkWalletSweeperHandlersDOGE,
+        NULL,//WKExportablePaperWalletHandlers
+        &wkPaymentProtocolHandlersBTC,
+        &wkFeeBasisHandlersBTC,
+        &wkWalletManagerHandlersDOGE
+    },
+
+    {
         WK_NETWORK_TYPE_ETH,
         &wkNetworkHandlersETH,
         &wkAddressHandlersETH,
@@ -104,6 +130,19 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         NULL,//WKPaymentProtocolHandlers not supported
         &wkFeeBasisHandlersXTZ,
         &wkWalletManagerHandlersXTZ
+    },
+
+    {
+        WK_NETWORK_TYPE_XLM,
+        &wkNetworkHandlersXLM,
+        &wkAddressHandlersXLM,
+        &wkTransferHandlersXLM,
+        &wkWalletHandlersXLM,
+        NULL,//WKWalletSweeperHandlers not supported
+        NULL,//WKExportablePaperWalletHandlers
+        NULL,//WKPaymentProtocolHandlers not supported
+        &wkFeeBasisHandlersXLM,
+        &wkWalletManagerHandlersXLM
     },
 };
 

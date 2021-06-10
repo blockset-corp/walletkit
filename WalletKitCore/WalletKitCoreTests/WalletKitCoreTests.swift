@@ -200,7 +200,12 @@ final class WalletKitCoreTests: XCTestCase {
     func testTezos () {
         runTezosTest()
     }
-    
+
+    // MARK: - Stellar
+    func testStellar () {
+        runStellarTest()
+    }
+
     // MARK: - Bitcoin
 
     func testBitcoinSupport () {
@@ -447,6 +452,9 @@ final class WalletKitCoreTests: XCTestCase {
         
         // Tezos
         ("testTezos",           testTezos),
+
+        // Stellar
+        ("testStellar",         testStellar),
 
         // Bitcoin
         ("testSupportBTC",      testBitcoinSupport),

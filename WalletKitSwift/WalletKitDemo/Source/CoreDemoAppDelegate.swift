@@ -128,10 +128,13 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
             "btc" : .api_only,
             "bch" : .api_only,
             "bsv" : .api_only,
+            "ltc" : .p2p_only,
+            "doge": .p2p_only,
             "eth" : .api_only,
             "xrp" : .api_only,
             "hbar": .api_only,
-            "xtz" : .api_only
+            "xtz" : .api_only,
+            "xlm" : .api_only
             ]
 
         registerCurrencyCodes = (mainnet
@@ -374,11 +377,13 @@ extension Network {
         case .btc: return "bitcoin"
         case .bch: return (onMainnet ? "bitcoincash" : "bchtest")
         case .bsv: return "bitcoinsv"
+        case .ltc: return "litecoin"
+        case .doge: return "dogecoin"
         case .eth: return "ethereum"
         case .xrp: return "ripple"
         case .hbar: return "hedera"
         case .xtz: return "tezos"
-//        case .xlm:  return "stellar"
+        case .xlm: return "stellar"
         }
     }
 }

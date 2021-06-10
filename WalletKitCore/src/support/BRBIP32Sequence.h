@@ -78,34 +78,37 @@ typedef struct {
 // returns the master public key for the default BIP32 wallet layout - derivation path N(m/0H)
 BRMasterPubKey BRBIP32MasterPubKey(const void *seed, size_t seedLen);
 
-// writes the public key for path N(m/0H/chain/index) to pubKey
-// returns number of bytes written, or pubKeyLen needed if pubKey is NULL
-size_t BRBIP32PubKey(uint8_t *pubKey, size_t pubKeyLen, BRMasterPubKey mpk, uint32_t chain, uint32_t index);
+// returns the master public key for the derivation path N(m/child[0]/child[1]...child[depth - 1])
+BRMasterPubKey BRBIP32MasterPubKeyPath(const void *seed, size_t seedLen, int depth, const uint32_t child[]);
+
+// writes the public key for path N(mpk/chain/index) to pubKey
+// returns number of bytes written, maximum is 33
+size_t BRBIP32PubKey(uint8_t pubKey[33], BRMasterPubKey mpk, uint32_t chain, uint32_t index);
 
 // sets the private key for path m/0H/chain/index to key
 void BRBIP32PrivKey(BRKey *key, const void *seed, size_t seedLen, uint32_t chain, uint32_t index);
 
-// sets the private key for path m/0H/chain/index to each element in keys
-void BRBIP32PrivKeyList(BRKey keys[], size_t keysCount, const void *seed, size_t seedLen, uint32_t chain,
-                        const uint32_t indexes[]);
+// sets the private key for the path m/child[0]/child[1]...child[depth - 1]/chain/index to each element in keys
+void BRBIP32PrivKeyList(BRKey keys[], size_t keysCount, const void *seed, size_t seedLen,
+                        int depth, const uint32_t child[], uint32_t chain, const uint32_t indexes[]);
     
-// sets the private key for the specified path to key
-// depth is the number of arguments used to specify the path
-void BRBIP32PrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, ...);
-
-// sets the private key for the path specified by vlist to key
-// depth is the number of arguments in vlist
-void BRBIP32vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_list vlist);
+// sets the private key for path m/child[0]/child[1]...child[depth - 1] to key
+void BRBIP32PrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, const uint32_t child[]);
 
 // writes the base58check encoded serialized master private key (xprv) to str
-// returns number of bytes written including NULL terminator, or strLen needed if str is NULL
-size_t BRBIP32SerializeMasterPrivKey(char *str, size_t strLen, const void *seed, size_t seedLen);
+// returns number of bytes written including NULL terminator, maximum is 113
+size_t BRBIP32SerializeMasterPrivKey(char str[113], const void *seed, size_t seedLen);
+
+// writes the base58check encoded serialized master public key (xpub) to str, using the default derivation path N(m/0H)
+// returns number of bytes written including NULL terminator, maximum is 113
+size_t BRBIP32SerializeMasterPubKey(char str[113], BRMasterPubKey mpk);
 
 // writes the base58check encoded serialized master public key (xpub) to str
-// returns number of bytes written including NULL terminator, or strLen needed if str is NULL
-size_t BRBIP32SerializeMasterPubKey(char *str, size_t strLen, BRMasterPubKey mpk);
+// depth is the is the depth of the path used to derive mpk, and child is the final path element used to derive mpk
+// returns number of bytes written including NULL terminator, maximum is 113
+size_t BRBIP32SerializeMasterPubKeyPath(char str[113], BRMasterPubKey mpk, int depth, uint32_t child);
 
-// returns a master public key give a base58check encoded serialized master public key (xpub)
+// returns a master public key given a base58check encoded serialized master public key (xpub)
 BRMasterPubKey BRBIP32ParseMasterPubKey(const char *str);
 
 // key used for authenticated API calls, i.e. bitauth: https://github.com/bitpay/bitauth - path m/1H/0

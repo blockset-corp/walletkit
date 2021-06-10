@@ -269,6 +269,18 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.h
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.c)
                 
+# Litecoin
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.h
+                ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.c)
+
+# Dogecoin
+target_sources (corecrypto
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.h
+                ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.c)
+                
 # Ethereum
 target_sources (corecrypto
                 PRIVATE
@@ -483,6 +495,44 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/tezos/testTezos.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# Stellar
+target_sources (corecrypto
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/b64.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/base32.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/base32.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/crc16.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/crc16.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/decode.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/utils/encode.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellar.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAccount.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAccount.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAccountUtils.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAccountUtils.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarBase.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarFeeBasis.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarFeeBasis.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarOperation.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarOperation.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarPrivateStructs.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarResultCodes.h
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarTransaction.c
+        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarTransaction.h)
+
+# Stellar Tests
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    target_sources (corecryptotest
+            PRIVATE
+            ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/stellar/testStellar.c)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
 # Crypto
 target_sources (corecrypto
                 PRIVATE
@@ -632,6 +682,20 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKWalletXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKWalletManagerXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKXTZ.h
+        )
+
+
+# Crypto XLM
+target_sources (corecrypto
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAddressXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKFeeBasisXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKNetworkXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKSupportXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKTransferXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKWalletXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKWalletManagerXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKXLM.h
         )
 
 # Crypto Tests

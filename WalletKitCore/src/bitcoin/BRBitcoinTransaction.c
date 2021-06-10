@@ -417,6 +417,7 @@ BRBitcoinTransaction *btcTransactionParse(const uint8_t *buf, size_t bufLen)
         off += len;
     }
 
+    if (off + tx->inCount*(sizeof(UInt256) + sizeof(uint32_t)*2 + 1) > bufLen) tx->inCount = 0;
     array_set_count(tx->inputs, tx->inCount);
     
     for (i = 0; off <= bufLen && i < tx->inCount; i++) {
@@ -444,6 +445,7 @@ BRBitcoinTransaction *btcTransactionParse(const uint8_t *buf, size_t bufLen)
     
     tx->outCount = (size_t)BRVarInt(&buf[off], (off <= bufLen ? bufLen - off : 0), &len);
     off += len;
+    if (off + tx->outCount*(sizeof(uint64_t) + 1) > bufLen) tx->outCount = 0;
     array_set_count(tx->outputs, tx->outCount);
     
     for (i = 0; off <= bufLen && i < tx->outCount; i++) {
@@ -473,7 +475,7 @@ BRBitcoinTransaction *btcTransactionParse(const uint8_t *buf, size_t bufLen)
     tx->lockTime = (off + sizeof(uint32_t) <= bufLen) ? UInt32GetLE(&buf[off]) : 0;
     off += sizeof(uint32_t);
     
-    if (tx->inCount == 0 || off > bufLen) {
+    if (tx->inCount == 0 || tx->outCount == 0 || off > bufLen) {
         btcTransactionFree(tx);
         tx = NULL;
     }

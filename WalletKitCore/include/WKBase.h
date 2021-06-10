@@ -253,14 +253,16 @@ typedef enum {
     WK_NETWORK_TYPE_BTC,
     WK_NETWORK_TYPE_BCH,
     WK_NETWORK_TYPE_BSV,
+    WK_NETWORK_TYPE_LTC,
+    WK_NETWORK_TYPE_DOGE,
     WK_NETWORK_TYPE_ETH,
     WK_NETWORK_TYPE_XRP,
     WK_NETWORK_TYPE_HBAR,
     WK_NETWORK_TYPE_XTZ,
-    // WK_NETWORK_TYPE_XLM,
+    WK_NETWORK_TYPE_XLM
 } WKNetworkType;
 
-#define NUMBER_OF_NETWORK_TYPES     (1 + WK_NETWORK_TYPE_XTZ)
+#define NUMBER_OF_NETWORK_TYPES     (1 + WK_NETWORK_TYPE_XLM)
 #define WK_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
 //
 // Crypto Network Base Currency
@@ -271,13 +273,16 @@ typedef enum {
 #define WK_NETWORK_CURRENCY_BTC     "btc"
 #define WK_NETWORK_CURRENCY_BCH     "bch"
 #define WK_NETWORK_CURRENCY_BSV     "bsv"
+#define WK_NETWORK_CURRENCY_LTC     "ltc"
+#define WK_NETWORK_CURRENCY_DOGE    "doge"
 #define WK_NETWORK_CURRENCY_ETH     "eth"
 #define WK_NETWORK_CURRENCY_XRP     "xrp"
 #define WK_NETWORK_CURRENCY_HBAR    "hbar"
 #define WK_NETWORK_CURRENCY_XTZ     "xtz"
+#define WK_NETWORK_CURRENCY_XLM     "xlm"
 
 extern const char *
-wkBlockChainTypeGetCurrencyCode (WKNetworkType type);
+wkNetworkTypeGetCurrencyCode (WKNetworkType type);
 
 // MARK: - Status
 

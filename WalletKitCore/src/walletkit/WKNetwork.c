@@ -30,19 +30,40 @@ wkUnitGiveAll (BRArrayOf(WKUnit) units);
 /// MARK: - Network Canonical Type
 
 extern const char *
-wkBlockChainTypeGetCurrencyCode (WKNetworkType type) {
-    static const char *currencies[NUMBER_OF_NETWORK_TYPES] = {
+wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
+    static const char *currencies [NUMBER_OF_NETWORK_TYPES] = {
         WK_NETWORK_CURRENCY_BTC,
         WK_NETWORK_CURRENCY_BCH,
         WK_NETWORK_CURRENCY_BSV,
+        WK_NETWORK_CURRENCY_LTC,
+        WK_NETWORK_CURRENCY_DOGE,
         WK_NETWORK_CURRENCY_ETH,
         WK_NETWORK_CURRENCY_XRP,
         WK_NETWORK_CURRENCY_HBAR,
         WK_NETWORK_CURRENCY_XTZ,
-        // "Stellar"
+        WK_NETWORK_CURRENCY_XLM,
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
+}
+
+private_extern bool
+wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
+    static const char isBitcoinBased [NUMBER_OF_NETWORK_TYPES] = {
+        true,       // BTC
+        true,       // BCH
+        true,       // BSV
+        true,       // LTC
+        true,       // DOGE
+
+        false,      // ETH
+        false,      // XRP
+        false,      // HBAR
+        false,      // XTZ
+        false       // XLM
+    };
+    assert (type < NUMBER_OF_NETWORK_TYPES);
+    return isBitcoinBased[type];
 }
 
 /// MARK: - Network Fee
@@ -1002,7 +1023,7 @@ wkNetworkInstallBuiltins (WKCount *networksCount,
         nativeCurrency = NULL;
 
         // Create the Network Fees
-        WKUnit feeUnit = wkNetworkGetUnitAsDefault (network, network->currency);
+        WKUnit feeUnit = wkNetworkGetUnitAsBase (network, network->currency);
         for (size_t networkFeeIndex = 0; networkFeeIndex < NUMBER_OF_FEES; networkFeeIndex++) {
             struct NetworkFeeSpecification *networkFeeSpec = &networkFeeSpecifications[networkFeeIndex];
             if (0 == strcmp (networkSpec->networkId, networkFeeSpec->networkId)) {

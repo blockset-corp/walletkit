@@ -37,8 +37,9 @@
 
 #include "bcash/BRBCashParams.h"
 #include "bcash/BRBCashAddr.h"
-
 #include "bsv/BRBSVParams.h"
+#include "litecoin/BRLitecoinParams.h"
+#include "dogecoin/BRDogecoinParams.h"
 
 #include "bitcoin/BRBitcoinBloomFilter.h"
 #include "bitcoin/BRBitcoinMerkleBlock.h"
@@ -82,6 +83,12 @@ extern const BRBitcoinChainParams* getChainParams (BRBitcoinChain chain, int isM
         case BITCOIN_CHAIN_BSV:
             return bsvChainParams(isMainnet);
             
+        case BITCOIN_CHAIN_LTC:
+            return ltcChainParams(isMainnet);
+            
+        case BITCOIN_CHAIN_DOGE:
+            return dogeChainParams(isMainnet);
+            
         default:
             assert(0);
             return NULL;
@@ -98,7 +105,13 @@ extern const char * getChainName (BRBitcoinChain chain) {
             
         case BITCOIN_CHAIN_BSV:
             return "bsv";
-            
+
+        case BITCOIN_CHAIN_LTC:
+            return "ltc";
+
+        case BITCOIN_CHAIN_DOGE:
+            return "doge";
+
         default:
             assert(0);
             return NULL;
@@ -560,6 +573,63 @@ int BRBCashAsertTests()
 
     if (aserti3_2d(0x1804dafe, 1605449609 - 1605447844, 0) != 0x1804e0d0)
         r = 0, fprintf(stderr, "***FAILED*** %s: aserti3_2d() test 26\n", __func__);
+    
+    return r;
+}
+
+int BRDogecoinAuxPowTests()
+{
+    int r = 1;
+    
+    uint8_t block1[] = "\x02\x00\x00\x00\x21\xc5\xd6\x24\x76\x24\x46\xd3\x6e\x81\xb7\x88\xb1\x91\x94\x83\x96\xbd\xdf"
+    "\xfa\x88\xde\xa4\x9a\x79\xec\x15\xd4\xbd\x1c\x4b\xe5\x84\x3f\xca\x19\x84\x63\x0c\x7d\x1b\x0e\xa2\x65\x69\x90\x8c"
+    "\xc0\x3b\x35\xa0\x85\x3c\x04\x7d\x40\x87\x15\x3b\x6e\x75\x74\x77\x33\xbe\x9b\xd6\x53\x45\xa5\x62\x1b\x80\x4e\x6e"
+    "\x9c\x01\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x26\x03\xa2\xd4\x04\x06\x2f\x50\x32\x53\x48\x2f\x04"
+    "\xbf\x9b\xd6\x53\x08\x06\x01\xd9\x37\x01\x00\x00\x00\x0c\x2f\x43\x6f\x69\x6e\x4d\x69\x6e\x65\x50\x57\x2f\x00\x00"
+    "\x00\x00\x01\x00\xa4\x07\x31\xaf\x05\x00\x00\x19\x76\xa9\x14\x02\xe1\x19\xc4\x81\xb2\x42\x2c\xd7\x48\x76\x66\x69"
+    "\xd7\x3f\x86\x76\x49\xee\xaa\x88\xac\x00\x00\x00\x00";
+
+    BRBitcoinMerkleBlock *b = btcMerkleBlockParse(block1, sizeof(block1) - 1);
+
+    if (! b || ! UInt256Eq(UInt256Reverse(uint256("e6e6d9e221fc2525505586daba87c233921d6682d8e19e4a0a6fc5e5bceafa01")),
+                           b->blockHash))
+        r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockParse() test 1\n", __func__);
+    
+//    if (! b || ! dogeVerifyProofOfWork(b))
+//        r = 0, fprintf(stderr, "***FAILED*** %s: dogeVerifyProofOfWork() test 1\n", __func__);
+
+    // block 390,000
+    uint8_t block2[] = "\x02\x01\x62\x00\x38\x20\xa8\xf9\xfe\xb8\xc7\xe1\xf0\x2b\x2b\xe1\x6b\x0b\x1a\xb9\x1c\x4c\x6e"
+    "\x18\x76\x39\x18\x42\xcb\x2c\x6c\x89\x77\x66\xad\x16\xb7\x72\x97\xce\x1a\x87\xcc\x8d\x81\x64\xca\x7e\x52\x4d\x53"
+    "\x96\x1a\x74\xb9\x94\x51\x36\x59\xc5\x13\x50\x14\x36\x63\x0a\x19\x28\xa0\xca\x23\x54\x3c\x87\x05\x1b\x00\x00\x00"
+    "\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x52\x03\x34\xdf\x09\x06\x2f\x50\x32\x53\x48\x2f\x04\xa1"
+    "\xca\x23\x54\x08\xfa\xbe\x6d\x6d\x15\x61\x39\xa6\xc9\x39\x4d\x27\x4a\x42\xb1\x21\x34\x90\x6d\xad\x0c\x0c\x9f\xd6"
+    "\x94\x84\xf4\xaa\x93\xc4\x88\xd4\xc1\x56\x01\x3d\x01\x00\x00\x00\x00\x00\x00\x00\x70\x5f\xd3\xe1\x1e\x00\x00\x00"
+    "\x0c\x2f\x43\x4d\x65\x75\x31\x35\x32\x31\x32\x37\x2f\x00\x00\x00\x00\x01\x50\xcc\x17\x2a\x01\x00\x00\x00\x19\x76"
+    "\xa9\x14\x11\xfd\xe3\x13\x1d\x4a\x59\xd9\xde\x9d\x6d\x93\x90\xf8\xba\xee\xbf\x50\x39\x60\x88\xac\x00\x00\x00\x00"
+    "\x6a\x15\x92\xba\x35\x88\x00\xaa\xce\x34\xcf\x92\xee\x5d\xfe\xd5\xfe\x8a\xfd\xa1\x30\xdc\x57\x73\x0b\x50\x38\x21"
+    "\x54\xb7\xae\x17\x04\xf0\xf5\x23\xb7\xff\x02\xd7\x30\xfa\x84\x1b\x8a\x2e\xd9\x71\xa1\x0f\x1b\xa0\x5e\x0f\xaa\x60"
+    "\xe7\x0a\x6c\x1b\x37\x08\x94\xc7\x62\x3e\x91\x1b\xd6\x3f\x88\x60\x86\xce\xd8\x21\x1d\xb1\x9a\x96\xad\x6d\x9b\x38"
+    "\xa0\x10\xf7\xf5\x32\xd8\x65\x95\x8f\x98\x0c\xd7\x2e\x24\x1f\xc2\x60\x5f\xcd\x55\xfe\x2c\x56\x05\xa9\xff\xd9\xcd"
+    "\xd3\x97\x83\x29\xab\xd0\xe7\xe0\xfc\xe9\xce\x5a\x3e\x8e\x05\xb9\x0d\x1b\x8e\x54\x1b\x4f\x85\xdc\x52\xf1\x3d\x22"
+    "\xc5\x23\x8b\xda\x70\x92\xd6\xd7\x70\xdd\x40\xe4\x2b\xd1\xdc\x65\x92\x7b\xe1\x26\x16\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x02\x00\x00\x00\x6e\xb7\xbe\x48\xdb\x8d\x8f\x6e\x86\xe4\x7f\x87\xf4\x16\x57\x62\x7e\x31\xd8\xa1\x0e\x7b"
+    "\xcf\x0e\xc0\xab\x89\xf9\xf0\x91\x45\xcd\xdc\x7f\xba\xbb\xbf\x90\x3f\xef\xc0\xd4\x99\x6c\xa7\x63\xf6\xa6\x86\xcb"
+    "\x50\x86\x0b\x29\x1e\xe5\x8f\xc7\xee\xf1\x99\x6f\xde\x5f\x75\xca\x23\x54\x10\x0a\x02\x1b\x11\xa2\x13\x06";
+
+    b = btcMerkleBlockParse(block2, sizeof(block2) - 1);
+
+    if (! b || ! UInt256Eq(UInt256Reverse(uint256("156139a6c9394d274a42b12134906dad0c0c9fd69484f4aa93c488d4c156013d")),
+                           b->blockHash))
+        r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockParse() test 2\n", __func__);
+
+//    if (! b || ! dogeVerifyProofOfWork(b))
+//        r = 0, fprintf(stderr, "***FAILED*** %s: dogeVerifyProofOfWork() test 2\n", __func__);
+
+    if (! b || ! btcMerkleBlockIsValid(b, time(NULL)))
+        r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockIsValid() test 1\n", __func__);
     
     return r;
 }
@@ -2180,7 +2250,7 @@ int BRBIP32SequenceTests()
 
     uint8_t pubKey[33];
 
-    BRBIP32PubKey(pubKey, sizeof(pubKey), mpk, SEQUENCE_EXTERNAL_CHAIN, 0);
+    BRBIP32PubKey(pubKey, mpk, SEQUENCE_EXTERNAL_CHAIN, 0);
     printf("000102030405060708090a0b0c0d0e0f/0H/0/0 pub = %02x%s\n", pubKey[0], u256hex(*(UInt256 *)&pubKey[1]));
     if (pubKey[0] != 0x02 ||
         ! UInt256Eq(*(UInt256 *)&pubKey[1],
@@ -2206,11 +2276,11 @@ int BRBIP32SequenceTests()
     char s[sizeof(mpks)];
     
     mpk = BRBIP32ParseMasterPubKey(mpks);
-    BRBIP32SerializeMasterPubKey(s, sizeof(s), mpk);
+    BRBIP32SerializeMasterPubKey(s, mpk);
     if (strncmp(s, mpks, sizeof(mpks)) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRBIP32ParseMasterPubKey() test\n", __func__);
 
-    BRBIP32SerializeMasterPrivKey(s, sizeof(s), &seed, sizeof(seed));
+    BRBIP32SerializeMasterPrivKey(s, &seed, sizeof(seed));
     if (strncmp(s, "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk"
                 "33yuGBxrMPHi", sizeof(s)) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: BRBIP32SerializeMasterPrivKey() test\n", __func__);
@@ -2656,7 +2726,8 @@ int btcWalletTests()
     tx = btcWalletCreateTransaction(w, SATOSHIS/2, addr.s);
     if (! tx) r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletCreateTransaction() test 4\n", __func__);
 
-    if (tx) btcWalletSignTransaction(w, tx, 0x00, &seed, sizeof(seed));
+    if (tx) btcWalletSignTransaction(w, tx, 0x00, btcMainNetParams->bip32depth, btcMainNetParams->bip32child,
+                                     &seed, sizeof(seed));
     if (tx && ! btcTransactionIsSigned(tx))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletSignTransaction() test\n", __func__);
     
@@ -2856,7 +2927,7 @@ int btcMerkleBlockTests()
         r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockParse() test\n", __func__);
 
     if (! btcMerkleBlockIsValid(b, (uint32_t)time(NULL)))
-        r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockParse() test\n", __func__);
+        r = 0, fprintf(stderr, "***FAILED*** %s: btcMerkleBlockIsValid() test\n", __func__);
     
     if (btcMerkleBlockSerialize(b, block2, sizeof(block2)) != sizeof(block2) ||
         memcmp(block, block2, sizeof(block2)) != 0)
@@ -3386,6 +3457,8 @@ int BRRunTests()
     printf("%s\n", (BRBCashAddrTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRBCashAsertTests...                ");
     printf("%s\n", (BRBCashAsertTests()) ? "success" : (fail++, "***FAIL***"));
+    printf("BRDogecoinAuxPowTests...            ");
+    printf("%s\n", (BRDogecoinAuxPowTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRHashTests...                      ");
     printf("%s\n", (BRHashTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRMacTests...                       ");
@@ -3414,17 +3487,17 @@ int BRRunTests()
     printf("%s\n", (BRBIP39MnemonicTests()) ? "success" : (fail++, "***FAIL***"));
     printf("BRBIP32SequenceTests...             ");
     printf("%s\n", (BRBIP32SequenceTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRTransactionTests...               ");
+    printf("btcTransactionTests...              ");
     printf("%s\n", (btcTransactionTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRWalletTests...                    ");
+    printf("btcWalletTests...                   ");
     printf("%s\n", (btcWalletTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRBloomFilterTests...               ");
+    printf("btcBloomFilterTests...              ");
     printf("%s\n", (btcBloomFilterTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRMerkleBlockTests...               ");
+    printf("btcMerkleBlockTests...              ");
     printf("%s\n", (btcMerkleBlockTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRPaymentProtocolTests...           ");
+    printf("btcPaymentProtocolTests...          ");
     printf("%s\n", (btcPaymentProtocolTests()) ? "success" : (fail++, "***FAIL***"));
-    printf("BRPaymentProtocolEncryptionTests... ");
+    printf("btcPaymentProtocolEncryptionTests...");
     printf("%s\n", (btcPaymentProtocolEncryptionTests()) ? "success" : (fail++, "***FAIL***"));
     printf("\n");
     
@@ -3577,18 +3650,18 @@ int main(int argc, const char *argv[])
 //    int err = 0;
 //    UInt512 seed = UINT512_ZERO;
 //    BRMasterPubKey mpk = BR_MASTER_PUBKEY_NONE;
-//    BRWallet *wallet;
-//    BRPeerManager *manager;
+//    BRBitcoinWallet *wallet;
+//    BRBitcoinPeerManager *manager;
 //
 //    //BRBIP39DeriveKey(seed.u8, "video tiger report bid suspect taxi mail argue naive layer metal surface", NULL);
 //    BRBIP39DeriveKey(seed.u8, "axis husband project any sea patch drip tip spirit tide bring belt", NULL);
 //    mpk = BRBIP32MasterPubKey(&seed, sizeof(seed));
 //
-//    wallet = btcWalletNew(BRMainNetParams->addrParams, NULL, 0, mpk);
+//    wallet = btcWalletNew(getChainParams(BITCOIN_CHAIN_BTC, 1)->addrParams, NULL, 0, mpk);
 //    btcWalletSetCallbacks(wallet, wallet, walletBalanceChanged, walletTxAdded, walletTxUpdated, walletTxDeleted);
 //    printf("wallet created with first receive address: %s\n", btcWalletLegacyAddress(wallet).s);
 //
-//    manager = btcPeerManagerNew(BRMainNetParams, wallet, BIP39_CREATION_TIME, NULL, 0, NULL, 0);
+//    manager = btcPeerManagerNew(getChainParams(BITCOIN_CHAIN_BTC, 1), wallet, BIP39_CREATION_TIME, NULL, 0, NULL, 0);
 //    btcPeerManagerSetCallbacks(manager, manager, syncStarted, syncStopped, txStatusUpdate, NULL, NULL, NULL, NULL);
 //
 //    btcPeerManagerConnect(manager);

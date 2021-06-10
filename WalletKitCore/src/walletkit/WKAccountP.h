@@ -20,6 +20,7 @@
 #include "ripple/BRRippleAccount.h"
 #include "hedera/BRHederaAccount.h"
 #include "tezos/BRTezosAccount.h"
+#include "stellar/BRStellarAccount.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,10 +28,13 @@ extern "C" {
 
 struct WKAccountRecord {
     BRMasterPubKey btc;
+    BRMasterPubKey ltc;
+    BRMasterPubKey doge;
     BREthereumAccount eth;
     BRRippleAccount xrp;
     BRHederaAccount hbar;
     BRTezosAccount xtz;
+    BRStellarAccount xlm;
     // ...
 
     char *uids;
@@ -66,6 +70,16 @@ wkAccountAsBTC (WKAccount account) {
     return account->btc;
 }
 
+static inline BRMasterPubKey
+wkAccountAsLTC (WKAccount account) {
+    return account->ltc;
+}
+
+static inline BRMasterPubKey
+wkAccountAsDOGE (WKAccount account) {
+    return account->doge;
+}
+
 static inline BREthereumAccount
 wkAccountAsETH (WKAccount account) {
     return account->eth;
@@ -84,6 +98,11 @@ wkAccountAsHBAR (WKAccount account) {
 static inline BRTezosAccount
 wkAccountAsXTZ (WKAccount account) {
     return account->xtz;
+}
+
+static inline BRStellarAccount
+wkAccountAsXLM (WKAccount account) {
+    return account->xlm;
 }
 
 #ifdef __cplusplus

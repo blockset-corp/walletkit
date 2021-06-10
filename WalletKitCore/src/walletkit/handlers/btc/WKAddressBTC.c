@@ -22,9 +22,7 @@ wkAddressCoerce (WKAddress address, WKNetworkType type) {
 
 static WKAddressBTC
 wkAddressCoerceANY (WKAddress address) {
-    assert (WK_NETWORK_TYPE_BTC == address->type ||
-            WK_NETWORK_TYPE_BCH == address->type ||
-            WK_NETWORK_TYPE_BSV == address->type);
+    assert (wkNetworkTypeIsBitcoinBased(address->type));
     return (WKAddressBTC) address;
 }
 
@@ -95,6 +93,27 @@ wkAddressCreateFromStringAsBSV (BRAddressParams params, const char *bsvAddress) 
             : NULL);
 }
 
+extern WKAddress
+wkAddressCreateFromStringAsLTC (BRAddressParams params, const char *ltcAddress) {
+    assert (ltcAddress);
+
+    return (BRAddressIsValid (params, ltcAddress)
+            ? wkAddressCreateAsBTC (WK_NETWORK_TYPE_LTC,
+                                        BRAddressFill(params, ltcAddress))
+            : NULL);
+}
+
+extern WKAddress
+wkAddressCreateFromStringAsDOGE (BRAddressParams params, const char *dogeAddress) {
+    assert (dogeAddress);
+
+    return (BRAddressIsValid (params, dogeAddress)
+            ? wkAddressCreateAsBTC (WK_NETWORK_TYPE_DOGE,
+                                    BRAddressFill(params, dogeAddress))
+            : NULL);
+}
+
+
 static void
 wkAddressReleaseBTC (WKAddress address) {
     WKAddressBTC addressANY = wkAddressCoerceANY (address);
@@ -122,6 +141,17 @@ wkAddressAsStringBSV (WKAddress address) {
     return strdup (addressBSV->addr.s);
 }
 
+static char *
+wkAddressAsStringLTC (WKAddress address) {
+    WKAddressBTC addressLTC = wkAddressCoerce (address, WK_NETWORK_TYPE_LTC);
+    return strdup (addressLTC->addr.s);
+}
+
+static char *
+wkAddressAsStringDOGE (WKAddress address) {
+    WKAddressBTC addressDOGE = wkAddressCoerce (address, WK_NETWORK_TYPE_DOGE);
+    return strdup (addressDOGE->addr.s);
+}
 
 static bool
 wkAddressIsEqualBTC (WKAddress address1, WKAddress address2) {
@@ -157,5 +187,17 @@ WKAddressHandlers wkAddressHandlersBCH = {
 WKAddressHandlers wkAddressHandlersBSV = {
     wkAddressReleaseBTC,
     wkAddressAsStringBSV,
+    wkAddressIsEqualBTC
+};
+
+WKAddressHandlers wkAddressHandlersLTC = {
+    wkAddressReleaseBTC,
+    wkAddressAsStringLTC,
+    wkAddressIsEqualBTC
+};
+
+WKAddressHandlers wkAddressHandlersDOGE = {
+    wkAddressReleaseBTC,
+    wkAddressAsStringDOGE,
     wkAddressIsEqualBTC
 };

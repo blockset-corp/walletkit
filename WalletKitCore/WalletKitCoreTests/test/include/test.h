@@ -74,7 +74,9 @@ runPerfTestsCoder (int repeat, int many);
 typedef enum {
     BITCOIN_CHAIN_BTC,
     BITCOIN_CHAIN_BCH,
-    BITCOIN_CHAIN_BSV
+    BITCOIN_CHAIN_BSV,
+    BITCOIN_CHAIN_LTC,
+    BITCOIN_CHAIN_DOGE
 } BRBitcoinChain;
 
 extern const BRBitcoinChainParams*
@@ -131,6 +133,10 @@ runHederaTest (void);
 // Tezos
 extern void
 runTezosTest (void);
+
+// Stellar
+extern void
+runStellarTest (void);
 
 #ifdef __cplusplus
 }

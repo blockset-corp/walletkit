@@ -89,11 +89,12 @@ static int bchMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
 {
     const BRBitcoinMerkleBlock *prev;
     int64_t timeDelta, heightDelta;
-
+    
     assert(block != NULL);
     assert(blockSet != NULL);
-
-    if (block && block->height > ASERT_REF_HEIGHT) { // axion activation height
+    if (! block) return 0;
+    
+    if (block->height > ASERT_REF_HEIGHT) { // axion activation height
         prev = BRSetGet(blockSet, &block->prevBlock);
         if (! prev) return 1;
         timeDelta = prev->timestamp - ASERT_REF_TIME;
@@ -101,7 +102,7 @@ static int bchMainNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const B
         if (aserti3_2d(ASERT_REF_BITS, timeDelta, heightDelta) != block->target) return 0;
     }
 
-    return 1;
+    return btcMerkleBlockVerifyProofOfWork(block);
 }
 
 static int bchTestNetVerifyDifficulty(const BRBitcoinMerkleBlock *block, const BRSet *blockSet)
@@ -118,7 +119,9 @@ static BRBitcoinChainParams bchMainNetParamsRecord = {
     NULL,
     0,
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, NULL },
-    BCASH_FORKID
+    BCASH_FORKID,
+    BITCOIN_BIP32_DEPTH,
+    BITCOIN_BIP32_CHILD
 };
 
 static BRBitcoinChainParams bchTestNetParamsRecord = {
@@ -130,7 +133,9 @@ static BRBitcoinChainParams bchTestNetParamsRecord = {
     NULL,
     0,
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, NULL },
-    BCASH_FORKID
+    BCASH_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 
 // Run once initializer for bsv checkpoints

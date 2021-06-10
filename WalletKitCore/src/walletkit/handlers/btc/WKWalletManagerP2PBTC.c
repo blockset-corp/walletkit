@@ -54,9 +54,7 @@ typedef struct WKClientP2PManagerRecordBTC {
 
 static WKClientP2PManagerBTC
 wkClientP2PManagerCoerce (WKClientP2PManager manager) {
-    assert (WK_NETWORK_TYPE_BTC == manager->type ||
-            WK_NETWORK_TYPE_BCH == manager->type ||
-            WK_NETWORK_TYPE_BSV == manager->type);
+    assert (wkNetworkTypeIsBitcoinBased (manager->type));
     return (WKClientP2PManagerBTC) manager;
 }
 

@@ -82,7 +82,9 @@ static BRBitcoinChainParams btcMainNetParamsRecord = {
     NULL,
     0,
     { BITCOIN_PUBKEY_PREFIX, BITCOIN_SCRIPT_PREFIX, BITCOIN_PRIVKEY_PREFIX, BITCOIN_BECH32_PREFIX },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH,
+    BITCOIN_BIP32_CHILD
 };
 
 static BRBitcoinChainParams btcTestNetParamsRecord = {
@@ -94,7 +96,9 @@ static BRBitcoinChainParams btcTestNetParamsRecord = {
     NULL,
     0,
     { BITCOIN_PUBKEY_PREFIX_TEST, BITCOIN_SCRIPT_PREFIX_TEST, BITCOIN_PRIVKEY_PREFIX_TEST, BITCOIN_BECH32_PREFIX_TEST },
-    BITCOIN_FORKID
+    BITCOIN_FORKID,
+    BITCOIN_BIP32_DEPTH_TEST,
+    BITCOIN_BIP32_CHILD_TEST
 };
 
 // Run once initializer for bsv checkpoints

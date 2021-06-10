@@ -18,6 +18,8 @@
 
 #include "bcash/BRBCashParams.h"
 #include "bsv/BRBSVParams.h"
+#include "litecoin/BRLitecoinParams.h"
+#include "dogecoin/BRDogecoinParams.h"
 #include "bitcoin/BRBitcoinChainParams.h"
 
 #include "support/BRArray.h"
