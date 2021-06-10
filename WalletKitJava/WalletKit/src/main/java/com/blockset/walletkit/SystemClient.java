@@ -12,14 +12,6 @@ package com.blockset.walletkit;
 import android.support.annotation.Nullable;
 
 import com.blockset.walletkit.errors.QueryError;
-import com.blockset.walletkit.systemclient.brd.Blockchain;
-import com.blockset.walletkit.systemclient.brd.HederaAccount;
-import com.blockset.walletkit.systemclient.brd.Subscription;
-import com.blockset.walletkit.systemclient.brd.SubscriptionCurrency;
-import com.blockset.walletkit.systemclient.brd.SubscriptionEndpoint;
-import com.blockset.walletkit.systemclient.brd.Transaction;
-import com.blockset.walletkit.systemclient.brd.TransactionFee;
-import com.blockset.walletkit.systemclient.brd.TransactionIdentifier;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
@@ -106,7 +98,7 @@ public interface SystemClient {
         public Optional<String> getPrevHash();
         public Optional<String> getNextHash();
         // TODO make Optional as in swift
-        public List<SystemClient.Transaction> getTransactions();
+        public List<Transaction> getTransactions();
         public UnsignedLong getAcknowledgements();
     }
 
@@ -166,11 +158,10 @@ public interface SystemClient {
         public List<SubscriptionCurrency> getCurrencies();
     };
 
-    // TODO verify where is Address used in blockset Java?
-
     interface HederaAccount {
         public static final Comparator<HederaAccount> BALANCE_COMPARATOR =
                 (HederaAccount a1, HederaAccount a2) -> Long.compare(a1.getBalance().or(0L), a2.getBalance().or(0L));
+
         public String getId();
         public Optional<Long> getBalance();
         public Boolean isDeleted();
@@ -412,13 +403,6 @@ public interface SystemClient {
     public void deleteSubscription(String subscriptionId,
                                    CompletionHandler<Void, QueryError> handler);
 
-    /** Swift SystemClient additionally defines Address based API get/create but there is
-     *  no blockset analogue for these methods
-     */
-
-    /* Hedera Experimental? Users? Does it fit the generic interface? Also in the swift...
-
-     */
 
     /**
      * Retrieves the indicated Hedera account

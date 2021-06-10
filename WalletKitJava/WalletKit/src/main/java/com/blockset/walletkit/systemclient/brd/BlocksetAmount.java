@@ -7,28 +7,28 @@
  */
 package com.blockset.walletkit.systemclient.brd;
 
-import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.Amount;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Amount implements SystemClient.Amount {
+public class BlocksetAmount implements Amount {
 
     // creators
 
     // TODO(fix): require the currency id
-    public static Amount create(String amountValue) {
-        return new Amount(
+    public static BlocksetAmount create(String amountValue) {
+        return new BlocksetAmount(
                 null,
                 amountValue
         );
     }
 
     @JsonCreator
-    public static Amount create(@JsonProperty("currency_id") String currency,
-                                @JsonProperty("amount") String amount) {
-        return new Amount(
+    public static BlocksetAmount create(@JsonProperty("currency_id") String currency,
+                                        @JsonProperty("amount") String amount) {
+        return new BlocksetAmount(
                 checkNotNull(currency),
                 checkNotNull(amount)
         );
@@ -39,19 +39,21 @@ public class Amount implements SystemClient.Amount {
     private final String currency;
     private final String amount;
 
-    private Amount(String currencyId,
-                   String amount) {
+    private BlocksetAmount(String currencyId,
+                           String amount) {
         this.currency = currencyId;
         this.amount= amount;
     }
 
     // getters
 
+    @Override
     @JsonProperty("currency_id")
     public String getCurrency() {
         return currency;
     }
 
+    @Override
     @JsonProperty("amount")
     public String getAmount() {
         return amount;

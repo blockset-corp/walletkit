@@ -10,26 +10,8 @@ package com.blockset.walletkit.systemclient.brd;
 import android.support.annotation.Nullable;
 
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.systemclient.brd.DataTask;
-import com.blockset.walletkit.systemclient.brd.PagedData;
-import com.blockset.walletkit.systemclient.brd.QueryJsonParseError;
 import com.blockset.walletkit.errors.QueryNoDataError;
-import com.blockset.walletkit.systemclient.brd.QueryResponseError;
-import com.blockset.walletkit.systemclient.brd.GetChunkedCoordinator;
-import com.blockset.walletkit.systemclient.brd.NewSubscription;
-import com.blockset.walletkit.systemclient.brd.ObjectCoder;
 import com.blockset.walletkit.errors.QueryError;
-import com.blockset.walletkit.systemclient.brd.Block;
-import com.blockset.walletkit.systemclient.brd.Blockchain;
-import com.blockset.walletkit.systemclient.brd.Currency;
-import com.blockset.walletkit.systemclient.brd.HederaAccount;
-import com.blockset.walletkit.systemclient.brd.Subscription;
-import com.blockset.walletkit.systemclient.brd.SubscriptionCurrency;
-import com.blockset.walletkit.systemclient.brd.SubscriptionEndpoint;
-import com.blockset.walletkit.systemclient.brd.Transaction;
-import com.blockset.walletkit.systemclient.brd.TransactionFee;
-import com.blockset.walletkit.systemclient.brd.TransactionIdentifier;
-import com.blockset.walletkit.systemclient.brd.Transfer;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -74,14 +55,6 @@ public class BlocksetSystemClient implements SystemClient {
     private final ExecutorService apiExecutor;
     private final ScheduledExecutorService scheduledApiExecutor;
 
-    //private final BlockApi blockApi;
-    //private final BlockchainApi blockchainApi;
-    //private final CurrencyApi currencyApi;
-    //private final SubscriptionApi subscriptionApi;
-    //private final TransferApi transferApi;
-    //private final TransactionApi transactionApi;
-    //private final ExperimentalApi experimentalApi;
-
     public BlocksetSystemClient(OkHttpClient client) {
         this(client, null, null);
     }
@@ -106,13 +79,6 @@ public class BlocksetSystemClient implements SystemClient {
         this.ridGenerator = new AtomicInteger(0);
 
         this.client = client;
-     //   this.blockApi = new BlockApi(bdbClient, executorService);
-     //   this.blockchainApi = new BlockchainApi(bdbClient);
-     //   this.currencyApi = new CurrencyApi(bdbClient, executorService);
-     //   this.subscriptionApi = new SubscriptionApi(bdbClient);
-     //   this.transferApi = new TransferApi(bdbClient, executorService);
-      //  this.transactionApi = new TransactionApi(bdbClient, executorService);
-      //  this.experimentalApi = new ExperimentalApi(bdbClient, scheduledExecutorService);
     }
 
     public static BlocksetSystemClient createForTest (OkHttpClient client,
@@ -135,6 +101,7 @@ public class BlocksetSystemClient implements SystemClient {
     /**
      * Cancel all client requests that are currently enqueued or executing
      */
+    @Override
     public void cancelAll () {
         client.dispatcher().cancelAll();
         // In a race, any Callable on any Executor might run NOW, causing a `client` request.
@@ -143,7 +110,7 @@ public class BlocksetSystemClient implements SystemClient {
     }
 
     // Blockchain
-
+    @Override
     public void getBlockchains(boolean isMainnet,
                                CompletionHandler<List<Blockchain>, QueryError> handler) {
         ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
@@ -151,13 +118,14 @@ public class BlocksetSystemClient implements SystemClient {
         paramsBuilder.put("verified", "true");
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
-        bdbClient.sendGetForArray("blockchains", params, Blockchain.class, handler);
+        bdbClient.sendGetForArray("blockchains", params, BlocksetBlockchain.class, handler);
     }
 
+    @Override
     public void getBlockchain(String blockchainId,
                               CompletionHandler<Blockchain, QueryError> handler) {
         Multimap<String, String> params = ImmutableListMultimap.of("verified", "true");
-        bdbClient.sendGetWithId("blockchains", blockchainId, params, Blockchain.class, handler);
+        bdbClient.sendGetWithId("blockchains", blockchainId, params, BlocksetBlockchain.class, handler);
     }
 
     // Currency
@@ -171,7 +139,7 @@ public class BlocksetSystemClient implements SystemClient {
             }
 
             private void getNextBlocks(String nextUrl, CompletionHandler<PagedData<Currency>, QueryError> handler) {
-                bdbClient.sendGetForArrayWithPaging("blocks", nextUrl, Currency.class, handler);
+                bdbClient.sendGetForArrayWithPaging("blocks", nextUrl, BlocksetCurrency.class, handler);
             }
 
             @Override
@@ -194,6 +162,7 @@ public class BlocksetSystemClient implements SystemClient {
         };
     }
 
+    @Override
     public void getCurrencies(@Nullable String blockchainId,
                               @Nullable Boolean isMainnet,
                               CompletionHandler<List<Currency>, QueryError> handler) {
@@ -207,16 +176,17 @@ public class BlocksetSystemClient implements SystemClient {
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
         CompletionHandler<PagedData<Currency>, QueryError> pagedHandler = createPagedResultsHandler(handler);
-        bdbClient.sendGetForArrayWithPaging("currencies", params, Currency.class, pagedHandler);
+        bdbClient.sendGetForArrayWithPaging("currencies", params, BlocksetCurrency.class, pagedHandler);
     }
 
+    @Override
     public void getCurrency(String currencyId,
                             CompletionHandler<Currency, QueryError> handler) {
-        bdbClient.sendGetWithId("currencies", currencyId, ImmutableMultimap.of(), Currency.class, handler);
+        bdbClient.sendGetWithId("currencies", currencyId, ImmutableMultimap.of(), BlocksetCurrency.class, handler);
     }
 
     // Subscription
-
+    @Override
     public void getOrCreateSubscription(Subscription subscription,
                                         CompletionHandler<Subscription, QueryError> handler) {
         getSubscription(subscription.getId(), new CompletionHandler<Subscription, QueryError>() {
@@ -233,32 +203,37 @@ public class BlocksetSystemClient implements SystemClient {
         });
     }
 
+    @Override
     public void getSubscription(String subscriptionId,
                                 CompletionHandler<Subscription, QueryError> handler) {
         bdbClient.sendGetWithId("subscriptions", subscriptionId, ImmutableMultimap.of(),
-                                 Subscription.class, handler);
+                                 BlocksetSubscription.class, handler);
     }
 
+    @Override
     public void getSubscriptions(CompletionHandler<List<Subscription>, QueryError> handler) {
         bdbClient.sendGetForArray("subscriptions", ImmutableMultimap.of(),
-                                   Subscription.class, handler);
+                                   BlocksetSubscription.class, handler);
     }
 
+    @Override
     public void createSubscription(String deviceId,
                                    SubscriptionEndpoint endpoint,
                                    List<SubscriptionCurrency> currencies,
                                    CompletionHandler<Subscription, QueryError> handler) {
         bdbClient.sendPost("subscriptions", ImmutableMultimap.of(),
                             NewSubscription.create(deviceId, endpoint, currencies),
-                            Subscription.class, handler);
+                            BlocksetSubscription.class, handler);
     }
 
+    @Override
     public void updateSubscription(Subscription subscription,
                                    CompletionHandler<Subscription, QueryError> handler) {
         bdbClient.sendPutWithId("subscriptions", subscription.getId(), ImmutableMultimap.of(),
-                                 subscription, Subscription.class, handler);
+                                 subscription, BlocksetSubscription.class, handler);
     }
 
+    @Override
     public void deleteSubscription(String id,
                                    CompletionHandler<Void, QueryError> handler) {
         bdbClient.sendDeleteWithId("subscriptions", id, ImmutableMultimap.of(), handler);
@@ -266,19 +241,21 @@ public class BlocksetSystemClient implements SystemClient {
 
     // Transfer
 
-    private CompletionHandler<PagedData<Transfer>, QueryError> createPagedTransferResultsHandler(GetChunkedCoordinator<String, Transfer> coordinator,
-                                                                                                 List<String> chunkedAddresses) {
+    private CompletionHandler<PagedData<Transfer>, QueryError> createPagedTransferResultsHandler(
+            GetChunkedCoordinator<String, Transfer> coordinator,
+            List<String> chunkedAddresses) {
+
         List<Transfer> allResults = new ArrayList<>();
         return new CompletionHandler<PagedData<Transfer>, QueryError>() {
 
             private void getTransfer(String id,
                                     CompletionHandler<Transfer, QueryError> handler) {
-                bdbClient.sendGetWithId("transfers", id, ImmutableMultimap.of(), Transfer.class, handler);
+                bdbClient.sendGetWithId("transfers", id, ImmutableMultimap.of(), BlocksetTransfer.class, handler);
             }
 
             private void getNextTransfers(String nextUrl,
                                           CompletionHandler<PagedData<Transfer>, QueryError> handler) {
-                bdbClient.sendGetForArrayWithPaging("transfers", nextUrl, Transfer.class, handler);
+                bdbClient.sendGetForArrayWithPaging("transfers", nextUrl, BlocksetTransfer.class, handler);
             }
 
             private void submitGetNextTransfers(String nextUrl,
@@ -307,22 +284,7 @@ public class BlocksetSystemClient implements SystemClient {
     }
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-   /* private void getTransfers(String id,
-                             List<String> addresses,
-                             UnsignedLong beginBlockNumber,
-                             UnsignedLong endBlockNumber,
-                             CompletionHandler<List<Transfer>, QueryError> handler) {
-        getTransfers(
-                id,
-                addresses,
-                beginBlockNumber,
-                endBlockNumber,
-                null,
-                handler
-        );
-    }*/
-
-    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
+    @Override
     public void getTransfers(String blockchainId,
                              List<String> addresses,
                              @Nullable UnsignedLong beginBlockNumber,
@@ -349,14 +311,15 @@ public class BlocksetSystemClient implements SystemClient {
             ImmutableMultimap<String, String> params = paramsBuilder.build();
 
             CompletionHandler<PagedData<Transfer>, QueryError> pagedHandler = createPagedTransferResultsHandler(coordinator, chunkedAddresses);
-            bdbClient.sendGetForArrayWithPaging("transfers", params, Transfer.class, pagedHandler);
+            bdbClient.sendGetForArrayWithPaging("transfers", params, BlocksetTransfer.class, pagedHandler);
         }
     }
 
+    @Override
     public void getTransfer(String transferId,
                             CompletionHandler<Transfer, QueryError> handler) {
 
-        bdbClient.sendGetWithId("transfers", transferId, ImmutableMultimap.of(), Transfer.class, handler);
+        bdbClient.sendGetWithId("transfers", transferId, ImmutableMultimap.of(), BlocksetTransfer.class, handler);
     }
 
     // Transactions
@@ -368,7 +331,7 @@ public class BlocksetSystemClient implements SystemClient {
 
             private void getNextTransactions(String nextUrl,
                                              CompletionHandler<PagedData<Transaction>, QueryError> handler) {
-                bdbClient.sendGetForArrayWithPaging("transactions", nextUrl, Transaction.class, handler);
+                bdbClient.sendGetForArrayWithPaging("transactions", nextUrl, BlocksetTransaction.class, handler);
             }
 
             private void submitGetNextTransactions(String nextUrl,
@@ -421,28 +384,7 @@ public class BlocksetSystemClient implements SystemClient {
     }
 
     /* Throws 'IllegalArgumentException' if `addresses` is empty. */
-   /* private void getTransactions(String id,
-                                List<String> addresses,
-                                @Nullable UnsignedLong beginBlockNumber,
-                                @Nullable UnsignedLong endBlockNumber,
-                                boolean includeRaw,
-                                boolean includeProof,
-                                boolean includeTransfers,
-                                CompletionHandler<List<Transaction>, QueryError> handler) {
-        getTransactions(
-                id,
-                addresses,
-                beginBlockNumber,
-                endBlockNumber,
-                includeRaw,
-                includeProof,
-                includeTransfers,
-                null,
-                handler
-        );
-    }*/
-
-    /* Throws 'IllegalArgumentException' if `addresses` is empty. */
+    @Override
     public void getTransactions(String blockchainId,
                                 List<String> addresses,
                                 @Nullable UnsignedLong beginBlockNumber,
@@ -476,10 +418,11 @@ public class BlocksetSystemClient implements SystemClient {
             ImmutableMultimap<String, String> params = paramsBuilder.build();
 
             CompletionHandler<PagedData<Transaction>, QueryError> pagedHandler = createPagedTransactionResultsHandler(coordinator, chunkedAddresses);
-            bdbClient.sendGetForArrayWithPaging("transactions", params, Transaction.class, pagedHandler);
+            bdbClient.sendGetForArrayWithPaging("transactions", params, BlocksetTransaction.class, pagedHandler);
         }
     }
 
+    @Override
     public void getTransaction(String transactionId,
                                boolean includeRaw,
                                boolean includeProof,
@@ -491,9 +434,10 @@ public class BlocksetSystemClient implements SystemClient {
                 "include_transfers", String.valueOf(includeTransfers),
                 "include_calls", "false");
 
-        bdbClient.sendGetWithId("transactions", transactionId, params, Transaction.class, handler);
+        bdbClient.sendGetWithId("transactions", transactionId, params, BlocksetTransaction.class, handler);
     }
 
+    @Override
     public void createTransaction(String blockchainId,
                                   byte[] tx,
                                   String identifier,
@@ -504,9 +448,10 @@ public class BlocksetSystemClient implements SystemClient {
                 "submit_context", String.format ("WalletKit:%s:%s", blockchainId, (null != identifier ? identifier : ("Data:" + data.substring(0,20)))),
                 "data", data);
 
-        bdbClient.sendPost("transactions", ImmutableMultimap.of(), json, TransactionIdentifier.class, handler);
+        bdbClient.sendPost("transactions", ImmutableMultimap.of(), json, BlocksetTransactionIdentifier.class, handler);
     }
 
+    @Override
     public void estimateTransactionFee(String blockchainId,
                                        byte[] data,
                                        CompletionHandler<TransactionFee, QueryError> handler) {
@@ -519,25 +464,25 @@ public class BlocksetSystemClient implements SystemClient {
                 "submit_context", String.format("WalletKit:%s:Data:%s (FeeEstimate)", blockchainId, sdata.substring(0, 20)),
                 "data", data);
 
-        bdbClient.sendPost("transactions", params, json, TransactionFee.class, handler);
+        bdbClient.sendPost("transactions", params, json, BlocksetTransactionFee.class, handler);
     }
 
     // Blocks
 
-    private CompletionHandler<PagedData<Block>, QueryError> createPagedBlockResultsHandler(CompletionHandler<List<Block>, QueryError> handler) {
+    private CompletionHandler<PagedData<BlocksetBlock>, QueryError> createPagedBlockResultsHandler(CompletionHandler<List<Block>, QueryError> handler) {
         List<Block> allResults = new ArrayList<>();
-        return new CompletionHandler<PagedData<Block>, QueryError>() {
+        return new CompletionHandler<PagedData<BlocksetBlock>, QueryError>() {
 
-            private void getNextBlocks(String nextUrl, CompletionHandler<PagedData<Block>, QueryError> handler) {
-                bdbClient.sendGetForArrayWithPaging("blocks", nextUrl, Block.class, handler);
+            private void getNextBlocks(String nextUrl, CompletionHandler<PagedData<BlocksetBlock>, QueryError> handler) {
+                bdbClient.sendGetForArrayWithPaging("blocks", nextUrl, BlocksetBlock.class, handler);
             }
 
-            private void submitGetNextBlocks(String nextUrl, CompletionHandler<PagedData<Block>, QueryError> handler) {
+            private void submitGetNextBlocks(String nextUrl, CompletionHandler<PagedData<BlocksetBlock>, QueryError> handler) {
                 apiExecutor.submit(() -> getNextBlocks(nextUrl, handler));
             }
 
             @Override
-            public void handleData(PagedData<Block> results) {
+            public void handleData(PagedData<BlocksetBlock> results) {
                 Optional<String> nextUrl = results.getNextUrl();
                 allResults.addAll(results.getData());
 
@@ -555,6 +500,8 @@ public class BlocksetSystemClient implements SystemClient {
             }
         };
     }
+
+    @Override
     public void getBlocks(String blockchainId,
                           UnsignedLong beginBlockNumber,
                           UnsignedLong endBlockNumber,
@@ -577,49 +524,11 @@ public class BlocksetSystemClient implements SystemClient {
             paramsBuilder.put("max_page_size", maxPageSize.toString());
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
-        CompletionHandler<PagedData<Block>, QueryError> pagedHandler = createPagedBlockResultsHandler(handler);
-        bdbClient.sendGetForArrayWithPaging("blocks", params, Block.class, pagedHandler);
+        CompletionHandler<PagedData<BlocksetBlock>, QueryError> pagedHandler = createPagedBlockResultsHandler(handler);
+        bdbClient.sendGetForArrayWithPaging("blocks", params, BlocksetBlock.class, pagedHandler);
     }
 
-   /* public void getBlocks(String id,
-                          UnsignedLong beginBlockNumber,
-                          UnsignedLong endBlockNumber,
-                          boolean includeTx,
-                          boolean includeTxRaw,
-                          boolean includeTxProof,
-                          @Nullable Integer maxPageSize,
-                          CompletionHandler<List<Block>, QueryError> handler) {
-        blockApi.getBlocks(
-                id,
-                beginBlockNumber,
-                endBlockNumber,
-                false,
-                includeTx,
-                includeTxRaw,
-                includeTxProof,
-                maxPageSize,
-                handler);
-    }*/
-
-    /* NO USAGES ??
-    public void getBlocksWithRaw(String id,
-                                 UnsignedLong beginBlockNumber,
-                                 UnsignedLong endBlockNumber,
-                                 @Nullable Integer maxPageSize,
-                                 CompletionHandler<List<Block>, QueryError> handler) {
-        blockApi.getBlocks(
-                id,
-                beginBlockNumber,
-                endBlockNumber,
-                true,
-                false,
-                false,
-                false,
-                maxPageSize,
-                handler
-        );
-    } */
-
+    @Override
     public void getBlock(String id,
                          boolean includeRaw,
                          boolean includeTx,
@@ -632,21 +541,8 @@ public class BlocksetSystemClient implements SystemClient {
                 "include_tx_raw", String.valueOf(includeTxRaw),
                 "include_tx_proof", String.valueOf(includeTxProof));
 
-        bdbClient.sendGetWithId("blocks", id, params, Block.class, handler);
+        bdbClient.sendGetWithId("blocks", id, params, BlocksetBlock.class, handler);
     }
-
-    /* NO USAGES ??
-    public void getBlockWithRaw(String id,
-                                CompletionHandler<Block, QueryError> handler) {
-        blockApi.getBlock(
-                id,
-                true,
-                false,
-                false,
-                false,
-                handler
-        );
-    } */
 
     // Addresses
 
@@ -764,6 +660,7 @@ public class BlocksetSystemClient implements SystemClient {
         }
     }
 
+    @Override
     public void getHederaAccount(String blockchainId,
                                  String publicKey,
                                  CompletionHandler<List<HederaAccount>, QueryError> handler) {
@@ -773,10 +670,11 @@ public class BlocksetSystemClient implements SystemClient {
                 ImmutableListMultimap.of(
                         "blockchain_id", blockchainId,
                         "pub_key", publicKey),
-                HederaAccount.class,
+                BlocksetHederaAccount.class,
                 handler);
     }
 
+    @Override
     public void createHederaAccount(String id,
                                     String publicKey,
                                     CompletionHandler<List<HederaAccount>, QueryError> handler) {

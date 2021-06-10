@@ -7,21 +7,21 @@
  */
 package com.blockset.walletkit.systemclient.brd;
 
-import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.SubscriptionEndpoint;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SubscriptionEndpoint implements SystemClient.SubscriptionEndpoint {
+public class BlocksetSubscriptionEndpoint implements SubscriptionEndpoint {
 
     // creators
 
     @JsonCreator
-    public static SubscriptionEndpoint create(@JsonProperty("kind") String kind,
-                                              @JsonProperty("environment") String environment,
-                                              @JsonProperty("value") String value) {
-        return new SubscriptionEndpoint(
+    public static BlocksetSubscriptionEndpoint create(@JsonProperty("kind") String kind,
+                                                      @JsonProperty("environment") String environment,
+                                                      @JsonProperty("value") String value) {
+        return new BlocksetSubscriptionEndpoint(
                 checkNotNull(kind),
                 checkNotNull(environment),
                 checkNotNull(value)
@@ -34,9 +34,9 @@ public class SubscriptionEndpoint implements SystemClient.SubscriptionEndpoint {
     private final String environment;
     private final String value;
 
-    private SubscriptionEndpoint(String kind,
-                                 String environment,
-                                 String value) {
+    private BlocksetSubscriptionEndpoint(String kind,
+                                         String environment,
+                                         String value) {
         this.kind = kind;
         this.environment = environment;
         this.value = value;
@@ -44,16 +44,19 @@ public class SubscriptionEndpoint implements SystemClient.SubscriptionEndpoint {
 
     // getters
 
-    @JsonProperty("kind")
-    public String getKind() {
-        return kind;
-    }
-
+    @Override
     @JsonProperty("environment")
     public String getEnvironment() {
         return environment;
     }
 
+    @Override
+    @JsonProperty("kind")
+    public String getKind() {
+        return kind;
+    }
+
+    @Override
     @JsonProperty("value")
     public String getValue() {
         return value;

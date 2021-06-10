@@ -98,6 +98,9 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletDeletedEvent;
+import com.blockset.walletkit.systemclient.brd.BlocksetAmount;
+import com.blockset.walletkit.systemclient.brd.BlocksetCurrency;
+import com.blockset.walletkit.systemclient.brd.BlocksetTransfer;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -238,7 +241,7 @@ final class System implements com.blockset.walletkit.System {
 
         // TODO: SystemClient inscrutability question?
         return Optional.of(
-                com.blockset.walletkit.systemclient.brd.Currency.create(
+                BlocksetCurrency.create(
                         uids,
                         name,
                         code,
@@ -2193,11 +2196,11 @@ final class System implements com.blockset.walletkit.System {
             transfers = new ArrayList<>(transfersWithoutFee);
             if (null == transferMatchingFee) {
                 transfers.add(
-                        com.blockset.walletkit.systemclient.brd.Transfer.create(
+                        BlocksetTransfer.create(
                                 transferWithFee.getId(),
                                 transferWithFee.getBlockchainId(),
                                 transferWithFee.getIndex(),
-                                com.blockset.walletkit.systemclient.brd.Amount.create(transferWithFee.getAmount().getCurrency(), "0"),
+                                BlocksetAmount.create(transferWithFee.getAmount().getCurrency(), "0"),
                                 transferWithFee.getMetaData(),
                                 transferWithFee.getSource().orNull(),
                                 "unknown",

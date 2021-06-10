@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.systemclient.brd;
 
-import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.BlockchainFee;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,25 +15,25 @@ import com.google.common.primitives.UnsignedLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class BlockchainFee implements SystemClient.BlockchainFee {
+public class BlocksetBlockchainFee implements BlockchainFee {
 
     // creators
 
-    public static BlockchainFee create(String amount,
-                                       String tier,
-                                       UnsignedLong confirmationTimeInMilliseconds) {
+    public static BlocksetBlockchainFee create(String amount,
+                                               String tier,
+                                               UnsignedLong confirmationTimeInMilliseconds) {
         return create(
-                Amount.create(amount),
+                BlocksetAmount.create(amount),
                 tier,
                 confirmationTimeInMilliseconds
         );
     }
 
     @JsonCreator
-    public static BlockchainFee create(@JsonProperty("fee") Amount fee,
-                                       @JsonProperty("tier") String tier,
-                                       @JsonProperty("estimated_confirmation_in") UnsignedLong confirmationTimeInMilliseconds) {
-        return new BlockchainFee(
+    public static BlocksetBlockchainFee create(@JsonProperty("fee") BlocksetAmount fee,
+                                               @JsonProperty("tier") String tier,
+                                               @JsonProperty("estimated_confirmation_in") UnsignedLong confirmationTimeInMilliseconds) {
+        return new BlocksetBlockchainFee(
                 checkNotNull(fee),
                 checkNotNull(tier),
                 checkNotNull(confirmationTimeInMilliseconds)
@@ -42,13 +42,13 @@ public class BlockchainFee implements SystemClient.BlockchainFee {
 
     // fields
 
-    private final Amount amount;
+    private final BlocksetAmount amount;
     private final String tier;
     private final UnsignedLong confirmationTimeInMilliseconds;
 
-    private BlockchainFee(Amount amount,
-                         String tier,
-                         UnsignedLong confirmationTimeInMilliseconds) {
+    private BlocksetBlockchainFee(BlocksetAmount amount,
+                                  String tier,
+                                  UnsignedLong confirmationTimeInMilliseconds) {
         this.amount = amount;
         this.tier = tier;
         this.confirmationTimeInMilliseconds = confirmationTimeInMilliseconds;
@@ -56,23 +56,26 @@ public class BlockchainFee implements SystemClient.BlockchainFee {
 
     // getters
 
-    @JsonProperty("fee")
-    public Amount getFee() {
-        return amount;
+    @Override
+    @JsonIgnore
+    public String getAmount() {
+        return amount.getAmount();
     }
 
+    @Override
     @JsonProperty("tier")
     public String getTier() {
         return tier;
     }
 
+    @Override
     @JsonProperty("estimated_confirmation_in")
     public UnsignedLong getConfirmationTimeInMilliseconds() {
         return confirmationTimeInMilliseconds;
     }
 
-    @JsonIgnore
-    public String getAmount() {
-        return amount.getAmount();
+    @JsonProperty("fee")
+    public BlocksetAmount getFee() {
+        return amount;
     }
 }

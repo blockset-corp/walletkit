@@ -61,7 +61,7 @@ public final class ObjectCoder {
         }
     }
 
-    public <X> List<X> deserializeObjectList(Class<X> clazz, Object object) throws ObjectCoderException {
+    public <X> List<X> deserializeObjectList(Class<? extends X> clazz, Object object) throws ObjectCoderException {
         TypeFactory typeFactory = mapper.getTypeFactory();
         JavaType type = typeFactory.constructCollectionLikeType(ArrayList.class, clazz);
         try {

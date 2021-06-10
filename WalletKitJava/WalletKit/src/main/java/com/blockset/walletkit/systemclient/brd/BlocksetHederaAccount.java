@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.systemclient.brd;
 
-import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.HederaAccount;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
@@ -16,12 +16,13 @@ import java.util.Comparator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class HederaAccount implements SystemClient.HederaAccount {
+public class BlocksetHederaAccount implements HederaAccount {
+
     @JsonCreator
-    public static HederaAccount create(@JsonProperty("account_id") String id,
-                                       @JsonProperty("hbar_balance") Long balance,
-                                       @JsonProperty("account_status") String status) {
-        return new HederaAccount(
+    public static BlocksetHederaAccount create(@JsonProperty("account_id") String id,
+                                               @JsonProperty("hbar_balance") Long balance,
+                                               @JsonProperty("account_status") String status) {
+        return new BlocksetHederaAccount(
                 checkNotNull(id),
                 balance,
                 checkNotNull(status)
@@ -32,28 +33,31 @@ public class HederaAccount implements SystemClient.HederaAccount {
     private final Optional<Long> balance;
     private final String status;
 
-    private HederaAccount (String id, Long balance, String status) {
+    private BlocksetHederaAccount (String id, Long balance, String status) {
         this.id = id;
         this.balance = Optional.fromNullable(balance);
         this.status = status;
-        }
+    }
 
+    @Override
     @JsonProperty("account_id")
     public String getId () {
         return id;
     }
 
+    @Override
     @JsonProperty("hbar_balance")
     public Optional<Long> getBalance () {
         return balance;
     }
 
+    @Override
+    public Boolean isDeleted() {
+        return !"active".equalsIgnoreCase(status);
+    }
+
     @JsonProperty("account_status")
     public String getStatus() {
         return status;
-    }
-
-    public Boolean isDeleted() {
-        return !"active".equalsIgnoreCase(status);
     }
 }

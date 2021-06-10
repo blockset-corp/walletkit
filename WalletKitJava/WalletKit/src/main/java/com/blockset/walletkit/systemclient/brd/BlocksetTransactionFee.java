@@ -6,7 +6,8 @@
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
 package com.blockset.walletkit.systemclient.brd;
-import com.blockset.walletkit.SystemClient;
+
+import com.blockset.walletkit.SystemClient.TransactionFee;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
@@ -15,14 +16,14 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TransactionFee implements SystemClient.TransactionFee {
+public class BlocksetTransactionFee implements TransactionFee {
     // creator
 
     @JsonCreator
-    public static TransactionFee create(
-            @JsonProperty("cost_units") UnsignedLong costUnits,
-            @JsonProperty("properties") Map<String, String> properties) {
-        return new TransactionFee(
+    public static BlocksetTransactionFee create(
+                        @JsonProperty("cost_units") UnsignedLong costUnits,
+                        @JsonProperty("properties") Map<String, String> properties) {
+        return new BlocksetTransactionFee(
                 checkNotNull(costUnits),
                 properties
         );
@@ -33,19 +34,21 @@ public class TransactionFee implements SystemClient.TransactionFee {
     private final UnsignedLong costUnits;
     private final Map<String, String> properties;
 
-    private TransactionFee(UnsignedLong costUnits,
-                           Map<String, String> properties) {
+    private BlocksetTransactionFee(UnsignedLong costUnits,
+                                   Map<String, String> properties) {
         this.costUnits = costUnits;
         this.properties = properties;
     }
 
     // getters
 
+    @Override
     @JsonProperty("cost_units")
     public UnsignedLong getCostUnits() {
         return costUnits;
     }
 
+    @Override
     @JsonProperty("properties")
     public Map<String, String> getProperties() {
         return properties;

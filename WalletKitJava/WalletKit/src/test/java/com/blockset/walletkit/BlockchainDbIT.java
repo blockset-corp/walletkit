@@ -7,6 +7,10 @@
  */
 package com.blockset.walletkit;
 
+import com.blockset.walletkit.systemclient.brd.BlocksetSubscription;
+import com.blockset.walletkit.systemclient.brd.BlocksetSubscriptionCurrency;
+import com.blockset.walletkit.systemclient.brd.BlocksetSubscriptionEndpoint;
+import com.blockset.walletkit.systemclient.brd.BlocksetSubscriptionEvent;
 import com.blockset.walletkit.systemclient.brd.DataTask;
 import com.blockset.walletkit.SystemClient.Blockchain;
 import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
@@ -311,19 +315,19 @@ public class BlockchainDbIT {
 
         String deviceId = UUID.randomUUID().toString();
 
-        SubscriptionEndpoint endpoint = com.blockset.walletkit.systemclient.brd.SubscriptionEndpoint.create(
+        SubscriptionEndpoint endpoint = BlocksetSubscriptionEndpoint.create(
                 "fcm",
                 "development",
                 "fcm registration token");
 
         List<SubscriptionCurrency> currencies = Collections.singletonList(
-                com.blockset.walletkit.systemclient.brd.SubscriptionCurrency.create(
+                BlocksetSubscriptionCurrency.create(
                         "bitcoin-testnet:__native__",
                         Arrays.asList(
                                 "2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT",
                                 "mvnSpXB1Vizfg3uodBx418APVK1jQXScvW"),
                         Collections.singletonList(
-                                com.blockset.walletkit.systemclient.brd.SubscriptionEvent.create(
+                                BlocksetSubscriptionEvent.create(
                                         "confirmed",
                                         Collections.singletonList(UnsignedInteger.ONE)
                                 )
@@ -345,6 +349,7 @@ public class BlockchainDbIT {
         Subscription createSubscription = subHandler.dat().orNull();
         assertNotNull(createSubscription);
 
+
         // subscription get
 
         subHandler = new SynchronousCompletionHandler<>();
@@ -363,15 +368,16 @@ public class BlockchainDbIT {
         assertNotEquals(0, updatedGetSubscriptions.size());
         assertEquals(initialGetSubscriptions.size() + 1, updatedGetSubscriptions.size());
 
+
         // subscription update
 
-        List<SubscriptionCurrency> updatedCurrencies = Collections.singletonList(
-                com.blockset.walletkit.systemclient.brd.SubscriptionCurrency.create(
+        List<BlocksetSubscriptionCurrency> updatedCurrencies = Collections.singletonList(
+                BlocksetSubscriptionCurrency.create(
                         "bitcoin-testnet:__native__",
                         Collections.singletonList(
                                 "2NEpHgLvBJqGFVwQPUA3AQPjpE5gNWhETfT"),
                         Collections.singletonList(
-                                com.blockset.walletkit.systemclient.brd.SubscriptionEvent.create(
+                                BlocksetSubscriptionEvent.create(
                                         "confirmed",
                                         Collections.singletonList(UnsignedInteger.ONE)
                                 )
@@ -379,10 +385,10 @@ public class BlockchainDbIT {
                 )
         );
 
-        Subscription updatedSubscription = com.blockset.walletkit.systemclient.brd.Subscription.create(
+        Subscription updatedSubscription = BlocksetSubscription.create(
                 createSubscription.getId(),
                 createSubscription.getDevice(),
-                createSubscription.getEndpoint(),
+                (BlocksetSubscriptionEndpoint)createSubscription.getEndpoint(),
                 updatedCurrencies
         );
 
@@ -391,6 +397,7 @@ public class BlockchainDbIT {
         Subscription updateSubscription = subHandler.dat().orNull();
         assertNotNull(updateSubscription);
         assertEquals(updatedSubscription.getCurrencies().size(), updateSubscription.getCurrencies().size());
+
 
         // subscription delete
 
@@ -406,6 +413,7 @@ public class BlockchainDbIT {
         List<Subscription> updatedAgainGetSubscriptions = subsHandler.dat().orNull();
         assertNotNull(updatedAgainGetSubscriptions);
         assertEquals(initialGetSubscriptions.size(), updatedAgainGetSubscriptions.size());
+
     }
 
     // Helpers

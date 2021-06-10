@@ -25,7 +25,9 @@ class GetChunkedCoordinator<ChunkType, ResultType> {
     private QueryError error;
 
     /* package */
-    GetChunkedCoordinator(List<List<ChunkType>> chunks, CompletionHandler<List<ResultType>, QueryError> handler) {
+    GetChunkedCoordinator(List<List<ChunkType>> chunks,
+                          CompletionHandler<List<ResultType>, QueryError> handler) {
+
         this.chunks = new ArrayList<>(chunks);
         this.transactions = new ArrayList<>();
         this.handler = handler;

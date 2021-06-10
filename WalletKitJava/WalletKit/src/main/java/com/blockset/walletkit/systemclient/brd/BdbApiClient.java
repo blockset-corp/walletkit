@@ -82,7 +82,7 @@ public class BdbApiClient {
     <T> void sendPost(String resource,
                       Multimap<String, String> params,
                       Object body,
-                      Class<T> clazz,
+                      Class<? extends T> clazz,
                       CompletionHandler<T, QueryError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
@@ -126,7 +126,7 @@ public class BdbApiClient {
     /* package */
     <T> void sendGetForArray(String resource,
                              Multimap<String, String> params,
-                             Class<T> clazz,
+                             Class<? extends T> clazz,
                              CompletionHandler<List<T>, QueryError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
@@ -141,7 +141,7 @@ public class BdbApiClient {
     <T> void sendGetForArray(List<String> resourcePath,
                              String embeddedPath,
                              Multimap<String, String> params,
-                             Class<T> clazz,
+                             Class<? extends T> clazz,
                              CompletionHandler<List<T>, QueryError> handler) {
         makeAndSendRequest(
                 resourcePath,
@@ -155,7 +155,7 @@ public class BdbApiClient {
     /* package */
     <T> void sendGetForArrayWithPaging(String resource,
                                        Multimap<String, String> params,
-                                       Class<T> clazz,
+                                       Class<? extends T> clazz,
                                        CompletionHandler<PagedData<T>, QueryError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
@@ -169,7 +169,7 @@ public class BdbApiClient {
     /* package */
     <T> void sendGetForArrayWithPaging(String resource,
                                        String url,
-                                       Class<T> clazz,
+                                       Class<? extends T> clazz,
                                        CompletionHandler<PagedData<T>, QueryError> handler) {
         makeAndSendRequest(
                 url,
@@ -182,7 +182,7 @@ public class BdbApiClient {
     <T> void sendGetWithId(String resource,
                            String id,
                            Multimap<String, String> params,
-                           Class<T> clazz,
+                           Class<? extends T> clazz,
                            CompletionHandler<T, QueryError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
@@ -197,7 +197,7 @@ public class BdbApiClient {
     <T> void sendGetWithId(List<String> resourcePath,
                            String id,
                            Multimap<String, String> params,
-                           Class<T> clazz,
+                           Class<? extends T> clazz,
                            CompletionHandler<T, QueryError> handler) {
         List<String> fullResourcePath = new ArrayList<>(resourcePath);
         fullResourcePath.add(id);
@@ -231,7 +231,7 @@ public class BdbApiClient {
                            String id,
                            Multimap<String, String> params,
                            Object json,
-                           Class<T> clazz,
+                           Class<? extends T> clazz,
                            CompletionHandler<T, QueryError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
@@ -260,7 +260,7 @@ public class BdbApiClient {
 
     private <T> void makeAndSendRequest(String fullUrl,
                                         String httpMethod,
-                                        ResponseParser<T> parser,
+                                        ResponseParser<? extends T> parser,
                                         CompletionHandler<T, QueryError> handler) {
         HttpUrl url = HttpUrl.parse(fullUrl);
         if (null == url) {
@@ -328,7 +328,7 @@ public class BdbApiClient {
 
     private <T> void sendRequest(Request request,
                                  DataTask dataTask,
-                                 ResponseParser<T> parser,
+                                 ResponseParser<? extends T> parser,
                                  CompletionHandler<T, QueryError> handler) {
         dataTask.execute(client, request, new Callback() {
             @Override
@@ -401,10 +401,10 @@ public class BdbApiClient {
     private static class RootObjectResponseParser<T> implements ResponseParser<T> {
 
         private final ObjectCoder coder;
-        private final Class<T> clazz;
+        private final Class<? extends T> clazz;
 
         RootObjectResponseParser(ObjectCoder coder,
-                                 Class<T> clazz) {
+                                 Class<? extends T> clazz) {
             this.coder = coder;
             this.clazz = clazz;
         }
@@ -428,11 +428,11 @@ public class BdbApiClient {
 
         private final String path;
         private final ObjectCoder coder;
-        private final Class<T> clazz;
+        private final Class<?extends T> clazz;
 
         EmbeddedArrayResponseParser(String path,
                                     ObjectCoder coder,
-                                    Class<T> clazz) {
+                                    Class<? extends T> clazz) {
             this.path = path;
             this.coder = coder;
             this.clazz = clazz;
@@ -460,11 +460,11 @@ public class BdbApiClient {
 
         private final String path;
         private final ObjectCoder coder;
-        private final Class<T> clazz;
+        private final Class<? extends T> clazz;
 
         EmbeddedPagedArrayResponseHandler(String path,
                                           ObjectCoder coder,
-                                          Class<T> clazz) {
+                                          Class<? extends T> clazz) {
             this.path = path;
             this.coder = coder;
             this.clazz = clazz;

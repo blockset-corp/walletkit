@@ -7,24 +7,26 @@
  */
 package com.blockset.walletkit.systemclient.brd;
 
-import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.SubscriptionCurrency;
 import com.blockset.walletkit.SystemClient.SubscriptionEvent;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SubscriptionCurrency implements SystemClient.SubscriptionCurrency {
+public class BlocksetSubscriptionCurrency implements SubscriptionCurrency {
 
     // creators
 
     @JsonCreator
-    public static SubscriptionCurrency create(@JsonProperty("currency_id") String currencyId,
-                                              @JsonProperty("addresses") List<String> addresses,
-                                              @JsonProperty("events") List<SubscriptionEvent> events) {
-        return new SubscriptionCurrency(
+    public static BlocksetSubscriptionCurrency create(@JsonProperty("currency_id") String currencyId,
+                                                      @JsonProperty("addresses") List<String> addresses,
+                                                      @JsonProperty("events") List<BlocksetSubscriptionEvent> events) {
+        return new BlocksetSubscriptionCurrency(
                 checkNotNull(currencyId),
                 checkNotNull(addresses),
                 checkNotNull(events)
@@ -35,11 +37,11 @@ public class SubscriptionCurrency implements SystemClient.SubscriptionCurrency {
 
     private final String currencyId;
     private final List<String> addresses;
-    private final List<SubscriptionEvent> events;
+    private final List<BlocksetSubscriptionEvent> events;
 
-    private SubscriptionCurrency(String currencyId,
-                                 List<String> addresses,
-                                 List<SubscriptionEvent> events) {
+    private BlocksetSubscriptionCurrency(String currencyId,
+                                         List<String> addresses,
+                                         List<BlocksetSubscriptionEvent> events) {
         this.currencyId = currencyId;
         this.addresses = addresses;
         this.events = events;
@@ -47,18 +49,27 @@ public class SubscriptionCurrency implements SystemClient.SubscriptionCurrency {
 
     // getters
 
+    @Override
     @JsonProperty("currency_id")
     public String getCurrencyId() {
         return currencyId;
     }
 
+    @Override
     @JsonProperty("addresses")
     public List<String> getAddresses() {
         return addresses;
     }
 
-    @JsonProperty("events")
+    @Override
+    @JsonIgnore
     public List<SubscriptionEvent> getEvents() {
+        return new ArrayList<SubscriptionEvent>(getBlocksetEvents());
+    }
+
+    @JsonProperty("events")
+    private List<BlocksetSubscriptionEvent> getBlocksetEvents() {
         return events;
     }
+
 }
