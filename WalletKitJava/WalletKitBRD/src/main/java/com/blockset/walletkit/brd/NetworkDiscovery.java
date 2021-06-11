@@ -7,15 +7,16 @@
  */
 package com.blockset.walletkit.brd;
 
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
-import com.blockset.walletkit.blockchaindb.errors.QueryError;
-import com.blockset.walletkit.blockchaindb.models.bdb.Blockchain;
-import com.blockset.walletkit.blockchaindb.models.bdb.BlockchainFee;
-import com.blockset.walletkit.blockchaindb.models.bdb.CurrencyDenomination;
+import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.SystemClient.Blockchain;
+import com.blockset.walletkit.SystemClient.BlockchainFee;
+import com.blockset.walletkit.SystemClient.CurrencyDenomination;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
+import com.google.common.primitives.UnsignedLong;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,10 +42,10 @@ final class NetworkDiscovery {
     }
 
     /* package */
-    static void discoverNetworks(BlockchainDb query,
+    static void discoverNetworks(SystemClient query,
                                  boolean isMainnet,
                                  List<Network> networks,
-                                 List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> appCurrencies,
+                                 List<SystemClient.Currency> appCurrencies,
                                  Callback callback) {
         CountUpAndDownLatch latch = new CountUpAndDownLatch(() -> callback.complete(networks));
 
@@ -70,7 +71,7 @@ final class NetworkDiscovery {
 
                     Network coreNetwork = Network.from(network);
 
-                    for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
+                    for (SystemClient.Currency currencyModel : currencyModels) {
                         if (currencyModel.getBlockchainId().equals(blockchainModelId)) {
                             Currency currency = Currency.create(
                                     currencyModel.getId(),
@@ -117,8 +118,10 @@ final class NetworkDiscovery {
                     if (null != blockchainModel) {
 
                         // Update the network's height
-                        if (blockchainModel.getBlockHeight().isPresent())
-                            coreNetwork.setHeight(blockchainModel.getBlockHeightValue());
+                        if (blockchainModel.getBlockHeight().isPresent()) {
+                            Optional<UnsignedLong> blockHeight = blockchainModel.getBlockHeight();
+                            coreNetwork.setHeight(blockHeight.isPresent() ? blockHeight.get() : Blockchain.BLOCK_HEIGHT_UNSPECIFIED);
+                        }
 
                         if (blockchainModel.getVerifiedBlockHash().isPresent())
                             coreNetwork.setVerifiedBlockHashAsString(blockchainModel.getVerifiedBlockHash().get());
@@ -162,7 +165,7 @@ final class NetworkDiscovery {
     }
 
     private static void getBlockChains(CountUpAndDownLatch latch,
-                                       BlockchainDb query,
+                                       SystemClient query,
                                        boolean isMainnet,
                                        Function<Collection<Blockchain>, Void> func) {
         latch.countUp();
@@ -194,20 +197,20 @@ final class NetworkDiscovery {
     }
 
     private static void getCurrencies(CountUpAndDownLatch latch,
-                                      BlockchainDb query,
+                                      SystemClient query,
                                       String blockchainId,
-                                      Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency> applicationCurrencies,
-                                      Function<Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, Void> func) {
+                                      Collection<SystemClient.Currency> applicationCurrencies,
+                                      Function<Collection<SystemClient.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(blockchainId, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(blockchainId, null, new CompletionHandler<List<SystemClient.Currency>, QueryError>() {
             @Override
-            public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> newCurrencies) {
+            public void handleData(List<SystemClient.Currency> newCurrencies) {
                 try {
                     // On success, always merge `default` INTO the result.  We merge defaultUnit
                     // into `result` to always bias to the blockchainDB result.
 
-                    Map<String, com.blockset.walletkit.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
-                    for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currency : newCurrencies) {
+                    Map<String, SystemClient.Currency> merged = new HashMap<>();
+                    for (SystemClient.Currency currency : newCurrencies) {
                         if (currency.getBlockchainId().equals(blockchainId) && currency.getVerified()) {
                             merged.put(currency.getId(), currency);
                         }
@@ -225,8 +228,8 @@ final class NetworkDiscovery {
                     // On error, use `apps` merged INTO defaults.  We merge into `defaults` to ensure that we get
                     // BTC, BCH, ETH, BRD and that they are correct (don't rely on the App).
 
-                    Map<String, com.blockset.walletkit.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
-                    for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currency : applicationCurrencies) {
+                    Map<String, SystemClient.Currency> merged = new HashMap<>();
+                    for (SystemClient.Currency currency : applicationCurrencies) {
                         if (currency.getBlockchainId().equals(blockchainId) && currency.getVerified()) {
                             merged.put(currency.getId(), currency);
                         }
@@ -241,20 +244,20 @@ final class NetworkDiscovery {
     }
 
     private static void getCurrencies(CountUpAndDownLatch latch,
-                                      BlockchainDb query,
+                                      SystemClient query,
                                       boolean mainnet,
-                                      Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency> applicationCurrencies,
-                                      Function<Collection<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, Void> func) {
+                                      Collection<SystemClient.Currency> applicationCurrencies,
+                                      Function<Collection<SystemClient.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(mainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(null, mainnet, new CompletionHandler<List<SystemClient.Currency>, QueryError>() {
             @Override
-            public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> newCurrencies) {
+            public void handleData(List<SystemClient.Currency> newCurrencies) {
                 try {
                     // On success, always merge `default` INTO the result.  We merge defaultUnit
                     // into `result` to always bias to the blockchainDB result.
 
-                    Map<String, com.blockset.walletkit.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
-                    for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currency : newCurrencies) {
+                    Map<String, SystemClient.Currency> merged = new HashMap<>();
+                    for (SystemClient.Currency currency : newCurrencies) {
                         merged.put(currency.getId(), currency);
                     }
 
@@ -270,8 +273,8 @@ final class NetworkDiscovery {
                     // On error, use `apps` merged INTO defaults.  We merge into `defaults` to ensure that we get
                     // BTC, BCH, ETH, BRD and that they are correct (don't rely on the App).
 
-                    Map<String, com.blockset.walletkit.blockchaindb.models.bdb.Currency> merged = new HashMap<>();
-                    for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currency : applicationCurrencies) {
+                    Map<String, SystemClient.Currency> merged = new HashMap<>();
+                    for (SystemClient.Currency currency : applicationCurrencies) {
                         merged.put(currency.getId(), currency);
                     }
 

@@ -10,7 +10,9 @@ package com.blockset.walletkit.brd;
 
 import java.util.List;
 import java.util.Locale;
-import com.blockset.walletkit.blockchaindb.models.bdb.CurrencyDenomination;
+
+import com.blockset.walletkit.SystemClient.CurrencyDenomination;
+import com.blockset.walletkit.brd.systemclient.BlocksetCurrencyDenomination;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedInteger;
 
@@ -24,18 +26,18 @@ final class Blockchains {
     static final String ADDRESS_BRD_TESTNET = "0x7108ca7c4718efa810457f228305c9c71390931a";
 
     /* package */
-    static List<CurrencyDenomination> makeCurrencyDemominationsErc20 (String code, UnsignedInteger decimals) {
+    static List<BlocksetCurrencyDenomination> makeCurrencyDemominationsErc20 (String code, UnsignedInteger decimals) {
         String name = code.toUpperCase(Locale.ROOT);
         code = code.toLowerCase(Locale.ROOT);
 
         return ImmutableList.of(
-                CurrencyDenomination.create(
+                BlocksetCurrencyDenomination.create(
                         String.format(Locale.ROOT, "%s Token INT", name),
                         String.format(Locale.ROOT, "%si", code),
                         UnsignedInteger.ZERO,
                         String.format(Locale.ROOT, "%si", code)
                 ),
-                CurrencyDenomination.create(
+                BlocksetCurrencyDenomination.create(
                         String.format(Locale.ROOT, "%s Token", name),
                         code,
                         decimals,
@@ -43,6 +45,4 @@ final class Blockchains {
                 )
         );
     }
-
-
 }

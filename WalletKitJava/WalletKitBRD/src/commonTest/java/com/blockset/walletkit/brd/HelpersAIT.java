@@ -10,10 +10,12 @@ package com.blockset.walletkit.brd;
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.Network;
 import com.blockset.walletkit.System;
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.brd.systemclient.BlocksetCurrency;
+import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.events.network.NetworkEvent;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
 import com.blockset.walletkit.events.system.SystemEvent;
@@ -89,7 +91,7 @@ class HelpersAIT {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
         SystemListener listener = new DefaultSystemListener() {};
-        BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithToken();
+        BlocksetSystemClient query = HelpersAIT.createDefaultBlockchainDbWithToken();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         com.blockset.walletkit.brd.System system = com.blockset.walletkit.brd.System.create(executor, listener, account, false, storagePath, query);
 
@@ -103,7 +105,7 @@ class HelpersAIT {
     static System createAndConfigureSystemWithListener(File dataDir, SystemListener listener, Boolean mainnet) {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
-        BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithToken();
+        BlocksetSystemClient query = HelpersAIT.createDefaultBlockchainDbWithToken();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         com.blockset.walletkit.brd.System system = com.blockset.walletkit.brd.System.create(executor, listener, account, mainnet, storagePath, query);
 
@@ -114,7 +116,7 @@ class HelpersAIT {
     }
 
     /* package */
-    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlockchainDb query, List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencies) {
+    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlocksetSystemClient query, List<SystemClient.Currency> currencies) {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
         SystemListener listener = new DefaultSystemListener() {};
@@ -184,16 +186,16 @@ class HelpersAIT {
     private static final OkHttpClient DEFAULT_HTTP_CLIENT = new OkHttpClient();
 
     /* package */
-    static BlockchainDb createDefaultBlockchainDbWithToken() {
+    static BlocksetSystemClient createDefaultBlockchainDbWithToken() {
         if (null == testConfiguration) testConfiguration = TestConfigurationLoader.getTestConfiguration();
-        return BlockchainDb.createForTest(DEFAULT_HTTP_CLIENT,
+        return BlocksetSystemClient.createForTest(DEFAULT_HTTP_CLIENT,
                 testConfiguration.getBlocksetAccess().getToken(),
                 testConfiguration.getBlocksetAccess().getBaseURL());
     }
 
     /* package */
-    static BlockchainDb createDefaultBlockchainDbWithoutToken() {
-        return new BlockchainDb(DEFAULT_HTTP_CLIENT);
+    static BlocksetSystemClient createDefaultBlockchainDbWithoutToken() {
+        return new BlocksetSystemClient(DEFAULT_HTTP_CLIENT);
     }
 
     // Listeners
