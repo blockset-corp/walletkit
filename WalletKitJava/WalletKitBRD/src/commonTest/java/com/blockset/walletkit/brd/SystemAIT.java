@@ -270,17 +270,17 @@ public class SystemAIT {
 
     @Test
     public void testSystemBsv() {
-        testSystemForCurrency("bsv", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("bsv", true, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
     public void testSystemLtc() {
-        testSystemForCurrency("ltc", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("ltc", true, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
     public void testSystemDoge() {
-        testSystemForCurrency("doge", false, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
+        testSystemForCurrency("doge", true, WalletManagerMode.API_ONLY, AddressScheme.BTC_LEGACY, 0);
     }
 
     @Test
