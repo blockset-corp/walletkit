@@ -98,9 +98,9 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletDeletedEvent;
-import com.blockset.walletkit.systemclient.brd.BlocksetAmount;
-import com.blockset.walletkit.systemclient.brd.BlocksetCurrency;
-import com.blockset.walletkit.systemclient.brd.BlocksetTransfer;
+import com.blockset.walletkit.brd.systemclient.BlocksetAmount;
+import com.blockset.walletkit.brd.systemclient.BlocksetCurrency;
+import com.blockset.walletkit.brd.systemclient.BlocksetTransfer;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;

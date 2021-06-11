@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.brd.HelpersAIT.RecordingSystemListener;
 import com.blockset.walletkit.AddressScheme;
 import com.blockset.walletkit.Coder;
@@ -32,7 +33,7 @@ import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
 import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.WalletState;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -65,11 +66,11 @@ public class SystemAIT {
     // @Test
     public void ignoreTestSystemAppCurrencies() {
         // Create a query that fails (no authentication)
-        BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithoutToken();
+        BlocksetSystemClient query = HelpersAIT.createDefaultBlockchainDbWithoutToken();
 
         // We need the UIDS to contain a valid ETH address BUT not be a default.  Since we are
         // using `isMainnet = false` use a mainnet address.
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencies = Collections.singletonList(
+        List<SystemClient.Currency> currencies = Collections.singletonList(
                 System.asBlockChainDBModelCurrency(
                         "ethereum-ropsten" + ":" + Blockchains.ADDRESS_BRD_MAINNET,
                         "FOO Token",

@@ -21,9 +21,8 @@ import com.blockset.walletkit.Api;
 import com.blockset.walletkit.DispatchingSystemListener;
 import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
+import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.System;
-import com.blockset.walletkit.systemclient.brd.BlocksetSystemClient;
 import com.blockset.walletkit.utility.TestConfiguration;
 
 import java.io.BufferedReader;
