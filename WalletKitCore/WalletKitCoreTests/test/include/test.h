@@ -134,6 +134,10 @@ runHederaTest (void);
 extern void
 runTezosTest (void);
 
+//Avalanche
+extern void
+runAvalancheTest (void);
+
 // Stellar
 extern void
 runStellarTest (void);
