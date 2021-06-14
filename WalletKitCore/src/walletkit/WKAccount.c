@@ -202,11 +202,17 @@ if (bytesPtr > bytesEnd) return NULL; /* overkill */ \
     BYTES_PTR_INCR_AND_CHECK (mpkSize);
 
     // LTC
+    mpkSize = UInt32GetBE(bytesPtr);
+    BYTES_PTR_INCR_AND_CHECK (szSize);
+
     BRMasterPubKey ltc = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
     if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, ltc)) return NULL;
     BYTES_PTR_INCR_AND_CHECK (mpkSize);
 
     // DOGE
+    mpkSize = UInt32GetBE(bytesPtr);
+    BYTES_PTR_INCR_AND_CHECK (szSize);
+
     BRMasterPubKey doge = BRBIP32ParseMasterPubKey ((const char *) bytesPtr);
     if (mpkSize != BRBIP32SerializeMasterPubKey (NULL, doge)) return NULL;
     BYTES_PTR_INCR_AND_CHECK (mpkSize);
