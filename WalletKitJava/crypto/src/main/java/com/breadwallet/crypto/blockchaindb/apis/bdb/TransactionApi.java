@@ -70,6 +70,7 @@ public class TransactionApi {
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
             paramsBuilder.put("include_transfers", String.valueOf(includeTransfers));
             paramsBuilder.put("include_calls", "false");
+            paramsBuilder.put("merge_currencies", "true");
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
