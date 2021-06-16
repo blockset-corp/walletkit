@@ -91,7 +91,8 @@ wkWalletManagerSignTransactionWithSeedHBAR (WKWalletManager manager,
                                                 WKWallet wallet,
                                                 WKTransfer transfer,
                                                 UInt512 seed) {
-    BRHederaAccount account = wkAccountAsHBAR (manager->account);
+    BRHederaAccount account = (BRHederaAccount) wkAccountAs (manager->account,
+                                                             WK_NETWORK_TYPE_HBAR);
     BRKey publicKey = hederaAccountGetPublicKey (account);
     BRHederaTransaction transaction = wkTransferCoerceHBAR(transfer)->hbarTransaction;
     // BRHederaAddress nodeAddress = hederaAccountGetNodeAddress(account);
@@ -181,7 +182,8 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
                                                           OwnershipKept WKClientTransferBundle bundle) {
     // create BRHederaTransaction
     
-    BRHederaAccount hbarAccount = wkAccountAsHBAR (manager->account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (manager->account,
+                                                                 WK_NETWORK_TYPE_HBAR);
     
     BRHederaUnitTinyBar amountHbar, feeHbar = 0;
     sscanf(bundle->amount, "%" PRIi64, &amountHbar);
@@ -268,7 +270,8 @@ wkWalletManagerCreateWalletHBAR (WKWalletManager manager,
                                      WKCurrency currency,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRHederaAccount hbarAccount = wkAccountAsHBAR(manager->account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (manager->account,
+                                                                 WK_NETWORK_TYPE_HBAR);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

@@ -585,6 +585,7 @@ target_sources (corecrypto
 # Crypto BTC
 target_sources (corecrypto
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAccountBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAddressBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKBTC.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKFeeBasisBTC.c
@@ -603,6 +604,7 @@ target_sources (corecrypto
 # Crypto ETH
 target_sources (corecrypto
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAccountETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAddressETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKETH.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKFeeBasisETH.c
@@ -616,6 +618,7 @@ target_sources (corecrypto
 # Crypto XRP
 target_sources (corecrypto
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAccountXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAddressXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKFeeBasisXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKNetworkXRP.c
@@ -629,6 +632,7 @@ target_sources (corecrypto
 # Crypto HBAR
 target_sources (corecrypto
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAccountHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAddressHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKFeeBasisHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHBAR.h
@@ -642,6 +646,7 @@ target_sources (corecrypto
 # Crypto XTZ
 target_sources (corecrypto
         PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAccountXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAddressXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKFeeBasisXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKNetworkXTZ.c
@@ -656,6 +661,7 @@ target_sources (corecrypto
 # Crypto XLM
 target_sources (corecrypto
         PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAccountXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAddressXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKFeeBasisXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKNetworkXLM.c

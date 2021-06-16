@@ -72,7 +72,8 @@ wkNetworkIsAccountInitializedXLM (WKNetwork network,
     WKNetworkXLM networkXLM = wkNetworkCoerce (network);
     (void) networkXLM;
 
-    BRStellarAccount xlmAccount = wkAccountAsXLM (account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (account,
+                                                                  WK_NETWORK_TYPE_XLM);
     assert (NULL != xlmAccount);
     return AS_WK_BOOLEAN (true);
 }
@@ -85,7 +86,8 @@ wkNetworkGetAccountInitializationDataXLM (WKNetwork network,
     WKNetworkXLM networkXLM = wkNetworkCoerce (network);
     (void) networkXLM;
 
-    BRStellarAccount xlmAccount = wkAccountAsXLM (account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (account,
+                                                                  WK_NETWORK_TYPE_XLM);
     assert (NULL != xlmAccount);
     if (NULL != bytesCount) *bytesCount = 0;
     return NULL;
@@ -99,7 +101,8 @@ wkNetworkInitializeAccountXLM (WKNetwork network,
     WKNetworkXLM networkXLM = wkNetworkCoerce (network);
     (void) networkXLM;
 
-    BRStellarAccount xlmAccount = wkAccountAsXLM (account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (account,
+                                                                  WK_NETWORK_TYPE_XLM);
     assert (NULL != xlmAccount);
     return;
 }

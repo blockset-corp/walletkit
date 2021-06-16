@@ -19,6 +19,7 @@ extern "C" {
 
 // MARK: - BTC Handlers
 
+extern WKAccountHandlers wkAccountHandlersBTC;
 extern WKAddressHandlers wkAddressHandlersBTC;
 extern WKNetworkHandlers wkNetworkHandlersBTC;
 extern WKTransferHandlers wkTransferHandlersBTC;
@@ -55,6 +56,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersBSV;
 
 // MARK: - LTC Handlers
 
+extern WKAccountHandlers wkAccountHandlersLTC;
 extern WKAddressHandlers wkAddressHandlersLTC;
 extern WKNetworkHandlers wkNetworkHandlersLTC;
 extern WKTransferHandlers wkTransferHandlersLTC;
@@ -67,6 +69,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersLTC;
 
 // MARK: - DOGE Handlers
 
+extern WKAccountHandlers wkAccountHandlersDOGE;
 extern WKAddressHandlers wkAddressHandlersDOGE;
 extern WKNetworkHandlers wkNetworkHandlersDOGE;
 extern WKTransferHandlers wkTransferHandlersDOGE;
@@ -79,6 +82,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersDOGE;
 
 // MARK: - ETH Handlers
 
+extern WKAccountHandlers wkAccountHandlersETH;
 extern WKAddressHandlers wkAddressHandlersETH;
 extern WKNetworkHandlers wkNetworkHandlersETH;
 extern WKTransferHandlers wkTransferHandlersETH;
@@ -91,6 +95,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersETH;
 
 // MARK: - XRP Handlers
 
+extern WKAccountHandlers wkAccountHandlersXRP;
 extern WKAddressHandlers wkAddressHandlersXRP;
 extern WKNetworkHandlers wkNetworkHandlersXRP;
 extern WKTransferHandlers wkTransferHandlersXRP;
@@ -103,6 +108,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersXRP;
 
 // MARK: - HBAR Handlers
 
+extern WKAccountHandlers wkAccountHandlersHBAR;
 extern WKAddressHandlers wkAddressHandlersHBAR;
 extern WKNetworkHandlers wkNetworkHandlersHBAR;
 extern WKTransferHandlers wkTransferHandlersHBAR;
@@ -115,6 +121,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersHBAR;
 
 // MARK: - XTZ Handlers
 
+extern WKAccountHandlers wkAccountHandlersXTZ;
 extern WKAddressHandlers wkAddressHandlersXTZ;
 extern WKNetworkHandlers wkNetworkHandlersXTZ;
 extern WKTransferHandlers wkTransferHandlersXTZ;
@@ -127,6 +134,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersXTZ;
 
 // MARK: - XLM Handlers
 
+extern WKAccountHandlers wkAccountHandlersXLM;
 extern WKAddressHandlers wkAddressHandlersXLM;
 extern WKNetworkHandlers wkNetworkHandlersXLM;
 extern WKTransferHandlers wkTransferHandlersXLM;

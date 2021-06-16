@@ -26,16 +26,66 @@
 extern "C" {
 #endif
 
+/// MARK: - Account Handlers
+
+/** Create a network specific account provided the specified
+ *  seed material.
+ *
+ *  @param seed The seed from BIP39 phrase
+ *
+ *  @return The new network specific account
+ */
+typedef void*
+(*WKAccountCreateFromSeedHandler)(UInt512 seed);
+
+/** Create a network specific account from a series of bytes
+ *
+ * @param bytes Pointer to start of account bytes
+ * @param len The number of bytes describing this
+ *            network account
+ */
+typedef void*
+(*WKAccountCreateFromBytesHandler)(uint8_t* bytes,
+                                   size_t   len);
+
+/**
+ * Release the account any associated resources
+ *
+ * @param account The account to be released
+ */
+typedef void
+(*WKAccountReleaseHandler)(WKAccount account);
+
+/**
+ * Serialize the account provided into the specified
+ * serialization buffer. The input serialization buffer
+ * may be NULL in which case no serialization occurs but
+ * the number of bytes buffer required to serialize this
+ * account is returned
+ *
+ * @param accountSerBuf The output serialization buffer or NULL
+ * @param account The account object to be serialized
+ *
+ * @return The size bytes serialized or required to be serialized
+ */
+typedef size_t
+(*WKAccountSerializeHandler)(uint8_t        *accountSerBuf,
+                             WKAccount      account         );
+
+/**
+ * The account handlers interface for plug-in support
+ * of account creation, serialization and resource deallocation
+ */
+typedef struct {
+    WKAccountCreateFromSeedHandler      createFromSeed;
+    WKAccountCreateFromBytesHandler     createFromBytes;
+    WKAccountReleaseHandler             release;
+    WKAccountSerializeHandler           serialize;
+} WKAccountHandlers;
+
 struct WKAccountRecord {
-    BRMasterPubKey btc;
-    BRMasterPubKey ltc;
-    BRMasterPubKey doge;
-    BREthereumAccount eth;
-    BRRippleAccount xrp;
-    BRHederaAccount hbar;
-    BRTezosAccount xtz;
-    BRStellarAccount xlm;
-    // ...
+
+    void *networkAccounts[NUMBER_OF_NETWORK_TYPES];
 
     char *uids;
     WKTimestamp timestamp;
@@ -64,45 +114,15 @@ private_extern UInt512
 wkAccountDeriveSeed (const char *phrase);
 
 // MARK: Account As {ETH,BTC,XRP,HBAR,XTZ}
+static inline void*
+wkAccountAs(
+    WKAccount       account,
+    WKNetworkType   type    ) {
 
-static inline BRMasterPubKey
-wkAccountAsBTC (WKAccount account) {
-    return account->btc;
-}
+    assert ( (type >= WK_NETWORK_TYPE_BTC) &&
+             (type < NUMBER_OF_NETWORK_TYPES)   );
 
-static inline BRMasterPubKey
-wkAccountAsLTC (WKAccount account) {
-    return account->ltc;
-}
-
-static inline BRMasterPubKey
-wkAccountAsDOGE (WKAccount account) {
-    return account->doge;
-}
-
-static inline BREthereumAccount
-wkAccountAsETH (WKAccount account) {
-    return account->eth;
-}
-
-static inline BRRippleAccount
-wkAccountAsXRP (WKAccount account) {
-    return account->xrp;
-}
-
-static inline BRHederaAccount
-wkAccountAsHBAR (WKAccount account) {
-    return account->hbar;
-}
-
-static inline BRTezosAccount
-wkAccountAsXTZ (WKAccount account) {
-    return account->xtz;
-}
-
-static inline BRStellarAccount
-wkAccountAsXLM (WKAccount account) {
-    return account->xlm;
+    return account->networkAccounts[type];
 }
 
 #ifdef __cplusplus

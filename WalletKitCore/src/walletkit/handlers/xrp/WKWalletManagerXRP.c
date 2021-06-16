@@ -99,7 +99,8 @@ wkWalletManagerSignTransactionWithSeedXRP (WKWalletManager manager,
                                                WKWallet wallet,
                                                WKTransfer transfer,
                                                UInt512 seed) {
-    BRRippleAccount account = wkAccountAsXRP (manager->account);
+    BRRippleAccount account = (BRRippleAccount) wkAccountAs (manager->account,
+                                                             WK_NETWORK_TYPE_XRP);
     BRRippleTransaction tid = wkTransferCoerceXRP(transfer)->xrpTransaction;
     if (tid) {
         size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
@@ -183,7 +184,8 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
                                                          OwnershipKept WKClientTransferBundle bundle) {
     // create BRRippleTransfer
 
-    BRRippleAccount xrpAccount = wkAccountAsXRP(manager->account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (manager->account,
+                                                                WK_NETWORK_TYPE_XRP);
     
     BRRippleUnitDrops amountDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
@@ -268,7 +270,8 @@ wkWalletManagerCreateWalletXRP (WKWalletManager manager,
                                     WKCurrency currency,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRRippleAccount xrpAccount = wkAccountAsXRP(manager->account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (manager->account,
+                                                                WK_NETWORK_TYPE_XRP);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

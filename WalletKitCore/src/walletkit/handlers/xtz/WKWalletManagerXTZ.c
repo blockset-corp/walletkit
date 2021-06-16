@@ -92,7 +92,8 @@ wkWalletManagerSignTransactionWithSeedXTZ (WKWalletManager manager,
                                                WKTransfer transfer,
                                                UInt512 seed) {
     BRTezosHash lastBlockHash = wkHashAsXTZ (wkNetworkGetVerifiedBlockHash (manager->network));
-    BRTezosAccount account = wkAccountAsXTZ (manager->account);
+    BRTezosAccount account = (BRTezosAccount) wkAccountAs (manager->account,
+                                                           WK_NETWORK_TYPE_XTZ);
     BRTezosTransaction tid = tezosTransferGetTransaction (wkTransferCoerceXTZ(transfer)->xtzTransfer);
     bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(tid)) && wkWalletNeedsRevealXTZ(wallet);
     
@@ -158,7 +159,8 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
     
     // serialize the transaction for fee estimation payload
     BRTezosHash lastBlockHash = wkHashAsXTZ (wkNetworkGetVerifiedBlockHash (manager->network));
-    BRTezosAccount account = wkAccountAsXTZ (manager->account);
+    BRTezosAccount account = (BRTezosAccount) wkAccountAs (manager->account,
+                                                           WK_NETWORK_TYPE_XTZ);
     BRTezosTransaction tid = tezosTransferGetTransaction (wkTransferCoerceXTZ(transfer)->xtzTransfer);
     bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(tid)) && wkWalletNeedsRevealXTZ(wallet);
     
@@ -211,7 +213,8 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
                                                          OwnershipKept WKClientTransferBundle bundle) {
     // create BRTezosTransfer
 
-    BRTezosAccount xtzAccount = wkAccountAsXTZ(manager->account);
+    BRTezosAccount xtzAccount = (BRTezosAccount) wkAccountAs (manager->account,
+                                                              WK_NETWORK_TYPE_XTZ);
     
     BRTezosUnitMutez amountMutez, feeMutez = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountMutez);
@@ -324,7 +327,8 @@ wkWalletManagerCreateWalletXTZ (WKWalletManager manager,
                                     WKCurrency currency,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRTezosAccount xtzAccount = wkAccountAsXTZ(manager->account);
+    BRTezosAccount xtzAccount = (BRTezosAccount) wkAccountAs (manager->account,
+                                                              WK_NETWORK_TYPE_XTZ);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

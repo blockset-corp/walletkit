@@ -17,6 +17,7 @@
 static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     {
         WK_NETWORK_TYPE_BTC,
+        &wkAccountHandlersBTC,
         &wkNetworkHandlersBTC,
         &wkAddressHandlersBTC,
         &wkTransferHandlersBTC,
@@ -30,6 +31,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_BCH,
+        NULL,
         &wkNetworkHandlersBCH,
         &wkAddressHandlersBCH,
         &wkTransferHandlersBCH,
@@ -43,6 +45,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_BSV,
+        NULL,
         &wkNetworkHandlersBSV,
         &wkAddressHandlersBSV,
         &wkTransferHandlersBSV,
@@ -56,6 +59,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_LTC,
+        &wkAccountHandlersLTC,
         &wkNetworkHandlersLTC,
         &wkAddressHandlersLTC,
         &wkTransferHandlersLTC,
@@ -69,6 +73,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_DOGE,
+        &wkAccountHandlersDOGE,
         &wkNetworkHandlersDOGE,
         &wkAddressHandlersDOGE,
         &wkTransferHandlersDOGE,
@@ -82,6 +87,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_ETH,
+        &wkAccountHandlersETH,
         &wkNetworkHandlersETH,
         &wkAddressHandlersETH,
         &wkTransferHandlersETH,
@@ -95,6 +101,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_XRP,
+        &wkAccountHandlersXRP,
         &wkNetworkHandlersXRP,
         &wkAddressHandlersXRP,
         &wkTransferHandlersXRP,
@@ -108,6 +115,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_HBAR,
+        &wkAccountHandlersHBAR,
         &wkNetworkHandlersHBAR,
         &wkAddressHandlersHBAR,
         &wkTransferHandlersHBAR,
@@ -121,6 +129,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
     
     {
         WK_NETWORK_TYPE_XTZ,
+        &wkAccountHandlersXTZ,
         &wkNetworkHandlersXTZ,
         &wkAddressHandlersXTZ,
         &wkTransferHandlersXTZ,
@@ -134,6 +143,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_XLM,
+        NULL, //&wkAccountHandlersXLM,
         &wkNetworkHandlersXLM,
         &wkAddressHandlersXLM,
         &wkTransferHandlersXLM,
