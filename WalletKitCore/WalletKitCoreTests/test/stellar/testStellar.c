@@ -129,6 +129,32 @@ static BRStellarAccount createTestAccount(const char* paper_key,
     }
 }
 
+static void testAccountSerialization(const char * paperKey, const char * accountAsString) {
+    BRStellarAccount account1 = stellarAccountCreate(paperKey);
+    BRStellarAddress address1 = stellarAccountGetAddress(account1);
+
+    size_t bytesCount = 0;
+    uint8_t* bytes = stellarAccountGetSerialization(account1, &bytesCount);
+
+    BRStellarAccount account2 = stellarAccountCreateWithSerialization(bytes, bytesCount);
+    BRStellarAddress address2 = stellarAccountGetAddress(account2);
+
+    assert(stellarAddressEqual(address1, address2));
+
+    // Compare the string version
+    char * address1AsStrign = stellarAddressAsString(address1);
+    char * address2AsString = stellarAddressAsString(address2);
+    assert(strcmp(address1AsStrign, address2AsString) == 0);
+    assert(strcmp(address1AsStrign, accountAsString) == 0);
+
+    free(address1AsStrign);
+    free(address2AsString);
+    stellarAddressFree(address1);
+    stellarAddressFree(address2);
+    stellarAccountFree(account1);
+    stellarAccountFree(account2);
+}
+
 static void runAccountTests()
 {
     // Account we use for sending on TESTNET
@@ -164,6 +190,10 @@ static void runAccountTests()
     // Account "Ted"
     createTestAccount("brave rival swap wrestle gorilla diet lounge farm tennis capital ecology design",
                                 NULL, "GDSTAICFVBHMGZ4HI6YEKZSGDR7QGEM4PPREYW2JV3XW7STVM7L5EDYZ");
+
+    // Account serialization test
+    testAccountSerialization("illness spike retreat truth genius clock brain pass fit cave bargain toe", "GDRXE2BQUC3AZNPVFSCEZ76NJ3WWL25FYFK6RGZGIEKWE4SOOHSUJUJ6");
+
 }
 
 // MARK: - Transaction Tests

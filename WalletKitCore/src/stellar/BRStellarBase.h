@@ -17,6 +17,8 @@
 #include "support/BRArray.h"
 #include "BRStellarResultCodes.h"
 
+#define STELLAR_ADDRESS_BYTES   (32)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -117,7 +119,7 @@ typedef struct st_memo {
 
 typedef struct st_account_id {
     BRStellarPublicKeyType accountType;
-    uint8_t                accountID[32];
+    uint8_t                accountID[STELLAR_ADDRESS_BYTES];
 } BRStellarAccountID;
 
 typedef struct st_asset
