@@ -850,11 +850,13 @@ public class BlocksetSystemClient: SystemClient {
             let queryKeys = ["blockchain_id",
                              "start_height",
                              "end_height",
+                             "merge_currencies",
                              "max_page_size"] + Array (repeating: "address", count: addresses.count)
 
             let queryVals = [blockchainId,
                              begBlockNumber.description,
                              endBlockNumber.description,
+                             "true", 
                              maxPageSize.description] + addresses
 
             self.bdbMakeRequest (path: "transfers",
@@ -916,6 +918,7 @@ public class BlocksetSystemClient: SystemClient {
             "blockchain_id",
             begBlockNumber.map { (_) in "start_height" },
             endBlockNumber.map { (_) in "end_height" },
+            "merge_currencies",
             "include_proof",
             "include_raw",
             "include_transfers",
@@ -927,6 +930,7 @@ public class BlocksetSystemClient: SystemClient {
             blockchainId,
             begBlockNumber.map { $0.description },
             endBlockNumber.map { $0.description },
+            "true",  // merge_currencies
             includeProof.description,
             includeRaw.description,
             includeTransfers.description,

@@ -61,6 +61,7 @@ public class TransferApi {
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber   != null) paramsBuilder.put("end_height",   endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
+            paramsBuilder.put("merge_currencies", "true");
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();
 
