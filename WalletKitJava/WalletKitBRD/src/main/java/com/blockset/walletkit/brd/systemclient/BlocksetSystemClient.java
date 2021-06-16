@@ -306,6 +306,7 @@ public class BlocksetSystemClient implements SystemClient {
             paramsBuilder.put("blockchain_id", blockchainId);
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber   != null) paramsBuilder.put("end_height",   endBlockNumber.toString());
+            paramsBuilder.put("merge_currencies", "true");
             paramsBuilder.put("max_page_size", maxPageSize.toString());
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();
@@ -411,6 +412,7 @@ public class BlocksetSystemClient implements SystemClient {
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
             paramsBuilder.put("include_transfers", String.valueOf(includeTransfers));
             paramsBuilder.put("include_calls", "false");
+            paramsBuilder.put("merge_currencies", "true");
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
