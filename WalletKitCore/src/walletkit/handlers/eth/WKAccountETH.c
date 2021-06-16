@@ -11,12 +11,12 @@
 
 #include "WKETH.h"
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedETH(UInt512 seed) {
     return ethAccountCreateWithBIP32Seed(seed);
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesETH(
     uint8_t*    bytes,
     size_t      len )

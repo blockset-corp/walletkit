@@ -32,6 +32,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersBTC;
 
 // MARK: - BCH Handlers
 
+extern WKAccountHandlers wkAccountHandlersBCH;
 extern WKAddressHandlers wkAddressHandlersBCH;
 extern WKNetworkHandlers wkNetworkHandlersBCH;
 extern WKTransferHandlers wkTransferHandlersBCH;
@@ -44,6 +45,7 @@ extern WKWalletManagerHandlers wkWalletManagerHandlersBCH;
 
 // MARK: - BSV Handlers
 
+extern WKAccountHandlers wkAccountHandlersBSV;
 extern WKAddressHandlers wkAddressHandlersBSV;
 extern WKNetworkHandlers wkNetworkHandlersBSV;
 extern WKTransferHandlers wkTransferHandlersBSV;

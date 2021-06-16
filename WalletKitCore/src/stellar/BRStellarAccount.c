@@ -91,14 +91,19 @@ extern BRStellarAccount
 stellarAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
 {
     // TODO - Carl
-    return NULL;
+
+    // To pass account handlers account creation, create nothing
+    return (BRStellarAccount) calloc (1, sizeof(void*));
 }
 
 extern uint8_t * // Caller owns memory and must delete calling "free"
 stellarAccountGetSerialization (BRStellarAccount account, size_t *bytesCount)
 {
     // TODO - Carl
-    return NULL;
+
+    // To pass account handlers account creation, create nothing
+    *bytesCount = sizeof(void*);
+    return (uint8_t*) calloc (1, *bytesCount);
 }
 
 extern BRStellarAddress stellarAccountGetAddress(BRStellarAccount account)

@@ -31,7 +31,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_BCH,
-        NULL,
+        &wkAccountHandlersBCH,
         &wkNetworkHandlersBCH,
         &wkAddressHandlersBCH,
         &wkTransferHandlersBCH,
@@ -45,7 +45,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_BSV,
-        NULL,
+        &wkAccountHandlersBSV,
         &wkNetworkHandlersBSV,
         &wkAddressHandlersBSV,
         &wkTransferHandlersBSV,
@@ -143,7 +143,7 @@ static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
 
     {
         WK_NETWORK_TYPE_XLM,
-        NULL, //&wkAccountHandlersXLM,
+        &wkAccountHandlersXLM,
         &wkNetworkHandlersXLM,
         &wkAddressHandlersXLM,
         &wkTransferHandlersXLM,

@@ -12,7 +12,7 @@
 #include "litecoin/BRLitecoinParams.h" // For LTC_BIP32_DEPTH & CHILD
 #include "dogecoin/BRDogecoinParams.h" // For DOGE_BIP32_DEPTH & CHILD
 
-static void*
+static WKAccountDetails
 wkAccountCreateSeedCommon(
     UInt512         seed,
     int             depth,
@@ -29,7 +29,7 @@ wkAccountCreateSeedCommon(
     return pubKey;
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesCommon(
     uint8_t*    bytes,
     size_t      len    ) {
@@ -83,7 +83,7 @@ wkAccountReleaseCommon(WKAccount account) {
 
 // BTC account handling functions
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedBTC(UInt512  seed) {
 
     BRMasterPubKey *pubKey = (BRMasterPubKey*) calloc (1, sizeof(BRMasterPubKey));
@@ -128,7 +128,7 @@ wkAccountSerializeLTC(
                                     account );
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedLTC(UInt512  seed) {
 
     return wkAccountCreateSeedCommon(seed,
@@ -155,7 +155,7 @@ wkAccountSerializeDOGE(
                                     account );
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedDOGE(UInt512  seed) {
 
     return wkAccountCreateSeedCommon(seed,
@@ -163,7 +163,22 @@ wkAccountCreateFromSeedDOGE(UInt512  seed) {
                                      DOGE_BIP32_CHILD );
 }
 
+// Handlers are functionally equivalent for each of BTC/BCH/BSV
 WKAccountHandlers wkAccountHandlersBTC = {
+    wkAccountCreateFromSeedBTC,
+    wkAccountCreateFromBytesCommon,
+    wkAccountReleaseCommon,
+    wkAccountSerializeBTC
+};
+
+WKAccountHandlers wkAccountHandlersBCH = {
+    wkAccountCreateFromSeedBTC,
+    wkAccountCreateFromBytesCommon,
+    wkAccountReleaseCommon,
+    wkAccountSerializeBTC
+};
+
+WKAccountHandlers wkAccountHandlersBSV= {
     wkAccountCreateFromSeedBTC,
     wkAccountCreateFromBytesCommon,
     wkAccountReleaseCommon,

@@ -12,21 +12,18 @@
 #define WKAccountP_h
 
 #include "WKAccount.h"
-
-#include "support/BRBIP32Sequence.h"
-#include "support/BRBIP39Mnemonic.h"
-#include "support/BRKey.h"
-#include "ethereum/blockchain/BREthereumAccount.h"
-#include "ripple/BRRippleAccount.h"
-#include "hedera/BRHederaAccount.h"
-#include "tezos/BRTezosAccount.h"
-#include "stellar/BRStellarAccount.h"
+#include "support/BRInt.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /// MARK: - Account Handlers
+
+/** Generic identifier for stored network accounts.
+ *  Use wkAccounAs() and cast appropriately.
+ */
+typedef void* WKAccountDetails;
 
 /** Create a network specific account provided the specified
  *  seed material.
@@ -35,7 +32,7 @@ extern "C" {
  *
  *  @return The new network specific account
  */
-typedef void*
+typedef WKAccountDetails
 (*WKAccountCreateFromSeedHandler)(UInt512 seed);
 
 /** Create a network specific account from a series of bytes
@@ -44,7 +41,7 @@ typedef void*
  * @param len The number of bytes describing this
  *            network account
  */
-typedef void*
+typedef WKAccountDetails
 (*WKAccountCreateFromBytesHandler)(uint8_t* bytes,
                                    size_t   len);
 
@@ -85,7 +82,7 @@ typedef struct {
 
 struct WKAccountRecord {
 
-    void *networkAccounts[NUMBER_OF_NETWORK_TYPES];
+    WKAccountDetails networkAccounts[NUMBER_OF_NETWORK_TYPES];
 
     char *uids;
     WKTimestamp timestamp;
@@ -113,8 +110,8 @@ wkAccountInstall (void);
 private_extern UInt512
 wkAccountDeriveSeed (const char *phrase);
 
-// MARK: Account As {ETH,BTC,XRP,HBAR,XTZ}
-static inline void*
+// MARK: Account As {ETH,BTC,XRP,HBAR,XTZ,XLM etc}
+static inline WKAccountDetails
 wkAccountAs(
     WKAccount       account,
     WKNetworkType   type    ) {

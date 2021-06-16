@@ -13,54 +13,13 @@
 #include "WKAccountP.h"
 #include <string.h>
 
-/* WILL GO WITH FINAL COMMIT...
-
-#define acct_log(tag, format, ...) _acct_log("%s: " format "\n", tag, __VA_ARGS__)
-
-#if defined(TARGET_OS_MAC)
-#  include <Foundation/Foundation.h>
-#  define _acct_log(...) NSLog(__VA_ARGS__)
-#elif defined(__ANDROID__)
-#  include <android/log.h>
-#  define _acct_log(...) __android_log_print(ANDROID_LOG_INFO, "bread", __VA_ARGS__)
-#else
-#  include <stdio.h>
-#  define _acct_log(...) printf(__VA_ARGS__)
-#endif
-
-static void acct_buf_log(uint8_t* buf, size_t count) {
-    char b[4];
-    char line[4+16*4+1];
-    size_t bno = 0;
-    int lno = 0;
-
-    memset(line, 0, sizeof(line));
-    strcat(line, "    ");
-    acct_log("SER_BUF", "bytes %lu", count);
-    while (bno < count) {
-
-        if (lno == 16) {
-            acct_log("SER_BUF", "%s", line);
-            lno = 0;
-            memset(line, 0, sizeof(line));
-            strcat(line, "    ");
-        }
-        snprintf(b, 4, "%02X ", (int)buf[bno]);
-        strcat(line,b);
-
-        bno++;
-        lno++;
-    }
-
-    acct_log("SER_BUF", "%s", line);
-}*/
-
 #include "litecoin/BRLitecoinParams.h"
 #include "dogecoin/BRDogecoinParams.h"
+#include "support/BRBIP32Sequence.h"
+#include "support/BRBIP39Mnemonic.h"
 
 static pthread_once_t  _accounts_once = PTHREAD_ONCE_INIT;
 
-/* ? What was the intent?  */
 static void _accounts_init (void) {
 //    genHandlersInstall (genericRippleHandlers);
 //    genHandlersInstall (genericHederaHandlers);
@@ -80,7 +39,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 3: V2 + HBAR
 // Version 4: V3 + XTZ
 // Version 5: V4 + LTC, DOGE, XLM
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  5
+// Version 6: V5 + serialization of BCH and BSV with their own keys
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  6
 
 IMPLEMENT_WK_GIVE_TAKE (WKAccount, wkAccount);
 
@@ -150,15 +110,8 @@ wkAccountCreateFromSeedInternal (UInt512 seed,
          netNo++                            ) {
 
         netHandlers = wkHandlersLookup(netNo);
-
-        // Certain networks may share account handlers
-        // (e.g. BTC/BCH/BSV)
-        if (netHandlers->account != NULL) {
-            acctHandlers = netHandlers->account;
-            acct->networkAccounts[netNo] = acctHandlers->createFromSeed(seed);
-
-            assert (acct->networkAccounts[netNo] != NULL);
-        }
+        acctHandlers = netHandlers->account;
+        acct->networkAccounts[netNo] = acctHandlers->createFromSeed(seed);
     }
 
     return acct;
@@ -172,15 +125,6 @@ wkAccountCreate (const char *phrase,
 
     return wkAccountCreateFromSeedInternal (wkAccountDeriveSeedInternal(phrase), timestamp, uids);
 }
-
-#define BYTES_PTR_INCR_AND_CHECK(size)      \
-    do {                                    \
-        bytesPtr += (size);                 \
-        if (bytesPtr > bytesEnd) {          \
-            free (acct);                    \
-            return NULL; /* overkill */     \
-        }                                   \
-    } while (0)
 
 /**
  * Deserialize into an Account.  The serialization format is:
@@ -208,6 +152,15 @@ wkAccountCreateFromSerialization (
 
     uint8_t *bytesPtr = (uint8_t *) bytes;
     uint8_t *bytesEnd = bytesPtr + bytesCount;
+
+#define BYTES_PTR_INCR_AND_CHECK(size)      \
+    do {                                    \
+        bytesPtr += (size);                 \
+        if (bytesPtr > bytesEnd) {          \
+            free (acct);                    \
+            return NULL; /* overkill */     \
+        }                                   \
+    } while (0)
 
     size_t chkSize = sizeof (uint16_t); // checksum
     size_t szSize  = sizeof (uint32_t); // size
@@ -253,23 +206,17 @@ wkAccountCreateFromSerialization (
 
         netHandlers = wkHandlersLookup(netNo);
 
-        // Certain networks may share account handlers
-        // (e.g. BTC/BCH/BSV)
-        if (netHandlers->account != NULL) {
+        // Get network account len and check available buffer
+        size_t mpkSize = UInt32GetBE(bytesPtr);
+        BYTES_PTR_INCR_AND_CHECK (szSize);
 
-            // Get network account len and check available buffer
-            size_t mpkSize = UInt32GetBE(bytesPtr);
-            BYTES_PTR_INCR_AND_CHECK (szSize);
+        // Recreate the network account from available bytes of indicated
+        // mpkSize
+        acctHandlers = netHandlers->account;
+        acct->networkAccounts[netNo] = acctHandlers->createFromBytes(bytesPtr,
+                                                                     mpkSize    );
 
-            // Recreate the network account from available bytes of indicated
-            // mpkSize
-            acctHandlers = netHandlers->account;
-            acct->networkAccounts[netNo] = acctHandlers->createFromBytes(bytesPtr,
-                                                                         mpkSize    );
-
-            assert (acct->networkAccounts[netNo] != NULL);
-            BYTES_PTR_INCR_AND_CHECK (mpkSize);
-        }
+        BYTES_PTR_INCR_AND_CHECK (mpkSize);
     }
 
     return acct;
@@ -287,14 +234,7 @@ wkAccountRelease (WKAccount account) {
          netNo++                            ) {
 
         netHandlers = wkHandlersLookup(netNo);
-
-        // Certain networks may share account handlers
-        // (e.g. BTC/BCH/BSV) and so account handlers
-        // may not be specified
-        if (netHandlers->account != NULL) {
-
-            netHandlers->account->release(account->networkAccounts[netNo]);
-        }
+        netHandlers->account->release(account->networkAccounts[netNo]);
     }
 
     free (account->uids);
@@ -330,10 +270,6 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     // Version
     uint16_t version = ACCOUNT_SERIALIZE_DEFAULT_VERSION;
 
-    //   acct_log("SER-SIZES",
-    //           "BTC (%lu) LTC (%lu) DOGE (%lu) ETH (%lu) XRP (%lu) HBAR (%lu) XTZ (%lu)",
-    //           btcSize, ltcSize, dogeSize, ethSize, xrpSize, hbarSize, xtzSize);
-
     // Overall size - summing all factors.
     *bytesCount = (chkSize + szSize + verSize + tsSize);
     for (WKNetworkType netNo = WK_NETWORK_TYPE_BTC;
@@ -341,22 +277,14 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
          netNo++                            ) {
 
         netHandlers = wkHandlersLookup(netNo);
+        size_t serSize = netHandlers->account->serialize(NULL, account);
 
-        // Certain networks may share account handlers
-        // (e.g. BTC/BCH/BSV)
-        if (netHandlers->account != NULL) {
-            size_t serSize = netHandlers->account->serialize(NULL, account);
-
-            if (serSize != 0) {
-                // Space for account serialization length & serialization itself
-                *bytesCount += szSize;
-                *bytesCount += serSize;
-            }
-
-           // acct_log("SER-SIZES", "%d (%lu)", (netNo-WK_NETWORK_TYPE_BTC+1), serSize);
+        if (serSize != 0) {
+            // Space for account serialization length & serialization itself
+            *bytesCount += szSize;
+            *bytesCount += serSize;
         }
     }
-    //acct_log("SER-SIZES", "Byte Count: %lu", (*bytesCount));
 
     uint8_t *bytes = calloc (1, *bytesCount);
     uint8_t *bytesPtr = bytes;
@@ -384,20 +312,15 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
 
         netHandlers = wkHandlersLookup(netNo);
 
-        // Certain networks may share account handlers
-        // (e.g. BTC/BCH/BSV)
-        if (netHandlers->account != NULL) {
+        // Skip size field until its known
+        bytesPtr += szSize;
 
-            // Skip size field until its known
-            bytesPtr += szSize;
+        // Write account specific serialization into ser buffer
+        acctSerSize = netHandlers->account->serialize(bytesPtr, account);
 
-            // Write account specific serialization into ser buffer
-            acctSerSize = netHandlers->account->serialize(bytesPtr, account);
-
-            // Backpatch account serial size & prep for next account
-            UInt32SetBE((bytesPtr - szSize), (uint32_t) acctSerSize);
-            bytesPtr += acctSerSize;
-        }
+        // Backpatch account serial size & prep for next account
+        UInt32SetBE((bytesPtr - szSize), (uint32_t) acctSerSize);
+        bytesPtr += acctSerSize;
     }
 
     // Avoid static analysis warning
@@ -406,8 +329,6 @@ wkAccountSerialize (WKAccount account, size_t *bytesCount) {
     // checksum
     uint16_t checksum = checksumFletcher16 (&bytes[chkSize], (*bytesCount - chkSize));
     UInt16SetBE (bytes, checksum);
-
-//    acct_buf_log(bytes, *bytesCount);
 
     return bytes;
 }

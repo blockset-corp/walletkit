@@ -10,32 +10,48 @@
 //
 #include "WKXLM.h"
 
-// Impls for Stellar account handler TODO
-
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedXLM(UInt512 seed) {
 
-    return NULL;
+    return stellarAccountCreateWithSeed(seed);
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesXLM(
     uint8_t*    bytes,
     size_t      len ) {
 
-    return NULL;
+    return stellarAccountCreateWithSerialization(bytes, len);
 }
 
 static void
 wkAccountReleaseXLM(WKAccount account) {
+    BRStellarAccount xlmAcct;
+
+    xlmAcct = (BRStellarAccount) wkAccountAs (account,
+                                              WK_NETWORK_TYPE_XLM);
+    stellarAccountFree(xlmAcct);
 }
 
 static size_t
 wkAccountSerializeXLM(  uint8_t     *accountSerBuf,
                         WKAccount   account ) {
 
-    assert (account != NULL);
-    return 0;
+    BRStellarAccount xlmAcct;
+    size_t           serializationSize;
+    uint8_t          *xlmSerBuf;
+
+    xlmAcct = (BRStellarAccount) wkAccountAs (account,
+                                              WK_NETWORK_TYPE_XLM);
+
+    xlmSerBuf = stellarAccountGetSerialization (xlmAcct,
+                                                &serializationSize);
+    if (accountSerBuf != NULL)
+        memcpy (accountSerBuf, xlmSerBuf, serializationSize);
+
+    free (xlmSerBuf);
+
+    return serializationSize;
 }
 
 // TODO

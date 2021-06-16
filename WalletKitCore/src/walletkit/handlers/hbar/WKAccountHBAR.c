@@ -10,12 +10,12 @@
 //
 #include "WKHBAR.h"
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedHBAR(UInt512 seed) {
     return hederaAccountCreateWithSeed(seed);
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesHBAR(
     uint8_t*    bytes,
     size_t      len ) {

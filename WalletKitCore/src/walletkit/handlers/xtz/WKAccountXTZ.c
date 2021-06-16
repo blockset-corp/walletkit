@@ -10,12 +10,12 @@
 //
 #include "WKXTZ.h"
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedXTZ(UInt512 seed) {
     return tezosAccountCreateWithSeed(seed);
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesXTZ(
     uint8_t*    bytes,
     size_t      len ) {

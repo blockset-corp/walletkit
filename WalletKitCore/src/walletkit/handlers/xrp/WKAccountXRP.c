@@ -10,12 +10,12 @@
 //
 #include "WKXRP.h"
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromSeedXRP(UInt512 seed) {
     return rippleAccountCreateWithSeed(seed);
 }
 
-static void*
+static WKAccountDetails
 wkAccountCreateFromBytesXRP(
     uint8_t*    bytes,
     size_t      len ) {
