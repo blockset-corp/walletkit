@@ -29,3 +29,11 @@ public class TestConfigurationLoader {
         }
     }
 }
+
+// Another implementation, directly accessing .json
+//public class TestConfigurationLoader {
+//    public static TestConfiguration getTestConfiguration() {
+//        String filename = java.lang.System.getProperty("user.home") + File.separator + ".brdWalletKitTestsConfig.json";
+//        return TestConfiguration.loadFrom(filename);
+//    }
+//}

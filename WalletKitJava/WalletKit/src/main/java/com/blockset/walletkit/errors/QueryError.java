@@ -7,10 +7,13 @@
  */
 package com.blockset.walletkit.errors;
 
-import com.blockset.walletkit.errors.QueryError;
+public abstract class QueryError extends Exception {
 
-public final class WalletSweeperQueryError extends WalletSweeperError {
-    public WalletSweeperQueryError(QueryError e) {
-        super(e);
+    public QueryError() {
+        super();
+    }
+
+    public QueryError(String message) {
+        super(message);
     }
 }

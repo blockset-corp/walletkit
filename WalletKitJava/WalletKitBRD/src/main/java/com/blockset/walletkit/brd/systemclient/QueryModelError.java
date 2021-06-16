@@ -5,12 +5,14 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.errors;
+package com.blockset.walletkit.brd.systemclient;
 
 import com.blockset.walletkit.errors.QueryError;
 
-public final class WalletSweeperQueryError extends WalletSweeperError {
-    public WalletSweeperQueryError(QueryError e) {
-        super(e);
+// Could not convert JSON to model
+public class QueryModelError extends QueryError {
+
+    public QueryModelError(String message) {
+        super(message);
     }
 }

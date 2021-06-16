@@ -112,7 +112,7 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
     public void createSweeper(com.blockset.walletkit.Wallet wallet,
                               com.blockset.walletkit.Key key,
                               CompletionHandler<com.blockset.walletkit.WalletSweeper, WalletSweeperError> completion) {
-        WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getBlockchainDb(), completion);
+        WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getSystemClient(), completion);
     }
 
     @Override

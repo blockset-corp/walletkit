@@ -52,14 +52,14 @@ static BRStellarAccount createStellarAccountObject(BRKey * key)
 
     // Generate the public key from the secret
     unsigned char privateKey[64] = {0};
-    unsigned char publicKey[32] = {0};
+    unsigned char publicKey[STELLAR_ADDRESS_BYTES] = {0};
     ed25519_create_keypair(publicKey, privateKey, key->secret.u8);
     var_clean(&privateKey); // never leave the private key in memory
     var_clean(&key);
-    memcpy(&account->publicKey.pubKey[0], &publicKey[0], 32);
+    memcpy(&account->publicKey.pubKey[0], &publicKey[0], STELLAR_ADDRESS_BYTES);
     account->networkType = STELLAR_NETWORK_PUBLIC;
     account->accountID.accountType = PUBLIC_KEY_TYPE_ED25519;
-    memcpy(account->accountID.accountID, publicKey, 32);
+    memcpy(account->accountID.accountID, publicKey, STELLAR_ADDRESS_BYTES);
     // The address is the public key
     account->address = stellarAddressCreate(&account->publicKey);
     return account;
@@ -90,20 +90,31 @@ extern BRStellarAccount stellarAccountCreateWithKey(BRKey key)
 extern BRStellarAccount
 stellarAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
 {
-    // TODO - Carl
+    // We only support the ed25519 keyp pair
+    if (!bytes || bytesCount != STELLAR_ADDRESS_BYTES) {
+        return NULL;
+    }
+    BRStellarAccount account = (BRStellarAccount) calloc (1, sizeof (struct BRStellarAccountRecord));
+    memcpy(&account->publicKey.pubKey[0], bytes, STELLAR_ADDRESS_BYTES);
+    account->networkType = STELLAR_NETWORK_PUBLIC;
+    account->accountID.accountType = PUBLIC_KEY_TYPE_ED25519;
+    memcpy(account->accountID.accountID, bytes, STELLAR_ADDRESS_BYTES);
+    // The address is the public key
+    account->address = stellarAddressCreate(&account->publicKey);
 
-    // To pass account handlers account creation, create nothing
-    return (BRStellarAccount) calloc (1, sizeof(void*));
+    return account;
 }
 
 extern uint8_t * // Caller owns memory and must delete calling "free"
 stellarAccountGetSerialization (BRStellarAccount account, size_t *bytesCount)
 {
-    // TODO - Carl
+    assert (NULL != bytesCount);
+    assert (NULL != account);
 
-    // To pass account handlers account creation, create nothing
-    *bytesCount = sizeof(void*);
-    return (uint8_t*) calloc (1, *bytesCount);
+    *bytesCount = STELLAR_ADDRESS_BYTES;
+    uint8_t *bytes = calloc (1, STELLAR_ADDRESS_BYTES);
+    memcpy(bytes, account->accountID.accountID, STELLAR_ADDRESS_BYTES);
+    return bytes;
 }
 
 extern BRStellarAddress stellarAccountGetAddress(BRStellarAccount account)

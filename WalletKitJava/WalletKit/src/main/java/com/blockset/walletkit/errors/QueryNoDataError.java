@@ -9,8 +9,6 @@ package com.blockset.walletkit.errors;
 
 import com.blockset.walletkit.errors.QueryError;
 
-public final class WalletSweeperQueryError extends WalletSweeperError {
-    public WalletSweeperQueryError(QueryError e) {
-        super(e);
-    }
+// HTTP submission didn't error but returned no data
+public class QueryNoDataError extends QueryError {
 }

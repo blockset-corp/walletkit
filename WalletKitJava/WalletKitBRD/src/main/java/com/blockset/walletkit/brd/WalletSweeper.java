@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.TransferFeeBasis;
+import com.blockset.walletkit.errors.QueryError;
 import com.blockset.walletkit.nativex.WKClientTransactionBundle;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKAddress;
@@ -17,9 +18,8 @@ import com.blockset.walletkit.nativex.WKWalletManager;
 import com.blockset.walletkit.nativex.WKWalletSweeper;
 import com.blockset.walletkit.nativex.WKWalletSweeperStatus;
 import com.blockset.walletkit.NetworkFee;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
-import com.blockset.walletkit.blockchaindb.errors.QueryError;
-import com.blockset.walletkit.blockchaindb.models.bdb.Transaction;
+import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.SystemClient.Transaction;
 import com.blockset.walletkit.errors.FeeEstimationError;
 import com.blockset.walletkit.errors.WalletSweeperError;
 import com.blockset.walletkit.errors.WalletSweeperInsufficientFundsError;
@@ -48,7 +48,7 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
     static void create(WalletManager manager,
                        Wallet wallet,
                        Key key,
-                       BlockchainDb bdb,
+                       SystemClient sc,
                        CompletionHandler<com.blockset.walletkit.WalletSweeper, WalletSweeperError> completion) {
         // check that the requested operation is supported
         WalletSweeperError e = WalletSweeper.validateSupported(manager, wallet, key);
@@ -59,7 +59,7 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
 
         // Well, this is implied by 'validateSupported', I think.  And, there is
         // no other 'createAsXYZ' function.  When there is, we'll need something more.
-        WalletSweeper.createAsBtc(manager, wallet, key).initAsBtc(bdb, completion);
+        WalletSweeper.createAsBtc(manager, wallet, key).initAsBtc(sc, completion);
     }
 
     private static WalletSweeperError statusToError(WKWalletSweeperStatus status) {
@@ -146,11 +146,11 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
         return core;
     }
 
-    private void initAsBtc(BlockchainDb bdb,
+    private void initAsBtc(SystemClient sc,
                            CompletionHandler<com.blockset.walletkit.WalletSweeper, WalletSweeperError> completion) {
         Network network = manager.getNetwork();
 
-        bdb.getTransactions(
+        sc.getTransactions(
                 network.getUids(),
                 Collections.singletonList(getAddress()),
                 UnsignedLong.ZERO,
@@ -158,6 +158,7 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
                 true,
                 false,
                 false,
+                null,
                 new CompletionHandler<List<Transaction>, QueryError>() {
 
                     @Override

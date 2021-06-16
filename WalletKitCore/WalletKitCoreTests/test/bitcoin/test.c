@@ -2766,7 +2766,8 @@ int btcWalletTests()
     amt = btcWalletMaxOutputAmount(w);
     tx = btcWalletCreateTransaction(w, amt, addr.s);
     
-    if (btcWalletAmountSentByTx(w, tx) - btcWalletFeeForTx(w, tx) != amt || btcWalletAmountReceivedFromTx(w, tx) != 0)
+    if (! tx || btcWalletAmountSentByTx(w, tx) - btcWalletFeeForTx(w, tx) != amt ||
+        btcWalletAmountReceivedFromTx(w, tx) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletMaxOutputAmount() test\n", __func__);
 
     fee = btcWalletFeeForTxAmount (w, amt);
@@ -2776,7 +2777,7 @@ int btcWalletTests()
     if (fee != btcWalletFeeForTxAmountWithFeePerKb (w, 65000, amt))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletFeeForTxAmountWithFeePerKb() test\n", __func__);
 
-    btcTransactionFree(tx);
+    if (tx) btcTransactionFree(tx);
     btcWalletFree(w);
     
     amt = btcBitcoinAmount(50000, 50000);

@@ -5,12 +5,12 @@
  * See the LICENSE file at the project root for license information.
  * See the CONTRIBUTORS file at the project root for a list of contributors.
  */
-package com.blockset.walletkit.errors;
+package com.blockset.walletkit.brd.systemclient;
 
-import com.blockset.walletkit.errors.QueryError;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
-public final class WalletSweeperQueryError extends WalletSweeperError {
-    public WalletSweeperQueryError(QueryError e) {
-        super(e);
-    }
+public interface DataTask {
+    void execute(OkHttpClient client, Request request, Callback callback);
 }

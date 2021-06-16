@@ -43,16 +43,16 @@ import com.blockset.walletkit.WalletManagerState;
 import com.blockset.walletkit.WalletManagerSyncDepth;
 import com.blockset.walletkit.WalletManagerSyncStoppedReason;
 import com.blockset.walletkit.WalletState;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
-import com.blockset.walletkit.blockchaindb.errors.QueryError;
-import com.blockset.walletkit.blockchaindb.errors.QueryNoDataError;
-import com.blockset.walletkit.blockchaindb.models.bdb.Blockchain;
-import com.blockset.walletkit.blockchaindb.models.bdb.BlockchainFee;
-import com.blockset.walletkit.blockchaindb.models.bdb.CurrencyDenomination;
-import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
-import com.blockset.walletkit.blockchaindb.models.bdb.Transaction;
-import com.blockset.walletkit.blockchaindb.models.bdb.TransactionFee;
-import com.blockset.walletkit.blockchaindb.models.bdb.TransactionIdentifier;
+import com.blockset.walletkit.SystemClient;
+import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.QueryNoDataError;
+import com.blockset.walletkit.SystemClient.Blockchain;
+import com.blockset.walletkit.SystemClient.BlockchainFee;
+import com.blockset.walletkit.SystemClient.CurrencyDenomination;
+import com.blockset.walletkit.SystemClient.HederaAccount;
+import com.blockset.walletkit.SystemClient.Transaction;
+import com.blockset.walletkit.SystemClient.TransactionFee;
+import com.blockset.walletkit.SystemClient.TransactionIdentifier;
 import com.blockset.walletkit.errors.AccountInitializationAlreadyInitializedError;
 import com.blockset.walletkit.errors.AccountInitializationCantCreateError;
 import com.blockset.walletkit.errors.AccountInitializationError;
@@ -98,6 +98,9 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletAddedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletChangedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletDeletedEvent;
+import com.blockset.walletkit.brd.systemclient.BlocksetAmount;
+import com.blockset.walletkit.brd.systemclient.BlocksetCurrency;
+import com.blockset.walletkit.brd.systemclient.BlocksetTransfer;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -178,7 +181,7 @@ final class System implements com.blockset.walletkit.System {
                          com.blockset.walletkit.Account account,
                          boolean isMainnet,
                          String storagePath,
-                         BlockchainDb query) {
+                         SystemClient query) {
         Account cryptoAccount = Account.from(account);
 
         storagePath = storagePath + (storagePath.endsWith(File.separator) ? "" : File.separator) + cryptoAccount.getFilesystemIdentifier();
@@ -221,11 +224,11 @@ final class System implements com.blockset.walletkit.System {
     }
 
     /* package */
-    static Optional<com.blockset.walletkit.blockchaindb.models.bdb.Currency> asBDBCurrency(String uids,
-                                                                                           String name,
-                                                                                           String code,
-                                                                                           String type,
-                                                                                           UnsignedInteger decimals) {
+    static Optional<SystemClient.Currency> asBDBCurrency(String uids,
+                                                         String name,
+                                                         String code,
+                                                         String type,
+                                                         UnsignedInteger decimals) {
         int index = uids.indexOf(':');
         if (index == -1) return Optional.absent();
 
@@ -236,15 +239,16 @@ final class System implements com.blockset.walletkit.System {
         String blockchainId = uids.substring(0, index);
         String address = uids.substring(index);
 
+        // TODO: SystemClient inscrutability question?
         return Optional.of(
-                com.blockset.walletkit.blockchaindb.models.bdb.Currency.create(
+                BlocksetCurrency.create(
                         uids,
                         name,
                         code,
                         type,
                         blockchainId,
                         address.equals("__native__") ? null : address,
-                        true,
+                        Boolean.valueOf(true),
                         Blockchains.makeCurrencyDemominationsErc20(code, decimals)
                 )
         );
@@ -344,7 +348,7 @@ final class System implements com.blockset.walletkit.System {
     private final Account account;
     private final boolean isMainnet;
     private final String storagePath;
-    private final BlockchainDb query;
+    private final SystemClient query;
     private final Cookie context;
     private final WKListener cwmListener;
     private final WKClient cwmClient;
@@ -354,7 +358,7 @@ final class System implements com.blockset.walletkit.System {
                    Account account,
                    boolean isMainnet,
                    String storagePath,
-                   BlockchainDb query,
+                   SystemClient query,
                    Cookie context,
                    WKListener cwmListener,
                    WKClient cwmClient) {
@@ -523,12 +527,12 @@ final class System implements com.blockset.walletkit.System {
 
     @Override
     public <T extends com.blockset.walletkit.Network> void updateCurrencies(@Nullable CompletionHandler<List<T>, CurrencyUpdateError> handler) {
-        query.getCurrencies(isMainnet, new CompletionHandler<List<com.blockset.walletkit.blockchaindb.models.bdb.Currency>, QueryError>() {
+        query.getCurrencies(null, isMainnet, new CompletionHandler<List<SystemClient.Currency>, QueryError>() {
             @Override
-            public void handleData(List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencyModels) {
+            public void handleData(List<SystemClient.Currency> currencyModels) {
                 List<WKClientCurrencyBundle> bundles = new ArrayList<>();
 
-                for (com.blockset.walletkit.blockchaindb.models.bdb.Currency currencyModel : currencyModels) {
+                for (SystemClient.Currency currencyModel : currencyModels) {
                     List<WKClientCurrencyDenominationBundle> denominationBundles = new ArrayList<>();
                     for (CurrencyDenomination currencyDenomination : currencyModel.getDenominations())
                         denominationBundles.add(
@@ -544,7 +548,7 @@ final class System implements com.blockset.walletkit.System {
                             currencyModel.getCode(),
                             currencyModel.getType(),
                             currencyModel.getBlockchainId(),
-                            currencyModel.getAddressValue(),
+                            currencyModel.getAddress().isPresent() ? currencyModel.getAddress().get() : null,
                             currencyModel.getVerified(),
                             denominationBundles));
                 }
@@ -650,7 +654,7 @@ final class System implements com.blockset.walletkit.System {
     // Miscellaneous
 
     /* package */
-    BlockchainDb getBlockchainDb() {
+    SystemClient getSystemClient() {
         return query;
     }
 
@@ -1879,6 +1883,7 @@ final class System implements com.blockset.walletkit.System {
                                 true,
                                 false,
                                 false,
+                                null,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
@@ -1933,22 +1938,22 @@ final class System implements com.blockset.walletkit.System {
 
         WKTransferStateType status = getTransferStatus (transaction.getStatus());
 
-        for (ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String> o : System.mergeTransfers(transaction, addresses)) {
+        for (ObjectPair<SystemClient.Transfer, String> o : System.mergeTransfers(transaction, addresses)) {
             Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback  announcing " + o.o1.getId());
 
             // Merge Transfer 'meta' into Transaction' meta; duplicates from Transfer
-            Map<String,String> meta = new HashMap<>(transaction.getMeta());
-            meta.putAll(o.o1.getMeta());
+            Map<String,String> meta = new HashMap<>(transaction.getMetaData());
+            meta.putAll(o.o1.getMetaData());
 
             result.add (WKClientTransferBundle.create(
                     status,
                     o.o1.getId(),
                     transaction.getHash(),
                     transaction.getIdentifier(),
-                    o.o1.getFromAddress().orNull(),
-                    o.o1.getToAddress().orNull(),
+                    o.o1.getSource().orNull(),
+                    o.o1.getTarget().orNull(),
                     o.o1.getAmount().getAmount(),
-                    o.o1.getAmount().getCurrencyId(),
+                    o.o1.getAmount().getCurrency(),
                     o.o2,
                     blockTimestamp,
                     blockHeight,
@@ -1980,12 +1985,15 @@ final class System implements com.blockset.walletkit.System {
 
                         final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), canonicalAddresses,
+                        system.query.getTransactions(
+                                walletManager.getNetwork().getUids(),
+                                canonicalAddresses,
                                 begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                                 endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
                                 false,
                                 false,
                                 true,
+                                null,
                                 new CompletionHandler<List<Transaction>, QueryError>() {
                                     @Override
                                     public void handleData(List<Transaction> transactions) {
@@ -2127,22 +2135,22 @@ final class System implements com.blockset.walletkit.System {
         }
     }
 
-    private static List<ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String>> mergeTransfers(Transaction transaction, List<String> addresses) {
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfers;
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfersWithFee;
-        List<com.blockset.walletkit.blockchaindb.models.bdb.Transfer> transfersWithoutFee;
-        List<ObjectPair<com.blockset.walletkit.blockchaindb.models.bdb.Transfer, String>> transfersMerged;
-        com.blockset.walletkit.blockchaindb.models.bdb.Transfer transferWithFee;
+    private static List<ObjectPair<SystemClient.Transfer, String>> mergeTransfers(Transaction transaction, List<String> addresses) {
+        List<SystemClient.Transfer> transfers;
+        List<SystemClient.Transfer> transfersWithFee;
+        List<SystemClient.Transfer> transfersWithoutFee;
+        List<ObjectPair<SystemClient.Transfer, String>> transfersMerged;
+        SystemClient.Transfer transferWithFee;
 
         // Only consider transfers w/ `address`
         transfers = new ArrayList<>(Collections2.filter(transaction.getTransfers(),
-                t -> addresses.contains(t.getFromAddress().orNull()) ||
-                        addresses.contains(t.getToAddress().orNull())));
+                t -> addresses.contains(t.getSource().orNull()) ||
+                        addresses.contains(t.getTarget().orNull())));
 
         // Note for later: all transfers have a unique id
 
-        transfersWithFee = new ArrayList<>(Collections2.filter(transfers, t -> "__fee__".equals(t.getToAddress().orNull())));
-        transfersWithoutFee = new ArrayList<>(Collections2.filter(transfers, t -> !"__fee__".equals(t.getToAddress().orNull())));
+        transfersWithFee = new ArrayList<>(Collections2.filter(transfers, t -> "__fee__".equals(t.getTarget().orNull())));
+        transfersWithoutFee = new ArrayList<>(Collections2.filter(transfers, t -> !"__fee__".equals(t.getTarget().orNull())));
 
         // Get the transferWithFee if we have one
         checkState(transfersWithFee.size() <= 1);
@@ -2153,7 +2161,7 @@ final class System implements com.blockset.walletkit.System {
         // There is no "__fee__" entry
         if (transferWithFee == null) {
             // Announce transfers with no fee
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfers) {
+            for (SystemClient.Transfer transfer: transfers) {
                 transfersMerged.add(new ObjectPair<>(transfer, null));
             }
 
@@ -2164,11 +2172,11 @@ final class System implements com.blockset.walletkit.System {
 
             // Find the first of the non-fee transfers matching `transferWithFee` that also matches
             // the amount's currency.
-            com.blockset.walletkit.blockchaindb.models.bdb.Transfer transferMatchingFee = null;
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfersWithoutFee) {
+            SystemClient.Transfer transferMatchingFee = null;
+            for (SystemClient.Transfer transfer: transfersWithoutFee) {
                 if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
-                    transferWithFee.getFromAddress().equals(transfer.getFromAddress()) &&
-                    transferWithFee.getAmount().getCurrencyId().equals(transfer.getAmount().getCurrencyId())) {
+                    transferWithFee.getSource().equals(transfer.getSource()) &&
+                    transferWithFee.getAmount().getCurrency().equals(transfer.getAmount().getCurrency())) {
                     transferMatchingFee = transfer;
                     break;
                 }
@@ -2176,9 +2184,9 @@ final class System implements com.blockset.walletkit.System {
 
             // If there is still no `transferWithFee`, find the first w/o matching the amount's currency
             if (null == transferMatchingFee)
-                for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer : transfersWithoutFee) {
+                for (SystemClient.Transfer transfer : transfersWithoutFee) {
                     if (transferWithFee.getTransactionId().equals(transfer.getTransactionId()) &&
-                            transferWithFee.getFromAddress().equals(transfer.getFromAddress())) {
+                            transferWithFee.getSource().equals(transfer.getSource())) {
                         transferMatchingFee = transfer;
                         break;
                     }
@@ -2188,13 +2196,13 @@ final class System implements com.blockset.walletkit.System {
             transfers = new ArrayList<>(transfersWithoutFee);
             if (null == transferMatchingFee) {
                 transfers.add(
-                        com.blockset.walletkit.blockchaindb.models.bdb.Transfer.create(
+                        BlocksetTransfer.create(
                                 transferWithFee.getId(),
                                 transferWithFee.getBlockchainId(),
                                 transferWithFee.getIndex(),
-                                com.blockset.walletkit.blockchaindb.models.bdb.Amount.create(transferWithFee.getAmount().getCurrencyId(), "0"),
-                                transferWithFee.getMeta(),
-                                transferWithFee.getFromAddress().orNull(),
+                                BlocksetAmount.create(transferWithFee.getAmount().getCurrency(), "0"),
+                                transferWithFee.getMetaData(),
+                                transferWithFee.getSource().orNull(),
                                 "unknown",
                                 transferWithFee.getTransactionId().or("0"),
                                 transferWithFee.getAcknowledgements().orNull())
@@ -2205,7 +2213,7 @@ final class System implements com.blockset.walletkit.System {
             String transferForFeeId = transferMatchingFee != null ? transferMatchingFee.getId() : transferWithFee.getId();
 
             // Announce transfers adding the fee to the `transferforFeeId`
-            for (com.blockset.walletkit.blockchaindb.models.bdb.Transfer transfer: transfers) {
+            for (SystemClient.Transfer transfer: transfers) {
                 String fee = transfer.getId().equals(transferForFeeId) ? transferWithFee.getAmount().getAmount() : null;
 
                 transfersMerged.add(new ObjectPair<>(transfer, fee));
@@ -2263,7 +2271,7 @@ final class System implements com.blockset.walletkit.System {
 
                                 case 1:
                                     Log.log(Level.INFO, String.format("HBAR accountInitialize: Hedera AccountId: %s, Balance: %s",
-                                            accounts.get(0).getAccountId(),
+                                            accounts.get(0).getId(),
                                             accounts.get(0).getBalance()));
 
                                     Optional<byte[]> serialization = accountInitializeUsingHedera(account, network, accounts.get(0));
@@ -2305,7 +2313,7 @@ final class System implements com.blockset.walletkit.System {
 
     @Override
     public Optional<byte[]> accountInitializeUsingHedera(com.blockset.walletkit.Account account, com.blockset.walletkit.Network network, HederaAccount hedera) {
-        return Optional. fromNullable (account.initialize (network, hedera.getAccountId().getBytes()));
+        return Optional. fromNullable (account.initialize (network, hedera.getId().getBytes()));
     }
 
     private void accountInitializeReportError(AccountInitializationError error,

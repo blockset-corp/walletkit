@@ -195,6 +195,7 @@ wkAccountCreateFromSerialization (
     uint64_t timestamp = UInt64GetBE (bytesPtr);
     BYTES_PTR_INCR_AND_CHECK (tsSize);
 
+<<<<<<< HEAD
     acct = wkAccountCreateInternal(AS_WK_TIMESTAMP (timestamp),
                                    uids);
     assert (acct != NULL);
