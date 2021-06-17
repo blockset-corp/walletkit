@@ -91,7 +91,8 @@ wkWalletManagerSignTransactionWithSeedXLM (WKWalletManager manager,
                                                 WKWallet wallet,
                                                 WKTransfer transfer,
                                                 UInt512 seed) {
-    BRStellarAccount account = wkAccountAsXLM (manager->account);
+    BRStellarAccount account = (BRStellarAccount) wkAccountAs (manager->account,
+                                                               WK_NETWORK_TYPE_XLM);
     BRKey publicKey = stellarAccountGetPublicKey (account);
     BRStellarTransaction transaction = wkTransferCoerceXLM(transfer)->xlmTransaction;
 
@@ -180,7 +181,8 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
                                                           OwnershipKept WKClientTransferBundle bundle) {
     // create BRStellarTransaction
     
-    BRStellarAccount xlmAccount = wkAccountAsXLM (manager->account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (manager->account,
+                                                                  WK_NETWORK_TYPE_XLM);
     
     BRStellarAmount amount = 0;
     sscanf(bundle->amount, "%lf", &amount);
@@ -267,7 +269,8 @@ wkWalletManagerCreateWalletXLM (WKWalletManager manager,
                                      WKCurrency currency,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRStellarAccount xlmAccount = wkAccountAsXLM(manager->account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (manager->account,
+                                                                  WK_NETWORK_TYPE_XLM);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

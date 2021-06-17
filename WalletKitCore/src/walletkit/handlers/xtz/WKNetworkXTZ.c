@@ -76,7 +76,8 @@ wkNetworkIsAccountInitializedXTZ (WKNetwork network,
     WKNetworkXTZ networkXTZ = wkNetworkCoerce (network);
     (void) networkXTZ;
 
-    BRTezosAccount xtzAccount = wkAccountAsXTZ (account);
+    BRTezosAccount xtzAccount = (BRTezosAccount) wkAccountAs (account,
+                                                              WK_NETWORK_TYPE_XTZ);
     assert (NULL != xtzAccount);
     return AS_WK_BOOLEAN (true);
 }
@@ -89,7 +90,8 @@ wkNetworkGetAccountInitializationDataXTZ (WKNetwork network,
     WKNetworkXTZ networkXTZ = wkNetworkCoerce (network);
     (void) networkXTZ;
 
-    BRTezosAccount xtzAccount = wkAccountAsXTZ (account);
+    BRTezosAccount xtzAccount = (BRTezosAccount) wkAccountAs (account,
+                                                              WK_NETWORK_TYPE_XTZ);
     assert (NULL != xtzAccount);
     if (NULL != bytesCount) *bytesCount = 0;
     return NULL;
@@ -103,7 +105,8 @@ wkNetworkInitializeAccountXTZ (WKNetwork network,
     WKNetworkXTZ networkXTZ = wkNetworkCoerce (network);
     (void) networkXTZ;
 
-    BRTezosAccount xtzAccount = wkAccountAsXTZ (account);
+    BRTezosAccount xtzAccount = (BRTezosAccount) wkAccountAs (account,
+                                                              WK_NETWORK_TYPE_XTZ);
     assert (NULL != xtzAccount);
     return;
 }

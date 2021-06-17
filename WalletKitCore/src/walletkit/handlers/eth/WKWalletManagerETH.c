@@ -96,7 +96,8 @@ wkWalletManagerCreateETH (WKWalletManagerListener listener,
                               const char *path) {
     WKWalletManagerCreateContextETH contextETH = {
         wkNetworkAsETH (network),
-        wkAccountAsETH (account),
+        (BREthereumAccount) wkAccountAs (account,
+                                         WK_NETWORK_TYPE_ETH),
         rlpCoderCreate()
     };
 
