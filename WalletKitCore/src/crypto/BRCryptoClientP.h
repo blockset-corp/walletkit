@@ -75,14 +75,15 @@ cryptoClientTransactionBundleSetRelease (BRSetOf(BRCryptoClientTransactionBundle
 
 struct BRCryptoClientTransferBundleRecord {
     BRCryptoTransferStateType status;
-    char *uids;
-    char *hash;
-    char *identifier;
+    char * /* transaction */ hash;
+    char * /* transaction */ identifier;
+    char * /* transfer */ uids;
     char *from;
     char *to;
     char *amount;
     char *currency;
     char *fee;
+    uint64_t transferIndex;
     BRCryptoTimestamp blockTimestamp;
     BRCryptoBlockNumber blockNumber;
     BRCryptoBlockNumber blockConfirmations;

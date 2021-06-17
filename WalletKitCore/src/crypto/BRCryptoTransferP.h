@@ -115,8 +115,18 @@ struct BRCryptoTransferRecord {
     pthread_mutex_t lock;
     BRCryptoTransferListener listener;
 
+
+    /// The identifier for this transfer's originating transaction.  This is usually the string
+    /// representation of a hash; however some currencies, notably Hedera, have identifier that
+    /// are not hashes.
+    ///
+    /// The identifier can be NULL.
     char *identifier;
+
+    /// The source address sent the amount and paid the fee.
     BRCryptoAddress sourceAddress;
+
+    /// The target address received the amount.
     BRCryptoAddress targetAddress;
 
     /// The state (modifiable)
