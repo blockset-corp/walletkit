@@ -179,22 +179,8 @@ wkWalletManagerEstimateFeeBasisBTC (WKWalletManager cwm,
 static BRMasterPubKey
 wkWalletManagerGetMPK (WKWalletManager manager) {
     assert (wkNetworkTypeIsBitcoinBased(manager->type));
-    switch (manager->type) {
-        case WK_NETWORK_TYPE_BTC:
-        case WK_NETWORK_TYPE_BCH:
-        case WK_NETWORK_TYPE_BSV:
-            return *((BRMasterPubKey*) wkAccountAs (manager->account,
-                                                    WK_NETWORK_TYPE_BTC));
-        case WK_NETWORK_TYPE_LTC:
-            return *((BRMasterPubKey*) wkAccountAs (manager->account,
-                                                    WK_NETWORK_TYPE_LTC));
-        case WK_NETWORK_TYPE_DOGE:
-            return *((BRMasterPubKey*) wkAccountAs (manager->account,
-                                                    WK_NETWORK_TYPE_DOGE));
-        default:
-            assert (false);
-            return (BRMasterPubKey) { 0 };
-    }
+    return *((BRMasterPubKey*) wkAccountAs (manager->account,
+                                            manager->type));
 }
 
 static WKWallet
