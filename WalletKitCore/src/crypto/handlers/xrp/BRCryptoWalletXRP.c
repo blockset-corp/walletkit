@@ -225,6 +225,7 @@ cryptoWalletCreateTransferXRP (BRCryptoWallet  wallet,
 
     BRCryptoTransferState state    = cryptoTransferStateInit(CRYPTO_TRANSFER_STATE_CREATED);
     BRCryptoTransfer      transfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,

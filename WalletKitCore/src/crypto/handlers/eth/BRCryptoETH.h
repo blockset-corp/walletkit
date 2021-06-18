@@ -77,6 +77,7 @@ cryptoTransferCoerceETH (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsETH (BRCryptoTransferListener listener,
+                           const char *uids,
                            BRCryptoHash hash,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,

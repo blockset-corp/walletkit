@@ -903,21 +903,16 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     // Get the hash; we'll use it to find a pre-existing transfer in wallet or primaryWallet
     BRCryptoHash hash = cryptoNetworkCreateHashFromString (network, bundle->hash);
 
-    // We'll create or find a transfer for the bundle
-    BRCryptoTransfer transfer = NULL;
-
-    // Look for a transfer in the wallet for currency
-    if (NULL != wallet)
-        transfer = cryptoWalletGetTransferByHash (wallet, hash);
-
-    // If there isn't a wallet, the currency is unknown, look in the primaryWallet (for a fee)
-    else
-        transfer = cryptoWalletGetTransferByHash (primaryWallet, hash);
+    // We'll create or find a transfer for the bundle uids
+    BRCryptoTransfer transfer = cryptoWalletGetTransferByHashOrUIDS ((NULL != wallet ? wallet : primaryWallet), hash, bundle->uids);
 
     // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
         // Get the transferETH so as to check for a nonce update
         BRCryptoTransferETH transeferETH = cryptoTransferCoerceETH(transfer);
+
+        // Get the UIDS
+        cryptoTransferSetUids (transfer, bundle->uids);
 
         // Compare the current nonce with the transfer's.
         bool nonceChanged = (nonce != cryptoTransferGetNonceETH(transeferETH));
@@ -960,6 +955,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 
             // Finally create a transfer
             transfer = cryptoTransferCreateAsETH (transfersPrimaryWallet->listenerTransfer,
+                                                  bundle->uids,
                                                   hash,
                                                   transfersPrimaryWallet->unit,
                                                   transfersPrimaryWallet->unitForFee,

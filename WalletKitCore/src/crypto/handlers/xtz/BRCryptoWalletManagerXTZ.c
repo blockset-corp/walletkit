@@ -237,7 +237,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed address.
     // It must be included since the burn amount is subtracted from wallet balance, but is not considered a normal fee.
     BRCryptoAddress target = cryptoAddressCreateAsXTZ (toAddress);
-    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHashAndTargetXTZ (wallet, hash, target);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHashOrUIDSAndTargetXTZ (wallet, hash, bundle->uids, target);
     
     cryptoAddressGive (target);
     cryptoHashGive (hash);
@@ -250,6 +250,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
 
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                  bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
@@ -259,6 +260,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXTZ (BRCryptoWalletManager m
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        cryptoTransferSetUids  (baseTransfer, bundle->uids);
         cryptoTransferSetState (baseTransfer, state);
     }
     

@@ -56,6 +56,7 @@ cryptoTransferCoerceXRP (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsXRP (BRCryptoTransferListener listener,
+                           const char *uids,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoTransferState state,

@@ -200,6 +200,7 @@ cryptoWalletCreateTransferHBAR (BRCryptoWallet  wallet,
 
     BRCryptoTransferState state    = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
     BRCryptoTransfer      transfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                                 NULL,
                                                                  unit,
                                                                  unitForFee,
                                                                  state,

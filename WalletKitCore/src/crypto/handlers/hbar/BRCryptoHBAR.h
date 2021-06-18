@@ -59,6 +59,7 @@ cryptoTransferCoerceHBAR (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsHBAR (BRCryptoTransferListener listener,
+                            const char *uids,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             BRCryptoTransferState state,

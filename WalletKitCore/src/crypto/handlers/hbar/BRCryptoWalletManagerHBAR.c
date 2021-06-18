@@ -217,7 +217,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
     BRCryptoHash hash = cryptoHashCreateAsHBAR (txHash);
 
-    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     cryptoHashGive(hash);
 
     BRCryptoFeeBasis      feeBasis = cryptoFeeBasisCreateAsHBAR (wallet->unit, hederaTransactionGetFeeBasis(hbarTransaction));
@@ -225,6 +225,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
 
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                   bundle->uids,
                                                    wallet->unit,
                                                    wallet->unitForFee,
                                                    state,
@@ -235,6 +236,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleHBAR (BRCryptoWalletManager 
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        cryptoTransferSetUids  (baseTransfer, bundle->uids);
         cryptoTransferSetState (baseTransfer, state);
     }
     

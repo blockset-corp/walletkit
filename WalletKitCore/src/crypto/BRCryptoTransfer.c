@@ -173,6 +173,7 @@ extern BRCryptoTransfer // OwnershipKept, all arguments
 cryptoTransferAllocAndInit (size_t sizeInBytes,
                             BRCryptoBlockChainType type,
                             BRCryptoTransferListener listener,
+                            const char *uids,
                             BRCryptoUnit unit,
                             BRCryptoUnit unitForFee,
                             BRCryptoFeeBasis feeBasisEstimated,
@@ -191,6 +192,7 @@ cryptoTransferAllocAndInit (size_t sizeInBytes,
     transfer->sizeInBytes = sizeInBytes;
 
     transfer->listener   = listener;
+    transfer->uids       = (NULL == uids ? NULL : strdup (uids));
     transfer->unit       = cryptoUnitTake(unit);
     transfer->unitForFee = cryptoUnitTake(unitForFee);
     transfer->feeBasisEstimated = cryptoFeeBasisTake (feeBasisEstimated);
@@ -221,6 +223,7 @@ static void
 cryptoTransferRelease (BRCryptoTransfer transfer) {
     pthread_mutex_lock (&transfer->lock);
 
+    if (NULL != transfer->uids) free (transfer->uids);
     if (NULL != transfer->identifier) free (transfer->identifier);
     cryptoAddressGive (transfer->sourceAddress);
     cryptoAddressGive (transfer->targetAddress);
@@ -408,6 +411,17 @@ cryptoTransferGetDirection (BRCryptoTransfer transfer) {
     return transfer->direction;
 }
 
+private_extern void
+cryptoTransferSetUids (BRCryptoTransfer transfer,
+                       const char *uids) {
+    assert (NULL == transfer->uids || NULL == uids || 0 == strcmp (uids, transfer->uids));
+
+    pthread_mutex_lock (&transfer->lock);
+    if (NULL != transfer->uids) free (transfer->uids);
+    transfer->uids = (NULL == uids ? NULL : strdup (uids));
+    pthread_mutex_unlock (&transfer->lock);
+}
+
 extern const char *
 cryptoTransferGetIdentifier (BRCryptoTransfer transfer) {
     // Lazy compute the `identifier`
@@ -554,16 +568,16 @@ cryptoTransferEqual (BRCryptoTransfer t1, BRCryptoTransfer t2) {
     if (t1->type != t2->type) return CRYPTO_FALSE;
 
     pthread_mutex_lock (&t1->lock);
-    const char *t1ID = t1->identifier;
+    const char *t1uids = t1->uids;
     pthread_mutex_unlock (&t1->lock);
 
     pthread_mutex_lock (&t2->lock);
-    const char *t2ID = t2->identifier;
+    const char *t2uids = t2->uids;
     pthread_mutex_unlock (&t2->lock);
 
-    if (NULL != t1ID && NULL != t2ID && 0 == strcmp (t1ID, t2ID)) return CRYPTO_TRUE;
-
-    return AS_CRYPTO_BOOLEAN (t1->handlers->isEqual (t1, t2));
+    return AS_CRYPTO_BOOLEAN (NULL != t1uids && NULL != t2uids
+                              ? 0 == strcmp (t1uids, t2uids)
+                              : t1->handlers->isEqual (t1, t2));
 }
 
 extern BRCryptoComparison

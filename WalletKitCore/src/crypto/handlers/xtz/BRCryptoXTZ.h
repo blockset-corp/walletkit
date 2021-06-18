@@ -55,6 +55,7 @@ cryptoTransferCoerceXTZ (BRCryptoTransfer transfer);
 
 extern BRCryptoTransfer
 cryptoTransferCreateAsXTZ (BRCryptoTransferListener listener,
+                           const char *uids,
                            BRCryptoUnit unit,
                            BRCryptoUnit unitForFee,
                            BRCryptoTransferState state,
@@ -91,8 +92,9 @@ private_extern bool
 cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet);
 
 private_extern BRCryptoTransfer
-cryptoWalletGetTransferByHashAndTargetXTZ (BRCryptoWallet wallet,
+cryptoWalletGetTransferByHashOrUIDSAndTargetXTZ (BRCryptoWallet wallet,
                                            BRCryptoHash hashToMatch,
+                                           const char *uids,
                                            BRCryptoAddress targetToMatch);
 
 // MARK: - Wallet Manager
