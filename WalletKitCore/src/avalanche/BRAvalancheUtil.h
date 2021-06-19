@@ -9,11 +9,12 @@
 #define BRAvalancheUtil_h
 
 #include <stdio.h>
+#include "WKBase.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int avaxEncodeByte(int input);
+//extern uint8_t* avaxEncodeInt32(uint32_t input);
 
 
 

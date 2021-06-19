@@ -82,9 +82,9 @@ typedef struct {
 TestAccount avaxTestAccount = {
     "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
     "029dc79308883267bb49f3924e9eb58d60bcecd17ad3f2f53681ecc5c668b2ba5f",
-    "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466"
+    "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466",
     //expected ripemd160: cc30e2015780a6c72efaef2280e3de4a954e770c
-    "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal"
+    "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",
     "bbc9bf879c06b13274c200c8b246881ef1ca33a0"
 };
 
@@ -108,9 +108,15 @@ makeAccount(TestAccount accountInfo) {
 //https://github.com/ava-labs/ledger-app-avalanche/blob/develop/tests/basic-tests.js
 extern void runAvalancheTest (void) {
     printf("Running avalanche unit tests...\n");
-    
     BRAvalancheAccount account = makeAccount(avaxTestAccount);
+    //printf("%s", (char *)(account->xaddress.bytes));
+   // printf("%s", (char *)(account->caddress.bytes));
+    assert(0==memcmp(avaxTestAccount.xaddress, (char *)(account->xaddress.bytes), sizeof(account->xaddress.bytes)));
     
+    uint8_t ethAddress[20];
+    hex2bin(avaxTestAccount.caddress, ethAddress);
+    assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
+   
 }
 
 

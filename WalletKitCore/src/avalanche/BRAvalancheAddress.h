@@ -21,7 +21,11 @@
 extern "C" {
 #endif
 
-typedef struct BRAvalancheXAddressRecord *BRAvalancheXAddress;
+//typedef struct BRAvalancheXAddressRecord *BRAvalancheXAddress;
+
+typedef struct {
+    uint8_t bytes[AVAX_X_ADDRESS_BYTES];
+} BRAvalancheXAddress;
 
 extern BRAvalancheXAddress
 avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen);

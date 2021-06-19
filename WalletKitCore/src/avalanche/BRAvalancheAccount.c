@@ -13,10 +13,6 @@
 
 #define AVAX_PUBKEY_LENGTH 33
 
-struct BRAvalancheAccountRecord {
-    BRAvalancheXAddress xaddress;
-    BREthereumAddress caddress;
-};
 
 //derives the root key for
 static BRKey

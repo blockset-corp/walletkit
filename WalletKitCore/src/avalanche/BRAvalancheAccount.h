@@ -28,6 +28,11 @@ extern "C" {
 
 typedef struct BRAvalancheAccountRecord *BRAvalancheAccount;
 
+struct BRAvalancheAccountRecord {
+    BRAvalancheXAddress xaddress;
+    BREthereumAddress caddress;
+};
+
 extern BRAvalancheAccount  /* caller must free - using "free" function */
 avalancheAccountCreateWithSeed (UInt512 seed);
 

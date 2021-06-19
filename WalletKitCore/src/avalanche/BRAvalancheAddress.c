@@ -12,15 +12,13 @@
 #include "support/BRBech32.h"
 
 
-struct BRAvalancheXAddressRecord{
-    uint8_t bytes[AVAX_X_ADDRESS_BYTES];
-};
+
 
 //generate x-chain address from seed
 // algorithm: Bech32Encode("avax",Base32Encode(ripemd160(sha256(publicKey))))
 extern BRAvalancheXAddress
 avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen) {
-    BRAvalancheXAddress address = calloc(1, sizeof(struct BRAvalancheXAddressRecord));
+    BRAvalancheXAddress address;// = calloc(1, sizeof(struct BRAvalancheXAddress));
     uint8_t pkh[32];
     uint8_t rmd160[20];
     static const char *hrp = "avax";
@@ -33,7 +31,7 @@ avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen) {
     BRRMD160(rmd160, pkh, 32);
     avax_base32_encode(pkh, &pkhLen, rmd160, sizeof(rmd160));
     avax_bech32_encode(&addr[0], &outputLen, hrp, hrpLen, pkh, sizeof(pkh));
-    memcpy(address->bytes, addr, sizeof(addr));
+    memcpy(address.bytes, addr, sizeof(addr));
    
     return address;
 }
