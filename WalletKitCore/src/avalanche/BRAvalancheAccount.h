@@ -15,6 +15,7 @@
 #include "support/BRBech32.h"
 #include "BRAvalancheAddress.h"
 #include "support/BRBIP32Sequence.h"
+#include "ethereum/base/BREthereumAddress.h"
 
 
 #ifdef __cplusplus

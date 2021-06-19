@@ -11,42 +11,34 @@
 #include "support/BRCrypto.h"
 #include "support/BRBech32.h"
 
-struct BRAvalancheAddressRecord {
+
+struct BRAvalancheXAddressRecord{
     uint8_t bytes[AVAX_X_ADDRESS_BYTES];
-    //todo ethereum address
 };
 
 //generate x-chain address from seed
-// Bech32Encode("avax",Base32Encode(ripemd160(sha256(publicKey))))
-extern BRAvalancheAddress
+// algorithm: Bech32Encode("avax",Base32Encode(ripemd160(sha256(publicKey))))
+extern BRAvalancheXAddress
 avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen) {
-    BRAvalancheAddress address = calloc(1, sizeof(struct BRAvalancheAddressRecord));
+    BRAvalancheXAddress address = calloc(1, sizeof(struct BRAvalancheXAddressRecord));
     uint8_t pkh[32];
     uint8_t rmd160[20];
+    static const char *hrp = "avax";
+    char addr[43];
+    const uint8_t *hrpLen = 4;
+    const uint8_t  *pkhLen = 32;
+    size_t *outputLen = 44 ;// must be > pkhLen + hrpSiz + 7
     
     BRSHA256(pkh, pubKey, pubKeyLen);
     BRRMD160(rmd160, pkh, 32);
-    //========= right up to here
-    //uint8_t data[22] = { 0, 20 };
-    //memcpy(&data[2], rmd160, 20);
-    //BRBech32Encode(addr, AVAX_HRP , data);
-    static const char *hrp = "avax";
-    char addr[91];
-    size_t * size = 50;
-    uint8_t * hrpSize = 4;
-    uint8_t * dataLen = 32;
-    avax_base32_encode(pkh, &dataLen, rmd160, sizeof(rmd160));
-    avax_bech32_encode(&addr[0], &size, hrp, hrpSize, pkh, sizeof(pkh));
-    //size_t BRBech32Encode(char *addr91, const char *hrp, const uint8_t data[]);
-    
-    //uint8_t pkh[BLAKE20_BYTES];
-    //blake2b(pkh, sizeof(pkh), NULL, 0, pubKey, pubKeyLen);
-
-    //memcpy(address->bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX));
-    //memcpy(address->bytes + sizeof(TZ1_PREFIX), pkh, sizeof(pkh));
+    avax_base32_encode(pkh, &pkhLen, rmd160, sizeof(rmd160));
+    avax_bech32_encode(&addr[0], &outputLen, hrp, hrpLen, pkh, sizeof(pkh));
+    memcpy(address->bytes, addr, sizeof(addr));
+   
     return address;
 }
 
+//TODO: move everything below here to vendored utils
 //https://github.com/ava-labs/ledger-app-avalanche/blob/a340702ec427b15e7e4ed31c47cc5e2fb170ebdf/src/bech32encode.c#L28
 //thanks to ledger for your hard work xo
 uint32_t bech32_polymod_step(uint32_t pre) {

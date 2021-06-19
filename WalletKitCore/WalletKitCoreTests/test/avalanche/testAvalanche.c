@@ -73,6 +73,7 @@ typedef struct {
     const char * pubKey;
     const char * privKey;
     const char * xaddress;
+    const char * caddress;
 } TestAccount;
 
 //test account was made via :
@@ -84,17 +85,16 @@ TestAccount avaxTestAccount = {
     "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466"
     //expected ripemd160: cc30e2015780a6c72efaef2280e3de4a954e770c
     "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal"
+    "bbc9bf879c06b13274c200c8b246881ef1ca33a0"
 };
 
 // caller must free
-static void
+static BRAvalancheAccount
 makeAccount(TestAccount accountInfo) {
     UInt512 seed = UINT512_ZERO;
-    BRBIP39DeriveKey(seed.u8, accountInfo.paperKey, NULL); // no passphrase
-    avalancheAccountCreateWithSeed(seed);
-    //avalancheAddressCreateFromKey();
-    //BRTezosAccount account = tezosAccountCreateWithSeed(seed);
-    //return account;
+    //generate seed from paperKey
+    BRBIP39DeriveKey(seed.u8, accountInfo.paperKey, NULL);
+    return avalancheAccountCreateWithSeed(seed);
 }
 
 //Test-Case resource
@@ -109,7 +109,8 @@ makeAccount(TestAccount accountInfo) {
 extern void runAvalancheTest (void) {
     printf("Running avalanche unit tests...\n");
     
-    makeAccount(avaxTestAccount);
+    BRAvalancheAccount account = makeAccount(avaxTestAccount);
+    
 }
 
 

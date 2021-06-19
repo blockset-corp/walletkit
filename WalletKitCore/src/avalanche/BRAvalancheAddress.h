@@ -10,18 +10,20 @@
 
 #include <stdio.h>
 
-#define AVAX_X_ADDRESS_BYTES (23)
+//refer for length: https://support.avax.network/en/articles/4587392-what-is-bech32
+#define AVAX_X_ADDRESS_BYTES (43)
 
-#define AVAX_C_ADDRESS_BYTES (23)
+#define AVAX_C_ADDRESS_BYTES (20)
 
 #define AVAX_HRP ("avax")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct BRAvalancheAddressRecord *BRAvalancheAddress;
 
-extern BRAvalancheAddress
+typedef struct BRAvalancheXAddressRecord *BRAvalancheXAddress;
+
+extern BRAvalancheXAddress
 avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen);
 
 /** Encode a Bech32 string
