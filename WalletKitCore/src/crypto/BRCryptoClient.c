@@ -1434,7 +1434,7 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
                                      BRRlpCoder coder) {
     size_t itemsCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
-    assert (15 == itemsCount);
+    assert (16 == itemsCount);
 
     char *uids     = rlpDecodeString (coder, items[ 1]);
     char *hash     = rlpDecodeString (coder, items[ 2]);
@@ -1451,9 +1451,9 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
 
     BRCryptoClientTransferBundle bundle =
     cryptoClientTransferBundleCreate ((BRCryptoTransferStateType) rlpDecodeUInt64 (coder, items[ 0], 0),
-                                      uids,
                                       hash,
                                       ident,
+                                      uids,
                                       from,
                                       to,
                                       amount,
