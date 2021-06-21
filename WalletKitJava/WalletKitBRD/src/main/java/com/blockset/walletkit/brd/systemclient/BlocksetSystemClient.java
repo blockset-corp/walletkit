@@ -306,6 +306,7 @@ public class BlocksetSystemClient implements SystemClient {
             paramsBuilder.put("blockchain_id", blockchainId);
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber   != null) paramsBuilder.put("end_height",   endBlockNumber.toString());
+            paramsBuilder.put("merge_currencies", "true");
             paramsBuilder.put("max_page_size", maxPageSize.toString());
             for (String address : chunkedAddresses) paramsBuilder.put("address", address);
             ImmutableMultimap<String, String> params = paramsBuilder.build();
@@ -319,7 +320,10 @@ public class BlocksetSystemClient implements SystemClient {
     public void getTransfer(String transferId,
                             CompletionHandler<Transfer, QueryError> handler) {
 
-        bdbClient.sendGetWithId("transfers", transferId, ImmutableMultimap.of(), BlocksetTransfer.class, handler);
+        Multimap<String, String> params = ImmutableListMultimap.of(
+                "merge_currencies", "true");
+
+        bdbClient.sendGetWithId("transfers", transferId, params, BlocksetTransfer.class, handler);
     }
 
     // Transactions
@@ -411,6 +415,7 @@ public class BlocksetSystemClient implements SystemClient {
             paramsBuilder.put("include_raw", String.valueOf(includeRaw));
             paramsBuilder.put("include_transfers", String.valueOf(includeTransfers));
             paramsBuilder.put("include_calls", "false");
+            paramsBuilder.put("merge_currencies", "true");
             if (beginBlockNumber != null) paramsBuilder.put("start_height", beginBlockNumber.toString());
             if (endBlockNumber != null) paramsBuilder.put("end_height", endBlockNumber.toString());
             paramsBuilder.put("max_page_size", maxPageSize.toString());
@@ -432,7 +437,8 @@ public class BlocksetSystemClient implements SystemClient {
                 "include_proof", String.valueOf(includeProof),
                 "include_raw", String.valueOf(includeRaw),
                 "include_transfers", String.valueOf(includeTransfers),
-                "include_calls", "false");
+                "include_calls", "false",
+                "merge_currencies", "true");
 
         bdbClient.sendGetWithId("transactions", transactionId, params, com.blockset.walletkit.brd.systemclient.BlocksetTransaction.class, handler);
     }
@@ -522,6 +528,7 @@ public class BlocksetSystemClient implements SystemClient {
         paramsBuilder.put("end_height", endBlockNumber.toString());
         if (null != maxPageSize)
             paramsBuilder.put("max_page_size", maxPageSize.toString());
+        paramsBuilder.put("merge_currencies", "true");
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
         CompletionHandler<PagedData<BlocksetBlock>, QueryError> pagedHandler = createPagedBlockResultsHandler(handler);
@@ -539,7 +546,8 @@ public class BlocksetSystemClient implements SystemClient {
                 "include_raw", String.valueOf(includeRaw),
                 "include_tx", String.valueOf(includeTx),
                 "include_tx_raw", String.valueOf(includeTxRaw),
-                "include_tx_proof", String.valueOf(includeTxProof));
+                "include_tx_proof", String.valueOf(includeTxProof),
+                "merge_currencies", "true");
 
         bdbClient.sendGetWithId("blocks", id, params, BlocksetBlock.class, handler);
     }

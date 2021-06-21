@@ -831,11 +831,13 @@ public class BlocksetSystemClient: SystemClient {
             let queryKeys = ["blockchain_id",
                              "start_height",
                              "end_height",
+                             "merge_currencies",
                              "max_page_size"] + Array (repeating: "address", count: addresses.count)
 
             let queryVals = [blockchainId,
                              begBlockNumber.description,
                              endBlockNumber.description,
+                             "true", 
                              maxPageSize.description] + addresses
 
             self.bdbMakeRequest (path: "transfers",
@@ -845,7 +847,7 @@ public class BlocksetSystemClient: SystemClient {
     }
 
     public func getTransfer (transferId: String, completion: @escaping (Result<SystemClient.Transfer, SystemClientError>) -> Void) {
-        bdbMakeRequest (path: "transfers/\(transferId)", query: nil, embedded: false) {
+        bdbMakeRequest (path: "transfers/\(transferId)", query: zip(["merge_currencies"], ["true"]), embedded: false) {
             (more: URL?, res: Result<[JSON], SystemClientError>) in
             precondition (nil == more)
             completion (res.flatMap {
@@ -897,6 +899,7 @@ public class BlocksetSystemClient: SystemClient {
             "blockchain_id",
             begBlockNumber.map { (_) in "start_height" },
             endBlockNumber.map { (_) in "end_height" },
+            "merge_currencies",
             "include_proof",
             "include_raw",
             "include_transfers",
@@ -908,6 +911,7 @@ public class BlocksetSystemClient: SystemClient {
             blockchainId,
             begBlockNumber.map { $0.description },
             endBlockNumber.map { $0.description },
+            "true",  // merge_currencies
             includeProof.description,
             includeRaw.description,
             includeTransfers.description,
@@ -930,8 +934,8 @@ public class BlocksetSystemClient: SystemClient {
                                 includeRaw: Bool = false,
                                 includeProof: Bool = false,
                                 completion: @escaping (Result<SystemClient.Transaction, SystemClientError>) -> Void) {
-        let queryKeys = ["include_proof", "include_raw"]
-        let queryVals = [includeProof.description, includeRaw.description]
+        let queryKeys = ["include_proof", "include_raw", "merge_currencies"]
+        let queryVals = [includeProof.description, includeRaw.description, "true"]
 
         bdbMakeRequest (path: "transactions/\(transactionId)", query: zip (queryKeys, queryVals), embedded: false) {
             (more: URL?, res: Result<[JSON], SystemClientError>) in
@@ -1036,7 +1040,8 @@ public class BlocksetSystemClient: SystemClient {
                          "include_raw",
                          "include_tx",
                          "include_tx_raw",
-                         "include_tx_proof"]
+                         "include_tx_proof",
+                         "merge_currencies"]
 
         var queryVals = [blockchainId,
                          begBlockNumber.description,
@@ -1044,7 +1049,8 @@ public class BlocksetSystemClient: SystemClient {
                          includeRaw.description,
                          includeTx.description,
                          includeTxRaw.description,
-                         includeTxProof.description]
+                         includeTxProof.description,
+                         "true"]
 
         if let maxPageSize = maxPageSize {
             queryKeys += ["max_page_size"]
@@ -1062,9 +1068,17 @@ public class BlocksetSystemClient: SystemClient {
                           includeTxRaw: Bool = false,
                           includeTxProof: Bool = false,
                           completion: @escaping (Result<SystemClient.Block, SystemClientError>) -> Void) {
-        let queryKeys = ["include_raw", "include_tx", "include_tx_raw", "include_tx_proof"]
+        let queryKeys = ["include_raw", 
+                         "include_tx", 
+                         "include_tx_raw", 
+                         "include_tx_proof",
+                         "merge_currencies"]
 
-        let queryVals = [includeRaw.description, includeTx.description, includeTxRaw.description, includeTxProof.description]
+        let queryVals = [includeRaw.description, 
+                         includeTx.description, 
+                         includeTxRaw.description, 
+                         includeTxProof.description,
+                         "true"]
 
         bdbMakeRequest (path: "blocks/\(blockId)", query: zip (queryKeys, queryVals), embedded: false) {
             (more: URL?, res: Result<[JSON], SystemClientError>) in
