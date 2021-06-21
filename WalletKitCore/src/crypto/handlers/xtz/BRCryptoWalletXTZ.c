@@ -112,15 +112,17 @@ cryptoWalletNeedsRevealXTZ (BRCryptoWallet wallet) {
 }
 
 private_extern BRCryptoTransfer
-cryptoWalletGetTransferByHashAndTargetXTZ (BRCryptoWallet wallet,
+cryptoWalletGetTransferByHashOrUIDSAndTargetXTZ (BRCryptoWallet wallet,
                                            BRCryptoHash hashToMatch,
+                                           const char *uids,
                                            BRCryptoAddress targetToMatch) {
     BRCryptoTransfer transfer = NULL;
     
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
         BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
-        if (CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch) &&
+        if (((NULL != uids && NULL != wallet->transfers[index]->uids && 0 == strcmp (uids, wallet->transfers[index]->uids))
+             || CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch)) &&
             cryptoAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
             transfer = wallet->transfers[index];
         cryptoHashGive(hash);
@@ -253,6 +255,7 @@ cryptoWalletCreateTransferXTZ (BRCryptoWallet  wallet,
 
     BRCryptoTransferState state    = cryptoTransferStateInit (CRYPTO_TRANSFER_STATE_CREATED);
     BRCryptoTransfer      transfer = cryptoTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,

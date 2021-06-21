@@ -67,14 +67,15 @@ public final class CryptoLibraryIndirect {
     }
 
     public static Pointer cryptoClientTransferBundleCreate(int status,
-                                                           String uids,
                                                            String hash,
                                                            String identifier,
+                                                           String uids,
                                                            String sourceAddr,
                                                            String targetAddr,
                                                            String amount,
                                                            String currency,
                                                            String fee,
+                                                           long transferIndex,
                                                            long blockTimestamp,
                                                            long blockHeight,
                                                            long blockConfirmations,
@@ -86,9 +87,9 @@ public final class CryptoLibraryIndirect {
         attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
         attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
         return INSTANCE.cryptoClientTransferBundleCreate(status,
-                uids, hash, identifier, sourceAddr, targetAddr,
+                hash, identifier, uids, sourceAddr, targetAddr,
                 amount, currency, fee,
-                blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
+                transferIndex, blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
     }
 
@@ -177,14 +178,15 @@ public final class CryptoLibraryIndirect {
         int cryptoWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, BRCryptoTransferAttribute[] attributes, IntByReference validates);
 
         Pointer cryptoClientTransferBundleCreate(int status,
-                                                 String uids,
                                                  String hash,
                                                  String identifier,
+                                                 String uids,
                                                  String sourceAddr,
                                                  String targetAddr,
                                                  String amount,
                                                  String currency,
                                                  String fee,
+                                                 long transferIndex,
                                                  long blockTimestamp,
                                                  long blockHeight,
                                                  long blockConfirmations,

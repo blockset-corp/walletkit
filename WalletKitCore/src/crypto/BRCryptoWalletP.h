@@ -184,6 +184,12 @@ cryptoWalletSetState (BRCryptoWallet wallet,
 private_extern BRCryptoTransfer
 cryptoWalletGetTransferByHash (BRCryptoWallet wallet, BRCryptoHash hashToMatch);
 
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByUIDS (BRCryptoWallet wallet, const char *identifier);
+
+private_extern BRCryptoTransfer
+cryptoWalletGetTransferByHashOrUIDS (BRCryptoWallet wallet, BRCryptoHash hash, const char *uids);
+
 private_extern void
 cryptoWalletAddTransfer (BRCryptoWallet wallet, BRCryptoTransfer transfer);
 

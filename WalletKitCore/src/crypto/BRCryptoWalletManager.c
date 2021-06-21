@@ -136,17 +136,6 @@ cryptoWalletManagerReleaseCurrenciesOfInterest (BRCryptoWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
-static int
-cryptoClientTransferBundleCompareByBlockheight (const void *tb1, const void *tb2) {
-    BRCryptoClientTransferBundle b1 = * (BRCryptoClientTransferBundle *) tb1;
-    BRCryptoClientTransferBundle b2 = * (BRCryptoClientTransferBundle *) tb2;
-    return (b1->blockNumber < b2-> blockNumber
-            ? -1
-            : (b1->blockNumber > b2->blockNumber
-               ? +1
-               :  0));
-}
-
 static void // not locked; called during manager init
 cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
     assert (NULL == manager->bundleTransfers);
@@ -172,7 +161,8 @@ cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
         BRSetAll (bundles, (void**) manager->bundleTransfers, sortedBundlesCount);
         array_set_count (manager->bundleTransfers, sortedBundlesCount);
 
-        qsort (manager->bundleTransfers, sortedBundlesCount, sizeof (BRCryptoClientTransferBundle), cryptoClientTransferBundleCompareByBlockheight);
+        mergesort_brd (manager->bundleTransfers, sortedBundlesCount, sizeof (BRCryptoClientTransferBundle),
+                       cryptoClientTransferBundleCompareForSort);
     }
 
     // Don't release the set's bundles
@@ -189,17 +179,6 @@ cryptoWalletManagerInitialTransferBundlesRecover (BRCryptoWalletManager manager)
         array_free_all (manager->bundleTransfers, cryptoClientTransferBundleRelease);
         manager->bundleTransfers = NULL;
     }
-}
-
-static int
-cryptoClientTransactionBundleCompareByBlockheight (const void *tb1, const void *tb2) {
-    BRCryptoClientTransactionBundle b1 = * (BRCryptoClientTransactionBundle *) tb1;
-    BRCryptoClientTransactionBundle b2 = * (BRCryptoClientTransactionBundle *) tb2;
-    return (b1->blockHeight < b2-> blockHeight
-            ? -1
-            : (b1->blockHeight > b2->blockHeight
-               ? +1
-               :  0));
 }
 
 static void // not locked; called during manager init
@@ -226,7 +205,8 @@ cryptoWalletManagerInitialTransactionBundlesLoad (BRCryptoWalletManager manager)
         BRSetAll (bundles, (void**) sortedBundles, sortedBundlesCount);
         array_set_count(sortedBundles, sortedBundlesCount);
 
-        qsort (sortedBundles, sortedBundlesCount, sizeof (BRCryptoClientTransactionBundle), cryptoClientTransactionBundleCompareByBlockheight);
+        mergesort_brd (sortedBundles, sortedBundlesCount, sizeof (BRCryptoClientTransactionBundle),
+                       cryptoClientTransactionBundleCompareByBlockheightForSort);
 
         manager->bundleTransactions = sortedBundles;
     }

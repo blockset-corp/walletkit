@@ -194,6 +194,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
+
     // Convert the hash string to bytes
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
@@ -217,7 +218,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
     BRCryptoWallet wallet = cryptoWalletManagerGetWallet (manager);
     BRCryptoHash hash = cryptoHashCreateAsXRP (txId);
     
-    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHash (wallet, hash);
+    BRCryptoTransfer baseTransfer = cryptoWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     cryptoHashGive (hash);
 
     BRCryptoFeeBasis      feeBasis = cryptoFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
@@ -225,6 +226,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
 
     if (NULL == baseTransfer) {
         baseTransfer = cryptoTransferCreateAsXRP (wallet->listenerTransfer,
+                                                  bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
@@ -235,6 +237,7 @@ cryptoWalletManagerRecoverTransferFromTransferBundleXRP (BRCryptoWalletManager m
         cryptoWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        cryptoTransferSetUids  (baseTransfer, bundle->uids);
         cryptoTransferSetState (baseTransfer, state);
     }
     

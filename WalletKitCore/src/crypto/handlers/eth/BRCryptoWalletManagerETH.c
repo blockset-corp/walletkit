@@ -864,6 +864,9 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     if (NULL != currency)
         cryptoWalletManagerEnsureTokenForCurrency (managerETH, currency);
 
+    // If we have a fee, we'll check if we sent the transfer and, if so, need a transfer
+    bool hasFee = (NULL != bundle->fee);
+
     UInt256  amountETH;
     uint64_t gasLimit;
     uint64_t gasUsed;
@@ -900,21 +903,16 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     // Get the hash; we'll use it to find a pre-existing transfer in wallet or primaryWallet
     BRCryptoHash hash = cryptoNetworkCreateHashFromString (network, bundle->hash);
 
-    // We'll create or find a transfer for the bundle
-    BRCryptoTransfer transfer = NULL;
-
-    // Look for a transfer in the wallet for currency
-    if (NULL != wallet)
-        transfer = cryptoWalletGetTransferByHash (wallet, hash);
-
-    // If there isn't a wallet, the currency is unknown, look in the primaryWallet (for a fee)
-    else
-        transfer = cryptoWalletGetTransferByHash (primaryWallet, hash);
+    // We'll create or find a transfer for the bundle uids
+    BRCryptoTransfer transfer = cryptoWalletGetTransferByHashOrUIDS ((NULL != wallet ? wallet : primaryWallet), hash, bundle->uids);
 
     // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
         // Get the transferETH so as to check for a nonce update
         BRCryptoTransferETH transeferETH = cryptoTransferCoerceETH(transfer);
+
+        // Get the UIDS
+        cryptoTransferSetUids (transfer, bundle->uids);
 
         // Compare the current nonce with the transfer's.
         bool nonceChanged = (nonce != cryptoTransferGetNonceETH(transeferETH));
@@ -927,12 +925,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
     }
 
     else {
-        BRCryptoAddress source = cryptoNetworkCreateAddress (network, bundle->from);
-        BRCryptoAddress target = cryptoNetworkCreateAddress (network, bundle->to);
-
-        BREthereumFeeBasis feeBasisEstimatedETH = ethFeeBasisCreate (ethGasCreate(gasLimit), ethGasPriceCreate(ethEtherCreate(gasPrice)));
-        BRCryptoFeeBasis   feeBasisEstimated = cryptoFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisEstimatedETH);
-
         BRCryptoAmount amount = NULL;
 
         // If we have a currency, then create an amount
@@ -942,8 +934,8 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             cryptoUnitGive(amountUnit);
         }
 
-        // We pay the fee
-        bool paysFee = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (accountETH, ethAddressCreate(bundle->from)));
+        // If we pay the fee, we'll need a transfer in the primaryWallet.
+        bool paysFee = hasFee && (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (accountETH, ethAddressCreate(bundle->from)));
 
         // If we pay the fee but don't have a currency, then we'll need a transfer with a zero amount.
         if (NULL == amount && paysFee)
@@ -951,10 +943,19 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
 
         // If we have a currency or pay the fee, we'll need a transfer
         if (NULL != currency || paysFee) {
+
+            // The transfer's primaryWallet is where the currency is held
             BRCryptoWallet transfersPrimaryWallet = (NULL != wallet ? wallet : primaryWallet);
+
+            BRCryptoAddress source = cryptoNetworkCreateAddress (network, bundle->from);
+            BRCryptoAddress target = cryptoNetworkCreateAddress (network, bundle->to);
+
+            BREthereumFeeBasis feeBasisEstimatedETH = ethFeeBasisCreate (ethGasCreate(gasLimit), ethGasPriceCreate(ethEtherCreate(gasPrice)));
+            BRCryptoFeeBasis   feeBasisEstimated = cryptoFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisEstimatedETH);
 
             // Finally create a transfer
             transfer = cryptoTransferCreateAsETH (transfersPrimaryWallet->listenerTransfer,
+                                                  bundle->uids,
                                                   hash,
                                                   transfersPrimaryWallet->unit,
                                                   transfersPrimaryWallet->unitForFee,
@@ -974,6 +975,10 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
             if (paysFee && transfersPrimaryWallet != primaryWallet)
                 cryptoWalletAddTransfer (primaryWallet, transfer);
 
+            cryptoFeeBasisGive (feeBasisEstimated);
+            cryptoAddressGive (target);
+            cryptoAddressGive (source);
+
 #if defined (NEVER_DEFINED)
             // if we pay the fee, then we send the transfer, update the Ethereum Account's nonce
             if (paysFee) {
@@ -987,9 +992,6 @@ cryptoWalletManagerRecoverTransferFromTransferBundleETH (BRCryptoWalletManager m
         }
 
         cryptoAmountGive (amount);
-        cryptoFeeBasisGive (feeBasisEstimated);
-        cryptoAddressGive (target);
-        cryptoAddressGive (source);
     }
 
     cryptoTransferGive (transfer);

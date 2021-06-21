@@ -170,9 +170,13 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                                     tid->timestamp,
                                                                     feeBasisEstimated);
 
+    char *uids = NULL;
+    if (BRTransactionIsSigned(tid)) asprintf (&uids, "%s:0", u256hex(tid->txHash));
+
     BRCryptoTransfer transfer = cryptoTransferAllocAndInit (sizeof (struct BRCryptoTransferBTCRecord),
                                                             type,
                                                             listener,
+                                                            uids,
                                                             unit,
                                                             unitForFee,
                                                             feeBasisEstimated,
@@ -184,6 +188,7 @@ cryptoTransferCreateAsBTC (BRCryptoTransferListener listener,
                                                             &contextBTC,
                                                             cryptoTransferCreateCallbackBTC);
 
+    if (NULL != uids) free (uids);
     cryptoTransferStateGive (state);
     cryptoFeeBasisGive (feeBasisEstimated);
     cryptoAmountGive  (amount);

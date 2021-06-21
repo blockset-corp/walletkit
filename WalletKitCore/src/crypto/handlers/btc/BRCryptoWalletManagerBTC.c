@@ -581,7 +581,12 @@ static void cryptoWalletManagerBTCTxUpdated (void *info,
                                                                                blockHeight,
                                                                                timestamp,
                                                                                feeBasis);
-
+            if (BRTransactionIsSigned(transfer->tid)) {
+                char *uids = NULL;
+                asprintf (&uids, "%s:0", u256hex(transfer->tid->txHash));
+                cryptoTransferSetUids (&transfer->base, uids);
+                free (uids);
+            }
             cryptoTransferSetState (&transfer->base, newState);
 
             cryptoFeeBasisGive (feeBasis);

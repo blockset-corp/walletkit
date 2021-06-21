@@ -64,6 +64,24 @@ extern int
 cryptoClientTransactionBundleCompare (const BRCryptoClientTransactionBundle b1,
                                       const BRCryptoClientTransactionBundle b2);
 
+static inline int
+cryptoClientTransactionBundleCompareForSort (const void *v1, const void *v2) {
+    const BRCryptoClientTransactionBundle *b1 = v1;
+    const BRCryptoClientTransactionBundle *b2 = v2;
+    return cryptoClientTransactionBundleCompare (*b1, *b2);
+}
+
+extern int
+cryptoClientTransactionBundleCompareByBlockheight (const BRCryptoClientTransactionBundle b1,
+                                                   const BRCryptoClientTransactionBundle b2);
+
+static inline int
+cryptoClientTransactionBundleCompareByBlockheightForSort (const void *tb1, const void *tb2) {
+    BRCryptoClientTransactionBundle b1 = * (BRCryptoClientTransactionBundle *) tb1;
+    BRCryptoClientTransactionBundle b2 = * (BRCryptoClientTransactionBundle *) tb2;
+    return cryptoClientTransactionBundleCompareByBlockheight (b1, b2);
+}
+
 extern void
 cryptoClientAnnounceTransactions (OwnershipKept BRCryptoWalletManager cwm,
                                   OwnershipGiven BRCryptoClientCallbackState callbackState,
@@ -86,14 +104,15 @@ typedef struct BRCryptoClientTransferBundleRecord *BRCryptoClientTransferBundle;
 
 extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleCreate (BRCryptoTransferStateType status,
-                                  OwnershipKept const char *uids,
-                                  OwnershipKept const char *hash,
-                                  OwnershipKept const char *identifier,
+                                  OwnershipKept const char */* transaction */ hash,
+                                  OwnershipKept const char */* transaction */ identifier,
+                                  OwnershipKept const char */* transfer */ uids,
                                   OwnershipKept const char *from,
                                   OwnershipKept const char *to,
                                   OwnershipKept const char *amount,
                                   OwnershipKept const char *currency,
                                   OwnershipKept const char *fee,
+                                  uint64_t transferIndex,
                                   BRCryptoTimestamp blockTimestamp,
                                   BRCryptoBlockNumber blockNumber,
                                   BRCryptoBlockNumber blockConfirmations,
@@ -109,6 +128,24 @@ cryptoClientTransferBundleRelease (BRCryptoClientTransferBundle bundle);
 extern int
 cryptoClientTransferBundleCompare (const BRCryptoClientTransferBundle b1,
                                    const BRCryptoClientTransferBundle b2);
+
+static inline int
+cryptoClientTransferBundleCompareForSort (const void *v1, const void *v2) {
+    const BRCryptoClientTransferBundle *b1 = v1;
+    const BRCryptoClientTransferBundle *b2 = v2;
+    return cryptoClientTransferBundleCompare (*b1, *b2);
+}
+
+extern int
+cryptoClientTransferBundleCompareByBlockheight (const BRCryptoClientTransferBundle b1,
+                                                const BRCryptoClientTransferBundle b2);
+
+static inline int
+cryptoClientTransferBundleCompareByBlockheightForSort (const void *tb1, const void *tb2) {
+    BRCryptoClientTransferBundle b1 = * (BRCryptoClientTransferBundle *) tb1;
+    BRCryptoClientTransferBundle b2 = * (BRCryptoClientTransferBundle *) tb2;
+    return cryptoClientTransferBundleCompareByBlockheight (b1, b2);
+}
 
 extern BRCryptoTransferState
 cryptoClientTransferBundleGetTransferState (const BRCryptoClientTransferBundle bundle,

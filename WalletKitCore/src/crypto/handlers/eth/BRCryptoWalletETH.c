@@ -200,6 +200,7 @@ cryptoWalletCreateTransferETH (BRCryptoWallet  wallet,
 
     BRCryptoTransfer transfer = cryptoTransferCreateAsETH (wallet->listenerTransfer,
                                                            NULL,
+                                                           NULL,
                                                            unit,
                                                            unitForFee,
                                                            estimatedFeeBasis,  // w/o margin
