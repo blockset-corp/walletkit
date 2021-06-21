@@ -56,6 +56,7 @@ wkTransferCoerceXLM (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXLM (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,
@@ -125,4 +126,4 @@ stellarAddressGetTransactionAttributeKeys (BRStellarAddress address, int asRequi
 }
 #endif
 
-#endif WKSTELLAR_h
+#endif

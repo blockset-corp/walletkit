@@ -225,6 +225,7 @@ wkWalletCreateTransferXRP (WKWallet  wallet,
 
     WKTransferState state    = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXRP (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,

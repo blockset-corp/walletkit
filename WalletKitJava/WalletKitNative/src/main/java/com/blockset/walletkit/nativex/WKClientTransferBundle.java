@@ -18,14 +18,15 @@ import java.util.Map;
 public class WKClientTransferBundle extends PointerType {
     public static WKClientTransferBundle create(
             WKTransferStateType status,
-            String uids,
             String hash,
             String identifier,
+            String uids,
             String from,
             String to,
             String amount,
             String currency,
             String fee,
+            UnsignedLong transferIndex,
             UnsignedLong blockTimestamp,
             UnsignedLong blockHeight,
             UnsignedLong blockConfirmations,
@@ -40,14 +41,15 @@ public class WKClientTransferBundle extends PointerType {
 
         Pointer pointer = WKNativeLibraryIndirect.wkClientTransferBundleCreate(
                 status.toCore(),
-                uids,
                 hash,
                 identifier,
+                uids,
                 from,
                 to,
                 amount,
                 currency,
                 fee,
+                transferIndex.longValue(),
                 blockTimestamp.longValue(),
                 blockHeight.longValue(),
                 blockConfirmations.longValue(),

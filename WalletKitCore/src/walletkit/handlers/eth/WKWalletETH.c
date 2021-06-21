@@ -201,6 +201,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     WKTransferState state = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
 
     WKTransfer transfer = wkTransferCreateAsETH (wallet->listenerTransfer,
+                                                           NULL, // w/o uids
                                                            NULL, // w/o hash
                                                            unit,
                                                            unitForFee,

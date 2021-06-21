@@ -55,6 +55,7 @@ wkTransferCoerceXTZ (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXTZ (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,
@@ -91,9 +92,10 @@ private_extern bool
 wkWalletNeedsRevealXTZ (WKWallet wallet);
 
 private_extern WKTransfer
-wkWalletGetTransferByHashAndTargetXTZ (WKWallet wallet,
-                                           WKHash hashToMatch,
-                                           WKAddress targetToMatch);
+wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
+                                             WKHash hashToMatch,
+                                             const char *uids,
+                                             WKAddress targetToMatch);
 
 // MARK: - Wallet Manager
 

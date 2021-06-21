@@ -229,6 +229,7 @@ wkWalletCreateTransferXLM (WKWallet  wallet,
 
     WKTransferState state    = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXLM (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,

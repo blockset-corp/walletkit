@@ -63,14 +63,15 @@ public final class WKNativeLibraryIndirect {
     }
 
     public static Pointer wkClientTransferBundleCreate(int status,
-                                                           String uids,
                                                            String hash,
                                                            String identifier,
+                                                           String uids,
                                                            String sourceAddr,
                                                            String targetAddr,
                                                            String amount,
                                                            String currency,
                                                            String fee,
+                                                           long transferIndex,
                                                            long blockTimestamp,
                                                            long blockHeight,
                                                            long blockConfirmations,
@@ -82,9 +83,9 @@ public final class WKNativeLibraryIndirect {
         attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
         attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
         return INSTANCE.wkClientTransferBundleCreate(status,
-                uids, hash, identifier, sourceAddr, targetAddr,
+                hash, identifier, uids, sourceAddr, targetAddr,
                 amount, currency, fee,
-                blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
+                transferIndex, blockTimestamp, blockHeight, blockConfirmations, blockTransactionIndex, blockHash,
                 attributesCount, attributeKeys, attributeVals);
     }
 
@@ -173,14 +174,15 @@ public final class WKNativeLibraryIndirect {
         int wkWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, WKTransferAttribute[] attributes, IntByReference validates);
 
         Pointer wkClientTransferBundleCreate(int status,
-                                                 String uids,
                                                  String hash,
                                                  String identifier,
+                                                 String uids,
                                                  String sourceAddr,
                                                  String targetAddr,
                                                  String amount,
                                                  String currency,
                                                  String fee,
+                                                 long transferIndex,
                                                  long blockTimestamp,
                                                  long blockHeight,
                                                  long blockConfirmations,

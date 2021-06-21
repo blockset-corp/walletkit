@@ -687,7 +687,9 @@ wkWalletReplaceTransfer (WKWallet wallet,
     
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        if (WK_TRUE == wkTransferEqual (wallet->transfers[index], oldTransfer)) {
+        if (oldTransfer == wallet->transfers[index] ||
+            WK_TRUE == wkTransferEqual (wallet->transfers[index], oldTransfer)) {
+
             walletTransfer = wallet->transfers[index];
             wallet->transfers[index] = wkTransferTake (newTransfer);
 
@@ -769,6 +771,52 @@ wkWalletGetTransferByHash (WKWallet wallet, WKHash hashToMatch) {
     pthread_mutex_unlock (&wallet->lock);
 
     return wkTransferTake (transfer);
+}
+
+private_extern WKTransfer
+wkWalletGetTransferByUIDS (WKWallet wallet, const char *uids) {
+    WKTransfer transfer = NULL;
+
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
+        const char *transferUIDS = wallet->transfers[index]->uids;
+        if (NULL != transferUIDS && 0 == strcmp (transferUIDS, uids))
+            transfer = wallet->transfers[index];
+    }
+    pthread_mutex_unlock (&wallet->lock);
+
+    return wkTransferTake (transfer);
+}
+
+private_extern WKTransfer
+wkWalletGetTransferByHashOrUIDS (WKWallet wallet, WKHash hash, const char *uids) {
+    WKTransfer transfer = NULL;
+
+    // This is quite a special match...
+
+    // 1) If we've nothing to match, then we are done.
+    if (NULL == hash && NULL == uids) return NULL;
+
+    // 2) If we find a uids match, we are done.
+    transfer = (NULL == uids
+                ? NULL
+                : wkWalletGetTransferByUIDS (wallet, uids));
+    if (NULL != transfer) return transfer;
+
+    // 3) If we don't find a hash match, we are done
+    transfer = (NULL == hash
+                ? NULL
+                : wkWalletGetTransferByHash (wallet, hash));
+    if (NULL == transfer) return NULL;
+
+    // 4) If we wanted a UIDS but then transfer doesn't have one, then we are done.  This is a
+    // transfer that we created... and it is waiting for a uids
+    if (NULL != uids && NULL == transfer->uids) return transfer;
+
+    // 5) We are done.
+    return NULL;
+
+    // WHY?
 }
 
 extern WKAddress

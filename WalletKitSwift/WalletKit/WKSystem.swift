@@ -1536,14 +1536,15 @@ extension System {
                 defer { metaValsPtr.forEach { wkMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
                 return wkClientTransferBundleCreate (status,
-                                                         transfer.id,
                                                          transaction.hash,
                                                          transaction.identifier,
+                                                         transfer.id,
                                                          transfer.source,
                                                          transfer.target,
                                                          transfer.amount.value,
                                                          transfer.amount.currency,
                                                          fee.map { $0.value },
+                                                         transfer.index,
                                                          blockTimestamp,
                                                          blockHeight,
                                                          blockConfirmations,

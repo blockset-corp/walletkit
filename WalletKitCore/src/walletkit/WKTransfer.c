@@ -173,6 +173,7 @@ extern WKTransfer // OwnershipKept, all arguments
 wkTransferAllocAndInit (size_t sizeInBytes,
                             WKNetworkType type,
                             WKTransferListener listener,
+                        const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKFeeBasis feeBasisEstimated,
@@ -191,6 +192,7 @@ wkTransferAllocAndInit (size_t sizeInBytes,
     transfer->sizeInBytes = sizeInBytes;
 
     transfer->listener   = listener;
+    transfer->uids       = (NULL == uids ? NULL : strdup (uids));
     transfer->unit       = wkUnitTake(unit);
     transfer->unitForFee = wkUnitTake(unitForFee);
     transfer->feeBasisEstimated = wkFeeBasisTake (feeBasisEstimated);
@@ -221,6 +223,7 @@ static void
 wkTransferRelease (WKTransfer transfer) {
     pthread_mutex_lock (&transfer->lock);
 
+    if (NULL != transfer->uids) free (transfer->uids);
     if (NULL != transfer->identifier) free (transfer->identifier);
     wkAddressGive (transfer->sourceAddress);
     wkAddressGive (transfer->targetAddress);
@@ -408,6 +411,17 @@ wkTransferGetDirection (WKTransfer transfer) {
     return transfer->direction;
 }
 
+private_extern void
+wkTransferSetUids (WKTransfer transfer,
+                   const char *uids) {
+    assert (NULL == transfer->uids || NULL == uids || 0 == strcmp (uids, transfer->uids));
+
+    pthread_mutex_lock (&transfer->lock);
+    if (NULL != transfer->uids) free (transfer->uids);
+    transfer->uids = (NULL == uids ? NULL : strdup (uids));
+    pthread_mutex_unlock (&transfer->lock);
+}
+
 extern const char *
 wkTransferGetIdentifier (WKTransfer transfer) {
     // Lazy compute the `identifier`
@@ -545,16 +559,16 @@ wkTransferEqual (WKTransfer t1, WKTransfer t2) {
     if (t1->type != t2->type) return WK_FALSE;
 
     pthread_mutex_lock (&t1->lock);
-    const char *t1ID = t1->identifier;
+    const char *t1uids = t1->uids;
     pthread_mutex_unlock (&t1->lock);
 
     pthread_mutex_lock (&t2->lock);
-    const char *t2ID = t2->identifier;
+    const char *t2uids = t2->uids;
     pthread_mutex_unlock (&t2->lock);
 
-    if (NULL != t1ID && NULL != t2ID && 0 == strcmp (t1ID, t2ID)) return WK_TRUE;
-
-    return AS_WK_BOOLEAN (t1->handlers->isEqual (t1, t2));
+    return AS_WK_BOOLEAN (NULL != t1uids && NULL != t2uids
+                              ? 0 == strcmp (t1uids, t2uids)
+                              : t1->handlers->isEqual (t1, t2));
 }
 
 extern WKComparison

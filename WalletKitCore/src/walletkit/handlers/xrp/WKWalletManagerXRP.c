@@ -196,6 +196,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
 
     BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
+
     // Convert the hash string to bytes
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
@@ -219,7 +220,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsXRP (txId);
     
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     wkHashGive (hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
@@ -227,6 +228,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsXRP (wallet->listenerTransfer,
+                                                  bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
@@ -237,6 +239,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids  (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     

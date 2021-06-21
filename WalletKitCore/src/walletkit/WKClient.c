@@ -587,13 +587,6 @@ typedef struct {
     BRArrayOf (WKClientTransactionBundle) bundles;
 } WKClientAnnounceTransactionsEvent;
 
-static int
-wkClientTransactionBundleCompareForSort (const void *v1, const void *v2) {
-    const WKClientTransactionBundle *b1 = v1;
-    const WKClientTransactionBundle *b2 = v2;
-    return wkClientTransactionBundleCompare (*b1, *b2);
-}
-
 extern void
 wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
                                 OwnershipGiven WKClientCallbackState callbackState,
@@ -723,13 +716,6 @@ typedef struct {
     WKBoolean success;
     BRArrayOf (WKClientTransferBundle) bundles;
 } WKClientAnnounceTransfersEvent;
-
-static int
-wkClientTransferBundleCompareForSort (const void *v1, const void *v2) {
-    const WKClientTransferBundle *b1 = v1;
-    const WKClientTransferBundle *b2 = v2;
-    return wkClientTransferBundleCompare (*b1, *b2);
-}
 
 extern void
 wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
@@ -1230,22 +1216,23 @@ wkClientQRYEstimateTransferFee (WKClientQRYManager qry,
 
 extern WKClientTransferBundle
 wkClientTransferBundleCreate (WKTransferStateType status,
-                                  OwnershipKept const char *uids,
-                                  OwnershipKept const char *hash,
-                                  OwnershipKept const char *identifier,
-                                  OwnershipKept const char *from,
-                                  OwnershipKept const char *to,
-                                  OwnershipKept const char *amount,
-                                  OwnershipKept const char *currency,
-                                  OwnershipKept const char *fee,
-                                  uint64_t blockTimestamp,
-                                  uint64_t blockNumber,
-                                  uint64_t blockConfirmations,
-                                  uint64_t blockTransactionIndex,
-                                  OwnershipKept const char *blockHash,
-                                  size_t attributesCount,
-                                  OwnershipKept const char **attributeKeys,
-                                  OwnershipKept const char **attributeVals) {
+                              OwnershipKept const char */* transaction */ hash,
+                              OwnershipKept const char */* transaction */ identifier,
+                              OwnershipKept const char */* transfer */ uids,
+                              OwnershipKept const char *from,
+                              OwnershipKept const char *to,
+                              OwnershipKept const char *amount,
+                              OwnershipKept const char *currency,
+                              OwnershipKept const char *fee,
+                              uint64_t transferIndex,
+                              uint64_t blockTimestamp,
+                              uint64_t blockNumber,
+                              uint64_t blockConfirmations,
+                              uint64_t blockTransactionIndex,
+                              OwnershipKept const char *blockHash,
+                              size_t attributesCount,
+                              OwnershipKept const char **attributeKeys,
+                              OwnershipKept const char **attributeVals) {
     WKClientTransferBundle bundle = calloc (1, sizeof (struct WKClientTransferBundleRecord));
 
     // In the case of an error, as indicated by `status`,  we've got no additional information
@@ -1255,15 +1242,16 @@ wkClientTransferBundleCreate (WKTransferStateType status,
     // so as to avoid simply creating a transaction to cause it again.
 
     bundle->status     = status;
-    bundle->uids       = strdup (uids);
     bundle->hash       = strdup (hash);
     bundle->identifier = strdup (identifier);
+    bundle->uids       = strdup (uids);
     bundle->from     = strdup (from);
     bundle->to       = strdup (to);
     bundle->amount   = strdup (amount);
     bundle->currency = strdup (currency);
     bundle->fee      = NULL == fee ? NULL : strdup (fee);
 
+    bundle->transferIndex = transferIndex;
     bundle->blockTimestamp = blockTimestamp;
     bundle->blockNumber    = blockNumber;
     bundle->blockConfirmations    = blockConfirmations;
@@ -1313,9 +1301,20 @@ wkClientTransferBundleRelease (WKClientTransferBundle bundle) {
     free (bundle);
 }
 
+static int
+wkClientStringCompare (const char *s1, const char *s2) {
+    int comparison = strcmp (s1, s2);
+
+    return (comparison > 0
+            ? +1
+            : (comparison < 0
+               ? -1
+               :  0));
+}
+
 extern int
 wkClientTransferBundleCompare (const WKClientTransferBundle b1,
-                                   const WKClientTransferBundle b2) {
+                               const WKClientTransferBundle b2) {
     return (b1->blockNumber < b2->blockNumber
             ? -1
             : (b1->blockNumber > b2->blockNumber
@@ -1324,7 +1323,21 @@ wkClientTransferBundleCompare (const WKClientTransferBundle b1,
                    ? -1
                    : (b1->blockTransactionIndex > b2->blockTransactionIndex
                       ? +1
-                      :  0))));
+                      : (b1->transferIndex < b2->transferIndex
+                         ? -1
+                         : (b1->transferIndex > b2->transferIndex
+                            ? +1
+                            :  wkClientStringCompare (b1->uids, b2->uids)))))));
+}
+
+extern int
+wkClientTransferBundleCompareByBlockheight (const WKClientTransferBundle b1,
+                                            const WKClientTransferBundle b2) {
+    return (b1->blockNumber < b2-> blockNumber
+            ? -1
+            : (b1->blockNumber > b2->blockNumber
+               ? +1
+               :  0));
 }
 
 extern WKTransferState
@@ -1395,7 +1408,7 @@ private_extern BRRlpItem
 wkClientTransferBundleRlpEncode (WKClientTransferBundle bundle,
                                      BRRlpCoder coder) {
 
-    return rlpEncodeList (coder, 15,
+    return rlpEncodeList (coder, 16,
                           rlpEncodeUInt64 (coder, bundle->status, 0),
                           rlpEncodeString (coder, bundle->uids),
                           rlpEncodeString (coder, bundle->hash),
@@ -1405,6 +1418,7 @@ wkClientTransferBundleRlpEncode (WKClientTransferBundle bundle,
                           rlpEncodeString (coder, bundle->amount),
                           rlpEncodeString (coder, bundle->currency),
                           rlpEncodeString (coder, bundle->fee),
+                          rlpEncodeUInt64 (coder, bundle->transferIndex,         0),
                           rlpEncodeUInt64 (coder, bundle->blockTimestamp,        0),
                           rlpEncodeUInt64 (coder, bundle->blockNumber,           0),
                           rlpEncodeUInt64 (coder, bundle->blockConfirmations,    0),
@@ -1418,10 +1432,10 @@ wkClientTransferBundleRlpEncode (WKClientTransferBundle bundle,
 
 private_extern WKClientTransferBundle
 wkClientTransferBundleRlpDecode (BRRlpItem item,
-                                     BRRlpCoder coder) {
+                                 BRRlpCoder coder) {
     size_t itemsCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
-    assert (15 == itemsCount);
+    assert (16 == itemsCount);
 
     char *uids     = rlpDecodeString (coder, items[ 1]);
     char *hash     = rlpDecodeString (coder, items[ 2]);
@@ -1431,29 +1445,30 @@ wkClientTransferBundleRlpDecode (BRRlpItem item,
     char *amount   = rlpDecodeString (coder, items[ 6]);
     char *currency = rlpDecodeString (coder, items[ 7]);
     char *fee      = rlpDecodeString (coder, items[ 8]);
-    char *blkHash  = rlpDecodeString (coder, items[13]);
+    char *blkHash  = rlpDecodeString (coder, items[14]);
 
     WKTransferBundleRlpDecodeAttributesResult attributesResult =
-    wkClientTransferBundleRlpDecodeAttributes (items[14], coder);
+    wkClientTransferBundleRlpDecodeAttributes (items[15], coder);
 
     WKClientTransferBundle bundle =
     wkClientTransferBundleCreate ((WKTransferStateType) rlpDecodeUInt64 (coder, items[ 0], 0),
-                                      uids,
-                                      hash,
-                                      ident,
-                                      from,
-                                      to,
-                                      amount,
-                                      currency,
-                                      (0 == strcmp(fee,"") ? NULL : fee),
-                                      rlpDecodeUInt64 (coder, items[ 9], 0),
-                                      rlpDecodeUInt64 (coder, items[10], 0),
-                                      rlpDecodeUInt64 (coder, items[11], 0),
-                                      rlpDecodeUInt64 (coder, items[12], 0),
-                                      blkHash,
-                                      array_count(attributesResult.keys),
-                                      (const char **) attributesResult.keys,
-                                      (const char **) attributesResult.vals);
+                                  hash,
+                                  ident,
+                                  uids,
+                                  from,
+                                  to,
+                                  amount,
+                                  currency,
+                                  (0 == strcmp(fee,"") ? NULL : fee),
+                                  rlpDecodeUInt64 (coder, items[ 9], 0),
+                                  rlpDecodeUInt64 (coder, items[10], 0),
+                                  rlpDecodeUInt64 (coder, items[11], 0),
+                                  rlpDecodeUInt64 (coder, items[12], 0),
+                                  rlpDecodeUInt64 (coder, items[13], 0),
+                                  blkHash,
+                                  array_count(attributesResult.keys),
+                                  (const char **) attributesResult.keys,
+                                  (const char **) attributesResult.vals);
 
     free (blkHash);
     free (fee);
@@ -1514,8 +1529,14 @@ wkClientTransactionBundleRelease (WKClientTransactionBundle bundle) {
 
 extern int
 wkClientTransactionBundleCompare (const WKClientTransactionBundle b1,
-                                      const WKClientTransactionBundle b2) {
-    return (b1->blockHeight < b2->blockHeight
+                                  const WKClientTransactionBundle b2) {
+    return wkClientTransactionBundleCompareByBlockheight (b1, b2);
+}
+
+extern int
+wkClientTransactionBundleCompareByBlockheight (const WKClientTransactionBundle b1,
+                                               const WKClientTransactionBundle b2) {
+    return (b1->blockHeight < b2-> blockHeight
             ? -1
             : (b1->blockHeight > b2->blockHeight
                ? +1

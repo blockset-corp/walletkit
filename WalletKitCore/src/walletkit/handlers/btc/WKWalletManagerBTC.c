@@ -591,6 +591,13 @@ static void wkWalletManagerBTCTxUpdated (void *info,
                                                                                timestamp,
                                                                                feeBasis);
 
+            if (btcTransactionIsSigned(transfer->tid)) {
+                char *uids = NULL;
+                asprintf (&uids, "%s:0", u256hex(transfer->tid->txHash));
+                wkTransferSetUids (&transfer->base, uids);
+                free (uids);
+            }
+
             wkTransferSetState (&transfer->base, newState);
 
             wkFeeBasisGive (feeBasis);

@@ -56,6 +56,7 @@ wkTransferCoerceXRP (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXRP (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,

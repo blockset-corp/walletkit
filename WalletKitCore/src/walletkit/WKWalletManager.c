@@ -136,17 +136,6 @@ wkWalletManagerReleaseCurrenciesOfInterest (WKWalletManager cwm,
 #pragma clang diagnostic pop
 #pragma GCC diagnostic pop
 
-static int
-wkClientTransferBundleCompareByBlockheight (const void *tb1, const void *tb2) {
-    WKClientTransferBundle b1 = * (WKClientTransferBundle *) tb1;
-    WKClientTransferBundle b2 = * (WKClientTransferBundle *) tb2;
-    return (b1->blockNumber < b2-> blockNumber
-            ? -1
-            : (b1->blockNumber > b2->blockNumber
-               ? +1
-               :  0));
-}
-
 static void // not locked; called during manager init
 wkWalletManagerInitialTransferBundlesLoad (WKWalletManager manager) {
     assert (NULL == manager->bundleTransfers);
@@ -172,7 +161,8 @@ wkWalletManagerInitialTransferBundlesLoad (WKWalletManager manager) {
         BRSetAll (bundles, (void**) manager->bundleTransfers, sortedBundlesCount);
         array_set_count (manager->bundleTransfers, sortedBundlesCount);
 
-        qsort (manager->bundleTransfers, sortedBundlesCount, sizeof (WKClientTransferBundle), wkClientTransferBundleCompareByBlockheight);
+        mergesort_brd (manager->bundleTransfers, sortedBundlesCount, sizeof (WKClientTransferBundle),
+                       wkClientTransferBundleCompareByBlockheightForSort);
     }
 
     // Don't release the set's bundles
@@ -189,17 +179,6 @@ wkWalletManagerInitialTransferBundlesRecover (WKWalletManager manager) {
         array_free_all (manager->bundleTransfers, wkClientTransferBundleRelease);
         manager->bundleTransfers = NULL;
     }
-}
-
-static int
-wkClientTransactionBundleCompareByBlockheight (const void *tb1, const void *tb2) {
-    WKClientTransactionBundle b1 = * (WKClientTransactionBundle *) tb1;
-    WKClientTransactionBundle b2 = * (WKClientTransactionBundle *) tb2;
-    return (b1->blockHeight < b2-> blockHeight
-            ? -1
-            : (b1->blockHeight > b2->blockHeight
-               ? +1
-               :  0));
 }
 
 static void // not locked; called during manager init
@@ -226,7 +205,8 @@ wkWalletManagerInitialTransactionBundlesLoad (WKWalletManager manager) {
         BRSetAll (bundles, (void**) sortedBundles, sortedBundlesCount);
         array_set_count(sortedBundles, sortedBundlesCount);
 
-        qsort (sortedBundles, sortedBundlesCount, sizeof (WKClientTransactionBundle), wkClientTransactionBundleCompareByBlockheight);
+        mergesort_brd (sortedBundles, sortedBundlesCount, sizeof (WKClientTransactionBundle),
+                       wkClientTransactionBundleCompareByBlockheightForSort);
 
         manager->bundleTransactions = sortedBundles;
     }

@@ -75,14 +75,15 @@ wkClientTransactionBundleSetRelease (BRSetOf(WKClientTransactionBundle) bundles)
 
 struct WKClientTransferBundleRecord {
     WKTransferStateType status;
-    char *uids;
     char *hash;
     char *identifier;
+    char *uids;
     char *from;
     char *to;
     char *amount;
     char *currency;
     char *fee;
+    uint64_t transferIndex;
     WKTimestamp blockTimestamp;
     WKBlockNumber blockNumber;
     WKBlockNumber blockConfirmations;
