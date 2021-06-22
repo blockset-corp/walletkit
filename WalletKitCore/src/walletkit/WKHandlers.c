@@ -11,153 +11,24 @@
 #include "WKHandlersP.h"
 
 // The specific handlers for each supported currency
-#include "handlers/WKHandlersExport.h"
+#define DEFINE_HANDLERS(type, name)    extern WKHandlers wkHandlers ## name ;
+#include "WKConfig.h"
+#undef DEFINE_HANDLERS
 
 // Must be ordered by WKBlockChainType enumeration values.
-static WKHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
-    {
-        WK_NETWORK_TYPE_BTC,
-        &wkAccountHandlersBTC,
-        &wkNetworkHandlersBTC,
-        &wkAddressHandlersBTC,
-        &wkTransferHandlersBTC,
-        &wkWalletHandlersBTC,
-        &wkWalletSweeperHandlersBTC,
-        &wkExportablePaperWalletHandlersBTC,
-        &wkPaymentProtocolHandlersBTC,
-        &wkFeeBasisHandlersBTC,
-        &wkWalletManagerHandlersBTC
-    },
+static WKHandlers *handlers[NUMBER_OF_NETWORK_TYPES];
 
-    {
-        WK_NETWORK_TYPE_BCH,
-        &wkAccountHandlersBCH,
-        &wkNetworkHandlersBCH,
-        &wkAddressHandlersBCH,
-        &wkTransferHandlersBCH,
-        &wkWalletHandlersBCH,
-        &wkWalletSweeperHandlersBCH,
-        NULL,//WKExportablePaperWalletHandlers
-        &wkPaymentProtocolHandlersBTC,
-        &wkFeeBasisHandlersBTC,
-        &wkWalletManagerHandlersBCH
-    },
+static pthread_once_t  wkHandlersLookupOnce = PTHREAD_ONCE_INIT;
 
-    {
-        WK_NETWORK_TYPE_BSV,
-        &wkAccountHandlersBSV,
-        &wkNetworkHandlersBSV,
-        &wkAddressHandlersBSV,
-        &wkTransferHandlersBSV,
-        &wkWalletHandlersBSV,
-        &wkWalletSweeperHandlersBSV,
-        NULL,//WKExportablePaperWalletHandlers
-        &wkPaymentProtocolHandlersBTC,
-        &wkFeeBasisHandlersBTC,
-        &wkWalletManagerHandlersBSV
-    },
-
-    {
-        WK_NETWORK_TYPE_LTC,
-        &wkAccountHandlersLTC,
-        &wkNetworkHandlersLTC,
-        &wkAddressHandlersLTC,
-        &wkTransferHandlersLTC,
-        &wkWalletHandlersLTC,
-        &wkWalletSweeperHandlersLTC,
-        NULL,//WKExportablePaperWalletHandlers
-        &wkPaymentProtocolHandlersBTC,
-        &wkFeeBasisHandlersBTC,
-        &wkWalletManagerHandlersLTC
-    },
-
-    {
-        WK_NETWORK_TYPE_DOGE,
-        &wkAccountHandlersDOGE,
-        &wkNetworkHandlersDOGE,
-        &wkAddressHandlersDOGE,
-        &wkTransferHandlersDOGE,
-        &wkWalletHandlersDOGE,
-        &wkWalletSweeperHandlersDOGE,
-        NULL,//WKExportablePaperWalletHandlers
-        &wkPaymentProtocolHandlersBTC,
-        &wkFeeBasisHandlersBTC,
-        &wkWalletManagerHandlersDOGE
-    },
-
-    {
-        WK_NETWORK_TYPE_ETH,
-        &wkAccountHandlersETH,
-        &wkNetworkHandlersETH,
-        &wkAddressHandlersETH,
-        &wkTransferHandlersETH,
-        &wkWalletHandlersETH,
-        NULL,//WKWalletSweeperHandlers not supported
-        NULL,//WKExportablePaperWalletHandlers
-        NULL,//WKPaymentProtocolHandlers not supported
-        &wkFeeBasisHandlersETH,
-        &wkWalletManagerHandlersETH
-    },
-
-    {
-        WK_NETWORK_TYPE_XRP,
-        &wkAccountHandlersXRP,
-        &wkNetworkHandlersXRP,
-        &wkAddressHandlersXRP,
-        &wkTransferHandlersXRP,
-        &wkWalletHandlersXRP,
-        NULL,//WKWalletSweeperHandlers not supported
-        NULL,//WKExportablePaperWalletHandlers
-        NULL,//WKPaymentProtocolHandlers not supported
-        &wkFeeBasisHandlersXRP,
-        &wkWalletManagerHandlersXRP
-    },
-
-    {
-        WK_NETWORK_TYPE_HBAR,
-        &wkAccountHandlersHBAR,
-        &wkNetworkHandlersHBAR,
-        &wkAddressHandlersHBAR,
-        &wkTransferHandlersHBAR,
-        &wkWalletHandlersHBAR,
-        NULL,//WKWalletSweeperHandlers not supported
-        NULL,//WKExportablePaperWalletHandlers
-        NULL,//WKPaymentProtocolHandlers not supported
-        &wkFeeBasisHandlersHBAR,
-        &wkWalletManagerHandlersHBAR
-    },
-    
-    {
-        WK_NETWORK_TYPE_XTZ,
-        &wkAccountHandlersXTZ,
-        &wkNetworkHandlersXTZ,
-        &wkAddressHandlersXTZ,
-        &wkTransferHandlersXTZ,
-        &wkWalletHandlersXTZ,
-        NULL,//WKWalletSweeperHandlers not supported
-        NULL,//WKExportablePaperWalletHandlers
-        NULL,//WKPaymentProtocolHandlers not supported
-        &wkFeeBasisHandlersXTZ,
-        &wkWalletManagerHandlersXTZ
-    },
-
-    {
-        WK_NETWORK_TYPE_XLM,
-        &wkAccountHandlersXLM,
-        &wkNetworkHandlersXLM,
-        &wkAddressHandlersXLM,
-        &wkTransferHandlersXLM,
-        &wkWalletHandlersXLM,
-        NULL,//WKWalletSweeperHandlers not supported
-        NULL,//WKExportablePaperWalletHandlers
-        NULL,//WKPaymentProtocolHandlers not supported
-        &wkFeeBasisHandlersXLM,
-        &wkWalletManagerHandlersXLM
-    },
-};
+static void wkHandlersLookupInit (void) {
+#define DEFINE_HANDLERS(type, name)   handlers[type] =  &wkHandlers ## name;
+#include "WKConfig.h"
+#undef DEFINE_HANDLERS
+}
 
 extern const WKHandlers *
 wkHandlersLookup (WKNetworkType type) {
+    pthread_once (&wkHandlersLookupOnce, wkHandlersLookupInit);
     assert (type < NUMBER_OF_NETWORK_TYPES);
-    return &handlers[type];
+    return handlers[type];
 }
