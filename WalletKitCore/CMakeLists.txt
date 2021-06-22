@@ -23,6 +23,37 @@ set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "-Oz")
 
 if (LINUX)
+    
+    # Example 1: Build like the top level makefile the single bitcoin test.c 
+    # only in this case satisfying all dependencies by linking
+    # corecrypto shared library rather than directly compiling in 
+    # required bitcoin sources
+    add_executable (test_bitcoin)
+    target_sources  (test_bitcoin
+                     PRIVATE
+                     WalletKitCoreTests/test/bitcoin/test.c)
+    target_include_directories(test_bitcoin
+                               PRIVATE
+                               WalletKitCoreTests/test/include)
+    target_link_libraries (test_bitcoin
+                           corecrypto)
+    
+    # Example 2: Create a separate test-all application that runs
+    # all core crypto tests by linking the test crypto shared lib
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+        add_executable (WalletKitCoreTests)
+        target_sources  (WalletKitCoreTests
+                         PRIVATE
+                         WalletKitCoreTests/WalletKitCoreTests.c)
+        target_include_directories(WalletKitCoreTests
+                                   PRIVATE
+                                   WalletKitCoreTests/test/include
+                                   WalletKitCore/include)
+        target_link_libraries (WalletKitCoreTests
+                               corecryptotest
+                               corecrypto)
+    endif ()
+
     # _POSIX_C_SOURCE:
     #    200809L if you want the pthread mutex recursive/normal defines & 
     #    implicitly defined functions
@@ -75,6 +106,15 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    add_library(corecryptotest
 	       STATIC)
+	   
+   # Prevent including main() from bitcoin test.c when
+   # linking the various 'test'.c files into corecrptotest
+   # so; so it can be linked with Linux tests app
+   if (LINUX)
+       target_compile_options (corecryptotest
+                               PRIVATE
+                               "-DOMIT_FOR_TEST_ALL_LINUX")
+   endif()
    target_include_directories (corecryptotest
                                PUBLIC
                             ${PROJECT_SOURCE_DIR}/include
@@ -734,3 +774,20 @@ if (APPLE)
                            "resolv"
                            "-framework Security")
 endif(APPLE)
+
+if (LINUX)
+    
+    find_library (loglib
+                  dl)
+    find_library (mathlib
+                  m)
+    find_library (bsdlib
+                  bsd)
+    find_library (pthreadlib
+                  pthread)
+    target_link_libraries (corecrypto
+                           ${loglib}
+                           ${mathlib}
+                           ${bsdlib}
+                           ${pthreadlib})
+endif(LINUX)

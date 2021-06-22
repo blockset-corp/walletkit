@@ -3643,6 +3643,9 @@ void txStatusUpdate(void *info)
     printf("transaction status updated\n");
 }
 
+// Prevent multiple main methods when linking Linux test application
+// WalletKitCoreTests.c with libcorecryptotest.so
+#if !defined(OMIT_FOR_TEST_ALL_LINUX)
 int main(int argc, const char *argv[])
 {
     int r = BRRunTests();
@@ -3675,4 +3678,5 @@ int main(int argc, const char *argv[])
     
     return (r) ? 0 : 1;
 }
+#endif // __linux__
 #endif
