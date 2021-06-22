@@ -1629,80 +1629,95 @@ initializeGenesisBlocks (void) {
 
 /// MARK: - Block Checkpoint
 
-static BREthereumBlockCheckpoint
-ethereumMainnetCheckpoints [] = {
-    {       0, ETHEREUM_HASH_INIT("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), { .std = "17179869184"              },          0 },
-    { 4000000, ETHEREUM_HASH_INIT("b8a3f7f5cfc1748f91a684f20fe89031202cbadcd15078c49b85ec2a57f43853"), { .std = "469024977881526938386"    }, 1499633567 },
-    { 4500000, ETHEREUM_HASH_INIT("43340a6d232532c328211d8a8c0fa84af658dbff1f4906ab7a7d4e41f82fe3a3"), { .std = "1386905480746946772236"   }, 1509953783 },
-    { 5000000, ETHEREUM_HASH_INIT("7d5a4369273c723454ac137f48a4f142b097aa2779464e6505f1b1c5e37b5382"), { .std = "2285199027754071740498"   }, 1517319693 },
-    { 5500000, ETHEREUM_HASH_INIT("2d3a154eee9f90666c6e824f11e15f2d60b05323a81254f60075c34a61ef124d"), { .std = "3825806101695195923560"   }, 1524611221 },
-    { 6000000, ETHEREUM_HASH_INIT("be847be2bceb74e660daf96b3f0669d58f59dc9101715689a00ef864a5408f43"), { .std = "5484495551037046114587"   }, 1532118564 },
-    { 6500000, ETHEREUM_HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "7174074700595750315193"   }, 1539330275 },
-    { 7000000, ETHEREUM_HASH_INIT("17aa411843cb100e57126e911f51f295f5ddb7e9a3bd25e708990534a828c4b7"), { .std = "8545742390070173675989"   }, 1546466952 },
-    { 7500000, ETHEREUM_HASH_INIT("b3cd718643c475c18efe4e2177777d38bdca3b9fb1eb9d9155db1365d6e5e8fd"), { .std = "9703290027978634211190"   }, 1554358137 },
-    { 8000000, ETHEREUM_HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "10690776258913596267754"  }, 1561100149 },
-    { 8500000, ETHEREUM_HASH_INIT("86ea48a5ae641bd1830426c45d14315862488a749c9e93fb228c23ca07237dab"), { .std = "11798521320484609094896"  }, 1567820847 },
-    { 9000000, ETHEREUM_HASH_INIT("388f34dd94b899f65bbd23006ee93d61434a2f2a57053c9870466d8e142960e3"), { .std = "13014076996386893192616"  }, 1574706444 },
-};
-#define CHECKPOINT_MAINNET_COUNT      (sizeof (ethereumMainnetCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumMainnetCheckpoints = NULL;
+static size_t checkpointMainnetCount = 0;
 
-static BREthereumBlockCheckpoint
-ethereumTestnetCheckpoints [] = {
-    {       0, ETHEREUM_HASH_INIT("41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"), { .std = "0x100000" },  0 }, // 1061 days  6 hrs ago (Jul-30-2015 03:26:13 PM +UTC)
-};
-#define CHECKPOINT_TESTNET_COUNT      (sizeof (ethereumTestnetCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumTestnetCheckpoints = NULL;
+static size_t checkpointTestnetCount = 0;
 
-static BREthereumBlockCheckpoint
-ethereumRinkebyCheckpoints [] = {
-    {       0, ETHEREUM_HASH_INIT("6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177"), { .std = "0x01" },  0 }, //  439 days  6 hrs ago (Apr-12-2017 03:20:50 PM +UTC)
-};
-#define CHECKPOINT_RINKEBY_COUNT      (sizeof (ethereumRinkebyCheckpoints) / sizeof (BREthereumBlockCheckpoint))
+static BREthereumBlockCheckpoint *ethereumRinkebyCheckpoints = NULL;
+static size_t checkpointRinkebyCount = 0;
 
 static void ethBlockCheckpointInitialize (void) {
-    static int needInitialization = 1;
-    if (needInitialization) {
-        needInitialization = 0;
 
-        BRCoreParseStatus status;
+    BRCoreParseStatus status;
 
-        for (size_t index = 0; index < CHECKPOINT_MAINNET_COUNT; index++) {
-            BREthereumBlockCheckpoint *cp = &ethereumMainnetCheckpoints[index];
-            cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
-            assert (CORE_PARSE_OK == status);
-        }
+    // One time initialization of checkpoints
+    BREthereumBlockCheckpoint ethMainnetCp [] = {
+        {       0, ETHEREUM_HASH_INIT("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"), { .std = "17179869184"              },          0 },
+        { 4000000, ETHEREUM_HASH_INIT("b8a3f7f5cfc1748f91a684f20fe89031202cbadcd15078c49b85ec2a57f43853"), { .std = "469024977881526938386"    }, 1499633567 },
+        { 4500000, ETHEREUM_HASH_INIT("43340a6d232532c328211d8a8c0fa84af658dbff1f4906ab7a7d4e41f82fe3a3"), { .std = "1386905480746946772236"   }, 1509953783 },
+        { 5000000, ETHEREUM_HASH_INIT("7d5a4369273c723454ac137f48a4f142b097aa2779464e6505f1b1c5e37b5382"), { .std = "2285199027754071740498"   }, 1517319693 },
+        { 5500000, ETHEREUM_HASH_INIT("2d3a154eee9f90666c6e824f11e15f2d60b05323a81254f60075c34a61ef124d"), { .std = "3825806101695195923560"   }, 1524611221 },
+        { 6000000, ETHEREUM_HASH_INIT("be847be2bceb74e660daf96b3f0669d58f59dc9101715689a00ef864a5408f43"), { .std = "5484495551037046114587"   }, 1532118564 },
+        { 6500000, ETHEREUM_HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "7174074700595750315193"   }, 1539330275 },
+        { 7000000, ETHEREUM_HASH_INIT("17aa411843cb100e57126e911f51f295f5ddb7e9a3bd25e708990534a828c4b7"), { .std = "8545742390070173675989"   }, 1546466952 },
+        { 7500000, ETHEREUM_HASH_INIT("b3cd718643c475c18efe4e2177777d38bdca3b9fb1eb9d9155db1365d6e5e8fd"), { .std = "9703290027978634211190"   }, 1554358137 },
+        { 8000000, ETHEREUM_HASH_INIT("70c81c3cb256b5b930f05b244d095cb4845e9808c48d881e3cc31d18ae4c3ae5"), { .std = "10690776258913596267754"  }, 1561100149 },
+        { 8500000, ETHEREUM_HASH_INIT("86ea48a5ae641bd1830426c45d14315862488a749c9e93fb228c23ca07237dab"), { .std = "11798521320484609094896"  }, 1567820847 },
+        { 9000000, ETHEREUM_HASH_INIT("388f34dd94b899f65bbd23006ee93d61434a2f2a57053c9870466d8e142960e3"), { .std = "13014076996386893192616"  }, 1574706444 },
+    };
 
-        for (size_t index = 0; index < CHECKPOINT_TESTNET_COUNT; index++) {
-            BREthereumBlockCheckpoint *cp = &ethereumTestnetCheckpoints[index];
-            cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
-            assert (CORE_PARSE_OK == status);
-        }
+    BREthereumBlockCheckpoint ethTestnetCp [] = {
+        {       0, ETHEREUM_HASH_INIT("41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"), { .std = "0x100000" },  0 }, // 1061 days  6 hrs ago (Jul-30-2015 03:26:13 PM +UTC)
+    };
 
-        for (size_t index = 0; index < CHECKPOINT_RINKEBY_COUNT; index++) {
-            BREthereumBlockCheckpoint *cp = &ethereumRinkebyCheckpoints[index];
-            cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
-            assert (CORE_PARSE_OK == status);
-        }
+    BREthereumBlockCheckpoint ethRinkebyCp [] = {
+        {       0, ETHEREUM_HASH_INIT("6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177"), { .std = "0x01" },  0 }, //  439 days  6 hrs ago (Apr-12-2017 03:20:50 PM +UTC)
+    };
+
+    checkpointMainnetCount = sizeof(ethMainnetCp) / sizeof(BREthereumBlockCheckpoint);
+    checkpointTestnetCount = sizeof(ethTestnetCp) / sizeof(BREthereumBlockCheckpoint);
+    checkpointRinkebyCount = sizeof(ethRinkebyCp) / sizeof(BREthereumBlockCheckpoint);
+
+    ethereumMainnetCheckpoints = calloc (sizeof(ethMainnetCp), 1);
+    ethereumTestnetCheckpoints = calloc (sizeof(ethTestnetCp), 1);
+    ethereumRinkebyCheckpoints = calloc (sizeof(ethRinkebyCp), 1);
+
+    memcpy (ethereumMainnetCheckpoints, ethMainnetCp, sizeof(ethMainnetCp));
+    memcpy (ethereumTestnetCheckpoints, ethTestnetCp, sizeof(ethTestnetCp));
+    memcpy (ethereumRinkebyCheckpoints, ethRinkebyCp, sizeof(ethRinkebyCp));
+
+    for (size_t index = 0; index < checkpointMainnetCount; index++) {
+        BREthereumBlockCheckpoint *cp = &ethereumMainnetCheckpoints[index];
+        cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
+        assert (CORE_PARSE_OK == status);
+    }
+
+    for (size_t index = 0; index < checkpointTestnetCount; index++) {
+        BREthereumBlockCheckpoint *cp = &ethereumTestnetCheckpoints[index];
+        cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
+        assert (CORE_PARSE_OK == status);
+    }
+
+    for (size_t index = 0; index < checkpointRinkebyCount; index++) {
+        BREthereumBlockCheckpoint *cp = &ethereumRinkebyCheckpoints[index];
+        cp->u.td = uint256CreateParse (cp->u.std, 0, &status);
+        assert (CORE_PARSE_OK == status);
     }
 }
 
+// Run once initializer guarantees
+static pthread_once_t ethNetworkParmsInitOnce = PTHREAD_ONCE_INIT;
 static const BREthereumBlockCheckpoint *
 ethBlockCheckpointFindForNetwork (BREthereumNetwork network,
                                size_t *count) {
-    ethBlockCheckpointInitialize();
+
+    pthread_once (&ethNetworkParmsInitOnce, ethBlockCheckpointInitialize);
     assert (NULL != count);
 
     if (network == ethNetworkMainnet) {
-        *count = CHECKPOINT_MAINNET_COUNT;
+        *count = checkpointMainnetCount;
         return ethereumMainnetCheckpoints;
     }
 
     if (network == ethNetworkTestnet) {
-        *count = CHECKPOINT_TESTNET_COUNT;
+        *count = checkpointTestnetCount;
         return ethereumTestnetCheckpoints;
     }
 
     if (network == ethNetworkRinkeby) {
-        *count = CHECKPOINT_RINKEBY_COUNT;
+        *count = checkpointRinkebyCount;
         return ethereumRinkebyCheckpoints;
     }
     *count = 0;
@@ -1711,7 +1726,6 @@ ethBlockCheckpointFindForNetwork (BREthereumNetwork network,
 
 extern const BREthereumBlockCheckpoint *
 ethBlockCheckpointLookupLatest (BREthereumNetwork network) {
-    ethBlockCheckpointInitialize();
     size_t count;
     const BREthereumBlockCheckpoint *checkpoints = ethBlockCheckpointFindForNetwork(network, &count);
     return &checkpoints[count - 1];
@@ -1720,7 +1734,6 @@ ethBlockCheckpointLookupLatest (BREthereumNetwork network) {
 extern const BREthereumBlockCheckpoint *
 ethBlockCheckpointLookupByNumber (BREthereumNetwork network,
                                uint64_t number) {
-    ethBlockCheckpointInitialize();
     size_t count;
     const BREthereumBlockCheckpoint *checkpoints = ethBlockCheckpointFindForNetwork(network, &count);
     for (size_t index = count; index > 0; index--)
@@ -1732,7 +1745,6 @@ ethBlockCheckpointLookupByNumber (BREthereumNetwork network,
 extern const BREthereumBlockCheckpoint *
 ethBlockCheckpointLookupByTimestamp (BREthereumNetwork network,
                                   uint64_t timestamp) {
-    ethBlockCheckpointInitialize();
 
     // Backup the timestamp.
     if (timestamp >= BLOCK_CHECKPOINT_TIMESTAMP_SAFETY)
