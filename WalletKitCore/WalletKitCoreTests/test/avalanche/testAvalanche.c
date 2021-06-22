@@ -20,6 +20,7 @@
 #include "support/BRBase58.h"
 
 #include "avalanche/BRAvalancheAccount.h"
+#include "avalanche/BRAvalancheTransaction.h"
 
 static int debug_log = 0;
 
@@ -116,6 +117,10 @@ extern void runAvalancheTest (void) {
     uint8_t ethAddress[20];
     hex2bin(avaxTestAccount.caddress, ethAddress);
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
+    
+    
+    
+    createBaseTx();
    
 }
 
