@@ -34,11 +34,10 @@ extern "C" {
 #define LTC_BIP32_DEPTH 3
 #define LTC_BIP32_CHILD ((const uint32_t []){ 44 | BIP32_HARD, 2 | BIP32_HARD, 0 | BIP32_HARD })
 
-extern const BRBitcoinChainParams *ltcMainNetParams;
-extern const BRBitcoinChainParams *ltcTestNetParams;
+extern const BRBitcoinChainParams *ltcChainParams(bool mainnet);
 
-static inline int btcChainParamsIsLitecoin(const BRBitcoinChainParams *params) {
-    return ltcMainNetParams == params || ltcTestNetParams == params;
+static inline int ltcChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return ltcChainParams(true) == params || ltcChainParams(false) == params;
 }
 
 #ifdef __cplusplus

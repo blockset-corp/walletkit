@@ -75,20 +75,20 @@
 extern const BRBitcoinChainParams* getChainParams (BRBitcoinChain chain, int isMainnet) {
     switch (chain) {
         case BITCOIN_CHAIN_BTC:
-            return isMainnet ? btcMainNetParams : btcTestNetParams;
+            return btcChainParams(isMainnet);
             
         case BITCOIN_CHAIN_BCH:
-            return isMainnet ? bchMainNetParams : bchTestNetParams;
+            return bsvChainParams(isMainnet);
             
         case BITCOIN_CHAIN_BSV:
-            return isMainnet ? bsvMainNetParams : bsvTestNetParams;
-
+            return bsvChainParams(isMainnet);
+            
         case BITCOIN_CHAIN_LTC:
-            return isMainnet ? ltcMainNetParams : ltcTestNetParams;
-
+            return ltcChainParams(isMainnet);
+            
         case BITCOIN_CHAIN_DOGE:
-            return isMainnet ? dogeMainNetParams : dogeTestNetParams;
-
+            return dogeChainParams(isMainnet);
+            
         default:
             assert(0);
             return NULL;
@@ -1410,6 +1410,9 @@ int BRKeyTests()
     uint8_t sig[72], pubKey[65];
     size_t sigLen, pkLen;
 
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+    const BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
+
     if (BRPrivKeyIsValid(btcMainNetParams->addrParams, "S6c56bnXQiBjk9mqSYE7ykVQ7NzrRz"))
         r = 0, fprintf(stderr, "***FAILED*** %s: BRPrivKeyIsValid() test 0\n", __func__);
 
@@ -1860,6 +1863,8 @@ int BRBIP38KeyTests()
     BRKey key;
     char privKey[55], bip38Key[61];
     
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+
     printf("\n");
 
     // non EC multiplied, uncompressed
@@ -2003,6 +2008,8 @@ int BRAddressTests()
     BRKey k;
     BRAddress addr, addr2;
     
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+
     BRKeySetSecret(&k, &secret, 1);
     if (! BRKeyAddress(&k, addr.s, sizeof(addr), btcMainNetParams->addrParams))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRKeyAddress()", __func__);
@@ -2211,6 +2218,9 @@ int BRBIP32SequenceTests()
 {
     int r = 1;
 
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+    const BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
+
     UInt128 seed = *(UInt128 *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F";
     BRKey key;
 
@@ -2331,6 +2341,8 @@ int btcTransactionTests()
     BRKey k[2];
     BRAddress address, addr;
     
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+
     memset(&k[0], 0, sizeof(k[0])); // test with array of keys where first key is empty/invalid
     BRKeySetSecret(&k[1], &secret, 1);
     BRKeyLegacyAddr(&k[1], address.s, sizeof(address), btcMainNetParams->addrParams);
@@ -2621,6 +2633,8 @@ int btcWalletTests()
     int r = 1;
     const char *phrase = "a random seed";
     UInt512 seed;
+
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
 
     BRBIP39DeriveKey(&seed, phrase, NULL);
 
@@ -3416,6 +3430,9 @@ void btcPeerAcceptMessageTest(BRBitcoinPeer *peer, const uint8_t *msg, size_t le
 int btcPeerTests()
 {
     int r = 1;
+
+    const BRBitcoinChainParams *btcMainNetParams = btcChainParams(true);
+
     BRBitcoinPeer *p = btcPeerNew(btcMainNetParams->magicNumber);
     const char msg[] = "my message";
     
@@ -3584,7 +3601,7 @@ extern int BRRunTestsSync (const char *paperKey,
     BRBIP39DeriveKey (seed.u8, paperKey, NULL);
     BRMasterPubKey mpk = BRBIP32MasterPubKey(&seed, sizeof (seed));
 
-    BRBitcoinWallet *wallet = btcWalletNew (btcMainNetParams->addrParams, NULL, 0, mpk);
+    BRBitcoinWallet *wallet = btcWalletNew (params->addrParams, NULL, 0, mpk);
     // BRWalletSetCallbacks
 
     BRBitcoinPeerManager *pm = btcPeerManagerNew (params, wallet, epoch, NULL, 0, NULL, 0);
