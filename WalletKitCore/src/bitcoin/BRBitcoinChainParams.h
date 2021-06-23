@@ -30,6 +30,7 @@
 #include "support/BRSet.h"
 #include "support/BRAddress.h"
 #include "support/BRBIP32Sequence.h"
+#include <stdbool.h>
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -64,15 +65,10 @@ typedef struct {
     const uint32_t *bip32child; // bip32 path child list: m/child[0]/child[1]...child[depth - 1]
 } BRBitcoinChainParams;
 
-extern const BRBitcoinChainParams *btcMainNetParams;
-extern const BRBitcoinChainParams *btcTestNetParams;
+extern const BRBitcoinChainParams *btcChainParams(bool mainnet);
 
-static inline const BRBitcoinChainParams *btcChainParamsGetBitcoin (int mainnet) {
-    return mainnet ? btcMainNetParams : btcTestNetParams;
-}
-
-static inline int btcChainParamsIsBitcoin (const BRBitcoinChainParams *params) {
-    return btcMainNetParams == params || btcTestNetParams == params;
+static inline int btcChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return btcChainParams(true) == params || btcChainParams(true) == params;
 }
 
 extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBefore (const BRBitcoinChainParams *params, uint32_t timestamp);

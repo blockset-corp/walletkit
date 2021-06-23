@@ -11,7 +11,7 @@
 #ifndef WKXTZ_h
 #define WKXTZ_h
 
-#include "../WKHandlersExport.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "tezos/BRTezos.h"
 

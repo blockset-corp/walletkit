@@ -209,6 +209,7 @@ transferTestsGetMPK (void) {
 static void
 transferTestsBalance (void) {
     BRMasterPubKey mpk = transferTestsGetMPK();
+    const BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
 
     BRBitcoinTransaction *transactions[numberOfTransferTests];
     for (size_t index = 0; index < numberOfTransferTests; index++) {

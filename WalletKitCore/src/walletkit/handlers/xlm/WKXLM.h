@@ -11,8 +11,7 @@
 #ifndef WKSTELLAR_h
 #define WKSTELLAR_h
 
-#include "../WKHandlersExport.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "stellar/BRStellar.h"
 
@@ -126,4 +125,4 @@ stellarAddressGetTransactionAttributeKeys (BRStellarAddress address, int asRequi
 }
 #endif
 
-#endif
+#endif // WKSTELLAR_h

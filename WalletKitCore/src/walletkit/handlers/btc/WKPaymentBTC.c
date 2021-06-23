@@ -76,14 +76,14 @@ static void wkPaymentProtocolRequestBitPayBuilderAddOutputBTC (WKPaymentProtocol
         const BRBitcoinChainParams * chainParams = wkNetworkAsBTC (builderBase->wkNetwork);
 
         // TODO: Use WK_NETWORK_TYPE_{BTC,BCH,BSV}
-        if (btcChainParamsIsBitcoin (chainParams)) {
+        if (btcChainParamsHasParams (chainParams)) {
             if (BRAddressIsValid (chainParams->addrParams, address)) {
                 BRBitcoinTxOutput output = {0};
                 btcTxOutputSetAddress (&output, chainParams->addrParams, address);
                 output.amount = satoshis;
                 array_add (builder->outputs, output);
             }
-        } else if (btcChainParamsIsBitcash (chainParams)) {
+        } else if (bchChainParamsHasParams (chainParams)) {
             char cashAddr[36];
             if (0 != bchAddrDecode (cashAddr, address) && !BRAddressIsValid(chainParams->addrParams, address)) {
                 BRBitcoinTxOutput output = {0};
@@ -578,7 +578,7 @@ wkPaymentProtocolPaymentCreateBTC (WKPaymentProtocolRequest protoReqBase,
                 BRAddress refundAddressBtc = wkAddressAsBTC (refundAddress, &refundType);
                 
                 const BRBitcoinChainParams * chainParams = wkNetworkAsBTC (wkNetwork);
-                WKBoolean isBTC = AS_WK_BOOLEAN (btcChainParamsIsBitcoin (chainParams));
+                WKBoolean isBTC = AS_WK_BOOLEAN (btcChainParamsHasParams (chainParams));
                 
                 if (WK_TRUE == isBTC && WK_NETWORK_TYPE_BTC == refundType && WK_FALSE == overflow) {
                     size_t merchantDataLen = 0;

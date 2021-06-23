@@ -554,7 +554,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKFileService.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlersP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlers.c
-                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/WKHandlersExport.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHashP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHash.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHasher.c
@@ -589,6 +588,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAddressBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKBTC.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKFeeBasisBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKHandlersBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKNetworkBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKPaymentBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKSupportBTC.c
@@ -608,6 +608,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAddressETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKETH.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKFeeBasisETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKHandlersETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKNetworkETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKSupportETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKTransferETH.c
@@ -621,6 +622,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAccountXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAddressXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKFeeBasisXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKHandlersXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKNetworkXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKSupportXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKTransferXRP.c
@@ -635,6 +637,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAccountHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAddressHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKFeeBasisHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHandlersHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHBAR.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKNetworkHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKSupportHBAR.c
@@ -649,6 +652,7 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAccountXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAddressXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKFeeBasisXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKHandlersXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKNetworkXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKSupportXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKTransferXTZ.c
@@ -664,6 +668,7 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAccountXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAddressXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKFeeBasisXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKHandlersXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKNetworkXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKSupportXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKTransferXLM.c

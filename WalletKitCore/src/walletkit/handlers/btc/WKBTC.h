@@ -12,11 +12,7 @@
 #ifndef WKBTC_h
 #define WKBTC_h
 
-#include "../WKHandlersExport.h"
-
-#include "walletkit/WKWalletSweeperP.h"
-#include "walletkit/WKPaymentP.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "bitcoin/BRBitcoinWallet.h"
 #include "bitcoin/BRBitcoinTransaction.h"

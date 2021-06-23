@@ -73,11 +73,10 @@ extern "C" {
 #define DOGE_BIP32_DEPTH 3
 #define DOGE_BIP32_CHILD ((const uint32_t []){ 44 | BIP32_HARD, 3 | BIP32_HARD, 0 | BIP32_HARD })
 
-extern const BRBitcoinChainParams *dogeMainNetParams;
-extern const BRBitcoinChainParams *dogeTestNetParams;
+extern const BRBitcoinChainParams *dogeChainParams(bool mainnet);
 
-static inline int btcChainParamsIsDogecoin(const BRBitcoinChainParams *params) {
-    return dogeMainNetParams == params || dogeTestNetParams == params;
+static inline int dogeChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return dogeChainParams(true) == params || dogeChainParams(false) == params;
 }
 
 #ifdef __cplusplus
