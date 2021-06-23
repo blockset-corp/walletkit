@@ -11,8 +11,7 @@
 #ifndef WKHBAR_h
 #define WKHBAR_h
 
-#include "../WKHandlersExport.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "hedera/BRHederaBase.h"
 #include "hedera/BRHederaAddress.h"

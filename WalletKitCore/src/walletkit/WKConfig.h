@@ -43,6 +43,10 @@
 #define DEFINE_MODES(networkId, defaultMode, otherModes...)
 #endif
 
+#if !defined DEFINE_HANDLERS
+#define DEFINE_HANDLERS(type,name)
+#endif
+
 // MARK: - BTC
 
 #define NETWORK_NAME    "Bitcoin"
@@ -65,6 +69,7 @@ DEFINE_MODES            ("bitcoin-testnet", WK_SYNC_MODE_API_ONLY,          WK_S
 #else
 DEFINE_MODES            ("bitcoin-testnet", CWK_SYNC_MODE_P2P_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_BTC, BTC)
 #undef NETWORK_NAME
 
 // MARK: - BCH
@@ -89,6 +94,7 @@ DEFINE_MODES            ("bitcoincash-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_
 #else
 DEFINE_MODES            ("bitcoincash-testnet", WK_SYNC_MODE_P2P_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_BCH, BCH)
 #undef NETWORK_NAME
 
 // MARK: - BSV
@@ -113,6 +119,7 @@ DEFINE_MODES            ("bitcoinsv-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MO
 #else
 DEFINE_MODES            ("bitcoinsv-testnet", WK_SYNC_MODE_P2P_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_BSV, BSV)
 #undef NETWORK_NAME
 
 // MARK: - LTC
@@ -137,6 +144,7 @@ DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MOD
 #else
 DEFINE_MODES            ("litecoin-testnet", WK_SYNC_MODE_P2P_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_LTC, LTC)
 #undef NETWORK_NAME
 
 // MARK: - DOGE
@@ -161,6 +169,7 @@ DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MOD
 #else
 DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_P2P_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_DOGE, DOGE)
 #undef NETWORK_NAME
 
 
@@ -195,6 +204,7 @@ DEFINE_CURRENCY ("ethereum-ropsten",    "ethereum-ropsten:0x722dd3f80bac40c951b5
 DEFINE_ADDRESS_SCHEMES  ("ethereum-ropsten", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("ethereum-ropsten", WK_SYNC_MODE_API_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_ETH, ETH)
 #undef NETWORK_NAME
 
 // MARK: XRP
@@ -217,6 +227,7 @@ DEFINE_CURRENCY ("ripple-testnet",     "ripple-testnet:__native__",   NETWORK_NA
 DEFINE_ADDRESS_SCHEMES  ("ripple-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("ripple-testnet", WK_SYNC_MODE_API_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_XRP, XRP)
 #undef NETWORK_NAME
 
 // MARK: HBAR
@@ -239,6 +250,7 @@ DEFINE_CURRENCY ("hedera-testnet",     "hedera-testnet:__native__",   NETWORK_NA
 DEFINE_ADDRESS_SCHEMES  ("hedera-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("hedera-testnet", WK_SYNC_MODE_API_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_HBAR, HBAR)
 #undef NETWORK_NAME
 
 // MARK: Tezos
@@ -261,6 +273,7 @@ DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME
 DEFINE_ADDRESS_SCHEMES  ("tezos-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("tezos-testnet", WK_SYNC_MODE_API_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_XTZ, XTZ)
 #undef NETWORK_NAME
 
 // MARK: XLM Mainnet
@@ -269,19 +282,21 @@ DEFINE_MODES            ("tezos-testnet", WK_SYNC_MODE_API_ONLY)
 DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-mainnet", NETWORK_NAME, "mainnet", true, 35516170, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("stellar-mainnet", "100", "5s", 5 * 1000)
 DEFINE_CURRENCY ("stellar-mainnet",     "stellar-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
-DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "XLM_I")
-DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen",       "xlm",     7,  "XLM")
+    DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "XLM_I")
+    DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen",       "xlm",     7,  "XLM")
 DEFINE_ADDRESS_SCHEMES  ("stellar-mainnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("stellar-mainnet", WK_SYNC_MODE_API_ONLY)
+
 #if HAS_XLM_TESTNET
 DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-testnet", NETWORK_NAME, "testnet", false, 1075721, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("stellar-testnet", "100", "5s", 5 * 1000)
 DEFINE_CURRENCY ("stellar-testnet",     "stellar-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
-DEFINE_UNIT ("stellar-testnet:__native__",  "lumen_i",     "txlm_i",   0,  "tXLM_I")
-DEFINE_UNIT ("stellar-testnet:__native__",  "lumen",       "txlm",     7,  "tXLM")
+    DEFINE_UNIT ("stellar-testnet:__native__",  "lumen_i",     "txlm_i",   0,  "tXLM_I")
+    DEFINE_UNIT ("stellar-testnet:__native__",  "lumen",       "txlm",     7,  "tXLM")
 DEFINE_ADDRESS_SCHEMES  ("stellar-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
 #endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE_XLM, XLM)
 #undef NETWORK_NAME
 
 #undef DEFINE_NETWORK
@@ -290,3 +305,4 @@ DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
 #undef DEFINE_UNIT
 #undef DEFINE_ADDRESS_SCHEMES
 #undef DEFINE_MODES
+#undef DEFINE_HANDLERS

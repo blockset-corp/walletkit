@@ -11,7 +11,7 @@
 #ifndef WKETH_h
 #define WKETH_h
 
-#include "../WKHandlersExport.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "ethereum/base/BREthereumBase.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
