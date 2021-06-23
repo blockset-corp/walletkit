@@ -77,6 +77,7 @@ wkTransferCoerceETH (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsETH (WKTransferListener listener,
+                           const char *uids,
                            WKHash hash,
                            WKUnit unit,
                            WKUnit unitForFee,

@@ -219,7 +219,8 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsHBAR (txHash);
 
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
+
     wkHashGive(hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsHBAR (wallet->unit, hederaTransactionGetFeeBasis(hbarTransaction));
@@ -227,6 +228,7 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                   bundle->uids,
                                                    wallet->unit,
                                                    wallet->unitForFee,
                                                    state,
@@ -237,6 +239,7 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     

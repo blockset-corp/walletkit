@@ -45,6 +45,10 @@ public interface Transfer {
 
     TransferDirection getDirection();
 
+    /**
+     * The originating transaction's identifier - typically a hash.  This may be `empty`.  There
+     * may be transfers with duplicate identifiers in a wallet.
+     */
     Optional<String> getIdentifier();
 
     Optional<? extends TransferHash> getHash();

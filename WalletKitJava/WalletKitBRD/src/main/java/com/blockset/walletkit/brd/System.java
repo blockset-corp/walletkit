@@ -1947,14 +1947,15 @@ final class System implements com.blockset.walletkit.System {
 
             result.add (WKClientTransferBundle.create(
                     status,
-                    o.o1.getId(),
                     transaction.getHash(),
                     transaction.getIdentifier(),
+                    o.o1.getId(),
                     o.o1.getSource().orNull(),
                     o.o1.getTarget().orNull(),
                     o.o1.getAmount().getAmount(),
                     o.o1.getAmount().getCurrency(),
-                    o.o2,
+                    o.o2, // fee
+                    o.o1.getIndex(),
                     blockTimestamp,
                     blockHeight,
                     blockConfirmations,

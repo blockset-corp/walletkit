@@ -35,4 +35,4 @@
 
 uint16_t crc16(const char *buf, int len);
 
-#endif __CRC_32_H_
+#endif

@@ -218,7 +218,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsXLM (txHash);
 
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     wkHashGive(hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsXLM (wallet->unit, stellarTransactionGetFee(xlmTransaction));
@@ -226,6 +226,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsXLM (wallet->listenerTransfer,
+                                                   bundle->uids,
                                                    wallet->unit,
                                                    wallet->unitForFee,
                                                    state,
@@ -236,6 +237,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids  (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     

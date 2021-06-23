@@ -58,6 +58,7 @@ wkTransferCoerceHBAR (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsHBAR (WKTransferListener listener,
+                            const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKTransferState state,

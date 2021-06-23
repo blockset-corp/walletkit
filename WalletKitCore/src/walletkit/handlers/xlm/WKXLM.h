@@ -55,6 +55,7 @@ wkTransferCoerceXLM (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXLM (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,

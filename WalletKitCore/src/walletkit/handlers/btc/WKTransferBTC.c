@@ -168,9 +168,13 @@ wkTransferCreateAsBTC (WKTransferListener listener,
                                                                     tid->timestamp,
                                                                     feeBasisEstimated);
 
+    char *uids = NULL;
+    if (btcTransactionIsSigned(tid)) asprintf (&uids, "%s:0", u256hex(tid->txHash));
+
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferBTCRecord),
                                                             type,
                                                             listener,
+                                                            uids,
                                                             unit,
                                                             unitForFee,
                                                             feeBasisEstimated,
@@ -182,6 +186,7 @@ wkTransferCreateAsBTC (WKTransferListener listener,
                                                             &contextBTC,
                                                             wkTransferCreateCallbackBTC);
 
+    if (NULL != uids) free (uids);
     wkTransferStateGive (state);
     wkFeeBasisGive (feeBasisEstimated);
     wkAmountGive  (amount);

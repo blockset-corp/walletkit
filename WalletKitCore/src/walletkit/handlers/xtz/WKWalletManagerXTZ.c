@@ -240,7 +240,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed address.
     // It must be included since the burn amount is subtracted from wallet balance, but is not considered a normal fee.
     WKAddress target = wkAddressCreateAsXTZ (toAddress);
-    WKTransfer baseTransfer = wkWalletGetTransferByHashAndTargetXTZ (wallet, hash, target);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDSAndTargetXTZ (wallet, hash, bundle->uids, target);
     
     wkAddressGive (target);
     wkHashGive (hash);
@@ -253,6 +253,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                  bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
@@ -262,6 +263,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids  (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     

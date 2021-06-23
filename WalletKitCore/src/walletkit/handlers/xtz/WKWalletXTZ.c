@@ -112,15 +112,18 @@ wkWalletNeedsRevealXTZ (WKWallet wallet) {
 }
 
 private_extern WKTransfer
-wkWalletGetTransferByHashAndTargetXTZ (WKWallet wallet,
-                                           WKHash hashToMatch,
-                                           WKAddress targetToMatch) {
+wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
+                                             WKHash hashToMatch,
+                                             const char *uids,
+                                             WKAddress targetToMatch) {
     WKTransfer transfer = NULL;
     
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
         WKHash hash = wkTransferGetHash (wallet->transfers[index]);
-        if (WK_TRUE == wkHashEqual(hash, hashToMatch) &&
+        if (((NULL != uids && NULL != wallet->transfers[index]->uids && 0 == strcmp (uids, wallet->transfers[index]->uids))
+             || WK_TRUE == wkHashEqual(hash, hashToMatch)) &&
+
             wkAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
             transfer = wallet->transfers[index];
         wkHashGive(hash);
@@ -253,6 +256,7 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,

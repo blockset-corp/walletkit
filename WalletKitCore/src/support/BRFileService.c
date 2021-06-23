@@ -1,6 +1,6 @@
 //
 //  BRFileService.c
-//  WalletKitCore
+//  Core
 //
 //  Created by Richard Evers on 1/4/19.
 //  Copyright © 2019 breadwallet LLC
@@ -687,6 +687,8 @@ fileServiceLoad (BRFileService fs,
     // to dereferencing uninitialized memory.  We accept this minimal, extraneous function call.
     memset(dataBytes, 0, dataBytesCount);
 
+    BRArrayOf(void*) entitiesToSave = NULL;
+
     while (SQLITE_ROW == sqlite3_step(fs->sdbSelectAllStmt)) {
         const char *hash = (const char *) sqlite3_column_text (fs->sdbSelectAllStmt, 0);
         const char *data = (const char *) sqlite3_column_text (fs->sdbSelectAllStmt, 1);
@@ -757,23 +759,36 @@ fileServiceLoad (BRFileService fs,
 
         // Update results with the newly restored entity
         void *oldEntity = BRSetAdd (results, entity);
-        assert (NULL == oldEntity);  // DEBUG builds
-        if (NULL != oldEntity)
+
+        // We should never have a `oldEntity` - there was an identifier clash.
+        if (NULL != oldEntity) {
+            assert (true);  // DEBUG builds
+            // TODO: Is this too harsh?
             return fileServiceFailedEntity (fs, 1, (dataBytes == dataBytesBuffer ? NULL : dataBytes), NULL,
                                             type, "duplicate set entry");
+        }
 
         // If the read version is not the current version, update
         if (updateVersion &&
             (version != entityType->currentVersion ||
-             headerVersion != currentHeaderFormatVersion))
-            // This could signal an error.  Perhaps we should test the return result and
-            // if `0` skip out here?  We won't - we couldn't save the entity in the new format
-            // but we'll continue and will try next time we load it.
-            _fileServiceSave (fs, type, entity, 0);
+             headerVersion != currentHeaderFormatVersion)) {
+            if (NULL == entitiesToSave) array_new (entitiesToSave, 100);
+            array_add (entitiesToSave, entity);
+        }
     }
 
     // Ensure the 'implicit DB transaction' is committed.
     sqlite3_reset (fs->sdbSelectAllStmt);
+
+    // Save any entities for which we upgraded a version.
+    if (NULL != entitiesToSave) {
+        for (size_t index = 0; index < array_count(entitiesToSave); index++)
+            // This could signal an error.  Perhaps we should test the return result and
+            // if `0` skip out here?  We won't - we couldn't save the entity in the new format
+            // but we'll continue and will try next time we load it.
+            _fileServiceSave (fs, type, entitiesToSave[index], 0);
+        array_free (entitiesToSave);
+    }
 
     pthread_mutex_unlock (&fs->lock);
 

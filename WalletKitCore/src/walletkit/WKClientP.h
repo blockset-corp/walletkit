@@ -18,6 +18,7 @@
 #include "support/rlp/BRRlp.h"
 #include "support/event/BREvent.h"
 
+#include "WKFileService.h"
 #include "WKClient.h"
 #include "WKSync.h"
 #include "WKTransfer.h"
@@ -75,14 +76,15 @@ wkClientTransactionBundleSetRelease (BRSetOf(WKClientTransactionBundle) bundles)
 
 struct WKClientTransferBundleRecord {
     WKTransferStateType status;
-    char *uids;
     char *hash;
     char *identifier;
+    char *uids;
     char *from;
     char *to;
     char *amount;
     char *currency;
     char *fee;
+    uint64_t transferIndex;
     WKTimestamp blockTimestamp;
     WKBlockNumber blockNumber;
     WKBlockNumber blockConfirmations;
@@ -100,7 +102,8 @@ wkClientTransferBundleRlpEncode (WKClientTransferBundle bundle,
 
 private_extern WKClientTransferBundle
 wkClientTransferBundleRlpDecode (BRRlpItem item,
-                                     BRRlpCoder coder);
+                                 BRRlpCoder coder,
+                                 WKFileServiceTransferVersion version);
 
 // For BRSet
 private_extern size_t
