@@ -22,7 +22,8 @@ extern "C" {
 #define CRYPTO_FILE_SERVICE_TYPE_TRANSFER      "crypto_transfers"
 
 typedef enum {
-    CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1
+    CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
+    CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2
 } BRCryptoFileServiceTransferVersion;
 
 private_extern UInt256
@@ -32,9 +33,15 @@ cryptoFileServiceTypeTransferV1Identifier (BRFileServiceContext context,
 
 private_extern void *
 cryptoFileServiceTypeTransferV1Reader (BRFileServiceContext context,
-                                 BRFileService fs,
-                                 uint8_t *bytes,
-                                 uint32_t bytesCount);
+                                       BRFileService fs,
+                                       uint8_t *bytes,
+                                       uint32_t bytesCount);
+
+private_extern void *
+cryptoFileServiceTypeTransferV2Reader (BRFileServiceContext context,
+                                       BRFileService fs,
+                                       uint8_t *bytes,
+                                       uint32_t bytesCount);
 
 private_extern uint8_t *
 cryptoFileServiceTypeTransferV1Writer (BRFileServiceContext context,

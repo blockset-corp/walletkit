@@ -1417,7 +1417,6 @@ cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
                           rlpEncodeString (coder, bundle->amount),
                           rlpEncodeString (coder, bundle->currency),
                           rlpEncodeString (coder, bundle->fee),
-                          rlpEncodeUInt64 (coder, bundle->transferIndex,         0),
                           rlpEncodeUInt64 (coder, bundle->blockTimestamp,        0),
                           rlpEncodeUInt64 (coder, bundle->blockNumber,           0),
                           rlpEncodeUInt64 (coder, bundle->blockConfirmations,    0),
@@ -1426,15 +1425,27 @@ cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
                           cryptoClientTransferBundleRlpEncodeAttributes (bundle->attributesCount,
                                                                          (const char **) bundle->attributeKeys,
                                                                          (const char **) bundle->attributeVals,
-                                                                         coder));
+                                                                         coder),
+                          rlpEncodeUInt64 (coder, bundle->transferIndex,         0));
 }
 
 private_extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleRlpDecode (BRRlpItem item,
-                                     BRRlpCoder coder) {
+                                     BRRlpCoder coder,
+                                     BRCryptoFileServiceTransferVersion version) {
     size_t itemsCount;
     const BRRlpItem *items = rlpDecodeList (coder, item, &itemsCount);
-    assert (16 == itemsCount);
+
+    switch (version) {
+        case CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1:
+            assert (15 == itemsCount);
+            break;
+        case CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2:
+            assert (16 == itemsCount);
+            break;
+        default:
+            break;
+    }
 
     char *uids     = rlpDecodeString (coder, items[ 1]);
     char *hash     = rlpDecodeString (coder, items[ 2]);
@@ -1444,10 +1455,41 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
     char *amount   = rlpDecodeString (coder, items[ 6]);
     char *currency = rlpDecodeString (coder, items[ 7]);
     char *fee      = rlpDecodeString (coder, items[ 8]);
-    char *blkHash  = rlpDecodeString (coder, items[14]);
+
+    uint64_t blockTimestamp        = rlpDecodeUInt64 (coder, items[ 9], 0);
+    uint64_t blockNumber           = rlpDecodeUInt64 (coder, items[10], 0);
+    uint64_t blockConfirmations    = rlpDecodeUInt64 (coder, items[11], 0);
+    uint64_t blockTransactionIndex = rlpDecodeUInt64 (coder, items[12], 0);
+
+    char *blockHash  = rlpDecodeString (coder, items[13]);
 
     BRCryptoTransferBundleRlpDecodeAttributesResult attributesResult =
-    cryptoClientTransferBundleRlpDecodeAttributes (items[15], coder);
+    cryptoClientTransferBundleRlpDecodeAttributes (items[14], coder);
+
+    // Set the transferIndex to a default value.
+    uint64_t transferIndex = 0;
+
+    switch (version) {
+        case CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1:
+            // derive the transferIndex from the UIDS
+            if (NULL != uids) {
+                char *sepPtr = strrchr (uids, ':');    // "<network>:<hash>:<index>" for Blockset only!
+
+                if (NULL != sepPtr) {
+                    char *endPtr = NULL;
+                    unsigned long value = strtoul (sepPtr + 1, &endPtr, 10);
+
+                    if ('\0' == endPtr[0])
+                        transferIndex = (uint64_t) value;
+                }
+            }
+            break;
+        case CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2:
+            transferIndex = rlpDecodeUInt64 (coder, items[15], 0);
+            break;
+        default:
+            break;
+    }
 
     BRCryptoClientTransferBundle bundle =
     cryptoClientTransferBundleCreate ((BRCryptoTransferStateType) rlpDecodeUInt64 (coder, items[ 0], 0),
@@ -1459,17 +1501,17 @@ cryptoClientTransferBundleRlpDecode (BRRlpItem item,
                                       amount,
                                       currency,
                                       (0 == strcmp(fee,"") ? NULL : fee),
-                                      rlpDecodeUInt64 (coder, items[ 9], 0),
-                                      rlpDecodeUInt64 (coder, items[10], 0),
-                                      rlpDecodeUInt64 (coder, items[11], 0),
-                                      rlpDecodeUInt64 (coder, items[12], 0),
-                                      rlpDecodeUInt64 (coder, items[13], 0),
-                                      blkHash,
+                                      transferIndex,
+                                      blockTimestamp,
+                                      blockNumber,
+                                      blockConfirmations,
+                                      blockTransactionIndex,
+                                      blockHash,
                                       array_count(attributesResult.keys),
                                       (const char **) attributesResult.keys,
                                       (const char **) attributesResult.vals);
 
-    free (blkHash);
+    free (blockHash);
     free (fee);
     free (currency);
     free (amount);

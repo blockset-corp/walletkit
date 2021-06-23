@@ -47,7 +47,8 @@ cryptoFileServiceTypeTransferV1Reader (BRFileServiceContext context,
     BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
     BRRlpItem  item  = rlpDataGetItem (coder, data);
 
-    BRCryptoClientTransferBundle bundle = cryptoClientTransferBundleRlpDecode(item, coder);
+    BRCryptoClientTransferBundle bundle = cryptoClientTransferBundleRlpDecode (item, coder,
+                                                                               CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1);
 
     rlpItemRelease (coder, item);
     rlpCoderRelease(coder);
@@ -55,6 +56,26 @@ cryptoFileServiceTypeTransferV1Reader (BRFileServiceContext context,
     return bundle;
 }
 
+private_extern void *
+cryptoFileServiceTypeTransferV2Reader (BRFileServiceContext context,
+                                       BRFileService fs,
+                                       uint8_t *bytes,
+                                       uint32_t bytesCount) {
+    BRCryptoWalletManager manager = (BRCryptoWalletManager) context; (void) manager;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
+    BRRlpItem  item  = rlpDataGetItem (coder, data);
+
+    BRCryptoClientTransferBundle bundle = cryptoClientTransferBundleRlpDecode(item, coder,
+                                                                              CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2);
+
+    rlpItemRelease (coder, item);
+    rlpCoderRelease(coder);
+
+    return bundle;
+
+}
 private_extern uint8_t *
 cryptoFileServiceTypeTransferV1Writer (BRFileServiceContext context,
                                  BRFileService fs,
@@ -132,13 +153,19 @@ cryptoFileServiceTypeTransactionV1Writer (BRFileServiceContext context,
 BRFileServiceTypeSpecification cryptoFileServiceSpecifications[] = {
     {
         CRYPTO_FILE_SERVICE_TYPE_TRANSFER,
-        CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1, // current version
-        1,
+        CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2, // current version
+        2,
         {
             {
                 CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
                 cryptoFileServiceTypeTransferV1Identifier,
                 cryptoFileServiceTypeTransferV1Reader,
+                cryptoFileServiceTypeTransferV1Writer
+            },
+            {
+                CRYPTO_FILE_SERVICE_TYPE_TRANSFER_VERSION_2,
+                cryptoFileServiceTypeTransferV1Identifier,
+                cryptoFileServiceTypeTransferV2Reader,
                 cryptoFileServiceTypeTransferV1Writer
             },
         }
