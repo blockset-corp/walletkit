@@ -23,22 +23,20 @@ import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.System;
-import com.blockset.walletkit.utility.TestConfiguration;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,19 +47,19 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class DemoApplication extends Application {
 
+    public static final String EXTRA_BLOCKSETACCESS_TOKEN = "com.blockset.walletkit.demo.blocksetaccesstoken";
+    public static final String EXTRA_BLOCKSETURL_TOKEN = "com.blockset.walletkit.demo.blockseturl";
+    public static final String EXTRA_PAPERKEY_TOKEN = "com.blockset.walletkit.demo.paperkey";
+    public static final String EXTRA_IS_MAINNET_TOKEN = "com.blockset.walletkit.demo.isMainnet";
+    public static final String EXTRA_TIMESTAMP_TOKEN = "com.blockset.walletkit.demo.timestamp";
+
     private static final Logger Log = Logger.getLogger(DemoApplication.class.getName());
 
-    private static final String EXTRA_TIMESTAMP = "TIMESTAMP";
-    private static final String EXTRA_PAPER_KEY = "PAPER_KEY";
     private static final String EXTRA_MODE = "MODE";
     private static final String EXTRA_WIPE = "WIPE";
-    private static final String EXTRA_IS_MAINNET = "IS_MAINNET";
 
     private static final boolean DEFAULT_IS_MAINNET = true;
     private static final boolean DEFAULT_WIPE = true;
-    private static final long DEFAULT_TIMESTAMP = 0;
-    private static final String DEFAULT_PAPER_KEY = "boring head harsh green empty clip fatal typical found crane dinner timber";
-    private static final WalletManagerMode DEFAULT_MODE = WalletManagerMode.API_ONLY;
 
     private static DemoApplication instance;
 
@@ -74,10 +72,9 @@ public class DemoApplication extends Application {
     private SystemClient blockchainDb;
     private byte[] paperKey;
     private File storageFile;
-
+    private Hashtable<String, WalletManagerMode> currencyCodesToMode;
+    private Set<String> registerCurrencyCodes;
     private AtomicBoolean runOnce = new AtomicBoolean(false);
-
-    private TestConfiguration testConfiguration;
 
     public static void initialize(Activity launchingActivity) {
         instance.initFromLaunchIntent(launchingActivity.getIntent());
@@ -115,7 +112,6 @@ public class DemoApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
-        this.testConfiguration = getTestConfiguration();
         StrictMode.enableDefaults();
     }
 
@@ -123,64 +119,108 @@ public class DemoApplication extends Application {
         if (!runOnce.getAndSet(true)) {
             Logging.initialize(Level.FINE);
 
-            Api.initialize(ApiProvider.getInstance());
+            if (intent.hasExtra(EXTRA_PAPERKEY_TOKEN)) {
 
-            String paperKeyString = (intent.hasExtra(EXTRA_PAPER_KEY) ? intent.getStringExtra(EXTRA_PAPER_KEY) : DEFAULT_PAPER_KEY);
-            paperKey = paperKeyString.getBytes(StandardCharsets.UTF_8);
+                boolean isMainnet = intent.getBooleanExtra(EXTRA_IS_MAINNET_TOKEN, DEFAULT_IS_MAINNET);
+                String paperKeyString = intent.getStringExtra(EXTRA_PAPERKEY_TOKEN);
+                Api.initialize(ApiProvider.getInstance());
 
-            isMainnet = intent.getBooleanExtra(EXTRA_IS_MAINNET, DEFAULT_IS_MAINNET);
 
-            long timestamp = intent.getLongExtra(EXTRA_TIMESTAMP, DEFAULT_TIMESTAMP);
-            WalletManagerMode mode = intent.hasExtra(EXTRA_MODE) ? WalletManagerMode.valueOf(intent.getStringExtra(EXTRA_MODE)) : DEFAULT_MODE;
-            boolean wipe = intent.getBooleanExtra(EXTRA_WIPE, DEFAULT_WIPE);
+                String timestamp = intent.getStringExtra(EXTRA_TIMESTAMP_TOKEN);
+                Date accountTs = new Date();
+                try {
+                    accountTs = new SimpleDateFormat("yyyy-MM-dd").parse(timestamp);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
 
-            systemExecutor = Executors.newSingleThreadScheduledExecutor();
+                boolean wipe = intent.getBooleanExtra(EXTRA_WIPE, DEFAULT_WIPE);
 
-            storageFile = new File(getFilesDir(), "core");
-            if (wipe) System.wipeAll(storageFile.getAbsolutePath(), Collections.emptyList());
-            if (!storageFile.exists()) checkState(storageFile.mkdirs());
+                systemExecutor = Executors.newSingleThreadScheduledExecutor();
 
-            Log.log(Level.FINE, String.format("Account PaperKey:  %s", paperKeyString));
-            Log.log(Level.FINE, String.format("Account Timestamp: %s", timestamp));
-            Log.log(Level.FINE, String.format("StoragePath:       %s", storageFile.getAbsolutePath()));
-            Log.log(Level.FINE, String.format("Mainnet:           %s", isMainnet));
+                storageFile = new File(getFilesDir(), "core");
+                if (wipe) System.wipeAll(storageFile.getAbsolutePath(), Collections.emptyList());
+                if (!storageFile.exists()) checkState(storageFile.mkdirs());
 
-            List<String> currencyCodesNeeded = Arrays.asList(
-                    "btc",
-                    "bch",
-                    "bsv",
-                    "eth",
-                    "xrp",
-                    "hbar",
-                    "xtz",
-                    "xlm",
-                    "ignore - end-of-array, w/o comma"
-            );
-            systemListener = new DispatchingSystemListener();
-            systemListener.addSystemListener(new DemoSystemListener(mode, isMainnet, currencyCodesNeeded));
+                currencyCodesToMode = new Hashtable<String, WalletManagerMode>() {
+                    {   put("btc", WalletManagerMode.API_ONLY);
+                        put("bch", WalletManagerMode.API_ONLY);
+                        put("bsv", WalletManagerMode.API_ONLY);
+                        put("ltc", WalletManagerMode.P2P_ONLY);
+                        put("doge", WalletManagerMode.P2P_ONLY);
+                        put("eth", WalletManagerMode.API_ONLY);
+                        put("xrp", WalletManagerMode.API_ONLY);
+                        put("hbar", WalletManagerMode.API_ONLY);
+                        put("xtz", WalletManagerMode.API_ONLY);
+                        put("xlm", WalletManagerMode.API_ONLY);
+                    }
+                };
 
-            String uids = UUID.randomUUID().toString();
-            account = Account.createFromPhrase(paperKey, new Date(TimeUnit.SECONDS.toMillis(timestamp)), uids).get();
+                String blocksetToken = intent.getStringExtra(EXTRA_BLOCKSETACCESS_TOKEN);
+                String blocksetBaseURL = intent.getStringExtra(EXTRA_BLOCKSETURL_TOKEN);
+                blockchainDb = BlocksetSystemClient.createForTest(new OkHttpClient(),
+                        blocksetToken,
+                        blocksetBaseURL);
 
-            blockchainDb = BlocksetSystemClient.createForTest (new OkHttpClient(),
-                    testConfiguration.getBlocksetAccess().getToken(),
-                    testConfiguration.getBlocksetAccess().getBaseURL());
-            system = System.create(systemExecutor, systemListener, account,
-                    isMainnet, storageFile.getAbsolutePath(), blockchainDb);
-            system.configure();
+                initializeSystemWithAccount(paperKeyString, isMainnet, accountTs);
 
-            System.wipeAll(storageFile.getAbsolutePath(), Collections.singletonList(system));
-
-            connectivityReceiver = new ConnectivityBroadcastReceiver();
-            registerReceiver(connectivityReceiver , new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+                connectivityReceiver = new ConnectivityBroadcastReceiver();
+                registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+            }
         }
+    }
+
+    public static void setAccount(
+            String  identifier,
+            String  paperKeyString,
+            boolean isMainnet,
+            Date    timestamp   ) {
+        checkState(null != instance && instance.runOnce.get());
+
+        Log.log(Level.INFO, String.format("Switch account to '%s'", paperKeyString));
+        instance.initializeSystemWithAccount(paperKeyString, isMainnet, timestamp);
+    }
+
+    private void initializeSystemWithAccount(
+            String   paperKeyString,
+            boolean  isMainnet,
+            Date     timestamp       ) {
+
+        paperKey = paperKeyString.getBytes(StandardCharsets.UTF_8);
+
+        // Store locally to permit wipe
+        this.isMainnet = isMainnet;
+
+        Log.log(Level.FINE, String.format("Account PaperKey:  %s", paperKeyString));
+        Log.log(Level.FINE, String.format("Account Timestamp: %s", timestamp));
+        Log.log(Level.FINE, String.format("StoragePath:       %s", storageFile.getAbsolutePath()));
+        Log.log(Level.FINE, String.format("Mainnet:           %s", isMainnet));
+
+        String uids = UUID.randomUUID().toString();
+        account = Account.createFromPhrase(paperKey,
+                                           timestamp,
+                                           uids).get();
+
+
+        registerCurrencyCodes = isMainnet ? new HashSet(Arrays.asList(/* "zla", "adt" */)) :
+                                            new HashSet(Arrays.asList("brd", "tst"));
+
+        systemListener = new DispatchingSystemListener();
+        systemListener.addSystemListener(new DemoSystemListener(currencyCodesToMode,
+                                                                registerCurrencyCodes,
+                                                                isMainnet));
+
+        wipeSystemImpl();
+
+        System.wipeAll(storageFile.getAbsolutePath(), Collections.singletonList(system));
     }
 
     private void wipeSystemImpl() {
         Log.log(Level.FINE, "Wiping");
 
         // Wipe the current system.
-        System.wipe(system);
+        if (system != null)
+            System.wipe(system);
 
         // Create a new system
         system = System.create(
@@ -193,15 +233,5 @@ public class DemoApplication extends Application {
 
         // Passing empty list... it is a demo app...
         system.configure();
-    }
-
-    public TestConfiguration getTestConfiguration() {
-        try (final InputStream inputStream = getAssets().open("WalletKitTestsConfig.json");
-             final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            return TestConfiguration.loadFrom(reader);
-        }
-        catch (IOException e) {
-            throw new RuntimeException (e);
-        }
     }
 }

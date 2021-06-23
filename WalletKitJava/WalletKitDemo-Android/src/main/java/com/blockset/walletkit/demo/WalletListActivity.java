@@ -7,6 +7,7 @@
  */
 package com.blockset.walletkit.demo;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -23,6 +24,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
 
 import com.blockset.walletkit.Currency;
@@ -43,12 +46,20 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncProgressEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStartedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent;
+import com.blockset.walletkit.utility.AccountSpecification;
+import com.blockset.walletkit.utility.TestConfiguration;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,38 +69,104 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     private static final int WALLET_CHUNK_SIZE = 10;
 
     private Adapter walletsAdapter;
+    private TestConfiguration testConfiguration;
+    private List<AccountSpecification> accounts;
+    private String accountName;
+    private int accountIdx = -1;
+    private String network;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wallet_list);
 
+        getTestConfiguration();
+
+        // Blockset access
+        getIntent().putExtra(DemoApplication.EXTRA_BLOCKSETACCESS_TOKEN,
+                             this.testConfiguration.getBlocksetAccess().getToken());
+        getIntent().putExtra(DemoApplication.EXTRA_BLOCKSETURL_TOKEN,
+                             this.testConfiguration.getBlocksetAccess().getBaseURL());
+
+        setDefaultAccount();
         DemoApplication.initialize(this);
+        if (configOk()) {
 
-        RecyclerView walletsView = findViewById(R.id.wallet_recycler_view);
-        walletsView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
+            setActivityTitle();
+            RecyclerView walletsView = findViewById(R.id.wallet_recycler_view);
 
-        RecyclerView.LayoutManager walletsLayoutManager = new LinearLayoutManager(this);
-        walletsView.setLayoutManager(walletsLayoutManager);
+            walletsView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
 
-        walletsAdapter = new Adapter((wallet) -> TransferListActivity.start(this, wallet));
-        walletsView.setAdapter(walletsAdapter);
+            RecyclerView.LayoutManager walletsLayoutManager = new LinearLayoutManager(this);
+            walletsView.setLayoutManager(walletsLayoutManager);
 
-        Toolbar toolbar = findViewById(R.id.toolbar_view);
-        setSupportActionBar(toolbar);
+            walletsAdapter = new Adapter((wallet) -> TransferListActivity.start(this, wallet));
+            walletsView.setAdapter(walletsAdapter);
+
+            Toolbar toolbar = findViewById(R.id.toolbar_view);
+            setSupportActionBar(toolbar);
+        } else {
+
+            LinearLayout topView = findViewById(R.id.wallet_list_layout);
+            topView.removeAllViews();
+            TextView discord = new TextView(this);
+            discord.setText("Invalid or missing configuration JSON");
+            discord.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            topView.addView (discord);
+        }
+    }
+
+    private void setActivityTitle() {
+        setTitle(network + " "
+                 + getString(R.string.wallets_list_title)
+                 + " (" + accountName + ")");
+    }
+
+    private boolean configOk() {
+        return accountIdx != -1;
+    }
+
+    /**
+     * Set local defaults and also indicate to the DemoApplication through Extra
+     * what should be the initial account setup
+     */
+    private void setDefaultAccount() {
+
+        Intent intent = getIntent();
+
+       if (accounts != null && accounts.size() > 0) {
+
+            // We have a valid account
+            accountIdx = 0;
+
+            accountName = accounts.get(accountIdx).getIdentifier();
+            intent.putExtra(DemoApplication.EXTRA_PAPERKEY_TOKEN,
+                            accounts.get(accountIdx).getPaperKey());
+            network = accounts.get(accountIdx).getNetwork();
+            intent.putExtra(DemoApplication.EXTRA_IS_MAINNET_TOKEN,
+                            network.equals("mainnet") ? true : false);
+
+            String dt = new SimpleDateFormat("yyyy-MM-dd").format(accounts.get(accountIdx).getTimestamp());
+            intent.putExtra(DemoApplication.EXTRA_TIMESTAMP_TOKEN,
+                            dt);
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        DemoApplication.getDispatchingSystemListener().addSystemListener(this);
-        loadWallets();
+        if (configOk()) {
+            DemoApplication.getDispatchingSystemListener().addSystemListener(this);
+            loadWallets();
+        }
     }
 
     @Override
     protected void onPause() {
-        DemoApplication.getDispatchingSystemListener().removeSystemListener(this);
+        if (configOk()) {
+            DemoApplication.getDispatchingSystemListener().removeSystemListener(this);
+        }
 
         super.onPause();
     }
@@ -103,6 +180,9 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_choose_account:
+                showChooseAccount();
+                return true;
             case R.id.action_connect:
                 connect();
                 return true;
@@ -252,6 +332,46 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
         ApplicationExecutors.runOnBlockingExecutor(() -> {
             DemoApplication.wipeSystem();
             runOnUiThread(this::recreate);
+        });
+    }
+
+    private void showChooseAccount() {
+        ApplicationExecutors.runOnUiExecutor(() -> {
+
+            String[] accountTexts = new String[accounts.size()];
+            for (int i = 0; i < accounts.size(); i++) {
+                accountTexts[i] = accounts.get(i).getIdentifier();
+            }
+
+            int selectedItem = 0;
+            runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle("Select Account")
+                    .setNegativeButton("Cancel", (d,w) -> {})
+                    .setPositiveButton("Ok", (d,w) -> {
+                        int selected = ((AlertDialog)d).getListView().getCheckedItemPosition();
+                        AccountSpecification acc = accounts.get(selected);
+                        String proposedAccount = acc.getIdentifier();
+                        String paperKey = acc.getPaperKey();
+                        Date timestamp = acc.getTimestamp();
+                        if (!proposedAccount.equals(accountName)) {
+                            accountIdx = selected;
+                            network = acc.getNetwork();
+                            accountName = proposedAccount;
+                            setActivityTitle();
+                            boolean isMainnet = network.equals("mainnet") ? true : false;
+                            DemoApplication.setAccount(proposedAccount,
+                                    paperKey,
+                                    isMainnet,
+                                    timestamp);
+
+                            onResume();
+                        }
+
+                        // Switch system account here
+                        d.dismiss();
+                    })
+                    .setSingleChoiceItems(accountTexts, accountIdx,null)
+                    .show());
         });
     }
 
@@ -508,6 +628,17 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
             currencyView = view.findViewById(R.id.item_currency);
             symbolView = view.findViewById(R.id.item_symbol);
             syncView = view.findViewById(R.id.item_sync_status);
+        }
+    }
+
+    public void getTestConfiguration() {
+        try (final InputStream inputStream = getAssets().open("WalletKitTestsConfig.json");
+             final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            this.testConfiguration = TestConfiguration.loadFrom(reader);
+            this.accounts = testConfiguration.getAccountSpecifications();
+        }
+        catch (IOException e) {
+            throw new RuntimeException (e);
         }
     }
 }
