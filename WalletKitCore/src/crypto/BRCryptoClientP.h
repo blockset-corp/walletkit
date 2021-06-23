@@ -18,6 +18,7 @@
 #include "support/rlp/BRRlp.h"
 #include "support/event/BREvent.h"
 
+#include "BRCryptoFileService.h"
 #include "BRCryptoClient.h"
 #include "BRCryptoSync.h"
 #include "BRCryptoTransfer.h"
@@ -101,7 +102,8 @@ cryptoClientTransferBundleRlpEncode (BRCryptoClientTransferBundle bundle,
 
 private_extern BRCryptoClientTransferBundle
 cryptoClientTransferBundleRlpDecode (BRRlpItem item,
-                                     BRRlpCoder coder);
+                                     BRRlpCoder coder,
+                                     BRCryptoFileServiceTransferVersion version);
 
 // For BRSet
 private_extern size_t
