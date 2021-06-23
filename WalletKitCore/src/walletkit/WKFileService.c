@@ -38,16 +38,35 @@ wkFileServiceTypeTransferV1Identifier (BRFileServiceContext context,
 
 private_extern void *
 wkFileServiceTypeTransferV1Reader (BRFileServiceContext context,
-                                 BRFileService fs,
-                                 uint8_t *bytes,
-                                 uint32_t bytesCount) {
+                                   BRFileService fs,
+                                   uint8_t *bytes,
+                                   uint32_t bytesCount) {
     WKWalletManager manager = (WKWalletManager) context; (void) manager;
 
     BRRlpCoder coder = rlpCoderCreate();
     BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
     BRRlpItem  item  = rlpDataGetItem (coder, data);
 
-    WKClientTransferBundle bundle = wkClientTransferBundleRlpDecode(item, coder);
+    WKClientTransferBundle bundle = wkClientTransferBundleRlpDecode(item, coder, WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_1);
+
+    rlpItemRelease (coder, item);
+    rlpCoderRelease(coder);
+
+    return bundle;
+}
+
+private_extern void *
+wkFileServiceTypeTransferV2Reader (BRFileServiceContext context,
+                                   BRFileService fs,
+                                   uint8_t *bytes,
+                                   uint32_t bytesCount) {
+    WKWalletManager manager = (WKWalletManager) context; (void) manager;
+
+    BRRlpCoder coder = rlpCoderCreate();
+    BRRlpData  data  = (BRRlpData) { bytesCount, bytes };
+    BRRlpItem  item  = rlpDataGetItem (coder, data);
+
+    WKClientTransferBundle bundle = wkClientTransferBundleRlpDecode(item, coder, WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_2);
 
     rlpItemRelease (coder, item);
     rlpCoderRelease(coder);
@@ -132,13 +151,20 @@ wkFileServiceTypeTransactionV1Writer (BRFileServiceContext context,
 BRFileServiceTypeSpecification wkFileServiceSpecifications[] = {
     {
         WK_FILE_SERVICE_TYPE_TRANSFER,
-        WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_1, // current version
-        1,
+        WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_2, // current version
+        2,
         {
             {
                 WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
                 wkFileServiceTypeTransferV1Identifier,
                 wkFileServiceTypeTransferV1Reader,
+                wkFileServiceTypeTransferV1Writer
+            },
+
+            {
+                WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_2,
+                wkFileServiceTypeTransferV1Identifier,
+                wkFileServiceTypeTransferV2Reader,
                 wkFileServiceTypeTransferV1Writer
             },
         }

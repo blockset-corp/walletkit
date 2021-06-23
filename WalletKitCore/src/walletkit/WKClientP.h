@@ -18,6 +18,7 @@
 #include "support/rlp/BRRlp.h"
 #include "support/event/BREvent.h"
 
+#include "WKFileService.h"
 #include "WKClient.h"
 #include "WKSync.h"
 #include "WKTransfer.h"
@@ -101,7 +102,8 @@ wkClientTransferBundleRlpEncode (WKClientTransferBundle bundle,
 
 private_extern WKClientTransferBundle
 wkClientTransferBundleRlpDecode (BRRlpItem item,
-                                     BRRlpCoder coder);
+                                 BRRlpCoder coder,
+                                 WKFileServiceTransferVersion version);
 
 // For BRSet
 private_extern size_t
