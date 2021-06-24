@@ -48,6 +48,9 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStartedEvent
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent;
 import com.blockset.walletkit.utility.AccountSpecification;
 import com.blockset.walletkit.utility.TestConfiguration;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
@@ -56,10 +59,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,9 +72,7 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     private Adapter walletsAdapter;
     private TestConfiguration testConfiguration;
     private List<AccountSpecification> accounts;
-    private String accountName;
     private int accountIdx = -1;
-    private String network;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +87,7 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
         getIntent().putExtra(DemoApplication.EXTRA_BLOCKSETURL_TOKEN,
                              this.testConfiguration.getBlocksetAccess().getBaseURL());
 
-        setDefaultAccount();
+        setInitialAccount();
         DemoApplication.initialize(this);
         if (configOk()) {
 
@@ -117,20 +116,23 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     }
 
     private void setActivityTitle() {
-        setTitle(network + " "
+
+        setTitle(accounts.get(accountIdx).getNetwork() + " "
                  + getString(R.string.wallets_list_title)
-                 + " (" + accountName + ")");
+                 + " ("
+                 + accounts.get(accountIdx).getIdentifier()
+                 + ")");
     }
 
     private boolean configOk() {
         return accountIdx != -1;
     }
 
-    /**
-     * Set local defaults and also indicate to the DemoApplication through Extra
-     * what should be the initial account setup
+
+    /* Initial account selection is the first account provided
+     * in the config, assuming the config was valid
      */
-    private void setDefaultAccount() {
+    private void setInitialAccount() {
 
         Intent intent = getIntent();
 
@@ -139,16 +141,16 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
             // We have a valid account
             accountIdx = 0;
 
-            accountName = accounts.get(accountIdx).getIdentifier();
-            intent.putExtra(DemoApplication.EXTRA_PAPERKEY_TOKEN,
-                            accounts.get(accountIdx).getPaperKey());
-            network = accounts.get(accountIdx).getNetwork();
-            intent.putExtra(DemoApplication.EXTRA_IS_MAINNET_TOKEN,
-                            network.equals("mainnet") ? true : false);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new GuavaModule());
+            String acctSer;
+            try {
+                acctSer = mapper.writeValueAsString(accounts.get(accountIdx));
+            } catch (JsonProcessingException processingException) {
+                throw new RuntimeException (processingException);
+            }
 
-            String dt = new SimpleDateFormat("yyyy-MM-dd").format(accounts.get(accountIdx).getTimestamp());
-            intent.putExtra(DemoApplication.EXTRA_TIMESTAMP_TOKEN,
-                            dt);
+            intent.putExtra(DemoApplication.EXTRA_ACCOUNT_SPEC, acctSer);
         }
     }
 
@@ -348,21 +350,16 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
                     .setTitle("Select Account")
                     .setNegativeButton("Cancel", (d,w) -> {})
                     .setPositiveButton("Ok", (d,w) -> {
+
+                        // We can assume the index is within valid bounds
+                        // as it comes from selection of the choice initialized
+                        // with range of account strings
                         int selected = ((AlertDialog)d).getListView().getCheckedItemPosition();
                         AccountSpecification acc = accounts.get(selected);
-                        String proposedAccount = acc.getIdentifier();
-                        String paperKey = acc.getPaperKey();
-                        Date timestamp = acc.getTimestamp();
-                        if (!proposedAccount.equals(accountName)) {
+                        if (!accounts.get(accountIdx).getIdentifier().equals(acc.getIdentifier())) {
                             accountIdx = selected;
-                            network = acc.getNetwork();
-                            accountName = proposedAccount;
                             setActivityTitle();
-                            boolean isMainnet = network.equals("mainnet") ? true : false;
-                            DemoApplication.setAccount(proposedAccount,
-                                    paperKey,
-                                    isMainnet,
-                                    timestamp);
+                            DemoApplication.setAccount(accounts.get(accountIdx));
 
                             onResume();
                         }

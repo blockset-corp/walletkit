@@ -51,6 +51,10 @@ dependencies {
     implementation deps.androidConstraintLayout
     implementation deps.guavaAndroid
     implementation deps.okhttp
+    implementation deps.jacksonAnnotations
+    implementation deps.jacksonCore
+    implementation deps.jacksonDatabind
+    implementation deps.jacksonDatabindGuava
 
     testImplementation deps.junit
 

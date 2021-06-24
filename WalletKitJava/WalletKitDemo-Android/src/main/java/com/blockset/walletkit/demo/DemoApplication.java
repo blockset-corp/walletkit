@@ -23,14 +23,15 @@ import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.System;
+import com.blockset.walletkit.utility.AccountSpecification;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -49,16 +50,12 @@ public class DemoApplication extends Application {
 
     public static final String EXTRA_BLOCKSETACCESS_TOKEN = "com.blockset.walletkit.demo.blocksetaccesstoken";
     public static final String EXTRA_BLOCKSETURL_TOKEN = "com.blockset.walletkit.demo.blockseturl";
-    public static final String EXTRA_PAPERKEY_TOKEN = "com.blockset.walletkit.demo.paperkey";
-    public static final String EXTRA_IS_MAINNET_TOKEN = "com.blockset.walletkit.demo.isMainnet";
-    public static final String EXTRA_TIMESTAMP_TOKEN = "com.blockset.walletkit.demo.timestamp";
+    public static final String EXTRA_ACCOUNT_SPEC = "com.blockset.walletkit.demo.account";
 
     private static final Logger Log = Logger.getLogger(DemoApplication.class.getName());
 
-    private static final String EXTRA_MODE = "MODE";
     private static final String EXTRA_WIPE = "WIPE";
 
-    private static final boolean DEFAULT_IS_MAINNET = true;
     private static final boolean DEFAULT_WIPE = true;
 
     private static DemoApplication instance;
@@ -119,19 +116,19 @@ public class DemoApplication extends Application {
         if (!runOnce.getAndSet(true)) {
             Logging.initialize(Level.FINE);
 
-            if (intent.hasExtra(EXTRA_PAPERKEY_TOKEN)) {
-
-                boolean isMainnet = intent.getBooleanExtra(EXTRA_IS_MAINNET_TOKEN, DEFAULT_IS_MAINNET);
-                String paperKeyString = intent.getStringExtra(EXTRA_PAPERKEY_TOKEN);
+            if (intent.hasExtra(EXTRA_ACCOUNT_SPEC)) {
                 Api.initialize(ApiProvider.getInstance());
 
 
-                String timestamp = intent.getStringExtra(EXTRA_TIMESTAMP_TOKEN);
-                Date accountTs = new Date();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new GuavaModule());  // Must include for google.Optional
+                String acctSpecJson = intent.getStringExtra(EXTRA_ACCOUNT_SPEC);
+                AccountSpecification accountSpec;
                 try {
-                    accountTs = new SimpleDateFormat("yyyy-MM-dd").parse(timestamp);
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                    accountSpec = mapper.readValue(acctSpecJson, AccountSpecification.class);
+                } catch (JsonProcessingException processingException) {
+                    Log.log(Level.SEVERE, "Failed to deserialize account intent: %s", processingException);
+                    throw new RuntimeException(processingException);
                 }
 
                 boolean wipe = intent.getBooleanExtra(EXTRA_WIPE, DEFAULT_WIPE);
@@ -162,7 +159,7 @@ public class DemoApplication extends Application {
                         blocksetToken,
                         blocksetBaseURL);
 
-                initializeSystemWithAccount(paperKeyString, isMainnet, accountTs);
+                initializeSystemWithAccount(accountSpec);
 
                 connectivityReceiver = new ConnectivityBroadcastReceiver();
                 registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
@@ -170,35 +167,28 @@ public class DemoApplication extends Application {
         }
     }
 
-    public static void setAccount(
-            String  identifier,
-            String  paperKeyString,
-            boolean isMainnet,
-            Date    timestamp   ) {
+    public static void setAccount(AccountSpecification accountSpec) {
         checkState(null != instance && instance.runOnce.get());
 
-        Log.log(Level.INFO, String.format("Switch account to '%s'", paperKeyString));
-        instance.initializeSystemWithAccount(paperKeyString, isMainnet, timestamp);
+        Log.log(Level.INFO, String.format("Switch account to '%s'", accountSpec.getIdentifier()));
+        instance.initializeSystemWithAccount(accountSpec);
     }
 
-    private void initializeSystemWithAccount(
-            String   paperKeyString,
-            boolean  isMainnet,
-            Date     timestamp       ) {
+    private void initializeSystemWithAccount(AccountSpecification accountSpec) {
 
-        paperKey = paperKeyString.getBytes(StandardCharsets.UTF_8);
+        paperKey = accountSpec.getPaperKey().getBytes(StandardCharsets.UTF_8);
 
         // Store locally to permit wipe
-        this.isMainnet = isMainnet;
+        this.isMainnet = accountSpec.getNetwork().equals("mainnet") ? true : false;;
 
-        Log.log(Level.FINE, String.format("Account PaperKey:  %s", paperKeyString));
-        Log.log(Level.FINE, String.format("Account Timestamp: %s", timestamp));
+        Log.log(Level.FINE, String.format("Account PaperKey:  %s", accountSpec.getPaperKey()));
+        Log.log(Level.FINE, String.format("Account Timestamp: %s", accountSpec.getTimestamp()));
         Log.log(Level.FINE, String.format("StoragePath:       %s", storageFile.getAbsolutePath()));
         Log.log(Level.FINE, String.format("Mainnet:           %s", isMainnet));
 
         String uids = UUID.randomUUID().toString();
         account = Account.createFromPhrase(paperKey,
-                                           timestamp,
+                                           accountSpec.getTimestamp(),
                                            uids).get();
 
 
