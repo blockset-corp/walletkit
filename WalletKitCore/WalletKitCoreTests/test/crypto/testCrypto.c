@@ -266,6 +266,7 @@ transferTestsAddress (void) {
                             "SAT");
 
     BRMasterPubKey mpk = transferTestsGetMPK();
+    const BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
     BRBitcoinWallet *wid = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     btcWalletSetCallbacks (wid, NULL, NULL, NULL, NULL, NULL);
 
