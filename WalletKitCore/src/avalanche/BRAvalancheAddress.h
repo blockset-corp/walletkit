@@ -24,7 +24,10 @@ extern "C" {
 //typedef struct BRAvalancheXAddressRecord *BRAvalancheXAddress;
 
 typedef struct {
+    //This is the vanity address from bech32, we also need the 20 byte address
     uint8_t bytes[AVAX_X_ADDRESS_BYTES];
+    //TODO populate below
+    uint8_t addr[20];
 } BRAvalancheXAddress;
 
 extern BRAvalancheXAddress
@@ -68,6 +71,10 @@ int avax_base32_encode(
     uint8_t *const out, size_t *const out_len,
     const uint8_t *const in, const size_t inlen
     );
+
+
+int avax_addr_bech32_decode(uint8_t *addr_data, size_t *addr_len, const char *hrp, const char *addr_str);
+
 #ifdef __cplusplus
 }
 #endif
