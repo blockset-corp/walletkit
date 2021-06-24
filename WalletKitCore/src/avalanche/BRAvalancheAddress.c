@@ -78,8 +78,8 @@ static int avax_convert_bits(uint8_t *out, size_t *outlen, int outbits, const ui
 
 
 int avax_addr_bech32_decode(uint8_t *addr_data, size_t *addr_len, const char *hrp, const char *addr_str) {
-    uint8_t data[38];
-    char hrp_actual[8];//we only expect the hrp = avax\0
+    uint8_t data[AVAX_X_ADDRESS_BYTES - (strlen(hrp)+1)]; // total - (hrp + 1) = 
+    char hrp_actual[strlen(hrp)+1];//we only expect the hrp = avax\0
     size_t data_len = 0;
 
   if (!avax_bech32_decode(hrp_actual, data, &data_len, addr_str)) {
