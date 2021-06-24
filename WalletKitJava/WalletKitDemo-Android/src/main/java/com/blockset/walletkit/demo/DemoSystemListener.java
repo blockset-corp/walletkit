@@ -36,11 +36,14 @@ import com.blockset.walletkit.events.wallet.WalletCreatedEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 import com.blockset.walletkit.utility.CompletionHandler;
-import com.google.common.base.Optional;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,15 +53,18 @@ public class DemoSystemListener implements SystemListener {
 
     private static final Logger Log = Logger.getLogger(DemoSystemListener.class.getName());
 
-    private final WalletManagerMode preferredMode;
     private final boolean isMainnet;
-    private final List<String> currencyCodesNeeded;
+    private Hashtable<String, WalletManagerMode> networkCurrencyCodesToMode;
+    private Set<String> registerCurrencyCodes;
 
-    /* package */
-    DemoSystemListener(WalletManagerMode preferredMode, boolean isMainnet, List<String> currencyCodesNeeded) {
-        this.preferredMode = preferredMode;
+        /* package */
+    DemoSystemListener(Hashtable<String, WalletManagerMode> networkCurrencyCodesToMode,
+                       Set<String> registerCurrencyCodes,
+                       boolean isMainnet )
+    {
         this.isMainnet = isMainnet;
-        this.currencyCodesNeeded = new ArrayList<>(currencyCodesNeeded);
+        this.networkCurrencyCodesToMode = networkCurrencyCodesToMode;
+        this.registerCurrencyCodes = registerCurrencyCodes;
     }
 
     // SystemListener Handlers
@@ -133,22 +139,30 @@ public class DemoSystemListener implements SystemListener {
     // Misc.
 
     private void createWalletManager(System system, Network network) {
-        boolean isNetworkNeeded = false;
-        for (String currencyCode : currencyCodesNeeded) {
-            Optional<? extends Currency> currency = network.getCurrencyByCode(currencyCode);
-            if (currency.isPresent()) {
-                isNetworkNeeded = true;
-                break;
+
+        HashSet<Currency> filteredCurrencies = new HashSet();
+        Set<? extends Currency> currencies = network.getCurrencies();
+        Iterator<? extends Currency> i = currencies.iterator();
+        while (i.hasNext()) {
+            Currency c = i.next();
+            if (registerCurrencyCodes.contains(c.getCode())) {
+                filteredCurrencies.add(c);
             }
         }
 
+        String currencyCode = network.getCurrency().getCode();
+        boolean isNetworkNeeded = networkCurrencyCodesToMode.containsKey(currencyCode);
+
         if (isMainnet == network.isMainnet() && isNetworkNeeded) {
-            WalletManagerMode mode = network.supportsWalletManagerMode(preferredMode) ?
-                    preferredMode : network.getDefaultWalletManagerMode();
+
+            WalletManagerMode currencyMode = networkCurrencyCodesToMode.get(currencyCode);
+            WalletManagerMode mode = network.supportsWalletManagerMode(currencyMode) ?
+                    currencyMode : network.getDefaultWalletManagerMode();
 
             AddressScheme addressScheme = network.getDefaultAddressScheme();
+
             Log.log(Level.FINE, String.format("Creating %s WalletManager with %s and %s", network, mode, addressScheme));
-            boolean success = system.createWalletManager(network, mode, addressScheme, Collections.emptySet());
+            boolean success = system.createWalletManager(network, mode, addressScheme, filteredCurrencies);
             if (!success) {
                 Account account = system.getAccount();
 

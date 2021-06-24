@@ -31,8 +31,7 @@
             android:name="com.blockset.walletkit.demo.TransferListActivity"
             android:label="Transfers" />
         <activity
-            android:name="com.blockset.walletkit.demo.WalletListActivity"
-            android:label="Wallets">
+            android:name="com.blockset.walletkit.demo.WalletListActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
