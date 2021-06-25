@@ -144,7 +144,6 @@ wkWalletManagerInitialTransferBundlesLoad (WKWalletManager manager) {
 
     if (fileServiceHasType (manager->fileService, WK_FILE_SERVICE_TYPE_TRANSFER) &&
         1 != fileServiceLoad (manager->fileService, bundles, WK_FILE_SERVICE_TYPE_TRANSFER, 1)) {
-        wkClientTransferBundleSetRelease (bundles);
         printf ("CRY: %4s: failed to load transfer bundles",
                 wkNetworkTypeGetCurrencyCode (manager->type));
         wkClientTransferBundleSetRelease(bundles);
