@@ -144,7 +144,6 @@ cryptoWalletManagerInitialTransferBundlesLoad (BRCryptoWalletManager manager) {
 
     if (fileServiceHasType (manager->fileService, CRYPTO_FILE_SERVICE_TYPE_TRANSFER) &&
         1 != fileServiceLoad (manager->fileService, bundles, CRYPTO_FILE_SERVICE_TYPE_TRANSFER, 1)) {
-        cryptoClientTransferBundleSetRelease (bundles);
         printf ("CRY: %4s: failed to load transfer bundles",
                 cryptoBlockChainTypeGetCurrencyCode (manager->type));
         cryptoClientTransferBundleSetRelease(bundles);
