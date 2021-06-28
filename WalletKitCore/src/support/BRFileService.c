@@ -434,6 +434,8 @@ fileServiceSetErrorHandler (BRFileService fs,
 static BRFileServiceEntityType *
 fileServiceLookupType (const BRFileService fs,
                        const char *type) {
+    if (NULL == fs) return NULL;
+
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
         if (0 == strcmp (type, fs->entityTypes[index].type))
@@ -896,6 +898,8 @@ fileServiceClear (BRFileService fs,
 
 extern int
 fileServiceClearAll (BRFileService fs) {
+    if (NULL == fs) return 0;
+
     int success = 1;
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
@@ -1042,7 +1046,7 @@ fileServiceWipe (const char *basePath,
 extern bool
 fileServiceHasType (BRFileService fs,
                     const char *type) {
-    return NULL != fs && NULL != fileServiceLookupType (fs, type);
+    return NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256
