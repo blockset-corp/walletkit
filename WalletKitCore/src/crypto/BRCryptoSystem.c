@@ -600,6 +600,21 @@ cryptoSystemGetWalletManagerByNetwork (BRCryptoSystem system,
     return manager;
 }
 
+static BRCryptoWalletManager
+cryptoSystemGetWalletManagerByNetworkAndAccount (BRCryptoSystem system,
+                                                 BRCryptoNetwork network,
+                                                 BRCryptoAccount account) {
+    BRCryptoWalletManager manager = cryptoSystemGetWalletManagerByNetwork (system, network);
+    if (NULL != manager) {
+        if (CRYPTO_FALSE == cryptoWalletManagerHasAccount(manager, account)) {
+            cryptoWalletManagerGive(manager);
+            manager = NULL;
+        }
+    }
+
+    return manager;
+}
+
 extern size_t
 cryptoSystemGetWalletManagersCount (BRCryptoSystem system) {
     pthread_mutex_lock (&system->lock);
@@ -650,22 +665,27 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
         return NULL;
     }
 
-    BRCryptoWalletManager manager =
-    cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (system->listener, system),
-                               system->client,
-                               system->account,
-                               network,
-                               mode,
-                               scheme,
-                               system->path);
+    // Look for a pre-existing wallet manager
+    BRCryptoWalletManager manager = cryptoSystemGetWalletManagerByNetworkAndAccount (system, network, system->account);
 
-    cryptoSystemAddWalletManager (system, manager);
+    // If we don't have one, then create it
+    if (NULL == manager) {
+        manager = cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (system->listener, system),
+                                             system->client,
+                                             system->account,
+                                             network,
+                                             mode,
+                                             scheme,
+                                             system->path);
 
-    cryptoWalletManagerSetNetworkReachable (manager, system->isReachable);
+        cryptoSystemAddWalletManager (system, manager);
 
-    for (size_t index = 0; index < currenciesCount; index++)
-        if (cryptoNetworkHasCurrency (network, currencies[index]))
-            cryptoWalletManagerCreateWallet (manager, currencies[index]);
+        cryptoWalletManagerSetNetworkReachable (manager, system->isReachable);
+
+        for (size_t index = 0; index < currenciesCount; index++)
+            if (cryptoNetworkHasCurrency (network, currencies[index]))
+                cryptoWalletManagerCreateWallet (manager, currencies[index]);
+    }
 
     // Start the event handler.
     cryptoWalletManagerStart (manager);
@@ -680,7 +700,7 @@ cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
                                   OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
     // Partition `bundles` by `network`
 
-    size_t networksCount = cryptoSystemGetNetworksCount(system); 
+    size_t networksCount = cryptoSystemGetNetworksCount(system);
     BRArrayOf (BRCryptoClientCurrencyBundle) bundlesForNetworks[networksCount];
 
     for (size_t index = 0; index < networksCount; index++)
