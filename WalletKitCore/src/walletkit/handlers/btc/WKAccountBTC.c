@@ -20,7 +20,7 @@ wkAccountCreateSeedCommon(
 
     BRMasterPubKey *pubKey = (BRMasterPubKey*) calloc (1, sizeof(BRMasterPubKey));
     assert (pubKey != NULL);
-
+    
     *pubKey = BRBIP32MasterPubKeyPath(seed.u8,
                                       sizeof (seed.u8),
                                       depth,
@@ -59,8 +59,7 @@ wkAccountCreateFromBytesCommon(
 static size_t
 wkAccountSerializeCommon(
     BRMasterPubKey  masterPubKey,
-    uint8_t         *accountSerBuf,
-    WKAccount       account         ) {
+    uint8_t         *accountSerBuf ) {
 
     size_t keySerSize = BRBIP32SerializeMasterPubKey (NULL, masterPubKey);
 
@@ -72,16 +71,19 @@ wkAccountSerializeCommon(
 }
 
 static void
-wkAccountReleaseCommon(WKAccount account) {
+wkAccountReleaseCommon(
+    WKAccount       account,
+    WKNetworkType   netType) {
 
     BRMasterPubKey* pubKey;
 
     pubKey = (BRMasterPubKey*) wkAccountAs (account,
-                                            WK_NETWORK_TYPE_BTC);
+                                            netType);
+    
     free (pubKey);
 }
 
-// BTC account handling functions
+// BTC & BTC/BCH/BSV shared account handling functions
 
 static WKAccountDetails
 wkAccountCreateFromSeedBTC(UInt512  seed) {
@@ -94,6 +96,11 @@ wkAccountCreateFromSeedBTC(UInt512  seed) {
     return pubKey;
 }
 
+static void
+wkAccountReleaseBTC(WKAccount account) {
+    wkAccountReleaseCommon (account, WK_NETWORK_TYPE_BTC);
+}
+    
 static size_t
 wkAccountSerializeBTC(
     uint8_t     *accountSerBuf,
@@ -107,11 +114,57 @@ wkAccountSerializeBTC(
                                               WK_NETWORK_TYPE_BTC);
 
     return wkAccountSerializeCommon ( *masterKey,
-                                      accountSerBuf,
-                                      account   );
+                                      accountSerBuf );
+}
+
+// BCH specific account handling functions
+
+static void
+wkAccountReleaseBCH(WKAccount account) {
+    wkAccountReleaseCommon (account, WK_NETWORK_TYPE_BCH);
+}
+
+static size_t
+wkAccountSerializeBCH(
+    uint8_t     *accountSerBuf,
+    WKAccount   account         ) {
+
+    assert (account != NULL);
+
+    BRMasterPubKey* masterKey = (BRMasterPubKey*) wkAccountAs(account,
+                                                              WK_NETWORK_TYPE_BCH);
+
+    return wkAccountSerializeCommon ( *masterKey,
+                                      accountSerBuf );
+}
+
+// BSV specific account handling functions
+
+static void
+wkAccountReleaseBSV(WKAccount account) {
+    wkAccountReleaseCommon (account, WK_NETWORK_TYPE_BSV);
+}
+
+static size_t
+wkAccountSerializeBSV(
+    uint8_t     *accountSerBuf,
+    WKAccount   account         ) {
+
+    assert (account != NULL);
+
+    BRMasterPubKey* masterKey= (BRMasterPubKey*) wkAccountAs(account,
+                                                             WK_NETWORK_TYPE_BSV);
+
+    return wkAccountSerializeCommon ( *masterKey,
+                                      accountSerBuf );
 }
 
 // LTC specific account handling functions
+
+static void
+wkAccountReleaseLTC(WKAccount account) {
+    wkAccountReleaseCommon (account, WK_NETWORK_TYPE_LTC);
+}
 
 static size_t
 wkAccountSerializeLTC(
@@ -124,8 +177,7 @@ wkAccountSerializeLTC(
                                                                WK_NETWORK_TYPE_LTC);
 
     return wkAccountSerializeCommon(*masterKey,
-                                    accountSerBuf,
-                                    account );
+                                    accountSerBuf );
 }
 
 static WKAccountDetails
@@ -138,6 +190,11 @@ wkAccountCreateFromSeedLTC(UInt512  seed) {
 
 // DOGE specific account handling functions
 
+static void
+wkAccountReleaseDOGE(WKAccount account) {
+    wkAccountReleaseCommon (account, WK_NETWORK_TYPE_DOGE);
+}
+
 static size_t
 wkAccountSerializeDOGE(
     uint8_t     *accountSerBuf,
@@ -145,14 +202,11 @@ wkAccountSerializeDOGE(
 
     assert (account != NULL);
 
-    BRMasterPubKey* masterKey;
-
-    masterKey = (BRMasterPubKey*) wkAccountAs(account,
-                                              WK_NETWORK_TYPE_DOGE);
+    BRMasterPubKey* masterKey = (BRMasterPubKey*) wkAccountAs(account,
+                                                              WK_NETWORK_TYPE_DOGE);
 
     return wkAccountSerializeCommon(*masterKey,
-                                    accountSerBuf,
-                                    account );
+                                    accountSerBuf );
 }
 
 static WKAccountDetails
@@ -167,35 +221,35 @@ wkAccountCreateFromSeedDOGE(UInt512  seed) {
 WKAccountHandlers wkAccountHandlersBTC = {
     wkAccountCreateFromSeedBTC,
     wkAccountCreateFromBytesCommon,
-    wkAccountReleaseCommon,
+    wkAccountReleaseBTC,
     wkAccountSerializeBTC
 };
 
 WKAccountHandlers wkAccountHandlersBCH = {
     wkAccountCreateFromSeedBTC,
     wkAccountCreateFromBytesCommon,
-    wkAccountReleaseCommon,
-    wkAccountSerializeBTC
+    wkAccountReleaseBCH,
+    wkAccountSerializeBCH
 };
 
 WKAccountHandlers wkAccountHandlersBSV= {
     wkAccountCreateFromSeedBTC,
     wkAccountCreateFromBytesCommon,
-    wkAccountReleaseCommon,
-    wkAccountSerializeBTC
+    wkAccountReleaseBSV,
+    wkAccountSerializeBSV
 };
 
 WKAccountHandlers wkAccountHandlersLTC = {
     wkAccountCreateFromSeedLTC,
     wkAccountCreateFromBytesCommon,
-    wkAccountReleaseCommon,
+    wkAccountReleaseLTC,
     wkAccountSerializeLTC
 };
 
 WKAccountHandlers wkAccountHandlersDOGE = {
     wkAccountCreateFromSeedDOGE,
     wkAccountCreateFromBytesCommon,
-    wkAccountReleaseCommon,
+    wkAccountReleaseDOGE,
     wkAccountSerializeDOGE
 };
 
