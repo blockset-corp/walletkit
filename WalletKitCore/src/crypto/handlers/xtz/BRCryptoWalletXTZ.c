@@ -117,19 +117,17 @@ cryptoWalletGetTransferByHashOrUIDSAndTargetXTZ (BRCryptoWallet wallet,
                                            const char *uids,
                                            BRCryptoAddress targetToMatch) {
     BRCryptoTransfer transfer = NULL;
-    
-    pthread_mutex_lock (&wallet->lock);
-    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
-        BRCryptoHash hash = cryptoTransferGetHash (wallet->transfers[index]);
-        if (((NULL != uids && NULL != wallet->transfers[index]->uids && 0 == strcmp (uids, wallet->transfers[index]->uids))
-             || CRYPTO_TRUE == cryptoHashEqual(hash, hashToMatch)) &&
-            cryptoAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
-            transfer = wallet->transfers[index];
-        cryptoHashGive(hash);
+
+    // Do the 'special match' based on hash and/or uids
+    transfer = cryptoWalletGetTransferByHashOrUIDS (wallet, hashToMatch, uids);
+
+    // Confirmed with the address
+    if (NULL != transfer && !cryptoAddressIsEqual (transfer->targetAddress, targetToMatch)) {
+        cryptoTransferGive(transfer);
+        transfer = NULL;
     }
-    pthread_mutex_unlock (&wallet->lock);
-    
-    return cryptoTransferTake (transfer);
+
+    return transfer;
 }
 
 extern size_t
