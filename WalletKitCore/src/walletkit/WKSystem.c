@@ -159,6 +159,8 @@ fileServiceTypeCurrencyBundleV1Writer (BRFileServiceContext context,
 
 static BRSetOf (WKClientCurrencyBundle)
 wkSystemInitialCurrencyBundlesLoad (WKSystem system) {
+    if (NULL == system || NULL == system->fileService) return NULL;
+
     BRSetOf(WKClientCurrencyBundle) bundles =  wkClientCurrencyBundleSetCreate(100);
 
     if (fileServiceHasType (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE) &&
@@ -332,15 +334,21 @@ wkSystemOnMainnet (WKSystem system) {
 
 extern WKBoolean
 wkSystemIsReachable (WKSystem system) {
-    return system->isReachable;
+    pthread_mutex_lock (&system->lock);
+    WKBoolean result = system->isReachable;
+    pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern void
 wkSystemSetReachable (WKSystem system,
                           WKBoolean isReachable) {
+    pthread_mutex_lock (&system->lock);
     system->isReachable = isReachable;
     for (size_t index = 0; index < array_count(system->managers); index++)
         wkWalletManagerSetNetworkReachable (system->managers[index], isReachable);
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern const char *
@@ -356,6 +364,8 @@ wkSystemGetState (WKSystem system) {
 private_extern void
 wkSystemSetState (WKSystem system,
                       WKSystemState state) {
+    pthread_mutex_lock (&system->lock);
+
     WKSystemState newState = state;
     WKSystemState oldState = system->state;
 
@@ -366,6 +376,7 @@ wkSystemSetState (WKSystem system,
              WK_SYSTEM_EVENT_CHANGED,
              { .state = { oldState, newState }}
          });
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern const char *
@@ -392,54 +403,77 @@ wkSystemEventTypeString (WKSystemEventType type) {
 
 static WKBoolean
 wkSystemHasNetworkFor (WKSystem system,
-                           WKNetwork network,
-                           size_t *forIndex) {
+                       WKNetwork network,
+                       size_t *forIndex,
+                       bool needLock) {
+    WKBoolean result = WK_FALSE;
+
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (network == system->networks[index]) {
             if (forIndex) *forIndex = index;
-            return WK_TRUE;
+            result = WK_TRUE;
+            break;
         }
     }
-    return WK_FALSE;
+    if (needLock) pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern WKBoolean
 wkSystemHasNetwork (WKSystem system,
                         WKNetwork network) {
-    return wkSystemHasNetworkFor (system, network, NULL);
+    return wkSystemHasNetworkFor (system, network, NULL, true);
 }
 
 extern WKNetwork *
 wkSystemGetNetworks (WKSystem system,
                          size_t *count) {
-    *count = array_count (system->networks);
     WKNetwork *networks = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    *count = array_count (system->networks);
     if (0 != *count) {
         networks = calloc (*count, sizeof(WKNetwork));
         for (size_t index = 0; index < *count; index++) {
             networks[index] = wkNetworkTake(system->networks[index]);
         }
     }
+    pthread_mutex_unlock (&system->lock);
+
     return networks;
 }
 
 extern WKNetwork
  wkSystemGetNetworkAt (WKSystem system,
                            size_t index) {
-     return index < array_count(system->networks) ? system->networks[index] : NULL;
+     WKNetwork network = NULL;
+
+     pthread_mutex_lock (&system->lock);
+     if (index < array_count(system->networks))
+         network = wkNetworkTake (system->networks[index]);
+     pthread_mutex_unlock (&system->lock);
+
+     return network;
 }
 
 static WKNetwork
 wkSystemGetNetworkForUidsWithIndex (WKSystem system,
                                         const char *uids,
                                         size_t *indexOfNetwork) {
+    WKNetwork network = NULL;
+
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (0 == strcmp (uids, wkNetworkGetUids(system->networks[index]))) {
             if (NULL != indexOfNetwork) *indexOfNetwork = index;
-            return wkNetworkTake (system->networks[index]);
+            network = wkNetworkTake (system->networks[index]);
         }
     }
-    return NULL;
+    pthread_mutex_unlock (&system->lock);
+
+    return network;
 }
 
 extern WKNetwork
@@ -451,113 +485,154 @@ wkSystemGetNetworkForUids (WKSystem system,
 
 extern size_t
 wkSystemGetNetworksCount (WKSystem system) {
-    return array_count(system->networks);
+    pthread_mutex_lock (&system->lock);
+    size_t count = array_count(system->networks);
+    pthread_mutex_unlock (&system->lock);
+
+    return count;
 }
 
 private_extern void
 wkSystemAddNetwork (WKSystem system,
                         WKNetwork network) {
-    if (WK_FALSE == wkSystemHasNetwork (system, network)) {
+    pthread_mutex_lock (&system->lock);
+    if (WK_FALSE == wkSystemHasNetworkFor (system, network, NULL, false)) {
         array_add (system->networks, wkNetworkTake(network));
         wkListenerGenerateSystemEvent (system->listener, system, (WKSystemEvent) {
             WK_SYSTEM_EVENT_NETWORK_ADDED,
             { .network = wkNetworkTake (network) }
         });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 private_extern void
 wkSystemRemNetwork (WKSystem system,
                         WKNetwork network) {
     size_t index;
-    if (WK_TRUE == wkSystemHasNetworkFor (system, network, &index)) {
+    pthread_mutex_lock (&system->lock);
+    if (WK_TRUE == wkSystemHasNetworkFor (system, network, &index, false)) {
         array_rm (system->networks, index);
         wkListenerGenerateSystemEvent (system->listener, system, (WKSystemEvent) {
              WK_SYSTEM_EVENT_NETWORK_DELETED,
             { .network = network }  // no wkNetworkTake -> releases system->networks reference
          });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 // MARK: - System Wallet Managers
 
 static WKBoolean
 wkSystemHasWalletManagerFor (WKSystem system,
-                                 WKWalletManager manager,
-                                 size_t *forIndex) {
+                             WKWalletManager manager,
+                             size_t *forIndex,
+                             bool needLock) {
+    WKBoolean result = WK_FALSE;
+
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++) {
         if (manager == system->managers[index]) {
             if (forIndex) *forIndex = index;
-            return WK_TRUE;
+            result = WK_TRUE;
         }
     }
-    return WK_FALSE;
+    if (needLock) pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern WKBoolean
 wkSystemHasWalletManager (WKSystem system,
                               WKWalletManager manager) {
-    return wkSystemHasWalletManagerFor (system, manager, NULL);
+    return wkSystemHasWalletManagerFor (system, manager, NULL, true);
 
 }
 
 extern WKWalletManager *
 wkSystemGetWalletManagers (WKSystem system,
                                size_t *count) {
-    *count = array_count (system->managers);
     WKWalletManager *managers = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    *count = array_count (system->managers);
     if (0 != *count) {
         managers = calloc (*count, sizeof(WKWalletManager));
         for (size_t index = 0; index < *count; index++) {
             managers[index] = wkWalletManagerTake(system->managers[index]);
         }
     }
+    pthread_mutex_unlock (&system->lock);
+
     return managers;
 }
 
 extern WKWalletManager
 wkSystemGetWalletManagerAt (WKSystem system,
                                 size_t index) {
-    return index < array_count(system->managers) ? system->managers[index] : NULL;
+    WKWalletManager manager = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    if (index < array_count(system->managers))
+        manager = wkWalletManagerTake (system->managers[index]);
+    pthread_mutex_unlock (&system->lock);
+
+    return manager;
 }
 
 extern WKWalletManager
 wkSystemGetWalletManagerByNetwork (WKSystem system,
                                        WKNetwork network) {
+    WKWalletManager manager = NULL;
+
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
-        if (wkWalletManagerHasNetwork (system->managers[index], network))
-            return system->managers[index];
-    return NULL;
+        if (wkWalletManagerHasNetwork (system->managers[index], network)) {
+            manager = wkWalletManagerTake (system->managers[index]);
+            break;
+        }
+    pthread_mutex_unlock (&system->lock);
+
+    return manager;
 }
 
 extern size_t
 wkSystemGetWalletManagersCount (WKSystem system) {
-    return array_count(system->managers);
+    pthread_mutex_lock (&system->lock);
+    size_t count = array_count(system->managers);
+    pthread_mutex_unlock (&system->lock);
+
+    return count;
 }
 
 private_extern void
 wkSystemAddWalletManager (WKSystem system,
                               WKWalletManager manager) {
-    if (WK_FALSE == wkSystemHasWalletManager (system, manager)) {
+    pthread_mutex_lock (&system->lock);
+    if (WK_FALSE == wkSystemHasWalletManagerFor (system, manager, NULL, false)) {
         array_add (system->managers, wkWalletManagerTake(manager));
         wkListenerGenerateSystemEvent (system->listener, system, (WKSystemEvent) {
             WK_SYSTEM_EVENT_MANAGER_ADDED,
             { .manager = wkWalletManagerTake (manager) }
         });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 private_extern void
 wkSystemRemWalletManager (WKSystem system,
                               WKWalletManager manager) {
     size_t index;
-    if (WK_TRUE == wkSystemHasWalletManagerFor (system, manager, &index)) {
+
+    pthread_mutex_lock (&system->lock);
+    if (WK_TRUE == wkSystemHasWalletManagerFor (system, manager, &index, false)) {
         array_rm (system->managers, index);
         wkListenerGenerateSystemEvent (system->listener, system, (WKSystemEvent) {
              WK_SYSTEM_EVENT_MANAGER_DELETED,
             { .manager = manager }  // no wkNetworkTake -> releases system->managers reference
          });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern WKWalletManager
@@ -601,7 +676,7 @@ wkSystemHandleCurrencyBundles (WKSystem system,
                                   OwnershipKept BRArrayOf (WKClientCurrencyBundle) bundles) {
     // Partition `bundles` by `network`
 
-    size_t networksCount = array_count(system->networks);
+    size_t networksCount = wkSystemGetNetworksCount(system);
     BRArrayOf (WKClientCurrencyBundle) bundlesForNetworks[networksCount];
 
     for (size_t index = 0; index < networksCount; index++)
@@ -640,12 +715,16 @@ wkSystemStop (WKSystem system) {
 
 extern void
 wkSystemConnect (WKSystem system) {
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
         wkWalletManagerConnect (system->managers[index], NULL);
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern void
 wkSystemDisconnect (WKSystem system) {
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
          wkWalletManagerDisconnect (system->managers[index]);
+    pthread_mutex_unlock (&system->lock);
 }
