@@ -596,6 +596,22 @@ wkSystemGetWalletManagerByNetwork (WKSystem system,
     return manager;
 }
 
+static WKWalletManager
+wkSystemGetWalletManagerByNetworkAndAccount (WKSystem system,
+                                             WKNetwork network,
+                                             WKAccount account) {
+    WKWalletManager manager = wkSystemGetWalletManagerByNetwork (system, network);
+    
+    if (NULL != manager) {
+        if (WK_FALSE == wkWalletManagerHasAccount(manager, account)) {
+            wkWalletManagerGive(manager);
+            manager = NULL;
+        }
+    }
+    
+    return manager;
+}
+
 extern size_t
 wkSystemGetWalletManagersCount (WKSystem system) {
     pthread_mutex_lock (&system->lock);
@@ -637,31 +653,36 @@ wkSystemRemWalletManager (WKSystem system,
 
 extern WKWalletManager
 wkSystemCreateWalletManager (WKSystem system,
-                                 WKNetwork network,
-                                 WKSyncMode mode,
-                                 WKAddressScheme scheme,
-                                 WKCurrency *currencies,
-                                 size_t currenciesCount) {
+                             WKNetwork network,
+                             WKSyncMode mode,
+                             WKAddressScheme scheme,
+                             WKCurrency *currencies,
+                             size_t currenciesCount) {
     if (WK_FALSE == wkNetworkIsAccountInitialized (network, system->account)) {
         return NULL;
     }
 
-    WKWalletManager manager =
-    wkWalletManagerCreate (wkListenerCreateWalletManagerListener (system->listener, system),
-                               system->client,
-                               system->account,
-                               network,
-                               mode,
-                               scheme,
-                               system->path);
+    // Look for a pre-existing wallet manager
+    WKWalletManager manager = wkSystemGetWalletManagerByNetworkAndAccount (system, network, system->account);
 
-    wkSystemAddWalletManager (system, manager);
+    if (NULL == manager) {
 
-    wkWalletManagerSetNetworkReachable (manager, system->isReachable);
+        manager = wkWalletManagerCreate (wkListenerCreateWalletManagerListener (system->listener, system),
+                                         system->client,
+                                         system->account,
+                                         network,
+                                         mode,
+                                         scheme,
+                                         system->path);
 
-    for (size_t index = 0; index < currenciesCount; index++)
-        if (wkNetworkHasCurrency (network, currencies[index]))
-            wkWalletManagerCreateWallet (manager, currencies[index]);
+        wkSystemAddWalletManager (system, manager);
+
+        wkWalletManagerSetNetworkReachable (manager, system->isReachable);
+
+        for (size_t index = 0; index < currenciesCount; index++)
+            if (wkNetworkHasCurrency (network, currencies[index]))
+                wkWalletManagerCreateWallet (manager, currencies[index]);
+    }
 
     // Start the event handler.
     wkWalletManagerStart (manager);
