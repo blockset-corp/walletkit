@@ -219,7 +219,7 @@ static WKAddress
 wkNetworkCreateAddressBCH (WKNetwork network,
                                 const char *addressAsString) {
     WKNetworkBTC networkBTC = wkNetworkCoerce (network, WK_NETWORK_TYPE_BCH);
-    assert (!bchChainParamsHasParams (networkBTC->params));
+    assert (bchChainParamsHasParams (networkBTC->params));
     return wkAddressCreateFromStringAsBCH (networkBTC->params->addrParams, addressAsString);
 }
 

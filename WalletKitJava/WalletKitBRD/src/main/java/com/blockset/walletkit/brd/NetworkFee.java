@@ -66,6 +66,9 @@ class NetworkFee implements com.blockset.walletkit.NetworkFee {
     }
 
     @Override
+    public String toString() { return getConfirmationTimeInMilliseconds().toString(); }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
