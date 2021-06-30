@@ -117,20 +117,17 @@ wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
                                              const char *uids,
                                              WKAddress targetToMatch) {
     WKTransfer transfer = NULL;
-    
-    pthread_mutex_lock (&wallet->lock);
-    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
-        WKHash hash = wkTransferGetHash (wallet->transfers[index]);
-        if (((NULL != uids && NULL != wallet->transfers[index]->uids && 0 == strcmp (uids, wallet->transfers[index]->uids))
-             || WK_TRUE == wkHashEqual(hash, hashToMatch)) &&
 
-            wkAddressIsEqual(wallet->transfers[index]->targetAddress, targetToMatch))
-            transfer = wallet->transfers[index];
-        wkHashGive(hash);
+    // Do the 'special match' based on hash and/or uids
+    transfer = wkWalletGetTransferByHashOrUIDS (wallet, hashToMatch, uids);
+
+    // Confirmed with the address
+    if (NULL != transfer && !wkAddressIsEqual (transfer->targetAddress, targetToMatch)) {
+        wkTransferGive(transfer);
+        transfer = NULL;
     }
-    pthread_mutex_unlock (&wallet->lock);
-    
-    return wkTransferTake (transfer);
+
+    return transfer;
 }
 
 extern size_t
