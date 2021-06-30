@@ -21,7 +21,6 @@ extern "C" {
 /// MARK: - Account Handlers
 
 /** Generic identifier for stored network accounts.
- *  Use wkAccounAs() and cast appropriately.
  */
 typedef void* WKAccountDetails;
 
@@ -51,7 +50,7 @@ typedef WKAccountDetails
  * @param account The account to be released
  */
 typedef void
-(*WKAccountReleaseHandler)(WKAccount account);
+(*WKAccountReleaseHandler)(WKAccountDetails accountDetails);
 
 /**
  * Serialize the account provided into the specified

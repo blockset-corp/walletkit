@@ -27,13 +27,8 @@ wkAccountCreateFromBytesHBAR(
 }
 
 static void
-wkAccountReleaseHBAR(WKAccount account) {
-
-    BRHederaAccount hbar;
-
-    hbar = (BRHederaAccount) wkAccountAs (account,
-                                          WK_NETWORK_TYPE_HBAR);
-    hederaAccountFree (hbar);
+wkAccountReleaseHBAR(WKAccountDetails accountDetails) {
+    hederaAccountFree ((BRHederaAccount)accountDetails);
 }
 
 static size_t

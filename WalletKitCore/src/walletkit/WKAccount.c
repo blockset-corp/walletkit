@@ -234,7 +234,7 @@ wkAccountRelease (WKAccount account) {
          netNo++                            ) {
 
         netHandlers = wkHandlersLookup(netNo);
-        netHandlers->account->release(account);
+        netHandlers->account->release(account->networkAccounts[netNo]);
     }
 
     free (account->uids);

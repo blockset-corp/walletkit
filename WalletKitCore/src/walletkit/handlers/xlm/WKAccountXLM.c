@@ -25,12 +25,8 @@ wkAccountCreateFromBytesXLM(
 }
 
 static void
-wkAccountReleaseXLM(WKAccount account) {
-    BRStellarAccount xlmAcct;
-
-    xlmAcct = (BRStellarAccount) wkAccountAs (account,
-                                              WK_NETWORK_TYPE_XLM);
-    stellarAccountFree(xlmAcct);
+wkAccountReleaseXLM(WKAccountDetails accountDetails) {
+    stellarAccountFree((BRStellarAccount)accountDetails);
 }
 
 static size_t
