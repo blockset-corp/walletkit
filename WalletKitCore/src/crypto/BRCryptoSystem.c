@@ -158,6 +158,8 @@ fileServiceTypeCurrencyBundleV1Writer (BRFileServiceContext context,
 
 static BRSetOf (BRCryptoClientCurrencyBundle)
 cryptoSystemInitialCurrencyBundlesLoad (BRCryptoSystem system) {
+    if (NULL == system || NULL == system->fileService) return NULL;
+
     BRSetOf(BRCryptoClientCurrencyBundle) bundles =  cryptoClientCurrencyBundleSetCreate(100);
 
     if (fileServiceHasType (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE) &&
@@ -331,15 +333,21 @@ cryptoSystemOnMainnet (BRCryptoSystem system) {
 
 extern BRCryptoBoolean
 cryptoSystemIsReachable (BRCryptoSystem system) {
-    return system->isReachable;
+    pthread_mutex_lock (&system->lock);
+    BRCryptoBoolean result = system->isReachable;
+    pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern void
 cryptoSystemSetReachable (BRCryptoSystem system,
                           BRCryptoBoolean isReachable) {
+    pthread_mutex_lock (&system->lock);
     system->isReachable = isReachable;
     for (size_t index = 0; index < array_count(system->managers); index++)
         cryptoWalletManagerSetNetworkReachable (system->managers[index], isReachable);
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern const char *
@@ -349,12 +357,18 @@ cryptoSystemGetResolvedPath (BRCryptoSystem system) {
 
 extern BRCryptoSystemState
 cryptoSystemGetState (BRCryptoSystem system) {
-    return system->state;
+    pthread_mutex_lock (&system->lock);
+    BRCryptoSystemState state = system->state;
+    pthread_mutex_unlock (&system->lock);
+
+    return state;
 }
 
 private_extern void
 cryptoSystemSetState (BRCryptoSystem system,
                       BRCryptoSystemState state) {
+    pthread_mutex_lock (&system->lock);
+
     BRCryptoSystemState newState = state;
     BRCryptoSystemState oldState = system->state;
 
@@ -365,6 +379,7 @@ cryptoSystemSetState (BRCryptoSystem system,
              CRYPTO_SYSTEM_EVENT_CHANGED,
              { .state = { oldState, newState }}
          });
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern const char *
@@ -392,53 +407,76 @@ cryptoSystemEventTypeString (BRCryptoSystemEventType type) {
 static BRCryptoBoolean
 cryptoSystemHasNetworkFor (BRCryptoSystem system,
                            BRCryptoNetwork network,
-                           size_t *forIndex) {
+                           size_t *forIndex,
+                           bool needLock) {
+    BRCryptoBoolean result = CRYPTO_FALSE;
+
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (network == system->networks[index]) {
             if (forIndex) *forIndex = index;
-            return CRYPTO_TRUE;
+            result = CRYPTO_TRUE;
+            break;
         }
     }
-    return CRYPTO_FALSE;
+    if (needLock) pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern BRCryptoBoolean
 cryptoSystemHasNetwork (BRCryptoSystem system,
                         BRCryptoNetwork network) {
-    return cryptoSystemHasNetworkFor (system, network, NULL);
+    return cryptoSystemHasNetworkFor (system, network, NULL, true);
 }
 
 extern BRCryptoNetwork *
 cryptoSystemGetNetworks (BRCryptoSystem system,
                          size_t *count) {
-    *count = array_count (system->networks);
     BRCryptoNetwork *networks = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    *count = array_count (system->networks);
     if (0 != *count) {
         networks = calloc (*count, sizeof(BRCryptoNetwork));
         for (size_t index = 0; index < *count; index++) {
             networks[index] = cryptoNetworkTake(system->networks[index]);
         }
     }
+    pthread_mutex_unlock (&system->lock);
+
     return networks;
 }
 
 extern BRCryptoNetwork
  cryptoSystemGetNetworkAt (BRCryptoSystem system,
                            size_t index) {
-     return index < array_count(system->networks) ? system->networks[index] : NULL;
+     BRCryptoNetwork network = NULL;
+
+     pthread_mutex_lock (&system->lock);
+     if (index < array_count(system->networks))
+         network = cryptoNetworkTake (system->networks[index]);
+     pthread_mutex_unlock (&system->lock);
+
+     return network;
 }
 
 static BRCryptoNetwork
 cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
                                         const char *uids,
                                         size_t *indexOfNetwork) {
+    BRCryptoNetwork network = NULL;
+
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index]))) {
             if (NULL != indexOfNetwork) *indexOfNetwork = index;
-            return cryptoNetworkTake (system->networks[index]);
+            network = cryptoNetworkTake (system->networks[index]);
         }
     }
-    return NULL;
+    pthread_mutex_unlock (&system->lock);
+
+    return network;
 }
 
 extern BRCryptoNetwork
@@ -450,32 +488,40 @@ cryptoSystemGetNetworkForUids (BRCryptoSystem system,
 
 extern size_t
 cryptoSystemGetNetworksCount (BRCryptoSystem system) {
-    return array_count(system->networks);
+    pthread_mutex_lock (&system->lock);
+    size_t count = array_count(system->networks);
+    pthread_mutex_unlock (&system->lock);
+
+    return count;
 }
 
 private_extern void
 cryptoSystemAddNetwork (BRCryptoSystem system,
                         BRCryptoNetwork network) {
-    if (CRYPTO_FALSE == cryptoSystemHasNetwork (system, network)) {
+    pthread_mutex_lock (&system->lock);
+    if (CRYPTO_FALSE == cryptoSystemHasNetworkFor (system, network, NULL, false)) {
         array_add (system->networks, cryptoNetworkTake(network));
         cryptoListenerGenerateSystemEvent (system->listener, system, (BRCryptoSystemEvent) {
             CRYPTO_SYSTEM_EVENT_NETWORK_ADDED,
             { .network = cryptoNetworkTake (network) }
         });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 private_extern void
 cryptoSystemRemNetwork (BRCryptoSystem system,
                         BRCryptoNetwork network) {
     size_t index;
-    if (CRYPTO_TRUE == cryptoSystemHasNetworkFor (system, network, &index)) {
+    pthread_mutex_lock (&system->lock);
+    if (CRYPTO_TRUE == cryptoSystemHasNetworkFor (system, network, &index, false)) {
         array_rm (system->networks, index);
         cryptoListenerGenerateSystemEvent (system->listener, system, (BRCryptoSystemEvent) {
              CRYPTO_SYSTEM_EVENT_NETWORK_DELETED,
             { .network = network }  // no cryptoNetworkTake -> releases system->networks reference
          });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 // MARK: - System Wallet Managers
@@ -483,80 +529,129 @@ cryptoSystemRemNetwork (BRCryptoSystem system,
 static BRCryptoBoolean
 cryptoSystemHasWalletManagerFor (BRCryptoSystem system,
                                  BRCryptoWalletManager manager,
-                                 size_t *forIndex) {
+                                 size_t *forIndex,
+                                 bool needLock) {
+    BRCryptoBoolean result = CRYPTO_FALSE;
+
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++) {
         if (manager == system->managers[index]) {
             if (forIndex) *forIndex = index;
-            return CRYPTO_TRUE;
+            result = CRYPTO_TRUE;
+            break;
         }
     }
-    return CRYPTO_FALSE;
+    if (needLock) pthread_mutex_unlock (&system->lock);
+
+    return result;
 }
 
 extern BRCryptoBoolean
 cryptoSystemHasWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager) {
-    return cryptoSystemHasWalletManagerFor (system, manager, NULL);
+    return cryptoSystemHasWalletManagerFor (system, manager, NULL, true);
 
 }
 
 extern BRCryptoWalletManager *
 cryptoSystemGetWalletManagers (BRCryptoSystem system,
                                size_t *count) {
-    *count = array_count (system->managers);
     BRCryptoWalletManager *managers = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    *count = array_count (system->managers);
     if (0 != *count) {
         managers = calloc (*count, sizeof(BRCryptoWalletManager));
         for (size_t index = 0; index < *count; index++) {
             managers[index] = cryptoWalletManagerTake(system->managers[index]);
         }
     }
+    pthread_mutex_unlock (&system->lock);
+
     return managers;
 }
 
 extern BRCryptoWalletManager
 cryptoSystemGetWalletManagerAt (BRCryptoSystem system,
                                 size_t index) {
-    return index < array_count(system->managers) ? system->managers[index] : NULL;
+    BRCryptoWalletManager manager = NULL;
+
+    pthread_mutex_lock (&system->lock);
+    if (index < array_count(system->managers))
+        manager = cryptoWalletManagerTake (system->managers[index]);
+    pthread_mutex_unlock (&system->lock);
+
+    return manager;
 }
 
 extern BRCryptoWalletManager
 cryptoSystemGetWalletManagerByNetwork (BRCryptoSystem system,
                                        BRCryptoNetwork network) {
+    BRCryptoWalletManager manager = NULL;
+
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
-        if (cryptoWalletManagerHasNetwork (system->managers[index], network))
-            return system->managers[index];
-    return NULL;
+        if (cryptoWalletManagerHasNetwork (system->managers[index], network)) {
+            manager = cryptoWalletManagerTake (system->managers[index]);
+            break;
+        }
+    pthread_mutex_unlock (&system->lock);
+
+    return manager;
+}
+
+static BRCryptoWalletManager
+cryptoSystemGetWalletManagerByNetworkAndAccount (BRCryptoSystem system,
+                                                 BRCryptoNetwork network,
+                                                 BRCryptoAccount account) {
+    BRCryptoWalletManager manager = cryptoSystemGetWalletManagerByNetwork (system, network);
+    if (NULL != manager) {
+        if (CRYPTO_FALSE == cryptoWalletManagerHasAccount(manager, account)) {
+            cryptoWalletManagerGive(manager);
+            manager = NULL;
+        }
+    }
+
+    return manager;
 }
 
 extern size_t
 cryptoSystemGetWalletManagersCount (BRCryptoSystem system) {
-    return array_count(system->managers);
+    pthread_mutex_lock (&system->lock);
+    size_t count = array_count(system->managers);
+    pthread_mutex_unlock (&system->lock);
+
+    return count;
 }
 
 private_extern void
 cryptoSystemAddWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager) {
-    if (CRYPTO_FALSE == cryptoSystemHasWalletManager (system, manager)) {
+    pthread_mutex_lock (&system->lock);
+    if (CRYPTO_FALSE == cryptoSystemHasWalletManagerFor (system, manager, NULL, false)) {
         array_add (system->managers, cryptoWalletManagerTake(manager));
         cryptoListenerGenerateSystemEvent (system->listener, system, (BRCryptoSystemEvent) {
             CRYPTO_SYSTEM_EVENT_MANAGER_ADDED,
             { .manager = cryptoWalletManagerTake (manager) }
         });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 private_extern void
 cryptoSystemRemWalletManager (BRCryptoSystem system,
                               BRCryptoWalletManager manager) {
     size_t index;
-    if (CRYPTO_TRUE == cryptoSystemHasWalletManagerFor (system, manager, &index)) {
+
+    pthread_mutex_lock (&system->lock);
+    if (CRYPTO_TRUE == cryptoSystemHasWalletManagerFor (system, manager, &index, false)) {
         array_rm (system->managers, index);
         cryptoListenerGenerateSystemEvent (system->listener, system, (BRCryptoSystemEvent) {
              CRYPTO_SYSTEM_EVENT_MANAGER_DELETED,
             { .manager = manager }  // no cryptoNetworkTake -> releases system->managers reference
          });
     }
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern BRCryptoWalletManager
@@ -570,22 +665,27 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
         return NULL;
     }
 
-    BRCryptoWalletManager manager =
-    cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (system->listener, system),
-                               system->client,
-                               system->account,
-                               network,
-                               mode,
-                               scheme,
-                               system->path);
+    // Look for a pre-existing wallet manager
+    BRCryptoWalletManager manager = cryptoSystemGetWalletManagerByNetworkAndAccount (system, network, system->account);
 
-    cryptoSystemAddWalletManager (system, manager);
+    // If we don't have one, then create it
+    if (NULL == manager) {
+        manager = cryptoWalletManagerCreate (cryptoListenerCreateWalletManagerListener (system->listener, system),
+                                             system->client,
+                                             system->account,
+                                             network,
+                                             mode,
+                                             scheme,
+                                             system->path);
 
-    cryptoWalletManagerSetNetworkReachable (manager, system->isReachable);
+        cryptoSystemAddWalletManager (system, manager);
 
-    for (size_t index = 0; index < currenciesCount; index++)
-        if (cryptoNetworkHasCurrency (network, currencies[index]))
-            cryptoWalletManagerCreateWallet (manager, currencies[index]);
+        cryptoWalletManagerSetNetworkReachable (manager, system->isReachable);
+
+        for (size_t index = 0; index < currenciesCount; index++)
+            if (cryptoNetworkHasCurrency (network, currencies[index]))
+                cryptoWalletManagerCreateWallet (manager, currencies[index]);
+    }
 
     // Start the event handler.
     cryptoWalletManagerStart (manager);
@@ -600,7 +700,7 @@ cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
                                   OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
     // Partition `bundles` by `network`
 
-    size_t networksCount = array_count(system->networks);
+    size_t networksCount = cryptoSystemGetNetworksCount(system);
     BRArrayOf (BRCryptoClientCurrencyBundle) bundlesForNetworks[networksCount];
 
     for (size_t index = 0; index < networksCount; index++)
@@ -639,12 +739,16 @@ cryptoSystemStop (BRCryptoSystem system) {
 
 extern void
 cryptoSystemConnect (BRCryptoSystem system) {
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
         cryptoWalletManagerConnect (system->managers[index], NULL);
+    pthread_mutex_unlock (&system->lock);
 }
 
 extern void
 cryptoSystemDisconnect (BRCryptoSystem system) {
+    pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->managers); index++)
          cryptoWalletManagerDisconnect (system->managers[index]);
+    pthread_mutex_unlock (&system->lock);
 }

@@ -278,6 +278,9 @@ fileServiceCreate (const char *basePath,
         return NULL;
     }
 
+    // Allow an absurdly long timeout for DB creation
+    sqlite3_busy_timeout (fs->sdb, 10 * 1000); // 10 seconds
+
     // Create the SQLite 'Entity' Table
     sqlite3_stmt *sdbCreateTableStmt;
     status = sqlite3_prepare_v2 (fs->sdb, FILE_SERVICE_SDB_ENTITY_TABLE, -1, &sdbCreateTableStmt, NULL);
@@ -352,6 +355,9 @@ fileServiceCreate (const char *basePath,
         }
     }
 #  endif
+    // A shorter timeout for individual statements; we'll handle SQLITE_BUSY
+    sqlite3_busy_timeout (fs->sdb, 2 * 1000); // 2 seconds
+
 #endif // !define(NEUTER_FILE_SERVICE)
 
     // Allocate the `entityTypes` array
@@ -434,6 +440,8 @@ fileServiceSetErrorHandler (BRFileService fs,
 static BRFileServiceEntityType *
 fileServiceLookupType (const BRFileService fs,
                        const char *type) {
+    if (NULL == fs) return NULL;
+
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
         if (0 == strcmp (type, fs->entityTypes[index].type))
@@ -629,8 +637,13 @@ _fileServiceSave (BRFileService fs,
 
     status = sqlite3_step (fs->sdbInsertStmt);
     if (SQLITE_DONE != status) {
-        free (data);
-        return fileServiceFailedSDB (fs, needLock, status);
+        int retries = 3;
+        while (retries-- > 0 && status != SQLITE_DONE && status != SQLITE_BUSY)
+            status = sqlite3_step (fs->sdbInsertStmt);
+        if (0 == retries) {
+            free (data);
+            return fileServiceFailedSDB (fs, needLock, status);
+        }
     }
 
     // Ensure the 'implicit DB transaction' is committed.
@@ -896,6 +909,8 @@ fileServiceClear (BRFileService fs,
 
 extern int
 fileServiceClearAll (BRFileService fs) {
+    if (NULL == fs) return 0;
+
     int success = 1;
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
@@ -1042,7 +1057,7 @@ fileServiceWipe (const char *basePath,
 extern bool
 fileServiceHasType (BRFileService fs,
                     const char *type) {
-    return NULL != fs && NULL != fileServiceLookupType (fs, type);
+    return NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256
