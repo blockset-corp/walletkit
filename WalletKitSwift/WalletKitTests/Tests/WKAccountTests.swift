@@ -62,6 +62,15 @@ class WKAccountTests: XCTestCase {
 
         XCTAssertFalse (a3.validate(serialization: a1.serialize))
 
+        let a1Ser  = a1.serialize
+        
+        // Verify incorrect serialization detected through validation
+        var a1Bytes = [UInt8](a1Ser)
+        a1Bytes[a1Bytes.count-1] = ~a1Bytes[a1Bytes.count-1]
+        let modSerData = Data(a1Bytes)
+        XCTAssertFalse (a1.validate(serialization: modSerData))
+        
+        
         let _ = Account (core: a2.core, take: true)
     }
 
@@ -239,7 +248,7 @@ class WKAccountTests: XCTestCase {
         ("testAddressXRP",        testAddressXRP),
         ("testAddressHBAR",       testAddressHBAR),
         ("testAddressXTZ",        testAddressXTZ),
-       ("testAddressScheme",     testAddressScheme),
+        ("testAddressScheme",     testAddressScheme),
     ]
 
     static let words: [String] = [
