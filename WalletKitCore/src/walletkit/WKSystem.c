@@ -459,21 +459,30 @@ extern WKNetwork
 }
 
 static WKNetwork
-wkSystemGetNetworkForUidsWithIndex (WKSystem system,
-                                        const char *uids,
-                                        size_t *indexOfNetwork) {
+wkSystemGetNetworkForUidsWithIndexNeedLock (WKSystem system,
+                                            const char *uids,
+                                            size_t *indexOfNetwork,
+                                            bool needLock) {
     WKNetwork network = NULL;
 
-    pthread_mutex_lock (&system->lock);
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (0 == strcmp (uids, wkNetworkGetUids(system->networks[index]))) {
             if (NULL != indexOfNetwork) *indexOfNetwork = index;
             network = wkNetworkTake (system->networks[index]);
+            break;
         }
     }
-    pthread_mutex_unlock (&system->lock);
+    if (needLock) pthread_mutex_unlock (&system->lock);
 
     return network;
+}
+
+static WKNetwork
+wkSystemGetNetworkForUidsWithIndex (WKSystem system,
+                                    const char *uids,
+                                    size_t *indexOfNetwork) {
+    return wkSystemGetNetworkForUidsWithIndexNeedLock (system, uids, indexOfNetwork, true);
 }
 
 extern WKNetwork
@@ -535,6 +544,7 @@ wkSystemHasWalletManagerFor (WKSystem system,
         if (manager == system->managers[index]) {
             if (forIndex) *forIndex = index;
             result = WK_TRUE;
+            break;
         }
     }
     if (needLock) pthread_mutex_unlock (&system->lock);
@@ -694,10 +704,16 @@ wkSystemCreateWalletManager (WKSystem system,
 
 private_extern void
 wkSystemHandleCurrencyBundles (WKSystem system,
-                                  OwnershipKept BRArrayOf (WKClientCurrencyBundle) bundles) {
+                               OwnershipKept BRArrayOf (WKClientCurrencyBundle) bundles) {
+    // Save the bundles straight away
+    for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++)
+        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
+
+    pthread_mutex_lock (&system->lock);
+
     // Partition `bundles` by `network`
 
-    size_t networksCount = wkSystemGetNetworksCount(system);
+    size_t networksCount = array_count(system->networks);
     BRArrayOf (WKClientCurrencyBundle) bundlesForNetworks[networksCount];
 
     for (size_t index = 0; index < networksCount; index++)
@@ -705,17 +721,19 @@ wkSystemHandleCurrencyBundles (WKSystem system,
 
     size_t networkIndex = 0;
     for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++) {
-        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
-
-        WKNetwork network = wkSystemGetNetworkForUidsWithIndex (system, bundles[bundleIndex]->bid, &networkIndex);
+        WKNetwork network = wkSystemGetNetworkForUidsWithIndexNeedLock (system, bundles[bundleIndex]->bid, &networkIndex, false);
         if (NULL != network)
             array_add (bundlesForNetworks[networkIndex], bundles[bundleIndex]);
     }
+
+    // Add bundles applicable to each network
 
     for (size_t index = 0; index < networksCount; index++) {
         wkNetworkAddCurrencyAssociationsFromBundles (system->networks[index], bundlesForNetworks[index]);
         array_free (bundlesForNetworks[index]);
     }
+
+    pthread_mutex_unlock (&system->lock);
 }
 
 // MARK: - System Control
