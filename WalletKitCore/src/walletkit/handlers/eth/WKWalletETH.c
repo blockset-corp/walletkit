@@ -171,6 +171,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
 
     BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = wkFeeBasisAsETH (estimatedFeeBasis);
+    BREthereumGas      ethGasLimit      = ethFeeBasisGetGasLimit(ethFeeBasis);
     BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = wkAddressAsETH (target);
 
@@ -182,17 +183,20 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
-    // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.
-    //
-    // The created `ethTransaction` is unsigned and thus doesn't have a hash.
+    // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.  However, if
+    // the estimated `ethGasLimit` is 21000, we won't apply a margin as the target address cannot
+    // be a Smart Contract (a default function will always have a gasLimit above 21000).
+
     BREthereumTransaction ethTransaction =
     ethTransactionCreate (ethSourceAddress,
-                       wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
-                       wkTransferProvideOriginatingAmount (ethToken, value),
-                       ethFeeBasisGetGasPrice(ethFeeBasis),
-                       gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
-                       data,
-                       nonce);
+                          wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
+                          wkTransferProvideOriginatingAmount (ethToken, value),
+                          ethFeeBasisGetGasPrice(ethFeeBasis),
+                          (DEFAULT_ETHER_GAS_LIMIT == ethGasLimit.amountOfGas && (NULL == data || '\0' == data[0])
+                           ? ethGasLimit
+                           : gasApplyLimitMargin (ethGasLimit)),
+                          data,
+                          nonce);
 
     free (data);
 
