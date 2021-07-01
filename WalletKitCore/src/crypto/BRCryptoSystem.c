@@ -462,12 +462,13 @@ extern BRCryptoNetwork
 }
 
 static BRCryptoNetwork
-cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
-                                        const char *uids,
-                                        size_t *indexOfNetwork) {
+cryptoSystemGetNetworkForUidsWithIndexNeedLock (BRCryptoSystem system,
+                                                const char *uids,
+                                                size_t *indexOfNetwork,
+                                                bool needLock) {
     BRCryptoNetwork network = NULL;
 
-    pthread_mutex_lock (&system->lock);
+    if (needLock) pthread_mutex_lock (&system->lock);
     for (size_t index = 0; index < array_count(system->networks); index++) {
         if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index]))) {
             if (NULL != indexOfNetwork) *indexOfNetwork = index;
@@ -475,9 +476,16 @@ cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
             break;
         }
     }
-    pthread_mutex_unlock (&system->lock);
+    if (needLock) pthread_mutex_unlock (&system->lock);
 
     return network;
+}
+
+static BRCryptoNetwork
+cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
+                                        const char *uids,
+                                        size_t *indexOfNetwork) {
+    return cryptoSystemGetNetworkForUidsWithIndexNeedLock (system, uids, indexOfNetwork, true);
 }
 
 extern BRCryptoNetwork
@@ -698,10 +706,17 @@ cryptoSystemCreateWalletManager (BRCryptoSystem system,
 
 private_extern void
 cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
-                                  OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
+                                   OwnershipKept BRArrayOf (BRCryptoClientCurrencyBundle) bundles) {
+
+    // Save the bundles straight away
+    for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++)
+        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
+
+    pthread_mutex_lock (&system->lock);
+
     // Partition `bundles` by `network`
 
-    size_t networksCount = cryptoSystemGetNetworksCount(system);
+    size_t networksCount = array_count(system->networks);
     BRArrayOf (BRCryptoClientCurrencyBundle) bundlesForNetworks[networksCount];
 
     for (size_t index = 0; index < networksCount; index++)
@@ -709,17 +724,19 @@ cryptoSystemHandleCurrencyBundles (BRCryptoSystem system,
 
     size_t networkIndex = 0;
     for (size_t bundleIndex = 0; bundleIndex < array_count(bundles); bundleIndex++) {
-        fileServiceSave (system->fileService, FILE_SERVICE_TYPE_CURRENCY_BUNDLE, bundles[bundleIndex]);
-
-        BRCryptoNetwork network = cryptoSystemGetNetworkForUidsWithIndex (system, bundles[bundleIndex]->bid, &networkIndex);
+        BRCryptoNetwork network = cryptoSystemGetNetworkForUidsWithIndexNeedLock (system, bundles[bundleIndex]->bid, &networkIndex, false);
         if (NULL != network)
             array_add (bundlesForNetworks[networkIndex], bundles[bundleIndex]);
     }
+
+    // Add bundles applicable to each network
 
     for (size_t index = 0; index < networksCount; index++) {
         cryptoNetworkAddCurrencyAssociationsFromBundles (system->networks[index], bundlesForNetworks[index]);
         array_free (bundlesForNetworks[index]);
     }
+
+    pthread_mutex_unlock (&system->lock);
 }
 
 // MARK: - System Control
