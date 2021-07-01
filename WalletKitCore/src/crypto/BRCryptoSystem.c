@@ -472,6 +472,7 @@ cryptoSystemGetNetworkForUidsWithIndex (BRCryptoSystem system,
         if (0 == strcmp (uids, cryptoNetworkGetUids(system->networks[index]))) {
             if (NULL != indexOfNetwork) *indexOfNetwork = index;
             network = cryptoNetworkTake (system->networks[index]);
+            break;
         }
     }
     pthread_mutex_unlock (&system->lock);
