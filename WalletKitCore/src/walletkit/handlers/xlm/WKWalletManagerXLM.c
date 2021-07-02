@@ -162,6 +162,8 @@ wkWalletManagerEstimateFeeBasisXLM (WKWalletManager manager,
                                          OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
     BRStellarFeeBasis xlmFeeBasis;
+
+    // No margin needed.
     xlmFeeBasis.pricePerCostFactor = (BRStellarAmount) value.u64[0];
     xlmFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
 

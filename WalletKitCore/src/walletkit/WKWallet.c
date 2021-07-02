@@ -233,7 +233,7 @@ wkWalletEventExtractFeeBasisUpdate (WKWalletEvent event,
 private_extern WKWalletEvent
 wkWalletEventCreateFeeBasisEstimated (WKStatus status,
                                           WKCookie cookie,
-                                          OwnershipGiven WKFeeBasis basis) {
+                                          OwnershipKept WKFeeBasis basis) {
     WKWalletEvent event = wkWalletEventCreate (WK_WALLET_EVENT_FEE_BASIS_ESTIMATED);
 
     event->u.feeBasisEstimated.status = status;

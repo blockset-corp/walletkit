@@ -117,12 +117,12 @@ typedef void
 
 typedef WKFeeBasis
 (*WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (WKWalletManager cwm,
-                                                               WKNetworkFee networkFee,
-                                                               WKFeeBasis initialFeeBasis,
-                                                               double costUnits,
-                                                               size_t attributesCount,
-                                                               OwnershipKept const char **attributeKeys,
-                                                               OwnershipKept const char **attributeVals);
+                                                         WKTransfer transfer,
+                                                         WKNetworkFee networkFee,
+                                                         double costUnits,
+                                                         size_t attributesCount,
+                                                         OwnershipKept const char **attributeKeys,
+                                                         OwnershipKept const char **attributeVals);
 
 typedef WKWalletSweeperStatus
 (*WKWalletManagerWalletSweeperValidateSupportedHandler) (WKWalletManager cwm,
@@ -298,12 +298,12 @@ wkWalletManagerRecoverTransferAttributesFromTransferBundle (WKWallet wallet,
 
 private_extern WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimate (WKWalletManager cwm,
-                                                   WKNetworkFee networkFee,
-                                                   WKFeeBasis initialFeeBasis,
-                                                   double costUnits,
-                                                   size_t attributesCount,
-                                                   OwnershipKept const char **attributeKeys,
-                                                   OwnershipKept const char **attributeVals);
+                                               WKTransfer transfer,
+                                               WKNetworkFee networkFee,
+                                               double costUnits,
+                                               size_t attributesCount,
+                                               OwnershipKept const char **attributeKeys,
+                                               OwnershipKept const char **attributeVals);
 
 static inline void
 wkWalletManagerGenerateEvent (WKWalletManager manager,

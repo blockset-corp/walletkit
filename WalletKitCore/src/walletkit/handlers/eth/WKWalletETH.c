@@ -14,8 +14,6 @@
 #define DEFAULT_ETHER_GAS_PRICE      2ull  // 2 GWEI
 #define DEFAULT_ETHER_GAS_PRICE_UNIT GWEI
 
-#define DEFAULT_ETHER_GAS_LIMIT    21000ull
-
 extern WKWalletETH
 wkWalletCoerce (WKWallet wallet) {
     assert (WK_NETWORK_TYPE_ETH == wallet->type);
@@ -171,7 +169,6 @@ wkWalletCreateTransferETH (WKWallet  wallet,
 
     BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = wkFeeBasisAsETH (estimatedFeeBasis);
-    BREthereumGas      ethGasLimit      = ethFeeBasisGetGasLimit(ethFeeBasis);
     BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = wkAddressAsETH (target);
 
@@ -192,9 +189,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
                           wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
                           wkTransferProvideOriginatingAmount (ethToken, value),
                           ethFeeBasisGetGasPrice(ethFeeBasis),
-                          (DEFAULT_ETHER_GAS_LIMIT == ethGasLimit.amountOfGas && (NULL == data || '\0' == data[0])
-                           ? ethGasLimit
-                           : gasApplyLimitMargin (ethGasLimit)),
+                          ethFeeBasisGetGasLimit(ethFeeBasis),
                           data,
                           nonce);
 

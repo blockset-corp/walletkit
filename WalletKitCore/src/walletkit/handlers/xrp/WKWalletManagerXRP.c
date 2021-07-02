@@ -168,7 +168,10 @@ wkWalletManagerEstimateFeeBasisXRP (WKWalletManager manager,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
+
+    // No margin needed.
     BRRippleUnitDrops fee = value.u64[0];
+
     return wkFeeBasisCreateAsXRP (wallet->unitForFee, fee);
 }
 

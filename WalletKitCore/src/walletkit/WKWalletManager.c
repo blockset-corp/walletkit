@@ -943,6 +943,8 @@ wkWalletManagerEstimateFeeBasis (WKWalletManager manager,
                                      WKNetworkFee fee,
                                      size_t attributesCount,
                                      OwnershipKept WKTransferAttribute *attributes) {
+
+    // Margin will be added, if appropriate for `manager`
     WKFeeBasis feeBasis = manager->handlers->estimateFeeBasis (manager,
                                                                      wallet,
                                                                      cookie,
@@ -1235,16 +1237,16 @@ wkWalletManagerRecoverTransferAttributesFromTransferBundle (WKWallet wallet,
 
 private_extern WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimate (WKWalletManager cwm,
-                                                   WKNetworkFee networkFee,
-                                                   WKFeeBasis initialFeeBasis,
-                                                   double costUnits,
-                                                   size_t attributesCount,
-                                                   OwnershipKept const char **attributeKeys,
-                                                   OwnershipKept const char **attributeVals) {
+                                               WKTransfer transfer,
+                                               WKNetworkFee networkFee,
+                                               double costUnits,
+                                               size_t attributesCount,
+                                               OwnershipKept const char **attributeKeys,
+                                               OwnershipKept const char **attributeVals) {
     assert (NULL != cwm->handlers->recoverFeeBasisFromFeeEstimate); // not supported by chain
     return cwm->handlers->recoverFeeBasisFromFeeEstimate (cwm,
+                                                          transfer,
                                                           networkFee,
-                                                          initialFeeBasis,
                                                           costUnits,
                                                           attributesCount,
                                                           attributeKeys,

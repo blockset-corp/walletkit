@@ -516,13 +516,17 @@ public final class Wallet: Equatable {
     public typealias EstimateFeeHandler = (Result<TransferFeeBasis,FeeEstimationError>) -> Void
 
     ///
-    /// Estimate the fee for a transfer with `amount` from `wallet`.  If provided use the `feeBasis`
-    /// otherwise use the wallet's `defaultFeeBasis`
+    /// Estimate the `TransferFeeBasis` for a transfer with `amount` from `wallet`.  The result
+    /// will have margin applied if appropriate for the `target`.  Specifically, some targets for
+    /// some blockchains involve 'Smart Contracts' which may have some uncertainty in their 'cost
+    /// units'.  On a blockchain-specific basis a blockchain-specific amount of margin is added
+    /// to the 'cost units' - thereby ensuring high reliabitly in transfer submission.
     ///
     /// - Parameters:
     ///   - target: the transfer's target address
     ///   - amount: the transfer amount MUST BE GREATER THAN 0
     ///   - fee: the network fee (aka priority)
+    ///   - attributes: arbitrary, generally Network-specific, attributes
     ///   - completion: handler function
     ///
     public func estimateFee (target: Address,

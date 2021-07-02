@@ -298,8 +298,7 @@ wkWalletManagerEstimateFeeBasisETH (WKWalletManager manager,
     wkClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
-                                        networkFee,
-                                        feeBasis);
+                                        networkFee);
 
     wkTransferGive (transfer);
     wkFeeBasisGive (feeBasis);
@@ -310,15 +309,23 @@ wkWalletManagerEstimateFeeBasisETH (WKWalletManager manager,
 
 static WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimateETH (WKWalletManager cwm,
-                                                      WKNetworkFee networkFee,
-                                                      WKFeeBasis initialFeeBasis,
-                                                      double costUnits,
-                                                      size_t attributesCount,
-                                                      OwnershipKept const char **attributeKeys,
-                                                      OwnershipKept const char **attributeVals) {
-    BREthereumFeeBasis feeBasis = ethFeeBasisCreate (ethGasCreate ((uint64_t) costUnits),
-                                                     wkNetworkFeeAsETH (networkFee));
-    return wkFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit, feeBasis);
+                                                  WKTransfer transfer,
+                                                  WKNetworkFee networkFee,
+                                                  double costUnits,
+                                                  size_t attributesCount,
+                                                  OwnershipKept const char **attributeKeys,
+                                                  OwnershipKept const char **attributeVals) {
+    WKTransferETH transferETH = wkTransferCoerceETH(transfer);
+    assert (NULL != transferETH->originatingTransaction);
+    
+    BREthereumTransaction ethTransaction = transferETH->originatingTransaction;
+    BREthereumGas         ethGasLimit    = ethGasCreate((uint64_t) costUnits);
+
+    // Apply a margin
+    BREthereumGas ethGasLimitWithMargin  = ethTransactionApplyGasLimitMargin (ethTransaction, ethGasLimit);
+
+    return wkFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit,
+                                  ethFeeBasisCreate (ethGasLimitWithMargin, wkNetworkFeeAsETH (networkFee)));
 }
 
 static void
