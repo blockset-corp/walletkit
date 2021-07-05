@@ -38,6 +38,7 @@ import android.widget.Toast;
 import com.blockset.walletkit.Network;
 import com.blockset.walletkit.NetworkPeer;
 import com.blockset.walletkit.NetworkType;
+import com.blockset.walletkit.PaymentProtocolRequest;
 import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.Transfer;
@@ -91,6 +92,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     private boolean isBitcoin;
     private Adapter transferAdapter;
     private ClipboardManager clipboardManager;
+    private ArrayList<PaymentProtocolRequestType> availablePaymentProtocols = new ArrayList();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,19 +107,32 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
             return;
         }
 
+        Network net = wallet.getWalletManager().getNetwork();
         String currencyCode = wallet.getCurrency().getCode().toLowerCase();
-        NetworkType networkType = wallet.getWalletManager().getNetwork().getType();
+        NetworkType networkType = net.getType();
         isBitcoin = NetworkType.BTC == networkType || NetworkType.BCH == networkType;
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
+        // Send currency must be contingent on available funds
         Button sendView = findViewById(R.id.send_view);
-        sendView.setOnClickListener(v -> TransferCreateSendActivity.start(TransferListActivity.this, wallet));
+        if (wallet.getBalance().isZero())
+            sendView.setEnabled(false);
+        else
+            sendView.setOnClickListener(v -> TransferCreateSendActivity.start(TransferListActivity.this, wallet));
 
         Button recvView = findViewById(R.id.receive_view);
         recvView.setOnClickListener(v -> copyReceiveAddress());
 
+        // Payment is dependent on available payment protocols for this wallet.
         Button payView = findViewById(R.id.pay_view);
-        payView.setOnClickListener(v -> showPaymentMenu(TransferListActivity.this, wallet));
+        for (PaymentProtocolRequestType pprt :PaymentProtocolRequestType.values()) {
+            if (PaymentProtocolRequest.checkPaymentMethodSupported(wallet, pprt))
+                availablePaymentProtocols.add(pprt);
+        }
+        if (availablePaymentProtocols.size() > 0)
+            payView.setOnClickListener(v -> showPaymentMenu(TransferListActivity.this, wallet));
+        else
+            payView.setEnabled(false);
 
         Button sweepView = findViewById(R.id.sweep_view);
         sweepView.setOnClickListener(v -> TransferCreateSweepActivity.start(TransferListActivity.this, wallet));
@@ -340,18 +355,19 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     }
 
     private void showPaymentMenu(Activity context, Wallet wallet) {
+        String[] availablePaymentMethods = new String[availablePaymentProtocols.size()];
+        for (int choiceNum = 0;choiceNum < availablePaymentProtocols.size(); choiceNum++) {
+            availablePaymentMethods[choiceNum] =  availablePaymentProtocols.get(choiceNum).toString();
+        }
         runOnUiThread(() -> new AlertDialog.Builder(this)
                 .setTitle("Payment Protocol")
-                .setSingleChoiceItems(new String[]{PaymentProtocolRequestType.BITPAY.name(), PaymentProtocolRequestType.BIP70.name()},
-                        -1,
-                        (d, w) -> {
-                            switch (w) {
-                                case 0: TransferCreatePaymentActivity.start(context, wallet, PaymentProtocolRequestType.BITPAY); break;
-                                case 1: TransferCreatePaymentActivity.start(context, wallet, PaymentProtocolRequestType.BIP70); break;
-                                default: break;
-                            };
-                            d.dismiss();
-                        })
+                .setNegativeButton("Cancel", (d,w) -> {})
+                .setPositiveButton("Ok", (d,w) -> {
+                    int selected = ((AlertDialog)d).getListView().getCheckedItemPosition();
+                    TransferCreatePaymentActivity.start(context, wallet, availablePaymentProtocols.get(selected));
+                    d.dismiss();
+                })
+                .setSingleChoiceItems(availablePaymentMethods,0, null)
                 .show());
     }
 

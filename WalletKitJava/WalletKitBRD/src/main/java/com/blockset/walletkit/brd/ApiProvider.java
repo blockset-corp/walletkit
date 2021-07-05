@@ -9,6 +9,7 @@ package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.Network;
+import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.Unit;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.SystemClient;
@@ -112,6 +113,12 @@ public final class ApiProvider implements Api.Provider {
         @Override
         public Optional<com.blockset.walletkit.PaymentProtocolRequest> createRequestForBip70(Wallet wallet, byte[] serialization) {
             return PaymentProtocolRequest.createForBip70(wallet, serialization).transform(r -> r);
+        }
+
+        @Override
+        public boolean checkPaymentMethodSupported(Wallet                       wallet,
+                                                   PaymentProtocolRequestType   protocolType) {
+            return PaymentProtocolRequest.checkPaymentMethodSupported(wallet, protocolType);
         }
 
         @Override
