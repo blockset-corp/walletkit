@@ -164,6 +164,8 @@ wkWalletManagerEstimateFeeBasisHBAR (WKWalletManager manager,
                                          OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
     BRHederaFeeBasis hbarFeeBasis;
+
+    // No margin needed.
     hbarFeeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) value.u64[0];
     hbarFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
     

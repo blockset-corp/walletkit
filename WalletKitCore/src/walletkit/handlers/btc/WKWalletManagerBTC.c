@@ -171,6 +171,7 @@ wkWalletManagerEstimateFeeBasisBTC (WKWalletManager cwm,
     uint64_t btcAmount   = wkAmountGetIntegerRaw (amount, &overflow);
     assert(WK_FALSE == overflow);
 
+    // No margin needed.
     uint64_t btcFee = (0 == btcAmount ? 0 : btcWalletFeeForTxAmountWithFeePerKb (btcWallet, btcFeePerKB, btcAmount));
 
     return wkFeeBasisCreateAsBTC (wallet->unitForFee, btcFee, btcFeePerKB, WK_FEE_BASIS_BTC_SIZE_UNKNOWN);

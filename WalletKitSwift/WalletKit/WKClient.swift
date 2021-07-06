@@ -166,10 +166,12 @@ public protocol SystemClient {
     // Transaction Fee
     
     typealias TransactionFee = (
+        // This is the best estimate of the costUnits needed to include the transaction in the
+        // blockchain.  It is does not include margin; it might be an upper limit.
         costUnits: UInt64,
         properties: Dictionary<String,String>?
     )
-    
+
     func estimateTransactionFee (blockchainId: String,
                                  transaction: Data,
                                  completion: @escaping (Result<TransactionFee, SystemClientError>) -> Void)
