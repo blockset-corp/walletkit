@@ -125,16 +125,16 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_BSV, BSV)
 // MARK: - LTC
 
 #define NETWORK_NAME    "Litecoin"
-DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-mainnet", NETWORK_NAME, "mainnet", true, 2056308, 6, 10 * 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "2", "10m", 20 * 60 * 1000)
+DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-mainnet", NETWORK_NAME, "mainnet", true, 2056308, 12, (5*60)/2)  // 2.5 min
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "1", "60m", 60 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-mainnet",     "litecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-mainnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
 DEFINE_ADDRESS_SCHEMES  ("litecoin-mainnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_ADDRESS_SCHEME_BTC_LEGACY)
 DEFINE_MODES            ("litecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
 
-DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-testnet", NETWORK_NAME, "testnet", false, 1903181, 6, 10 * 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "2", "10m", 20 * 60 * 1000)
+DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-testnet", NETWORK_NAME, "testnet", false, 1903181, 12, (5*60)/2)  // 2.5 min
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "1", "60m", 60 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-testnet",     "litecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-testnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
@@ -150,21 +150,21 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_LTC, LTC)
 // MARK: - DOGE
 
 #define NETWORK_NAME    "Dogecoin"
-DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-mainnet", NETWORK_NAME, "mainnet", true, 3744046, 6, 1 * 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-mainnet", "550000", "1m", 1 * 60 * 1000) // 1 DOGE / 1000 bytes = 10^8/1000 bytes = 100,000/byte
+DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-mainnet", NETWORK_NAME, "mainnet", true, 3744046, 40, 1 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-mainnet", "400000", "10m", 10 * 60 * 1000) // 1 DOGE / 240 bytes => 400,000 SAT/byte
 DEFINE_CURRENCY ("dogecoin-mainnet",     "dogecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_DOGE,  "native",   NULL,   true)
 DEFINE_UNIT ("dogecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
 DEFINE_UNIT ("dogecoin-mainnet:__native__",      NETWORK_NAME, "doge",     8,      "Ð")
 DEFINE_ADDRESS_SCHEMES  ("dogecoin-mainnet", WK_ADDRESS_SCHEME_BTC_LEGACY)
 DEFINE_MODES            ("dogecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
 
-DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-testnet", NETWORK_NAME, "testnet", false, 3194118, 6, 1 * 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-testnet", "550000", "1m", 1 * 60 * 1000)
+DEFINE_NETWORK (WK_NETWORK_TYPE_DOGE,  "dogecoin-testnet", NETWORK_NAME, "testnet", false, 3194118, 40, 1 * 60)
+DEFINE_NETWORK_FEE_ESTIMATE ("dogecoin-testnet", "400000", "10m", 10 * 60 * 1000)
 DEFINE_CURRENCY ("dogecoin-testnet",     "dogecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_DOGE,  "native",   NULL,   true)
 DEFINE_UNIT ("dogecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
 DEFINE_UNIT ("dogecoin-testnet:__native__",      NETWORK_NAME, "doge",     8,      "Ð")
 DEFINE_ADDRESS_SCHEMES  ("dogecoin-testnet", WK_ADDRESS_SCHEME_BTC_LEGACY)
-#if HAS_BSV_TESTNET
+#if HAS_DOGE_TESTNET
 DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_API_ONLY,  WK_SYNC_MODE_P2P_ONLY)
 #else
 DEFINE_MODES            ("dogecoin-testnet", WK_SYNC_MODE_P2P_ONLY)
@@ -203,7 +203,7 @@ DEFINE_CURRENCY ("ethereum-ropsten",    "ethereum-ropsten:0x722dd3f80bac40c951b5
     DEFINE_UNIT ("ethereum-ropsten:0x722dd3f80bac40c951b51bdd28dd19d435762180",      "TST Token",             "tst",       18,     "TST")
 DEFINE_ADDRESS_SCHEMES  ("ethereum-ropsten", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("ethereum-ropsten", WK_SYNC_MODE_API_ONLY)
-#endif
+#endif // HAS_ETH_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_ETH, ETH)
 #undef NETWORK_NAME
 
@@ -226,7 +226,7 @@ DEFINE_CURRENCY ("ripple-testnet",     "ripple-testnet:__native__",   NETWORK_NA
     DEFINE_UNIT ("ripple-testnet:__native__",      NETWORK_NAME, "xrp",       6,      "XRP")
 DEFINE_ADDRESS_SCHEMES  ("ripple-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("ripple-testnet", WK_SYNC_MODE_API_ONLY)
-#endif
+#endif // HAS_XRP_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_XRP, XRP)
 #undef NETWORK_NAME
 
@@ -249,7 +249,7 @@ DEFINE_CURRENCY ("hedera-testnet",     "hedera-testnet:__native__",   NETWORK_NA
     DEFINE_UNIT ("hedera-testnet:__native__",  NETWORK_NAME,  "hbar",   8,  "ℏ")
 DEFINE_ADDRESS_SCHEMES  ("hedera-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("hedera-testnet", WK_SYNC_MODE_API_ONLY)
-#endif
+#endif // HAS_HBAR_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_HBAR, HBAR)
 #undef NETWORK_NAME
 
@@ -272,7 +272,7 @@ DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME
     DEFINE_UNIT ("tezos-testnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
 DEFINE_ADDRESS_SCHEMES  ("tezos-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("tezos-testnet", WK_SYNC_MODE_API_ONLY)
-#endif
+#endif // HAS_XTZ_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_XTZ, XTZ)
 #undef NETWORK_NAME
 
@@ -295,7 +295,7 @@ DEFINE_CURRENCY ("stellar-testnet",     "stellar-testnet:__native__",   NETWORK_
     DEFINE_UNIT ("stellar-testnet:__native__",  "lumen",       "txlm",     7,  "tXLM")
 DEFINE_ADDRESS_SCHEMES  ("stellar-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
-#endif
+#endif // HAS_XLM_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_XLM, XLM)
 #undef NETWORK_NAME
 
