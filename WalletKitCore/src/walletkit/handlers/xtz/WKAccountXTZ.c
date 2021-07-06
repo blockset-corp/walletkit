@@ -27,13 +27,8 @@ wkAccountCreateFromBytesXTZ(
 }
 
 static void
-wkAccountReleaseXTZ(WKAccount account) {
-
-    BRTezosAccount xtz;
-
-    xtz = (BRTezosAccount) wkAccountAs (account,
-                                        WK_NETWORK_TYPE_XTZ);
-    tezosAccountFree (xtz);
+wkAccountReleaseXTZ(WKAccountDetails accountDetails) {
+    tezosAccountFree ((BRTezosAccount)accountDetails);
 }
 
 static size_t

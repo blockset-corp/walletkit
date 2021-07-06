@@ -10,7 +10,17 @@
 //
 
 import UIKit
-import WalletKit
+@testable import WalletKit
+
+extension Amount {
+    static func max (_ a: Amount, _ b: Amount) -> Amount {
+        return a > b ? a : b
+    }
+
+    static func min (_ a: Amount, _ b: Amount) -> Amount {
+        return a < b ? a : b
+    }
+}
 
 class TransferCreateSendController: TransferCreateController,
 UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
@@ -131,8 +141,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 else { self.submitTransferFailed("invalid target address"); return }
 
             let unit = self.wallet.unit
-            let amount = Amount.create (double: Double(value), unit: unit)
-            print ("APP: TVV: Submit Amount: \(amount)");
+            let amount = Amount.min (Amount.max (Amount.create (double: Double(value), unit: unit), self.minimum), self.maximum)
+            print ("APP: TVV: Submit Amount: \(amount), \(amount.integerRawSmall)");
 
             guard let transferFeeBasis = self.feeBasis
                 else { self.submitTransferFailed ("no fee basis"); return }
@@ -173,11 +183,13 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
             DispatchQueue.main.async {
                 self.minimum = minimum
 
-                self.amountSlider.minimumValue = Float (minimum.double (as: self.wallet.unit) ?? 0.0)
+                let minimumAsDouble = minimum.double (as: self.wallet.unit) ?? 0.0
+
+                self.amountSlider.minimumValue = Float (minimumAsDouble)
                 self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
 
-                self.amountSlider.value = max (self.amountSlider.minimumValue, self.amountSlider.value)
-                self.amountLabel.text = self.amount().description
+                self.amountSlider.value = max (Float(minimumAsDouble), self.amountSlider.value)
+                self.amountLabel.text = self.amountSlider.value.description
             }
         }
 
@@ -190,12 +202,14 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
             }
             DispatchQueue.main.async {
                 self.maximum = maximum
+                let maximumAsDouble = maximum.double (as: self.wallet.unit) ?? 0.0
 
-                self.amountSlider.maximumValue = Float (maximum.double (as: self.wallet.unit) ?? 0.0)
+                // Prone to Float <==> Double rounding errors
+                self.amountSlider.maximumValue = Float (maximumAsDouble)
                 self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
 
-                self.amountSlider.value = min (self.amountSlider.maximumValue, self.amountSlider.value)
-                self.amountLabel.text = self.amount().description
+                self.amountSlider.value = min (Float(maximumAsDouble), self.amountSlider.value)
+                self.amountLabel.text = self.amountSlider.value.description
             }
         }
     }

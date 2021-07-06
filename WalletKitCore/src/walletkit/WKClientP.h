@@ -199,8 +199,8 @@ struct WKClientCallbackStateRecord {
         struct {
             WKHash hash;
             WKCookie cookie;
+            WKTransfer   transfer;
             WKNetworkFee networkFee;
-            WKFeeBasis initialFeeBasis;
         } estimateTransactionFee;
         // ...
     } u;
@@ -383,8 +383,7 @@ extern void
 wkClientQRYEstimateTransferFee (WKClientQRYManager qry,
                                     WKCookie   cookie,
                                     WKTransfer transfer,
-                                    WKNetworkFee networkFee,
-                                    WKFeeBasis initialFeeBasis);
+                                    WKNetworkFee networkFee);
 
 static inline WKClientSync
 wkClientQRYManagerAsSync (WKClientQRYManager qry) {

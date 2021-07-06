@@ -33,13 +33,8 @@ wkAccountCreateFromBytesETH(
 }
 
 static void
-wkAccountReleaseETH(WKAccount account) {
-
-    BREthereumAccount eth;
-
-    eth = (BREthereumAccount) wkAccountAs (account,
-                                           WK_NETWORK_TYPE_ETH);
-    ethAccountRelease (eth);
+wkAccountReleaseETH(WKAccountDetails accountDetails) {
+    ethAccountRelease ((BREthereumAccount)accountDetails);
 }
 
 static size_t

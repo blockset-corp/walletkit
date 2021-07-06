@@ -22,6 +22,12 @@
 
 #include "tezos/BRTezosAccount.h"
 
+#define TEZOS_FEE_PADDING_PERCENT           (10)
+
+static int64_t
+wkWalletManagerPadValueXTZ (int64_t value) {
+    return ((100 + TEZOS_FEE_PADDING_PERCENT) * value) / 100;
+}
 
 // MARK: - Events
 
@@ -176,8 +182,7 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
     wkClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
-                                        networkFee,
-                                        feeBasis);
+                                        networkFee);
 
     wkTransferGive (transfer);
     wkFeeBasisGive (feeBasis);
@@ -237,8 +242,10 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsXTZ (txId);
     
-    // A transaction may include a "burn" transfer to target address 'unknown' in addition to the normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed address.
-    // It must be included since the burn amount is subtracted from wallet balance, but is not considered a normal fee.
+    // A transaction may include a "burn" transfer to target address 'unknown' in addition to the
+    // normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed
+    // address.  It must be included since the burn amount is subtracted from wallet balance, but
+    // is not considered a normal fee.
     WKAddress target = wkAddressCreateAsXTZ (toAddress);
     WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDSAndTargetXTZ (wallet, hash, bundle->uids, target);
     
@@ -279,27 +286,33 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
 
 static WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (WKWalletManager cwm,
-                                                      WKNetworkFee networkFee,
-                                                      WKFeeBasis initialFeeBasis,
-                                                      double costUnits,
-                                                      size_t attributesCount,
-                                                      OwnershipKept const char **attributeKeys,
-                                                      OwnershipKept const char **attributeVals) {
+                                                  WKTransfer transfer,
+                                                  WKNetworkFee networkFee,
+                                                  double costUnits,
+                                                  size_t attributesCount,
+                                                  OwnershipKept const char **attributeKeys,
+                                                  OwnershipKept const char **attributeVals) {
     bool parseError;
-    
-    int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
+
+    // get the serialized txn size from the estimation payload
+    WKFeeBasis initialFeeBasis = wkTransferGetFeeBasis(transfer);
+    double sizeInKBytes = wkFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.initial.sizeInKBytes;
+    wkFeeBasisGive(initialFeeBasis);
+
+    BRTezosUnitMutez mutezPerKByte = tezosMutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
+
+    int64_t gasUsed     = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
     int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
-    int64_t counter = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("counter", attributesCount, attributeKeys, attributeVals), &parseError);
+    int64_t counter     = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("counter",      attributesCount, attributeKeys, attributeVals), &parseError);
+
     // increment counter
     counter += 1;
-    // add 10% padding to gas/storage limits
-    gasUsed = (int64_t)(gasUsed * 1.1);
-    storageUsed = (int64_t)(storageUsed * 1.1);
-    BRTezosUnitMutez mutezPerKByte = tezosMutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
-    
-    // get the serialized txn size from the estimation payload
-    double sizeInKBytes = wkFeeBasisCoerceXTZ(initialFeeBasis)->xtzFeeBasis.u.initial.sizeInKBytes;
 
+    // add 10% padding to gas & storage limits
+    gasUsed     = wkWalletManagerPadValueXTZ (gasUsed);
+    storageUsed = wkWalletManagerPadValueXTZ (storageUsed);
+
+    // Create a feeBasis w/ margin applied
     BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerKByte,
                                                             sizeInKBytes,
                                                             gasUsed,

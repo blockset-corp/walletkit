@@ -370,7 +370,16 @@ wkAccountValidateSerialization (WKAccount account,
 
     if (mpkSize != mpkBytesCount) return WK_FALSE;
 
-    return AS_WK_BOOLEAN (0 == memcmp (mpkBytesToCheck, mpkBytes, mpkBytesCount));
+    if (0 != memcmp (mpkBytesToCheck, mpkBytes, mpkBytesCount))
+        return WK_FALSE;
+    
+    // As a last measure, verify the checksum of the serialized bytes
+    uint16_t checksum = checksumFletcher16 (&bytes[chkSize], (bytesCount - chkSize));
+    uint16_t bytesChecksum = UInt16GetBE (bytes);
+    if (checksum != bytesChecksum)
+        return WK_FALSE;
+    
+    return WK_TRUE;
 }
 
 extern WKTimestamp

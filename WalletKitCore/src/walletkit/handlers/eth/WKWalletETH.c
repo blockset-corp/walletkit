@@ -14,8 +14,6 @@
 #define DEFAULT_ETHER_GAS_PRICE      2ull  // 2 GWEI
 #define DEFAULT_ETHER_GAS_PRICE_UNIT GWEI
 
-#define DEFAULT_ETHER_GAS_LIMIT    21000ull
-
 extern WKWalletETH
 wkWalletCoerce (WKWallet wallet) {
     assert (WK_NETWORK_TYPE_ETH == wallet->type);
@@ -182,17 +180,18 @@ wkWalletCreateTransferETH (WKWallet  wallet,
     // When creating an BREthereumTransaction, we'll apply margin to the gasLimit in `ethFeeBasis`.
     // This helps to ensure that the transaction will be accepted into the blockchain rather than
     // be rejected with 'not enough gas'.  We apply this no matter the transaction type, for ETH or
-    // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.
-    //
-    // The created `ethTransaction` is unsigned and thus doesn't have a hash.
+    // TOK.  With an ETH transaction the target address might be a 'Smart Contract'.  However, if
+    // the estimated `ethGasLimit` is 21000, we won't apply a margin as the target address cannot
+    // be a Smart Contract (a default function will always have a gasLimit above 21000).
+
     BREthereumTransaction ethTransaction =
     ethTransactionCreate (ethSourceAddress,
-                       wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
-                       wkTransferProvideOriginatingAmount (ethToken, value),
-                       ethFeeBasisGetGasPrice(ethFeeBasis),
-                       gasApplyLimitMargin (ethFeeBasisGetGasLimit(ethFeeBasis)),
-                       data,
-                       nonce);
+                          wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
+                          wkTransferProvideOriginatingAmount (ethToken, value),
+                          ethFeeBasisGetGasPrice(ethFeeBasis),
+                          ethFeeBasisGetGasLimit(ethFeeBasis),
+                          data,
+                          nonce);
 
     free (data);
 

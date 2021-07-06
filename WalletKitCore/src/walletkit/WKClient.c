@@ -433,15 +433,15 @@ wkClientCallbackStateCreateSubmitTransaction (WKWallet wallet,
 
 static WKClientCallbackState
 wkClientCallbackStateCreateEstimateTransactionFee (WKHash hash,
-                                                       WKCookie cookie,
-                                                       OwnershipKept WKNetworkFee networkFee,
-                                                       OwnershipKept WKFeeBasis initialFeeBasis,
-                                                       size_t rid) {
+                                                   WKCookie cookie,
+                                                   OwnershipKept WKTransfer transfer,
+                                                   OwnershipKept WKNetworkFee networkFee,
+                                                   size_t rid) {
     WKClientCallbackState state = wkClientCallbackStateCreate (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE, rid);
 
-    state->u.estimateTransactionFee.cookie = cookie;
+    state->u.estimateTransactionFee.cookie     = cookie;
+    state->u.estimateTransactionFee.transfer   = wkTransferTake   (transfer);
     state->u.estimateTransactionFee.networkFee = wkNetworkFeeTake (networkFee);
-    state->u.estimateTransactionFee.initialFeeBasis = wkFeeBasisTake (initialFeeBasis);
 
     return state;
 }
@@ -464,8 +464,8 @@ wkClientCallbackStateRelease (WKClientCallbackState state) {
 
         case CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE:
             wkHashGive (state->u.estimateTransactionFee.hash);
+            wkTransferGive(state->u.estimateTransactionFee.transfer);
             wkNetworkFeeGive (state->u.estimateTransactionFee.networkFee);
-            wkFeeBasisGive (state->u.estimateTransactionFee.initialFeeBasis);
             break;
 
         default:
@@ -1086,35 +1086,42 @@ typedef struct {
 
 static void
 wkClientHandleEstimateTransactionFee (OwnershipKept WKWalletManager manager,
-                                          OwnershipGiven WKClientCallbackState callbackState,
-                                          WKBoolean success,
-                                          uint64_t costUnits,
-                                          BRArrayOf(char*) attributeKeys,
-                                          BRArrayOf(char*) attributeVals) {
+                                      OwnershipGiven WKClientCallbackState callbackState,
+                                      WKBoolean success,
+                                      uint64_t costUnits,
+                                      BRArrayOf(char*) attributeKeys,
+                                      BRArrayOf(char*) attributeVals) {
     assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
 
     WKStatus status = (WK_TRUE == success ? WK_SUCCESS : WK_ERROR_FAILED);
-    WKCookie cookie = callbackState->u.estimateTransactionFee.cookie;
 
+    WKCookie     cookie     = callbackState->u.estimateTransactionFee.cookie;
+    WKTransfer   transfer   = callbackState->u.estimateTransactionFee.transfer;
     WKNetworkFee networkFee = callbackState->u.estimateTransactionFee.networkFee;
-    WKFeeBasis initialFeeBasis = callbackState->u.estimateTransactionFee.initialFeeBasis;
 
+    // Unused
     WKAmount pricePerCostFactor = wkNetworkFeeGetPricePerCostFactor (networkFee);
+
+    // Leave a uint64_t?
     double costFactor = (double) costUnits;
+
     WKFeeBasis feeBasis = NULL;
     if (WK_TRUE == success)
         feeBasis = wkWalletManagerRecoverFeeBasisFromFeeEstimate (manager,
-                                                                      networkFee,
-                                                                      initialFeeBasis,
-                                                                      costFactor,
-                                                                      array_count(attributeKeys),
-                                                                      (const char**) attributeKeys,
-                                                                      (const char**) attributeVals);
+                                                                  transfer,
+                                                                  networkFee,
+                                                                  costFactor,
+                                                                  array_count(attributeKeys),
+                                                                  (const char**) attributeKeys,
+                                                                  (const char**) attributeVals);
 
     wkWalletGenerateEvent (manager->wallet, wkWalletEventCreateFeeBasisEstimated(status, cookie, feeBasis));
 
     wkFeeBasisGive(feeBasis);
+
+    // Unused
     wkAmountGive (pricePerCostFactor);
+
     wkClientCallbackStateRelease (callbackState);
 }
 
@@ -1182,8 +1189,7 @@ extern void
 wkClientQRYEstimateTransferFee (WKClientQRYManager qry,
                                     WKCookie   cookie,
                                     OwnershipKept WKTransfer transfer,
-                                    OwnershipKept WKNetworkFee networkFee,
-                                    OwnershipKept WKFeeBasis initialFeeBasis) {
+                                    OwnershipKept WKNetworkFee networkFee) {
     WKWalletManager manager = wkWalletManagerTakeWeak(qry->manager);
     if (NULL == manager) return;
 
@@ -1198,11 +1204,12 @@ wkClientQRYEstimateTransferFee (WKClientQRYManager qry,
     size_t rid = qry->requestId++;
     pthread_mutex_unlock (&qry->lock);
 
+    // Provide the transfer itself.
     WKClientCallbackState callbackState = wkClientCallbackStateCreateEstimateTransactionFee (hash,
-                                                                                                       cookie,
-                                                                                                       networkFee,
-                                                                                                       initialFeeBasis,
-                                                                                                       rid);
+                                                                                             cookie,
+                                                                                             transfer,     // taken
+                                                                                             networkFee,   // taken
+                                                                                             rid);
 
     qry->client.funcEstimateTransactionFee (qry->client.context,
                                             wkWalletManagerTake(manager),

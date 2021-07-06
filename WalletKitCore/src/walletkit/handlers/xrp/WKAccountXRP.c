@@ -27,13 +27,8 @@ wkAccountCreateFromBytesXRP(
 }
 
 static void
-wkAccountReleaseXRP(WKAccount account) {
-
-    BRRippleAccount rip;
-
-    rip = (BRRippleAccount) wkAccountAs (account,
-                                         WK_NETWORK_TYPE_XRP);
-    rippleAccountFree (rip);
+wkAccountReleaseXRP(WKAccountDetails accountDetails) {
+    rippleAccountFree ((BRRippleAccount)accountDetails);
 }
 
 static size_t
