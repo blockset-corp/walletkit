@@ -62,6 +62,7 @@ import com.google.common.primitives.UnsignedInteger;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -93,6 +94,13 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     private Adapter transferAdapter;
     private ClipboardManager clipboardManager;
     private ArrayList<PaymentProtocolRequestType> availablePaymentProtocols = new ArrayList();
+
+    void setActionConditionalOnNetwork(Button button, List<NetworkType> netTypes, View.OnClickListener clicker) {
+        if (netTypes.contains(wallet.getWalletManager().getNetwork().getType()))
+            button.setOnClickListener(clicker);
+        else
+            button.setEnabled(false);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,7 +143,31 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
             payView.setEnabled(false);
 
         Button sweepView = findViewById(R.id.sweep_view);
-        sweepView.setOnClickListener(v -> TransferCreateSweepActivity.start(TransferListActivity.this, wallet));
+        setActionConditionalOnNetwork(sweepView, Arrays.asList(NetworkType.BTC, NetworkType.BCH), new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v) {
+                TransferCreateSweepActivity.start(TransferListActivity.this, wallet);
+            }
+        });
+
+        Button delegateView = findViewById(R.id.delegate_view);
+        setActionConditionalOnNetwork(delegateView, Arrays.asList(NetworkType.XTZ), new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        Button exportablePaperView = findViewById(R.id.exportablepaper_view);
+        setActionConditionalOnNetwork(exportablePaperView, Arrays.asList(NetworkType.BTC), new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                TransferCreateExportablePaperActivity.start(TransferListActivity.this, wallet);
+            }
+        });
 
         RecyclerView transfersView = findViewById(R.id.transfer_recycler_view);
         transfersView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
