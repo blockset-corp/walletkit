@@ -159,9 +159,12 @@ public class TransferCreateDelegateActivity extends AppCompatActivity {
 
         @Override
         public void handleData(TransferFeeBasis data) {
-            submit.setEnabled(true);
             feeBasis = data;
-            fee.setText(data.getFee().toString());
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    submit.setEnabled(true);
+                    fee.setText(data.getFee().toString());
+                }});
         }
 
         @Override
@@ -217,6 +220,7 @@ public class TransferCreateDelegateActivity extends AppCompatActivity {
                 if (transfer.isPresent()) {
                     wallet.getWalletManager().submit(transfer.get(),
                             DemoApplication.getPaperKey());
+                    finish();
                 } else {
                     showError("Failed to create transfer");
                 }

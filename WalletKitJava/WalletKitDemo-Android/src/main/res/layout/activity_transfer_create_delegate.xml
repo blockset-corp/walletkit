@@ -111,7 +111,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="Submit" />
+            android:text="Submit"
+            style="?android:attr/buttonBarButtonStyle" />
         </LinearLayout>
 
     </LinearLayout>
