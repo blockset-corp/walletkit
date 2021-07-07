@@ -29,9 +29,6 @@ import com.google.common.base.Optional;
 
 import java.util.logging.Logger;
 
-/** An activity to export wallet address and private key to 'Paper'
- *
- */
 public class TransferCreateExportablePaperActivity extends AppCompatActivity {
 
     private static final Logger Log = Logger.getLogger(TransferCreateExportablePaperActivity.class.getName());

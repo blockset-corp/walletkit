@@ -156,7 +156,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
 
             @Override
             public void onClick(View v) {
-
+                TransferCreateDelegateActivity.start(TransferListActivity.this, wallet);
             }
         });
 

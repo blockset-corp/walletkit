@@ -16,6 +16,9 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
+            android:name="com.blockset.walletkit.demo.TransferCreateDelegateActivity"
+            android:label="Create Delegation"/>
+        <activity
             android:name="com.blockset.walletkit.demo.TransferCreateExportablePaperActivity"
             android:label="Exportable Paper Wallet"/>
         <activity
