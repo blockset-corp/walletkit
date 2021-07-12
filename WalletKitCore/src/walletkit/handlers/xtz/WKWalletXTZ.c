@@ -104,9 +104,11 @@ private_extern bool
 wkWalletNeedsRevealXTZ (WKWallet wallet) {
     assert(wallet);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        // reveal is needed before the first outgoing transfer
+        // reveal is needed before the first outgoing transfer and if the type of any outgoing
+        // transfer is not WK_TRANSFER_STATE_ERRORED (a failed submit).
         WKTransferDirection direction = wkTransferGetDirection (wallet->transfers[index]);
-        if (WK_TRANSFER_SENT == direction) return false;
+        WKTransferStateType type      = wkTransferGetStateType (wallet->transfers[index]);
+        if (WK_TRANSFER_SENT == direction && WK_TRANSFER_STATE_ERRORED != type) return false;
     }
     return true;
 }
