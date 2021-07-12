@@ -2,7 +2,7 @@
 //  BR__Name__Account.c
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-06-17.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.

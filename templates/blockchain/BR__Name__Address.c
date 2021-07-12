@@ -2,7 +2,7 @@
 //  BR__Name__Address.c
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-06-17.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
@@ -26,10 +26,10 @@
 
 #define BLAKE20_BYTES 20
 
-const uint8_t TZ1_PREFIX[3] = { 6, 161, 159 };
-const uint8_t TZ2_PREFIX[3] = { 6, 161, 161 };
-const uint8_t TZ3_PREFIX[3] = { 6, 161, 164 };
-const uint8_t KT_PREFIX[3] = { 2, 90, 121 };
+const uint8_t __SYMBOL__TZ1_PREFIX[3] = { 6, 161, 159 };
+const uint8_t __SYMBOL__TZ2_PREFIX[3] = { 6, 161, 161 };
+const uint8_t __SYMBOL__TZ3_PREFIX[3] = { 6, 161, 164 };
+const uint8_t __SYMBOL__KT_PREFIX[3] = { 2, 90, 121 };
 
 static uint8_t feeAddressBytes[__NAME___ADDRESS_BYTES] = {
     0x42, 0x52, 0x44, //BRD
@@ -118,8 +118,8 @@ __name__AddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen) {
     uint8_t pkh[BLAKE20_BYTES];
     blake2b(pkh, sizeof(pkh), NULL, 0, pubKey, pubKeyLen);
 
-    memcpy(address->bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX));
-    memcpy(address->bytes + sizeof(TZ1_PREFIX), pkh, sizeof(pkh));
+    memcpy(address->bytes, __SYMBOL__TZ1_PREFIX, sizeof(__SYMBOL__TZ1_PREFIX));
+    memcpy(address->bytes + sizeof(__SYMBOL__TZ1_PREFIX), pkh, sizeof(pkh));
     return address;
 }
 
@@ -141,10 +141,10 @@ __name__AddressStringToAddress(const char *input) {
         return NULL;
     }
     
-    if (0 == memcmp(bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
-        || 0 == memcmp(bytes, TZ2_PREFIX, sizeof(TZ2_PREFIX))
-        || 0 == memcmp(bytes, TZ3_PREFIX, sizeof(TZ3_PREFIX))
-        || 0 == memcmp(bytes, KT_PREFIX, sizeof(KT_PREFIX))) {
+    if (0 == memcmp(bytes, __SYMBOL__TZ1_PREFIX, sizeof(__SYMBOL__TZ1_PREFIX))
+        || 0 == memcmp(bytes, __SYMBOL__TZ2_PREFIX, sizeof(__SYMBOL__TZ2_PREFIX))
+        || 0 == memcmp(bytes, __SYMBOL__TZ3_PREFIX, sizeof(__SYMBOL__TZ3_PREFIX))
+        || 0 == memcmp(bytes, __SYMBOL__KT_PREFIX, sizeof(__SYMBOL__KT_PREFIX))) {
         return __name__AddressCreateFromBytes(bytes, length);
     }
     
@@ -202,7 +202,7 @@ extern void __name__AddressGetRawBytes (BR__Name__Address address, uint8_t *buff
 
 extern bool
 __name__AddressIsImplicit (BR__Name__Address address) {
-    return (0 == memcmp(address->bytes, TZ1_PREFIX, sizeof(TZ1_PREFIX))
-            || 0 == memcmp(address->bytes, TZ2_PREFIX, sizeof(TZ1_PREFIX))
-            || 0 == memcmp(address->bytes, TZ3_PREFIX, sizeof(TZ1_PREFIX)));
+    return (0 == memcmp(address->bytes, __SYMBOL__TZ1_PREFIX, sizeof(__SYMBOL__TZ1_PREFIX))
+            || 0 == memcmp(address->bytes, __SYMBOL__TZ2_PREFIX, sizeof(__SYMBOL__TZ1_PREFIX))
+            || 0 == memcmp(address->bytes, __SYMBOL__TZ3_PREFIX, sizeof(__SYMBOL__TZ1_PREFIX)));
 }

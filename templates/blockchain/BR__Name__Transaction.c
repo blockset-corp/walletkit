@@ -2,7 +2,7 @@
 //  BR__Name__Transaction.c
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-06-17.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
@@ -10,7 +10,6 @@
 //
 
 #include "BR__Name__Transaction.h"
-#include "BR__Name__Encoder.h"
 #include "ed25519/ed25519.h"
 #include "blake2/blake2b.h"
 #include <stdio.h>
@@ -20,6 +19,21 @@
 #include <string.h>
 
 #define __NAME___SIGNATURE_BYTES 64
+
+WKData
+__name__SerializeTransaction (BR__Name__Transaction tx) {
+    WKData data = {0};
+    return data;
+}
+
+WKData
+__name__SerializeOperationList (
+        BR__Name__Transaction * tx,
+        size_t txCount,
+        BR__Name__Hash blockHash) {
+    WKData data = {0};
+    return data;
+}
 
 struct BR__Name__TransactionRecord {
     

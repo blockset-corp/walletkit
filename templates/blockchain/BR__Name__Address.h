@@ -2,7 +2,7 @@
 //  BR__Name__Address.h
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-06-17.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
@@ -22,10 +22,10 @@ extern "C" {
 #define __NAME___ADDRESS_BYTES (23)
 
 // address prefixes
-extern const uint8_t TZ1_PREFIX[3];
-extern const uint8_t TZ2_PREFIX[3];
-extern const uint8_t TZ3_PREFIX[3];
-extern const uint8_t KT_PREFIX[3];
+extern const uint8_t __SYMBOL__TZ1_PREFIX[3];
+extern const uint8_t __SYMBOL__TZ2_PREFIX[3];
+extern const uint8_t __SYMBOL__TZ3_PREFIX[3];
+extern const uint8_t __SYMBOL__KT_PREFIX[3];
 
 
 typedef struct BR__Name__AddressRecord *BR__Name__Address;

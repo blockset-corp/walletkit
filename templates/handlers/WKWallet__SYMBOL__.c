@@ -2,7 +2,7 @@
 //  WKWallet__SYMBOL__.c
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-08-27.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.

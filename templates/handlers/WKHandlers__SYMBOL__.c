@@ -2,7 +2,7 @@
 //  WKHandlers__SYMBOL__.c
 //  WalletKitCore
 //
-//  Created by Ed Gamble on 06/22/2021.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2021 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.

@@ -18,6 +18,7 @@
 #define HAS_HBAR_TESTNET    0
 #define HAS_XTZ_TESTNET     0
 #define HAS_XLM_TESTNET     0
+// __CONTROL__
 
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)

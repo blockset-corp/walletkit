@@ -501,6 +501,8 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/stellar/testStellar.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# __NEW_BLOCKCHAIN_IMPL__
+
 # Crypto
 target_sources (corecrypto
                 PRIVATE
@@ -676,6 +678,8 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKWalletManagerXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKXLM.h
         )
+
+# __NEW_HANDLER__
 
 # Crypto Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)

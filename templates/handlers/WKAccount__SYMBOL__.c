@@ -2,7 +2,7 @@
 //  WKAccount__SYMBOL__.c
 //  WalletKitCore
 //
-//  Created by Bryan Goring on 06/15/2021.
+//  Created by __USER__ on __DATE__.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
