@@ -7,6 +7,9 @@
  */
 package com.blockset.walletkit.brd;
 
+import com.blockset.walletkit.nativex.WKCurrency;
+import com.blockset.walletkit.nativex.WKNetwork;
+import com.blockset.walletkit.nativex.WKWallet;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKPayProtReqBitPayAndBip70Callbacks;
 import com.blockset.walletkit.nativex.WKPayProtReqBitPayAndBip70Callbacks.BitPayAndBip70Validator;
@@ -50,6 +53,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /* package */
 final class PaymentProtocolRequest implements com.blockset.walletkit.PaymentProtocolRequest {
+
+
+    static boolean checkPaymentMethodSupported(com.blockset.walletkit.Wallet    w,
+                                               PaymentProtocolRequestType       protocolType) {
+
+        boolean supported = false;
+
+        Wallet wallet = Wallet.from(w);
+        Network network = wallet.getWalletManager().getNetwork();
+        Currency currency = wallet.getCurrency();
+        WKNetwork wkNetwork = network.getCoreBRCryptoNetwork();
+        WKCurrency wkCurrency = currency.getCoreBRCryptoCurrency();
+        WKWallet wkWallet = wallet.getCoreBRCryptoWallet();
+
+        switch (protocolType) {
+            case BIP70:
+                supported = WKPaymentProtocolRequest.validateForBitPay(wkNetwork,
+                                                                       wkCurrency,
+                                                                       wkWallet);
+                break;
+            case BITPAY:
+                supported = WKPaymentProtocolRequest.validateForBip70(wkNetwork,
+                                                                      wkCurrency,
+                                                                      wkWallet);
+                break;
+        }
+
+        return supported;
+    }
 
     /* package */
     static Optional<PaymentProtocolRequest> createForBitPay(com.blockset.walletkit.Wallet w, String json) {

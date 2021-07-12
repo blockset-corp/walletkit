@@ -47,6 +47,7 @@ public final class Api {
     }
 
     public interface PaymentProvider {
+        boolean checkPaymentMethodSupported(Wallet wallet, PaymentProtocolRequestType protocolType);
         Optional<PaymentProtocolRequest> createRequestForBip70(Wallet wallet, byte[] serialization);
         Optional<PaymentProtocolRequest> createRequestForBitPay(Wallet wallet, String json);
         Optional<PaymentProtocolPaymentAck> createAckForBip70(byte[] serialization);

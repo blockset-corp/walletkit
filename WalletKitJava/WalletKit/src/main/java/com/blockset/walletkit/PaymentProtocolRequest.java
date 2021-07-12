@@ -14,6 +14,12 @@ import com.google.common.base.Optional;
 
 public interface PaymentProtocolRequest {
 
+    static boolean checkPaymentMethodSupported(Wallet                     wallet,
+                                               PaymentProtocolRequestType protocolType) {
+        return Api.getProvider().paymentProvider().checkPaymentMethodSupported(wallet,
+                                                                               protocolType);
+    }
+
     static Optional<PaymentProtocolRequest> createForBip70(Wallet wallet, byte[] serialization) {
         return Api.getProvider().paymentProvider().createRequestForBip70(wallet, serialization);
     }
