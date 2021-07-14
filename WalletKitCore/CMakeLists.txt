@@ -503,6 +503,8 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # __NEW_BLOCKCHAIN_IMPL__
 
+# __NEW_BLOCKCHAIN_TEST__
+
 # Crypto
 target_sources (corecrypto
                 PRIVATE

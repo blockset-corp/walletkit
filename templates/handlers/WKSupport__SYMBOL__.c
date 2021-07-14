@@ -3,7 +3,7 @@
 //  WalletKitCore
 //
 //  Created by __USER__ on __DATE__.
-//  Copyright © 2019 Breadwinner AG. All rights reserved.
+//  Copyright © __YEAR__ Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.

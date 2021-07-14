@@ -206,8 +206,10 @@ final class WalletKitCoreTests: XCTestCase {
         runStellarTest()
     }
 
+    // __NEW_BLOCKCHAIN_TEST_IMPL__
+    
     // MARK: - Bitcoin
-
+    
     func testBitcoinSupport () {
         XCTAssert(1 == BRRunSupTests ())
     }
@@ -461,5 +463,7 @@ final class WalletKitCoreTests: XCTestCase {
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
+        
+        // __NEW_BLOCKCHAIN_TEST__
     ]
 }

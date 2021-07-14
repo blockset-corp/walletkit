@@ -49,20 +49,22 @@ set -e
 gen_user=""
 bc_symbol=""
 bc_name=""
-packages=(1 1)
-package_names=("handlers" "blockchain")
+packages=(1 1 1)
+package_names=("handlers" "blockchain" "test")
 output_path="../WalletKitCore"
-output_pkg_paths=("walletkit/handlers" ".")
+output_pkg_paths=("src/walletkit/handlers" "src" "WalletKitCoreTests/test")
 pkg_paths=()
 templates="../templates"
 wk_config_templ="WkConfig.h.tmpl"
-build_bc_templ="cmakelists.bc.tmpl"
-build_hndlr_templ="cmakelists.hndlr.tmpl"
+build_bc_templ="make/cmakelists.bc.tmpl"
+build_hndlr_templ="make/cmakelists.hndlr.tmpl"
+build_test_templ="make/cmakelists.test.tmpl"
 include_testnet=0
 verbose=0
 
 HANDLER_PKG=0
 BLOCKCHAIN_PKG=1
+TESTS_PKG=2
 
 # Simple echo screening desired verbosity
 echov() {
@@ -94,6 +96,7 @@ usage() {
     echo "             output will be generated:"
     echo "                0: handlers package"
     echo "                1: blockchain implementation package"
+    echo "                2: tests"
     echo "             By default all packages are generated"
     echo
     echo "          o: Specifies the output folder for generated code" 
@@ -189,7 +192,7 @@ get_opts() {
 # This function also updates the pkg_paths for each package type (handler/blockchain)
 # with the specific folder names being created for this blockchain
 #
-# param path: The first argument which is the main output path (e.g. 'src')
+# param path: The first argument which is the main output path (e.g. location of WalletKitCore )
 # param bc_folder: The second argument which is the new blockchain specific folder name
 check_create_folders() {
     
@@ -206,8 +209,8 @@ check_create_folders() {
         if [ ${packages[$i]} -ne 0 ]; then
 
             # Remember the final new output package path, per package type
-            pkg_paths[$i]=$path/src/${output_pkg_paths[$i]}/$bc_folder
-            mkdir -p ${pkg_paths[$i]}
+            pkg_paths[$i]=${output_pkg_paths[$i]}/$bc_folder
+            mkdir -p $path/${pkg_paths[$i]}
         fi
     done 
 }
@@ -229,7 +232,7 @@ copy_templates() {
             
             for template_file in $templates_files; do
                 cpFrom=$template_src_folder/$template_file
-                cpTo=${pkg_paths[$i]}/${template_file/${symbols[$i*2]}/${symbols[$i*2+1]}}
+                cpTo=${output_path}/${pkg_paths[$i]}/${template_file/${symbols[$i*2]}/${symbols[$i*2+1]}}
                 cp $cpFrom $cpTo
                 echov "    Creating file $cpTo"
             done
@@ -323,15 +326,20 @@ update_cmakelists() {
     for (( i=0; i<${#fills[@]}; i+=2 )); do
         
         # Create the list of buildable files
-        # and substitute the list into the template
-        files=`ls ${fills[i+1]}`
-        cmake=${cmake//${fills[i]}/$files}
+        # suitable for core cmakelists 
+        files=(`ls $output_path/${fills[i+1]}`)
+        compilable=""
+        for (( j=0; j<${#files[@]}; j++ )); do
+            compilable="$compilable        \${PROJECT_SOURCE_DIR}\/${fills[i+1]//\//\\/}\/${files[j]}\n"
+        done
+        cmake=${cmake//${fills[i]}/$compilable}
         cmake=${cmake//$'\n'/\\n}
-
-        # Substitute the templace section into
+        
+        # Substitute the template section into
         # the makefile
         sed -i '' -e "s/$repl/$cmake/" $mfile
     done
+    
 }
 
 # Checks if there is a cmakelists in the target output
@@ -344,6 +352,7 @@ function check_create_cmakelists() {
         touch $cmakelists_file
         echo $'#' __NEW_BLOCKCHAIN_IMPL__$'\n'$'\n' >> $cmakelists_file
         echo $'#' __NEW_HANDLER__$'\n'$'\n' >> $cmakelists_file
+        echo $'#' __NEW_BLOCKCHAIN_TEST__$'\n'$'\n' >> $cmakelists_file
     fi
 }
 
@@ -368,11 +377,55 @@ function check_create_wkbase() {
         touch $wk_base_file
         
         echo $'#'ifndef WKBase.h$'\n'$'#'define WKBase.h$'\n' >> $wk_base_file
-        echo typedef enum {$'\n''    '/* WK_NETWORK_TYPE___SYMBOL__' '*/$'\n' >> $wk_base_file
-        echo '    'WK_NETWORK_NUMBER_OF_NETWORK_TYPES$'\n'} WKNetworkType$';'$'\n' >> $wk_base_file
+        echo typedef enum {$'\n''    '/* WK_NETWORK_TYPE___SYMBOL__' '*/$'\n'} WKNetworkType$';'$'\n' >> $wk_base_file
+        echo $'#'define WK_NETWORK_TYPE_LAST'        'WK_NETWORK_TYPE_XLM$'\n' >> $wk_base_file
         echo "/* #define WK_NETWORK_CURRENCY___SYMBOL__    \"__symbol__\" */"$'\n' >> $wk_base_file
         echo $'#'endif$'\n' >> $wk_base_file
     fi
+}
+
+# Checks if there is no swift wrapper of tests and 
+# creates on if need be
+function check_create_walletkitcoretests() {
+
+    wkcoretests_base_file=$output_path/WalletKitCoreTests/WalletKitCoreTests.swift
+    wkcoretests_include=$output_path/WalletKitCoreTests/test/include/test.h
+
+    if [ ! -f $wkcoretests_base_file ]; then
+        echov "  Creating new WalletKitCoreTests.swift file"
+        mkdir -p $output_path/WalletKitCoreTests/test
+        touch $wkcoretests_base_file
+
+        echo '    '//' '__NEW_BLOCKCHAIN_TEST_IMPL__$'\n' >> $wkcoretests_base_file
+        echo '    'static var allTests = [$'\n''        '//' '__NEW_BLOCKCHAIN_TEST__$'\n''    '] >> $wkcoretests_base_file
+    fi
+    if [ ! -f $wkcoretests_include ]; then
+        echov "  Creating new tests header file"
+        mkdir -p $output_path/WalletKitCoreTests/test/include
+        touch $wkcoretests_include
+
+        echo //' '__NEW_BLOCKCHAIN_TEST_DEFN__$'\n' >> $wkcoretests_include
+    fi
+}
+
+# Update the swift tests to include a new bare test for the 
+# particular blockchain being added
+#
+# @param name The Name of the new blockchain
+function update_walletkitcoretests() {
+
+    name=$1
+    wkcoretests_base_file=$output_path/WalletKitCoreTests/WalletKitCoreTests.swift
+    wkcoretests_include=$output_path/WalletKitCoreTests/test/include/test.h
+
+    all_tests_inclusion="\/\/ ${name}\n        (\"test${name}\", test${name}),\n"
+    all_tests_inclusion="$all_tests_inclusion        \/\/ __NEW_BLOCKCHAIN_TEST__"
+    test_impl="\/\/ MARK - ${name}\n    func test${name} () {\n"
+    test_impl="$test_impl        run${name}Test()\n    }\n\n    \/\/ __NEW_BLOCKCHAIN_TEST_IMPL__"
+    test_defn="\/\/ ${name}\nextern void\nrun${name}Test (void);\n\n\/\/ __NEW_BLOCKCHAIN_TEST_DEFN__"
+    sed -i '' -e "1,\$s/\/\/[ ]__NEW_BLOCKCHAIN_TEST__/$all_tests_inclusion/" $wkcoretests_base_file
+    sed -i '' -e "1,\$s/\/\/[ ]__NEW_BLOCKCHAIN_TEST_IMPL__/$test_impl/" $wkcoretests_base_file
+    sed -i '' -e "1,\$s/\/\/[ ]__NEW_BLOCKCHAIN_TEST_DEFN__/$test_defn/" $wkcoretests_include
 }
 
 # Updates the WKBase.h header file with required definitions
@@ -389,7 +442,9 @@ function update_wkbase() {
     # Create if necessary    
     check_create_wkbase
 
-    net_type_repl="/* WK_NETWORK_TYPE___SYMBOL__ */" 
+    net_new_type="WK_NETWORK_TYPE___SYMBOL__"
+    net_new_val=${net_new_type/__SYMBOL__/$ucsymbol}
+    net_type_repl="/* $net_new_type */" 
     net_currency_repl="/* #define WK_NETWORK_CURRENCY___SYMBOL__    \"__symbol__\" */"
     net_type=${net_type_repl/__SYMBOL__/$ucsymbol}
     net_currency=${net_currency_repl/__SYMBOL__/$ucsymbol}
@@ -410,8 +465,16 @@ function update_wkbase() {
     net_currency=${net_currency:1:${#net_currency}-1}
     
     # Replacement of actual values and restore replacement string thereafter
-    sed -i '' -e "1,\$s/$net_type_repl/$net_type,\n    $net_type_repl/" $wk_base_file 
+
+    # WKNetworkType enumeration
+    sed -i '' -e "1,\$s/$net_type_repl/$net_type,\n    $net_type_repl/" $wk_base_file
+
+    # Introduce a new WK_NETWORK_CURRENCY... 
     sed -i '' -e "1,\$s/$net_currency_repl/$net_currency\n$net_currency_repl/" $wk_base_file 
+
+    # Update the 'last' type enumeration element for defining total number
+    # of network types
+    sed -i '' -e "1,\$s/#define WK_NETWORK_TYPE_LAST\([ ]*\)WK_NETWORK_TYPE_\(.*\)/#define WK_NETWORK_TYPE_LAST\1$net_new_val/" $wk_base_file
 }
 
 # ---------------------- main -------------------------
@@ -422,6 +485,7 @@ get_opts $*
 if [ ! -d $templates ] ||
    [ ! -d "$templates/${package_names[$HANDLER_PKG]}" ]  ||
    [ ! -d "$templates/${package_names[$BLOCKCHAIN_PKG]}" ]  ||
+   [ ! -d "$templates/${package_names[$TESTS_PKG]}" ]  ||
    [ ! -f "$templates/$wk_config_templ" ]; then
     echo "$templates/$wk_config_templ"
     echo "ERR: Blockchain templates not found at $templates"
@@ -430,6 +494,7 @@ fi
 
 # Determine user and date
 gen_date=`date '+%Y-%m-%d'`
+copyright_year=`date +%Y`
 if [ "$gen_user" == "" ]; then
     gen_user=$USER
 fi 
@@ -462,19 +527,25 @@ echov "  From templates: $templates"
 # is updated to contain the paths to new blockchain output paths
 check_create_folders $output_path $bc_symbol_lc
 
-# Base templates for each active component are copied & renamed
-rename_symbols=("__SYMBOL__" $bc_symbol 
-                "__Name__"   $bc_name)
-copy_templates ${rename_symbols[@]} 
+# Base templates for each active package are copied & renamed
+per_pkg_rename_symbols=("__SYMBOL__" $bc_symbol 
+                        "__Name__"   $bc_name
+                        "__Name__"   $bc_name)
+copy_templates ${per_pkg_rename_symbols[@]} 
 
 # create a cmakelists if it does not exist
 check_create_cmakelists   
 
-# check for and create a new WKConfig.h if necessary
-check_create_wkconfig
+# Preliminary, not needed for separate test generation
+if [ ${packages[$HANDLER_PKG]} -ne 0 ] ||
+   [ ${packages[$BLOCKCHAIN_PKG]} -ne 0 ]; then
 
-# check for and create a new WKBase.h if necessary
-update_wkbase $bc_symbol $bc_symbol_lc
+    # check for and create a new WKConfig.h if necessary
+    check_create_wkconfig
+
+    # check for and create a new WKBase.h if necessary
+    update_wkbase $bc_symbol $bc_symbol_lc
+fi
 
 # Update naked templates for handlers
 if [ ${packages[$HANDLER_PKG]} -ne 0 ]; then
@@ -482,12 +553,13 @@ if [ ${packages[$HANDLER_PKG]} -ne 0 ]; then
     echov "  Creating '$bc_symbol' ($bc_name) handler"
     rename_symbols=("__USER__"   $gen_user
                     "__DATE__"   $gen_date
+                    "__YEAR__"   $copyright_year
                     "__SYMBOL__" $bc_symbol
                     "__symbol__" $bc_symbol_lc
                     "__NAME__"   $bc_name_uc
                     "__name__"   $bc_name_lc
                     "__Name__"   $bc_name)
-    personalize_package ${pkg_paths[$HANLDER_PKG]} ${rename_symbols[@]}
+    personalize_package $output_path/${pkg_paths[$HANLDER_PKG]} ${rename_symbols[@]}
 
     
     rename_symbols=("__SYMBOL__" $bc_symbol
@@ -512,11 +584,12 @@ if [ ${packages[$BLOCKCHAIN_PKG]} -ne 0 ]; then
     echov "  Creating '$bc_symbol' ($bc_name) blockchain impl"
     rename_symbols=("__USER__"   $gen_user
                     "__DATE__"   $gen_date
+                    "__YEAR__"   $copyright_year
                     "__SYMBOL__" $bc_symbol
                     "__NAME__"   $bc_name_uc
                     "__name__"   $bc_name_lc 
                     "__Name__"   $bc_name )
-    personalize_package ${pkg_paths[$BLOCKCHAIN_PKG]} ${rename_symbols[@]}
+    personalize_package ${output_path}/${pkg_paths[$BLOCKCHAIN_PKG]} ${rename_symbols[@]}
     
     # Update blockchain portion of cmakelists
     rename_symbols=("__Name__" $bc_name)
@@ -524,6 +597,37 @@ if [ ${packages[$BLOCKCHAIN_PKG]} -ne 0 ]; then
     update_cmakelists $cmakelists_file \
                       $build_bc_templ \
                       "__NEW_BLOCKCHAIN_IMPL__" \
+                      ${#rename_symbols[@]} \
+                      ${rename_symbols[@]} \
+                      ${fill_sources[@]} 
+fi
+
+# Update test template
+if [ ${packages[$TESTS_PKG]} -ne 0 ]; then
+    echov "  Creating '$bc_symbol' ($bc_name) test"
+
+
+    rename_symbols=("__USER__"   $gen_user
+                    "__DATE__"   $gen_date
+                    "__YEAR__"   $copyright_year
+                    "__SYMBOL__" $bc_symbol
+                    "__NAME__"   $bc_name_uc
+                    "__name__"   $bc_name_lc 
+                    "__Name__"   $bc_name )
+    personalize_package ${output_path}/${pkg_paths[$TESTS_PKG]} ${rename_symbols[@]}
+  
+    # Create the test area if needed (not generating on WalletKitCore)
+    # and update the test framework to include the new test 
+    check_create_walletkitcoretests
+    update_walletkitcoretests $bc_name
+
+    # Update blockchain portion of cmakelists
+    rename_symbols=("__Name__" $bc_name
+                    "__name__" $bc_name_lc)
+    fill_sources=("__TEST_SOURCES__" ${pkg_paths[$TESTS_PKG]})
+    update_cmakelists $cmakelists_file \
+                      $build_test_templ \
+                      "__NEW_BLOCKCHAIN_TEST__" \
                       ${#rename_symbols[@]} \
                       ${rename_symbols[@]} \
                       ${fill_sources[@]} 
