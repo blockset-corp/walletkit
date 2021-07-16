@@ -65,10 +65,7 @@ extern BRTezosFeeBasis
 tezosFeeBasisCreateActual(BRTezosUnitMutez fee);
 
 extern BRTezosUnitMutez
-tezosFeeBasisGetFee(BRTezosFeeBasis *feeBasis);
-
-extern bool
-tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
+tezosFeeBasisGetFee(BRTezosFeeBasis feeBasis);
 
 private_extern int64_t
 tezosFeeBasisGetGasLimit(BRTezosFeeBasis feeBasis);
@@ -76,6 +73,8 @@ tezosFeeBasisGetGasLimit(BRTezosFeeBasis feeBasis);
 private_extern int64_t
 tezosFeeBasisGetStorageLimit(BRTezosFeeBasis feeBasis);
 
+extern bool
+tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
 
 #ifdef __cplusplus
 }

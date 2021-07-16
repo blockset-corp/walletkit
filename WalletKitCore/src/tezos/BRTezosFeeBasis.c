@@ -77,14 +77,14 @@ tezosFeeBasisCreateActual(BRTezosUnitMutez fee) {
 }
 
 extern BRTezosUnitMutez
-tezosFeeBasisGetFee (BRTezosFeeBasis *feeBasis) {
-    switch (feeBasis->type) {
+tezosFeeBasisGetFee (BRTezosFeeBasis feeBasis) {
+    switch (feeBasis.type) {
         case FEE_BASIS_INITIAL:
             return TEZOS_DEFAULT_FEE_MUTEZ;
         case FEE_BASIS_ESTIMATE:
-            return feeBasis->u.estimate.calculatedFee;
+            return feeBasis.u.estimate.calculatedFee;
         case FEE_BASIS_ACTUAL:
-            return feeBasis->u.actual.fee;
+            return feeBasis.u.actual.fee;
     }
 }
 

@@ -84,7 +84,7 @@ wkFeeBasisGetPricePerCostFactorXTZ (WKFeeBasis feeBasis) {
 static WKAmount
 wkFeeBasisGetFeeXTZ (WKFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = wkFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
-    BRTezosUnitMutez fee = tezosFeeBasisGetFee (&xtzFeeBasis);
+    BRTezosUnitMutez fee = tezosFeeBasisGetFee (xtzFeeBasis);
     return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, fee);
 }
 
