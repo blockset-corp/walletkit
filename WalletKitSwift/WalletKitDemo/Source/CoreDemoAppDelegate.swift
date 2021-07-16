@@ -380,10 +380,7 @@ extension Network {
         case .ltc: return "litecoin"
         case .doge: return "dogecoin"
         case .eth: return "ethereum"
-        case .xrp: return "ripple"
-        case .hbar: return "hedera"
-        case .xtz: return "tezos"
-        case .xlm: return "stellar"
+        default:   return nil
         }
     }
 }
