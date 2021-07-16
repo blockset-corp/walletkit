@@ -225,11 +225,12 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
                                WKUnit unitForFee) {
     WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
     
-    BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
-    BRTezosAddress xtzTarget  = wkAddressAsXTZ (target);
-    BRTezosUnitMutez mutez = tezosMutezCreate (amount);
-    BRTezosFeeBasis feeBasis = wkFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
-    int64_t counter = (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
+    BRTezosAddress   xtzSource   = tezosAccountGetAddress (walletXTZ->xtzAccount);
+    BRTezosAddress   xtzTarget   = wkAddressAsXTZ (target);
+    BRTezosUnitMutez xtzAmount   = tezosMutezCreate (amount);
+    BRTezosFeeBasis  xtzFeeBasis = wkFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
+
+    int64_t counter = xtzFeeBasis.counter; // (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
     
     bool delegationOp = false;
     
@@ -243,24 +244,43 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
             }
         }
     }
-    
-    BRTezosTransfer xtzTransfer = tezosTransferCreateNew (source,
+
+    BRTezosHash        xtzHash        = TEZOS_HASH_EMPTY;
+    BRTezosTransaction xtzTransaction = (delegationOp
+                                         ? tezosTransactionCreateDelegation  (xtzSource,
+                                                                              xtzTarget,
+                                                                              xtzFeeBasis,
+                                                                              counter)
+                                         : tezosTransactionCreateTransaction (xtzSource,
+                                                                              xtzTarget,
+                                                                              xtzAmount,
+                                                                              xtzFeeBasis,
+                                                                              counter));
+#if 0
+    : tezosTransferCreateNew (source,
                                                           xtzTarget,
                                                           mutez,
                                                           feeBasis,
                                                           counter,
                                                           delegationOp);
+#endif
+    tezosAddressFree (xtzSource);
 
-    tezosAddressFree (source);
+    WKAddress source = wkAddressCreateAsXTZ (xtzSource);
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
-                                                                NULL,
-                                                                unit,
-                                                                unitForFee,
-                                                                state,
-                                                                walletXTZ->xtzAccount,
-                                                                xtzTransfer);
+                                                      NULL,
+                                                      unit,
+                                                      unitForFee,
+                                                      estimatedFeeBasis,
+                                                      amount,
+                                                      source,
+                                                      target,
+                                                      state,
+                                                      walletXTZ->xtzAccount,
+                                                      xtzHash,
+                                                      xtzTransaction);
     
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);

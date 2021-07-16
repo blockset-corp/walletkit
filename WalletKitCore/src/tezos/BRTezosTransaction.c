@@ -262,6 +262,11 @@ tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size) {
     }
 }
 
+extern size_t
+tezosTransactionGetSignedBytesCount (BRTezosTransaction transaction) {
+    return transaction->signedBytes.size;
+}
+
 extern BRTezosHash tezosTransactionGetHash(BRTezosTransaction transaction){
     assert(transaction);
     return transaction->hash;
@@ -299,10 +304,36 @@ extern BRTezosAddress tezosTransactionGetSource(BRTezosTransaction transaction){
     return tezosAddressClone (transaction->source);
 }
 
+extern bool tezosTransactionHasSource (BRTezosTransaction transaction,
+                                       BRTezosAddress address) {
+    return tezosAddressEqual(transaction->source, address);
+}
+
 extern BRTezosAddress tezosTransactionGetTarget(BRTezosTransaction transaction){
     assert(transaction);
+    switch (transaction->operation.kind) {
+        case TEZOS_OP_ENDORESEMENT:
+            return NULL;
+        case TEZOS_OP_REVEAL:
+            return NULL;
+        case TEZOS_OP_TRANSACTION:
+            return tezosAddressClone (transaction->operation.u.transaction.target);
+        case TEZOS_OP_DELEGATION:
+            return tezosAddressClone (transaction->operation.u.delegation.target);
+    }
     assert(TEZOS_OP_TRANSACTION == transaction->operation.kind);
     return tezosAddressClone (transaction->operation.u.transaction.target);
+}
+
+extern bool tezosTransactionHasTarget (BRTezosTransaction transaction,
+                                       BRTezosAddress address) {
+    switch (transaction->operation.kind) {
+
+        case TEZOS_OP_ENDORESEMENT:  return false;
+        case TEZOS_OP_REVEAL:        return false;
+        case TEZOS_OP_TRANSACTION:   return tezosAddressEqual(transaction->operation.u.transaction.target, address);
+        case TEZOS_OP_DELEGATION:    return tezosAddressEqual(transaction->operation.u.delegation.target,  address);
+    }
 }
 
 extern BRTezosOperationKind

@@ -47,6 +47,16 @@ typedef enum {
     TEZOS_OP_DELEGATION = 110
 } BRTezosOperationKind;
 
+static inline const char *
+tezosOperationKindDescription (BRTezosOperationKind kind) {
+    switch (kind) {
+        case TEZOS_OP_ENDORESEMENT: return "Endoresement";
+        case TEZOS_OP_REVEAL:       return "Reveal";
+        case TEZOS_OP_TRANSACTION:  return "Transaction";
+        case TEZOS_OP_DELEGATION:   return "Delegation";
+    }
+}
+
 static inline bool
 tezosHashIsEqual (const BRTezosHash h1,
                   const BRTezosHash h2) {

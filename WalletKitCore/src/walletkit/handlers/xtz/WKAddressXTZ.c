@@ -34,7 +34,7 @@ wkAddressCreateCallbackXTZ (WKAddressCreateContext context,
 }
 
 extern WKAddress
-wkAddressCreateAsXTZ (BRTezosAddress addr) {
+wkAddressCreateAsXTZ (OwnershipGiven BRTezosAddress addr) {
     WKAddressCreateContextXTZ contextXTZ = {
         addr
     };

@@ -106,15 +106,17 @@ tezosSerializeTransaction (BRTezosTransaction tx) {
     
     BRTezosAddress source = tezosTransactionGetSource(tx);
     BRTezosFeeBasis feeBasis = tezosTransactionGetFeeBasis(tx);
-    int64_t gasLimit = tezosFeeBasisGetGasLimit(feeBasis);
-    int64_t storageLimit = tezosFeeBasisGetStorageLimit(feeBasis);
+
+    BRTezosUnitMutez fee = tezosFeeBasisGetFee (feeBasis);
+    int64_t gasLimit     = tezosFeeBasisGetGasLimit (feeBasis);
+    int64_t storageLimit = tezosFeeBasisGetStorageLimit (feeBasis);
     
     size_t maxFields = 10;
     WKData fields[maxFields];
     size_t numFields = 0;
     fields[numFields++] = encodeOperationKind(opData.kind);
     fields[numFields++] = encodeAddress(source);
-    fields[numFields++] = encodeZarith(tezosTransactionGetFee(tx));
+    fields[numFields++] = encodeZarith(fee);
     fields[numFields++] = encodeZarith(tezosTransactionGetCounter(tx));
     fields[numFields++] = encodeZarith(gasLimit);
     fields[numFields++] = encodeZarith(storageLimit);

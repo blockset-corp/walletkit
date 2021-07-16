@@ -150,6 +150,9 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
 extern uint8_t * /* caller owns and must free using normal "free" function */
 tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size);
 
+extern size_t
+tezosTransactionGetSignedBytesCount (BRTezosTransaction transaction);
+
 extern BRTezosHash
 tezosTransactionGetHash(BRTezosTransaction transaction);
 
@@ -172,8 +175,16 @@ tezosTransactionGetAmount(BRTezosTransaction transaction);
 extern BRTezosAddress
 tezosTransactionGetSource(BRTezosTransaction transaction);
 
+extern bool
+tezosTransactionHasSource (BRTezosTransaction transaction,
+                           BRTezosAddress address);
+
 extern BRTezosAddress
 tezosTransactionGetTarget(BRTezosTransaction transaction);
+
+extern bool
+tezosTransactionHasTarget (BRTezosTransaction transaction,
+                           BRTezosAddress address);
 
 extern BRTezosOperationKind
 tezosTransactionGetOperationKind(BRTezosTransaction transaction);
