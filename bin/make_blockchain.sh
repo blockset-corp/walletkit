@@ -56,8 +56,8 @@ bc_name=""
 # Number of and activity of all packages
 core_packages=3
 swift_packages=1
-packages=(1 1 1 1)
-package_names=("handlers" "blockchain" "test" "swift")
+packages=(1 1 1 1 1)
+package_names=("handlers" "blockchain" "test" "Swift" "Java")
 root=".."
 output_path=()
 core_pkg_paths=("src/walletkit/handlers" "src" "WalletKitCoreTests/test")
@@ -76,10 +76,12 @@ HANDLER_PKG=0
 BLOCKCHAIN_PKG=1
 TESTS_PKG=2
 SWIFT_PKG=3
+JAVA_PKG=4
 
 # Locations of output
 WKCORE_OUTPUT=0
 SWIFT_OUTPUT=1
+JAVA_OUTPUT=2
 
 # Simple echo screening desired verbosity
 echov() {
@@ -112,7 +114,8 @@ usage() {
     echo "                0: handlers package"
     echo "                1: blockchain implementation package"
     echo "                2: tests"
-    echo "                3: swift"
+    echo "                3: Swift"
+    echo "                3: Java"
     echo "             By default all packages are generated"
     echo
     echo "          o: Specifies the output folder for generated code" 
@@ -131,7 +134,7 @@ usage() {
 # @param bc_name The name of the new blockchain
 get_opts() {
 
-    custom_pkgs=(0 0 0 0)
+    custom_pkgs=(0 0 0 0 0)
     gens=0
     parm_num=0
 
@@ -576,12 +579,179 @@ update_swift() {
     done
 }     
 
+# Creates test area for Java code update
+check_create_java() {
+    
+    wknetwork_java=${output_path[$JAVA_OUTPUT]}/WalletKit/src/main/java/com/blockset/walletkit/NetworkType.java
+    brdutil_java=${output_path[$JAVA_OUTPUT]}/WalletKitBRD/src/main/java/com/blockset/walletkit/brd/Utilities.java
+    wknetworktype_java=${output_path[$JAVA_OUTPUT]}/WalletKitNative/src/main/java/com/blockset/walletkit/nativex/WKNetworkType.java
+
+    if [ ! -f $wknetwork_java ]; then
+        echov "  Creating new Java NetworkType file"
+        mkdir -p ${output_path[$JAVA_OUTPUT]}/WalletKit/src/main/java/com/blockset/walletkit
+        touch $wknetwork_java
+
+        # Generate something base to modify
+        echo "public enum NetworkType {" >> $wknetwork_java
+        echo "    /* __SYMBOL__ */" >> $wknetwork_java
+        echo "}" >> $wknetwork_java
+    fi
+
+    if [ ! -f $brdutil_java ]; then
+        echov "  Creating new BRD Utilities file"
+        mkdir -p ${output_path[$JAVA_OUTPUT]}/WalletKitBRD/src/main/java/com/blockset/walletkit/brd
+        touch $brdutil_java
+
+        echo "    static WKNetworkType networkTypeToCrypto(NetworkType type) {" >> $brdutil_java
+        echo "        switch (type) {" >> $brdutil_java
+        echo "            /* case __SYMBOL__: return WKNetworkType.__SYMBOL__; */" >> $brdutil_java
+        echo "            default: throw new IllegalArgumentException(\"Unsupported type\");" >> $brdutil_java
+        echo "        }" >> $brdutil_java
+        echo "    }" >> $brdutil_java
+        echo >> $brdutil_java 
+        echo "    static NetworkType networkTypeFromCrypto(WKNetworkType type) {" >> $brdutil_java
+        echo "        switch (type) {" >> $brdutil_java
+        echo "            /* case __SYMBOL__: return NetworkType.__SYMBOL__; */" >> $brdutil_java
+        echo "            default: throw new IllegalArgumentException(\"Unsupported type\");" >> $brdutil_java
+        echo "        }" >> $brdutil_java
+        echo "    }" >> $brdutil_java
+        echo  >> $brdutil_java
+    fi
+
+    if [ ! -f $wknetworktype_java ]; then
+        echov "  Creating new BRD WKNetworkType file"
+        mkdir -p ${output_path[$JAVA_OUTPUT]}/WalletKitNative/src/main/java/com/blockset/walletkit/nativex
+        touch $wknetworktype_java
+
+        echo "public enum WKNetworkType {" >> $wknetworktype_java
+        echo "    XLM {" >> $wknetworktype_java
+        echo "        @Override" >> $wknetworktype_java
+        echo "        public int toCore() {" >> $wknetworktype_java
+        echo "            return XLM_VALUE;" >> $wknetworktype_java
+        echo "        }" >> $wknetworktype_java
+        echo "    }/* New __SYMBOL__ toCore() */;" >> $wknetworktype_java
+        echo >> $wknetworktype_java
+        echo "    /* private static final int __SYMBOL___VALUE = 10 */" >> $wknetworktype_java
+        echo >> $wknetworktype_java
+        echo "    public static WKNetworkType fromCore(int nativeValue) {" >> $wknetworktype_java
+        echo "        switch (nativeValue) {" >> $wknetworktype_java
+        echo "            /* case __SYMBOL___VALUE: return __SYMBOL__; */" >> $wknetworktype_java
+        echo "            default: throw new IllegalArgumentException("Invalid core value");" >> $wknetworktype_java
+        echo "        }" >> $wknetworktype_java
+        echo "    }" >> $wknetworktype_java
+        echo "}" >> $wknetworktype_java
+        echo >> $wknetworktype_java
+    fi
+}
+
+# Update Java NetworkType.java include new blockchain mnemonics
+#
+# @param symbol The blockchain mnemonic
+update_networktype_java() {
+    symbol=$1
+
+    wknetwork_java=${output_path[$JAVA_OUTPUT]}/WalletKit/src/main/java/com/blockset/walletkit/NetworkType.java
+    
+    # NetworkType.java: NetworkType enumeration 
+    nt_enum_repl="/* __SYMBOL__ */"
+    nt_enum_val=${nt_enum_repl//__SYMBOL__/$symbol}
+    nt_enum_repl_escpd=${nt_enum_repl//\//\\/}
+    nt_enum_repl_escpd=${nt_enum_repl_escpd//\*/\\*}
+    nt_enum_val=${nt_enum_val//\/\*/}
+    nt_enum_val=${nt_enum_val//\*\//}
+    nt_enum_val=${nt_enum_val// /}
+
+    sed -i '' -e "1,\$s/$nt_enum_repl_escpd/$nt_enum_val,\n    $nt_enum_repl_escpd/" $wknetwork_java 
+}
+
+# Update BRD Utilities.java to include new blockchain mnemonics
+#
+# @param symbol The blockchain mnemonic
+update_brd_utilities_java() {
+    symbol=$1
+
+    brdutil_java=${output_path[$JAVA_OUTPUT]}/WalletKitBRD/src/main/java/com/blockset/walletkit/brd/Utilities.java
+    
+    # Utilities.java: networkTypeToCrypto (tc), networkTypeFromCrypto (fc) function updates
+    tc_repl="/* case __SYMBOL__: return WKNetworkType.__SYMBOL__; */"
+    fc_repl="/* case __SYMBOL__: return NetworkType.__SYMBOL__; */"
+    tc_val=${tc_repl//__SYMBOL__/$symbol}
+    fc_val=${fc_repl//__SYMBOL__/$symbol}
+    tc_repl_escpd=${tc_repl//\//\\/}
+    tc_repl_escpd=${tc_repl_escpd//\*/\\*}
+    fc_repl_escpd=${fc_repl//\//\\/}
+    fc_repl_escpd=${fc_repl_escpd//\*/\\*}
+    tc_val=${tc_val//\/\*/}
+    tc_val=${tc_val//\*\//}
+    tc_val=${tc_val:1:${#tc_val}}
+    fc_val=${fc_val//\/\*/}
+    fc_val=${fc_val//\*\//}
+    fc_val=${fc_val:1:${#fc_val}}
+   
+    sed -i '' -e "1,\$s/$tc_repl_escpd/$tc_val\n            $tc_repl_escpd/" $brdutil_java 
+    sed -i '' -e "1,\$s/$fc_repl_escpd/$fc_val\n            $fc_repl_escpd/" $brdutil_java 
+}
+
+update_native_wknetworktype_java() {
+    symbol=$1
+
+    wknetworktype_java=${output_path[$JAVA_OUTPUT]}/WalletKitNative/src/main/java/com/blockset/walletkit/nativex/WKNetworkType.java
+    
+    # toCore() method: replace a single line placeholder in WKNetworkType.java with a multiline method defn
+    symbol_to_core=",\n\n    $symbol {\n"
+    symbol_to_core="$symbol_to_core        @Override\n"
+    symbol_to_core="$symbol_to_core        public int toCore() {\n"
+    symbol_to_core="$symbol_to_core            return ${symbol}_VALUE;\n"
+    symbol_to_core="$symbol_to_core        }\n"
+    symbol_to_core="$symbol_to_core    }\/\* New __SYMBOL__ toCore() \*\/;\n"
+
+    new_tocore_repl="/* New __SYMBOL__ toCore() */;"
+    new_tocore_repl_escpd=${new_tocore_repl//\//\\/}
+    new_tocore_repl_escpd=${new_tocore_repl_escpd//\*/\\*}
+
+    sed -i '' -e "1,\$s/$new_tocore_repl_escpd/$symbol_to_core/" $wknetworktype_java 
+
+    # WKNetworkType fromCore switch
+    new_case_repl="/* case __SYMBOL___VALUE: return __SYMBOL__; */"
+    new_case_val=${new_case_repl//__SYMBOL__/$symbol}
+    new_case_repl_escpd=${new_case_repl//\//\\/}
+    new_case_repl_escpd=${new_case_repl_escpd//\*/\\*}
+    new_case_val=${new_case_val//\/\*/}
+    new_case_val=${new_case_val//\*\//}
+    new_case_val=${new_case_val:1:${#new_case_val}}
+
+    sed -i '' -e "1,\$s/$new_case_repl_escpd/$new_case_val\n            $new_case_repl_escpd/" $wknetworktype_java 
+    
+    # WKNetworkType private static decl for new VALUE requires picking up
+    # the last emitted 'next value' which is part of the commented section
+    new_priv_decl_repl="/* private static final int __SYMBOL___VALUE = [0-9]{1,} */"
+    new_priv_decl_repl_escpd=${new_priv_decl_repl//\*/\\*}
+    last_priv_static_value=`grep -Eo "$new_priv_decl_repl_escpd" $wknetworktype_java | grep -Eo '[0-9]{1,}'`
+    next_priv_static_value=$((last_priv_static_value + 1))
+    next_val="private static final int ${symbol}_VALUE = ${last_priv_static_value};"
+    next_priv_decl_repl="\/\* private static final int __SYMBOL___VALUE = $next_priv_static_value \*\/"
+    new_priv_decl_repl_escpd="\/\* private static final int __SYMBOL___VALUE = ${last_priv_static_value} \*\/"
+    sed -i '' -e "1,\$s/$new_priv_decl_repl_escpd/$next_val\n    $next_priv_decl_repl/" $wknetworktype_java 
+}
+
+# Update Java NetworkType.java and BRD Utilities.java to include new blockchain
+# mnemonics
+#
+# @param symbol The blockchain mnemonic
+update_java() {
+    symbol=$1
+
+    update_networktype_java $symbol
+    update_brd_utilities_java $symbol
+    update_native_wknetworktype_java $symbol
+}
+
 # ---------------------- main -------------------------
 # Valid options beyond this point
 get_opts $*
 
 # Resolve top level output paths
-output_path=($root/WalletKitCore $root/WalletKitSwift)
+output_path=($root/WalletKitCore $root/WalletKitSwift $root/WalletKitJava)
 
 # Check for presence of required templates
 if [ ! -d $templates ] ||
@@ -736,11 +906,16 @@ if [ ${packages[$TESTS_PKG]} -ne 0 ]; then
                       ${fill_sources[@]} 
 fi
 
-# Update swift
+# Update Swift
 if [ ${packages[$SWIFT_PKG]} -ne 0 ]; then
-    echov "  Updating swift for '$bc_symbol'"
-
+    echov "  Updating Swift for '$bc_symbol'"
     check_create_swift
     update_swift $bc_symbol $bc_symbol_lc    
+fi
 
+# Update Java
+if [ ${packages[$JAVA_PKG]} -ne 0 ]; then
+    echov "  Updating Java for '$bc_symbol'"
+    check_create_java
+    update_java $bc_symbol  
 fi
