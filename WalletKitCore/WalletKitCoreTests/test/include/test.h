@@ -138,6 +138,8 @@ runTezosTest (void);
 extern void
 runStellarTest (void);
 
+// __NEW_BLOCKCHAIN_TEST_DEFN__
+
 #ifdef __cplusplus
 }
 #endif
