@@ -782,7 +782,8 @@ static void _peerConnected(void *info)
             
         if (manager->lastBlock->height < btcPeerLastBlock(peer)) { // start blockchain sync
             size_t   count    = _btcPeerManagerBlockLocators(manager, NULL, 0);
-            UInt256 *locators = calloc (count, sizeof(UInt256));
+            UInt256 *locators = calloc (count, sizeof(UInt256)); // Okay if NULL
+            
             _btcPeerManagerBlockLocators (manager, locators, count);
             
             btcPeerScheduleDisconnect(peer, PROTOCOL_TIMEOUT); // schedule sync timeout
@@ -794,7 +795,7 @@ static void _peerConnected(void *info)
             }
             else btcPeerSendGetheaders(peer, locators, count, UINT256_ZERO);
 
-            free (locators);
+            if (locators) free (locators);
         }
         else { // we're already synced
             manager->connectFailureCount = 0; // reset connect failure count
