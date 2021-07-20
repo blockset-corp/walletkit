@@ -57,6 +57,8 @@ tezosOperationKindDescription (BRTezosOperationKind kind) {
     }
 }
 
+// MARK: - Tezos Hash
+
 static inline bool
 tezosHashIsEqual (const BRTezosHash h1,
                   const BRTezosHash h2) {

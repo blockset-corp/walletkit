@@ -104,11 +104,10 @@ wkWalletManagerSignTransactionWithSeedXTZ (WKWalletManager manager,
 
     if (NULL == xtzTransaction) return WK_FALSE;
 
-    bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind(xtzTransaction)
-                        && wkWalletNeedsRevealXTZ(wallet));
+    tezosTransactionSerializeAndSign (xtzTransaction, account, seed, lastBlockHash);
 
-    size_t tx_size = tezosTransactionSerializeAndSign (xtzTransaction, account, seed, lastBlockHash, needsReveal);
-    return AS_WK_BOOLEAN(tx_size > 0);
+    tezosTransactionSerializeAndSign (xtzTransaction, account, seed, lastBlockHash, needsReveal);
+    return AS_WK_BOOLEAN(tezosTransactionGetSignedBytesCount(xtzTransaction) > 0);
 }
 
 static WKBoolean
@@ -161,7 +160,6 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
                                                      wallet->unit,
                                                      wallet->unitForFee);
 
-    wkFeeBasisGive (feeBasis);
     wkCurrencyGive (currency);
     
     // serialize the transaction for fee estimation payload
@@ -171,17 +169,13 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
     BRTezosTransaction xtzTransaction = wkTransferCoerceXTZ(transfer)->originatingTransaction;
     assert (NULL != xtzTransaction);
 
-    bool needsReveal = (TEZOS_OP_TRANSACTION == tezosTransactionGetOperationKind (xtzTransaction) &&
-                        wkWalletNeedsRevealXTZ (wallet));
-
     // Serialize the xtzTransaction; the serialization is saved (in `xtzTransaction`) and then used
     // in the call to `wkClientQRYEstimateTransferFee()` below.  Eventually,
     // `wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ()` is called and then the serialization
     // size will be used to complete the fee estimation.
     tezosTransactionSerializeForFeeEstimation (xtzTransaction,
                                                xtzAccount,
-                                               xtzLastBlockHash,
-                                               needsReveal);
+                                               xtzLastBlockHash);
     
     wkClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
@@ -318,7 +312,7 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (WKWalletManager cwm,
 
     // Create a feeBasis w/ margin applied
     BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerKByte,
-                                                            sizeInKBytes,
+                                                            sizeInBytes / 1000.0,
                                                             gasUsed,
                                                             storageUsed,
                                                             counter);

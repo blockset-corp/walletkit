@@ -96,7 +96,8 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
                                WKUnit unitForFee);
 
 private_extern bool
-wkWalletNeedsRevealXTZ (WKWallet wallet);
+wkWalletNeedsRevealForTransactionXTZ (WKWallet wallet,
+                                      BRTezosTransaction transaction);
 
 private_extern WKTransfer
 wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
