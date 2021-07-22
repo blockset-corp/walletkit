@@ -25,7 +25,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+    
 /// MARK: - Network Fee
 
 struct BRCryptoNetworkFeeRecord {

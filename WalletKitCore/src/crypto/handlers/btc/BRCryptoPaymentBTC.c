@@ -30,7 +30,8 @@ cryptoPaymentProtocolRequestGetOutputsAsBTC (BRCryptoPaymentProtocolRequest prot
 
 static BRCryptoPaymentProtocolRequestBitPayBuilderBTC
 cryptoPaymentProtocolRequestBitPayBuilderCoerceBTC (BRCryptoPaymentProtocolRequestBitPayBuilder builder) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == builder->type);
+    assert (builder->type == CRYPTO_NETWORK_TYPE_BTC ||
+            builder->type == CRYPTO_NETWORK_TYPE_BCH );
     return (BRCryptoPaymentProtocolRequestBitPayBuilderBTC) builder;
 }
 
@@ -111,7 +112,8 @@ cryptoPaymentProtocolRequestBitPayBuilderReleaseBTC (BRCryptoPaymentProtocolRequ
 
 static BRCryptoPaymentProtocolRequestBTC
 cryptoPaymentProtocolRequestCoerceBTC (BRCryptoPaymentProtocolRequest protoReq) {
-    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType);
+    assert (CRYPTO_NETWORK_TYPE_BTC == protoReq->chainType ||
+            CRYPTO_NETWORK_TYPE_BCH == protoReq->chainType);
     return (BRCryptoPaymentProtocolRequestBTC) protoReq;
 }
 
@@ -129,7 +131,7 @@ cryptoPaymentProtocolRequestCreateForBitPayBTC (BRCryptoPaymentProtocolRequestBi
     
     BRCryptoPaymentProtocolRequest protoReqBase = NULL;
 
-    if ((CRYPTO_NETWORK_TYPE_BTC == type) &&
+    if ((CRYPTO_NETWORK_TYPE_BTC == type || CRYPTO_NETWORK_TYPE_BCH == type) &&
         cryptoNetworkHasCurrency(builderBase->cryptoNetwork, builderBase->cryptoCurrency) &&
         0 != array_count (builder->outputs) && 0 != builder->outputs[0].amount && 0 != builder->outputs[0].scriptLen) {
         
@@ -190,7 +192,7 @@ cryptoPaymentProtocolRequestCreateForBip70BTC (BRCryptoNetwork cryptoNetwork,
     
     BRCryptoPaymentProtocolRequest protoReqBase = NULL;
     
-    if ((CRYPTO_NETWORK_TYPE_BTC == type) &&
+    if ((CRYPTO_NETWORK_TYPE_BTC == type || CRYPTO_NETWORK_TYPE_BCH == type) &&
         (cryptoNetworkHasCurrency(cryptoNetwork, cryptoCurrency))) {
         
         BRPaymentProtocolRequest *request = BRPaymentProtocolRequestParse (serialization,
@@ -248,7 +250,8 @@ cryptoPaymentProtocolRequestCreateTransferBTC (BRCryptoPaymentProtocolRequest pr
     BRCryptoUnit unitForFee = cryptoWalletGetUnitForFee (wallet);
     
     switch (wallet->type) {
-        case CRYPTO_NETWORK_TYPE_BTC: {
+        case CRYPTO_NETWORK_TYPE_BTC:
+        case CRYPTO_NETWORK_TYPE_BCH: {
             BRWallet *wid = cryptoWalletAsBTC (wallet);
             
             switch (cryptoPaymentProtocolRequestGetType (protoReq)) {

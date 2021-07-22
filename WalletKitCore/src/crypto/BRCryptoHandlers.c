@@ -49,7 +49,7 @@ static BRCryptoHandlers handlers[NUMBER_OF_NETWORK_TYPES] = {
         &cryptoWalletHandlersBSV,
         &cryptoWalletSweeperHandlersBSV,
         NULL,//BRCryptoExportablePaperWalletHandlers
-        &cryptoPaymentProtocolHandlersBTC,
+        NULL , //BRCryptoPaymentProtocolHandlers
         &cryptoFeeBasisHandlersBTC,
         &cryptoWalletManagerHandlersBSV
     },
