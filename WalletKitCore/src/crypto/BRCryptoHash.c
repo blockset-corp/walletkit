@@ -44,7 +44,8 @@ cryptoHashRelease (BRCryptoHash hash) {
 extern BRCryptoBoolean
 cryptoHashEqual (BRCryptoHash h1, BRCryptoHash h2) {
     return AS_CRYPTO_BOOLEAN (h1 == h2 ||
-                              (h1->setValue   == h2->setValue   &&
+                              (NULL != h1     && NULL != h2     &&
+                               h1->setValue   == h2->setValue   &&
                                h1->bytesCount == h2->bytesCount &&
                                0 == memcmp (h1->bytes, h2->bytes, h1->bytesCount)));
 }
