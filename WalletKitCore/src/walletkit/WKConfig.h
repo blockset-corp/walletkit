@@ -18,6 +18,7 @@
 #define HAS_HBAR_TESTNET    0
 #define HAS_XTZ_TESTNET     0
 #define HAS_XLM_TESTNET     0
+// __CONTROL__
 
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)
@@ -298,6 +299,8 @@ DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
 #endif // HAS_XLM_TESTNET
 DEFINE_HANDLERS (WK_NETWORK_TYPE_XLM, XLM)
 #undef NETWORK_NAME
+
+// __CONFIG__
 
 #undef DEFINE_NETWORK
 #undef DEFINE_NETWORK_FEE_ESTIMATE

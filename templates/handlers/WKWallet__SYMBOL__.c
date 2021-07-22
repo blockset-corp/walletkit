@@ -1,74 +1,74 @@
 //
-//  WKWalletXTZ.c
+//  WKWallet__SYMBOL__.c
 //  WalletKitCore
 //
-//  Created by Ehsan Rezaie on 2020-08-27.
-//  Copyright © 2019 Breadwinner AG. All rights reserved.
+//  Created by __USER__ on __DATE__.
+//  Copyright © __YEAR__ Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
-#include "WKXTZ.h"
+#include "WK__SYMBOL__.h"
 #include "WKBase.h"
 #include "walletkit/WKWalletP.h"
 #include "walletkit/WKAmountP.h"
 #include "walletkit/WKFeeBasisP.h"
-#include "tezos/BRTezos.h"
+#include "__name__/BR__Name__.h"
 #include "support/BRSet.h"
 #include "support/util/BRUtilMath.h"
 
 #include <stdio.h>
 #include <errno.h>
 
-static WKWalletXTZ
+static WKWallet__SYMBOL__
 wkWalletCoerce (WKWallet wallet) {
-    assert (WK_NETWORK_TYPE_XTZ == wallet->type);
-    return (WKWalletXTZ) wallet;
+    assert (WK_NETWORK_TYPE___SYMBOL__ == wallet->type);
+    return (WKWallet__SYMBOL__) wallet;
 }
 
 typedef struct {
-    BRTezosAccount xtzAccount;
-} WKWalletCreateContextXTZ;
+    BR__Name__Account __symbol__Account;
+} WKWalletCreateContext__SYMBOL__;
 
 static void
-wkWalletCreateCallbackXTZ (WKWalletCreateContext context,
+wkWalletCreateCallback__SYMBOL__ (WKWalletCreateContext context,
                                WKWallet wallet) {
-    WKWalletCreateContextXTZ *contextXTZ = (WKWalletCreateContextXTZ*) context;
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
+    WKWalletCreateContext__SYMBOL__ *context__SYMBOL__ = (WKWalletCreateContext__SYMBOL__*) context;
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
 
-    walletXTZ->xtzAccount = contextXTZ->xtzAccount;
+    wallet__SYMBOL__->__symbol__Account = context__SYMBOL__->__symbol__Account;
 }
 
 private_extern WKWallet
-wkWalletCreateAsXTZ (WKWalletListener listener,
+wkWalletCreateAs__SYMBOL__ (WKWalletListener listener,
                          WKUnit unit,
                          WKUnit unitForFee,
-                         BRTezosAccount xtzAccount) {
+                         BR__Name__Account __symbol__Account) {
     int hasMinBalance;
     int hasMaxBalance;
-    BRTezosUnitMutez minBalanceXTZ = tezosAccountGetBalanceLimit (xtzAccount, 0, &hasMinBalance);
-    BRTezosUnitMutez maxBalanceXTZ = tezosAccountGetBalanceLimit (xtzAccount, 1, &hasMaxBalance);
+    BR__Name__UnitMutez minBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 0, &hasMinBalance);
+    BR__Name__UnitMutez maxBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 1, &hasMaxBalance);
 
-    WKAmount minBalance = hasMinBalance ? wkAmountCreateAsXTZ(unit, WK_FALSE, minBalanceXTZ) : NULL;
-    WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAsXTZ(unit, WK_FALSE, maxBalanceXTZ) : NULL;
+    WKAmount minBalance = hasMinBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, minBalance__SYMBOL__) : NULL;
+    WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, maxBalance__SYMBOL__) : NULL;
 
-    BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis (TEZOS_DEFAULT_MUTEZ_PER_BYTE);
-    WKFeeBasis feeBasis   = wkFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
+    BR__Name__FeeBasis feeBasis__SYMBOL__ = __name__DefaultFeeBasis (__NAME___DEFAULT_MUTEZ_PER_BYTE);
+    WKFeeBasis feeBasis   = wkFeeBasisCreateAs__SYMBOL__ (unitForFee, feeBasis__SYMBOL__);
 
-    WKWalletCreateContextXTZ contextXTZ = {
-        xtzAccount
+    WKWalletCreateContext__SYMBOL__ context__SYMBOL__ = {
+        __symbol__Account
     };
 
-    WKWallet wallet = wkWalletAllocAndInit (sizeof (struct WKWalletXTZRecord),
-                                                      WK_NETWORK_TYPE_XTZ,
+    WKWallet wallet = wkWalletAllocAndInit (sizeof (struct WKWallet__SYMBOL__Record),
+                                                      WK_NETWORK_TYPE___SYMBOL__,
                                                       listener,
                                                       unit,
                                                       unitForFee,
                                                       minBalance,
                                                       maxBalance,
                                                       feeBasis,
-                                                      &contextXTZ,
-                                                      wkWalletCreateCallbackXTZ);
+                                                      &context__SYMBOL__,
+                                                      wkWalletCreateCallback__SYMBOL__);
 
     wkFeeBasisGive(feeBasis);
     wkAmountGive (maxBalance);
@@ -78,43 +78,41 @@ wkWalletCreateAsXTZ (WKWalletListener listener,
 }
 
 static void
-wkWalletReleaseXTZ (WKWallet wallet) {
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
-    tezosAccountFree(walletXTZ->xtzAccount);
+wkWalletRelease__SYMBOL__ (WKWallet wallet) {
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
+    __name__AccountFree(wallet__SYMBOL__->__symbol__Account);
 }
 
 static WKAddress
-wkWalletGetAddressXTZ (WKWallet wallet,
+wkWalletGetAddress__SYMBOL__ (WKWallet wallet,
                            WKAddressScheme addressScheme) {
     assert (WK_ADDRESS_SCHEME_NATIVE == addressScheme);
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
-    return wkAddressCreateAsXTZ (tezosAccountGetAddress(walletXTZ->xtzAccount));
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
+    return wkAddressCreateAs__SYMBOL__ (__name__AccountGetAddress(wallet__SYMBOL__->__symbol__Account));
 }
 
 static bool
-wkWalletHasAddressXTZ (WKWallet wallet,
+wkWalletHasAddress__SYMBOL__ (WKWallet wallet,
                            WKAddress address) {
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
-    BRTezosAddress xtzAddress = wkAddressAsXTZ (address);
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
+    BR__Name__Address __symbol__Address = wkAddressAs__SYMBOL__ (address);
     
-    return tezosAccountHasAddress (walletXTZ->xtzAccount, xtzAddress);
+    return __name__AccountHasAddress (wallet__SYMBOL__->__symbol__Account, __symbol__Address);
 }
 
 private_extern bool
-wkWalletNeedsRevealXTZ (WKWallet wallet) {
+wkWalletNeedsReveal__SYMBOL__ (WKWallet wallet) {
     assert(wallet);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        // reveal is needed before the first outgoing transfer and if the type of any outgoing
-        // transfer is not WK_TRANSFER_STATE_ERRORED (a failed submit).
+        // reveal is needed before the first outgoing transfer
         WKTransferDirection direction = wkTransferGetDirection (wallet->transfers[index]);
-        WKTransferStateType type      = wkTransferGetStateType (wallet->transfers[index]);
-        if (WK_TRANSFER_SENT == direction && WK_TRANSFER_STATE_ERRORED != type) return false;
+        if (WK_TRANSFER_SENT == direction) return false;
     }
     return true;
 }
 
 private_extern WKTransfer
-wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
+wkWalletGetTransferByHashOrUIDSAndTarget__SYMBOL__ (WKWallet wallet,
                                              WKHash hashToMatch,
                                              const char *uids,
                                              WKAddress targetToMatch) {
@@ -133,21 +131,21 @@ wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
 }
 
 extern size_t
-wkWalletGetTransferAttributeCountXTZ (WKWallet wallet,
+wkWalletGetTransferAttributeCount__SYMBOL__ (WKWallet wallet,
                                           WKAddress target) {
     size_t countRequired, countOptional;
-    tezosGetTransactionAttributeKeys (1, &countRequired);
-    tezosGetTransactionAttributeKeys (0, &countOptional);
+    __name__GetTransactionAttributeKeys (1, &countRequired);
+    __name__GetTransactionAttributeKeys (0, &countOptional);
     return countRequired + countOptional;
 }
 
 extern WKTransferAttribute
-wkWalletGetTransferAttributeAtXTZ (WKWallet wallet,
+wkWalletGetTransferAttributeAt__SYMBOL__ (WKWallet wallet,
                                        WKAddress target,
                                        size_t index) {
     size_t countRequired, countOptional;
-    const char **keysRequired = tezosGetTransactionAttributeKeys (1, &countRequired);
-    const char **keysOptional = tezosGetTransactionAttributeKeys (0, &countOptional);
+    const char **keysRequired = __name__GetTransactionAttributeKeys (1, &countRequired);
+    const char **keysOptional = __name__GetTransactionAttributeKeys (0, &countOptional);
 
     assert (index < (countRequired + countOptional));
 
@@ -159,12 +157,12 @@ wkWalletGetTransferAttributeAtXTZ (WKWallet wallet,
 }
 
 static int // 1 if equal, 0 if not.
-tezosCompareFieldOption (const char *t1, const char *t2) {
+__name__CompareFieldOption (const char *t1, const char *t2) {
     return 0 == strcasecmp (t1, t2);
 }
 
 extern WKTransferAttributeValidationError
-wkWalletValidateTransferAttributeXTZ (WKWallet wallet,
+wkWalletValidateTransferAttribute__SYMBOL__ (WKWallet wallet,
                                           OwnershipKept WKTransferAttribute attribute,
                                           WKBoolean *validates) {
     const char *key = wkTransferAttributeGetKey (attribute);
@@ -182,7 +180,7 @@ wkWalletValidateTransferAttributeXTZ (WKWallet wallet,
         return error;
     }
 
-    if (tezosCompareFieldOption (key, FIELD_OPTION_DELEGATION_OP)) {
+    if (__name__CompareFieldOption (key, FIELD_OPTION_DELEGATION_OP)) {
         // expect 0 or 1
         char *end = NULL;
         errno = 0;
@@ -195,11 +193,11 @@ wkWalletValidateTransferAttributeXTZ (WKWallet wallet,
             error = WK_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_MISMATCHED_TYPE;
         }
     }
-    else if (tezosCompareFieldOption (key, FIELD_OPTION_DELEGATE)) {
+    else if (__name__CompareFieldOption (key, FIELD_OPTION_DELEGATE)) {
         // expect string
         *validates = WK_TRUE;
     }
-    else if (tezosCompareFieldOption (key, FIELD_OPTION_OPERATION_TYPE)) {
+    else if (__name__CompareFieldOption (key, FIELD_OPTION_OPERATION_TYPE)) {
         // expect string
         *validates = WK_TRUE;
     }
@@ -214,7 +212,7 @@ wkWalletValidateTransferAttributeXTZ (WKWallet wallet,
 
 // create for send
 extern WKTransfer
-wkWalletCreateTransferXTZ (WKWallet  wallet,
+wkWalletCreateTransfer__SYMBOL__ (WKWallet  wallet,
                                WKAddress target,
                                WKAmount  amount,
                                WKFeeBasis estimatedFeeBasis,
@@ -223,12 +221,12 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
                                WKCurrency currency,
                                WKUnit unit,
                                WKUnit unitForFee) {
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
     
-    BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
-    BRTezosAddress xtzTarget  = wkAddressAsXTZ (target);
-    BRTezosUnitMutez mutez = tezosMutezCreate (amount);
-    BRTezosFeeBasis feeBasis = wkFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
+    BR__Name__Address source  = __name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account);
+    BR__Name__Address __symbol__Target  = wkAddressAs__SYMBOL__ (target);
+    BR__Name__UnitMutez mutez = __name__MutezCreate (amount);
+    BR__Name__FeeBasis feeBasis = wkFeeBasisCoerce__SYMBOL__ (estimatedFeeBasis)->__symbol__FeeBasis;
     int64_t counter = (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
     
     bool delegationOp = false;
@@ -236,7 +234,7 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
     for (size_t index = 0; index < attributesCount; index++) {
         WKTransferAttribute attribute = attributes[index];
         if (NULL != wkTransferAttributeGetValue(attribute)) {
-            if (tezosCompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
+            if (__name__CompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
                 int op;
                 sscanf (wkTransferAttributeGetValue(attribute), "%d", &op);
                 delegationOp = (op == 1);
@@ -244,23 +242,23 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
         }
     }
     
-    BRTezosTransfer xtzTransfer = tezosTransferCreateNew (source,
-                                                          xtzTarget,
+    BR__Name__Transfer __symbol__Transfer = __name__TransferCreateNew (source,
+                                                          __symbol__Target,
                                                           mutez,
                                                           feeBasis,
                                                           counter,
                                                           delegationOp);
 
-    tezosAddressFree (source);
+    __name__AddressFree (source);
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
-    WKTransfer      transfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
+    WKTransfer      transfer = wkTransferCreateAs__SYMBOL__ (wallet->listenerTransfer,
                                                                 NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,
-                                                                walletXTZ->xtzAccount,
-                                                                xtzTransfer);
+                                                                wallet__SYMBOL__->__symbol__Account,
+                                                                __symbol__Transfer);
     
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);
@@ -269,7 +267,7 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
 }
 
 extern WKTransfer
-wkWalletCreateTransferMultipleXTZ (WKWallet wallet,
+wkWalletCreateTransferMultiple__SYMBOL__ (WKWallet wallet,
                                        size_t outputsCount,
                                        WKTransferOutput *outputs,
                                        WKFeeBasis estimatedFeeBasis,
@@ -281,35 +279,35 @@ wkWalletCreateTransferMultipleXTZ (WKWallet wallet,
 }
 
 static OwnershipGiven BRSetOf(WKAddress)
-wkWalletGetAddressesForRecoveryXTZ (WKWallet wallet) {
+wkWalletGetAddressesForRecovery__SYMBOL__ (WKWallet wallet) {
     BRSetOf(WKAddress) addresses = wkAddressSetCreate (1);
 
-    WKWalletXTZ walletXTZ = wkWalletCoerce(wallet);
+    WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce(wallet);
 
-    BRSetAdd (addresses, wkAddressCreateAsXTZ (tezosAccountGetAddress (walletXTZ->xtzAccount)));
+    BRSetAdd (addresses, wkAddressCreateAs__SYMBOL__ (__name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account)));
 
     return addresses;
 }
 
 static bool
-wkWalletIsEqualXTZ (WKWallet wb1, WKWallet wb2) {
+wkWalletIsEqual__SYMBOL__ (WKWallet wb1, WKWallet wb2) {
     if (wb1 == wb2) return true;
 
-    WKWalletXTZ w1 = wkWalletCoerce(wb1);
-    WKWalletXTZ w2 = wkWalletCoerce(wb2);
-    return w1->xtzAccount == w2->xtzAccount;
+    WKWallet__SYMBOL__ w1 = wkWalletCoerce(wb1);
+    WKWallet__SYMBOL__ w2 = wkWalletCoerce(wb2);
+    return w1->__symbol__Account == w2->__symbol__Account;
 }
 
-WKWalletHandlers wkWalletHandlersXTZ = {
-    wkWalletReleaseXTZ,
-    wkWalletGetAddressXTZ,
-    wkWalletHasAddressXTZ,
-    wkWalletGetTransferAttributeCountXTZ,
-    wkWalletGetTransferAttributeAtXTZ,
-    wkWalletValidateTransferAttributeXTZ,
-    wkWalletCreateTransferXTZ,
-    wkWalletCreateTransferMultipleXTZ,
-    wkWalletGetAddressesForRecoveryXTZ,
+WKWalletHandlers wkWalletHandlers__SYMBOL__ = {
+    wkWalletRelease__SYMBOL__,
+    wkWalletGetAddress__SYMBOL__,
+    wkWalletHasAddress__SYMBOL__,
+    wkWalletGetTransferAttributeCount__SYMBOL__,
+    wkWalletGetTransferAttributeAt__SYMBOL__,
+    wkWalletValidateTransferAttribute__SYMBOL__,
+    wkWalletCreateTransfer__SYMBOL__,
+    wkWalletCreateTransferMultiple__SYMBOL__,
+    wkWalletGetAddressesForRecovery__SYMBOL__,
     NULL,//WKWalletAnnounceTransfer
-    wkWalletIsEqualXTZ
+    wkWalletIsEqual__SYMBOL__
 };

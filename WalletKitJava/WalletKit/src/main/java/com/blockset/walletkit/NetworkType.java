@@ -17,5 +17,6 @@ public enum NetworkType {
     XRP,
     HBAR,
     XTZ,
-    XLM
+    XLM,
+    /* __SYMBOL__ */
 }
