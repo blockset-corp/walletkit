@@ -351,10 +351,13 @@ static void _updateFilterRerequestDone(void *info, int success)
         pthread_mutex_lock(&manager->lock);
 
         if ((peer->flags & PEER_FLAG_NEEDSUPDATE) == 0) {
-            UInt256 locators[_btcPeerManagerBlockLocators(manager, NULL, 0)];
-            size_t count = _btcPeerManagerBlockLocators(manager, locators, sizeof(locators)/sizeof(*locators));
-            
+            size_t   count    = _btcPeerManagerBlockLocators(manager, NULL, 0);
+            UInt256 *locators = calloc (count, sizeof(UInt256));
+            _btcPeerManagerBlockLocators(manager, locators, count);
+
             btcPeerSendGetblocks(peer, locators, count, UINT256_ZERO);
+
+            if (NULL != locators) free (locators);
         }
 
         pthread_mutex_unlock(&manager->lock);
@@ -1252,12 +1255,14 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
             // call getblocks, unless we already did with the previous block, or we're still syncing
             if (manager->lastBlock->height >= btcPeerLastBlock(peer) &&
                 (! manager->lastOrphan || ! UInt256Eq(manager->lastOrphan->blockHash, block->prevBlock))) {
-                UInt256 locators[_btcPeerManagerBlockLocators(manager, NULL, 0)];
-                size_t locatorsCount = _btcPeerManagerBlockLocators(manager, locators,
-                                                                   sizeof(locators)/sizeof(*locators));
-                
+                size_t   locatorsCount = _btcPeerManagerBlockLocators(manager, NULL, 0);
+                UInt256 *locators      = calloc (locatorsCount, sizeof(UInt256));
+                _btcPeerManagerBlockLocators (manager, locators, locatorsCount);
+
                 peer_log(peer, "calling getblocks");
                 btcPeerSendGetblocks(peer, locators, locatorsCount, UINT256_ZERO);
+
+                if (NULL != locators) free (locators);
             }
             
             BRSetAdd(manager->orphans, block); // BUG: limit total orphans to avoid memory exhaustion attack
