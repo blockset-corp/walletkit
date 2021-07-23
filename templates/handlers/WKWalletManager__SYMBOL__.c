@@ -140,7 +140,7 @@ wkWalletManagerEstimateFeeBasis__SYMBOL__ (WKWalletManager manager,
                                         WKNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes) {
-    BR__Name__UnitMutez mutezPerByte = __name__MutezCreate (networkFee->pricePerCostFactor) / 1000; // given as nanotez/byte
+    BR__Name__Amount mutezPerByte = __name__MutezCreate (networkFee->pricePerCostFactor) / 1000; // given as nanotez/byte
     BR__Name__FeeBasis __symbol__FeeBasis = __name__DefaultFeeBasis (mutezPerByte);
     WKFeeBasis feeBasis = wkFeeBasisCreateAs__SYMBOL__ (networkFee->pricePerCostFactorUnit, __symbol__FeeBasis);
 
@@ -216,7 +216,7 @@ wkWalletManagerRecoverTransferFromTransferBundle__SYMBOL__ (WKWalletManager mana
     BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (manager->account,
                                                               WK_NETWORK_TYPE___SYMBOL__);
     
-    BR__Name__UnitMutez amountMutez, feeMutez = 0;
+    BR__Name__Amount amountMutez, feeMutez = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountMutez);
     if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeMutez);
     BR__Name__Address toAddress   = __name__AddressCreateFromString (bundle->to,   false);
@@ -297,7 +297,7 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimate__SYMBOL__ (WKWalletManager cwm,
     // add 10% padding to gas/storage limits
     gasUsed = (int64_t)(gasUsed * 1.1);
     storageUsed = (int64_t)(storageUsed * 1.1);
-    BR__Name__UnitMutez mutezPerKByte = __name__MutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
+    BR__Name__Amount mutezPerKByte = __name__MutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
     
     // get the serialized txn size from the estimation payload
     double sizeInKBytes = wkFeeBasisCoerce__SYMBOL__(initialFeeBasis)->__symbol__FeeBasis.u.initial.sizeInKBytes;

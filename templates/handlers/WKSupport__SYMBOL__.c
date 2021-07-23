@@ -19,14 +19,14 @@
 private_extern WKAmount
 wkAmountCreateAs__SYMBOL__ (WKUnit unit,
                          WKBoolean isNegative,
-                         BR__Name__UnitMutez value) {
+                         BR__Name__Amount value) {
     return wkAmountCreate (unit, isNegative, uint256Create ((uint64_t)value));
 }
 
-private_extern BR__Name__UnitMutez
+private_extern BR__Name__Amount
 __name__MutezCreate (WKAmount amount) {
     UInt256 value = wkAmountGetValue (amount);
-    return (BR__Name__UnitMutez) value.u64[0];
+    return (BR__Name__Amount) value.u64[0];
 }
 
 // MARK: - Hash
@@ -46,6 +46,8 @@ wkHashCreateAs__SYMBOL__ (BR__Name__Hash hash) {
 
 private_extern WKHash
 wkHashCreateFromStringAs__SYMBOL__(const char *input) {
+    assert (false);
+    
     size_t length = BRBase58CheckDecode(NULL, 0, input);
     assert(length == __NAME___HASH_BYTES);
     BR__Name__Hash hash;

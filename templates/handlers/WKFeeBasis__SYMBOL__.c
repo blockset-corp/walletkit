@@ -84,7 +84,7 @@ wkFeeBasisGetPricePerCostFactor__SYMBOL__ (WKFeeBasis feeBasis) {
 static WKAmount
 wkFeeBasisGetFee__SYMBOL__ (WKFeeBasis feeBasis) {
     BR__Name__FeeBasis __symbol__FeeBasis = wkFeeBasisCoerce__SYMBOL__ (feeBasis)->__symbol__FeeBasis;
-    BR__Name__UnitMutez fee = __name__FeeBasisGetFee (&__symbol__FeeBasis);
+    BR__Name__Amount fee = __name__FeeBasisGetFee (&__symbol__FeeBasis);
     return wkAmountCreateAs__SYMBOL__ (feeBasis->unit, WK_FALSE, fee);
 }
 

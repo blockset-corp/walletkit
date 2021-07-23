@@ -131,9 +131,9 @@ wkFeeBasisAs__SYMBOL__ (WKFeeBasis feeBasis);
 private_extern WKAmount
 wkAmountCreateAs__SYMBOL__ (WKUnit unit,
                          WKBoolean isNegative,
-                         BR__Name__UnitMutez value);
+                         BR__Name__Amount value);
 
-private_extern BR__Name__UnitMutez
+private_extern BR__Name__Amount
 __name__MutezCreate (WKAmount amount);
 
 private_extern WKHash

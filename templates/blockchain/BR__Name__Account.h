@@ -12,9 +12,9 @@
 #ifndef BR__Name__Account_h
 #define BR__Name__Account_h
 
-
 #include "support/BRKey.h"
 #include "support/BRInt.h"
+
 #include "BR__Name__Base.h"
 #include "BR__Name__Address.h"
 
@@ -22,6 +22,7 @@
 extern "C" {
 #endif
 
+#define __NAME___PUBLIC_KEY_SIZE 32
 
 typedef struct BR__Name__AccountRecord *BR__Name__Account;
 
@@ -44,7 +45,8 @@ __name__AccountCreateWithSeed (UInt512 seed);
  * @return account
 */
 extern BR__Name__Account  /* caller must free - using "free" function */
-__name__AccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount);
+__name__AccountCreateWithSerialization (uint8_t *bytes,
+                                        size_t bytesCount);
 
 /**
  * Free all memory associated with this account
@@ -60,15 +62,19 @@ __name__AccountFree (BR__Name__Account account);
  * Signs a message using the account private key.
  *
  * @param account
- * @param data - the message to sign
+ * @param bytes - the bytes to sign
+ * @param bytesCount - the number of byes
  * @param seed - account seed
+ * @param count - Filled with number of result bytes
  *
- * @return signature
+ * @return result bytes
 */
-extern WKData
+extern OwnershipGiven uint8_t *
 __name__AccountSignData (BR__Name__Account account,
-                      WKData data,
-                      UInt512 seed);
+                         uint8_t *bytes,
+                         size_t   bytesCount,
+                         UInt512 seed,
+                         size_t  *count);
 
 /**
  * Get the public key for this __Name__ account
@@ -77,7 +83,8 @@ __name__AccountSignData (BR__Name__Account account,
  *
  * @return public key
  */
-extern BRKey __name__AccountGetPublicKey (BR__Name__Account account);
+extern BRKey
+__name__AccountGetPublicKey (BR__Name__Account account);
 
 /**
  * Get the __Name__ Address from the specified account.
@@ -86,7 +93,8 @@ extern BRKey __name__AccountGetPublicKey (BR__Name__Account account);
  *
  * @return address
  */
-extern BR__Name__Address __name__AccountGetAddress (BR__Name__Account account);
+extern BR__Name__Address
+__name__AccountGetAddress (BR__Name__Account account);
 
 /**
 *
@@ -97,7 +105,8 @@ extern BR__Name__Address __name__AccountGetAddress (BR__Name__Account account);
 * @return address
 */
 extern uint8_t * // Caller owns memory and must delete calling "free"
-__name__AccountGetSerialization (BR__Name__Account account, size_t *bytesCount);
+__name__AccountGetSerialization (BR__Name__Account account,
+                                 size_t *bytesCount);
 
 /**
  * Check if this account has the specified address
@@ -107,7 +116,9 @@ __name__AccountGetSerialization (BR__Name__Account account, size_t *bytesCount);
  *
  * @return 1 if true, 0 if false
 */
-extern int __name__AccountHasAddress (BR__Name__Account account, BR__Name__Address address);
+extern int
+__name__AccountHasAddress (BR__Name__Account account,
+                           BR__Name__Address address);
 
 /**
  * Return the balance limit, either asMaximum or asMinimum
@@ -118,7 +129,7 @@ extern int __name__AccountHasAddress (BR__Name__Account account, BR__Name__Addre
  *
  * @return balance limit - in mutez units
  */
-extern BR__Name__UnitMutez
+extern BR__Name__Amount
 __name__AccountGetBalanceLimit (BR__Name__Account account,
                             int asMaximum,
                             int *hasLimit);

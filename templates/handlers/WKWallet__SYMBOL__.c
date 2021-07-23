@@ -46,8 +46,8 @@ wkWalletCreateAs__SYMBOL__ (WKWalletListener listener,
                          BR__Name__Account __symbol__Account) {
     int hasMinBalance;
     int hasMaxBalance;
-    BR__Name__UnitMutez minBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 0, &hasMinBalance);
-    BR__Name__UnitMutez maxBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 1, &hasMaxBalance);
+    BR__Name__Amount minBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 0, &hasMinBalance);
+    BR__Name__Amount maxBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 1, &hasMaxBalance);
 
     WKAmount minBalance = hasMinBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, minBalance__SYMBOL__) : NULL;
     WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, maxBalance__SYMBOL__) : NULL;
@@ -134,8 +134,8 @@ extern size_t
 wkWalletGetTransferAttributeCount__SYMBOL__ (WKWallet wallet,
                                           WKAddress target) {
     size_t countRequired, countOptional;
-    __name__GetTransactionAttributeKeys (1, &countRequired);
-    __name__GetTransactionAttributeKeys (0, &countOptional);
+    __name__TransactionGetAttributeKeys (true,  &countRequired);
+    __name__TransactionGetAttributeKeys (false, &countOptional);
     return countRequired + countOptional;
 }
 
@@ -144,8 +144,8 @@ wkWalletGetTransferAttributeAt__SYMBOL__ (WKWallet wallet,
                                        WKAddress target,
                                        size_t index) {
     size_t countRequired, countOptional;
-    const char **keysRequired = __name__GetTransactionAttributeKeys (1, &countRequired);
-    const char **keysOptional = __name__GetTransactionAttributeKeys (0, &countOptional);
+    const char **keysRequired = __name__TransactionGetAttributeKeys (true,  &countRequired);
+    const char **keysOptional = __name__TransactionGetAttributeKeys (false, &countOptional);
 
     assert (index < (countRequired + countOptional));
 
@@ -225,7 +225,7 @@ wkWalletCreateTransfer__SYMBOL__ (WKWallet  wallet,
     
     BR__Name__Address source  = __name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account);
     BR__Name__Address __symbol__Target  = wkAddressAs__SYMBOL__ (target);
-    BR__Name__UnitMutez mutez = __name__MutezCreate (amount);
+    BR__Name__Amount mutez = __name__MutezCreate (amount);
     BR__Name__FeeBasis feeBasis = wkFeeBasisCoerce__SYMBOL__ (estimatedFeeBasis)->__symbol__FeeBasis;
     int64_t counter = (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
     

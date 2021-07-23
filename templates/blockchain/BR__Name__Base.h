@@ -11,16 +11,34 @@
 #ifndef BR__Name__Base_h
 #define BR__Name__Base_h
 
-#include "WKBase.h"
-#include "support/BRBase58.h"
+#include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include <inttypes.h>
+#include <memory.h>
+#include <assert.h>
+
+#include "support/BRBase.h"
+#include "support/BRInt.h"
+
+#if !defined(ASSERT_UNIMPLEMENTED)
+#define ASSERT_UNIMPLEMENTED    assert(false);
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// The integer amount for __Name__
+typedef uint64_t BR__Name__Amount;
 
-#define __NAME___PUBLIC_KEY_SIZE 32
+#if 0
+#define __NAME___AMOUNT_DIGITS          (8)
+#define __NAME___AMOUNT_SCALE_FACTOR    (100000000)  // 1
+#endif
+
+// MARK: - __Name__ Hash
+
 #define __NAME___HASH_BYTES 34
 
 typedef struct {
@@ -35,21 +53,9 @@ typedef struct {
     0, 0, 0, 0,     0, 0, 0, 0, \
 })
 
-typedef int64_t BR__Name__UnitMutez;
-
-#define __NAME___TEZ_SCALE_FACTOR       (1000000)  // 1 TEZ = 1e6 MUTEZ
-#define __NAME___TEZ_TO_MUTEZ(x)        ((x) * __NAME___TEZ_SCALE_FACTOR)
-
-typedef enum {
-    __NAME___OP_ENDORESEMENT = 0,
-    __NAME___OP_REVEAL = 107,
-    __NAME___OP_TRANSACTION = 108,
-    __NAME___OP_DELEGATION = 110
-} BR__Name__OperationKind;
-
 static inline bool
 __name__HashIsEqual (const BR__Name__Hash h1,
-                  const BR__Name__Hash h2) {
+                     const BR__Name__Hash h2) {
     return 0 == memcmp (h1.bytes, h2.bytes, __NAME___HASH_BYTES);
 }
 
@@ -60,18 +66,32 @@ __name__HashIsEmpty (BR__Name__Hash hash) {
 
 static inline BR__Name__Hash
 __name__HashFromString(const char *input) {
+    assert (0);
+#if 0
     size_t length = BRBase58CheckDecode(NULL, 0, input);
     assert(length == __NAME___HASH_BYTES);
     BR__Name__Hash hash;
     BRBase58CheckDecode(hash.bytes, length, input);
+#endif
+    BR__Name__Hash hash = { 0 };
     return hash;
 }
 
 static inline char *
 __name__HashToString (BR__Name__Hash hash) {
+#if 0
     char string[64] = {0};
     BRBase58CheckEncode(string, sizeof(string), hash.bytes, sizeof(hash.bytes));
     return strdup(string);
+#endif
+    return strdup ("");
+}
+
+// For use with BRSet
+static inline uint32_t
+__name__HashSetValue (const BR__Name__Hash *hash) {
+    // First foun bytes as a uint32; unlikely to be sufficient (?)
+    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
 }
 
 #ifdef __cplusplus
