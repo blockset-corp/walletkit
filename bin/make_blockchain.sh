@@ -58,12 +58,12 @@ core_packages=3
 swift_packages=1
 packages=(1 1 1 1 1)
 package_names=("handlers" "blockchain" "test" "Swift" "Java")
-root=".."
+root="$(dirname $0)/.."
 output_path=()
 core_pkg_paths=("src/walletkit/handlers" "src" "WalletKitCoreTests/test")
 swift_pkg_paths=("WalletKit")
 pkg_paths=()
-templates="../templates"
+templates="${root}/templates"
 wk_config_templ="WkConfig.h.tmpl"
 build_bc_templ="make/cmakelists.bc.tmpl"
 build_hndlr_templ="make/cmakelists.hndlr.tmpl"
@@ -95,7 +95,7 @@ echov() {
 usage() {
 
     error_msg="$1"
-    if [ "$error_msg" != "" ]; then 
+    if [ "$error_msg" != "" ]; then
         echo "Err: $error_msg"
     fi
 
@@ -109,7 +109,7 @@ usage() {
     echo
     echo "       options:"
     echo
-    echo "          g: Specifies a code package index to include, and controls which type of"
+    echo "          -g: Specifies a code package index to include, and controls which type of"
     echo "             output will be generated:"
     echo "                0: handlers package"
     echo "                1: blockchain implementation package"
@@ -118,11 +118,12 @@ usage() {
     echo "                3: Java"
     echo "             By default all packages are generated"
     echo
-    echo "          o: Specifies the output folder for generated code" 
-    echo "          i: Path to templates"
-    echo "          v: Verbose output"
-    echo "          t: Creates header files supporting testnet (default mainnet)"
-    echo "          u: Username for decorating copyright notices (otherwise shell defaults)"
+    echo "          -o: Specifies the output folder for generated code"
+    echo "          -i: Path to templates"
+    echo "          -v: Verbose output"
+    echo "          -t: Creates header files supporting testnet (default mainnet)"
+    echo "          -u: Username for decorating copyright notices (otherwise shell defaults)"
+    echo "          -h: help"
 }
 
 # Gets all program options and populates global variables.
@@ -158,7 +159,7 @@ get_opts() {
             ;;
 
         u)
-            gen_user=$OPTARG
+            gen_user="$OPTARG"
             parm_num=$(($parm_num+1))
             ;;
 
@@ -286,10 +287,9 @@ personalize_package() {
     for pkg_file in $pkg_files; do 
        
         for (( replace=0; replace<${#symbols[@]}; replace+=2 )); do 
-            
             # Note: due to differences with in-place editing of files with sed
             # on OSX vs GNU, the following may not work on GNU
-            sed -i '' -e "1,\$s/${symbols[replace]}/${symbols[replace+1]}/g" $pkg_path/$pkg_file
+            sed -i '' -e "1,\$s/${symbols[replace]}/${symbols[replace+1]//\\s/ }/g" $pkg_path/$pkg_file
         done 
 
     done
@@ -748,7 +748,7 @@ update_java() {
 
 # ---------------------- main -------------------------
 # Valid options beyond this point
-get_opts $*
+get_opts "$@" 
 
 # Resolve top level output paths
 output_path=($root/WalletKitCore $root/WalletKitSwift $root/WalletKitJava)
@@ -823,7 +823,7 @@ fi
 if [ ${packages[$HANDLER_PKG]} -ne 0 ]; then
 
     echov "  Creating '$bc_symbol' ($bc_name) handler"
-    rename_symbols=("__USER__"   $gen_user
+    rename_symbols=("__USER__"   ${gen_user// /\\s}
                     "__DATE__"   $gen_date
                     "__YEAR__"   $copyright_year
                     "__SYMBOL__" $bc_symbol
@@ -853,7 +853,7 @@ fi
 # Update naked templates for blockchain impl 
 if [ ${packages[$BLOCKCHAIN_PKG]} -ne 0 ]; then
     echov "  Creating '$bc_symbol' ($bc_name) blockchain impl"
-    rename_symbols=("__USER__"   $gen_user
+    rename_symbols=("__USER__"   ${gen_user// /\\s}
                     "__DATE__"   $gen_date
                     "__YEAR__"   $copyright_year
                     "__SYMBOL__" $bc_symbol
@@ -878,8 +878,7 @@ fi
 if [ ${packages[$TESTS_PKG]} -ne 0 ]; then
     echov "  Creating '$bc_symbol' ($bc_name) test"
 
-
-    rename_symbols=("__USER__"   $gen_user
+    rename_symbols=("__USER__"   ${gen_user// /\\s}
                     "__DATE__"   $gen_date
                     "__YEAR__"   $copyright_year
                     "__SYMBOL__" $bc_symbol

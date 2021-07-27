@@ -13,36 +13,51 @@
 
 #include "support/BRInt.h"
 #include "support/BRKey.h"
+#include "BR__Name__Base.h"
 #include "BR__Name__Account.h"
 #include "BR__Name__Address.h"
 #include "BR__Name__FeeBasis.h"
-#include "BR__Name__Base.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct BR__Name__TransactionRecord *BR__Name__Transaction;
-typedef struct BR__Name__SerializedOperationRecord *BR__Name__SerializedOperation;
-typedef struct BR__Name__SignatureRecord *BR__Name__Signature;
+// MARK: - Signature
+
+#define __NAME___SIGNATURE_BYTES (64)
 
 typedef struct {
-    BR__Name__OperationKind kind;
-    union {
-        struct {
-            BR__Name__Address target;
-            BR__Name__UnitMutez amount;
-        } transaction;
-        
-        struct {
-            BR__Name__Address target;
-        } delegation;
-        
-        struct {
-            uint8_t publicKey[__NAME___PUBLIC_KEY_SIZE];
-        } reveal;
-    } u;
-} BR__Name__OperationData;
+    uint8_t bytes[__NAME___SIGNATURE_BYTES];
+} BR__Name__Signature;
+
+static inline bool
+__name__SignatureIsEmpty (const BR__Name__Signature *signature) {
+    BR__Name__Signature empty = { 0 };
+    return 0 == memcmp (signature->bytes, empty.bytes, __NAME___SIGNATURE_BYTES);
+}
+
+// MARK: - Attributes
+
+extern const char **
+__name__TransactionGetAttributeKeys (bool asRequired, size_t *count);
+
+
+// MARK - Transaction
+
+typedef struct BR__Name__TransactionRecord {
+    BR__Name__Address source;
+    BR__Name__Address target;
+
+    BR__Name__Amount amount;
+    BR__Name__FeeBasis feeBasis;
+
+    BR__Name__Hash hash;
+    BR__Name__Signature signature;
+
+    // Serialization
+    uint8_t *serialization;
+    size_t   serializationCount;
+} *BR__Name__Transaction;
 
 /**
  * Create a new __Name__ transaction for sending a transfer
@@ -56,34 +71,10 @@ typedef struct {
  * @return transaction
  */
 extern BR__Name__Transaction /* caller owns memory and must call "__name__TransactionFree" function */
-__name__TransactionCreateTransaction (BR__Name__Address source,
-                                   BR__Name__Address target,
-                                   BR__Name__UnitMutez amount,
-                                   BR__Name__FeeBasis feeBasis,
-                                   int64_t counter);
-
-/**
-* Create a new __Name__ delegation operation
-*
-* @param source - account that is delegating its balance
-* @param target - baker address or self
-* @param amount - amount that was (or will be) transferred
-* @param feeBasis -
-* @param counter -
-*
-* @return transaction
-*/
-extern BR__Name__Transaction
-__name__TransactionCreateDelegation (BR__Name__Address source,
-                                  BR__Name__Address target,
-                                  BR__Name__FeeBasis feeBasis,
-                                  int64_t counter);
-
-extern BR__Name__Transaction
-__name__TransactionCreateReveal (BR__Name__Address source,
-                              uint8_t * pubKey,
-                              BR__Name__FeeBasis feeBasis,
-                              int64_t counter);
+__name__TransactionCreate (BR__Name__Address source,
+                           BR__Name__Address target,
+                           BR__Name__Amount amount,
+                           BR__Name__FeeBasis feeBasis);
 
 /**
 * Create a copy of a __Name__ transaction. Caller must free with __name__TrasactionFree.
@@ -105,59 +96,23 @@ __name__TransactionClone (BR__Name__Transaction transaction);
 extern void
 __name__TransactionFree (BR__Name__Transaction transaction);
 
-/**
-* Serializes (forges) a __Name__ operation with an empty signature and stores the bytes in the transaction.
-* If a reveal operation is required it will be prepended to the serialized operation list.
-*
-* @param transaction
-* @param account         - the source account
-* @param lastBlockHash   - hash of the network's most recent block, needed for serialization payload
-*
- * @return size           - number of bytes in the serialization
- */
-extern size_t
+extern OwnershipGiven uint8_t *
 __name__TransactionSerializeForFeeEstimation (BR__Name__Transaction transaction,
+                                              BR__Name__Account account,
+                                              size_t *count);
+
+extern OwnershipGiven uint8_t *
+__name__TransactionSerializeForSubmission (BR__Name__Transaction transaction,
                                            BR__Name__Account account,
-                                           BR__Name__Hash lastBlockHash,
-                                           bool needsReveal);
+                                           UInt512 seed,
+                                           size_t *count);
 
-/**
- * Serializes (forges) and signs a __Name__ operation and stores the signed bytes in the transaction.
- * If a reveal operation is required it will be prepended to the serialized operation list.
- *
- * @param transaction
- * @param account         - the source account
- * @param seed            - seed for this account, used to create private key
- * @param lastBlockHash   - hash of the network's most recent block, needed for serialization payload
- *
- * @return size           - number of bytes in the signed transaction
- */
-extern size_t
-__name__TransactionSerializeAndSign (BR__Name__Transaction transaction,
-                                  BR__Name__Account account,
-                                  UInt512 seed,
-                                  BR__Name__Hash lastBlockHash,
-                                  bool needsReveal);
-
-/**
- * Get serialiezd bytes for the specified transaction
- *
- * @param transaction
- * @param size         - pointer to variable to hold the size
- *
- * @return bytes       - pointer to serialized bytes
- */
-extern uint8_t * /* caller owns and must free using normal "free" function */
-__name__TransactionGetSignedBytes (BR__Name__Transaction transaction, size_t *size);
+extern  OwnershipGiven uint8_t *
+__name__TransactionGetSerialization (BR__Name__Transaction transaction,
+                                     size_t *count);
 
 extern BR__Name__Hash
 __name__TransactionGetHash(BR__Name__Transaction transaction);
-
-extern int64_t
-__name__TransactionGetCounter(BR__Name__Transaction transaction);
-
-extern BR__Name__UnitMutez
-__name__TransactionGetFee(BR__Name__Transaction transaction);
 
 extern BR__Name__FeeBasis
 __name__TransactionGetFeeBasis(BR__Name__Transaction transaction);
@@ -166,7 +121,7 @@ extern void
 __name__TransactionSetFeeBasis(BR__Name__Transaction transaction,
                             BR__Name__FeeBasis feeBasis);
 
-extern BR__Name__UnitMutez
+extern BR__Name__Amount
 __name__TransactionGetAmount(BR__Name__Transaction transaction);
 
 extern BR__Name__Address
@@ -175,14 +130,8 @@ __name__TransactionGetSource(BR__Name__Transaction transaction);
 extern BR__Name__Address
 __name__TransactionGetTarget(BR__Name__Transaction transaction);
 
-extern BR__Name__OperationKind
-__name__TransactionGetOperationKind(BR__Name__Transaction transaction);
-
-extern BR__Name__OperationData
-__name__TransactionGetOperationData(BR__Name__Transaction transaction);
-
-extern void
-__name__TransactionFreeOperationData(BR__Name__OperationData opData);
+extern BR__Name__Signature
+__name__TransactionGetSignature (BR__Name__Transaction transaction);
 
 extern bool
 __name__TransactionEqual (BR__Name__Transaction t1, BR__Name__Transaction t2);

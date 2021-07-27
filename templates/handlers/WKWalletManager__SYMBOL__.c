@@ -91,18 +91,17 @@ wkWalletManagerSignTransactionWithSeed__SYMBOL__ (WKWalletManager manager,
                                                WKWallet wallet,
                                                WKTransfer transfer,
                                                UInt512 seed) {
-    BR__Name__Hash lastBlockHash = wkHashAs__SYMBOL__ (wkNetworkGetVerifiedBlockHash (manager->network));
-    BR__Name__Account account = (BR__Name__Account) wkAccountAs (manager->account,
-                                                           WK_NETWORK_TYPE___SYMBOL__);
-    BR__Name__Transaction tid = __name__TransferGetTransaction (wkTransferCoerce__SYMBOL__(transfer)->__symbol__Transfer);
-    bool needsReveal = (__NAME___OP_TRANSACTION == __name__TransactionGetOperationKind(tid)) && wkWalletNeedsReveal__SYMBOL__(wallet);
-    
-    if (tid) {
-        size_t tx_size = __name__TransactionSerializeAndSign (tid, account, seed, lastBlockHash, needsReveal);
-        return AS_WK_BOOLEAN(tx_size > 0);
-    } else {
-        return WK_FALSE;
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (manager->account);
+    BR__Name__Transaction __symbol__Transaction = wkTransferCoerce__SYMBOL__(transfer)->__symbol__Transaction;
+
+    size_t serializationSize = 0;
+
+    if (__symbol__Transaction) {
+        uint8_t *serialization = __name__TransactionSerializeForSubmission (__symbol__Transaction, __symbol__Account, seed, &serializationSize);
+        free (serialization);
     }
+
+    return AS_WK_BOOLEAN (serializationSize > 0);
 }
 
 static WKBoolean
@@ -123,8 +122,9 @@ wkWalletManagerEstimateLimit__SYMBOL__ (WKWalletManager manager,
                                      WKBoolean *needEstimate,
                                      WKBoolean *isZeroIfInsuffientFunds,
                                      WKUnit unit) {
-    // We always need an estimate as we do not know the fees.
+#if 0
     *needEstimate = asMaximum;
+#endif
 
     return (WK_TRUE == asMaximum
             ? wkWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'
@@ -140,7 +140,8 @@ wkWalletManagerEstimateFeeBasis__SYMBOL__ (WKWalletManager manager,
                                         WKNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes) {
-    BR__Name__UnitMutez mutezPerByte = __name__MutezCreate (networkFee->pricePerCostFactor) / 1000; // given as nanotez/byte
+#if 0
+    BR__Name__Amount mutezPerByte = __name__MutezCreate (networkFee->pricePerCostFactor) / 1000; // given as nanotez/byte
     BR__Name__FeeBasis __symbol__FeeBasis = __name__DefaultFeeBasis (mutezPerByte);
     WKFeeBasis feeBasis = wkFeeBasisCreateAs__SYMBOL__ (networkFee->pricePerCostFactorUnit, __symbol__FeeBasis);
 
@@ -159,13 +160,12 @@ wkWalletManagerEstimateFeeBasis__SYMBOL__ (WKWalletManager manager,
     
     // serialize the transaction for fee estimation payload
     BR__Name__Hash lastBlockHash = wkHashAs__SYMBOL__ (wkNetworkGetVerifiedBlockHash (manager->network));
-    BR__Name__Account account = (BR__Name__Account) wkAccountAs (manager->account,
-                                                           WK_NETWORK_TYPE___SYMBOL__);
-    BR__Name__Transaction tid = __name__TransferGetTransaction (wkTransferCoerce__SYMBOL__(transfer)->__symbol__Transfer);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (manager->account);
+    BR__Name__Transaction tid = __name__TransactionGetTransaction (wkTransferCoerce__SYMBOL__(transfer)->__symbol__Transaction);
     bool needsReveal = (__NAME___OP_TRANSACTION == __name__TransactionGetOperationKind(tid)) && wkWalletNeedsReveal__SYMBOL__(wallet);
     
     __name__TransactionSerializeForFeeEstimation(tid,
-                                              account,
+                                              __symbol__Account,
                                               lastBlockHash,
                                               needsReveal);
     
@@ -184,6 +184,9 @@ wkWalletManagerEstimateFeeBasis__SYMBOL__ (WKWalletManager manager,
 
     // Require QRY with cookie - made above
     return NULL;
+#endif
+    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreate ();
+    return wkFeeBasisCreateAs__SYMBOL__ (wallet->unitForFee, __symbol__FeeBasis);
 }
 
 static void
@@ -193,7 +196,6 @@ wkWalletManagerRecoverTransfersFromTransactionBundle__SYMBOL__ (WKWalletManager 
     assert (0);
 }
 
-//TODO:__SYMBOL__ refactor (copied from WalletManagerETH)
 static const char *
 cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
     for (size_t index = 0; index < count; index++)
@@ -211,82 +213,81 @@ cwmParseUInt64 (const char *string, bool *error) {
 static void
 wkWalletManagerRecoverTransferFromTransferBundle__SYMBOL__ (WKWalletManager manager,
                                                          OwnershipKept WKClientTransferBundle bundle) {
-    // create BR__Name__Transfer
-
-    BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (manager->account,
-                                                              WK_NETWORK_TYPE___SYMBOL__);
-    
-    BR__Name__UnitMutez amountMutez, feeMutez = 0;
-    sscanf(bundle->amount, "%" PRIu64, &amountMutez);
-    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &feeMutez);
-    BR__Name__Address toAddress   = __name__AddressCreateFromString (bundle->to,   false);
-    BR__Name__Address fromAddress = __name__AddressCreateFromString (bundle->from, false);
-
-    // Convert the hash string to bytes
-    WKHash bundleHash = wkHashCreateFromStringAs__SYMBOL__ (bundle->hash);
-    BR__Name__Hash txId = wkHashAs__SYMBOL__ (bundleHash);
-    wkHashGive(bundleHash);
-
-    int error = (WK_TRANSFER_STATE_ERRORED == bundle->status);
-
-    bool __symbol__TransferNeedFree = true;
-    BR__Name__Transfer __symbol__Transfer = __name__TransferCreate(fromAddress, toAddress, amountMutez, feeMutez, txId, bundle->blockTimestamp, bundle->blockNumber, error);
-
-    // create WKTransfer
-    
+    // The wallet holds currency transfers
     WKWallet wallet = wkWalletManagerGetWallet (manager);
-    WKHash hash = wkHashCreateAs__SYMBOL__ (txId);
-    
+
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (manager->account);
+
+    BR__Name__Amount __symbol__Amount;
+    sscanf(bundle->amount, "%" PRIu64, &__symbol__Amount);
+
+    BR__Name__Amount __symbol__Fee = 0;
+    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &__symbol__Fee);
+
+    // Get the `source` and `target` addresses.  We'll only use `source` if we need to create a
+    // transfer; we'll use `target` both if a transfer is created and to identify a pre-existing
+    // transfer held by wallet.
+    BR__Name__Address __symbol__Target = __name__AddressCreateFromString (bundle->to,   false);
+    BR__Name__Address __symbol__Source = __name__AddressCreateFromString (bundle->from, false);
+
+    WKAddress target = wkAddressCreateAs__SYMBOL__ (__symbol__Target);
+    WKAddress source = wkAddressCreateAs__SYMBOL__ (__symbol__Source);
+
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the
     // normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed
     // address.  It must be included since the burn amount is subtracted from wallet balance, but
     // is not considered a normal fee.
-    WKAddress target = wkAddressCreateAs__SYMBOL__ (toAddress);
-    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDSAndTarget__SYMBOL__ (wallet, hash, bundle->uids, target);
-    
-    wkAddressGive (target);
-    wkHashGive (hash);
-    __name__AddressFree (fromAddress);
+    WKHash         hash = wkHashCreateFromStringAs__SYMBOL__ (bundle->hash);
+    WKTransfer transfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
 
-    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreateActual (feeMutez);
+    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreate();
+    WKFeeBasis  feeBasis = wkFeeBasisCreateAs__SYMBOL__ (wallet->unitForFee, __symbol__FeeBasis);
 
-    WKFeeBasis      feeBasis = wkFeeBasisCreateAs__SYMBOL__ (wallet->unitForFee, __symbol__FeeBasis);
-    WKTransferState state    = wkClientTransferBundleGetTransferState (bundle, feeBasis);
+    WKTransferState state = wkClientTransferBundleGetTransferState (bundle, feeBasis);
 
-    if (NULL == baseTransfer) {
-        baseTransfer = wkTransferCreateAs__SYMBOL__ (wallet->listenerTransfer,
+    if (NULL != transfer) {
+        wkTransferSetUids  (transfer, bundle->uids);
+        wkTransferSetState (transfer, state);
+    }
+    else {
+        BR__Name__Transaction __symbol__Transaction = __name__TransactionCreate (__symbol__Source,
+                                                                                 __symbol__Target,
+                                                                                 __symbol__Amount,
+                                                                                 __symbol__FeeBasis);
+
+        transfer = wkTransferCreateAs__SYMBOL__ (wallet->listenerTransfer,
                                                   bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
                                                   __symbol__Account,
-                                                  __symbol__Transfer);
-        __symbol__TransferNeedFree = false;
-        wkWalletAddTransfer (wallet, baseTransfer);
+                                                  __symbol__Transaction);
+        wkWalletAddTransfer (wallet, transfer);
     }
-    else {
-        wkTransferSetUids  (baseTransfer, bundle->uids);
-        wkTransferSetState (baseTransfer, state);
-    }
+
+    wkWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, transfer, bundle);
     
-    wkWalletManagerRecoverTransferAttributesFromTransferBundle (wallet, baseTransfer, bundle);
-    
-    wkTransferGive(baseTransfer);
+    wkTransferGive (transfer);
+    wkHashGive (hash);
+
+    wkAddressGive (source);
+    wkAddressGive (target);
+
     wkFeeBasisGive (feeBasis);
     wkTransferStateGive (state);
-    
-    if (__symbol__TransferNeedFree)
-        __name__TransferFree (__symbol__Transfer);
+
+    wkWalletGive (wallet);
 }
 
 static WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimate__SYMBOL__ (WKWalletManager cwm,
-                                                      WKNetworkFee networkFee,
-                                                      WKFeeBasis initialFeeBasis,
-                                                      double costUnits,
-                                                      size_t attributesCount,
-                                                      OwnershipKept const char **attributeKeys,
-                                                      OwnershipKept const char **attributeVals) {
+                                                  WKTransfer transfer,
+                                                  WKNetworkFee networkFee,
+                                                  double costUnits,
+                                                  size_t attributesCount,
+                                                  OwnershipKept const char **attributeKeys,
+                                                  OwnershipKept const char **attributeVals) {
+#if 0
     bool parseError;
     
     int64_t gasUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
@@ -297,7 +298,7 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimate__SYMBOL__ (WKWalletManager cwm,
     // add 10% padding to gas/storage limits
     gasUsed = (int64_t)(gasUsed * 1.1);
     storageUsed = (int64_t)(storageUsed * 1.1);
-    BR__Name__UnitMutez mutezPerKByte = __name__MutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
+    BR__Name__Amount mutezPerKByte = __name__MutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
     
     // get the serialized txn size from the estimation payload
     double sizeInKBytes = wkFeeBasisCoerce__SYMBOL__(initialFeeBasis)->__symbol__FeeBasis.u.initial.sizeInKBytes;
@@ -307,8 +308,10 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimate__SYMBOL__ (WKWalletManager cwm,
                                                             gasUsed,
                                                             storageUsed,
                                                             counter);
-    
-    return wkFeeBasisCreateAs__SYMBOL__ (networkFee->pricePerCostFactorUnit, feeBasis);
+#endif
+
+    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreate ();
+    return wkFeeBasisCreateAs__SYMBOL__ (networkFee->pricePerCostFactorUnit, __symbol__FeeBasis);
 }
 
 extern WKWalletSweeperStatus
@@ -331,8 +334,7 @@ wkWalletManagerCreateWallet__SYMBOL__ (WKWalletManager manager,
                                     WKCurrency currency,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (manager->account,
-                                                              WK_NETWORK_TYPE___SYMBOL__);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (manager->account);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;
