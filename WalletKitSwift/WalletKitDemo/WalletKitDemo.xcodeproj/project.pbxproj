@@ -43,7 +43,6 @@
 		3C2CAEFF26AB60DD00275B28 /* WKWalletManager__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKWalletManager__SYMBOL__.c; sourceTree = "<group>"; };
 		3C2CAF0026AB60DD00275B28 /* WKHandlers__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKHandlers__SYMBOL__.c; sourceTree = "<group>"; };
 		3C2CAF0126AB60DD00275B28 /* WKAddress__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKAddress__SYMBOL__.c; sourceTree = "<group>"; };
-		3C2CAF0226AB60DD00275B28 /* WKSupport__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKSupport__SYMBOL__.c; sourceTree = "<group>"; };
 		3C2CAF0326AB60DD00275B28 /* WKFeeBasis__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKFeeBasis__SYMBOL__.c; sourceTree = "<group>"; };
 		3C2CAF0426AB60DD00275B28 /* WKTransfer__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKTransfer__SYMBOL__.c; sourceTree = "<group>"; };
 		3C2CAF0526AB60DD00275B28 /* WKNetwork__SYMBOL__.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WKNetwork__SYMBOL__.c; sourceTree = "<group>"; };
@@ -121,7 +120,6 @@
 				3C2CAEFF26AB60DD00275B28 /* WKWalletManager__SYMBOL__.c */,
 				3C2CAF0026AB60DD00275B28 /* WKHandlers__SYMBOL__.c */,
 				3C2CAF0126AB60DD00275B28 /* WKAddress__SYMBOL__.c */,
-				3C2CAF0226AB60DD00275B28 /* WKSupport__SYMBOL__.c */,
 				3C2CAF0326AB60DD00275B28 /* WKFeeBasis__SYMBOL__.c */,
 				3C2CAF0426AB60DD00275B28 /* WKTransfer__SYMBOL__.c */,
 				3C2CAF0526AB60DD00275B28 /* WKNetwork__SYMBOL__.c */,

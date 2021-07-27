@@ -11,22 +11,15 @@
 #include "WK__SYMBOL__.h"
 #include "walletkit/WKAmountP.h"
 #include "walletkit/WKHashP.h"
-#include "__name__/BR__Name__Transfer.h"
-#include "__name__/BR__Name__FeeBasis.h"
+
 #include "support/util/BRUtilMath.h"
 
 static WKTransferDirection
-transferGetDirectionFrom__SYMBOL__ (BR__Name__Transfer transfer,
-                             BR__Name__Account account);
-
-extern WKTransfer__SYMBOL__
-wkTransferCoerce__SYMBOL__ (WKTransfer transfer) {
-    assert (WK_NETWORK_TYPE___SYMBOL__ == transfer->type);
-    return (WKTransfer__SYMBOL__) transfer;
-}
+__name__TransactionGetDirection (BR__Name__Transaction transfer,
+                                 BR__Name__Account account);
 
 typedef struct {
-    BR__Name__Transfer __symbol__Transfer;
+    BR__Name__Transaction __symbol__Transaction;
 } WKTransferCreateContext__SYMBOL__;
 
 static void
@@ -35,49 +28,47 @@ wkTransferCreateCallback__SYMBOL__ (WKTransferCreateContext context,
     WKTransferCreateContext__SYMBOL__ *context__SYMBOL__ = (WKTransferCreateContext__SYMBOL__*) context;
     WKTransfer__SYMBOL__ transfer__SYMBOL__ = wkTransferCoerce__SYMBOL__ (transfer);
 
-    transfer__SYMBOL__->__symbol__Transfer = context__SYMBOL__->__symbol__Transfer;
+    transfer__SYMBOL__->__symbol__Transaction = context__SYMBOL__->__symbol__Transaction;
 }
 
 extern WKTransfer
 wkTransferCreateAs__SYMBOL__ (WKTransferListener listener,
-                           const char *uids,
-                           WKUnit unit,
-                           WKUnit unitForFee,
-                           WKTransferState state,
-                           OwnershipKept BR__Name__Account __symbol__Account,
-                           OwnershipGiven BR__Name__Transfer __symbol__Transfer) {
+                              const char *uids,
+                              WKUnit unit,
+                              WKUnit unitForFee,
+                              WKTransferState state,
+                              OwnershipKept  BR__Name__Account     __symbol__Account,
+                              OwnershipGiven BR__Name__Transaction __symbol__Transaction) {
     
-    WKTransferDirection direction = transferGetDirectionFrom__SYMBOL__ (__symbol__Transfer, __symbol__Account);
+    WKTransferDirection direction = __name__TransactionGetDirection (__symbol__Transaction, __symbol__Account);
+
+    BR__Name__Amount __symbol__Amount = __name__TransactionGetAmount (__symbol__Transaction);
+    WKAmount amount = wkAmountCreateAs__SYMBOL__ (unit, WK_FALSE, __symbol__Amount);
+
+    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreate ();
+    WKFeeBasis feeBasis = wkFeeBasisCreateAs__SYMBOL__ (unitForFee, __symbol__FeeBasis);
     
-    WKAmount amount = wkAmountCreateAs__SYMBOL__ (unit,
-                                                     WK_FALSE,
-                                                     __name__TransferGetAmount (__symbol__Transfer));
-    
-    BR__Name__FeeBasis __symbol__FeeBasis = __name__FeeBasisCreateActual (WK_TRANSFER_RECEIVED == direction ? 0 : __name__TransferGetFee(__symbol__Transfer));
-    WKFeeBasis feeBasis = wkFeeBasisCreateAs__SYMBOL__ (unitForFee,
-                                                           __symbol__FeeBasis);
-    
-    WKAddress sourceAddress = wkAddressCreateAs__SYMBOL__ (__name__TransferGetSource (__symbol__Transfer));
-    WKAddress targetAddress = wkAddressCreateAs__SYMBOL__ (__name__TransferGetTarget (__symbol__Transfer));
+    WKAddress sourceAddress = wkAddressCreateAs__SYMBOL__ (__name__TransactionGetSource (__symbol__Transaction));
+    WKAddress targetAddress = wkAddressCreateAs__SYMBOL__ (__name__TransactionGetTarget (__symbol__Transaction));
 
     WKTransferCreateContext__SYMBOL__ context__SYMBOL__ = {
-        __symbol__Transfer
+        __symbol__Transaction
     };
 
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransfer__SYMBOL__Record),
-                                                            WK_NETWORK_TYPE___SYMBOL__,
-                                                            listener,
-                                                            uids,
-                                                            unit,
-                                                            unitForFee,
-                                                            feeBasis,
-                                                            amount,
-                                                            direction,
-                                                            sourceAddress,
-                                                            targetAddress,
-                                                            state,
-                                                            &context__SYMBOL__,
-                                                            wkTransferCreateCallback__SYMBOL__);
+                                                  WK_NETWORK_TYPE___SYMBOL__,
+                                                  listener,
+                                                  uids,
+                                                  unit,
+                                                  unitForFee,
+                                                  feeBasis,
+                                                  amount,
+                                                  direction,
+                                                  sourceAddress,
+                                                  targetAddress,
+                                                  state,
+                                                  &context__SYMBOL__,
+                                                  wkTransferCreateCallback__SYMBOL__);
     
     wkFeeBasisGive (feeBasis);
     wkAddressGive (sourceAddress);
@@ -89,13 +80,14 @@ wkTransferCreateAs__SYMBOL__ (WKTransferListener listener,
 static void
 wkTransferRelease__SYMBOL__ (WKTransfer transfer) {
     WKTransfer__SYMBOL__ transfer__SYMBOL__ = wkTransferCoerce__SYMBOL__(transfer);
-    __name__TransferFree (transfer__SYMBOL__->__symbol__Transfer);
+    __name__TransactionFree (transfer__SYMBOL__->__symbol__Transaction);
 }
 
 static WKHash
 wkTransferGetHash__SYMBOL__ (WKTransfer transfer) {
     WKTransfer__SYMBOL__ transfer__SYMBOL__ = wkTransferCoerce__SYMBOL__(transfer);
-    BR__Name__Hash hash = __name__TransferGetTransactionId (transfer__SYMBOL__->__symbol__Transfer);
+
+    BR__Name__Hash hash = __name__TransactionGetHash (transfer__SYMBOL__->__symbol__Transaction);
     return (__name__HashIsEmpty(hash)
             ? NULL
             : wkHashCreateAs__SYMBOL__ (hash));
@@ -103,19 +95,16 @@ wkTransferGetHash__SYMBOL__ (WKTransfer transfer) {
 
 static uint8_t *
 wkTransferSerialize__SYMBOL__ (WKTransfer transfer,
-                            WKNetwork network,
-                            WKBoolean  requireSignature,
-                            size_t *serializationCount) {
+                               WKNetwork network,
+                               WKBoolean  requireSignature,
+                               size_t *serializationCount) {
     WKTransfer__SYMBOL__ transfer__SYMBOL__ = wkTransferCoerce__SYMBOL__ (transfer);
 
-    uint8_t *serialization = NULL;
     *serializationCount = 0;
-    BR__Name__Transaction transaction = __name__TransferGetTransaction (transfer__SYMBOL__->__symbol__Transfer);
-    if (transaction) {
-        serialization = __name__TransactionGetSignedBytes (transaction, serializationCount);
-    }
-    
-    return serialization;
+
+    return (NULL == transfer__SYMBOL__->__symbol__Transaction
+            ? NULL
+            : __name__TransactionGetSerialization (transfer__SYMBOL__->__symbol__Transaction, serializationCount));
 }
 
 static int
@@ -125,14 +114,14 @@ wkTransferIsEqual__SYMBOL__ (WKTransfer tb1, WKTransfer tb2) {
     WKTransfer__SYMBOL__ tz1 = wkTransferCoerce__SYMBOL__ (tb1);
     WKTransfer__SYMBOL__ tz2 = wkTransferCoerce__SYMBOL__ (tb2);
     
-    return __name__TransferIsEqual (tz1->__symbol__Transfer, tz2->__symbol__Transfer);
+    return __name__TransactionEqual (tz1->__symbol__Transaction, tz2->__symbol__Transaction);
 }
 
 static WKTransferDirection
-transferGetDirectionFrom__SYMBOL__ (BR__Name__Transfer transfer,
-                             BR__Name__Account account) {
-    BR__Name__Address source = __name__TransferGetSource (transfer);
-    BR__Name__Address target = __name__TransferGetTarget (transfer);
+__name__TransactionGetDirection (BR__Name__Transaction transfer,
+                                    BR__Name__Account account) {
+    BR__Name__Address source = __name__TransactionGetSource (transfer);
+    BR__Name__Address target = __name__TransactionGetTarget (transfer);
     
     int isSource = __name__AccountHasAddress (account, source);
     int isTarget = __name__AccountHasAddress (account, target);

@@ -13,13 +13,6 @@
 #include "WK__SYMBOL__.h"
 #include "__name__/BR__Name__Address.h"
 
-
-static WKAddress__SYMBOL__
-wkAddressCoerce (WKAddress address) {
-    assert (WK_NETWORK_TYPE___SYMBOL__ == address->type);
-    return (WKAddress__SYMBOL__) address;
-}
-
 typedef struct {
     BR__Name__Address __symbol__Address;
 } WKAddressCreateContext__SYMBOL__;
@@ -28,7 +21,7 @@ static void
 wkAddressCreateCallback__SYMBOL__ (WKAddressCreateContext context,
                                 WKAddress address) {
     WKAddressCreateContext__SYMBOL__ *context__SYMBOL__ = (WKAddressCreateContext__SYMBOL__*) context;
-    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce (address);
+    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce__SYMBOL__ (address);
 
     address__SYMBOL__->addr = context__SYMBOL__->__symbol__Address;
 }
@@ -58,7 +51,7 @@ wkAddressCreateFromStringAs__SYMBOL__ (const char *string) {
 
 private_extern OwnershipKept BR__Name__Address
 wkAddressAs__SYMBOL__ (WKAddress address) {
-    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce (address);
+    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce__SYMBOL__ (address);
     return address__SYMBOL__->addr;
 }
 
@@ -66,20 +59,20 @@ wkAddressAs__SYMBOL__ (WKAddress address) {
 
 static void
 wkAddressRelease__SYMBOL__ (WKAddress address) {
-    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce (address);
+    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce__SYMBOL__ (address);
     __name__AddressFree (address__SYMBOL__->addr);
 }
 
 static char *
 wkAddressAsString__SYMBOL__ (WKAddress address) {
-    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce (address);
+    WKAddress__SYMBOL__ address__SYMBOL__ = wkAddressCoerce__SYMBOL__ (address);
     return __name__AddressAsString (address__SYMBOL__->addr);
 }
 
 static bool
 wkAddressIsEqual__SYMBOL__ (WKAddress address1, WKAddress address2) {
-    WKAddress__SYMBOL__ a1 = wkAddressCoerce (address1);
-    WKAddress__SYMBOL__ a2 = wkAddressCoerce (address2);
+    WKAddress__SYMBOL__ a1 = wkAddressCoerce__SYMBOL__ (address1);
+    WKAddress__SYMBOL__ a2 = wkAddressCoerce__SYMBOL__ (address2);
 
     return __name__AddressEqual (a1->addr, a2->addr);
 }
