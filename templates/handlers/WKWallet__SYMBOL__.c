@@ -46,14 +46,14 @@ wkWalletCreateAs__SYMBOL__ (WKWalletListener listener,
                          BR__Name__Account __symbol__Account) {
     int hasMinBalance;
     int hasMaxBalance;
-    BR__Name__UnitMutez minBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 0, &hasMinBalance);
-    BR__Name__UnitMutez maxBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 1, &hasMaxBalance);
+    BR__Name__Amount minBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 0, &hasMinBalance);
+    BR__Name__Amount maxBalance__SYMBOL__ = __name__AccountGetBalanceLimit (__symbol__Account, 1, &hasMaxBalance);
 
     WKAmount minBalance = hasMinBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, minBalance__SYMBOL__) : NULL;
     WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAs__SYMBOL__(unit, WK_FALSE, maxBalance__SYMBOL__) : NULL;
 
-    BR__Name__FeeBasis feeBasis__SYMBOL__ = __name__DefaultFeeBasis (__NAME___DEFAULT_MUTEZ_PER_BYTE);
-    WKFeeBasis feeBasis   = wkFeeBasisCreateAs__SYMBOL__ (unitForFee, feeBasis__SYMBOL__);
+    BR__Name__FeeBasis __name__FeeBasis = __name__FeeBasisCreate ();
+    WKFeeBasis feeBasis   = wkFeeBasisCreateAs__SYMBOL__ (unitForFee, __name__FeeBasis);
 
     WKWalletCreateContext__SYMBOL__ context__SYMBOL__ = {
         __symbol__Account
@@ -100,42 +100,13 @@ wkWalletHasAddress__SYMBOL__ (WKWallet wallet,
     return __name__AccountHasAddress (wallet__SYMBOL__->__symbol__Account, __symbol__Address);
 }
 
-private_extern bool
-wkWalletNeedsReveal__SYMBOL__ (WKWallet wallet) {
-    assert(wallet);
-    for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        // reveal is needed before the first outgoing transfer
-        WKTransferDirection direction = wkTransferGetDirection (wallet->transfers[index]);
-        if (WK_TRANSFER_SENT == direction) return false;
-    }
-    return true;
-}
-
-private_extern WKTransfer
-wkWalletGetTransferByHashOrUIDSAndTarget__SYMBOL__ (WKWallet wallet,
-                                             WKHash hashToMatch,
-                                             const char *uids,
-                                             WKAddress targetToMatch) {
-    WKTransfer transfer = NULL;
-
-    // Do the 'special match' based on hash and/or uids
-    transfer = wkWalletGetTransferByHashOrUIDS (wallet, hashToMatch, uids);
-
-    // Confirmed with the address
-    if (NULL != transfer && !wkAddressIsEqual (transfer->targetAddress, targetToMatch)) {
-        wkTransferGive(transfer);
-        transfer = NULL;
-    }
-
-    return transfer;
-}
 
 extern size_t
 wkWalletGetTransferAttributeCount__SYMBOL__ (WKWallet wallet,
                                           WKAddress target) {
     size_t countRequired, countOptional;
-    __name__GetTransactionAttributeKeys (1, &countRequired);
-    __name__GetTransactionAttributeKeys (0, &countOptional);
+    __name__TransactionGetAttributeKeys (true,  &countRequired);
+    __name__TransactionGetAttributeKeys (false, &countOptional);
     return countRequired + countOptional;
 }
 
@@ -144,8 +115,8 @@ wkWalletGetTransferAttributeAt__SYMBOL__ (WKWallet wallet,
                                        WKAddress target,
                                        size_t index) {
     size_t countRequired, countOptional;
-    const char **keysRequired = __name__GetTransactionAttributeKeys (1, &countRequired);
-    const char **keysOptional = __name__GetTransactionAttributeKeys (0, &countOptional);
+    const char **keysRequired = __name__TransactionGetAttributeKeys (true,  &countRequired);
+    const char **keysOptional = __name__TransactionGetAttributeKeys (false, &countOptional);
 
     assert (index < (countRequired + countOptional));
 
@@ -156,10 +127,12 @@ wkWalletGetTransferAttributeAt__SYMBOL__ (WKWallet wallet,
     return wkTransferAttributeCreate(keys[keysIndex], NULL, isRequired);
 }
 
+#if 0
 static int // 1 if equal, 0 if not.
 __name__CompareFieldOption (const char *t1, const char *t2) {
     return 0 == strcasecmp (t1, t2);
 }
+#endif
 
 extern WKTransferAttributeValidationError
 wkWalletValidateTransferAttribute__SYMBOL__ (WKWallet wallet,
@@ -180,6 +153,7 @@ wkWalletValidateTransferAttribute__SYMBOL__ (WKWallet wallet,
         return error;
     }
 
+#if 0
     if (__name__CompareFieldOption (key, FIELD_OPTION_DELEGATION_OP)) {
         // expect 0 or 1
         char *end = NULL;
@@ -206,59 +180,52 @@ wkWalletValidateTransferAttribute__SYMBOL__ (WKWallet wallet,
         error = WK_TRANSFER_ATTRIBUTE_VALIDATION_ERROR_RELATIONSHIP_INCONSISTENCY;
         *validates = WK_FALSE;
     }
-    
+#endif
+
+    (void) key;
+    *validates = WK_TRUE;
     return error;
 }
 
 // create for send
 extern WKTransfer
 wkWalletCreateTransfer__SYMBOL__ (WKWallet  wallet,
-                               WKAddress target,
-                               WKAmount  amount,
-                               WKFeeBasis estimatedFeeBasis,
-                               size_t attributesCount,
-                               OwnershipKept WKTransferAttribute *attributes,
-                               WKCurrency currency,
-                               WKUnit unit,
-                               WKUnit unitForFee) {
+                                  WKAddress target,
+                                  WKAmount  amount,
+                                  WKFeeBasis estimatedFeeBasis,
+                                  size_t attributesCount,
+                                  OwnershipKept WKTransferAttribute *attributes,
+                                  WKCurrency currency,
+                                  WKUnit unit,
+                                  WKUnit unitForFee) {
     WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce (wallet);
-    
-    BR__Name__Address source  = __name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account);
-    BR__Name__Address __symbol__Target  = wkAddressAs__SYMBOL__ (target);
-    BR__Name__UnitMutez mutez = __name__MutezCreate (amount);
-    BR__Name__FeeBasis feeBasis = wkFeeBasisCoerce__SYMBOL__ (estimatedFeeBasis)->__symbol__FeeBasis;
-    int64_t counter = (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
-    
-    bool delegationOp = false;
-    
-    for (size_t index = 0; index < attributesCount; index++) {
-        WKTransferAttribute attribute = attributes[index];
-        if (NULL != wkTransferAttributeGetValue(attribute)) {
-            if (__name__CompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_DELEGATION_OP)) {
-                int op;
-                sscanf (wkTransferAttributeGetValue(attribute), "%d", &op);
-                delegationOp = (op == 1);
-            }
-        }
-    }
-    
-    BR__Name__Transfer __symbol__Transfer = __name__TransferCreateNew (source,
-                                                          __symbol__Target,
-                                                          mutez,
-                                                          feeBasis,
-                                                          counter,
-                                                          delegationOp);
 
-    __name__AddressFree (source);
+    BR__Name__Account __symbol__Acount = wallet__SYMBOL__->__symbol__Account;
+    
+    BR__Name__Address __symbol__Source  = __name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account);
+    BR__Name__Address __symbol__Target  = wkAddressAs__SYMBOL__ (target);
+
+    WKBoolean amountIsNegative = WK_FALSE;
+    BR__Name__Amount __symbol__Amount = wkAmountAs__SYMBOL__ (amount, &amountIsNegative);
+    assert (WK_FALSE == amountIsNegative);
+
+    BR__Name__FeeBasis __symbol__FeeBasis = wkFeeBasisCoerce__SYMBOL__ (estimatedFeeBasis)->__symbol__FeeBasis;
+    
+    BR__Name__Transaction __symbol__Transaction = __name__TransactionCreate (__symbol__Source,
+                                                                             __symbol__Target,
+                                                                             __symbol__Amount,
+                                                                             __symbol__FeeBasis);
+    
+    __name__AddressFree (__symbol__Source);
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAs__SYMBOL__ (wallet->listenerTransfer,
-                                                                NULL,
-                                                                unit,
-                                                                unitForFee,
-                                                                state,
-                                                                wallet__SYMBOL__->__symbol__Account,
-                                                                __symbol__Transfer);
+                                                             NULL,
+                                                             unit,
+                                                             unitForFee,
+                                                             state,
+                                                             __symbol__Acount,
+                                                             __symbol__Transaction);
     
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);
@@ -283,8 +250,9 @@ wkWalletGetAddressesForRecovery__SYMBOL__ (WKWallet wallet) {
     BRSetOf(WKAddress) addresses = wkAddressSetCreate (1);
 
     WKWallet__SYMBOL__ wallet__SYMBOL__ = wkWalletCoerce(wallet);
+    BR__Name__Account __symbol__Account = wallet__SYMBOL__->__symbol__Account;
 
-    BRSetAdd (addresses, wkAddressCreateAs__SYMBOL__ (__name__AccountGetAddress (wallet__SYMBOL__->__symbol__Account)));
+    BRSetAdd (addresses, wkAddressCreateAs__SYMBOL__ (__name__AccountGetAddress (__symbol__Account)));
 
     return addresses;
 }

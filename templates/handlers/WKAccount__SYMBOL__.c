@@ -36,15 +36,10 @@ wkAccountSerialize__SYMBOL__(  uint8_t     *accountSerBuf,
                         WKAccount   account ) {
 
     assert (account != NULL);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (account);
 
-    size_t          __symbol__Size;
-    BR__Name__Account  __symbol__Acct;
-    uint8_t         *__symbol__Bytes;
-
-    __symbol__Acct = (BR__Name__Account) wkAccountAs (account,
-                                            WK_NETWORK_TYPE___SYMBOL__);
-    __symbol__Bytes = __name__AccountGetSerialization (__symbol__Acct,
-                                             &__symbol__Size );
+    size_t __symbol__Size;
+    uint8_t *__symbol__Bytes = __name__AccountGetSerialization (__symbol__Account, &__symbol__Size );
 
     if (accountSerBuf != NULL) {
         memcpy (accountSerBuf, __symbol__Bytes, __symbol__Size);

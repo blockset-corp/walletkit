@@ -15,26 +15,90 @@
 
 // Key WalletKit includes
 #include "support/BRArray.h"
-#include "support/BRCrypto.h"
-#include "support/BRBIP32Sequence.h"
-#include "support/BRBIP39Mnemonic.h"
-#include "support/BRBIP39WordsEn.h"
-#include "support/BRKey.h"
-#include "support/BRBase58.h"
+#include "support/BRInt.h"
 
-// Key __SYMBOL__ includes
-#include "__name__/BR__Name__Transaction.h"
-#include "__name__/BR__Name__Transfer.h"
-#include "__name__/BR__Name__Account.h"
+#include "__name__/BR__Name__.h"
 
-// MARK: -
+// MARK: - Hash Test
+
+static void
+run__Name__HashTest (void) {
+    printf("TST:    __Name__ Hash tests\n");
+
+    return;
+}
+
+// MARK: - Address Test
+
+static void
+run__Name__AddressTest (void) {
+    printf("TST:    __Name__ Address tests\n");
+    return;
+}
+
+// MARK: - Account Test
+
+static void
+run__Name__AccountTest (void) {
+    printf("TST:    __Name__ Account tests\n");
+   return;
+}
+
+// MARK: - Fee Basis Test
+
+static void
+run__Name__FeeBasisTest (void) {
+    printf("TST:    __Name__ FeeBasis tests\n");
+    return;
+}
+
+// MARK: - Transaction Test
+
+static void
+run__Name__TransactionCreateTest (void) {
+    printf("TST:        __Name__ Transaction Create tests\n");
+    return;
+}
+
+static void
+run__Name__TransactionSignTest (void) {
+    printf("TST:        __Name__ Transaction Sign tests\n");
+   return;
+}
+
+static void
+run__Name__TransactionSerializeTest (void) {
+    printf("TST:        __Name__ Transaction Serialize tests\n");
+    return;
+}
+
+static void
+run__Name__TransactionTest (void) {
+    printf("TST:    __Name__ Transaction tests\n");
+    run__Name__TransactionCreateTest ();
+    run__Name__TransactionSignTest ();
+    run__Name__TransactionSerializeTest ();
+}
+
+// MARK: - Wallet Test
+
+static void
+run__Name__WalletTest (void) {
+    printf("TST:    __Name__ Wallet tests\n");
+   return;
+}
+
+// MARK: - All Tests
 
 extern void
 run__Name__Test (void /* ... */) {
-    
-    // Entry point for __SYMBOL__ specific blockchain tests.
-    // An empty template. Consider incorporating tests similar
-    // to what is found in other WalletKitCoreTests/test packages.
-    printf("Running __Name__ unit tests...\n");
+    printf("TST: __Name__ tests\n");
+
+    run__Name__HashTest ();
+    run__Name__AddressTest();
+    run__Name__AccountTest();
+    run__Name__FeeBasisTest ();
+    run__Name__TransactionTest ();
+    run__Name__WalletTest ();
 }
 

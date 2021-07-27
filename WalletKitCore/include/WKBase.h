@@ -207,6 +207,16 @@ static inline WKData wkDataNew (size_t size) {
     return data;
 }
 
+static inline WKData wkDataCreate (uint8_t *bytes, size_t bytesCount) {
+    WKData data = wkDataNew (bytesCount);
+    memcpy (data.bytes, bytes, bytesCount);
+    return data;
+}
+
+static inline WKData wkDataCreateEmpty (void) {
+    return (WKData) { NULL, 0};
+}
+
 static inline WKData wkDataCopy (uint8_t * bytes, size_t size) {
     WKData data;
     data.bytes = malloc (size * sizeof(uint8_t));
@@ -228,6 +238,12 @@ wkDataConcat (WKData * fields, size_t numFields) {
         totalSize += fields[i].size;
     }
     return concat;
+}
+
+static inline WKData
+wkDataConcatTwo (WKData data1, WKData data2) {
+    WKData data[2] = { data1, data2 };
+    return wkDataConcat (data, 2);
 }
 
 static inline void wkDataFree (WKData data) {
@@ -379,6 +395,10 @@ static int wkRefDebug = 0;
 
 #if !defined (private_extern)
 #  define private_extern          extern
+#endif
+
+#if !defined(ASSERT_UNIMPLEMENTED)
+#define ASSERT_UNIMPLEMENTED    assert(false);
 #endif
 
 #ifdef __cplusplus

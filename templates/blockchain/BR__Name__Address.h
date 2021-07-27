@@ -11,23 +11,15 @@
 #ifndef BR__Name__Address_h
 #define BR__Name__Address_h
 
-#include "support/BRKey.h"
 #include <stdbool.h>
+
+#include "support/BRKey.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// prefix (3 bytes) + pkh (20 bytes)
-#define __NAME___ADDRESS_BYTES (23)
-
-// address prefixes
-extern const uint8_t __SYMBOL__TZ1_PREFIX[3];
-extern const uint8_t __SYMBOL__TZ2_PREFIX[3];
-extern const uint8_t __SYMBOL__TZ3_PREFIX[3];
-extern const uint8_t __SYMBOL__KT_PREFIX[3];
-
-
+// Possibly a 'value' type instead of this 'reference' type
 typedef struct BR__Name__AddressRecord *BR__Name__Address;
 
 /**
@@ -78,12 +70,12 @@ __name__AddressFree (BR__Name__Address address);
  *
  * @param address   - a BR__Name__Address
  *
- * @return 1 if this is the "Fee" address, 0 if not
+ * @return `true` if this is the "Fee" address, `false` if not
  */
-extern int
+extern bool
 __name__AddressIsFeeAddress (BR__Name__Address address);
 
-extern int
+extern bool
 __name__AddressIsUnknownAddress (BR__Name__Address address);
 
 /**
@@ -124,19 +116,15 @@ __name__AddressGetRawBytes (BR__Name__Address address, uint8_t *buffer, size_t b
  * @param a1  first address
  * @param a2  second address
  *
- * @return 1 - if addresses are equal
- *         0 - if not equal
+ * @return `true`  - if addresses are equal
+ *         `false` - if not equal
  */
-extern int // 1 if equal
+extern bool
 __name__AddressEqual (BR__Name__Address a1, BR__Name__Address a2);
 
 extern size_t
 __name__AddressHashValue (BR__Name__Address address);
 
-extern bool
-__name__AddressIsImplicit (BR__Name__Address address);
-
- 
 #ifdef __cplusplus
 }
 #endif

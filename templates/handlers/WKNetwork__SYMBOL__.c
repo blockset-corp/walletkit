@@ -13,12 +13,6 @@
 #include "walletkit/WKHashP.h"
 #include "support/BRBase58.h"
 
-static WKNetwork__SYMBOL__
-wkNetworkCoerce (WKNetwork network) {
-    assert (WK_NETWORK_TYPE___SYMBOL__ == network->type);
-    return (WKNetwork__SYMBOL__) network;
-}
-
 static WKNetwork
 cyptoNetworkCreate__SYMBOL__ (WKNetworkListener listener,
                        const char *uids,
@@ -48,14 +42,14 @@ cyptoNetworkCreate__SYMBOL__ (WKNetworkListener listener,
 
 static void
 wkNetworkRelease__SYMBOL__ (WKNetwork network) {
-    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce (network);
+    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce__SYMBOL__ (network);
     (void) network__SYMBOL__;
 }
 
 static WKAddress
 wkNetworkCreateAddress__SYMBOL__ (WKNetwork network,
                                const char *addressAsString) {
-    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce (network);
+    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce__SYMBOL__ (network);
     (void) network__SYMBOL__;
 
     return wkAddressCreateFromStringAs__SYMBOL__ (addressAsString);
@@ -63,7 +57,7 @@ wkNetworkCreateAddress__SYMBOL__ (WKNetwork network,
 
 static WKBlockNumber
 wkNetworkGetBlockNumberAtOrBeforeTimestamp__SYMBOL__ (WKNetwork network,
-                                                   WKTimestamp timestamp) {
+                                                      WKTimestamp timestamp) {
     // not supported (used for p2p sync checkpoints)
     return 0;
 }
@@ -73,12 +67,13 @@ wkNetworkGetBlockNumberAtOrBeforeTimestamp__SYMBOL__ (WKNetwork network,
 static WKBoolean
 wkNetworkIsAccountInitialized__SYMBOL__ (WKNetwork network,
                                       WKAccount account) {
-    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce (network);
+    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce__SYMBOL__ (network);
     (void) network__SYMBOL__;
 
-    BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (account,
-                                                              WK_NETWORK_TYPE___SYMBOL__);
-    assert (NULL != __symbol__Account);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (account);
+
+    // No initialization required
+    (void) __symbol__Account;
     return AS_WK_BOOLEAN (true);
 }
 
@@ -87,12 +82,13 @@ static uint8_t *
 wkNetworkGetAccountInitializationData__SYMBOL__ (WKNetwork network,
                                               WKAccount account,
                                               size_t *bytesCount) {
-    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce (network);
+    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce__SYMBOL__ (network);
     (void) network__SYMBOL__;
 
-    BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (account,
-                                                              WK_NETWORK_TYPE___SYMBOL__);
-    assert (NULL != __symbol__Account);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (account);
+
+    // No initialization required
+    (void) __symbol__Account;
     if (NULL != bytesCount) *bytesCount = 0;
     return NULL;
 }
@@ -102,12 +98,13 @@ wkNetworkInitializeAccount__SYMBOL__ (WKNetwork network,
                                    WKAccount account,
                                    const uint8_t *bytes,
                                    size_t bytesCount) {
-    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce (network);
+    WKNetwork__SYMBOL__ network__SYMBOL__ = wkNetworkCoerce__SYMBOL__ (network);
     (void) network__SYMBOL__;
 
-    BR__Name__Account __symbol__Account = (BR__Name__Account) wkAccountAs (account,
-                                                              WK_NETWORK_TYPE___SYMBOL__);
-    assert (NULL != __symbol__Account);
+    BR__Name__Account __symbol__Account = wkAccountGetAs__SYMBOL__ (account);
+
+    // No initialization required
+    (void) __symbol__Account;
     return;
 }
 
@@ -119,12 +116,15 @@ wkNetworkCreateHashFromString__SYMBOL__ (WKNetwork network,
 
 static char *
 wkNetworkEncodeHash__SYMBOL__ (WKHash hash) {
+#if 0
     size_t len = BRBase58CheckEncode (NULL, 0, hash->bytes, __NAME___HASH_BYTES);
     if (0 == len) return NULL;
 
     char * string = calloc (1, len);
     BRBase58CheckEncode (string, len, hash->bytes, __NAME___HASH_BYTES);
     return string;
+#endif
+    return NULL;
 }
 
 // MARK: - Handlers

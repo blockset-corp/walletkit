@@ -12,17 +12,10 @@
 #ifndef BR__Name___h
 #define BR__Name___h
 
-#include <stdint.h>
+#include "BR__Name__Base.h"
+#include "BR__Name__Address.h"
 #include "BR__Name__Account.h"
+#include "BR__Name__FeeBasis.h"
 #include "BR__Name__Transaction.h"
-#include "BR__Name__Transfer.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* BR__Name___h */

@@ -9,16 +9,16 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 
-#include "BR__Name__Account.h"
-#include "BR__Name__Address.h"
-#include "support/BRBIP32Sequence.h"
-#include "ed25519/ed25519.h"
-
-#include "blake2/blake2b.h"
-
 #include <stdlib.h>
 #include <assert.h>
 
+#include "support/BRBIP32Sequence.h"
+#include "ed25519/ed25519.h"
+
+#include "BR__Name__Account.h"
+#include "BR__Name__Address.h"
+
+// #include "blake2/blake2b.h"
 
 struct BR__Name__AccountRecord {
     BR__Name__Address address;
@@ -28,14 +28,13 @@ struct BR__Name__AccountRecord {
 // MARK: Forward Declarations
 
 static BRKey
-derive__Name__PrivateKeyFromSeed (UInt512 seed, uint32_t index);
+__name__DerivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
 
 static void
 __name__KeyGetPublicKey (BRKey key, uint8_t * publicKey);
 
 static void
 __name__KeyGetPrivateKey (BRKey key, uint8_t * privateKey);
-
 
 // MARK: - Init/Free
 
@@ -44,7 +43,7 @@ __name__AccountCreateWithSeed (UInt512 seed) {
     BR__Name__Account account = calloc(1, sizeof(struct BR__Name__AccountRecord));
     
     // Private key
-    BRKey privateKey = derive__Name__PrivateKeyFromSeed(seed, 0);
+    BRKey privateKey = __name__DerivePrivateKeyFromSeed(seed, 0);
 
     __name__KeyGetPublicKey(privateKey, account->publicKey);
 
@@ -75,12 +74,18 @@ __name__AccountFree (BR__Name__Account account)
 
 // MARK: - Signing
 
-extern WKData
+extern OwnershipGiven uint8_t *
 __name__AccountSignData (BR__Name__Account account,
-                      WKData data,
-                      UInt512 seed) {
-    BRKey publicKey = __name__AccountGetPublicKey ((BR__Name__Account)account);
-    BRKey privateKey = derive__Name__PrivateKeyFromSeed(seed, 0);
+                         uint8_t *bytes,
+                         size_t   bytesCount,
+                         UInt512 seed,
+                         size_t  *count) {
+
+    BRKey keyPublic  = __name__AccountGetPublicKey (account);
+    BRKey keyPrivate = __name__DerivePrivateKeyFromSeed (seed, /* index */ 0);
+
+
+#if 0
     uint8_t privateKeyBytes[64];
     __name__KeyGetPrivateKey(privateKey, privateKeyBytes);
     
@@ -102,6 +107,12 @@ __name__AccountSignData (BR__Name__Account account,
     wkDataFree(watermarkedData);
     
     return signature;
+#endif
+
+    ASSERT_UNIMPLEMENTED; (void) keyPublic; (void) keyPrivate;
+
+    *count = 0;
+    return NULL;
 }
 
 // MARK: - Accessors
@@ -128,6 +139,10 @@ __name__AccountGetSerialization (BR__Name__Account account, size_t *bytesCount) 
     assert (NULL != bytesCount);
     assert (NULL != account);
 
+    ASSERT_UNIMPLEMENTED;
+
+#if 0
+    // If just the public key
     *bytesCount = __NAME___PUBLIC_KEY_SIZE;
     uint8_t *bytes = calloc (1, *bytesCount);
     
@@ -135,6 +150,9 @@ __name__AccountGetSerialization (BR__Name__Account account, size_t *bytesCount) 
     memcpy(bytes, account->publicKey, __NAME___PUBLIC_KEY_SIZE);
     
     return bytes;
+#endif
+    *bytesCount = 0;
+    return NULL;
 }
 
 extern int
@@ -146,7 +164,7 @@ __name__AccountHasAddress (BR__Name__Account account,
     return __name__AddressEqual (account->address, address);
 }
 
-extern BR__Name__UnitMutez
+extern BR__Name__Amount
 __name__AccountGetBalanceLimit (BR__Name__Account account,
                              int asMaximum,
                              int *hasLimit) {
@@ -157,6 +175,7 @@ __name__AccountGetBalanceLimit (BR__Name__Account account,
 
 // MARK: - Crypto
 
+#if 0
 // ed25519 child key derivation
 static void
 _CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
@@ -183,12 +202,15 @@ _CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
     var_clean(&I);
     mem_clean(buf, sizeof(buf));
 }
+#endif
 
+#if 0
 // https://github.com/satoshilabs/slips/blob/master/slip-0010.md
 #define ED25519_SEED_KEY "ed25519 seed"
 static void
 ed25519vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_list vlist)
 {
+
     UInt512 I;
     UInt256 secret, chainCode;
     
@@ -215,23 +237,30 @@ ed25519vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_
 
 static void
 ed25519PrivKeyPath(BRKey * key, const void * seed, size_t seedLen, int depth , ... ){
+    ASSERT_UNIMPLEMENTED;
+
+#if 0
     va_list ap;
 
     va_start(ap, depth);
     ed25519vPrivKeyPath(key, seed, seedLen, depth, ap);
     va_end(ap);
+#endif
 }
+#endif // 0
 
 static BRKey
-derive__Name__PrivateKeyFromSeed (UInt512 seed, uint32_t index) {
+__name__DerivePrivateKeyFromSeed (UInt512 seed, uint32_t index) {
     BRKey privateKey;
-    
+
+    ASSERT_UNIMPLEMENTED;
+#if 0
     ed25519PrivKeyPath (&privateKey, &seed, sizeof(UInt512), 4,
                         44 | BIP32_HARD,   // purpose  : BIP-44
                         1729 | BIP32_HARD, // coin_type: __Name__
                         0 | BIP32_HARD,    // account
                         index | BIP32_HARD);
-    
+#endif
     return privateKey;
 }
 
