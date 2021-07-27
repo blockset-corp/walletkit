@@ -114,13 +114,13 @@ extern int BRRunTestsBWM (const char *paperKey,
 
 extern void BRRandInit (void);
 
-// testCrypto.c
-extern void runCryptoTests (void);
+// testWalletKit.c
+extern void runWalletKitTests (void);
 
 extern WKBoolean
-runCryptoTestsWithAccountAndNetwork (WKAccount account,
-                                     WKNetwork network,
-                                     const char *storagePath);
+runWalletKitTestsWithAccountAndNetwork (WKAccount account,
+                                        WKNetwork network,
+                                        const char *storagePath);
 
 // Ripple
 extern void

@@ -1,6 +1,6 @@
 //
-//  testCrypto.c
-//  CoreTests
+//  testWalletKit.c
+//  WalletKitCore Tests
 //
 //  Created by Ed Gamble on 3/28/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -45,29 +45,26 @@
 ///
 
 static void
-runCryptoAmountTests (void) {
+runWalletKitAmountTests (void) {
     WKBoolean overflow;
 
-    WKCurrency currency =
-        wkCurrencyCreate ("Cuids",
-                              "Cname",
-                              "Ccode",
-                              "Ctype",
-                              NULL);
+    WKCurrency currency = wkCurrencyCreate ("Cuids",
+                                            "Cname",
+                                            "Ccode",
+                                            "Ctype",
+                                            NULL);
 
-    WKUnit unitBase =
-        wkUnitCreateAsBase (currency,
-                                "UuidsBase",
-                                "UnameBase",
-                                "UsymbBase");
+    WKUnit unitBase = wkUnitCreateAsBase (currency,
+                                          "UuidsBase",
+                                          "UnameBase",
+                                          "UsymbBase");
 
-    WKUnit unitDef =
-        wkUnitCreate (currency,
-                          "UuidsDef",
-                          "UnameDef",
-                          "UsymbDef",
-                          unitBase,
-                          18);
+    WKUnit unitDef = wkUnitCreate (currency,
+                                   "UuidsDef",
+                                   "UnameDef",
+                                   "UsymbDef",
+                                   unitBase,
+                                   18);
 
     double value = 25.25434525155732538797258871;
 
@@ -235,7 +232,7 @@ transferTestsBalance (void) {
     uint64_t balance2 = btcWalletBalance(wid2);
 
     // Initialize wallet w/ each transaction in reverse order
-     BRBitcoinWallet *wid3 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
+    BRBitcoinWallet *wid3 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
         btcWalletRegisterTransaction (wid3, btcTransactionCopy(transactions[numberOfTransferTests - 1 - index]));
     }
@@ -252,19 +249,17 @@ transferTestsBalance (void) {
 
 static void
 transferTestsAddress (void) {
-    WKCurrency btc =
-    wkCurrencyCreate ("BitcoinUIDS",
-                          "Bitcoin",
-                          "BTC",
-                          "native",
-                          NULL);
-
-    WKUnit sat =
-    wkUnitCreateAsBase (btc,
-                            "SatoshiUIDS",
-                            "Satoshi",
-                            "SAT");
-
+    WKCurrency btc = wkCurrencyCreate ("BitcoinUIDS",
+                                       "Bitcoin",
+                                       "BTC",
+                                       "native",
+                                       NULL);
+    
+    WKUnit sat = wkUnitCreateAsBase (btc,
+                                     "SatoshiUIDS",
+                                     "Satoshi",
+                                     "SAT");
+    
     BRMasterPubKey mpk = transferTestsGetMPK();
     const BRBitcoinChainParams *btcTestNetParams = btcChainParams(false);
     BRBitcoinWallet *wid = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
@@ -283,11 +278,11 @@ transferTestsAddress (void) {
 
         WKTransferListener listener = { NULL };
         WKTransfer transfer = wkTransferCreateAsBTC (listener,
-                                                               sat,
-                                                               sat,
-                                                               wid,
-                                                               btcTransactionCopy(tid), // ownership given
-                                                               WK_NETWORK_TYPE_BTC);
+                                                     sat,
+                                                     sat,
+                                                     wid,
+                                                     btcTransactionCopy(tid), // ownership given
+                                                     WK_NETWORK_TYPE_BTC);
 
         WKAddress sourceAddress = wkTransferGetSourceAddress(transfer);
         WKAddress targetAddress = wkTransferGetTargetAddress(transfer);
@@ -306,7 +301,7 @@ transferTestsAddress (void) {
 }
 
 static void
-runCryptoTransferTests (void) {
+runWalletKitTransferTests (void) {
     transferTestsBalance();
     transferTestsAddress();
 }
@@ -451,11 +446,11 @@ const char *
 CWMEventTypeString (CWMEventType type) {
     switch (type) {
         case SYNC_EVENT_WALLET_MANAGER_TYPE:
-        return "SYNC_EVENT_WALLET_MANAGER_TYPE";
+            return "SYNC_EVENT_WALLET_MANAGER_TYPE";
         case SYNC_EVENT_WALLET_TYPE:
-        return "SYNC_EVENT_WALLET_TYPE";
+            return "SYNC_EVENT_WALLET_TYPE";
         case SYNC_EVENT_TXN_TYPE:
-        return "SYNC_EVENT_TXN_TYPE";
+            return "SYNC_EVENT_TXN_TYPE";
     }
 }
 
@@ -585,14 +580,14 @@ CWMEventString (CWMEvent *e) {
 
     switch (e->type) {
         case SYNC_EVENT_WALLET_MANAGER_TYPE:
-        subtypeString = wkWalletManagerEventTypeString (e->u.m.event.type);
-        break;
+            subtypeString = wkWalletManagerEventTypeString (e->u.m.event.type);
+            break;
         case SYNC_EVENT_WALLET_TYPE:
-        subtypeString = wkWalletEventTypeString (wkWalletEventGetType (e->u.w.event));
-        break;
+            subtypeString = wkWalletEventTypeString (wkWalletEventGetType (e->u.w.event));
+            break;
         case SYNC_EVENT_TXN_TYPE:
-        subtypeString = wkTransferEventTypeString (e->u.t.event.type);
-        break;
+            subtypeString = wkTransferEventTypeString (e->u.t.event.type);
+            break;
     }
 
     const char * fmtString = "CWMEventString(%s -> %s)";
@@ -798,12 +793,12 @@ CWMEventRecordingVerifyEventSequence (CWMEventRecordingState *state,
         if (!isCompleteSequence && expectedIndex == expectedCount) {
             break;
 
-        // Check for the expected event
+            // Check for the expected event
         } else if ((success = (expectedIndex < expectedCount &&
                                CWMEventEqual (state->events[index], &expected[expectedIndex])))) {
             expectedIndex++;
 
-        // We didn't get the expected event, see if this is an ignored event
+            // We didn't get the expected event, see if this is an ignored event
         } else {
             for (size_t ignoredIndex = 0; !success && ignoredIndex < ignoredCount; ignoredIndex++) {
                 success = CWMEventEqual (state->events[index], &ignored[ignoredIndex]);
@@ -854,18 +849,18 @@ CWMEventRecordingVerifyEventSequence (CWMEventRecordingState *state,
 
 static WKWalletManager
 wkWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
-                                            WKAccount account,
-                                            WKNetwork network,
-                                            WKSyncMode mode,
-                                            WKAddressScheme scheme,
-                                            const char *storagePath)
+                                      WKAccount account,
+                                      WKNetwork network,
+                                      WKSyncMode mode,
+                                      WKAddressScheme scheme,
+                                      const char *storagePath)
 {
     WKListener listener = wkListenerCreate (state,
-                                                     _CWMEventRecordingSystemCallback,
-                                                     _CWMEventRecordingNetworkCallback,
-                                                     _CWMEventRecordingManagerCallback,
-                                                     _CWMEventRecordingWalletCallback,
-                                                     _CWMEventRecordingTransferCallback);
+                                            _CWMEventRecordingSystemCallback,
+                                            _CWMEventRecordingNetworkCallback,
+                                            _CWMEventRecordingManagerCallback,
+                                            _CWMEventRecordingWalletCallback,
+                                            _CWMEventRecordingTransferCallback);
 
     WKClient client = (WKClient) {
         state,
@@ -879,20 +874,20 @@ wkWalletManagerSetupForLifecycleTest (CWMEventRecordingState *state,
     WKSystem system = wkSystemCreate (client, listener, account, storagePath, wkNetworkIsMainnet(network));
 
     return wkWalletManagerCreate (wkListenerCreateWalletManagerListener (listener, system),
-                                      client,
-                                      account,
-                                      network,
-                                      mode,
-                                      scheme,
-                                      storagePath);
+                                  client,
+                                  account,
+                                  network,
+                                  mode,
+                                  scheme,
+                                  storagePath);
 }
 
 static int
-runCryptoWalletManagerLifecycleTest (WKAccount account,
-                                     WKNetwork network,
-                                     WKSyncMode mode,
-                                     WKAddressScheme scheme,
-                                     const char *storagePath) {
+runWalletKitWalletManagerLifecycleTest (WKAccount account,
+                                        WKNetwork network,
+                                        WKSyncMode mode,
+                                        WKAddressScheme scheme,
+                                        const char *storagePath) {
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
@@ -904,71 +899,71 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
            wkNetworkIsMainnet (network) ? "mainnet" : "testnet",
            storagePath);
 
-   printf("Testing WKWalletManager connect, disconnect...\n");
-   {
-       // Test setup
-       CWMEventRecordingState state = {0};
-       CWMEventRecordingStateNewDefault (&state);
+    printf("Testing WKWalletManager connect, disconnect...\n");
+    {
+        // Test setup
+        CWMEventRecordingState state = {0};
+        CWMEventRecordingStateNewDefault (&state);
 
-       WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, mode, scheme, storagePath);
-       WKWallet wallet = wkWalletManagerGetWallet (manager);
+        WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, mode, scheme, storagePath);
+        WKWallet wallet = wkWalletManagerGetWallet (manager);
 
-       // connect, disconnect
-       wkWalletManagerConnect (manager, NULL);
-       sleep(1);
-       wkWalletManagerDisconnect (manager);
-       sleep(1);
-       wkWalletManagerStop (manager);
+        // connect, disconnect
+        wkWalletManagerConnect (manager, NULL);
+        sleep(1);
+        wkWalletManagerDisconnect (manager);
+        sleep(1);
+        wkWalletManagerStop (manager);
 
-       // Verification
-       success = CWMEventRecordingVerifyEventSequence(&state,
-                                                      WK_TRUE,
-                                                      (CWMEvent []) {
-                                                          // wkWalletManagerCreate()
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                          CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                          CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                    wallet),
-                                                           // wkWalletManagerConnect()
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
-                                                           // wkWalletManagerDisconnect()
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                    wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
-                                                      },
-                                                      9,
-                                                      (CWMEvent []) {
-                                                          CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                          CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                      },
-                                                      2);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
-           return success;
-       }
+        // Verification
+        success = CWMEventRecordingVerifyEventSequence(&state,
+                                                       WK_TRUE,
+                                                       (CWMEvent []) {
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+            // wkWalletManagerConnect()
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
+            // wkWalletManagerDisconnect()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
+        },
+                                                       9,
+                                                       (CWMEvent []) {
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
+                                                       2);
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       success = CWMEventRecordingVerifyEventPairs (&state);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
-           return success;
-       }
+        success = CWMEventRecordingVerifyEventPairs (&state);
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       // Test teardown
-       wkNetworkSetHeight (network, originalNetworkHeight);
-       wkWalletGive (wallet);
-       wkWalletManagerGive (manager);
-       CWMEventRecordingStateFree (&state);
-   }
+        // Test teardown
+        wkNetworkSetHeight (network, originalNetworkHeight);
+        wkWalletGive (wallet);
+        wkWalletManagerGive (manager);
+        CWMEventRecordingStateFree (&state);
+    }
 
     printf("Testing WKWalletManager repeated connect attempts...\n");
     {
@@ -994,33 +989,33 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_TRUE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                            // wkWalletManagerConnect() - first, second and third do nothing
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
-                                                            // wkWalletManagerDisconnect()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                     wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+            // wkWalletManagerConnect() - first, second and third do nothing
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
+            // wkWalletManagerDisconnect()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
+        },
                                                        9,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1071,17 +1066,17 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_TRUE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+        },
                                                        3,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1123,33 +1118,33 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_TRUE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                            // wkWalletManagerConnect()
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
-                                                            // wkWalletManagerDisconnect()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                           CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                     wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                     wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+            // wkWalletManagerConnect()
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
+            // wkWalletManagerDisconnect()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
+        },
                                                        9,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1189,17 +1184,17 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_TRUE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+        },
                                                        3,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1261,17 +1256,17 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_FALSE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+        },
                                                        3,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1289,12 +1284,12 @@ runCryptoWalletManagerLifecycleTest (WKAccount account,
 }
 
 static int
-runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
-                                                WKNetwork network,
-                                                WKSyncMode primaryMode,
-                                                WKSyncMode secondaryMode,
-                                                WKAddressScheme scheme,
-                                                const char *storagePath) {
+runWalletKitWalletManagerLifecycleWithSetModeTest (WKAccount account,
+                                                   WKNetwork network,
+                                                   WKSyncMode primaryMode,
+                                                   WKSyncMode secondaryMode,
+                                                   WKAddressScheme scheme,
+                                                   const char *storagePath) {
     int success = 1;
 
     // HACK: Managers set the height; we need to be able to restore it between tests
@@ -1307,14 +1302,14 @@ runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
            wkNetworkIsMainnet (network) ? "mainnet" : "testnet",
            storagePath);
 
-   printf("Testing WKWalletManager mode swap while disconnected...\n");
-   {
-       // Test setup
-       CWMEventRecordingState state = {0};
-       CWMEventRecordingStateNewDefault (&state);
+    printf("Testing WKWalletManager mode swap while disconnected...\n");
+    {
+        // Test setup
+        CWMEventRecordingState state = {0};
+        CWMEventRecordingStateNewDefault (&state);
 
-       WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, primaryMode, scheme, storagePath);
-       WKWallet wallet = wkWalletManagerGetWallet (manager);
+        WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, primaryMode, scheme, storagePath);
+        WKWallet wallet = wkWalletManagerGetWallet (manager);
 
         // swap modes while disconnected
         wkWalletManagerSetMode (manager, secondaryMode);
@@ -1327,48 +1322,48 @@ runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
 
         wkWalletManagerStop (manager);
 
-       // Verification
+        // Verification
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_TRUE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+        },
                                                        3,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
-           return success;
-       }
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       success = CWMEventRecordingVerifyEventPairs (&state);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
-           return success;
-       }
+        success = CWMEventRecordingVerifyEventPairs (&state);
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       // Test teardown
-       wkNetworkSetHeight (network, originalNetworkHeight);
-       wkWalletGive (wallet);
-       wkWalletManagerGive (manager);
-       CWMEventRecordingStateFree (&state);
-   }
+        // Test teardown
+        wkNetworkSetHeight (network, originalNetworkHeight);
+        wkWalletGive (wallet);
+        wkWalletManagerGive (manager);
+        CWMEventRecordingStateFree (&state);
+    }
 
-   printf("Testing WKWalletManager mode swap while connected...\n");
-   {
-       // Test setup
-       CWMEventRecordingState state = {0};
-       CWMEventRecordingStateNewDefault (&state);
+    printf("Testing WKWalletManager mode swap while connected...\n");
+    {
+        // Test setup
+        CWMEventRecordingState state = {0};
+        CWMEventRecordingStateNewDefault (&state);
 
-       WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, primaryMode, scheme, storagePath);
-       WKWallet wallet = wkWalletManagerGetWallet (manager);
+        WKWalletManager manager = wkWalletManagerSetupForLifecycleTest(&state, account, network, primaryMode, scheme, storagePath);
+        WKWallet wallet = wkWalletManagerGetWallet (manager);
 
         // swap modes while connected
         wkWalletManagerConnect (manager, NULL);
@@ -1384,55 +1379,55 @@ runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
 
         wkWalletManagerStop (manager);
 
-       // Verification
-       success = CWMEventRecordingVerifyEventSequence(&state,
-                                                      WK_TRUE,
-                                                      (CWMEvent []) {
-                                                          // wkWalletManagerCreate()
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                          CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                          CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                    wallet),
-                                                           // wkWalletManagerConnect()
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
-                                                           // wkWalletManagerSetMode()
-                                                          CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
-                                                          CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
-                                                                                                    wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
-                                                                                                    wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
-                                                      },
-                                                      9,
-                                                      (CWMEvent []) {
-                                                          CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                          CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                      },
-                                                      2);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
-           return success;
-       }
+        // Verification
+        success = CWMEventRecordingVerifyEventSequence(&state,
+                                                       WK_TRUE,
+                                                       (CWMEvent []) {
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+            // wkWalletManagerConnect()
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CREATED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STARTED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING)),
+            // wkWalletManagerSetMode()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_SYNC_STOPPED),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_SYNCING),
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED)),
+            CWMEventForWalletManagerStateType    (WK_WALLET_MANAGER_EVENT_CHANGED,
+                                                  wkWalletManagerStateInit (WK_WALLET_MANAGER_STATE_CONNECTED),
+                                                  wkWalletManagerStateDisconnectedInit (wkWalletManagerDisconnectReasonUnknown())),
+        },
+                                                       9,
+                                                       (CWMEvent []) {
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
+                                                       2);
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       success = CWMEventRecordingVerifyEventPairs (&state);
-       if (!success) {
-           fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
-           return success;
-       }
+        success = CWMEventRecordingVerifyEventPairs (&state);
+        if (!success) {
+            fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventPairs failed\n", __func__, __LINE__);
+            return success;
+        }
 
-       // Test teardown
-       wkNetworkSetHeight (network, originalNetworkHeight);
-       wkWalletGive (wallet);
-       wkWalletManagerGive (manager);
-       CWMEventRecordingStateFree (&state);
-   }
+        // Test teardown
+        wkNetworkSetHeight (network, originalNetworkHeight);
+        wkWalletGive (wallet);
+        wkWalletManagerGive (manager);
+        CWMEventRecordingStateFree (&state);
+    }
 
     printf("Testing WKWalletManager mode swap threading...\n");
     if (WK_NETWORK_TYPE_BTC == wkNetworkGetType (network) &&
@@ -1479,17 +1474,17 @@ runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
         success = CWMEventRecordingVerifyEventSequence(&state,
                                                        WK_FALSE,
                                                        (CWMEvent []) {
-                                                           // wkWalletManagerCreate()
-                                                           CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
-                                                           CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
-                                                           CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
-                                                                                                     wallet),
-                                                       },
+            // wkWalletManagerCreate()
+            CWMEventForWalletManagerType         (WK_WALLET_MANAGER_EVENT_CREATED),
+            CWMEventForWalletType                (WK_WALLET_EVENT_CREATED),
+            CWMEventForWalletManagerWalletType   (WK_WALLET_MANAGER_EVENT_WALLET_ADDED,
+                                                  wallet),
+        },
                                                        3,
                                                        (CWMEvent []) {
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
-                                                           CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
-                                                       },
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_SYNC_CONTINUES),
+            CWMEventForWalletManagerType (WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED),
+        },
                                                        2);
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: BRRunTestWalletManagerSyncTestVerifyEventSequence failed\n", __func__, __LINE__);
@@ -1511,14 +1506,14 @@ runCryptoWalletManagerLifecycleWithSetModeTest (WKAccount account,
 ///
 
 extern WKBoolean
-runCryptoTestsWithAccountAndNetwork (WKAccount account,
-                                     WKNetwork network,
-                                     const char *storagePath) {
+runWalletKitTestsWithAccountAndNetwork (WKAccount account,
+                                        WKNetwork network,
+                                        const char *storagePath) {
     WKBoolean success = WK_TRUE;
 
     WKNetworkType chainType = wkNetworkGetType (network);
 
- //   WKBoolean isGen = AS_WK_BOOLEAN (WK_NETWORK_TYPE_GEN == chainType);
+    //   WKBoolean isGen = AS_WK_BOOLEAN (WK_NETWORK_TYPE_GEN == chainType);
     WKBoolean isEth = AS_WK_BOOLEAN (WK_NETWORK_TYPE_ETH == chainType);
     WKBoolean isBtc = AS_WK_BOOLEAN (WK_NETWORK_TYPE_BTC == chainType);
     WKBoolean isBch = AS_WK_BOOLEAN (WK_NETWORK_TYPE_BTC == chainType);
@@ -1526,15 +1521,15 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
     WKBoolean isGen = (!isEth && !isBch && !isBch && !isBsv);
 
     WKAddressScheme scheme = ((isBtc || isBch) ?
-                                    WK_ADDRESS_SCHEME_BTC_LEGACY :
-                                    WK_ADDRESS_SCHEME_NATIVE);
+                              WK_ADDRESS_SCHEME_BTC_LEGACY :
+                              WK_ADDRESS_SCHEME_NATIVE);
 
     if (isBtc || isEth || isGen) {
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleTest (account,
-                                                                         network,
-                                                                         WK_SYNC_MODE_API_ONLY,
-                                                                         scheme,
-                                                                         storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleTest (account,
+                                                                        network,
+                                                                        WK_SYNC_MODE_API_ONLY,
+                                                                        scheme,
+                                                                        storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
@@ -1542,11 +1537,11 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
     }
 
     if (isBtc || isBch || isBsv || isEth) {
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleTest (account,
-                                                                         network,
-                                                                         WK_SYNC_MODE_P2P_ONLY,
-                                                                         scheme,
-                                                                         storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleTest (account,
+                                                                        network,
+                                                                        WK_SYNC_MODE_P2P_ONLY,
+                                                                        scheme,
+                                                                        storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
@@ -1554,11 +1549,11 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
     }
 
     if (isEth) {
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleTest (account,
-                                                                         network,
-                                                                         WK_SYNC_MODE_API_WITH_P2P_SEND,
-                                                                         scheme,
-                                                                         storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleTest (account,
+                                                                        network,
+                                                                        WK_SYNC_MODE_API_WITH_P2P_SEND,
+                                                                        scheme,
+                                                                        storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
@@ -1566,23 +1561,23 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
     }
 
     if (isBtc) {
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleWithSetModeTest (account,
-                                                                                    network,
-                                                                                    WK_SYNC_MODE_P2P_ONLY,
-                                                                                    WK_SYNC_MODE_API_ONLY,
-                                                                                    scheme,
-                                                                                    storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleWithSetModeTest (account,
+                                                                                   network,
+                                                                                   WK_SYNC_MODE_P2P_ONLY,
+                                                                                   WK_SYNC_MODE_API_ONLY,
+                                                                                   scheme,
+                                                                                   storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
         }
 
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleWithSetModeTest (account,
-                                                                                    network,
-                                                                                    WK_SYNC_MODE_API_ONLY,
-                                                                                    WK_SYNC_MODE_P2P_ONLY,
-                                                                                    scheme,
-                                                                                    storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleWithSetModeTest (account,
+                                                                                   network,
+                                                                                   WK_SYNC_MODE_API_ONLY,
+                                                                                   WK_SYNC_MODE_P2P_ONLY,
+                                                                                   scheme,
+                                                                                   storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
@@ -1590,23 +1585,23 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
     }
 
     if (isEth) {
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleWithSetModeTest (account,
-                                                                                    network,
-                                                                                    WK_SYNC_MODE_P2P_ONLY,
-                                                                                    WK_SYNC_MODE_API_WITH_P2P_SEND,
-                                                                                    scheme,
-                                                                                    storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleWithSetModeTest (account,
+                                                                                   network,
+                                                                                   WK_SYNC_MODE_P2P_ONLY,
+                                                                                   WK_SYNC_MODE_API_WITH_P2P_SEND,
+                                                                                   scheme,
+                                                                                   storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
         }
 
-        success = AS_WK_BOOLEAN(runCryptoWalletManagerLifecycleWithSetModeTest (account,
-                                                                                    network,
-                                                                                    WK_SYNC_MODE_API_WITH_P2P_SEND,
-                                                                                    WK_SYNC_MODE_P2P_ONLY,
-                                                                                    scheme,
-                                                                                    storagePath));
+        success = AS_WK_BOOLEAN(runWalletKitWalletManagerLifecycleWithSetModeTest (account,
+                                                                                   network,
+                                                                                   WK_SYNC_MODE_API_WITH_P2P_SEND,
+                                                                                   WK_SYNC_MODE_P2P_ONLY,
+                                                                                   scheme,
+                                                                                   storagePath));
         if (!success) {
             fprintf(stderr, "***FAILED*** %s:%d: failed\n", __func__, __LINE__);
             return success;
@@ -1617,8 +1612,8 @@ runCryptoTestsWithAccountAndNetwork (WKAccount account,
 }
 
 extern void
-runCryptoTests (void) {
-    runCryptoAmountTests ();
-    runCryptoTransferTests();
+runWalletKitTests (void) {
+    runWalletKitAmountTests ();
+    runWalletKitTransferTests();
     return;
 }
