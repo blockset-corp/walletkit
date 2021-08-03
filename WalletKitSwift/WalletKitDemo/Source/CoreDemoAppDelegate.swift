@@ -129,7 +129,7 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
             "bch" : .api_only,
             "bsv" : .api_only,
             "ltc" : .p2p_only,
-            "doge": .p2p_only,
+            "doge": .api_only,
             "eth" : .api_only,
             "xrp" : .api_only,
             "hbar": .api_only,
