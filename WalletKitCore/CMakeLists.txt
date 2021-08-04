@@ -501,9 +501,9 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/stellar/testStellar.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-# __NEW_BLOCKCHAIN_IMPL__
+# Avalanche ntarget_sources (WalletKitCoren        PRIVATEn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalanche.hn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAccount.cn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAccount.hn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAddress.cn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAddress.hn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheBase.hn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.cn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.hn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.cn        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.hn)n        n# __NEW_BLOCKCHAIN_IMPL__
 
-# __NEW_BLOCKCHAIN_TEST__
+# Avalanche Testsnif (CMAKE_BUILD_TYPE MATCHES Debug)n    target_sources (WalletKitCoreTestn            PRIVATEn            ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/avax/testAvalanche.cn)nendif(CMAKE_BUILD_TYPE MATCHES Debug)n        n# __NEW_BLOCKCHAIN_TEST__
 
 # Crypto
 target_sources (WalletKitCore
@@ -681,7 +681,7 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKXLM.h
         )
 
-# __NEW_HANDLER__
+# Crypto AVAX ntarget_sources (WalletKitCoren        PRIVATEn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAVAX.hn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAccountAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAddressAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKFeeBasisAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKHandlersAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKNetworkAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKTransferAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKWalletAVAX.cn        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKWalletManagerAVAX.cn)n        n# __NEW_HANDLER__
 
 # WalletKitCore Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)

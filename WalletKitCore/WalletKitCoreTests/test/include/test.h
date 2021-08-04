@@ -138,7 +138,7 @@ runTezosTest (void);
 extern void
 runStellarTest (void);
 
-// __NEW_BLOCKCHAIN_TEST_DEFN__
+// Avalanchenextern voidnrunAvalancheTest (void);nn// __NEW_BLOCKCHAIN_TEST_DEFN__
 
 #ifdef __cplusplus
 }
