@@ -206,7 +206,10 @@ final class WalletKitCoreTests: XCTestCase {
         runStellarTest()
     }
 
-    // MARK - Avalanchen    func testAvalanche () {n        runAvalancheTest()n    }nn    // __NEW_BLOCKCHAIN_TEST_IMPL__
+    // MARK - Avalanchen
+    func testAvalanche () {
+        runAvalancheTest()
+    }   // __NEW_BLOCKCHAIN_TEST_IMPL__
     
     // MARK: - Bitcoin
     
