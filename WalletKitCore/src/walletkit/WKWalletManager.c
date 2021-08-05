@@ -1192,6 +1192,11 @@ wkWalletManagerRecoverTransfersFromTransactionBundle (WKWalletManager cwm,
 }
 
 private_extern void
+wkWalletManagerUpdateWalletBalance (WKWalletManager cwm) {
+    cwm->handlers->updateWalletBalance (cwm);
+}
+
+private_extern void
 wkWalletManagerRecoverTransferFromTransferBundle (WKWalletManager cwm,
                                                       OwnershipKept WKClientTransferBundle bundle) {
     cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);

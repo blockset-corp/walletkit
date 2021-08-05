@@ -134,6 +134,9 @@ typedef WKWalletSweeper
                                                     WKWallet wallet,
                                                     WKKey key);
 
+typedef void
+(*WKWalletManagerUpdateWalletBalanceHandler) (WKWalletManager cwm);                                                    
+
 typedef struct {
     WKWalletManagerCreateHandler create;
     WKWalletManagerReleaseHandler release;
@@ -152,6 +155,7 @@ typedef struct {
     WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler        recoverFeeBasisFromFeeEstimate;
     WKWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     WKWalletManagerCreateWalletSweeperHandler createSweeper;
+    WKWalletManagerUpdateWalletBalanceHandler updateWalletBalance;
 } WKWalletManagerHandlers;
 
 // MARK: - Wallet Manager State

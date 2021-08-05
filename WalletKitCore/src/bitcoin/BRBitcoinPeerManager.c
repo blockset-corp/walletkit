@@ -951,7 +951,7 @@ static void _peerRelayedTx(void *info, BRBitcoinTransaction *tx)
     }
 
     if (manager->syncStartHeight == 0 || btcWalletContainsTransaction(manager->wallet, tx)) {
-        isWalletTx = btcWalletRegisterTransaction(manager->wallet, tx);
+        isWalletTx = btcWalletRegisterTransaction(manager->wallet, tx, true);
         if (isWalletTx) tx = btcWalletTransactionForHash(manager->wallet, tx->txHash);
     }
     else {
@@ -1034,7 +1034,7 @@ static void _peerHasTx(void *info, UInt256 txHash)
     }
 
     if (tx) {
-        isWalletTx = btcWalletRegisterTransaction(manager->wallet, tx);
+        isWalletTx = btcWalletRegisterTransaction(manager->wallet, tx, true);
         if (isWalletTx) tx = btcWalletTransactionForHash(manager->wallet, tx->txHash);
 
         // reschedule sync timeout
@@ -1482,7 +1482,7 @@ static BRBitcoinTransaction *_peerRequestedTx(void *info, UInt256 txHash)
     }
 
     _BRTxPeerListAddPeer(&manager->txRelays, txHash, peer);
-    if (pubTx.tx) btcWalletRegisterTransaction(manager->wallet, pubTx.tx);
+    if (pubTx.tx) btcWalletRegisterTransaction(manager->wallet, pubTx.tx, true);
     if (pubTx.tx && ! btcWalletTransactionIsValid(manager->wallet, pubTx.tx)) error = EINVAL;
     pthread_mutex_unlock(&manager->lock);
     if (pubTx.callback) pubTx.callback(pubTx.info, error);

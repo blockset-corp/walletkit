@@ -306,7 +306,7 @@ wkWalletManagerRecoverTransfersFromTransactionBundleBTC (WKWalletManager manager
     if (needRegistration) {
         if (NULL == btcWalletTransactionForHash (btcWallet, btcTransaction->txHash)) {
             // BRWalletRegisterTransaction doesn't reliably report if the txn was added to the wallet.
-            btcWalletRegisterTransaction (btcWallet, btcTransaction);
+            btcWalletRegisterTransaction (btcWallet, btcTransaction, false);
             if (btcTransaction == btcWalletTransactionForHash (btcWallet, btcTransaction->txHash)) {
                 // If our transaction made it into the wallet, do not deallocate it
                 needFree = false;
@@ -436,6 +436,13 @@ wkWalletManagerCreateWalletSweeperBTC (WKWalletManager cwm,
     wkCurrencyGive (currency);
 
     return sweeper;
+}
+
+static void
+wkWalletManagerUpdateWalletBalanceBTC (WKWalletManager manager)
+{
+    BRBitcoinWallet *btcWallet = wkWalletAsBTC(manager->wallet);
+    btcWalletUpdateBalance(btcWallet);
 }
 
 // MARK: BRBitcoinWallet Callback Balance Changed
@@ -685,7 +692,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersBTC = {
     wkWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedBTC,
-    wkWalletManagerCreateWalletSweeperBTC
+    wkWalletManagerCreateWalletSweeperBTC,
+    wkWalletManagerUpdateWalletBalanceBTC
 };
 
 WKWalletManagerHandlers wkWalletManagerHandlersBCH = {
@@ -705,7 +713,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersBCH = {
     wkWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedBTC,
-    wkWalletManagerCreateWalletSweeperBTC
+    wkWalletManagerCreateWalletSweeperBTC,
+    wkWalletManagerUpdateWalletBalanceBTC
 };
 
 WKWalletManagerHandlers wkWalletManagerHandlersBSV = {
@@ -725,7 +734,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersBSV = {
     wkWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedBTC,
-    wkWalletManagerCreateWalletSweeperBTC
+    wkWalletManagerCreateWalletSweeperBTC,
+    wkWalletManagerUpdateWalletBalanceBTC
 };
 
 WKWalletManagerHandlers wkWalletManagerHandlersLTC = {
@@ -745,7 +755,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersLTC = {
     wkWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedBTC,
-    wkWalletManagerCreateWalletSweeperBTC
+    wkWalletManagerCreateWalletSweeperBTC,
+    wkWalletManagerUpdateWalletBalanceBTC
 };
 
 WKWalletManagerHandlers wkWalletManagerHandlersDOGE = {
@@ -765,5 +776,6 @@ WKWalletManagerHandlers wkWalletManagerHandlersDOGE = {
     wkWalletManagerRecoverTransferFromTransferBundleBTC,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedBTC,
-    wkWalletManagerCreateWalletSweeperBTC
+    wkWalletManagerCreateWalletSweeperBTC,
+    wkWalletManagerUpdateWalletBalanceBTC
 };

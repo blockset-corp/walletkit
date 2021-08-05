@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "WKClientP.h"
+#include "bitcoin/BRBitcoinWallet.h" 
 
 #include <errno.h>
 #include <math.h>  // round()
@@ -645,6 +646,7 @@ wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
                                                                     callbackState->rid)) {
                     syncCompleted = true;
                     syncSuccess   = true;
+                    wkWalletManagerUpdateWalletBalance(manager);
                 }
 
                 wkWalletGive (wallet);

@@ -312,5 +312,6 @@ WKWalletManagerHandlers wkWalletManagerHandlersXLM = {
     wkWalletManagerRecoverTransferFromTransferBundleXLM,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedXLM,
-    wkWalletManagerCreateWalletSweeperXLM
+    wkWalletManagerCreateWalletSweeperXLM,
+    NULL //WKWalletManagerUpdateWalletBalanceHandler not supported
 };

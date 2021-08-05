@@ -227,14 +227,14 @@ transferTestsBalance (void) {
     // Initialize wallet w/ each transaction, one by one
     BRBitcoinWallet *wid2 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
-        btcWalletRegisterTransaction (wid2, btcTransactionCopy (transactions[index]));
+        btcWalletRegisterTransaction (wid2, btcTransactionCopy (transactions[index]), true);
     }
     uint64_t balance2 = btcWalletBalance(wid2);
 
     // Initialize wallet w/ each transaction in reverse order
     BRBitcoinWallet *wid3 = btcWalletNew (btcTestNetParams->addrParams, NULL, 0, mpk);
     for (size_t index = 0; index < numberOfTransferTests; index++) {
-        btcWalletRegisterTransaction (wid3, btcTransactionCopy(transactions[numberOfTransferTests - 1 - index]));
+        btcWalletRegisterTransaction (wid3, btcTransactionCopy(transactions[numberOfTransferTests - 1 - index]), true);
     }
     uint64_t balance3 = btcWalletBalance(wid3);
 
@@ -274,7 +274,7 @@ transferTestsAddress (void) {
         BRBitcoinTransaction *tid = btcTransactionParse (testRawBytes, testRawSize);
         tid->blockHeight = test->blockHeight;
         tid->timestamp   = test->timestamp;
-        btcWalletRegisterTransaction (wid, tid); // ownership given
+        btcWalletRegisterTransaction (wid, tid, true); // ownership given
 
         WKTransferListener listener = { NULL };
         WKTransfer transfer = wkTransferCreateAsBTC (listener,

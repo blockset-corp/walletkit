@@ -381,5 +381,6 @@ WKWalletManagerHandlers wkWalletManagerHandlersXTZ = {
     wkWalletManagerRecoverTransferFromTransferBundleXTZ,
     wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ,
     wkWalletManagerWalletSweeperValidateSupportedXTZ,
-    wkWalletManagerCreateWalletSweeperXTZ
+    wkWalletManagerCreateWalletSweeperXTZ,
+    NULL //WKWalletManagerUpdateWalletBalanceHandler not supported
 };

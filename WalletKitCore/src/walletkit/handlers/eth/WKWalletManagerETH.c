@@ -1025,4 +1025,5 @@ WKWalletManagerHandlers wkWalletManagerHandlersETH = {
     wkWalletManagerRecoverFeeBasisFromFeeEstimateETH,
     NULL,//WKWalletManagerWalletSweeperValidateSupportedHandler not supported
     NULL,//WKWalletManagerCreateWalletSweeperHandler not supported
+    NULL //WKWalletManagerUpdateWalletBalanceHandler not supported
 };

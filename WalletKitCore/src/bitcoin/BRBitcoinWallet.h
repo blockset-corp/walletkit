@@ -30,6 +30,7 @@
 #include "support/BRBIP32Sequence.h"
 #include "support/BRInt.h"
 #include <string.h>
+#include <stdbool.h>  
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +119,8 @@ size_t btcWalletTxUnconfirmedBefore(BRBitcoinWallet *wallet, BRBitcoinTransactio
 // current wallet balance, not including transactions known to be invalid
 uint64_t btcWalletBalance(BRBitcoinWallet *wallet);
 
+void btcWalletUpdateBalance(BRBitcoinWallet *wallet);
+
 // total amount spent from the wallet (exluding change)
 uint64_t btcWalletTotalSent(BRBitcoinWallet *wallet);
 
@@ -169,7 +172,7 @@ int btcWalletSignTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx, 
 int btcWalletContainsTransaction(BRBitcoinWallet *wallet, const BRBitcoinTransaction *tx);
 
 // adds a transaction to the wallet, or returns false if it isn't associated with the wallet
-int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx);
+int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx, bool needUpdateBalance);
 
 // removes a tx from the wallet, along with any tx that depend on its outputs
 void btcWalletRemoveTransaction(BRBitcoinWallet *wallet, UInt256 txHash);

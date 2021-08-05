@@ -163,6 +163,20 @@ static int _btcWalletContainsTx(BRBitcoinWallet *wallet, const BRBitcoinTransact
     return r;
 }
 
+static void _btcWalletUpdatePKH(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx)
+{
+    const uint8_t *pkh;
+    size_t i;
+
+    for (i = 0; i < tx->outCount; i++) {
+        pkh = BRScriptPKH(tx->outputs[i].script, tx->outputs[i].scriptLen);
+
+        if (pkh && BRSetContains(wallet->allPKH, pkh)) {
+            BRSetAdd(wallet->usedPKH, (void *)pkh);
+        }
+    }
+}
+
 static void _btcWalletUpdateBalance(BRBitcoinWallet *wallet)
 {
     int isInvalid, isPending;
@@ -409,6 +423,17 @@ uint64_t btcWalletBalance(BRBitcoinWallet *wallet)
     balance = wallet->balance;
     pthread_mutex_unlock(&wallet->lock);
     return balance;
+}
+
+// calculate wallet balance 
+void btcWalletUpdateBalance(BRBitcoinWallet *wallet)
+{
+    assert(wallet != NULL);
+    pthread_mutex_lock(&wallet->lock);
+    
+    _btcWalletUpdateBalance(wallet);
+
+    pthread_mutex_unlock(&wallet->lock);
 }
 
 // writes unspent outputs to utxos and returns the number of outputs written, or total number available if utxos is NULL
@@ -766,7 +791,7 @@ int btcWalletContainsTransaction(BRBitcoinWallet *wallet, const BRBitcoinTransac
 }
 
 // adds a transaction to the wallet, or returns false if it isn't associated with the wallet
-int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx)
+int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *tx, bool needUpdateBalance)
 {
     int wasAdded = 0, r = 1;
     
@@ -783,7 +808,10 @@ int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *
                 //       (for now, replacements appear invalid until confirmation)
                 BRSetAdd(wallet->allTx, tx);
                 _btcWalletInsertTx(wallet, tx);
-                _btcWalletUpdateBalance(wallet);
+
+                if(needUpdateBalance) _btcWalletUpdateBalance(wallet);
+                else _btcWalletUpdatePKH(wallet, tx);
+
                 wasAdded = 1;
             }
             else { // keep track of unconfirmed non-wallet tx for invalid tx checks and child-pays-for-parent fees

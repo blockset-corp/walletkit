@@ -315,5 +315,6 @@ WKWalletManagerHandlers wkWalletManagerHandlersXRP = {
     wkWalletManagerRecoverTransferFromTransferBundleXRP,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedXRP,
-    wkWalletManagerCreateWalletSweeperXRP
+    wkWalletManagerCreateWalletSweeperXRP,
+    NULL //WKWalletManagerUpdateWalletBalanceHandler not supported
 };

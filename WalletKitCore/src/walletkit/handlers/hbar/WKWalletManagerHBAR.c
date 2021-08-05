@@ -314,5 +314,6 @@ WKWalletManagerHandlers wkWalletManagerHandlersHBAR = {
     wkWalletManagerRecoverTransferFromTransferBundleHBAR,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedHBAR,
-    wkWalletManagerCreateWalletSweeperHBAR
+    wkWalletManagerCreateWalletSweeperHBAR,
+    NULL //WKWalletManagerUpdateWalletBalanceHandler not supported
 };

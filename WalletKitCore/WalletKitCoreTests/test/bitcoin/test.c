@@ -2783,14 +2783,14 @@ int btcWalletTests()
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletTransactions() test 1\n", __func__);
 
     btcTransactionSign(tx, 0, &k, 1);
-    btcWalletRegisterTransaction(w, tx);
+    btcWalletRegisterTransaction(w, tx, true);
     if (btcWalletBalance(w) != SATOSHIS)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletRegisterTransaction() test 2\n", __func__);
 
     if (btcWalletTransactions(w, NULL, 0) != 1)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletTransactions() test 2\n", __func__);
 
-    btcWalletRegisterTransaction(w, tx); // test adding same tx twice
+    btcWalletRegisterTransaction(w, tx, true); // test adding same tx twice
     if (btcWalletBalance(w) != SATOSHIS)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletRegisterTransaction() test 3\n", __func__);
 
@@ -2803,7 +2803,7 @@ int btcWalletTests()
     if (! btcWalletTransactionIsPending(w, tx))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletTransactionIsPending() test\n", __func__);
 
-    btcWalletRegisterTransaction(w, tx); // test adding tx with future lockTime
+    btcWalletRegisterTransaction(w, tx, true); // test adding tx with future lockTime
     if (btcWalletBalance(w) != SATOSHIS)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletRegisterTransaction() test 4\n", __func__);
 
@@ -2840,7 +2840,7 @@ int btcWalletTests()
     if (tx && ! btcTransactionIsSigned(tx))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletSignTransaction() test\n", __func__);
     
-    if (tx) tx->timestamp = 1, btcWalletRegisterTransaction(w, tx);
+    if (tx) tx->timestamp = 1, btcWalletRegisterTransaction(w, tx, true);
     if (tx && btcWalletBalance(w) + btcWalletFeeForTx(w, tx) != SATOSHIS/2)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletRegisterTransaction() test 5\n", __func__);
     
