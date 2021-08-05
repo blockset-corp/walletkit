@@ -18,5 +18,6 @@ public enum NetworkType {
     HBAR,
     XTZ,
     XLM,
-    AVAX,n    /* __SYMBOL__ */
+    AVAX,
+    /* __SYMBOL__ */
 }
