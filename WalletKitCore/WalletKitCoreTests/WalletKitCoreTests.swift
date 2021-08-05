@@ -467,6 +467,8 @@ final class WalletKitCoreTests: XCTestCase {
         ("testSyncOneBTC",      testBitcoinSyncOne),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
         
-        // Avalanchen        ("testAvalanche", testAvalanche),n        // __NEW_BLOCKCHAIN_TEST__
+        // Avalanche
+        ("testAvalanche", testAvalanche),
+        // __NEW_BLOCKCHAIN_TEST__
     ]
 }

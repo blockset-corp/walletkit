@@ -215,7 +215,8 @@ final class Utilities {
             case HBAR:return WKNetworkType.HBAR;
             case XTZ: return WKNetworkType.XTZ;
             case XLM: return WKNetworkType.XLM;
-            case AVAX: return WKNetworkType.AVAX; n            /* case __SYMBOL__: return WKNetworkType.__SYMBOL__; */
+            case AVAX: return WKNetworkType.AVAX; 
+            /* case __SYMBOL__: return WKNetworkType.__SYMBOL__; */
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -233,7 +234,8 @@ final class Utilities {
             case HBAR:return NetworkType.HBAR;
             case XTZ: return NetworkType.XTZ;
             case XLM: return NetworkType.XLM;
-            case AVAX: return NetworkType.AVAX; n            /* case __SYMBOL__: return NetworkType.__SYMBOL__; */
+            case AVAX: return NetworkType.AVAX;
+            /* case __SYMBOL__: return NetworkType.__SYMBOL__; */
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

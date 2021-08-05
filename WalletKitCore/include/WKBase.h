@@ -276,7 +276,8 @@ typedef enum {
     WK_NETWORK_TYPE_HBAR,
     WK_NETWORK_TYPE_XTZ,
     WK_NETWORK_TYPE_XLM,
-    WK_NETWORK_TYPE_AVAX,n    /* WK_NETWORK_TYPE___SYMBOL__ */
+    WK_NETWORK_TYPE_AVAX,
+    /* WK_NETWORK_TYPE___SYMBOL__ */
 } WKNetworkType;
 
 #define WK_NETWORK_TYPE_LAST        WK_NETWORK_TYPE_AVAX
@@ -298,7 +299,8 @@ typedef enum {
 #define WK_NETWORK_CURRENCY_HBAR    "hbar"
 #define WK_NETWORK_CURRENCY_XTZ     "xtz"
 #define WK_NETWORK_CURRENCY_XLM     "xlm"
-#define WK_NETWORK_CURRENCY_AVAX    "avax" n/* #define WK_NETWORK_CURRENCY___SYMBOL__    "__symbol__" */
+#define WK_NETWORK_CURRENCY_AVAX    "avax" 
+/* #define WK_NETWORK_CURRENCY___SYMBOL__    "__symbol__" */
 
 extern const char *
 wkNetworkTypeGetCurrencyCode (WKNetworkType type);
