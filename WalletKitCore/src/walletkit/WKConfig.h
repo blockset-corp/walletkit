@@ -18,7 +18,8 @@
 #define HAS_HBAR_TESTNET    0
 #define HAS_XTZ_TESTNET     0
 #define HAS_XLM_TESTNET     0
-#define HAS_AVAX_TESTNET 0n// __CONTROL__
+#define HAS_AVAX_TESTNET    0
+// __CONTROL__
 
 #if !defined DEFINE_NETWORK
 #define DEFINE_NETWORK(type, networkId, name, network, isMainnet, height, confirmations, confirmationPeriodInSeconds)
@@ -305,7 +306,8 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_XLM, XLM)
 #define NETWORK_NAME    "Avalanche"
 DEFINE_NETWORK (WK_NETWORK_TYPE_AVAX,  "avalanche-mainnet", NETWORK_NAME, "mainnet", true, 35516170, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("avalanche-mainnet", "100", "5s", 5 * 1000)
-DEFINE_CURRENCY ("avalanche-mainnet",     "avalanche-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_AVAX,  "native",   NULL,   true)n    DEFINE_UNIT ("avalanche-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "AVAX_I")
+DEFINE_CURRENCY ("avalanche-mainnet",     "avalanche-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_AVAX,  "native",   NULL,   true)
+    DEFINE_UNIT ("avalanche-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "AVAX_I")
     DEFINE_UNIT ("avalanche-mainnet:__native__",  "lumen",       "xlm",     7,  "AVAX")
 DEFINE_ADDRESS_SCHEMES  ("avalanche-mainnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("avalanche-mainnet", WK_SYNC_MODE_API_ONLY)
