@@ -77,6 +77,12 @@ public enum WKNetworkType {
         public int toCore() {
             return XLM_VALUE;
         }
+    },
+
+    AVAX {
+        @Override
+        public int toCore() {
+            return AVAX_VALUE;        }
     }/* New __SYMBOL__ toCore() */;
 
     private static final int BTC_VALUE = 0;
@@ -89,7 +95,8 @@ public enum WKNetworkType {
     private static final int HBAR_VALUE = 7;
     private static final int XTZ_VALUE = 8;
     private static final int XLM_VALUE = 9;
-    /* private static final int __SYMBOL___VALUE = 10 */
+    private static final int AVAX_VALUE = 10;
+    /* private static final int __SYMBOL___VALUE = 11 */
 
     public static WKNetworkType fromCore(int nativeValue) {
         switch (nativeValue) {
@@ -103,6 +110,7 @@ public enum WKNetworkType {
             case HBAR_VALUE:return HBAR;
             case XTZ_VALUE: return XTZ;
             case XLM_VALUE: return XLM;
+            case AVAX_VALUE: return AVAX;
             /* case __SYMBOL___VALUE: return __SYMBOL__; */
             default: throw new IllegalArgumentException("Invalid core value");
         }

@@ -276,10 +276,11 @@ typedef enum {
     WK_NETWORK_TYPE_HBAR,
     WK_NETWORK_TYPE_XTZ,
     WK_NETWORK_TYPE_XLM,
+    WK_NETWORK_TYPE_AVAX,
     /* WK_NETWORK_TYPE___SYMBOL__ */
 } WKNetworkType;
 
-#define WK_NETWORK_TYPE_LAST        WK_NETWORK_TYPE_XLM
+#define WK_NETWORK_TYPE_LAST        WK_NETWORK_TYPE_AVAX
 #define NUMBER_OF_NETWORK_TYPES     (1 + WK_NETWORK_TYPE_LAST)
 #define WK_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
 //
@@ -298,6 +299,7 @@ typedef enum {
 #define WK_NETWORK_CURRENCY_HBAR    "hbar"
 #define WK_NETWORK_CURRENCY_XTZ     "xtz"
 #define WK_NETWORK_CURRENCY_XLM     "xlm"
+#define WK_NETWORK_CURRENCY_AVAX    "avax" 
 /* #define WK_NETWORK_CURRENCY___SYMBOL__    "__symbol__" */
 
 extern const char *

@@ -206,7 +206,10 @@ final class WalletKitCoreTests: XCTestCase {
         runStellarTest()
     }
 
-    // __NEW_BLOCKCHAIN_TEST_IMPL__
+    // MARK - Avalanchen
+    func testAvalanche () {
+        runAvalancheTest()
+    }   // __NEW_BLOCKCHAIN_TEST_IMPL__
     
     // MARK: - Bitcoin
     
@@ -464,6 +467,8 @@ final class WalletKitCoreTests: XCTestCase {
         ("testSyncOneBTC",      testBitcoinSyncOne),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
         
+        // Avalanche
+        ("testAvalanche", testAvalanche),
         // __NEW_BLOCKCHAIN_TEST__
     ]
 }

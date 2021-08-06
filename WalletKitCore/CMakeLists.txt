@@ -501,7 +501,28 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/stellar/testStellar.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# Avalanche 
+target_sources (WalletKitCore
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalanche.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAccount.c
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAccount.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAddress.c
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheAddress.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheBase.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.c
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.c
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.h)
+        
 # __NEW_BLOCKCHAIN_IMPL__
+
+# Avalanche Tests
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    target_sources (WalletKitCoreTest
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/avax/testAvalanche.c)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # __NEW_BLOCKCHAIN_TEST__
 
@@ -681,6 +702,19 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKXLM.h
         )
 
+# Crypto AVAX
+target_sources (WalletKitCore
+        PRIVATE
+	    ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAVAX.h
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAccountAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKAddressAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKFeeBasisAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKHandlersAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKNetworkAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKTransferAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKWalletAVAX.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/avax/WKWalletManagerAVAX.c)
+        
 # __NEW_HANDLER__
 
 # WalletKitCore Tests
