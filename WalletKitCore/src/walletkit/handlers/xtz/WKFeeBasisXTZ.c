@@ -24,7 +24,7 @@ typedef struct {
 
 static void
 wkFeeBasisCreateCallbackXTZ (WKFeeBasisCreateContext context,
-                                 WKFeeBasis feeBasis) {
+                             WKFeeBasis feeBasis) {
     WKFeeBasisCreateContextXTZ *contextXTZ = (WKFeeBasisCreateContextXTZ*) context;
     WKFeeBasisXTZ feeBasisXTZ = wkFeeBasisCoerceXTZ (feeBasis);
     
@@ -33,16 +33,16 @@ wkFeeBasisCreateCallbackXTZ (WKFeeBasisCreateContext context,
 
 private_extern WKFeeBasis
 wkFeeBasisCreateAsXTZ (WKUnit unit,
-                           BRTezosFeeBasis xtzFeeBasis) {
+                       BRTezosFeeBasis xtzFeeBasis) {
     WKFeeBasisCreateContextXTZ contextXTZ = {
         xtzFeeBasis
     };
     
     return wkFeeBasisAllocAndInit (sizeof (struct WKFeeBasisXTZRecord),
-                                       WK_NETWORK_TYPE_XTZ,
-                                       unit,
-                                       &contextXTZ,
-                                       wkFeeBasisCreateCallbackXTZ);
+                                   WK_NETWORK_TYPE_XTZ,
+                                   unit,
+                                   &contextXTZ,
+                                   wkFeeBasisCreateCallbackXTZ);
 }
 
 static void
@@ -58,34 +58,21 @@ wkFeeBasisAsXTZ (WKFeeBasis feeBasis) {
 static double
 wkFeeBasisGetCostFactorXTZ (WKFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = wkFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
-    switch (xtzFeeBasis.type) {
-        case FEE_BASIS_INITIAL:
-            return (double) xtzFeeBasis.u.initial.sizeInKBytes;
-        case FEE_BASIS_ESTIMATE:
-            return 1.0;
-        case FEE_BASIS_ACTUAL:
-            return 1.0;
-    }
+
+    BRTezosUnitMutez fee = tezosFeeBasisGetFee (xtzFeeBasis);
+    return 1000 * fee / ((double) xtzFeeBasis.mutezPerKByte);  // byte
 }
 
-static WKAmount
+static WKAmount // mutez/byte
 wkFeeBasisGetPricePerCostFactorXTZ (WKFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = wkFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
-    switch (xtzFeeBasis.type) {
-        case FEE_BASIS_INITIAL:
-            return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, xtzFeeBasis.u.initial.mutezPerKByte);
-        case FEE_BASIS_ESTIMATE:
-            return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, xtzFeeBasis.u.estimate.calculatedFee);
-        case FEE_BASIS_ACTUAL:
-            return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, xtzFeeBasis.u.actual.fee);
-    }
+    return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, xtzFeeBasis.mutezPerKByte / 1000);
 }
 
 static WKAmount
 wkFeeBasisGetFeeXTZ (WKFeeBasis feeBasis) {
     BRTezosFeeBasis xtzFeeBasis = wkFeeBasisCoerceXTZ (feeBasis)->xtzFeeBasis;
-    BRTezosUnitMutez fee = tezosFeeBasisGetFee (xtzFeeBasis);
-    return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, fee);
+    return wkAmountCreateAsXTZ (feeBasis->unit, WK_FALSE, tezosFeeBasisGetFee (xtzFeeBasis));
 }
 
 static WKBoolean

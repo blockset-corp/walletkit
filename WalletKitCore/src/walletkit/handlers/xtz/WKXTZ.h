@@ -96,8 +96,16 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
                                WKUnit unitForFee);
 
 private_extern bool
+wkWalletNeedsRevealXTZ (WKWallet wallet);
+
+private_extern bool
 wkWalletNeedsRevealForTransactionXTZ (WKWallet wallet,
                                       BRTezosTransaction transaction);
+
+private_extern bool
+wkWalletHasTransferAttributeForDelegationXTZ (WKWallet wallet,
+                                              size_t attributesCount,
+                                              OwnershipKept WKTransferAttribute *attributes);
 
 private_extern WKTransfer
 wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,

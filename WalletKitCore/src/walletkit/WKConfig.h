@@ -258,7 +258,7 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_HBAR, HBAR)
 
 #define NETWORK_NAME    "Tezos"
 DEFINE_NETWORK (WK_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 1328407, 6, 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "1", "1m", 1 * 60 * 1000)  // 1 mutez/byte
 DEFINE_CURRENCY ("tezos-mainnet",     "tezos-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-mainnet:__native__",  "mutez",     "mtz",   0,  "mutez")
     DEFINE_UNIT ("tezos-mainnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
@@ -267,7 +267,7 @@ DEFINE_MODES            ("tezos-mainnet", WK_SYNC_MODE_API_ONLY)
 
 #if HAS_XTZ_TESTNET
 DEFINE_NETWORK (WK_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 6, 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "1", "1m", 1 * 60 * 1000)   // 1 mutez/byte
 DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-testnet:__native__",  "mutez",     "mtz",   0,  "mutez")
     DEFINE_UNIT ("tezos-testnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")

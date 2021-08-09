@@ -21,6 +21,7 @@
 #include "walletkit/WKHashP.h"
 
 #include "tezos/BRTezosAccount.h"
+#include "tezos/BRTezosFeeBasis.h"
 
 #define TEZOS_FEE_PADDING_PERCENT           (10)
 
@@ -106,8 +107,11 @@ wkWalletManagerSignTransactionWithSeedXTZ (WKWalletManager manager,
 
     tezosTransactionSerializeAndSign (xtzTransaction, account, seed, lastBlockHash);
 
-    tezosTransactionSerializeAndSign (xtzTransaction, account, seed, lastBlockHash, needsReveal);
-    return AS_WK_BOOLEAN(tezosTransactionGetSignedBytesCount(xtzTransaction) > 0);
+    if (tezosTransactionGetSignedBytesCount(xtzTransaction) > 0) {
+        wkTransferCoerceXTZ(transfer)->hash = tezosTransactionGetHash(xtzTransaction);
+        return WK_TRUE;
+    }
+    else return WK_FALSE;
 }
 
 static WKBoolean
@@ -145,9 +149,12 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
                                         WKNetworkFee networkFee,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes) {
-    BRTezosUnitMutez mutezPerByte = tezosMutezCreate (networkFee->pricePerCostFactor) / 1000; // given as nanotez/byte
-    BRTezosFeeBasis xtzFeeBasis = tezosDefaultFeeBasis (mutezPerByte);
-    WKFeeBasis feeBasis = wkFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
+    BRTezosUnitMutez mutezPerKByte = 1000 * tezosMutezCreate (networkFee->pricePerCostFactor /* mutez/byte */);
+
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateDefault (mutezPerKByte,
+                                                              wkWalletHasTransferAttributeForDelegationXTZ (wallet, attributesCount, attributes),
+                                                              wkWalletNeedsRevealXTZ(wallet));
+    WKFeeBasis      feeBasis    = wkFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
 
     WKCurrency currency = wkAmountGetCurrency (amount);
     WKTransfer transfer = wkWalletCreateTransferXTZ (wallet,
@@ -196,7 +203,6 @@ wkWalletManagerRecoverTransfersFromTransactionBundleXTZ (WKWalletManager manager
     assert (0);
 }
 
-//TODO:XTZ refactor (copied from WalletManagerETH)
 static const char *
 cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys, const char **vals) {
     for (size_t index = 0; index < count; index++)
@@ -205,10 +211,21 @@ cwmLookupAttributeValueForKey (const char *key, size_t count, const char **keys,
     return NULL;
 }
 
-static uint64_t
-cwmParseUInt64 (const char *string, bool *error) {
-    if (!string) { *error = true; return 0; }
-    return strtoull(string, NULL, 0);
+static BRTezosOperationKind
+wkWalletManagerRecoverOperationKind (const char *key, size_t count, const char **keys, const char **vals, bool *hasKind) {
+
+    // Assume success
+    *hasKind = true;
+
+    //
+
+    const char *strKind = cwmLookupAttributeValueForKey (key, count, keys, vals);
+
+    if (NULL == strKind) { *hasKind = false; return /* ignore */ TEZOS_OP_ENDORESEMENT; }
+    else if (0 == strcasecmp (strKind, "transaction")) { return TEZOS_OP_TRANSACTION; }
+    else if (0 == strcasecmp (strKind, "delegation" )) { return TEZOS_OP_DELEGATION;  }
+    else if (0 == strcasecmp (strKind, "reveal"     )) { return TEZOS_OP_REVEAL;      }
+    else { *hasKind = false; return /* ignore */ TEZOS_OP_ENDORESEMENT; }
 }
 
 static void
@@ -219,22 +236,33 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     // The wallet holds currency transfers
     WKWallet wallet = wkWalletManagerGetWallet (manager);
 
+    // Get the xtzAmount...
     BRTezosUnitMutez xtzAmount;
     sscanf(bundle->amount, "%" PRIu64, &xtzAmount);
 
+    // and the xtzFee
+    BRTezosUnitMutez xtzFee = 0;
+    if (NULL != bundle->fee) sscanf (bundle->fee, "%" PRIu64, &xtzFee);
+
+    //TODO: Get the kind
+    bool hasKind = false;
+    BRTezosOperationKind kind = wkWalletManagerRecoverOperationKind ("type",
+                                                                     bundle->attributesCount,
+                                                                     (const char **) bundle->attributeKeys,
+                                                                     (const char **) bundle->attributeVals,
+                                                                     &hasKind);
+    if (!hasKind) kind = TEZOS_OP_TRANSACTION;
+    
+    // Create an amount from the xtZAmount with the default XTZ unit
     WKCurrency currency = wkNetworkGetCurrency (manager->network);
     WKUnit   amountUnit = wkNetworkGetUnitAsDefault (manager->network, currency);
-    WKAmount amount     = wkAmountCreate(amountUnit, WK_FALSE, uint256Create((uint64_t) xtzAmount));
+    WKAmount amount     = wkAmountCreate (amountUnit, WK_FALSE, uint256Create((uint64_t) xtzAmount));
     wkUnitGive(amountUnit);
     wkCurrencyGive(currency);
 
-    BRTezosUnitMutez xtzFee = 0;
-    if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIu64, &xtzFee);
-    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (xtzFee);
-    WKFeeBasis      feeBasis    = wkFeeBasisCreateAsXTZ (wallet->unitForFee, xtzFeeBasis);
-
-    WKTransferState state = wkClientTransferBundleGetTransferState (bundle, feeBasis);
-
+    // Get the `source` and `target` addresses.  We'll only use `source` if we need to create a
+    // transfer; we'll use `target` both if a transfer is created and to identify a pre-existing
+    // transfer held by wallet.
     BRTezosAddress xtzSource = tezosAddressCreateFromString (bundle->from, false);
     BRTezosAddress xtzTarget = tezosAddressCreateFromString (bundle->to,   false);
 
@@ -248,11 +276,28 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     WKHash         hash = wkHashCreateFromStringAsXTZ (bundle->hash);
     WKTransfer transfer = wkWalletGetTransferByHashOrUIDSAndTargetXTZ (wallet, hash, bundle->uids, target);
 
+    // We need the `WKState` which includes the 'confirmed fee basis'.  In general we don't have
+    // enough information to derive a proper BZTezosFeeBasis.  Specifically, we don't have the
+    // mutezPerKByte.  (We might have that if we originated the transaction but then on a restart
+    // we will lose the transaction - since only Transfer/Transaction bundles are saved.
+    //
+    // We could approximate the mutezPerKByte if we invert `tezosOperationFeeBasisComputeMinimalFee()`
+    // which uses `fee = f(mutezPerKByte, sizeInBytes, gasLimit) - be we don't have the size nor
+    // the gasUsed.
+
+    // Get the 'confirmed' `WKFeeBasis` for use in the `WKTransferState`
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateWithFee (kind, xtzFee);
+    WKFeeBasis      feeBasis    = wkFeeBasisCreateAsXTZ (wallet->unitForFee, xtzFeeBasis);
+
+    // The `state` with the confirmed `WKFeeBasis`.
+    WKTransferState state = wkClientTransferBundleGetTransferState (bundle, feeBasis);
+
     if (NULL != transfer) {
         wkTransferSetUids  (transfer, bundle->uids);
         wkTransferSetState (transfer, state);
     }
     else {
+
         transfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
                                               bundle->uids,
                                               wallet->unit,
@@ -282,6 +327,50 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     wkWalletGive (wallet);
 }
 
+//TODO:XTZ refactor (copied from WalletManagerETH)
+static uint64_t
+cwmParseUInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return strtoull(string, NULL, 0);
+}
+
+static int64_t
+cwmParseInt64 (const char *string, bool *error) {
+    if (!string) { *error = true; return 0; }
+    return (int64_t) strtoll(string, NULL, 0);
+}
+
+
+static const char *cwmAppendSuffix (char *buffer, const char *string, const char *suffix) {
+    sprintf (buffer, "%s%s", string, suffix);
+    return buffer;
+}
+
+static BRTezosOperationFeeBasis
+wkWalletManagerRecoverOperationFeeBasis (const char *suffix, size_t count, const char **keys, const char **vals, bool *parseError) {
+    assert (NULL == suffix || strlen(suffix) < 32);
+    if (NULL == suffix) suffix = "";
+
+    char key[128];
+
+    bool hasKind = false;
+    BRTezosOperationKind kind = wkWalletManagerRecoverOperationKind (cwmAppendSuffix (key, "kind", suffix), count, keys, vals, &hasKind);
+
+    *parseError = false;
+    int64_t fee         = cwmParseInt64 (cwmLookupAttributeValueForKey (cwmAppendSuffix (key, "fee",          suffix), count, keys, vals), parseError);
+    int64_t burn        = cwmParseInt64 (cwmLookupAttributeValueForKey (cwmAppendSuffix (key, "burn",         suffix), count, keys, vals), parseError);
+    int64_t gasUsed     = cwmParseInt64 (cwmLookupAttributeValueForKey (cwmAppendSuffix (key, "consumed_gas", suffix), count, keys, vals), parseError);
+//    int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey (cwmAppendSuffix (key, "storage_size", suffix), count, keys, vals), parseError);
+    int64_t counter     = cwmParseInt64 (cwmLookupAttributeValueForKey (cwmAppendSuffix (key, "counter",      suffix), count, keys, vals), parseError);
+
+    return tezosOperationFeeBasisCreate (kind,
+                                         (BRTezosUnitMutez) fee,
+                                         gasUsed,
+                                         0,
+                                         counter,
+                                         (BRTezosUnitMutez) burn);
+}
+
 static WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (WKWalletManager cwm,
                                                   WKTransfer transfer,
@@ -290,34 +379,39 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ (WKWalletManager cwm,
                                                   size_t attributesCount,
                                                   OwnershipKept const char **attributeKeys,
                                                   OwnershipKept const char **attributeVals) {
-    bool parseError;
-
-    // get the serialized txn size from the estimation payload
     BRTezosTransaction xtzTransaction = wkTransferCoerceXTZ(transfer)->originatingTransaction;
     assert (NULL != xtzTransaction);
 
     size_t           sizeInBytes   = tezosTransactionGetSignedBytesCount (xtzTransaction);
-    BRTezosUnitMutez mutezPerKByte = tezosMutezCreate (networkFee->pricePerCostFactor); // given as nanotez/byte
+    BRTezosUnitMutez mutezPerKByte = 1000 * tezosMutezCreate (networkFee->pricePerCostFactor /* mutez/byte */);
 
-    int64_t gasUsed     = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("consumed_gas", attributesCount, attributeKeys, attributeVals), &parseError);
-    int64_t storageUsed = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("storage_size", attributesCount, attributeKeys, attributeVals), &parseError);
-    int64_t counter     = (int64_t) cwmParseUInt64 (cwmLookupAttributeValueForKey ("counter",      attributesCount, attributeKeys, attributeVals), &parseError);
+    bool error_0, error_1;
 
-    // increment counter
-    counter += 1;
+    BRTezosOperationFeeBasis operationFeeBasis_0 = wkWalletManagerRecoverOperationFeeBasis ("_0", attributesCount, attributeKeys, attributeVals, &error_0);
+    BRTezosOperationFeeBasis operationFeeBasis_1 = wkWalletManagerRecoverOperationFeeBasis ("_1", attributesCount, attributeKeys, attributeVals, &error_1);
 
-    // add 10% padding to gas & storage limits
-    gasUsed     = wkWalletManagerPadValueXTZ (gasUsed);
-    storageUsed = wkWalletManagerPadValueXTZ (storageUsed);
+    bool hasRevealOperationFeeBasis = !error_1;
 
-    // Create a feeBasis w/ margin applied
-    BRTezosFeeBasis feeBasis = tezosFeeBasisCreateEstimate (mutezPerKByte,
-                                                            sizeInBytes / 1000.0,
-                                                            gasUsed,
-                                                            storageUsed,
-                                                            counter);
-    
-    return wkFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, feeBasis);
+    //
+    // The result must include margin; we expect a) the User to confirm the upper-limit to the
+    // fee and b) we need to ensure that the submission goes through.
+    //
+    operationFeeBasis_0 = tezosOperationFeeBasisApplyMargin (operationFeeBasis_0, mutezPerKByte, sizeInBytes, 10);
+    operationFeeBasis_1 = tezosOperationFeeBasisApplyMargin (operationFeeBasis_1, mutezPerKByte, sizeInBytes, 10);
+
+    BRTezosOperationFeeBasis primaryOperationFeeBasis = (hasRevealOperationFeeBasis
+                                                         ? operationFeeBasis_1
+                                                         : operationFeeBasis_0);
+
+    BRTezosOperationFeeBasis revealOperationFeeBasis = (hasRevealOperationFeeBasis
+                                                        ? operationFeeBasis_0
+                                                        : tezosOperationFeeBasisCreateEmpty (TEZOS_OP_REVEAL));
+
+    BRTezosFeeBasis xtzFeeBasis = (!hasRevealOperationFeeBasis
+                                   ? tezosFeeBasisCreate (mutezPerKByte, primaryOperationFeeBasis)
+                                   : tezosFeeBasisCreateWithReveal (mutezPerKByte, primaryOperationFeeBasis, revealOperationFeeBasis));
+
+    return wkFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
 }
 
 extern WKWalletSweeperStatus

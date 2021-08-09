@@ -24,64 +24,131 @@
 
 // MARK: - Tezos Fee Basis
 
+
 // https://tezos.gitlab.io/protocols/004_Pt24m4xi.html#gas-and-fees
-#define TEZOS_MINIMAL_FEE_MUTEZ 100
+#define TEZOS_FEE_BASELINE      ((BRTezosUnitMutez)  100)
+#define TEZOS_FEE_DEFAULT       ((BRTezosUnitMutez) 1420)
 
-#define TEZOS_DEFAULT_FEE_MUTEZ 1420
-#define TEZOS_MINIMAL_FEE_MARGIN_PERCENTAGE    5
+#define TEZOS_TX_SIZE_MARGIN_PERCENTAGE  10
+#define TEZOS_TX_SIZE_FEE_RATE           ((BRTezosUnitMutez) 1000)  // mutez/kbyte
+#define TEZOS_TX_SIZE_DEFAULT           225                         // bytes - hackily
+
+#define TEZOS_GAS_LIMIT_MARGIN_PERCENTAGE        10
+#define TEZOS_GAS_LIMIT_MINIMUM                1000
+#define TEZOS_GAS_LIMIT_MAXIMUM             1040000         // gas
+#define TEZOS_GAS_LIMIT_DEFAULT_FEE_RATE        0.1         // mutez/gas
+
+#define TEZOS_STORAGE_LIMIT_MARGIN_PERCENTAGE          10
+#define TEZOS_STORAGE_LIMIT_MINIMUM                   300                 // sending to inactive accounts
+#define TEZOS_STORAGE_LIMIT_MAXIMUM                 60000
+#define TEZOS_STORAGE_LIMIT_DEFAULT_FEE_RATE          0.0         // mutez/storage
 
 
-#define TEZOS_MINIMAL_STORAGE_LIMIT     300  // sending to inactive accounts
-#define TEZOS_MAXIMUM_STORAGE_LIMIT   60000
-#define TEZOS_MINIMAL_MUTEZ_PER_KBYTE  1000  // equivalent to 1000 nanotez per byte
+static inline int64_t
+applyMargin (int64_t value, uint8_t marginInPercent) {
+    return ((100 + marginInPercent) * value) / 100;
+}
+ 
+static BRTezosUnitMutez
+tezosOperationFeeBasisComputeFee (BRTezosUnitMutez mutezPerKByte,
+                                  size_t sizeInBytes,
+                                  int64_t gasLimit,
+                                  int64_t storageLimit) {
+    BRTezosUnitMutez feeForGasLimit = (int64_t) (TEZOS_GAS_LIMIT_DEFAULT_FEE_RATE     * gasLimit);
+    BRTezosUnitMutez feeForStoLimit = (int64_t) (TEZOS_STORAGE_LIMIT_DEFAULT_FEE_RATE * storageLimit);
+    BRTezosUnitMutez feeForTxBytes  = (int64_t) (MAX (TEZOS_TX_SIZE_FEE_RATE, mutezPerKByte) * ((ssize_t) sizeInBytes) / 1000);
 
-#define TEZOS_MAXIMUM_GAS_LIMIT           1040000
-#define TEZOS_DEFAULT_MUTEZ_PER_GAS_LIMIT     0.1
-
-// Hackily
-#define TEZOS_DEFAULT_SERIALIZATION_SIZE    225
-
-extern BRTezosUnitMutez
-tezosOperationFeeBasisComputeMinimalFee (BRTezosUnitMutez mutezPerKByte,
-                                         size_t sizeInBytes,
-                                         int64_t gasLimit) {
-    return (TEZOS_MINIMAL_FEE_MUTEZ
-            + (int64_t) (TEZOS_DEFAULT_MUTEZ_PER_GAS_LIMIT * gasLimit)
-            + (int64_t) (MAX(TEZOS_MINIMAL_MUTEZ_PER_KBYTE, mutezPerKByte) * ((int64_t) sizeInBytes) / 1000));
+    // Not really a minimum.  If so, `MAX (MINIMUM, fee)` should be used; but that leads to a fee
+    // that Tezos nodes don't effectively accept - rejected from mempool (> 30 minutes).
+    return TEZOS_FEE_BASELINE + feeForGasLimit + feeForStoLimit + feeForTxBytes;
 }
 
 extern BRTezosUnitMutez // mutezPerKByte
 tezosOperationFeeBasisInvertFee (BRTezosUnitMutez fee) {
-    return (1000 * fee) / TEZOS_DEFAULT_SERIALIZATION_SIZE;
+    return (1000 * fee) / TEZOS_TX_SIZE_DEFAULT;
 }
 
-extern BRTezosUnitMutez
-tezosOperationFeeBasisApplyMarginToFee (BRTezosUnitMutez fee) {
-    return ((100 + TEZOS_MINIMAL_FEE_MARGIN_PERCENTAGE) * fee) / 100;
+static BRTezosUnitMutez
+tezosOperationFeeBasisGetDefaultFee (BRTezosOperationKind kind) {
+    switch (kind) {
+        case TEZOS_OP_ENDORESEMENT:  return 0;
+        case TEZOS_OP_REVEAL:        return TEZOS_FEE_DEFAULT;
+        case TEZOS_OP_TRANSACTION:   return TEZOS_FEE_DEFAULT;
+        case TEZOS_OP_DELEGATION:    return TEZOS_FEE_DEFAULT;
+    }
+}
+
+static void
+tezosOperationFeeBasisShow (BRTezosOperationFeeBasis feeBasis) {
+    printf ("XTZ: FeeBasis\n");
+    printf ("    Kind: %d\n", feeBasis.kind);
+    printf ("    Fee : %llu\n", feeBasis.fee);
+    printf ("    GasL: %llu\n", feeBasis.gasLimit);
+    printf ("    StoL: %llu\n", feeBasis.storageLimit);
+    printf ("    Cntr: %llu\n", feeBasis.counter);
+    printf ("    FeeX: %llu\n", feeBasis.feeExtra);
 }
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
                               BRTezosUnitMutez fee,
                               int64_t gasLimit,
-                              int64_t storageLimit) {
+                              int64_t storageLimit,
+                              int64_t counter,
+                              BRTezosUnitMutez feeExtra) {
     return (BRTezosOperationFeeBasis) {
         kind,
         fee,
-        gasLimit,
-        storageLimit,
-        0
+        MAX (gasLimit,     TEZOS_GAS_LIMIT_MINIMUM),
+        MAX (storageLimit, TEZOS_STORAGE_LIMIT_MINIMUM),
+        counter,
+        feeExtra
     };
 }
 
 extern BRTezosOperationFeeBasis
+tezosOperationFeeBasisActual (BRTezosOperationKind kind,
+                              BRTezosUnitMutez fee,
+                              BRTezosUnitMutez feeExtra) {
+    return tezosOperationFeeBasisCreate (kind, fee, 0, 0, 0, feeExtra);
+}
+
+extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreateEmpty (BRTezosOperationKind kind) {
-    return tezosOperationFeeBasisCreate (kind, 0, 0, 0);
+    return tezosOperationFeeBasisCreate (kind, 0, 0, 0, 0, 0);
 }
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreateDefault (BRTezosOperationKind kind) {
-    return tezosOperationFeeBasisCreate(kind, 0, TEZOS_MAXIMUM_GAS_LIMIT, TEZOS_MAXIMUM_STORAGE_LIMIT);
+    // Used in the fee estimation as a starting point.
+    return tezosOperationFeeBasisCreate (kind,
+                                         tezosOperationFeeBasisGetDefaultFee (kind),
+                                         TEZOS_GAS_LIMIT_MAXIMUM,
+                                         TEZOS_STORAGE_LIMIT_MAXIMUM,
+                                         0,
+                                         0);
+}
+
+extern BRTezosOperationFeeBasis
+tezosOperationFeeBasisApplyMargin (BRTezosOperationFeeBasis feeBasis,
+                                   BRTezosUnitMutez mutezPerKByte,
+                                   size_t sizeInByte,
+                                   unsigned int marginInPercentage) {
+    // Given a valid, best-estimate `feeBasis`, apply to margin
+
+    int64_t mutezPerKByteWithMargin = applyMargin (mutezPerKByte,         MAX (marginInPercentage, TEZOS_TX_SIZE_MARGIN_PERCENTAGE));
+    int64_t gasLimitWithMargin      = applyMargin (feeBasis.gasLimit,     MAX (marginInPercentage, TEZOS_GAS_LIMIT_MARGIN_PERCENTAGE));
+    int64_t storageLimitWithMargin  = applyMargin (feeBasis.storageLimit, MAX (marginInPercentage, TEZOS_STORAGE_LIMIT_MARGIN_PERCENTAGE));
+
+    return tezosOperationFeeBasisCreate (feeBasis.kind,
+                                         tezosOperationFeeBasisComputeFee (mutezPerKByteWithMargin,
+                                                                           sizeInByte,
+                                                                           gasLimitWithMargin,
+                                                                           storageLimitWithMargin),
+                                         gasLimitWithMargin,
+                                         feeBasis.storageLimit,
+                                         feeBasis.counter,
+                                         feeBasis.feeExtra);
 }
 
 extern BRTezosUnitMutez
@@ -110,6 +177,7 @@ tezosOperationCreateTransaction (BRTezosAddress source,
                                  BRTezosAddress target,
                                  BRTezosOperationFeeBasis feeBasis,
                                  BRTezosUnitMutez amount) {
+    assert (TEZOS_OP_TRANSACTION == feeBasis.kind);
     BRTezosOperation operation = tezosOperationCreate (TEZOS_OP_TRANSACTION,
                                                        tezosAddressClone (source),
                                                        feeBasis);
@@ -124,6 +192,7 @@ extern BRTezosOperation
 tezosOperationCreateDelegation (BRTezosAddress source,
                                 BRTezosAddress target,
                                 BRTezosOperationFeeBasis feeBasis) {
+    assert (TEZOS_OP_DELEGATION == feeBasis.kind);
     BRTezosOperation operation = tezosOperationCreate (TEZOS_OP_DELEGATION,
                                                        tezosAddressClone (source),
                                                        feeBasis);
@@ -138,6 +207,7 @@ tezosOperationCreateReveal (BRTezosAddress source,
                             BRTezosAddress target,
                             BRTezosOperationFeeBasis feeBasis,
                             BRTezosPublicKey publicKey) {
+    assert (TEZOS_OP_REVEAL == feeBasis.kind);
     BRTezosOperation operation = tezosOperationCreate (TEZOS_OP_REVEAL,
                                                        tezosAddressClone (source),
                                                        feeBasis);
@@ -173,10 +243,10 @@ tezosOperationFree (BRTezosOperation operation) {
     free (operation);
 }
 
-extern void
-tezosOperationSetCounter (BRTezosOperation operation, int64_t counter) {
-    operation->counter = counter;
-}
+//extern void
+//tezosOperationSetCounter (BRTezosOperation operation, int64_t counter) {
+//    operation->counter = counter;
+//}
 
 static bool
 tezosOperationDataEqual (BRTezosOperation op1,
@@ -208,7 +278,7 @@ tezosOperationEqual (BRTezosOperation op1,
             (NULL != op1 &&
              NULL != op2 &&
              op1->kind    == op2->kind    &&
-             op1->counter == op2->counter &&
+ //            op1->counter == op2->counter &&
              tezosAddressEqual           ( op1->source,    op2->source)   &&
              tezosOperationFeeBasisEqual (&op1->feeBasis, &op2->feeBasis) &&
              tezosOperationDataEqual (op1, op2)));
@@ -306,15 +376,14 @@ tezosOperationSerialize (BRTezosOperation op) {
     fields[numFields++] = encodeOperationKind (op->kind);
     fields[numFields++] = encodeAddress (op->source);
     fields[numFields++] = encodeZarith  (op->feeBasis.fee);
-    fields[numFields++] = encodeZarith  (op->counter);
+    fields[numFields++] = encodeZarith  (op->feeBasis.counter);
     fields[numFields++] = encodeZarith  (op->feeBasis.gasLimit);
     fields[numFields++] = encodeZarith  (op->feeBasis.storageLimit);
 
-#if 0
+#if 1
     printf ("XTZ: Serialize Tx\n");
-    printf ("XTZ:    Type    : %s\n",   tezosOperationKindDescription (opData.kind));
-    printf ("XTZ:    Fee     : %llu\n", tezosTransactionGetFee(tx));
-    tezosFeeBasisShow(feeBasis, "XTZ");
+    printf ("XTZ:    Type    : %s\n",   tezosOperationKindDescription(op->kind));
+    tezosOperationFeeBasisShow (op->feeBasis);
 #endif
     switch (op->kind) {
         case TEZOS_OP_ENDORESEMENT:

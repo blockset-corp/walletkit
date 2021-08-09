@@ -20,18 +20,6 @@
 extern "C" {
 #endif
 
-// MARK: Tezos Public Key
-
-typedef struct {
-    uint8_t bytes [TEZOS_PUBLIC_KEY_SIZE];
-} BRTezosPublicKey;
-
-static inline bool
-tezosPublicKeyEqual (const BRTezosPublicKey *pk1,
-                     const BRTezosPublicKey *pk2) {
-    return 0 == memcmp (pk1->bytes, pk2->bytes, TEZOS_PUBLIC_KEY_SIZE);
-}
-
 // MARK: - Tezos Operation Fee Basis
 
 typedef struct {
@@ -51,7 +39,9 @@ typedef struct {
     int64_t counter;
 
     /// Any extra feess which for Tezos might be the 'burn_fee' (a fee the source pays for the
-    /// pleasure of sending funds to a target w/o having received funds previously).
+    /// pleasure of sending funds to a target w/o having received funds previously).  These fees
+    /// are not included in the serialization of an operation; these fees are displayed to the
+    /// User for confirmation prior to submit (see tezosOperationFeeBasisGetTotalFee())
     BRTezosUnitMutez feeExtra;
 
 } BRTezosOperationFeeBasis;
@@ -71,13 +61,26 @@ extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
                               BRTezosUnitMutez fee,
                               int64_t gasLimit,
-                              int64_t storageLimit);
+                              int64_t storageLimit,
+                              int64_t counter,
+                              BRTezosUnitMutez feeExtra);
+
+extern BRTezosOperationFeeBasis
+tezosOperationFeeBasisActual (BRTezosOperationKind kind,
+                              BRTezosUnitMutez fee,
+                              BRTezosUnitMutez feeExtra);
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreateEmpty (BRTezosOperationKind kind);
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreateDefault (BRTezosOperationKind kind);
+
+extern BRTezosOperationFeeBasis
+tezosOperationFeeBasisApplyMargin (BRTezosOperationFeeBasis feeBasis,
+                                   BRTezosUnitMutez mutezPerKByte,
+                                   size_t sizeInByte,
+                                   unsigned int marginInPercentage);
 
 extern BRTezosUnitMutez
 tezosOperationFeeBasisGetTotalFee (const BRTezosOperationFeeBasis *feeBasis);
@@ -90,6 +93,9 @@ tezosOperationFeeBasisComputeMinimalFee (BRTezosUnitMutez mutezPerKByte,
 extern BRTezosUnitMutez
 tezosOperationFeeBasisApplyMarginToFee (BRTezosUnitMutez fee);
 
+extern BRTezosUnitMutez // mutezPerKByte
+tezosOperationFeeBasisInvertFee (BRTezosUnitMutez fee);
+
 // MARK: Tezos Operation
 
 typedef struct BRTezosOperationRecord {
@@ -97,7 +103,7 @@ typedef struct BRTezosOperationRecord {
 
     BRTezosAddress source;
     BRTezosOperationFeeBasis feeBasis;
-    int64_t counter;
+//    int64_t counter;
 
     union {
         struct {
@@ -135,8 +141,8 @@ tezosOperationCreateReveal (BRTezosAddress source,
 extern void
 tezosOperationFree (BRTezosOperation operation);
 
-extern void
-tezosOperationSetCounter (BRTezosOperation operation, int64_t counter);
+//extern void
+//tezosOperationSetCounter (BRTezosOperation operation, int64_t counter);
 
 extern WKData
 tezosOperationSerialize (BRTezosOperation operation);
