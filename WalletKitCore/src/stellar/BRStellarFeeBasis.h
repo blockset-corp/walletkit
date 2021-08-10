@@ -27,7 +27,7 @@ extern uint32_t stellarFeeBasisIsEqual(BRStellarFeeBasis *fb1, BRStellarFeeBasis
 
 extern BRStellarAmount stellarFeeBasisGetFee(BRStellarFeeBasis *feeBasis);
 
-extern void stellarFeeBasisSet (uint32_t costFactor, BRStellarAmount pricePerCostFactor, BRStellarFeeBasis *feeBasis);
+extern void stellarFeeBasisSet (uint32_t costFactor, BRStellarFee pricePerCostFactor, BRStellarFeeBasis *feeBasis);
 
 
 #endif /* BRStellarFeeBasis_h */

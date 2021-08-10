@@ -164,7 +164,7 @@ wkWalletManagerEstimateFeeBasisXLM (WKWalletManager manager,
     BRStellarFeeBasis xlmFeeBasis;
 
     // No margin needed.
-    xlmFeeBasis.pricePerCostFactor = (BRStellarAmount) value.u64[0];
+    xlmFeeBasis.pricePerCostFactor = (BRStellarFee) value.u32[0];
     xlmFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
 
     // TODO - Carl
@@ -187,7 +187,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
                                                                   WK_NETWORK_TYPE_XLM);
     
     BRStellarAmount amount = 0;
-    sscanf(bundle->amount, "%lf", &amount);
+    sscanf(bundle->amount, "%" PRIu64, &amount);
     BRStellarFee fee = 0;
     if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIi32, &fee);
     BRStellarFeeBasis stellarFeeBasis = { fee, 1};
