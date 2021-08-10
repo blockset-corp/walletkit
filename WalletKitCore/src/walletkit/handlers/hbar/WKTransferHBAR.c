@@ -115,7 +115,7 @@ crptoTransferUpdateIdentifierHBAR (WKTransfer transfer) {
     transfer->identifier = hederaTransactionGetTransactionId (transferHBAR->hbarTransaction);
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeHBAR (WKTransfer transfer,
                              WKNetwork network,
                              WKBoolean  requireSignature,

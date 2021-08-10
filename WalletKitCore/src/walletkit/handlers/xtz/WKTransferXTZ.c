@@ -101,7 +101,7 @@ wkTransferGetHashXTZ (WKTransfer transfer) {
             : wkHashCreateAsXTZ (hash));
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXTZ (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,
@@ -110,9 +110,14 @@ wkTransferSerializeXTZ (WKTransfer transfer,
 
     uint8_t *serialization = NULL;
     *serializationCount = 0;
+
     BRTezosTransaction transaction = tezosTransferGetTransaction (transferXTZ->xtzTransfer);
     if (transaction) {
-        serialization = tezosTransactionGetSignedBytes (transaction, serializationCount);
+        uint8_t *signedBytes = tezosTransactionGetSignedBytes (transaction, serializationCount);
+        if (NULL != signedBytes && 0 != *serializationCount) {
+            serialization = malloc (*serializationCount);
+            memcpy (serialization, signedBytes, *serializationCount);
+        }
     }
     
     return serialization;
