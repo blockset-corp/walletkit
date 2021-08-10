@@ -192,12 +192,17 @@ extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence
     account->sequence = sequence;
 }
 
-extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, int64_t blockNumber)
+extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, uint64_t blockNumber)
 {
     assert(account);
     // The sequence is very important as it must be 1 greater than the previous
     // transaction sequence.
-    account->blockNumberAtCreation = blockNumber;
+    // NOTE 1 - the sequence is created like this: blockNumberAtCreation << 32, also note that
+    // the sequence is an int64_t and block number is also int64_t so at some point in the future
+    // the block number might get very large and break things, but for now the block number must be
+    // small enough to not overrun
+    // So we will cast to int64_t for now
+    account->blockNumberAtCreation = (int64_t)blockNumber;
 }
 
 extern BRStellarAccountID stellerAccountCreateStellarAccountID(const char * stellarAddress)
