@@ -86,6 +86,24 @@ final class Wallet implements com.blockset.walletkit.Wallet {
         this.defaultUnitCurrencySupplier = Suppliers.memoize(() -> Currency.create(core.getCurrency()));
     }
 
+    /* package */
+    Transfer transferBy(WKTransfer coreTransfer) {
+        if (!core.containsTransfer(coreTransfer)) {
+            return Transfer.takeAndCreate(coreTransfer, this);
+        }
+        return null;
+    }
+
+    /* package */
+    Transfer transferByCoreOrCreate(WKTransfer  coreTransfer,
+                                    boolean     create  ) {
+        Transfer transfer = transferBy(coreTransfer);
+        if (transfer == null && create) {
+            transfer = Transfer.takeAndCreate(coreTransfer, this);
+        }
+        return transfer;
+    }
+
     @Override
     public Optional<Transfer> createTransfer(com.blockset.walletkit.Address target,
                                              com.blockset.walletkit.Amount amount,
