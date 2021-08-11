@@ -1290,8 +1290,12 @@ uint64_t btcWalletMaxOutputAmountWithFeePerKb(BRBitcoinWallet *wallet, uint64_t 
         o = &wallet->utxos[i];
         t = BRSetGet(wallet->allTx, &o->hash);
         if (! t || o->n >= t->outCount) continue;
-        btcTransactionAddInput(tx, o->hash, o->n, tx->outputs[o->n].amount,
-                               tx->outputs[o->n].script, tx->outputs[o->n].scriptLen, NULL, 0, NULL, 0, TXIN_SEQUENCE);
+        btcTransactionAddInput(tx, o->hash, o->n,
+                               t->outputs[o->n].amount,
+                               t->outputs[o->n].script, t->outputs[o->n].scriptLen,
+                               NULL, 0,
+                               NULL, 0,
+                               TXIN_SEQUENCE);
         
         if (btcTransactionVSize(tx) + TX_OUTPUT_SIZE*2 > TX_MAX_SIZE) {
             btcTxInputSetScript(tx->inputs + --tx->inCount, NULL, 0);
