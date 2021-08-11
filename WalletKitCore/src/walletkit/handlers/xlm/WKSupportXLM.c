@@ -19,8 +19,7 @@ private_extern WKAmount
 wkAmountCreateAsXLM (WKUnit unit,
                          WKBoolean isNegative,
                          BRStellarAmount value) {
-    // TODO - Carl - uint256CreateDouble - I think 
-    return wkAmountCreate (unit, isNegative, uint256Create (value));
+    return wkAmountCreate (unit, isNegative, uint256Create ((uint64_t)value));
 }
 
 private_extern WKHash

@@ -176,13 +176,10 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     }
 }
 
-// TODO: Clarify Ownership - Up Through Swift/Java
-extern uint8_t *
+extern OwnershipKept uint8_t *
 tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size) {
     *size = transaction->signedBytes.size;
-    return (*size > 0
-            ? transaction->signedBytes.bytes
-            : NULL);
+    return transaction->signedBytes.bytes;
 }
 
 extern size_t

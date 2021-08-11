@@ -75,7 +75,7 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
                                                                    wkAddressAsXTZ(source),
                                                                    wkAddressAsXTZ(target));
 
-    return wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
+    WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
                                    WK_NETWORK_TYPE_XTZ,
                                    listener,
                                    uids,
@@ -89,6 +89,12 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
                                    state,
                                    &contextXTZ,
                                    wkTransferCreateCallbackXTZ);
+    wkFeeBasisGive (feeBasisEstimated);
+    wkAddressGive (source);
+    wkAddressGive (target);
+    wkAmountGive  (amount);
+    
+    return transfer;
 }
 
 static void
@@ -106,18 +112,26 @@ wkTransferGetHashXTZ (WKTransfer transfer) {
             : wkHashCreateAsXTZ (transferXTZ->hash));
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXTZ (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,
                             size_t *serializationCount) {
     WKTransferXTZ transferXTZ = wkTransferCoerceXTZ (transfer);
 
+    uint8_t *serialization = NULL;
     *serializationCount = 0;
 
-    return (NULL == transferXTZ->originatingTransaction
-            ? NULL
-            : tezosTransactionGetSignedBytes (transferXTZ->originatingTransaction, serializationCount));
+    BRTezosTransaction transaction = transferXTZ->originatingTransaction;
+    if (transaction) {
+        uint8_t *signedBytes = tezosTransactionGetSignedBytes (transaction, serializationCount);
+        if (NULL != signedBytes && 0 != *serializationCount) {
+            serialization = malloc (*serializationCount);
+            memcpy (serialization, signedBytes, *serializationCount);
+        }
+    }
+    
+    return serialization;
 }
 
 static int

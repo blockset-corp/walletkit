@@ -40,8 +40,6 @@ struct BRStellarTransactionRecord {
     BRStellarAsset asset;
     BRStellarSequence sequence;
     BRStellarTransactionHash hash;
-    BRStellarTimeBounds *timeBounds;
-    uint32_t numTimeBounds;
     BRStellarMemo *memo;
     uint32_t numSignatures;
 
@@ -74,8 +72,8 @@ stellarTransactionCreate(BRStellarAddress sourceAddress,
     // Called when the user is actually creating a fully populated transaction
     BRStellarTransaction transaction = calloc (1, sizeof (struct BRStellarTransactionRecord));
     assert(transaction);
-    transaction->from = sourceAddress;
-    transaction->to = targetAddress;
+    transaction->from = stellarAddressClone(sourceAddress);
+    transaction->to = stellarAddressClone(targetAddress);
     transaction->amount = amount;
     transaction->feeBasis = feeBasis;
     transaction->fee = (BRStellarFee)stellarFeeBasisGetFee(&transaction->feeBasis);
@@ -178,8 +176,6 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
                                                 transaction->fee,
                                                 transaction->amount,
                                                 sequence,
-                                                transaction->timeBounds,
-                                                transaction->numTimeBounds,
                                                 transaction->memo,
                                                 0, NULL, &buffer);
 
@@ -197,8 +193,6 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
                                          transaction->fee,
                                          transaction->amount,
                                          sequence,
-                                         transaction->timeBounds,
-                                         transaction->numTimeBounds,
                                          transaction->memo,
                                          0, sig.signature, &buffer);
 
@@ -218,15 +212,12 @@ stellarTransactionSerializeAndSign(BRStellarTransaction transaction, uint8_t *pr
 extern BRStellarTransactionHash stellarTransactionGetHash(BRStellarTransaction transaction)
 {
     assert(transaction);
-    BRStellarTransactionHash hash;
-    // The only time we get the hash is when we do the serialize and sign. That way
-    // if someone changes the transaction we would need to generate a new hash
+    // See if we have any signed bytes
     if (transaction->signedBytes) {
-        memcpy(hash.bytes, transaction->signedBytes->txHash, 32);
-    } else {
-        memset(hash.bytes, 0x00, 32);
+        memcpy (&transaction->hash, transaction->signedBytes->txHash, 32);
     }
-    return hash;
+
+    return transaction->hash;
 }
 
 extern size_t stellarGetSerializedSize(BRStellarSerializedTransaction s)
@@ -243,29 +234,31 @@ extern uint8_t* stellarGetSerializedBytes(BRStellarSerializedTransaction s)
 extern int stellarTransactionHasSource (BRStellarTransaction transaction,
                                        BRStellarAddress source)
 {
-    // TODO - Carl
-    return 0;
+    assert(transaction);
+    assert(source);
+    return stellarAddressEqual(transaction->from, source);
 }
 
 extern int stellarTransactionHasTarget (BRStellarTransaction transaction,
                                        BRStellarAddress target)
 {
-    // TODO - Carl
-    return 0;
+    assert(transaction);
+    assert(target);
+    return stellarAddressEqual(transaction->to, target);
 }
 
 extern BRStellarAddress
 stellarTransactionGetSource(BRStellarTransaction transaction)
 {
     assert(transaction);
-    return transaction->from;
+    return stellarAddressClone (transaction->from);
 }
 
 extern BRStellarAddress
 stellarTransactionGetTarget(BRStellarTransaction transaction)
 {
     assert(transaction);
-    return transaction->to;
+    return stellarAddressClone (transaction->to);
 }
 
 extern BRStellarAmount

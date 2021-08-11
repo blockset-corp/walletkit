@@ -231,7 +231,7 @@ pkg_enabled() {
 # param bc_folder: The blockchain specific folder name
 check_create_folders() {
     
-    bc_folder=$1
+    pkg_folders=("$@") 
 
     # Create required forders 
     out_path=${output_path[$WKCORE_OUTPUT]}
@@ -240,7 +240,7 @@ check_create_folders() {
 
         if [ ${packages[$i]} -ne 0 ]; then
             # Remember the final new output package path, per package type
-            pkg_paths[$i]=$out_path/${core_pkg_paths[$i]}/$bc_folder
+            pkg_paths[$i]=$out_path/${core_pkg_paths[$i]}/${pkg_folders[$i]}
             echov "  Create package path ${pkg_paths[$i]}"
             mkdir -p ${pkg_paths[$i]}
         fi
@@ -797,7 +797,8 @@ echov "  From templates: $templates"
 
 # Target output folders are created and pkg_paths
 # is updated to contain the paths to new blockchain output paths
-check_create_folders $bc_symbol_lc
+per_pkg_folders=($bc_symbol_lc $bc_name_lc $bc_symbol_lc)
+check_create_folders ${per_pkg_folders[@]} 
 
 # Base templates for each active package are copied & renamed
 per_pkg_rename_symbols=("__SYMBOL__" $bc_symbol 

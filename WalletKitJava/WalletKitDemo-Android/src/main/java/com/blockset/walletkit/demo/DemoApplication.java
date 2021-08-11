@@ -140,11 +140,12 @@ public class DemoApplication extends Application {
                 if (!storageFile.exists()) checkState(storageFile.mkdirs());
 
                 currencyCodesToMode = new Hashtable<String, WalletManagerMode>() {
-                    {   put("btc", WalletManagerMode.API_ONLY);
+                    {
+                        put("btc", WalletManagerMode.API_ONLY);
                         put("bch", WalletManagerMode.API_ONLY);
                         put("bsv", WalletManagerMode.API_ONLY);
                         put("ltc", WalletManagerMode.P2P_ONLY);
-                        put("doge", WalletManagerMode.P2P_ONLY);
+                        put("doge", WalletManagerMode.API_ONLY);
                         put("eth", WalletManagerMode.API_ONLY);
                         put("xrp", WalletManagerMode.API_ONLY);
                         put("hbar", WalletManagerMode.API_ONLY);

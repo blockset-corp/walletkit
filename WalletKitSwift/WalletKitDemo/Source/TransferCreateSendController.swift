@@ -10,7 +10,7 @@
 //
 
 import UIKit
-@testable import WalletKit
+import WalletKit
 
 extension Amount {
     static func max (_ a: Amount, _ b: Amount) -> Amount {
@@ -142,7 +142,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let unit = self.wallet.unit
             let amount = Amount.min (Amount.max (Amount.create (double: Double(value), unit: unit), self.minimum), self.maximum)
-            print ("APP: TVV: Submit Amount: \(amount), \(amount.integerRawSmall)");
+            print ("APP: TVV: Submit Amount: \(amount)");
 
             guard let transferFeeBasis = self.feeBasis
                 else { self.submitTransferFailed ("no fee basis"); return }

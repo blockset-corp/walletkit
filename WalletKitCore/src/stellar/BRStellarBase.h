@@ -91,7 +91,7 @@ typedef enum st_manage_offer_type
 typedef uint32_t  BRStellarFee;
 typedef int64_t  BRStellarSequence;
 typedef uint64_t TimePoint;
-typedef int64_t  BRStellarAmount;
+typedef uint64_t  BRStellarAmount;
 
 // A Stellar Transaction Hash
 typedef struct {

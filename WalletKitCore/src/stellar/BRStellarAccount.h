@@ -131,7 +131,7 @@ extern BRKey stellarAccountGetPublicKey(BRStellarAccount account);
  *                  or should be set to 1 more that the value in the lastest transaction
  */
 extern void stellarAccountSetSequence(BRStellarAccount account, int64_t sequence);
-extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, int64_t blockNumber);
+extern void stellarAccountSetBlockNumberAtCreation(BRStellarAccount account, uint64_t blockNumber);
 
 /**
  * Set the network type being used for this account

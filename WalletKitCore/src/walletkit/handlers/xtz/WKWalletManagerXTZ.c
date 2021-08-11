@@ -25,11 +25,6 @@
 
 #define TEZOS_FEE_PADDING_PERCENT           (10)
 
-static int64_t
-wkWalletManagerPadValueXTZ (int64_t value) {
-    return ((100 + TEZOS_FEE_PADDING_PERCENT) * value) / 100;
-}
-
 // MARK: - Events
 
 static const BREventType *xtzEventTypes[] = {
@@ -325,13 +320,6 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     wkTransferStateGive (state);
 
     wkWalletGive (wallet);
-}
-
-//TODO:XTZ refactor (copied from WalletManagerETH)
-static uint64_t
-cwmParseUInt64 (const char *string, bool *error) {
-    if (!string) { *error = true; return 0; }
-    return strtoull(string, NULL, 0);
 }
 
 static int64_t

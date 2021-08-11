@@ -20,13 +20,13 @@ public final class WKNativeLibrary {
         NativeLibrary library;
 
         try {
-            // this should only be available in the `cryptonative-jre` test target
-            libname = "corecryptoWithTests";
+            // this should only be available in the `walletkitnative-jre` test target
+            libname = "WalletKitCoreTest";
             library = NativeLibrary.getInstance(libname);
 
         } catch (UnsatisfiedLinkError e) {
             // fall back to the stand library
-            libname = "corecrypto";
+            libname = "WalletKitCore";
             library = NativeLibrary.getInstance(libname);
         }
 
