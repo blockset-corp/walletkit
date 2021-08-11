@@ -109,6 +109,7 @@ tezosTransactionClone (BRTezosTransaction transaction) {
     newTransaction->feeBasis = transaction->feeBasis;
     newTransaction->hash = transaction->hash;
     newTransaction->blockHeight = transaction->blockHeight;
+    newTransaction->signedBytes = wkDataClone (transaction->signedBytes);
     return newTransaction;
 }
 
@@ -251,15 +252,10 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     return transaction->signedBytes.size;
 }
 
-extern uint8_t *
+extern OwnershipKept uint8_t *
 tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size) {
-    if (transaction->signedBytes.size > 0) {
-        *size = transaction->signedBytes.size;
-        return transaction->signedBytes.bytes;
-    } else {
-        *size = 0;
-        return NULL;
-    }
+    *size = transaction->signedBytes.size;
+    return transaction->signedBytes.bytes;
 }
 
 extern BRTezosHash tezosTransactionGetHash(BRTezosTransaction transaction){

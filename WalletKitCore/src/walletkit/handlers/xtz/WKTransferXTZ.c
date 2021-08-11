@@ -40,22 +40,22 @@ wkTransferCreateCallbackXTZ (WKTransferCreateContext context,
 
 extern WKTransfer
 wkTransferCreateAsXTZ (WKTransferListener listener,
-                           const char *uids,
-                           WKUnit unit,
-                           WKUnit unitForFee,
-                           WKTransferState state,
-                           OwnershipKept BRTezosAccount xtzAccount,
-                           OwnershipGiven BRTezosTransfer xtzTransfer) {
+                       const char *uids,
+                       WKUnit unit,
+                       WKUnit unitForFee,
+                       WKTransferState state,
+                       OwnershipKept BRTezosAccount xtzAccount,
+                       OwnershipGiven BRTezosTransfer xtzTransfer) {
     
     WKTransferDirection direction = transferGetDirectionFromXTZ (xtzTransfer, xtzAccount);
     
     WKAmount amount = wkAmountCreateAsXTZ (unit,
-                                                     WK_FALSE,
-                                                     tezosTransferGetAmount (xtzTransfer));
+                                           WK_FALSE,
+                                           tezosTransferGetAmount (xtzTransfer));
     
     BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (WK_TRANSFER_RECEIVED == direction ? 0 : tezosTransferGetFee(xtzTransfer));
     WKFeeBasis feeBasis = wkFeeBasisCreateAsXTZ (unitForFee,
-                                                           xtzFeeBasis);
+                                                 xtzFeeBasis);
     
     WKAddress sourceAddress = wkAddressCreateAsXTZ (tezosTransferGetSource (xtzTransfer));
     WKAddress targetAddress = wkAddressCreateAsXTZ (tezosTransferGetTarget (xtzTransfer));
@@ -65,23 +65,24 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
     };
 
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
-                                                            WK_NETWORK_TYPE_XTZ,
-                                                            listener,
-                                                            uids,
-                                                            unit,
-                                                            unitForFee,
-                                                            feeBasis,
-                                                            amount,
-                                                            direction,
-                                                            sourceAddress,
-                                                            targetAddress,
-                                                            state,
-                                                            &contextXTZ,
-                                                            wkTransferCreateCallbackXTZ);
+                                                  WK_NETWORK_TYPE_XTZ,
+                                                  listener,
+                                                  uids,
+                                                  unit,
+                                                  unitForFee,
+                                                  feeBasis,
+                                                  amount,
+                                                  direction,
+                                                  sourceAddress,
+                                                  targetAddress,
+                                                  state,
+                                                  &contextXTZ,
+                                                  wkTransferCreateCallbackXTZ);
     
     wkFeeBasisGive (feeBasis);
     wkAddressGive (sourceAddress);
     wkAddressGive (targetAddress);
+    wkAmountGive  (amount);
 
     return transfer;
 }
@@ -101,7 +102,7 @@ wkTransferGetHashXTZ (WKTransfer transfer) {
             : wkHashCreateAsXTZ (hash));
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXTZ (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,
@@ -110,9 +111,14 @@ wkTransferSerializeXTZ (WKTransfer transfer,
 
     uint8_t *serialization = NULL;
     *serializationCount = 0;
+
     BRTezosTransaction transaction = tezosTransferGetTransaction (transferXTZ->xtzTransfer);
     if (transaction) {
-        serialization = tezosTransactionGetSignedBytes (transaction, serializationCount);
+        uint8_t *signedBytes = tezosTransactionGetSignedBytes (transaction, serializationCount);
+        if (NULL != signedBytes && 0 != *serializationCount) {
+            serialization = malloc (*serializationCount);
+            memcpy (serialization, signedBytes, *serializationCount);
+        }
     }
     
     return serialization;

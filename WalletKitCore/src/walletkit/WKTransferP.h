@@ -86,16 +86,16 @@ typedef bool // true if changed
 (*WKTransferSetHashHandler) (WKTransfer transfer,
                                    WKHash hash);
 
-typedef uint8_t *
+typedef OwnershipGiven uint8_t *
 (*WKTransferSerializeHandler) (WKTransfer transfer,
-                                     WKNetwork  network,
-                                     WKBoolean  requireSignature,
-                                     size_t *serializationCount);
+                               WKNetwork  network,
+                               WKBoolean  requireSignature,
+                               size_t *serializationCount);
 
-typedef uint8_t *
+typedef OwnershipGiven uint8_t *
 (*WKTransferGetBytesForFeeEstimateHandler) (WKTransfer transfer,
-                                                  WKNetwork  network,
-                                                  size_t *bytesCount);
+                                            WKNetwork  network,
+                                            size_t *bytesCount);
 
 typedef int // 1 if equal, 0 if not
 (*WKTransferIsEqualHandler) (WKTransfer t1,
