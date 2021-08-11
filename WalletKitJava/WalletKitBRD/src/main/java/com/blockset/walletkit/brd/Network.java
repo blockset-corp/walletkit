@@ -55,7 +55,7 @@ final class Network implements com.blockset.walletkit.Network {
         throw new IllegalArgumentException("Unsupported network instance");
     }
 
-    final WKNetwork core;
+    private final WKNetwork core;
 
     private final Supplier<String> uidsSupplier;
     private final Supplier<String> nameSupplier;

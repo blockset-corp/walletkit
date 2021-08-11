@@ -75,7 +75,7 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
 
     /* package */
     Wallet walletBy(WKWallet coreWallet) {
-        if (!core.containsWallet(coreWallet)) {
+        if (core.containsWallet(coreWallet)) {
             return Wallet.takeAndCreate(coreWallet,
                                         this,
                                         this.callbackCoordinator);
