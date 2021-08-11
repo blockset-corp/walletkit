@@ -93,11 +93,9 @@ wkWalletManagerSignTransactionWithSeedXLM (WKWalletManager manager,
                                                 UInt512 seed) {
     BRStellarAccount account = (BRStellarAccount) wkAccountAs (manager->account,
                                                                WK_NETWORK_TYPE_XLM);
-    BRKey publicKey = stellarAccountGetPublicKey (account);
     BRStellarTransaction transaction = wkTransferCoerceXLM(transfer)->xlmTransaction;
 
-    // TODO - carl
-    size_t tx_size = 0; //stellarTransactionSignTransaction (transaction, publicKey, seed, nodeAddress);
+    size_t tx_size = stellarAccountSignTransaction (account, transaction, seed);
 
     return AS_WK_BOOLEAN(tx_size > 0);
 }
@@ -111,7 +109,6 @@ wkWalletManagerSignTransactionWithKeyXLM (WKWalletManager manager,
     return WK_FALSE;
 }
 
-//TODO:XLM make common?
 static WKAmount
 wkWalletManagerEstimateLimitXLM (WKWalletManager manager,
                                       WKWallet  wallet,
@@ -161,14 +158,12 @@ wkWalletManagerEstimateFeeBasisXLM (WKWalletManager manager,
                                          size_t attributesCount,
                                          OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
-    BRStellarFeeBasis xlmFeeBasis;
+    BRStellarFee fee;
 
     // No margin needed.
-    xlmFeeBasis.pricePerCostFactor = (BRStellarFee) value.u32[0];
-    xlmFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
+    fee = (BRStellarFee) value.u32[0];
 
-    // TODO - Carl
-    return NULL; //wkFeeBasisCreateAsXLM (wallet->unitForFee, xlmFeeBasis);
+    return wkFeeBasisCreateAsXLM (wallet->unitForFee, fee);
 }
 
 static void

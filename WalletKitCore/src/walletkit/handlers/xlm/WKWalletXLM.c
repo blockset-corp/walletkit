@@ -196,36 +196,20 @@ wkWalletCreateTransferXLM (WKWallet  wallet,
     BRStellarAddress source  = stellarAccountGetAddress(walletXLM->xlmAccount);
     BRStellarAmount amountXLM = value.u64[0];
 
-    // TODO - Carl - I think this is when we create a new transaction to submit
     BRStellarTransaction xlmTransaction = stellarTransactionCreate (source,
                                                                   wkAddressAsXLM(target),
                                                                   amountXLM,
                                                                   wkFeeBasisAsXLM(estimatedFeeBasis));
+    stellarAddressFree(source);
 
-    if (NULL == xlmTransaction)
-        return NULL;
-
-    // TODO - attributes?
+    // TODO - check out if Stellar needs any attributes for submitted transactions
+    /*
     for (size_t index = 0; index < attributesCount; index++) {
         WKTransferAttribute attribute = attributes[index];
         if (NULL != wkTransferAttributeGetValue(attribute)) {
-            /*
-            if (stellarCompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
-                BRCoreParseStatus tag;
-                sscanf (wkTransferAttributeGetValue(attribute), "%u", &tag);
-                stellarTransactionSetDestinationTag (xlmTransaction, tag);
-            }
-            else if (stellarCompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
-                // TODO: Handle INVOICE_ID (note: not used in BRD App)
-            }
-            else {
-                // TODO: Impossible if validated?
-            }
-             */
         }
     }
-
-    stellarAddressFree(source);
+    */
 
     WKTransferState state    = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXLM (wallet->listenerTransfer,
