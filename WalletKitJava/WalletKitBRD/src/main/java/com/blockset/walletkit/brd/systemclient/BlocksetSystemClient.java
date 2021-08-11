@@ -116,7 +116,6 @@ public class BlocksetSystemClient implements SystemClient {
         ImmutableListMultimap.Builder<String, String> paramsBuilder = ImmutableListMultimap.builder();
         paramsBuilder.put("testnet", Boolean.valueOf(!isMainnet).toString());
         paramsBuilder.put("verified", "true");
-        paramsBuilder.put("include_experimental", "true");
         ImmutableMultimap<String, String> params = paramsBuilder.build();
 
         bdbClient.sendGetForArray("blockchains", params, BlocksetBlockchain.class, handler);
