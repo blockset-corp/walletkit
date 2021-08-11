@@ -141,8 +141,8 @@ tezosOperationCreateReveal (BRTezosAddress source,
 extern void
 tezosOperationFree (BRTezosOperation operation);
 
-//extern void
-//tezosOperationSetCounter (BRTezosOperation operation, int64_t counter);
+extern BRTezosOperation
+tezosOperationClone (Nullable BRTezosOperation operation);
 
 extern WKData
 tezosOperationSerialize (BRTezosOperation operation);

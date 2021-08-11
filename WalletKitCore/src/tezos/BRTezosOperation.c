@@ -217,6 +217,35 @@ tezosOperationCreateReveal (BRTezosAddress source,
     return operation;
 }
 
+extern BRTezosOperation
+tezosOperationClone (BRTezosOperation operation) {
+    if (NULL == operation) return NULL;
+
+    BRTezosOperation clone = tezosOperationCreate (operation->kind,
+                                                   tezosAddressClone(operation->source),
+                                                   operation->feeBasis);
+    switch (operation->kind) {
+        case TEZOS_OP_ENDORESEMENT:
+            assert (false);
+            break;
+
+        case TEZOS_OP_REVEAL:
+            clone->data.reveal.publicKey = operation->data.reveal.publicKey;
+            break;
+
+        case TEZOS_OP_TRANSACTION:
+            clone->data.transaction.amount = operation->data.transaction.amount;
+            clone->data.transaction.target = tezosAddressClone (operation->data.transaction.target);
+            break;
+
+        case TEZOS_OP_DELEGATION:
+            clone->data.delegation.target = tezosAddressClone (operation->data.delegation.target);
+            break;
+    }
+
+    return clone;
+}
+
 extern void
 tezosOperationFree (BRTezosOperation operation) {
     if (NULL == operation) return;
@@ -278,7 +307,6 @@ tezosOperationEqual (BRTezosOperation op1,
             (NULL != op1 &&
              NULL != op2 &&
              op1->kind    == op2->kind    &&
- //            op1->counter == op2->counter &&
              tezosAddressEqual           ( op1->source,    op2->source)   &&
              tezosOperationFeeBasisEqual (&op1->feeBasis, &op2->feeBasis) &&
              tezosOperationDataEqual (op1, op2)));

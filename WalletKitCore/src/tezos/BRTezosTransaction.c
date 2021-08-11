@@ -71,12 +71,14 @@ tezosTransactionCreateWithReveal (OwnershipGiven BRTezosOperation operation,
 
 extern BRTezosTransaction
 tezosTransactionClone (BRTezosTransaction transaction) {
-    assert (false);
     BRTezosTransaction result  = tezosTransactionCreateInternal (transaction->hash,
-                                                                 transaction->primaryOperation,
-                                                                 transaction->revealOperation);
+                                                                 tezosOperationClone (transaction->primaryOperation),
+                                                                 tezosOperationClone (transaction->revealOperation));
 
-    // ...
+    result->protocol = transaction->protocol;
+    result->branch   = transaction->branch;
+
+    result->signedBytes = wkDataClone (transaction->signedBytes);
 
     return result;
 }
