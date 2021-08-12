@@ -228,7 +228,7 @@ wkTransferGetHashBTC (WKTransfer transfer) {
             : wkHashCreateAsBTC (transferBTC->tid->txHash));
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeBTC (WKTransfer transfer,
                             WKNetwork  network,
                             WKBoolean  requireSignature,

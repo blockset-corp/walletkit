@@ -180,7 +180,7 @@ wkTransferGetOriginatingTransactionHashETH (WKTransferETH transfer) {
              : ETHEREUM_EMPTY_HASH_INIT);
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeETH (WKTransfer transfer,
                             WKNetwork  network,
                             WKBoolean  requireSignature,
@@ -204,7 +204,7 @@ wkTransferSerializeETH (WKTransfer transfer,
     return data.bytes;
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferGetBytesForFeeEstimateETH (WKTransfer transfer,
                                          WKNetwork  network,
                                          size_t *bytesCount) {

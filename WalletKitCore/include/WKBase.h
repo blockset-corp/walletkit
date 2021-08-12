@@ -218,11 +218,19 @@ static inline WKData wkDataCreateEmpty (void) {
 }
 
 static inline WKData wkDataCopy (uint8_t * bytes, size_t size) {
-    WKData data;
-    data.bytes = malloc (size * sizeof(uint8_t));
-    memcpy (data.bytes, bytes, size);
-    data.size = size;
+    WKData data = { NULL, 0 };
+
+    if (NULL != bytes && 0 != size) {
+        data.bytes = malloc (size * sizeof(uint8_t));
+        memcpy (data.bytes, bytes, size);
+        data.size = size;
+    }
+    
     return data;
+}
+
+static inline WKData wkDataClone (WKData data) {
+    return wkDataCopy (data.bytes, data.size);
 }
 
 static inline WKData

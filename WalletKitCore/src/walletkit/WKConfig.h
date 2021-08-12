@@ -128,7 +128,7 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_BSV, BSV)
 
 #define NETWORK_NAME    "Litecoin"
 DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-mainnet", NETWORK_NAME, "mainnet", true, 2056308, 12, (5*60)/2)  // 2.5 min
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "1", "60m", 60 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "2", "5m", 5 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-mainnet",     "litecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-mainnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
@@ -136,7 +136,7 @@ DEFINE_ADDRESS_SCHEMES  ("litecoin-mainnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_AD
 DEFINE_MODES            ("litecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
 
 DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-testnet", NETWORK_NAME, "testnet", false, 1903181, 12, (5*60)/2)  // 2.5 min
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "1", "60m", 60 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "2", "5m", 5 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-testnet",     "litecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-testnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
@@ -259,7 +259,7 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_HBAR, HBAR)
 
 #define NETWORK_NAME    "Tezos"
 DEFINE_NETWORK (WK_NETWORK_TYPE_XTZ,  "tezos-mainnet", NETWORK_NAME, "mainnet", true, 1328407, 6, 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-mainnet", "1", "1m", 1 * 60 * 1000)  // 1 mutez/byte
 DEFINE_CURRENCY ("tezos-mainnet",     "tezos-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-mainnet:__native__",  "mutez",     "mtz",   0,  "mutez")
     DEFINE_UNIT ("tezos-mainnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
@@ -268,7 +268,7 @@ DEFINE_MODES            ("tezos-mainnet", WK_SYNC_MODE_API_ONLY)
 
 #if HAS_XTZ_TESTNET
 DEFINE_NETWORK (WK_NETWORK_TYPE_XTZ,  "tezos-testnet", NETWORK_NAME, "testnet", false, 50000, 6, 60)
-DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "500000", "1m", 1 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("tezos-testnet", "1", "1m", 1 * 60 * 1000)   // 1 mutez/byte
 DEFINE_CURRENCY ("tezos-testnet",     "tezos-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XTZ,  "native",   NULL,   true)
     DEFINE_UNIT ("tezos-testnet:__native__",  "mutez",     "mtz",   0,  "mutez")
     DEFINE_UNIT ("tezos-testnet:__native__",  NETWORK_NAME,  "xtz",   6,  "XTZ")
@@ -284,8 +284,8 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_XTZ, XTZ)
 DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-mainnet", NETWORK_NAME, "mainnet", true, 35516170, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("stellar-mainnet", "100", "5s", 5 * 1000)
 DEFINE_CURRENCY ("stellar-mainnet",     "stellar-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
-    DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "XLM_I")
-    DEFINE_UNIT ("stellar-mainnet:__native__",  "lumen",       "xlm",     7,  "XLM")
+    DEFINE_UNIT ("stellar-mainnet:__native__",  "Stroop",     "stroop",   0,  "STROOP")
+    DEFINE_UNIT ("stellar-mainnet:__native__",  NETWORK_NAME,  "xlm",     7,  "XLM")
 DEFINE_ADDRESS_SCHEMES  ("stellar-mainnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("stellar-mainnet", WK_SYNC_MODE_API_ONLY)
 
@@ -293,8 +293,8 @@ DEFINE_MODES            ("stellar-mainnet", WK_SYNC_MODE_API_ONLY)
 DEFINE_NETWORK (WK_NETWORK_TYPE_XLM,  "stellar-testnet", NETWORK_NAME, "testnet", false, 1075721, 1, 5)
 DEFINE_NETWORK_FEE_ESTIMATE ("stellar-testnet", "100", "5s", 5 * 1000)
 DEFINE_CURRENCY ("stellar-testnet",     "stellar-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_XLM,  "native",   NULL,   true)
-    DEFINE_UNIT ("stellar-testnet:__native__",  "lumen_i",     "txlm_i",   0,  "tXLM_I")
-    DEFINE_UNIT ("stellar-testnet:__native__",  "lumen",       "txlm",     7,  "tXLM")
+    DEFINE_UNIT ("stellar-testnet:__native__",  "Stroop",     "stroop",   0,  "STROOP")
+    DEFINE_UNIT ("stellar-testnet:__native__",  NETWORK_NAME,  "xlm",     7,  "XLM")
 DEFINE_ADDRESS_SCHEMES  ("stellar-testnet", WK_ADDRESS_SCHEME_NATIVE)
 DEFINE_MODES            ("stellar-testnet", WK_SYNC_MODE_API_ONLY)
 #endif // HAS_XLM_TESTNET

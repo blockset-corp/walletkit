@@ -261,9 +261,10 @@ wkTransferGetAttributeAt (WKTransfer transfer,
 /**
  * Get a serialization of `transfer` suitable for submission to `network`.  The transfer must
  * apply to `network` and the transfer must be signed.  Fills `serializationCount` with the
- * number of bytes in the serialization.
+ * number of bytes in the serialization.  The returned value is owned by the caller and must
+ * be freed.
  */
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeForSubmission (WKTransfer transfer,
                                   WKNetwork  network,
                                   size_t *serializationCount);
@@ -271,9 +272,10 @@ wkTransferSerializeForSubmission (WKTransfer transfer,
 /**
  * Get a serialization of `transfer` suitable for fee estimation on `network`.  The transfer
  * must apply to `network` and the transfer should not be signed.  Fills `serializationCount`
- * with the number of bytes in the serialization.
+ * with the number of bytes in the serialization.  The returned value is owned by the caller and
+ * must be freed.
  */
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeForFeeEstimation (WKTransfer transfer,
                                      WKNetwork  network,
                                      size_t *serializationCount);

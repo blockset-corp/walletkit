@@ -584,13 +584,11 @@ static char *
 hederaCreateTransactionId(BRHederaAddress address, BRHederaTimeStamp timeStamp)
 {
     char buffer[128] = {0};
-    const char * hederaAddress = hederaAddressAsString(address);
+    char * hederaAddress = hederaAddressAsString(address);
     sprintf(buffer, "%s-%10" PRIi64 "-%09" PRIi32, hederaAddress, timeStamp.seconds, timeStamp.nano);
-    char * result = calloc(1, strlen(buffer) + 1);
-    strncpy(result, buffer, strlen(buffer));
-    return result;
+    free (hederaAddress);
+    return strdup (buffer);
 }
-
 
 /*test */ extern int
 hederaParseTransactionId (const char *transactionId, char **address, int64_t *seconds, int32_t *nanoseconds)

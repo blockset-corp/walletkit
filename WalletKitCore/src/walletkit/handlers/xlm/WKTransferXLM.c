@@ -102,7 +102,7 @@ wkTransferGetHashXLM (WKTransfer transfer) {
     return wkHashCreateAsXLM (hash);
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXLM (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,

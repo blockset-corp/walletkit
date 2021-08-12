@@ -616,13 +616,11 @@ public class BlocksetSystemClient: SystemClient {
     public func getBlockchains (mainnet: Bool? = nil, completion: @escaping (Result<[SystemClient.Blockchain],SystemClientError>) -> Void) {
         let queryKeys = [
             mainnet.map { (_) in "testnet" },
-            "verified",
-            "include_experimental"]
+            "verified"]
             .compactMap { $0 } // Remove `nil` from blockchainId
 
         let queryVals: [String] = [
             mainnet.map { (!$0).description },
-            "true",
             "true"]
             .compactMap { $0 }  // Remove `nil` from blockchainId
 

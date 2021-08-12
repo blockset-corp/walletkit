@@ -481,8 +481,6 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarBase.h
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.c
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarFeeBasis.c
