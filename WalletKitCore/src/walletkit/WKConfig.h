@@ -127,7 +127,7 @@ DEFINE_HANDLERS (WK_NETWORK_TYPE_BSV, BSV)
 
 #define NETWORK_NAME    "Litecoin"
 DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-mainnet", NETWORK_NAME, "mainnet", true, 2056308, 12, (5*60)/2)  // 2.5 min
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "1", "60m", 60 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-mainnet", "2", "5m", 5 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-mainnet",     "litecoin-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-mainnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-mainnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
@@ -135,7 +135,7 @@ DEFINE_ADDRESS_SCHEMES  ("litecoin-mainnet", WK_ADDRESS_SCHEME_BTC_SEGWIT, WK_AD
 DEFINE_MODES            ("litecoin-mainnet", WK_SYNC_MODE_API_ONLY, WK_SYNC_MODE_P2P_ONLY)
 
 DEFINE_NETWORK (WK_NETWORK_TYPE_LTC,  "litecoin-testnet", NETWORK_NAME, "testnet", false, 1903181, 12, (5*60)/2)  // 2.5 min
-DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "1", "60m", 60 * 60 * 1000)
+DEFINE_NETWORK_FEE_ESTIMATE ("litecoin-testnet", "2", "5m", 5 * 60 * 1000)
 DEFINE_CURRENCY ("litecoin-testnet",     "litecoin-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY_LTC,  "native",   NULL,   true)
     DEFINE_UNIT ("litecoin-testnet:__native__",      "Satoshi",    "sat",      0,      "SAT")
     DEFINE_UNIT ("litecoin-testnet:__native__",      NETWORK_NAME, "ltc",      8,      "LTC")
