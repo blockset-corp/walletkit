@@ -50,7 +50,7 @@ import com.blockset.walletkit.WalletManagerSyncDepth;
 import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
 import com.blockset.walletkit.events.transfer.DefaultTransferEventVisitor;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.transfer.TransferChangedEvent;
 import com.blockset.walletkit.events.transfer.TransferCreatedEvent;
 import com.blockset.walletkit.events.transfer.TransferDeletedEvent;
@@ -228,7 +228,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     }
 
     @Override
-    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
         event.accept(new DefaultTransferEventVisitor<Void>() {
             @Override
             public Void visit(TransferCreatedEvent event) {

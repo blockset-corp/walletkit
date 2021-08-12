@@ -14,7 +14,6 @@ import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
-import com.blockset.walletkit.brd.systemclient.BlocksetCurrency;
 import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.events.network.NetworkEvent;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
@@ -22,7 +21,7 @@ import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.blockset.walletkit.events.system.SystemManagerAddedEvent;
 import com.blockset.walletkit.events.system.SystemNetworkAddedEvent;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletAddedEvent;
@@ -254,7 +253,7 @@ class HelpersAIT {
                 this.event = event;
             }
 
-            private CryptoEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+            private CryptoEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
                 this.system = system;
                 this.network = null;
                 this.manager = manager;
@@ -288,7 +287,7 @@ class HelpersAIT {
 
         @Override
         public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer,
-                                        TranferEvent event) {
+                                        TransferEvent event) {
             events.add(new CryptoEvent(system, manager, wallet, transfer, event));
         }
 

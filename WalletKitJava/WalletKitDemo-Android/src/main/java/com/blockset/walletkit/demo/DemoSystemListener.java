@@ -30,7 +30,7 @@ import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.blockset.walletkit.events.system.SystemManagerAddedEvent;
 import com.blockset.walletkit.events.system.SystemNetworkAddedEvent;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.wallet.DefaultWalletEventVisitor;
 import com.blockset.walletkit.events.wallet.WalletCreatedEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
@@ -130,7 +130,7 @@ public class DemoSystemListener implements SystemListener {
     }
 
     @Override
-    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
         ApplicationExecutors.runOnBlockingExecutor(() -> {
             Log.log(Level.FINE, String.format("Transfer (%s:%s): %s", manager.getName(), wallet.getName(), event));
         });

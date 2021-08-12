@@ -72,7 +72,7 @@ import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.blockset.walletkit.events.system.SystemManagerAddedEvent;
 import com.blockset.walletkit.events.system.SystemNetworkAddedEvent;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.transfer.TransferChangedEvent;
 import com.blockset.walletkit.events.transfer.TransferCreatedEvent;
 import com.blockset.walletkit.events.transfer.TransferDeletedEvent;
@@ -810,7 +810,7 @@ final class System implements com.blockset.walletkit.System {
         executor.submit(() -> listener.handleWalletEvent(this, walletManager, wallet, event));
     }
 
-    private void announceTransferEvent(WalletManager walletManager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    private void announceTransferEvent(WalletManager walletManager, Wallet wallet, Transfer transfer, TransferEvent event) {
         executor.submit(() -> listener.handleTransferEvent(this, walletManager, wallet, transfer, event));
     }
 

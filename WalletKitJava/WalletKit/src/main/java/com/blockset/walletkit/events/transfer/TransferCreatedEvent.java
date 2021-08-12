@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.events.transfer;
 
-public final class TransferCreatedEvent implements TranferEvent {
+public final class TransferCreatedEvent implements TransferEvent {
 
     @Override
     public <T> T accept(TransferEventVisitor<T> visitor) {
