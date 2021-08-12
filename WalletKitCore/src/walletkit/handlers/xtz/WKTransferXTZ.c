@@ -11,13 +11,23 @@
 #include "WKXTZ.h"
 #include "walletkit/WKAmountP.h"
 #include "walletkit/WKHashP.h"
-#include "tezos/BRTezosTransfer.h"
+#include "tezos/BRTezosTransaction.h"
 #include "tezos/BRTezosFeeBasis.h"
 #include "support/util/BRUtilMath.h"
 
 static WKTransferDirection
-transferGetDirectionFromXTZ (BRTezosTransfer transfer,
-                             BRTezosAccount account);
+wkTransferGetDirectionFromXTZ (BRTezosAccount account,
+                               BRTezosAddress source,
+                               BRTezosAddress target) {
+    int isSource = tezosAccountHasAddress (account, source);
+    int isTarget = tezosAccountHasAddress (account, target);
+
+    return (isSource && isTarget
+            ? WK_TRANSFER_RECOVERED
+            : (isSource
+               ? WK_TRANSFER_SENT
+               : WK_TRANSFER_RECEIVED));
+}
 
 extern WKTransferXTZ
 wkTransferCoerceXTZ (WKTransfer transfer) {
@@ -26,7 +36,9 @@ wkTransferCoerceXTZ (WKTransfer transfer) {
 }
 
 typedef struct {
-    BRTezosTransfer xtzTransfer;
+    BRTezosHash xtzHash;
+    BRTezosUnitMutez xtzAmount;
+    BRTezosTransaction xtzTransaction;
 } WKTransferCreateContextXTZ;
 
 static void
@@ -35,7 +47,9 @@ wkTransferCreateCallbackXTZ (WKTransferCreateContext context,
     WKTransferCreateContextXTZ *contextXTZ = (WKTransferCreateContextXTZ*) context;
     WKTransferXTZ transferXTZ = wkTransferCoerceXTZ (transfer);
 
-    transferXTZ->xtzTransfer = contextXTZ->xtzTransfer;
+    transferXTZ->hash = contextXTZ->xtzHash;
+    transferXTZ->amount = contextXTZ->xtzAmount;
+    transferXTZ->originatingTransaction = contextXTZ->xtzTransaction;
 }
 
 extern WKTransfer
@@ -43,63 +57,59 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
                        const char *uids,
                        WKUnit unit,
                        WKUnit unitForFee,
+                       WKFeeBasis feeBasisEstimated,
+                       WKAmount   amount,
+                       WKAddress  source,
+                       WKAddress  target,
                        WKTransferState state,
                        OwnershipKept BRTezosAccount xtzAccount,
-                       OwnershipGiven BRTezosTransfer xtzTransfer) {
-    
-    WKTransferDirection direction = transferGetDirectionFromXTZ (xtzTransfer, xtzAccount);
-    
-    WKAmount amount = wkAmountCreateAsXTZ (unit,
-                                           WK_FALSE,
-                                           tezosTransferGetAmount (xtzTransfer));
-    
-    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateActual (WK_TRANSFER_RECEIVED == direction ? 0 : tezosTransferGetFee(xtzTransfer));
-    WKFeeBasis feeBasis = wkFeeBasisCreateAsXTZ (unitForFee,
-                                                 xtzFeeBasis);
-    
-    WKAddress sourceAddress = wkAddressCreateAsXTZ (tezosTransferGetSource (xtzTransfer));
-    WKAddress targetAddress = wkAddressCreateAsXTZ (tezosTransferGetTarget (xtzTransfer));
-
+                       BRTezosHash xtzHash,
+                       OwnershipGiven BRTezosTransaction xtzTransaction) {
     WKTransferCreateContextXTZ contextXTZ = {
-        xtzTransfer
+        xtzHash,
+        0, // xtzAmount,
+        xtzTransaction
     };
 
-    WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
-                                                  WK_NETWORK_TYPE_XTZ,
-                                                  listener,
-                                                  uids,
-                                                  unit,
-                                                  unitForFee,
-                                                  feeBasis,
-                                                  amount,
-                                                  direction,
-                                                  sourceAddress,
-                                                  targetAddress,
-                                                  state,
-                                                  &contextXTZ,
-                                                  wkTransferCreateCallbackXTZ);
-    
-    wkFeeBasisGive (feeBasis);
-    wkAddressGive (sourceAddress);
-    wkAddressGive (targetAddress);
-    wkAmountGive  (amount);
+    WKTransferDirection direction = wkTransferGetDirectionFromXTZ (xtzAccount,
+                                                                   wkAddressAsXTZ(source),
+                                                                   wkAddressAsXTZ(target));
 
+    WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
+                                   WK_NETWORK_TYPE_XTZ,
+                                   listener,
+                                   uids,
+                                   unit,
+                                   unitForFee,
+                                   feeBasisEstimated,
+                                   amount,
+                                   direction,
+                                   source,
+                                   target,
+                                   state,
+                                   &contextXTZ,
+                                   wkTransferCreateCallbackXTZ);
+    wkFeeBasisGive (feeBasisEstimated);
+    wkAddressGive (source);
+    wkAddressGive (target);
+    wkAmountGive  (amount);
+    
     return transfer;
 }
 
 static void
 wkTransferReleaseXTZ (WKTransfer transfer) {
     WKTransferXTZ transferXTZ = wkTransferCoerceXTZ(transfer);
-    tezosTransferFree (transferXTZ->xtzTransfer);
+    if (NULL != transferXTZ->originatingTransaction)
+        tezosTransactionFree (transferXTZ->originatingTransaction);
 }
 
 static WKHash
 wkTransferGetHashXTZ (WKTransfer transfer) {
     WKTransferXTZ transferXTZ = wkTransferCoerceXTZ(transfer);
-    BRTezosHash hash = tezosTransferGetTransactionId (transferXTZ->xtzTransfer);
-    return (tezosHashIsEmpty(hash)
+    return (tezosHashIsEmpty (transferXTZ->hash)
             ? NULL
-            : wkHashCreateAsXTZ (hash));
+            : wkHashCreateAsXTZ (transferXTZ->hash));
 }
 
 static OwnershipGiven uint8_t *
@@ -112,7 +122,7 @@ wkTransferSerializeXTZ (WKTransfer transfer,
     uint8_t *serialization = NULL;
     *serializationCount = 0;
 
-    BRTezosTransaction transaction = tezosTransferGetTransaction (transferXTZ->xtzTransfer);
+    BRTezosTransaction transaction = transferXTZ->originatingTransaction;
     if (transaction) {
         uint8_t *signedBytes = tezosTransactionGetSignedBytes (transaction, serializationCount);
         if (NULL != signedBytes && 0 != *serializationCount) {
@@ -130,27 +140,11 @@ wkTransferIsEqualXTZ (WKTransfer tb1, WKTransfer tb2) {
     
     WKTransferXTZ tz1 = wkTransferCoerceXTZ (tb1);
     WKTransferXTZ tz2 = wkTransferCoerceXTZ (tb2);
-    
-    return tezosTransferIsEqual (tz1->xtzTransfer, tz2->xtzTransfer);
-}
 
-static WKTransferDirection
-transferGetDirectionFromXTZ (BRTezosTransfer transfer,
-                             BRTezosAccount account) {
-    BRTezosAddress source = tezosTransferGetSource (transfer);
-    BRTezosAddress target = tezosTransferGetTarget (transfer);
-    
-    int isSource = tezosAccountHasAddress (account, source);
-    int isTarget = tezosAccountHasAddress (account, target);
-    
-    tezosAddressFree (target);
-    tezosAddressFree (source);
-    
-    return (isSource && isTarget
-            ? WK_TRANSFER_RECOVERED
-            : (isSource
-               ? WK_TRANSFER_SENT
-               : WK_TRANSFER_RECEIVED));
+    return (NULL != tz1->originatingTransaction &&
+            NULL != tz2->originatingTransaction &&
+            tezosTransactionEqual (tz1->originatingTransaction,
+                                   tz2->originatingTransaction));
 }
 
 WKTransferHandlers wkTransferHandlersXTZ = {

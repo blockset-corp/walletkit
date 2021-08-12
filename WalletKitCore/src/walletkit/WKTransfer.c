@@ -173,7 +173,7 @@ extern WKTransfer // OwnershipKept, all arguments
 wkTransferAllocAndInit (size_t sizeInBytes,
                             WKNetworkType type,
                             WKTransferListener listener,
-                        const char *uids,
+                            const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKFeeBasis feeBasisEstimated,

@@ -52,8 +52,8 @@ wkWalletCreateAsXTZ (WKWalletListener listener,
     WKAmount minBalance = hasMinBalance ? wkAmountCreateAsXTZ(unit, WK_FALSE, minBalanceXTZ) : NULL;
     WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAsXTZ(unit, WK_FALSE, maxBalanceXTZ) : NULL;
 
-    BRTezosFeeBasis feeBasisXTZ = tezosDefaultFeeBasis (TEZOS_DEFAULT_MUTEZ_PER_BYTE);
-    WKFeeBasis feeBasis   = wkFeeBasisCreateAsXTZ (unitForFee, feeBasisXTZ);
+    BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateDefault(TEZOS_DEFAULT_MUTEZ_PER_BYTE, false, false);
+    WKFeeBasis      feeBasis    = wkFeeBasisCreateAsXTZ (unitForFee, xtzFeeBasis);
 
     WKWalletCreateContextXTZ contextXTZ = {
         xtzAccount
@@ -102,7 +102,6 @@ wkWalletHasAddressXTZ (WKWallet wallet,
 
 private_extern bool
 wkWalletNeedsRevealXTZ (WKWallet wallet) {
-    assert(wallet);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         // reveal is needed before the first outgoing transfer and if the type of any outgoing
         // transfer is not WK_TRANSFER_STATE_ERRORED (a failed submit).
@@ -110,8 +109,15 @@ wkWalletNeedsRevealXTZ (WKWallet wallet) {
         WKTransferStateType type      = wkTransferGetStateType (wallet->transfers[index]);
         if (WK_TRANSFER_SENT == direction && WK_TRANSFER_STATE_ERRORED != type) return false;
     }
+
     return true;
 }
+
+private_extern bool
+wkWalletNeedsRevealForTransactionXTZ (WKWallet wallet,
+                                      BRTezosTransaction transaction) {
+    return tezosTransactionRequiresReveal(transaction) && wkWalletNeedsRevealXTZ (wallet);
+ }
 
 private_extern WKTransfer
 wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,
@@ -212,27 +218,12 @@ wkWalletValidateTransferAttributeXTZ (WKWallet wallet,
     return error;
 }
 
-// create for send
-extern WKTransfer
-wkWalletCreateTransferXTZ (WKWallet  wallet,
-                               WKAddress target,
-                               WKAmount  amount,
-                               WKFeeBasis estimatedFeeBasis,
-                               size_t attributesCount,
-                               OwnershipKept WKTransferAttribute *attributes,
-                               WKCurrency currency,
-                               WKUnit unit,
-                               WKUnit unitForFee) {
-    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
-    
-    BRTezosAddress source  = tezosAccountGetAddress (walletXTZ->xtzAccount);
-    BRTezosAddress xtzTarget  = wkAddressAsXTZ (target);
-    BRTezosUnitMutez mutez = tezosMutezCreate (amount);
-    BRTezosFeeBasis feeBasis = wkFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
-    int64_t counter = (FEE_BASIS_ESTIMATE == feeBasis.type) ? feeBasis.u.estimate.counter : 0;
-    
+private_extern bool
+wkWalletHasTransferAttributeForDelegationXTZ (WKWallet wallet,
+                                              size_t attributesCount,
+                                              OwnershipKept WKTransferAttribute *attributes) {
     bool delegationOp = false;
-    
+
     for (size_t index = 0; index < attributesCount; index++) {
         WKTransferAttribute attribute = attributes[index];
         if (NULL != wkTransferAttributeGetValue(attribute)) {
@@ -243,27 +234,72 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
             }
         }
     }
+
+    return delegationOp;
+}
+
+// create for send
+extern WKTransfer
+wkWalletCreateTransferXTZ (WKWallet  wallet,
+                           WKAddress target,
+                           WKAmount  amount,
+                           WKFeeBasis estimatedFeeBasis,
+                           size_t attributesCount,
+                           OwnershipKept WKTransferAttribute *attributes,
+                           WKCurrency currency,
+                           WKUnit unit,
+                           WKUnit unitForFee) {
+    WKWalletXTZ walletXTZ = wkWalletCoerce (wallet);
     
-    BRTezosTransfer xtzTransfer = tezosTransferCreateNew (source,
-                                                          xtzTarget,
-                                                          mutez,
-                                                          feeBasis,
-                                                          counter,
-                                                          delegationOp);
+    BRTezosAddress   xtzSource   = tezosAccountGetAddress (walletXTZ->xtzAccount);
+    BRTezosAddress   xtzTarget   = wkAddressAsXTZ (target);
+    BRTezosUnitMutez xtzAmount   = tezosMutezCreate (amount);
+    BRTezosFeeBasis  xtzFeeBasis = wkFeeBasisCoerceXTZ (estimatedFeeBasis)->xtzFeeBasis;
+    BRTezosHash      xtzHash     = TEZOS_HASH_EMPTY;
 
-    tezosAddressFree (source);
+    BRTezosPublicKey xtzKey      = tezosAccountGetPublicKey(walletXTZ->xtzAccount);
 
+    // If the xtzFeeBasis is for a reveal but the wallet doesn't needd a reveal we've got a problem.
+    // Most likely some kind of race condition.  
+    //
+    // TODO: Need to handle this appropriately
+    if (xtzFeeBasis.hasRevealOperationFeeBasis != wkWalletNeedsRevealXTZ(wallet))
+        return NULL;
+
+    bool delegationOp = wkWalletHasTransferAttributeForDelegationXTZ (wallet, attributesCount, attributes);
+
+
+    // The primaryOperation is either a TRANSACTION of a DELEGATION
+    BRTezosOperation xtzPrimaryOperation = (delegationOp
+                                            ? tezosOperationCreateDelegation  (xtzSource, xtzTarget, xtzFeeBasis.primaryOperationFeeBasis)
+                                            : tezosOperationCreateTransaction (xtzSource, xtzTarget, xtzFeeBasis.primaryOperationFeeBasis, xtzAmount));
+
+    // A revealOperation is needed if this Account has not been seen; reveals the public key
+    BRTezosOperation xtzRevealOperation = (!xtzFeeBasis.hasRevealOperationFeeBasis
+                                           ? NULL
+                                           : tezosOperationCreateReveal (xtzSource, xtzTarget, xtzFeeBasis.revealOperationFeeBasis, xtzKey));
+
+    // The transaction is surely the primaryOperation with the optional revealOperation
+    BRTezosTransaction xtzTransaction = tezosTransactionCreateWithReveal (xtzPrimaryOperation, xtzRevealOperation);
+
+    WKAddress       source   = wkAddressCreateAsXTZ (xtzSource);
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXTZ (wallet->listenerTransfer,
-                                                                NULL,
-                                                                unit,
-                                                                unitForFee,
-                                                                state,
-                                                                walletXTZ->xtzAccount,
-                                                                xtzTransfer);
+                                                      NULL,
+                                                      unit,
+                                                      unitForFee,
+                                                      estimatedFeeBasis,
+                                                      amount,
+                                                      source,
+                                                      target,
+                                                      state,
+                                                      walletXTZ->xtzAccount,
+                                                      xtzHash,
+                                                      xtzTransaction);
     
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);
+    wkAddressGive (source);
     
     return transfer;
 }

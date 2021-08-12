@@ -22,7 +22,7 @@
 
 struct BRTezosAccountRecord {
     BRTezosAddress address;
-    uint8_t publicKey[TEZOS_PUBLIC_KEY_SIZE];
+    BRTezosPublicKey publicKey;
 };
 
 // MARK: Forward Declarations
@@ -46,9 +46,9 @@ tezosAccountCreateWithSeed (UInt512 seed) {
     // Private key
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
 
-    tezosKeyGetPublicKey(privateKey, account->publicKey);
+    tezosKeyGetPublicKey(privateKey, account->publicKey.bytes);
 
-    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    account->address = tezosAddressCreateFromKey(account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
 
     return account;
 }
@@ -59,8 +59,8 @@ tezosAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     assert (bytesCount == TEZOS_PUBLIC_KEY_SIZE);
     BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
     
-    memcpy(account->publicKey, bytes, TEZOS_PUBLIC_KEY_SIZE);
-    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    memcpy(account->publicKey.bytes, bytes, TEZOS_PUBLIC_KEY_SIZE);
+    account->address = tezosAddressCreateFromKey(account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     
     return account;
 }
@@ -79,7 +79,7 @@ extern WKData
 tezosAccountSignData (BRTezosAccount account,
                       WKData data,
                       UInt512 seed) {
-    BRKey publicKey = tezosAccountGetPublicKey ((BRTezosAccount)account);
+    BRKey publicKey  = tezosPublicKeyGetKey (account->publicKey);
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
     uint8_t privateKeyBytes[64];
     tezosKeyGetPrivateKey(privateKey, privateKeyBytes);
@@ -106,13 +106,10 @@ tezosAccountSignData (BRTezosAccount account,
 
 // MARK: - Accessors
 
-extern BRKey
+extern BRTezosPublicKey
 tezosAccountGetPublicKey (BRTezosAccount account) {
     assert(account);
-    BRKey key;
-    memset(&key, 0x00, sizeof(BRKey));
-    memcpy(key.pubKey, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
-    return key;
+    return account->publicKey;
 }
 
 extern BRTezosAddress
@@ -132,7 +129,7 @@ tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount) {
     uint8_t *bytes = calloc (1, *bytesCount);
     
     // Copy the public key
-    memcpy(bytes, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    memcpy(bytes, account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     
     return bytes;
 }

@@ -27,7 +27,7 @@ typedef struct WKAddressXTZRecord {
 } *WKAddressXTZ;
 
 extern WKAddress
-wkAddressCreateAsXTZ (BRTezosAddress addr);
+wkAddressCreateAsXTZ (OwnershipGiven BRTezosAddress addr);
 
 extern WKAddress
 wkAddressCreateFromStringAsXTZ (const char *string);
@@ -47,7 +47,10 @@ typedef struct WKNetworkXTZRecord {
 typedef struct WKTransferXTZRecord {
     struct WKTransferRecord base;
 
-    BRTezosTransfer xtzTransfer;
+    BRTezosHash hash;
+    BRTezosUnitMutez amount;
+
+    BRTezosTransaction originatingTransaction;
 } *WKTransferXTZ;
 
 extern WKTransferXTZ
@@ -55,13 +58,17 @@ wkTransferCoerceXTZ (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXTZ (WKTransferListener listener,
-                           const char *uids,
-                           WKUnit unit,
-                           WKUnit unitForFee,
-                           WKTransferState state,
-                           BRTezosAccount xtzAccount,
-                           BRTezosTransfer xtzTransfer);
-
+                       const char *uids,
+                       WKUnit unit,
+                       WKUnit unitForFee,
+                       WKFeeBasis feeBasisEstimated,
+                       WKAmount   amount,
+                       WKAddress  source,
+                       WKAddress  target,
+                       WKTransferState state,
+                       OwnershipKept BRTezosAccount xtzAccount,
+                       BRTezosHash xtzHash,
+                       OwnershipGiven BRTezosTransaction xtzTransaction);
 // MARK: - Wallet
 
 typedef struct WKWalletXTZRecord {
@@ -90,6 +97,15 @@ wkWalletCreateTransferXTZ (WKWallet  wallet,
 
 private_extern bool
 wkWalletNeedsRevealXTZ (WKWallet wallet);
+
+private_extern bool
+wkWalletNeedsRevealForTransactionXTZ (WKWallet wallet,
+                                      BRTezosTransaction transaction);
+
+private_extern bool
+wkWalletHasTransferAttributeForDelegationXTZ (WKWallet wallet,
+                                              size_t attributesCount,
+                                              OwnershipKept WKTransferAttribute *attributes);
 
 private_extern WKTransfer
 wkWalletGetTransferByHashOrUIDSAndTargetXTZ (WKWallet wallet,

@@ -10,7 +10,6 @@
 //
 
 #include "BRTezosTransaction.h"
-#include "BRTezosEncoder.h"
 #include "ed25519/ed25519.h"
 #include "blake2/blake2b.h"
 #include <stdio.h>
@@ -24,14 +23,10 @@
 struct BRTezosTransactionRecord {
     
     BRTezosHash hash;
-    BRTezosAddress source;
-    BRTezosFeeBasis feeBasis;
-    
-    BRTezosOperationData operation;
-    
-    uint64_t blockHeight;
-    int64_t counter; // nonce
-    
+
+    BRTezosOperation primaryOperation;
+    Nullable BRTezosOperation revealOperation;
+
     const char * protocol; // protocol name
     const char * branch; // hash of head block
     
@@ -43,100 +38,82 @@ struct BRTezosSignatureRecord {
 };
 
 static BRTezosTransaction
-createTransactionObject() {
-    BRTezosTransaction transaction = calloc (1, sizeof(struct BRTezosTransactionRecord));
-    assert(transaction);
+tezosTransactionCreateInternal (BRTezosHash hash,
+                                OwnershipGiven BRTezosOperation primaryOperation,
+                                Nullable OwnershipGiven BRTezosOperation revealOperation) {
+    assert (NULL == revealOperation || TEZOS_OP_REVEAL == revealOperation->kind);
+
+    BRTezosTransaction transaction = calloc (1, sizeof (struct BRTezosTransactionRecord));
+
+    transaction->hash = hash;
+    transaction->primaryOperation = primaryOperation;
+    transaction->revealOperation  = revealOperation;
+
+    transaction->protocol = NULL;
+    transaction->branch   = NULL;
+
+    transaction->signedBytes = wkDataCreateEmpty();
+    
     return transaction;
 }
 
 extern BRTezosTransaction
-tezosTransactionCreateTransaction (BRTezosAddress source,
-                                   BRTezosAddress target,
-                                   BRTezosUnitMutez amount,
-                                   BRTezosFeeBasis feeBasis,
-                                   int64_t counter) {
-    BRTezosTransaction transaction = createTransactionObject();
-    transaction->hash   = TEZOS_HASH_EMPTY;
-    transaction->source = tezosAddressClone (source);
-    transaction->operation.kind = TEZOS_OP_TRANSACTION;
-    transaction->operation.u.transaction.amount = amount;
-    transaction->operation.u.transaction.target = tezosAddressClone (target);
-    transaction->feeBasis = feeBasis;
-    transaction->blockHeight = 0;
-    transaction->counter = counter;
-    return transaction;
+tezosTransactionCreate (OwnershipGiven BRTezosOperation operation) {
+    return tezosTransactionCreateInternal (TEZOS_HASH_EMPTY, operation, NULL);
 }
 
 extern BRTezosTransaction
-tezosTransactionCreateDelegation (BRTezosAddress source,
-                                  BRTezosAddress target,
-                                  BRTezosFeeBasis feeBasis,
-                                  int64_t counter) {
-    BRTezosTransaction transaction = createTransactionObject();
-    transaction->hash   = TEZOS_HASH_EMPTY;
-    transaction->source = tezosAddressClone (source);
-    transaction->operation.kind = TEZOS_OP_DELEGATION;
-    bool endDelegation = tezosAddressEqual(source, target);
-    transaction->operation.u.delegation.target = endDelegation ? NULL : tezosAddressClone (target);
-    transaction->feeBasis = feeBasis;
-    transaction->blockHeight = 0;
-    transaction->counter = counter;
-    return transaction;
+tezosTransactionCreateWithReveal (OwnershipGiven BRTezosOperation operation,
+                                  OwnershipGiven BRTezosOperation revel) {
+    return tezosTransactionCreateInternal(TEZOS_HASH_EMPTY, operation, revel);
 }
 
-extern BRTezosTransaction
-tezosTransactionCreateReveal (BRTezosAddress source,
-                              uint8_t * pubKey,
-                              BRTezosFeeBasis feeBasis,
-                              int64_t counter) {
-    BRTezosTransaction transaction = createTransactionObject();
-    transaction->hash   = TEZOS_HASH_EMPTY;
-    transaction->source = tezosAddressClone (source);
-    transaction->operation.kind = TEZOS_OP_REVEAL;
-    memcpy(transaction->operation.u.reveal.publicKey, pubKey, TEZOS_PUBLIC_KEY_SIZE);
-    transaction->feeBasis = feeBasis;
-    transaction->blockHeight = 0;
-    transaction->counter = counter;
-    return transaction;
-}
 
 extern BRTezosTransaction
 tezosTransactionClone (BRTezosTransaction transaction) {
-    assert(transaction);
-    BRTezosTransaction newTransaction = calloc (1, sizeof(struct BRTezosTransactionRecord));
-    newTransaction->source = tezosTransactionGetSource(transaction);
-    newTransaction->operation = tezosTransactionGetOperationData (transaction);
-    newTransaction->feeBasis = transaction->feeBasis;
-    newTransaction->hash = transaction->hash;
-    newTransaction->blockHeight = transaction->blockHeight;
-    newTransaction->signedBytes = wkDataClone (transaction->signedBytes);
-    return newTransaction;
+    BRTezosTransaction result  = tezosTransactionCreateInternal (transaction->hash,
+                                                                 tezosOperationClone (transaction->primaryOperation),
+                                                                 tezosOperationClone (transaction->revealOperation));
+
+    result->protocol = transaction->protocol;
+    result->branch   = transaction->branch;
+
+    result->signedBytes = wkDataClone (transaction->signedBytes);
+
+    return result;
 }
 
 extern void tezosTransactionFree (BRTezosTransaction transaction)
 {
-    assert (transaction);
-    tezosAddressFree (transaction->source);
-    wkDataFree(transaction->signedBytes);
-    switch (transaction->operation.kind) {
-        case TEZOS_OP_REVEAL:
-            break;
-            
-        case TEZOS_OP_TRANSACTION:
-            tezosAddressFree(transaction->operation.u.transaction.target);
-            break;
-            
-        case TEZOS_OP_DELEGATION:
-            tezosAddressFree(transaction->operation.u.delegation.target);
-            break;
-        default:
-            break;
-    }
+    tezosOperationFree (transaction->primaryOperation);
+    tezosOperationFree (transaction->revealOperation);
+
+    transaction->protocol = NULL;
+    transaction->branch   = NULL;
+
+    wkDataFree (transaction->signedBytes);
+
+    memset (transaction, 0, sizeof (struct BRTezosTransactionRecord));
     free (transaction);
 }
 
+extern OwnershipKept BRTezosOperation
+tezosTransactionGetPrimaryOperation (BRTezosTransaction transaction) {
+    return transaction->primaryOperation;
+}
+
+extern OwnershipKept BRTezosOperation
+tezosTransactionGetRevealOperation (BRTezosTransaction transaction) {
+    return transaction->revealOperation;
+}
+
+extern bool
+tezosTransactionHasReveal (BRTezosTransaction transaction) {
+    return NULL != transaction->revealOperation;
+}
+
 static void
-createTransactionHash(BRTezosTransaction tx) {
+tezosTransactionAssignHash(BRTezosTransaction tx) {
     assert(tx->signedBytes.size);
     
     uint8_t hash[32];
@@ -149,107 +126,56 @@ createTransactionHash(BRTezosTransaction tx) {
 
 static WKData
 tezosTransactionSerialize (BRTezosTransaction transaction,
-                           BRTezosAccount account,
-                           BRTezosHash lastBlockHash,
-                           bool needsReveal) {
-    BRTezosTransaction opList[2];
-    size_t opCount = 0;
-    
-    // add a reveal operation to the operation list if needed
-    if (needsReveal) {
-        BRKey publicKey = tezosAccountGetPublicKey(account);
+                           BRTezosHash lastBlockHash) {
+    BRTezosOperation operations[2] = {
+        transaction->revealOperation,           // must be first, if used
+        transaction->primaryOperation,
+    };
+    size_t operationsCount = (NULL != transaction->revealOperation ? 2 : 1);
+    size_t operationsIndex = (NULL != transaction->revealOperation ? 0 : 1);
 
-        // The 'reveal' operation takes the transaction's feeBasis.
-        BRTezosFeeBasis revealFeeBasis = transaction->feeBasis;
-
-        // If this is a submit, we need to modifiy the reveal operation's feeBasis.
-        if (FEE_BASIS_ESTIMATE == transaction->feeBasis.type) {
-            assert (0 != transaction->feeBasis.u.estimate.gasLimit);
-
-            // When a 'reveal' operation is needed, we are going to double the transaction's
-            // gasLimit *and* calculated fee.  This is 'belt and suspenders' - ensuring the
-            // operation succeeds.
-            transaction->feeBasis.u.estimate.gasLimit      *= 2;
-            transaction->feeBasis.u.estimate.calculatedFee *= 2;
-
-            // The 'reveal' operation itself will duplicate the transaction's feeBasis except the
-            // fee will be set to zero.  The 'fee split' should be 0/100 for reveal/transaction.
-            revealFeeBasis.u.estimate.gasLimit     *= 2;
-            revealFeeBasis.u.estimate.calculatedFee = 0;
-        }
-
-        BRTezosTransaction reveal = tezosTransactionCreateReveal(transaction->source,
-                                                                 publicKey.pubKey,
-                                                                 revealFeeBasis,
-                                                                 transaction->counter);
-        transaction->counter += 1;
-        
-        opList[opCount++] = reveal;
-    }
-    
-    opList[opCount++] = transaction;
-
-    return tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    return tezosOperationSerializeList (&operations[operationsIndex], operationsCount, lastBlockHash);
 }
 
-extern size_t
+extern void
 tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
                                            BRTezosAccount account,
-                                           BRTezosHash lastBlockHash,
-                                           bool needsReveal) {
+                                           BRTezosHash lastBlockHash) {
     assert (transaction);
     assert (account);
     
     wkDataFree(transaction->signedBytes);
     
-    WKData unsignedBytes = tezosTransactionSerialize(transaction, account, lastBlockHash, needsReveal);
-    WKData signature = wkDataNew(TEZOS_SIGNATURE_BYTES); // empty signature
-    
-    WKData serializedBytes = wkDataNew(unsignedBytes.size + signature.size);
-    memcpy(serializedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
-    memcpy(&serializedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
+    WKData unsignedBytes = tezosTransactionSerialize(transaction, lastBlockHash);
+    WKData signature     = wkDataNew(TEZOS_SIGNATURE_BYTES); // empty signature
+
+    transaction->signedBytes = wkDataConcatTwo (unsignedBytes, signature);
 
     wkDataFree (unsignedBytes);
     wkDataFree (signature);
-    
-    transaction->signedBytes = serializedBytes;
-    assert (FEE_BASIS_INITIAL == transaction->feeBasis.type);
-    transaction->feeBasis.u.initial.sizeInKBytes = (double) serializedBytes.size / 1000;
-    
-    if (transaction->signedBytes.size > 0) {
-        createTransactionHash(transaction);
-    }
-    
-    return transaction->signedBytes.size;
+
+    //    tezosFeeBasisShow (transaction->feeBasis, "XTZ SerializeForFeeEstimation");
 }
 
-extern size_t
+extern void
 tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
                                   BRTezosAccount account,
                                   UInt512 seed,
-                                  BRTezosHash lastBlockHash,
-                                  bool needsReveal) {
+                                  BRTezosHash lastBlockHash) {
     assert (transaction);
     assert (account);
     
     wkDataFree(transaction->signedBytes);
     
-    WKData unsignedBytes = tezosTransactionSerialize (transaction, account, lastBlockHash, needsReveal);
-    
-    WKData signature = tezosAccountSignData(account, unsignedBytes, seed);
+    WKData unsignedBytes = tezosTransactionSerialize (transaction, lastBlockHash);
+    WKData signature     = tezosAccountSignData(account, unsignedBytes, seed);
     assert(TEZOS_SIGNATURE_BYTES == signature.size);
-    
-    WKData signedBytes = wkDataNew(unsignedBytes.size + signature.size);
-    memcpy(signedBytes.bytes, unsignedBytes.bytes, unsignedBytes.size);
-    memcpy(&signedBytes.bytes[unsignedBytes.size], signature.bytes, signature.size);
-    
-    transaction->signedBytes = signedBytes;
+
+    transaction->signedBytes = wkDataConcatTwo (unsignedBytes, signature);
 
     if (transaction->signedBytes.size > 0) {
-        createTransactionHash(transaction);
+        tezosTransactionAssignHash(transaction);
     }
-    
-    return transaction->signedBytes.size;
 }
 
 extern OwnershipKept uint8_t *
@@ -258,97 +184,37 @@ tezosTransactionGetSignedBytes (BRTezosTransaction transaction, size_t *size) {
     return transaction->signedBytes.bytes;
 }
 
+extern size_t
+tezosTransactionGetSignedBytesCount (BRTezosTransaction transaction) {
+    return transaction->signedBytes.size;
+}
+
 extern BRTezosHash tezosTransactionGetHash(BRTezosTransaction transaction){
     assert(transaction);
     return transaction->hash;
 }
 
-extern int64_t tezosTransactionGetCounter(BRTezosTransaction transaction) {
-    assert(transaction);
-    return transaction->counter;
-}
-
-extern BRTezosFeeBasis tezosTransactionGetFeeBasis(BRTezosTransaction transaction) {
-    assert(transaction);
-    return transaction->feeBasis;
-}
-
-extern void tezosTransactionSetFeeBasis(BRTezosTransaction transaction,
-                                        BRTezosFeeBasis feeBasis) {
-    assert(transaction);
-    transaction->feeBasis = feeBasis;
-}
-
-extern BRTezosUnitMutez tezosTransactionGetFee(BRTezosTransaction transaction){
-    assert(transaction);
-    return tezosFeeBasisGetFee (&transaction->feeBasis);
-}
-
-extern BRTezosUnitMutez tezosTransactionGetAmount(BRTezosTransaction transaction){
-    assert(transaction);
-    assert(TEZOS_OP_TRANSACTION == transaction->operation.kind);
-    return transaction->operation.u.transaction.amount;
-}
-
-extern BRTezosAddress tezosTransactionGetSource(BRTezosTransaction transaction){
-    assert(transaction);
-    return tezosAddressClone (transaction->source);
-}
-
-extern BRTezosAddress tezosTransactionGetTarget(BRTezosTransaction transaction){
-    assert(transaction);
-    assert(TEZOS_OP_TRANSACTION == transaction->operation.kind);
-    return tezosAddressClone (transaction->operation.u.transaction.target);
-}
-
-extern BRTezosOperationKind
-tezosTransactionGetOperationKind(BRTezosTransaction transaction) {
-    assert(transaction);
-    return transaction->operation.kind;
-}
-
-extern BRTezosOperationData tezosTransactionGetOperationData(BRTezosTransaction transaction){
-    assert(transaction);
-    BRTezosOperationData clone;
-    clone.kind = transaction->operation.kind;
-    switch (transaction->operation.kind) {
-        case TEZOS_OP_TRANSACTION:
-            clone.u.transaction.amount = transaction->operation.u.transaction.amount;
-            clone.u.transaction.target = tezosAddressClone (transaction->operation.u.transaction.target);
-            break;
-        case TEZOS_OP_REVEAL:
-            memcpy(clone.u.reveal.publicKey, transaction->operation.u.reveal.publicKey, TEZOS_PUBLIC_KEY_SIZE);
-            break;
-        case TEZOS_OP_DELEGATION:
-            clone.u.delegation.target = tezosAddressClone (transaction->operation.u.delegation.target);
-            break;
-        default:
-            break;
-    }
-    return clone;
-}
-
-extern void
-tezosTransactionFreeOperationData (BRTezosOperationData opData) {
-    switch (opData.kind) {
-        case TEZOS_OP_TRANSACTION:
-            tezosAddressFree (opData.u.transaction.target);
-            break;
-        case TEZOS_OP_REVEAL:
-            break;
-        case TEZOS_OP_DELEGATION:
-            tezosAddressFree (opData.u.delegation.target);
-            break;
-        default:
-            break;
+extern bool
+tezosTransactionRequiresReveal (BRTezosTransaction transaction) {
+    switch (transaction->primaryOperation->kind) {
+        case TEZOS_OP_ENDORESEMENT: return false;  // unsupported
+        case TEZOS_OP_REVEAL:       return false;
+        case TEZOS_OP_TRANSACTION:  return true;
+        case TEZOS_OP_DELEGATION:   return true;
     }
 }
 
 extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2){
     assert(t1);
     assert(t2);
+
+    return tezosOperationEqual (t1->primaryOperation,
+                                t2->primaryOperation);
+#if 0
     // Equal means the same transaction id, source, target
     bool result = false;
+
+
     // Transaction IDs are not available - use the hash
     BRTezosHash hash1 = tezosTransactionGetHash(t1);
     BRTezosHash hash2 = tezosTransactionGetHash(t2);
@@ -370,5 +236,6 @@ extern bool tezosTransactionEqual (BRTezosTransaction t1, BRTezosTransaction t2)
         tezosAddressFree (source2);
     }
     return result;
+#endif
 }
 
