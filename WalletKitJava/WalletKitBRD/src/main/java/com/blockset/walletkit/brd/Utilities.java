@@ -181,7 +181,10 @@ final class Utilities {
                             included.transactionIndex,
                             included.blockTimestamp,
                             Optional.fromNullable(included.feeBasis)
-                                    .transform(TransferFeeBasis::create)
+                                    .transform((core) -> {
+                                        core.take();
+                                        return TransferFeeBasis.create(core);
+                                    })
                                     .transform(TransferFeeBasis::getFee),
                             included.success,
                             included.error));

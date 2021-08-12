@@ -88,6 +88,7 @@ public final class WKNativeLibraryDirect {
     public static native double wkFeeBasisGetCostFactor (Pointer feeBasis);
     public static native Pointer wkFeeBasisGetFee (Pointer feeBasis);
     public static native int wkFeeBasisIsEqual(Pointer f1, Pointer f2);
+    public static native Pointer wkFeeBasisTake(Pointer obj);
     public static native void wkFeeBasisGive(Pointer obj);
 
     // crypto/BRCryptoHash.h

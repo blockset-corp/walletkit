@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 
 import com.blockset.walletkit.Key;
+import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
 import com.blockset.walletkit.nativex.WKClientCallbackState;
@@ -384,7 +385,7 @@ final class System implements com.blockset.walletkit.System {
                                             WKWalletManager   coreWalletManager   ) {
             return extract(context).transform((e)-> {
                 e.manager = WalletManager.create(coreWalletManager,
-                                                 false,
+                                                 true,
                                                  e.system,
                                                  e.system.callbackCoordinator);
 
@@ -738,18 +739,14 @@ final class System implements com.blockset.walletkit.System {
     public List<? extends Network> getNetworks() {
         List<Network> networks = new ArrayList<>();
         for (WKNetwork coreNetwork: core.getNetworks())
-            networks.add (Network.create(coreNetwork));
+            networks.add (Network.create(coreNetwork, false));
         return networks;
     }
 
     private Optional<Network> getNetwork(WKNetwork coreNetwork) {
         return (core.hasNetwork(coreNetwork)
-                ? Optional.of (createNetwork(coreNetwork, true))
+                ? Optional.of (Network.create(coreNetwork, true))
                 : Optional.absent());
-    }
-
-    private Network createNetwork (WKNetwork coreNetwork, boolean needTake) {
-        return Network.create(needTake ? coreNetwork.take() : coreNetwork);
     }
 
     // WalletManager management
@@ -823,18 +820,18 @@ final class System implements com.blockset.walletkit.System {
             /* OwnershipGiven */ WKSystemEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
-            SystemEvent sysEvent = null;
-
-            Optional<Extraction> optExtraction = Extraction.extract(context);
-            if (!optExtraction.isPresent()) {
-                Log.log(Level.SEVERE,
-                        String.format("%s: missed within extraction", event.type().toString()));
-                coreSystem.give();
-                return;
-            }
-            Extraction extract = optExtraction.get();
-
             try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                         String.format("%s: missed within extraction", event.type().toString()));
+                    return;
+                }
+
+                System system = optExtraction.get().system;
+
+                SystemEvent sysEvent = null;
 
                 switch (event.type()) {
 
@@ -861,24 +858,24 @@ final class System implements com.blockset.walletkit.System {
                     case NETWORK_ADDED:
 
                         Log.log(Level.FINE, "System Network Added");
-                        Network net = extract.system.networkBy(event.u.network);
-                        sysEvent = new SystemNetworkAddedEvent(net);
+                        Network network = Network.create(event.u.network, true);
+                        sysEvent = new SystemNetworkAddedEvent(network);
                         break;
 
                     case MANAGER_ADDED:
 
                         Log.log(Level.FINE, "System WalletManager Added");
                         WalletManager manager = WalletManager.create(event.u.walletManager,
-                                                                     false,
-                                                                     extract.system,
-                                                                     extract.system.callbackCoordinator);
-                        sysEvent = new SystemManagerAddedEvent(extract.manager);
+                                                                     true,
+                                                                     system,
+                                                                     system.callbackCoordinator);
+                        sysEvent = new SystemManagerAddedEvent(manager);
                         break;
 
                     case DISCOVERED_NETWORKS:
 
                         Log.log(Level.FINE, "System Discovered Networks");
-                        sysEvent = new SystemDiscoveredNetworksEvent(extract.system.getNetworks());
+                        sysEvent = new SystemDiscoveredNetworksEvent(system.getNetworks());
                         break;
 
                     default:
@@ -887,11 +884,22 @@ final class System implements com.blockset.walletkit.System {
                                               event.type().toString()));
                         break;
                 }
-            } finally {
-                if (sysEvent != null)
-                    extract.system.announceSystemEvent(sysEvent);
 
+                if (sysEvent != null)
+                    system.announceSystemEvent(sysEvent);
+
+            } finally {
                 coreSystem.give();
+                switch (event.type()) {
+                    case MANAGER_ADDED:
+                        if (null != event.u.walletManager) event.u.walletManager.give();
+                        break;
+                    case NETWORK_ADDED:
+                        if (null != event.u.network) event.u.network.give();
+                        break;
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -899,6 +907,10 @@ final class System implements com.blockset.walletkit.System {
     private static void networkEventCallback(Cookie context,
             /* OwnershipGiven */ WKNetwork coreNetwork,
             /* OwnershipGiven */ WKNetworkEvent event) {
+        EXECUTOR_LISTENER.execute(() -> {
+            coreNetwork.give();
+            // Nothing to give in `event`
+        });
     }
 
     private static void walletManagerEventCallback(Cookie context,
@@ -906,21 +918,22 @@ final class System implements com.blockset.walletkit.System {
             /* OwnershipGiven */ WKWalletManagerEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
-            WalletManagerEvent  mgrEvent = null;
-            Wallet              wallet;
-
-            Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                    coreWalletManager);
-            if (!optExtraction.isPresent()) {
-                Log.log(Level.SEVERE,
-                        String.format("%s: missed within extraction",
-                                      event.type().toString()));
-                coreWalletManager.give();
-                return;
-            }
-            Extraction extract = optExtraction.get();
-
             try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    event.type().toString()));
+                    return;
+                }
+
+                System        system  = optExtraction.get().system;
+                WalletManager manager = optExtraction.get().manager;
+
+                Wallet wallet = null;
+
+                WalletManagerEvent mgrEvent = null;
 
                 switch (event.type()) {
 
@@ -947,35 +960,34 @@ final class System implements com.blockset.walletkit.System {
                     case WALLET_ADDED:
 
                         Log.log(Level.FINE, "WalletManagerWalletAdded");
-                        wallet = extract.manager.walletByCoreOrCreate(event.u.wallet, true);
-                        if (wallet != null) {
-                            mgrEvent = new WalletManagerWalletAddedEvent(extract.wallet);
-                        } else {
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
                             Log.log(Level.SEVERE, "WalletManagerWalletAdded: Extraction missed wallet");
+                            return;
                         }
-                        //extract.updateAndGetWallet(event.u.wallet);
+                        mgrEvent = new WalletManagerWalletAddedEvent(wallet);
                         break;
 
                     case WALLET_CHANGED:
 
                         Log.log(Level.FINE, "WalletManagerWalletChanged");
-                        wallet = extract.manager.walletByCoreOrCreate(event.u.wallet, true);
-                        if (wallet != null) {
-                            mgrEvent = new WalletManagerWalletChangedEvent(extract.wallet);
-                        } else {
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
                             Log.log(Level.SEVERE, "WalletManagerWalletChanged: Extraction missed wallet");
+                            return;
                         }
+                        mgrEvent = new WalletManagerWalletChangedEvent(wallet);
                         break;
 
                     case WALLET_DELETED:
 
                         Log.log(Level.FINE, "WalletManagerWalletDeleted");
-                        wallet = extract.manager.walletByCoreOrCreate(event.u.wallet, true);
-                        if (wallet != null) {
-                            mgrEvent = new WalletManagerWalletDeletedEvent(extract.wallet);
-                        } else {
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
                             Log.log(Level.SEVERE, "WalletManagerWalletDeleted: Extraction missed wallet");
+                            return;
                         }
+                        mgrEvent = new WalletManagerWalletDeletedEvent(wallet);
                         break;
 
                     case SYNC_STARTED:
@@ -989,7 +1001,7 @@ final class System implements com.blockset.walletkit.System {
                         float percent = event.u.syncContinues.percentComplete;
                         Date timestamp = 0 == event.u.syncContinues.timestamp ? null : new Date(TimeUnit.SECONDS.toMillis(event.u.syncContinues.timestamp));
                         Log.log(Level.FINE, String.format("WalletManagerSyncProgress (%s)", percent));
-                        mgrEvent =  new WalletManagerSyncProgressEvent(percent, timestamp);
+                        mgrEvent = new WalletManagerSyncProgressEvent(percent, timestamp);
                         break;
 
                     case SYNC_STOPPED:
@@ -1017,16 +1029,25 @@ final class System implements com.blockset.walletkit.System {
                     default:
                         Log.log(Level.SEVERE,
                                 String.format("Untreated Wallet Manager Event %s",
-                                              event.type().toString()));
+                                        event.type().toString()));
                         break;
-
                 }
-            } finally {
 
                 if (mgrEvent != null)
-                    extract.system.announceWalletManagerEvent(extract.manager, mgrEvent);
+                    system.announceWalletManagerEvent(manager, mgrEvent);
 
+
+            } finally {
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case WALLET_ADDED:
+                    case WALLET_CHANGED:
+                    case WALLET_DELETED:
+                        if (null != event.u.wallet) event.u.wallet.give();
+                        break;
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -1041,25 +1062,24 @@ final class System implements com.blockset.walletkit.System {
             /* OwnershipGiven */ WKWalletEvent coreEvent) {
         EXECUTOR_LISTENER.execute(() -> {
 
-            WalletEvent         walletEvent = null;
-            TransferFeeBasis    feeBasis = null;
-            Transfer            transfer;
-
-            Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                    coreWalletManager,
-                                                                    coreWallet);
-            if (!optExtraction.isPresent()) {
-                Log.log(Level.SEVERE,
-                        String.format("%s: missed within extraction",
-                                      coreEvent.toString()));
-                coreEvent.give();
-                coreWallet.give();
-                coreWalletManager.give();
-                return;
-            }
-            Extraction extract = optExtraction.get();
-
             try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager, coreWallet);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    coreEvent.type().toString()));
+                    return;
+                }
+
+                System        system  = optExtraction.get().system;
+                WalletManager manager = optExtraction.get().manager;
+                Wallet        wallet  = optExtraction.get().wallet;
+
+                Transfer         transfer = null;
+                TransferFeeBasis feeBasis = null;
+
+                WalletEvent walletEvent = null;
 
                 switch (coreEvent.type()) {
                     case CREATED:
@@ -1087,58 +1107,45 @@ final class System implements com.blockset.walletkit.System {
                     case TRANSFER_ADDED:
 
                         Log.log(Level.FINE, "WalletTransferAdded");
-                        if (extract.manager != null && extract.wallet != null) {
-                            transfer = extract.wallet.transferByCoreOrCreate(coreEvent.transfer(),
-                                                                             true);
-                            if (transfer != null) {
-                                walletEvent = new WalletTransferAddedEvent(transfer);
-                            } else {
-                                Log.log(Level.SEVERE, "WalletTransferAdded: Extraction missed transfer");
-                            }
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferAdded: Extraction missed transfer");
+                            return;
                         }
-
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferAddedEvent(transfer);
                         break;
 
                     case TRANSFER_CHANGED:
 
                         Log.log(Level.FINE, "WalletTransferChanged");
-                        if (extract.manager != null && extract.wallet != null) {
-                            transfer = extract.wallet.transferByCoreOrCreate(coreEvent.transfer(),
-                                                                             true);
-                            if (transfer != null) {
-                                walletEvent = new WalletTransferChangedEvent(transfer);
-                            } else {
-                                Log.log(Level.SEVERE, "WalletTransferChanged: Extraction missed transfer");
-                            }
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferChanged: Extraction missed transfer");
+                            return;
                         }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferChangedEvent(transfer);
                         break;
 
                     case TRANSFER_SUBMITTED:
 
                         Log.log(Level.FINE, "WalletTransferSubmitted");
-                        if (extract.manager != null && extract.wallet != null) {
-                            transfer = extract.wallet.transferByCoreOrCreate(coreEvent.transfer(),
-                                    true);
-                            if (transfer != null) {
-                                walletEvent = new WalletTransferSubmittedEvent(transfer);
-                            } else {
-                                Log.log(Level.SEVERE, "WalletTransferSubmitted: Extraction missed transfer");
-                            }
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferSubmitted: Extraction missed transfer");
+                            return;
                         }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferSubmittedEvent(transfer);
                         break;
 
                     case TRANSFER_DELETED:
 
                         Log.log(Level.FINE, "WalletTransferDeleted");
-                        if (extract.manager != null && extract.wallet != null) {
-                            transfer = extract.wallet.transferByCoreOrCreate(coreEvent.transfer(),
-                                    true);
-                            if (transfer != null) {
-                                walletEvent = new WalletTransferDeletedEvent(transfer);
-                            } else {
-                                Log.log(Level.SEVERE, "WalletTransferSubmitted: Extraction missed transfer");
-                            }
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferDeleted: Extraction missed transfer");
+                            return;
                         }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferDeletedEvent(transfer);
                         break;
 
                     case BALANCE_UPDATED:
@@ -1150,35 +1157,40 @@ final class System implements com.blockset.walletkit.System {
 
                     case FEE_BASIS_UPDATED:
 
-                        feeBasis = TransferFeeBasis.create(coreEvent.feeBasisUpdate());
+                        WKFeeBasis coreFeeBasis = coreEvent.feeBasisUpdate();
+                        coreFeeBasis.take();
+
+                        feeBasis = TransferFeeBasis.create(coreFeeBasis);
                         Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
                         walletEvent = new WalletFeeBasisUpdatedEvent(feeBasis);
                         break;
 
                     case FEE_BASIS_ESTIMATED:
 
+                        // estimate.basis has ownership taken here.
                         WKWalletEvent.FeeBasisEstimate estimate = coreEvent.feeBasisEstimate();
                         Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)",
                                                           estimate.status));
 
-                        // estimate.basis needs to be given
                         if (estimate.status == WKStatus.SUCCESS) {
                             feeBasis = TransferFeeBasis.create(estimate.basis);
                         } else {
                             estimate.basis.give();
                         }
+
                         Cookie opCookie = new Cookie(estimate.cookie);
                         if (estimate.status == WKStatus.SUCCESS) {
-                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s",
-                                                              feeBasis));
-                            extract.system.callbackCoordinator.completeFeeBasisEstimateHandlerWithSuccess(opCookie, feeBasis);
+                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", feeBasis));
+                            system.callbackCoordinator.completeFeeBasisEstimateHandlerWithSuccess(opCookie, feeBasis);
 
                         } else {
                             FeeEstimationError error = Utilities.feeEstimationErrorFromStatus(estimate.status);
-                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s",
-                                                              error));
-                            extract.system.callbackCoordinator.completeFeeBasisEstimateHandlerWithError(opCookie, error);
+
+                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", error));
+                            system.callbackCoordinator.completeFeeBasisEstimateHandlerWithError(opCookie, error);
                         }
+
+                        // walletEvent is `null`, by design.
                         break;
 
                     default:
@@ -1186,14 +1198,12 @@ final class System implements com.blockset.walletkit.System {
                                 String.format("Untreated Wallet Event %s",
                                               coreEvent.toString()));
                         break;
-
                 }
-            } finally {
 
                 if (walletEvent != null)
-                    extract.system.announceWalletEvent(extract.manager,
-                                                       extract.wallet,
-                                                       walletEvent);
+                    system.announceWalletEvent(manager, wallet, walletEvent);
+
+            } finally {
                 coreEvent.give();
                 coreWallet.give();
                 coreWalletManager.give();
@@ -1212,26 +1222,24 @@ final class System implements com.blockset.walletkit.System {
             /* OwnershipGiven */ WKTransferEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
-            /*sp*/ TranferEvent transferEvent = null;
-
-            Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                    coreWalletManager,
-                                                                    coreWallet,
-                                                                    coreTransfer);
-            if (!optExtraction.isPresent()) {
-                Log.log(Level.SEVERE,
-                        String.format("%s: missed within extraction",
-                                      event.type().toString()));
-                coreTransfer.give();
-                coreWallet.give();
-                coreWalletManager.give();
-                return;
-            }
-            Extraction extract = optExtraction.get();
-
             try {
 
-                switch (event.type()) {
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager, coreWallet, coreTransfer);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    event.type().toString()));
+                    return;
+                }
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+                Wallet        wallet   = optExtraction.get().wallet;
+                Transfer      transfer = optExtraction.get().transfer;
+
+                TransferEvent transferEvent = null;
+
+                 switch (event.type()) {
                     case CREATED:
 
                         Log.log(Level.FINE, "TransferCreated");
@@ -1244,8 +1252,6 @@ final class System implements com.blockset.walletkit.System {
                         TransferState newState = Utilities.transferStateFromCrypto(event.u.state.newState);
                         Log.log(Level.FINE, String.format("TransferChanged (%s -> %s)", oldState, newState));
                         transferEvent = new TransferChangedEvent(oldState, newState);
-                        event.u.state.oldState.give();
-                        event.u.state.newState.give();
                         break;
 
                     case DELETED:
@@ -1261,17 +1267,21 @@ final class System implements com.blockset.walletkit.System {
                         break;
 
                 }
+
+                system.announceTransferEvent(manager, wallet, transfer, transferEvent);
+
             } finally {
-
-                if (transferEvent != null)
-                    extract.system.announceTransferEvent(extract.manager,
-                                                         extract.wallet,
-                                                         extract.transfer,
-                                                         transferEvent);
-
                 coreTransfer.give();
                 coreWallet.give();
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case CHANGED:
+                        event.u.state.oldState.give();
+                        event.u.state.newState.give();;
+                        break;
+                    default:
+                        break;
+                }
             }
         });
     }

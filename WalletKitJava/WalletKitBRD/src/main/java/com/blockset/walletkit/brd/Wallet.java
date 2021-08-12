@@ -89,7 +89,7 @@ final class Wallet implements com.blockset.walletkit.Wallet {
     /* package */
     Transfer transferBy(WKTransfer coreTransfer) {
         if (!core.containsTransfer(coreTransfer)) {
-            return Transfer.takeAndCreate(coreTransfer, this);
+            return Transfer.create(coreTransfer, this, true);
         }
         return null;
     }
@@ -99,7 +99,7 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                                     boolean     create  ) {
         Transfer transfer = transferBy(coreTransfer);
         if (transfer == null && create) {
-            transfer = Transfer.takeAndCreate(coreTransfer, this);
+            transfer = Transfer.create(coreTransfer, this, true);
         }
         return transfer;
     }
@@ -119,7 +119,8 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                 coreAttributes.add (TransferAttribute.from(attribute).getCoreBRCryptoTransferAttribute());
             }
 
-        return core.createTransfer(coreAddress, coreAmount, coreFeeBasis, coreAttributes).transform(t -> Transfer.create(t, this));
+        return core.createTransfer(coreAddress, coreAmount, coreFeeBasis, coreAttributes)
+                .transform(t -> Transfer.create(t, this, false));
     }
 
     /* package */
@@ -127,7 +128,8 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                                       com.blockset.walletkit.TransferFeeBasis estimatedFeeBasis) {
         WKWalletSweeper coreSweeper = sweeper.getCoreBRWalletSweeper();
         WKFeeBasis coreFeeBasis = TransferFeeBasis.from(estimatedFeeBasis).getCoreBRFeeBasis();
-        return core.createTransferForWalletSweep(coreSweeper, getWalletManager().getCoreBRCryptoWalletManager(), coreFeeBasis).transform(t -> Transfer.create(t, this));
+        return core.createTransferForWalletSweep(coreSweeper, getWalletManager().getCoreBRCryptoWalletManager(), coreFeeBasis)
+                .transform(t -> Transfer.create(t, this, false));
     }
 
     /* package */
@@ -135,7 +137,8 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                                       com.blockset.walletkit.TransferFeeBasis estimatedFeeBasis) {
         WKPaymentProtocolRequest coreRequest = request.getBRCryptoPaymentProtocolRequest();
         WKFeeBasis coreFeeBasis = TransferFeeBasis.from(estimatedFeeBasis).getCoreBRFeeBasis();
-        return core.createTransferForPaymentProtocolRequest(coreRequest, coreFeeBasis).transform(t -> Transfer.create(t, this));
+        return core.createTransferForPaymentProtocolRequest(coreRequest, coreFeeBasis)
+                .transform(t -> Transfer.create(t, this, false));
     }
 
     @Override
@@ -358,7 +361,7 @@ final class Wallet implements com.blockset.walletkit.Wallet {
         List<Transfer> transfers = new ArrayList<>();
 
         for (WKTransfer transfer: core.getTransfers()) {
-            transfers.add(Transfer.create(transfer, this));
+            transfers.add(Transfer.create(transfer, this, false));
         }
 
         return transfers;
@@ -493,13 +496,13 @@ final class Wallet implements com.blockset.walletkit.Wallet {
     /* package */
     Optional<Transfer> getTransfer(WKTransfer transfer) {
         return core.containsTransfer(transfer) ?
-                Optional.of(Transfer.takeAndCreate(transfer, this)) :
+                Optional.of(Transfer.create(transfer, this, true)) :
                 Optional.absent();
     }
 
     /* package */
     Transfer createTransfer(WKTransfer transfer) {
-        return Transfer.takeAndCreate(transfer, this);
+        return Transfer.create(transfer, this, true);
     }
 
     /* package */
