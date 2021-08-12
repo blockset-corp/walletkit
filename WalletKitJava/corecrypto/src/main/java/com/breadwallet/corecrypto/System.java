@@ -717,6 +717,22 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } finally {
                 coreSystem.give();
+                switch (event.type()) {
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_ADDED:
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_CHANGED:
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_DELETED:
+                        event.u.network.give();
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_ADDED:
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED:
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_DELETED:
+                        event.u.walletManager.give();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -766,14 +782,12 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleSystemNetworkAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        BRCryptoNetwork coreNetwork = event.u.network;
-
         Log.log(Level.FINE, "System Network Added");
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
-            Network network = system.createNetwork(coreNetwork, true);
+            Network network = system.createNetwork(event.u.network, true);
 
             system.announceSystemEvent(new SystemNetworkAddedEvent(network));
         } else {
@@ -782,14 +796,12 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleSystemManagerAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        BRCryptoWalletManager coreManager = event.u.walletManager;
-
         Log.log(Level.FINE, "System WalletManager Added");
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
-            WalletManager manager = system.createWalletManager(coreManager, true);
+            WalletManager manager = system.createWalletManager(event.u.walletManager, true);
 
             system.announceSystemEvent(new SystemManagerAddedEvent(manager));
         } else {
@@ -889,6 +901,19 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } finally {
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
+                        break;
+
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
+                        event.u.wallet.give();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -940,66 +965,48 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletManagerWalletAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletAdded");
+        Log.log(Level.FINE, "WalletManagerWalletAdded");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system  = optSystem.get();
-                WalletManager manager = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet  = manager.createWallet(coreWallet);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                system.announceWalletManagerEvent(manager, new WalletManagerWalletAddedEvent(wallet));
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletAddedEvent(wallet));
 
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed system");
         }
     }
 
     private static void handleWalletManagerWalletChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletChanged");
+        Log.log(Level.FINE, "WalletManagerWalletChanged");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system  = optSystem.get();
-                WalletManager manager = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet  = manager.createWallet(coreWallet);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                system.announceWalletManagerEvent(manager, new WalletManagerWalletChangedEvent(wallet));
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletChangedEvent(wallet));
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed system");
         }
     }
 
     private static void handleWalletManagerWalletDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletDeleted");
+        Log.log(Level.FINE, "WalletManagerWalletDeleted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system  = optSystem.get();
-                WalletManager manager = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet  = manager.createWallet(coreWallet);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                system.announceWalletManagerEvent(manager, new WalletManagerWalletDeletedEvent(wallet));
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletDeletedEvent(wallet));
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed system");
         }
     }
 
@@ -1193,100 +1200,80 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleWalletTransferAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferAdded");
+        Log.log(Level.FINE, "WalletTransferAdded");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system   = optSystem.get();
-                WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet   = manager.createWallet(coreWallet);
-                Transfer      transfer = wallet.createTransfer (coreTransfer);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
 
-                system.announceWalletEvent(manager, wallet, new WalletTransferAddedEvent(transfer));
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferAdded: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferAddedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferAdded: missed system");
         }
     }
 
     private static void handleWalletTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferChanged");
+        Log.log(Level.FINE, "WalletTransferChanged");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system   = optSystem.get();
-                WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet   = manager.createWallet(coreWallet);
-                Transfer      transfer = wallet.createTransfer (coreTransfer);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
-                system.announceWalletEvent(manager, wallet, new WalletTransferChangedEvent(transfer));
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferChanged: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferChangedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferChanged: missed system");
         }
     }
 
     private static void handleWalletTransferSubmitted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transferSubmit();
-        try {
-            Log.log(Level.FINE, "WalletTransferSubmitted");
+        Log.log(Level.FINE, "WalletTransferSubmitted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system   = optSystem.get();
-                WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet   = manager.createWallet(coreWallet);
-                Transfer      transfer = wallet.createTransfer (coreTransfer);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transferSubmit());
 
-                system.announceWalletEvent(manager, wallet, new WalletTransferSubmittedEvent(transfer));
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferSubmitted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferSubmittedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferSubmitted: missed system");
         }
     }
 
     private static void handleWalletTransferDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferDeleted");
+        Log.log(Level.FINE, "WalletTransferDeleted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System        system   = optSystem.get();
-                WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-                Wallet        wallet   = manager.createWallet(coreWallet);
-                Transfer      transfer = wallet.createTransfer (coreTransfer);
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
-                system.announceWalletEvent(manager, wallet, new WalletTransferDeletedEvent(transfer));
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferDeleted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferDeletedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferDeleted: missed system");
         }
     }
 
     private static void handleWalletBalanceUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletBalanceUpdated");
 
-        Amount amount = Amount.create(event.balance());
+        Amount amount = Amount.create(event.balance().take());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
-            WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-            Wallet        wallet   = manager.createWallet(coreWallet);
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
 
             Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
             system.announceWalletEvent(manager, wallet, new WalletBalanceUpdatedEvent(amount));
@@ -1298,13 +1285,13 @@ final class System implements com.breadwallet.crypto.System {
     private static void handleWalletFeeBasisUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletFeeBasisUpdate");
 
-        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate());
+        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate().take());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
-            WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-            Wallet        wallet   = manager.createWallet(coreWallet);
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
 
             Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
             system.announceWalletEvent(manager, wallet, new WalletFeeBasisUpdatedEvent(feeBasis));
@@ -1325,7 +1312,7 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
+            System system = optSystem.get();
 
             Cookie opCookie = new Cookie(estimate.cookie);
 
@@ -1371,9 +1358,14 @@ final class System implements com.breadwallet.crypto.System {
                     }
                 }
             } finally {
-                if (CRYPTO_TRANSFER_EVENT_CHANGED == event.type()) {
-                    event.u.state.oldState.give();
-                    event.u.state.newState.give();
+                switch (event.type()) {
+                    case CRYPTO_TRANSFER_EVENT_CHANGED:
+                        event.u.state.oldState.give();
+                        event.u.state.newState.give();
+                        break;
+
+                    default:
+                        break;
                 }
                 coreTransfer.give();
                 coreWallet.give();
@@ -1387,19 +1379,19 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
-            WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-            Wallet        wallet   = manager.createWallet(coreWallet);
-            Transfer      transfer = wallet.createTransfer (coreTransfer);
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
-           system.announceTransferEvent(manager, wallet, transfer, new TransferCreatedEvent());
+            system.announceTransferEvent(manager, wallet, transfer, new TransferCreatedEvent());
         } else {
             Log.log(Level.SEVERE, "TransferCreated: missed system");
         }
     }
 
     private static void handleTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoTransfer coreTransfer,
-                                       BRCryptoTransferEvent event) {
+                                              BRCryptoTransferEvent event) {
         TransferState oldState = Utilities.transferStateFromCrypto(event.u.state.oldState);
         TransferState newState = Utilities.transferStateFromCrypto(event.u.state.newState);
 
@@ -1407,10 +1399,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
-            WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-            Wallet        wallet   = manager.createWallet(coreWallet);
-            Transfer      transfer = wallet.createTransfer (coreTransfer);
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
             system.announceTransferEvent(manager, wallet, transfer, new TransferChangedEvent(oldState, newState));
         } else {
@@ -1423,10 +1415,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System        system   = optSystem.get();
-            WalletManager manager  = system.createWalletManager(coreWalletManager, true);
-            Wallet        wallet   = manager.createWallet(coreWallet);
-            Transfer      transfer = wallet.createTransfer (coreTransfer);
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
             system.announceTransferEvent(manager, wallet, transfer, new TransferDeletedEvent());
         } else {
@@ -1438,13 +1430,12 @@ final class System implements com.breadwallet.crypto.System {
 
     private static void getBlockNumber(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState) {
         EXECUTOR_CLIENT.execute(() -> {
+            Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
             try {
-                Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
-
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
-                    System        system   = optSystem.get();
-                    WalletManager manager  = system.createWalletManager(coreWalletManager, true);
+                    System system = optSystem.get();
+                    WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
                     system.query.getBlockchain(manager.getNetwork().getUids(), new CompletionHandler<Blockchain, QueryError>() {
                         @Override
@@ -1474,8 +1465,6 @@ final class System implements com.breadwallet.crypto.System {
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
-            } finally {
-                coreWalletManager.give();
             }
         });
     }

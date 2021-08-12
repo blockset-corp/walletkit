@@ -8,6 +8,7 @@
 package com.breadwallet.corecrypto;
 
 import com.breadwallet.corenative.crypto.BRCryptoAddressScheme;
+import com.breadwallet.corenative.crypto.BRCryptoFeeBasis;
 import com.breadwallet.corenative.crypto.BRCryptoNetworkType;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolError;
 import com.breadwallet.corenative.crypto.BRCryptoPaymentProtocolType;
@@ -181,6 +182,7 @@ final class Utilities {
                             included.transactionIndex,
                             included.blockTimestamp,
                             Optional.fromNullable(included.feeBasis)
+                                    .transform(BRCryptoFeeBasis::take)
                                     .transform(TransferFeeBasis::create)
                                     .transform(TransferFeeBasis::getFee),
                             included.success,

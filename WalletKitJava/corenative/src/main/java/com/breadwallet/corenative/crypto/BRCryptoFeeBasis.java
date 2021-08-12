@@ -52,6 +52,12 @@ public class BRCryptoFeeBasis extends PointerType {
         return BRCryptoBoolean.CRYPTO_TRUE == CryptoLibraryDirect.cryptoFeeBasisIsEqual(thisPtr, other.getPointer());
     }
 
+    public BRCryptoFeeBasis take() {
+        return new BRCryptoFeeBasis (
+                CryptoLibraryDirect.cryptoFeeBasisTake(
+                        this.getPointer()
+                ));
+    }
     public void give() {
         Pointer thisPtr = this.getPointer();
 

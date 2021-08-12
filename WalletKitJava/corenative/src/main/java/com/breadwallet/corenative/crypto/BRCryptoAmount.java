@@ -141,6 +141,12 @@ public class BRCryptoAmount extends PointerType {
         }
     }
 
+    public BRCryptoAmount take() {
+        return new BRCryptoAmount(
+            CryptoLibraryDirect.cryptoAmountTake(
+                    this.getPointer()
+         ));
+    }
     public void give() {
         Pointer thisPtr = this.getPointer();
 
