@@ -819,8 +819,8 @@ final class System implements com.blockset.walletkit.System {
     //
 
     private static void systemEventCallback(Cookie context,
-                                            WKSystem coreSystem,
-                                            WKSystemEvent event) {
+            /* OwnershipGiven */ WKSystem coreSystem,
+            /* OwnershipGiven */ WKSystemEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
             SystemEvent sysEvent = null;
@@ -897,14 +897,13 @@ final class System implements com.blockset.walletkit.System {
     }
 
     private static void networkEventCallback(Cookie context,
-                                             WKNetwork coreNetwork,
-                                             WKNetworkEvent event) {
+            /* OwnershipGiven */ WKNetwork coreNetwork,
+            /* OwnershipGiven */ WKNetworkEvent event) {
     }
 
     private static void walletManagerEventCallback(Cookie context,
-                                                   WKWalletManager coreWalletManager,
-                                                   WKWalletManagerEvent event) {
-
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWalletManagerEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
             WalletManagerEvent  mgrEvent = null;
@@ -1037,9 +1036,9 @@ final class System implements com.blockset.walletkit.System {
     //
 
     private static void walletEventCallback(Cookie context,
-                                            WKWalletManager coreWalletManager,
-                                            WKWallet coreWallet,
-                                            WKWalletEvent coreEvent) {
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWallet coreWallet,
+            /* OwnershipGiven */ WKWalletEvent coreEvent) {
         EXECUTOR_LISTENER.execute(() -> {
 
             WalletEvent         walletEvent = null;
@@ -1207,10 +1206,10 @@ final class System implements com.blockset.walletkit.System {
     //
 
     private static void transferEventCallback(Cookie context,
-                                              WKWalletManager coreWalletManager,
-                                              WKWallet coreWallet,
-                                              WKTransfer coreTransfer,
-                                              WKTransferEvent event) {
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWallet coreWallet,
+            /* OwnershipGiven */ WKTransfer coreTransfer,
+            /* OwnershipGiven */ WKTransferEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
 
             /*sp*/ TranferEvent transferEvent = null;
