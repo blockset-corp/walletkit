@@ -1421,8 +1421,6 @@ final class System implements com.blockset.walletkit.System {
                                          List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
 
-            Extraction extract = null;
-
             try {
 
                 Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
@@ -1442,7 +1440,7 @@ final class System implements com.blockset.walletkit.System {
 
                 final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                system.query.getTransactions(extract.manager.getNetwork().getUids(),
+                system.query.getTransactions(manager.getNetwork().getUids(),
                         canonicalAddresses,
                         begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                         endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
@@ -1534,8 +1532,6 @@ final class System implements com.blockset.walletkit.System {
                                      List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
 
-            Extraction extract = null;
-
             try {
 
                 Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
@@ -1607,8 +1603,6 @@ final class System implements com.blockset.walletkit.System {
                                           byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
 
-            Extraction extract = null;
-
             try {
                 Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback");
 
@@ -1621,7 +1615,7 @@ final class System implements com.blockset.walletkit.System {
                 System        system   = optExtraction.get().system;
                 WalletManager manager  = optExtraction.get().manager;
 
-                system.query.createTransaction(extract.manager.getNetwork().getUids(), transaction, identifier,
+                system.query.createTransaction(manager.getNetwork().getUids(), transaction, identifier,
                         new CompletionHandler<TransactionIdentifier, QueryError>() {
                             @Override
                             public void handleData(TransactionIdentifier tid) {
@@ -1655,8 +1649,6 @@ final class System implements com.blockset.walletkit.System {
     private static void estimateTransactionFee(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                                byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
-
-            Extraction extract = null;
 
             try {
                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback");
