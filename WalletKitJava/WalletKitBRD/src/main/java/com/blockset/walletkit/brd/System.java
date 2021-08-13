@@ -891,10 +891,16 @@ final class System implements com.blockset.walletkit.System {
             } finally {
                 coreSystem.give();
                 switch (event.type()) {
+                    case CHANGED:
+                        break;
                     case MANAGER_ADDED:
+                    case MANAGER_CHANGED:
+                    case MANAGER_DELETED:
                         if (null != event.u.walletManager) event.u.walletManager.give();
                         break;
                     case NETWORK_ADDED:
+                    case NETWORK_CHANGED:
+                    case NETWORK_DELETED:
                         if (null != event.u.network) event.u.network.give();
                         break;
                     default:
@@ -908,8 +914,12 @@ final class System implements com.blockset.walletkit.System {
             /* OwnershipGiven */ WKNetwork coreNetwork,
             /* OwnershipGiven */ WKNetworkEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
-            coreNetwork.give();
-            // Nothing to give in `event`
+            try {
+                // Nothing
+            } finally {
+                coreNetwork.give();
+                // Nothing to give in `event`
+            }
         });
     }
 
@@ -1040,6 +1050,9 @@ final class System implements com.blockset.walletkit.System {
             } finally {
                 coreWalletManager.give();
                 switch (event.type()) {
+                    case CHANGED:
+                        break;
+
                     case WALLET_ADDED:
                     case WALLET_CHANGED:
                     case WALLET_DELETED:
@@ -1150,15 +1163,14 @@ final class System implements com.blockset.walletkit.System {
 
                     case BALANCE_UPDATED:
 
-                        Amount amount = Amount.create(coreEvent.balance());
+                        Amount amount = Amount.create(coreEvent.balance().take());
                         Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
                         walletEvent = new WalletBalanceUpdatedEvent(amount);
                         break;
 
                     case FEE_BASIS_UPDATED:
 
-                        WKFeeBasis coreFeeBasis = coreEvent.feeBasisUpdate();
-                        coreFeeBasis.take();
+                        WKFeeBasis coreFeeBasis = coreEvent.feeBasisUpdate().take();
 
                         feeBasis = TransferFeeBasis.create(coreFeeBasis);
                         Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
@@ -1167,16 +1179,17 @@ final class System implements com.blockset.walletkit.System {
 
                     case FEE_BASIS_ESTIMATED:
 
-                        // estimate.basis has ownership taken here.
+                        // estimate.basis has ownership taken here.  It is not given with `coreEvent.give()`
                         WKWalletEvent.FeeBasisEstimate estimate = coreEvent.feeBasisEstimate();
                         Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)",
                                                           estimate.status));
 
                         if (estimate.status == WKStatus.SUCCESS) {
-                            feeBasis = TransferFeeBasis.create(estimate.basis);
-                        } else {
-                            estimate.basis.give();
+                            feeBasis = TransferFeeBasis.create(estimate.basis.take());
                         }
+
+                        // Giving `estimate.basis` to release ownership
+                        estimate.basis.give();
 
                         Cookie opCookie = new Cookie(estimate.cookie);
                         if (estimate.status == WKStatus.SUCCESS) {
@@ -1296,47 +1309,47 @@ final class System implements com.blockset.walletkit.System {
             try {
                 Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
 
-                Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                        coreWalletManager);
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
                 if (!optExtraction.isPresent()) {
                     throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing extraction");
                 }
-                extract = optExtraction.get();
 
-                Extraction finalExtract = extract;
-                extract.system.query.getBlockchain(extract.manager.getNetwork().getUids(),
-                                                   new CompletionHandler<Blockchain, QueryError>() {
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
-                    @Override
-                    public void handleData(Blockchain blockchain) {
-                        Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                        Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
-                        if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
-                            UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                            String verifiedBlockHash = maybeVerifiedBlockHash.get();
-                            Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
-                            finalExtract.manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
-                                                                                                  true,
-                                                                                                  blockchainHeight,
-                                                                                                  verifiedBlockHash);
-                        } else {
-                            Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
-                            finalExtract.manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
-                                                                                                  false,
-                                                                                                  UnsignedLong.ZERO,
-                                                                                                  "");
-                        }
-                    }
+                system.query.getBlockchain(manager.getNetwork().getUids(),
+                        new CompletionHandler<Blockchain, QueryError>() {
 
-                    @Override
-                    public void handleError(QueryError error) {
-                        Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
-                        finalExtract.manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
-                                                                                              false,
-                                                                                              UnsignedLong.ZERO,
-                                                                                              "");
-                    }
-                });
+                            @Override
+                            public void handleData(Blockchain blockchain) {
+                                Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
+                                Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                                if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
+                                    UnsignedLong blockchainHeight = maybeBlockHeight.get();
+                                    String verifiedBlockHash = maybeVerifiedBlockHash.get();
+                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
+                                    manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                            true,
+                                            blockchainHeight,
+                                            verifiedBlockHash);
+                                } else {
+                                    Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
+                                    manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                            false,
+                                            UnsignedLong.ZERO,
+                                            "");
+                                }
+                            }
+
+                            @Override
+                            public void handleError(QueryError error) {
+                                Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
+                                manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                        false,
+                                        UnsignedLong.ZERO,
+                                        "");
+                            }
+                        });
 
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
@@ -1412,25 +1425,24 @@ final class System implements com.blockset.walletkit.System {
 
             try {
 
-                Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                        coreWalletManager);
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
                 if (!optExtraction.isPresent()) {
                     throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing extraction");
                 }
-                extract = optExtraction.get();
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
                 UnsignedLong endBlockNumberUnsigned = UnsignedLong.fromLongBits(endBlockNumber);
 
                 Log.log(Level.FINE, String.format("BRCryptoCWMGetTransactionsCallback (%s -> %s)",
-                                                  begBlockNumberUnsigned,
-                                                  endBlockNumberUnsigned));
+                        begBlockNumberUnsigned,
+                        endBlockNumberUnsigned));
 
-                final List<String> canonicalAddresses = canonicalAddresses(addresses,
-                                                                           extract.manager.getNetwork().getType());
+                final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                Extraction finalExtract = extract;
-                extract.system.query.getTransactions(extract.manager.getNetwork().getUids(),
+                system.query.getTransactions(extract.manager.getNetwork().getUids(),
                         canonicalAddresses,
                         begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                         endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
@@ -1451,9 +1463,9 @@ final class System implements com.blockset.walletkit.System {
                                         bundles.add(bundle.get());
                                     }
                                 }
-                                finalExtract.manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
-                                                                                                    true,
-                                                                                                    bundles);
+                                manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
+                                        true,
+                                        bundles);
 
                                 success = true;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
@@ -1462,9 +1474,9 @@ final class System implements com.blockset.walletkit.System {
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
-                                finalExtract.manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
-                                                                                                    false,
-                                                                                                    new ArrayList<>());
+                                manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
+                                        false,
+                                        new ArrayList<>());
 
                             }
                         });
@@ -1476,7 +1488,7 @@ final class System implements com.blockset.walletkit.System {
                 coreWalletManager.give();
             }
         });
-    }
+     }
 
     protected static List<WKClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
         List<WKClientTransferBundle> result = new ArrayList<>();
@@ -1526,24 +1538,23 @@ final class System implements com.blockset.walletkit.System {
 
             try {
 
-                Optional<Extraction> optExtraction = Extraction.extract(context,
-                                                                        coreWalletManager);
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
                 if (!optExtraction.isPresent()) {
                     throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing extraction");
                 }
-                extract = optExtraction.get();
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
                 UnsignedLong endBlockNumberUnsigned = UnsignedLong.fromLongBits(endBlockNumber);
 
                 Log.log(Level.FINE, String.format("BRCryptoCWMGetTransfersCallback (%s -> %s)", begBlockNumberUnsigned, endBlockNumberUnsigned));
 
-                final List<String> canonicalAddresses = canonicalAddresses(addresses,
-                                                                           extract.manager.getNetwork().getType());
+                final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                Extraction finalExtract = extract;
-                extract.system.query.getTransactions(
-                        extract.manager.getNetwork().getUids(),
+                system.query.getTransactions(
+                        manager.getNetwork().getUids(),
                         canonicalAddresses,
                         begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
                         endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
@@ -1562,29 +1573,29 @@ final class System implements com.blockset.walletkit.System {
                                 try {
                                     for (Transaction transaction : transactions) {
                                         bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
-                                     }
+                                    }
 
                                     success = true;
                                     Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
                                 } finally {
-                                    finalExtract.manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
-                                                                                                     true,
-                                                                                                     bundles);
+                                    manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                            true,
+                                            bundles);
                                 }
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
-                                finalExtract.manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
-                                                                                                 false,
-                                                                                                 new ArrayList<>());
+                                manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                        false,
+                                        new ArrayList<>());
                             }
                         });
 
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceTransfers(callbackState,false, new ArrayList<>());
+                coreWalletManager.announceTransfers(callbackState, false, new ArrayList<>());
             } finally {
                 coreWalletManager.give();
             }
@@ -1606,27 +1617,28 @@ final class System implements com.blockset.walletkit.System {
                 if (!optExtraction.isPresent()) {
                     throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing extraction");
                 }
-                extract = optExtraction.get();
 
-                Extraction finalExtract = extract;
-                extract.system.query.createTransaction(extract.manager.getNetwork().getUids(), transaction, identifier,
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+
+                system.query.createTransaction(extract.manager.getNetwork().getUids(), transaction, identifier,
                         new CompletionHandler<TransactionIdentifier, QueryError>() {
                             @Override
                             public void handleData(TransactionIdentifier tid) {
                                 Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                finalExtract.manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
-                                                                                                      tid.getIdentifier(),
-                                                                                                      tid.getHash().orNull(),
-                                                                                                      true);
+                                manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
+                                        tid.getIdentifier(),
+                                        tid.getHash().orNull(),
+                                        true);
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                finalExtract.manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
-                                                                                                      null,
-                                                                                                      null,
-                                                                                                      false);
+                                manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
+                                        null,
+                                        null,
+                                        false);
                             }
                         });
 
@@ -1654,38 +1666,38 @@ final class System implements com.blockset.walletkit.System {
                 if (!optExtraction.isPresent()) {
                     throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing extraction");
                 }
-                extract = optExtraction.get();
 
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
-                Extraction finalExtract = extract;
-                extract.system.query.estimateTransactionFee(extract.manager.getNetwork().getUids(),
-                                                                    transaction,
-                                                                    new CompletionHandler<TransactionFee, QueryError>() {
-                    @Override
-                    public void handleData(TransactionFee fee) {
-                        Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                        finalExtract.manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
-                                                                                                           true,
-                                                                                                           fee.getCostUnits(),
-                                                                                                           fee.getProperties());
-                    }
+                system.query.estimateTransactionFee(manager.getNetwork().getUids(),
+                        transaction,
+                        new CompletionHandler<TransactionFee, QueryError>() {
+                            @Override
+                            public void handleData(TransactionFee fee) {
+                                Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
+                                manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
+                                        true,
+                                        fee.getCostUnits(),
+                                        fee.getProperties());
+                            }
 
-                    @Override
-                    public void handleError(QueryError error) {
-                        Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
-                        finalExtract.manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
-                                                                                                           false,
-                                                                                                           UnsignedLong.ZERO,
-                                                                                                           new ArrayMap<>());
-                    }
-                });
+                            @Override
+                            public void handleError(QueryError error) {
+                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
+                                manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
+                                        false,
+                                        UnsignedLong.ZERO,
+                                        new ArrayMap<>());
+                            }
+                        });
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
             } finally {
                 coreWalletManager.give();
             }
-    });
+        });
     }
 
     private static class ObjectPair<T1, T2> {

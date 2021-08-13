@@ -72,6 +72,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkAmountConvertToUnit(Pointer amount, Pointer unit);
     public static native double wkAmountGetDouble(Pointer amount, Pointer unit, IntByReference overflow);
     public static native Pointer wkAmountGetStringPrefaced (Pointer amount, int base, String preface);
+    public static native Pointer wkAmountTake(Pointer obj);
     public static native void wkAmountGive(Pointer obj);
 
     // crypto/BRCryptoCurrency.h
