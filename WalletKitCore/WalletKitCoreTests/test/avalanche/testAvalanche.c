@@ -19,9 +19,9 @@
 #include "support/BRKey.h"
 #include "support/BRBase58.h"
 
-#include "avalanche/BRAvalancheAccount.h"
-#include "avalanche/BRAvalancheTransaction.h"
-#include "avalanche/BRAvaxTransaction.h"
+#include "avalanche/prototype/BRAvalancheAccount.h"
+#include "avalanche/prototype/BRAvalancheTransaction.h"
+#include "avalanche/prototype/BRAvaxTransaction.h"
 
 static int debug_log = 0;
 
