@@ -66,6 +66,9 @@ let package = Package(
                 "ethereum/bcs",
                 "ethereum/les",
                 "ethereum/mpt",
+
+                // Temporary
+                "avalanche/prototype"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
@@ -177,6 +180,11 @@ let package = Package(
             name: "WalletKitCoreSupportTests",
             dependencies: ["WalletKitCore"],
             path: "WalletKitCoreTests/test",
+
+            // Temporary
+            exclude: [
+                "avax/prototype"
+            ],
             publicHeadersPath: "include",
             cSettings: [
                 .define("BITCOIN_TEST_NO_MAIN"),

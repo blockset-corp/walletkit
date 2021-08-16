@@ -185,13 +185,6 @@ final class WalletKitCoreTests: XCTestCase {
         runTests (0)
     }
 
-    // Mark: - Avalanche
-    
-    func testAvalanche()
-    {
-        runAvalancheTest()
-    }
-    
     // MARK: - Ripple
 
     func testRipple () {
@@ -216,7 +209,9 @@ final class WalletKitCoreTests: XCTestCase {
     // MARK - Avalanchen
     func testAvalanche () {
         runAvalancheTest()
-    }   // __NEW_BLOCKCHAIN_TEST_IMPL__
+    }
+
+    // __NEW_BLOCKCHAIN_TEST_IMPL__
     
     // MARK: - Bitcoin
     
