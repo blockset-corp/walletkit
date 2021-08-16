@@ -19,6 +19,11 @@ let package = Package(
             name: "WalletKitCorePerf",
             targets: ["WalletKitCorePerf"]
         ),
+
+        .library(
+            name: "WalletKitCoreAvalanchePrototype",
+            targets: ["WalletKitCoreAvalanche"]
+        ),
     ],
     dependencies: [],
     targets: [
@@ -66,6 +71,7 @@ let package = Package(
                 "ethereum/bcs",
                 "ethereum/les",
                 "ethereum/mpt",
+                "avalanche/prototype"
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
@@ -149,6 +155,33 @@ let package = Package(
             ]
         ),
 
+        .target(
+            name: "WalletKitCoreAvalanche",
+            dependencies: [
+                "WalletKitCore"
+            ],
+            path: "src/avalanche/prototype",
+            cSettings: [
+                .headerSearchPath("../../../include"),           // WK
+                .headerSearchPath("../../."),
+//                .headerSearchPath("../vendor"),
+//                .headerSearchPath("../vendor/secp256k1"),  // To compile vendor/secp256k1/secp256k1.c
+                .unsafeFlags([
+                    // Enable warning flags
+                    "-Wall",
+                    "-Wconversion",
+                    "-Wsign-conversion",
+                    "-Wparentheses",
+                    "-Wswitch",
+                    // Disable warning flags, if appropriate
+                    "-Wno-implicit-int-conversion",
+                    // "-Wno-sign-conversion",
+                    "-Wno-missing-braces"
+                ])
+            ]
+        ),
+
+
         // MARK: - Core Misc Targets
 
         .target (
@@ -175,7 +208,10 @@ let package = Package(
 
         .target(
             name: "WalletKitCoreSupportTests",
-            dependencies: ["WalletKitCore"],
+            dependencies: [
+                "WalletKitCore",
+                "WalletKitCoreAvalanche"
+            ],
             path: "WalletKitCoreTests/test",
             publicHeadersPath: "include",
             cSettings: [

@@ -108,7 +108,7 @@ makeAccount(TestAccount accountInfo) {
 //Get test cases from ava project itself
 //https://github.com/ava-labs/avalanche-wallet/blob/master/tests/js/wallets/SingletonWallet.test.ts
 //https://github.com/ava-labs/ledger-app-avalanche/blob/develop/tests/basic-tests.js
-extern void runAvalancheTest (void) {
+extern void runAvalanchePrototypeTest (void) {
     printf("Running avalanche unit tests...\n");
     BRAvalancheAccount account = makeAccount(avaxTestAccount);
     //printf("%s", (char *)(account->xaddress.bytes));

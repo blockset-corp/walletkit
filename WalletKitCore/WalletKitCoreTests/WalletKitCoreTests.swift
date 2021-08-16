@@ -187,11 +187,16 @@ final class WalletKitCoreTests: XCTestCase {
 
     // Mark: - Avalanche
     
-    func testAvalanche()
+//    func testAvalanche()
+//    {
+//        runAvalancheTest()
+//    }
+
+    func testAvalanchePrototype()
     {
-        runAvalancheTest()
+        runAvalanchePrototypeTest()
     }
-    
+
     // MARK: - Ripple
 
     func testRipple () {
@@ -452,7 +457,8 @@ final class WalletKitCoreTests: XCTestCase {
         ("testBasics",          testBasicsETH),
 
         // Avalanche
-        ("testAvalanche",          testAvalanche),
+//        ("testAvalanche",          testAvalanche),
+        ("testAvalanchePrototype",          testAvalanchePrototype),
 
         // Ripple
         ("testRipple",          testRipple),
