@@ -463,6 +463,13 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/tezos/testTezos.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# Avalanche Tests
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    target_sources (corecryptotest
+            PRIVATE
+            ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/avalanche/testAvalanche.c)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
 # Stellar
 target_sources (WalletKitCore
         PRIVATE
