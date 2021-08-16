@@ -138,9 +138,6 @@ runTezosTest (void);
 extern void
 runAvalancheTest (void);
 
-extern void
-runAvalanchePrototypeTest (void);
-
 // Stellar
 extern void
 runStellarTest (void);
