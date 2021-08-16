@@ -48,7 +48,13 @@ avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen) {
     }
     printf("\r\n");
    
-   
+   //TODO: Start Remove ==========
+//    avax_addr_bech32_decode(recovered, &rec_len, "avax", "avax10wkdx5ra49qefhwjkp3xsdjazccs284h2d5r0r");
+//    printf(" test decodex`:");
+//    for(int i=0; i < rec_len; i++){
+//        printf("%02x", recovered[i]);
+//    }
+    //============ End Remove
     return address;
 }
 

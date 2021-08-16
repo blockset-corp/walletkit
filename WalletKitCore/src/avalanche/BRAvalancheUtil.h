@@ -29,6 +29,13 @@ int avax_base32_encode(
 int avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input);
 
 
+int uint32_t_to_bytes(uint32_t data, uint8_t * output);
+
+int uint64_t_to_bytes(uint64_t data, uint8_t * output);
+
+void serialize_array(void * array, size_t len, uint8_t * output);
+
+
 
 #ifdef __cplusplus
 }

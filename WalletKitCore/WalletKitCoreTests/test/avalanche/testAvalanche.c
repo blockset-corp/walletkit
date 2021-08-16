@@ -21,6 +21,7 @@
 
 #include "avalanche/BRAvalancheAccount.h"
 #include "avalanche/BRAvalancheTransaction.h"
+#include "avalanche/BRAvaxTransaction.h"
 
 static int debug_log = 0;
 
@@ -119,7 +120,7 @@ extern void runAvalancheTest (void) {
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
     
     
-    
+    avaxCreateBaseTx();
     createBaseTx();
    
 }

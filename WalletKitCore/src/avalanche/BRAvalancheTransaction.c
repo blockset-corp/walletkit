@@ -6,7 +6,10 @@
 //
 
 #include "BRAvalancheTransaction.h"
+#include "support/BRBase58.h"
+#include "support/util/BRHex.h"
 #include <stdlib.h>
+#include <string.h>
 
 
 //SECP256K1TransferOutput
@@ -33,7 +36,35 @@
 //                         | 20 + 20 * len(addresses) bytes |
 //                         +--------------------------------+
 
+struct AVAX(Asset){
+    char cb58[50];//includes terminating character
+    uint8_t bytes[32];
+    char hex[65];//zero terminated
+};
 
+int setBytes(struct BRAvalancheAsset* asset){
+    //char jack[5]= "hell";
+//    char * ptr = &jack[0];
+//    memcpy(ptr, "byes", 4);
+////    jack="hell";
+    
+    //checksum last 4 bytes
+    //cb58 decode into uin8_t
+    size_t datalen = BRBase58Decode(NULL, 0, &(asset->cb58[0]));
+    uint8_t buffer[datalen];
+    BRBase58Decode(&buffer[0], datalen,  &(asset->cb58[0]));
+    memcpy(&asset->bytes[0], &buffer[0], sizeof(asset->bytes));
+    hexEncode(&asset->hex[0] , 65, &asset->bytes[0], 32);
+    return 1;
+    
+}
+
+
+int setCB58(struct BRAvalancheAsset* asset){
+    BRBase58Encode( &(asset->cb58[0]), 50,  &(asset->bytes[0]), sizeof(asset->bytes));
+    return 1;
+    
+}
 
 struct AVAX(TransferOutputBaseRecord) {
     BRAvalancheTransferOutputType type;//4 bytes
@@ -41,7 +72,7 @@ struct AVAX(TransferOutputBaseRecord) {
     uint64_t locktime; //8 bytes
     uint32_t threshold; //4 bytes
     size_t addresslen;
-    BRAvalancheXAddress address;//array of addresses
+    BRAvalancheXAddress * address;//array of addresses
     union {
         uint64_t amount;
     }target;
@@ -140,7 +171,10 @@ struct AVAX(BaseTxRecord) {
 
 extern void createBaseTx(){
    
+//
     
+    BRAvalancheTransferOutputBase tout = calloc(1, sizeof(struct BRAvalancheTransferOutputBaseRecord));
+    tout->target.amount = 101;
    
     
     SECP256K1TransferOutput output1 = calloc(1, sizeof(struct SECP256K1TransferOutputRecord));
@@ -174,13 +208,10 @@ extern void createBaseTx(){
 
     free(tx->outputs[0].output);
     free(tx->outputs);
-    free(tx);    
+    free(tx);
+    free(tout);
+    free(output1);
 }
 
-void * createOutputs(BRAvalancheXAddress address){
-    BRAvalancheTransferOutputBase to = calloc(1, sizeof(struct BRAvalancheTransferOutputBaseRecord));
-    to->address = address;
-    return to;
 
-}
 

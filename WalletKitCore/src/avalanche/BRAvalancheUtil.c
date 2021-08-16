@@ -249,7 +249,7 @@ int avax_base32_encode(
     return 1;
 }
 
-
+//https://github.com/iotaledger/iota.c/blob/6b94ad03c915139d8292513d7849cb5e1a20df2f/tests/core/test_utils_bech32.c
 int avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input) {
   uint32_t chk = 1;
   size_t i;
@@ -297,6 +297,7 @@ int avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *i
     }
     chk = bech32_polymod_step(chk) ^ v;
     if (i + 6 < input_len) {
+        printf("data[%i - (1 + %i)] = %i\r\n",i,hrp_len,v);
       data[i - (1 + hrp_len)] = v;
     }
     ++i;
@@ -306,3 +307,24 @@ int avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *i
   }
   return chk == 1;
 }
+
+
+int uint32_t_to_bytes(uint32_t data, uint8_t * output){
+    output[0] = (uint8_t)(data >>  0);
+    output[1] = (uint8_t)(data >>  8);
+    output[2] = (uint8_t)(data >> 16);
+    output[3] = (uint8_t)(data >> 24);
+    return 1;
+};
+
+int uint64_t_to_bytes(uint64_t data, uint8_t * output){
+    output[0] = (uint8_t)(data >>  0);
+    output[1] = (uint8_t)(data >>  8);
+    output[2] = (uint8_t)(data >> 16);
+    output[3] = (uint8_t)(data >> 24);
+    output[4] = (uint8_t)(data >> 32);
+    output[5] = (uint8_t)(data >> 40);
+    output[6] = (uint8_t)(data >> 48);
+    output[7] = (uint8_t)(data >> 56);
+    return 1;
+};
