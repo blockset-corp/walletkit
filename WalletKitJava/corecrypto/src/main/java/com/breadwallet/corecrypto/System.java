@@ -717,6 +717,22 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } finally {
                 coreSystem.give();
+                switch (event.type()) {
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_ADDED:
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_CHANGED:
+                    case CRYPTO_SYSTEM_EVENT_NETWORK_DELETED:
+                        event.u.network.give();
+                        break;
+
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_ADDED:
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_CHANGED:
+                    case CRYPTO_SYSTEM_EVENT_MANAGER_DELETED:
+                        event.u.walletManager.give();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -766,47 +782,32 @@ final class System implements com.breadwallet.crypto.System {
     }
 
     private static void handleSystemNetworkAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        BRCryptoNetwork coreNetwork = event.u.network;
-
         Log.log(Level.FINE, "System Network Added");
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            Network network = system.createNetwork(event.u.network, true);
 
-            Optional<Network> optional = system.getNetwork(coreNetwork);
-            if (optional.isPresent()) {
-                Network network = optional.get();
-                system.announceSystemEvent(new SystemNetworkAddedEvent(network));
-            } else {
-                Log.log(Level.SEVERE, "SystemNetworkAdded: missed network");
-            }
+            system.announceSystemEvent(new SystemNetworkAddedEvent(network));
         } else {
             Log.log(Level.SEVERE, "SystemNetworkAdded: missed system");
         }
     }
 
     private static void handleSystemManagerAdded(Cookie context, BRCryptoSystem coreSystem, BRCryptoSystemEvent event) {
-        BRCryptoWalletManager coreManagar = event.u.walletManager;
-
         Log.log(Level.FINE, "System WalletManager Added");
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(event.u.walletManager, true);
 
-            Optional<WalletManager> optional = system.getWalletManager(coreManagar);
-            if (optional.isPresent()) {
-                WalletManager manager = optional.get();
-                system.announceSystemEvent(new SystemManagerAddedEvent(manager));
-            } else {
-                Log.log(Level.SEVERE, "SystemManagerAdded: missed manager");
-            }
+            system.announceSystemEvent(new SystemManagerAddedEvent(manager));
         } else {
             Log.log(Level.SEVERE, "SystemManagerAdded: missed system");
         }
     }
-
 
     private static void handleSystemDiscoveredNetworks(Cookie context, BRCryptoSystem coreSystem) {
         Log.log(Level.FINE, "System Discovered Networks");
@@ -900,6 +901,19 @@ final class System implements com.breadwallet.crypto.System {
                 }
             } finally {
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case CRYPTO_WALLET_MANAGER_EVENT_CHANGED:
+                        break;
+
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_ADDED:
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_CHANGED:
+                    case CRYPTO_WALLET_MANAGER_EVENT_WALLET_DELETED:
+                        event.u.wallet.give();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         });
     }
@@ -909,10 +923,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager (coreWalletManager, true);
 
-            WalletManager walletManager = system.createWalletManager (coreWalletManager, true);
-            system.announceWalletManagerEvent(walletManager, new WalletManagerCreatedEvent());
+            system.announceWalletManagerEvent(manager, new WalletManagerCreatedEvent());
 
         } else {
             Log.log(Level.SEVERE, "WalletManagerCreated: missed system");
@@ -927,17 +941,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerChangedEvent(oldState, newState));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerChanged: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerChangedEvent(oldState, newState));
         } else {
             Log.log(Level.SEVERE, "WalletManagerChanged: missed system");
         }
@@ -948,124 +955,58 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerDeletedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerDeleted: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerDeletedEvent());
         } else {
             Log.log(Level.SEVERE, "WalletManagerDeleted: missed system");
         }
     }
 
     private static void handleWalletManagerWalletAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletAdded");
+        Log.log(Level.FINE, "WalletManagerWalletAdded");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletAddedEvent(wallet));
 
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletAddedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed system");
         }
     }
 
     private static void handleWalletManagerWalletChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletChanged");
+        Log.log(Level.FINE, "WalletManagerWalletChanged");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletChangedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletChangedEvent(wallet));
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed system");
         }
     }
 
     private static void handleWalletManagerWalletDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWalletManagerEvent event) {
-        BRCryptoWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletDeleted");
+        Log.log(Level.FINE, "WalletManagerWalletDeleted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(event.u.wallet);
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletDeletedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
+            system.announceWalletManagerEvent(manager, new WalletManagerWalletDeletedEvent(wallet));
+        } else {
+            Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed system");
         }
     }
 
@@ -1074,17 +1015,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncStartedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncStarted: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerSyncStartedEvent());
         } else {
             Log.log(Level.SEVERE, "WalletManagerSyncStarted: missed system");
         }
@@ -1098,17 +1032,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncProgressEvent(percent, timestamp));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncProgress: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerSyncProgressEvent(percent, timestamp));
         } else {
             Log.log(Level.SEVERE, "WalletManagerSyncProgress: missed system");
         }
@@ -1120,17 +1047,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncStoppedEvent(reason));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncStopped: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerSyncStoppedEvent(reason));
         } else {
             Log.log(Level.SEVERE, "WalletManagerSyncStopped: missed system");
         }
@@ -1142,17 +1062,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncRecommendedEvent(depth));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncRecommended: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerSyncRecommendedEvent(depth));
         } else {
             Log.log(Level.SEVERE, "WalletManagerSyncRecommended: missed system");
         }
@@ -1165,17 +1078,10 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerBlockUpdatedEvent(blockHeight));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerBlockHeightUpdated: missed wallet manager");
-            }
-
+            system.announceWalletManagerEvent(manager, new WalletManagerBlockUpdatedEvent(blockHeight));
         } else {
             Log.log(Level.SEVERE, "WalletManagerBlockHeightUpdated: missed system");
         }
@@ -1248,19 +1154,11 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet        wallet  = manager.createWallet(coreWallet);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Wallet wallet = walletManager.createWallet(coreWallet);
-                system.announceWalletEvent(walletManager, wallet, new WalletCreatedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletCreated: missed wallet manager");
-            }
-
+            system.announceWalletEvent(manager, wallet, new WalletCreatedEvent());
         } else {
             Log.log(Level.SEVERE, "WalletCreated: missed system");
         }
@@ -1276,25 +1174,11 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet        wallet  = manager.createWallet(coreWallet);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-                    system.announceWalletEvent(walletManager, wallet, new WalletChangedEvent(oldState, newState));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletChanged: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletChanged: missed wallet manager");
-            }
-
+            system.announceWalletEvent(manager, wallet, new WalletChangedEvent(oldState, newState));
         } else {
             Log.log(Level.SEVERE, "WalletChanged: missed system");
         }
@@ -1305,226 +1189,94 @@ final class System implements com.breadwallet.crypto.System {
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
-            System system = optSystem.get();
+            System        system  = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet        wallet  = manager.createWallet(coreWallet);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-                    system.announceWalletEvent(walletManager, wallet, new WalletDeletedEvent());
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletDeleted: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletDeleted: missed wallet manager");
-            }
-
+            system.announceWalletEvent(manager, wallet, new WalletDeletedEvent());
         } else {
             Log.log(Level.SEVERE, "WalletDeleted: missed system");
         }
     }
 
     private static void handleWalletTransferAdded(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferAdded");
+        Log.log(Level.FINE, "WalletTransferAdded");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
 
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferAddedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferAdded: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferAdded: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferAdded: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferAdded: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferAddedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferAdded: missed system");
         }
     }
 
     private static void handleWalletTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferChanged");
+        Log.log(Level.FINE, "WalletTransferChanged");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferChangedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferChanged: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferChanged: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferChanged: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferChanged: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferChangedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferChanged: missed system");
         }
     }
 
     private static void handleWalletTransferSubmitted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transferSubmit();
-        try {
-            Log.log(Level.FINE, "WalletTransferSubmitted");
+        Log.log(Level.FINE, "WalletTransferSubmitted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transferSubmit());
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferSubmittedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferSubmitted: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferSubmitted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferSubmitted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferSubmitted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferSubmittedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferSubmitted: missed system");
         }
     }
 
     private static void handleWalletTransferDeleted(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
-        BRCryptoTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferDeleted");
+        Log.log(Level.FINE, "WalletTransferDeleted");
 
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
+        Optional<System> optSystem = getSystem(context);
+        if (optSystem.isPresent()) {
+            System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(event.transfer());
 
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferDeletedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferDeleted: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferDeleted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferDeleted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferDeleted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
+            system.announceWalletEvent(manager, wallet, new WalletTransferDeletedEvent(transfer));
+        } else {
+            Log.log(Level.SEVERE, "WalletTransferDeleted: missed system");
         }
     }
 
     private static void handleWalletBalanceUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletBalanceUpdated");
 
-        Amount amount = Amount.create(event.balance());
+        Amount amount = Amount.create(event.balance().take());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
-                    system.announceWalletEvent(walletManager, wallet, new WalletBalanceUpdatedEvent(amount));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletBalanceUpdated: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletBalanceUpdated: missed wallet manager");
-            }
-
+            Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
+            system.announceWalletEvent(manager, wallet, new WalletBalanceUpdatedEvent(amount));
         } else {
             Log.log(Level.SEVERE, "WalletBalanceUpdated: missed system");
         }
@@ -1533,31 +1285,16 @@ final class System implements com.breadwallet.crypto.System {
     private static void handleWalletFeeBasisUpdated(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoWalletEvent event) {
         Log.log(Level.FINE, "WalletFeeBasisUpdate");
 
-        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate());
+        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate().take());
 
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
-                    system.announceWalletEvent(walletManager, wallet, new WalletFeeBasisUpdatedEvent(feeBasis));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed wallet manager");
-            }
-
+            Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
+            system.announceWalletEvent(manager, wallet, new WalletFeeBasisUpdatedEvent(feeBasis));
         } else {
             Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed system");
         }
@@ -1576,6 +1313,7 @@ final class System implements com.breadwallet.crypto.System {
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+
             Cookie opCookie = new Cookie(estimate.cookie);
 
             if (success) {
@@ -1620,9 +1358,14 @@ final class System implements com.breadwallet.crypto.System {
                     }
                 }
             } finally {
-                if (CRYPTO_TRANSFER_EVENT_CHANGED == event.type()) {
-                    event.u.state.oldState.give();
-                    event.u.state.newState.give();
+                switch (event.type()) {
+                    case CRYPTO_TRANSFER_EVENT_CHANGED:
+                        event.u.state.oldState.give();
+                        event.u.state.newState.give();
+                        break;
+
+                    default:
+                        break;
                 }
                 coreTransfer.give();
                 coreWallet.give();
@@ -1637,33 +1380,18 @@ final class System implements com.breadwallet.crypto.System {
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Transfer transfer = wallet.createTransfer(coreTransfer);
-                    system.announceTransferEvent(walletManager, wallet, transfer, new TransferCreatedEvent());
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferCreated: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferCreated: missed wallet manager");
-            }
-
+            system.announceTransferEvent(manager, wallet, transfer, new TransferCreatedEvent());
         } else {
             Log.log(Level.SEVERE, "TransferCreated: missed system");
         }
     }
 
     private static void handleTransferChanged(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoWallet coreWallet, BRCryptoTransfer coreTransfer,
-                                       BRCryptoTransferEvent event) {
+                                              BRCryptoTransferEvent event) {
         TransferState oldState = Utilities.transferStateFromCrypto(event.u.state.oldState);
         TransferState newState = Utilities.transferStateFromCrypto(event.u.state.newState);
 
@@ -1672,33 +1400,11 @@ final class System implements com.breadwallet.crypto.System {
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Optional<Transfer> optTransfer = wallet.getTransfer(coreTransfer);
-                    if (optTransfer.isPresent()) {
-                        Transfer transfer = optTransfer.get();
-
-                        system.announceTransferEvent(walletManager, wallet, transfer, new TransferChangedEvent(oldState, newState));
-
-                    } else {
-                        Log.log(Level.SEVERE, "TransferChanged: missed transfer");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferChanged: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferChanged: missed wallet manager");
-            }
-
+            system.announceTransferEvent(manager, wallet, transfer, new TransferChangedEvent(oldState, newState));
         } else {
             Log.log(Level.SEVERE, "TransferChanged: missed system");
         }
@@ -1710,32 +1416,11 @@ final class System implements com.breadwallet.crypto.System {
         Optional<System> optSystem = getSystem(context);
         if (optSystem.isPresent()) {
             System system = optSystem.get();
+            WalletManager manager = system.createWalletManager(coreWalletManager, true);
+            Wallet wallet = manager.createWallet(coreWallet);
+            Transfer transfer = wallet.createTransfer(coreTransfer);
 
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Optional<Transfer> optTransfer = wallet.getTransfer(coreTransfer);
-                    if (optTransfer.isPresent()) {
-                        Transfer transfer = optTransfer.get();
-                        system.announceTransferEvent(walletManager, wallet, transfer, new TransferDeletedEvent());
-
-                    } else {
-                        Log.log(Level.SEVERE, "TransferDeleted: missed transfer");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferDeleted: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferDeleted: missed wallet manager");
-            }
-
+            system.announceTransferEvent(manager, wallet, transfer, new TransferDeletedEvent());
         } else {
             Log.log(Level.SEVERE, "TransferDeleted: missed system");
         }
@@ -1745,51 +1430,41 @@ final class System implements com.breadwallet.crypto.System {
 
     private static void getBlockNumber(Cookie context, BRCryptoWalletManager coreWalletManager, BRCryptoClientCallbackState callbackState) {
         EXECUTOR_CLIENT.execute(() -> {
+            Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
             try {
-                Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
-
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
                     System system = optSystem.get();
+                    WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
-
-                        system.query.getBlockchain(walletManager.getNetwork().getUids(), new CompletionHandler<Blockchain, QueryError>() {
-                            @Override
-                            public void handleData(Blockchain blockchain) {
-                                Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
-                                Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
-                                if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
-                                    UnsignedLong blockchainHeight = maybeBlockHeight.get();
-                                    String verifiedBlockHash = maybeVerifiedBlockHash.get();
-                                    Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
-                                } else {
-                                    Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
-                                }
+                    system.query.getBlockchain(manager.getNetwork().getUids(), new CompletionHandler<Blockchain, QueryError>() {
+                        @Override
+                        public void handleData(Blockchain blockchain) {
+                            Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
+                            Optional<String> maybeVerifiedBlockHash = blockchain.getVerifiedBlockHash();
+                            if (maybeBlockHeight.isPresent() && maybeVerifiedBlockHash.isPresent()) {
+                                UnsignedLong blockchainHeight = maybeBlockHeight.get();
+                                String verifiedBlockHash = maybeVerifiedBlockHash.get();
+                                Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
+                                manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
+                            } else {
+                                Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
+                                manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
                             }
+                        }
 
-                            @Override
-                            public void handleError(QueryError error) {
-                                Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
-                            }
-                        });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing manager");
-                    }
-
+                        @Override
+                        public void handleError(QueryError error) {
+                            Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
+                            manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
+                        }
+                    });
                 } else {
                     throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing system");
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
-            } finally {
-                coreWalletManager.give();
             }
         });
     }
@@ -1863,50 +1538,43 @@ final class System implements com.breadwallet.crypto.System {
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
                     System system = optSystem.get();
+                    WalletManager walletManager = system.createWalletManager(coreWalletManager, true);
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                    final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
 
-                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+                    system.query.getTransactions(walletManager.getNetwork().getUids(),
+                            canonicalAddresses,
+                            begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                            endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                            true,
+                            false,
+                            false,
+                            new CompletionHandler<List<Transaction>, QueryError>() {
+                                @Override
+                                public void handleData(List<Transaction> transactions) {
+                                    boolean success = false;
+                                    Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(),
-                                canonicalAddresses,
-                                begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
-                                endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                true,
-                                false,
-                                false,
-                                new CompletionHandler<List<Transaction>, QueryError>() {
-                                    @Override
-                                    public void handleData(List<Transaction> transactions) {
-                                        boolean success = false;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
-
-                                        List<BRCryptoClientTransactionBundle> bundles = new ArrayList<>();
-                                        for (Transaction transaction : transactions) {
-                                            Optional<BRCryptoClientTransactionBundle> bundle = makeTransactionBundle(transaction);
-                                            if (bundle.isPresent()) {
-                                                bundles.add(bundle.get());
-                                            }
+                                    List<BRCryptoClientTransactionBundle> bundles = new ArrayList<>();
+                                    for (Transaction transaction : transactions) {
+                                        Optional<BRCryptoClientTransactionBundle> bundle = makeTransactionBundle(transaction);
+                                        if (bundle.isPresent()) {
+                                            bundles.add(bundle.get());
                                         }
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, true, bundles);
-
-                                        success = true;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
                                     }
+                                    walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, true, bundles);
 
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, false, new ArrayList<>());
+                                    success = true;
+                                    Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
+                                }
 
-                                    }
-                                });
+                                @Override
+                                public void handleError(QueryError error) {
+                                    Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
+                                    walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, false, new ArrayList<>());
 
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing manager");
-                    }
+                                }
+                            });
 
                 } else {
                     throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing system");
@@ -1918,7 +1586,7 @@ final class System implements com.breadwallet.crypto.System {
                 coreWalletManager.give();
             }
         });
-    }
+     }
 
     protected static List<BRCryptoClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
         List<BRCryptoClientTransferBundle> result = new ArrayList<>();
@@ -1972,55 +1640,48 @@ final class System implements com.breadwallet.crypto.System {
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
                     System system = optSystem.get();
+                    WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                    final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+                    system.query.getTransactions(manager.getNetwork().getUids(), canonicalAddresses,
+                            begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                            endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                            false,
+                            false,
+                            true,
+                            new CompletionHandler<List<Transaction>, QueryError>() {
+                                @Override
+                                public void handleData(List<Transaction> transactions) {
+                                    boolean success = false;
+                                    Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
 
-                        system.query.getTransactions(walletManager.getNetwork().getUids(), canonicalAddresses,
-                                begBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
-                                endBlockNumberUnsigned.equals(BRConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                false,
-                                false,
-                                true,
-                                new CompletionHandler<List<Transaction>, QueryError>() {
-                                    @Override
-                                    public void handleData(List<Transaction> transactions) {
-                                        boolean success = false;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
+                                    List<BRCryptoClientTransferBundle> bundles = new ArrayList<>();
 
-                                        List<BRCryptoClientTransferBundle> bundles = new ArrayList<>();
-
-                                        try {
-                                            for (Transaction transaction : transactions) {
-                                                bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
-                                             }
-
-                                            success = true;
-                                            Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
-                                        } finally {
-                                            walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, true, bundles);
+                                    try {
+                                        for (Transaction transaction : transactions) {
+                                            bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
                                         }
-                                    }
 
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, false, new ArrayList<>());
+                                        success = true;
+                                        Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
+                                    } finally {
+                                        manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, true, bundles);
                                     }
-                                });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing manager");
-                    }
+                                }
 
+                                @Override
+                                public void handleError(QueryError error) {
+                                    Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
+                                    manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, false, new ArrayList<>());
+                                }
+                            });
                 } else {
                     throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing system");
                 }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceTransfers(callbackState,false, new ArrayList<>());
+                coreWalletManager.announceTransfers(callbackState, false, new ArrayList<>());
             } finally {
                 coreWalletManager.give();
             }
@@ -2037,29 +1698,22 @@ final class System implements com.breadwallet.crypto.System {
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
                     System system = optSystem.get();
+                    WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                    system.query.createTransaction(manager.getNetwork().getUids(), transaction, identifier,
+                            new CompletionHandler<TransactionIdentifier, QueryError>() {
+                                @Override
+                                public void handleData(TransactionIdentifier tid) {
+                                    Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
+                                    manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash().orNull(), true);
+                                }
 
-                        system.query.createTransaction(walletManager.getNetwork().getUids(), transaction, identifier,
-                                new CompletionHandler<TransactionIdentifier, QueryError>() {
-                                    @Override
-                                    public void handleData(TransactionIdentifier tid) {
-                                        Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash().orNull(), true);
-                                    }
-
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
-                                    }
-                                });
-
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing manager");
-                    }
+                                @Override
+                                public void handleError(QueryError error) {
+                                    Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
+                                    manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
+                                }
+                            });
 
                 } else {
                     throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing system");
@@ -2082,28 +1736,21 @@ final class System implements com.breadwallet.crypto.System {
                 Optional<System> optSystem = getSystem(context);
                 if (optSystem.isPresent()) {
                     System system = optSystem.get();
+                    WalletManager manager = system.createWalletManager(coreWalletManager, true);
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                    system.query.estimateTransactionFee(manager.getNetwork().getUids(), transaction, new CompletionHandler<TransactionFee, QueryError>() {
+                        @Override
+                        public void handleData(TransactionFee fee) {
+                            Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
+                            manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
+                        }
 
-                        system.query.estimateTransactionFee(walletManager.getNetwork().getUids(), transaction, new CompletionHandler<TransactionFee, QueryError>() {
-                            @Override
-                            public void handleData(TransactionFee fee) {
-                                Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
-                            }
-
-                            @Override
-                            public void handleError(QueryError error) {
-                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
-                            }
-                        });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing manager");
-                    }
-
+                        @Override
+                        public void handleError(QueryError error) {
+                            Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
+                            manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
+                        }
+                    });
                 } else {
                     throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing system");
                 }

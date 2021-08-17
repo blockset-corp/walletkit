@@ -73,6 +73,7 @@ public final class CryptoLibraryDirect {
     public static native Pointer cryptoAmountConvertToUnit(Pointer amount, Pointer unit);
     public static native double cryptoAmountGetDouble(Pointer amount, Pointer unit, IntByReference overflow);
     public static native Pointer cryptoAmountGetStringPrefaced (Pointer amount, int base, String preface);
+    public static native Pointer cryptoAmountTake(Pointer obj);
     public static native void cryptoAmountGive(Pointer obj);
 
     // crypto/BRCryptoCurrency.h
@@ -89,6 +90,7 @@ public final class CryptoLibraryDirect {
     public static native double cryptoFeeBasisGetCostFactor (Pointer feeBasis);
     public static native Pointer cryptoFeeBasisGetFee (Pointer feeBasis);
     public static native int cryptoFeeBasisIsEqual(Pointer f1, Pointer f2);
+    public static native Pointer cryptoFeeBasisTake(Pointer obj);
     public static native void cryptoFeeBasisGive(Pointer obj);
 
     // crypto/BRCryptoHash.h
