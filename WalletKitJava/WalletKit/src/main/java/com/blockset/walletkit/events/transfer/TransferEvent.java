@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.events.transfer;
 
-public interface TranferEvent {
+public interface TransferEvent {
 
     <T> T accept(TransferEventVisitor<T> visitor);
 }

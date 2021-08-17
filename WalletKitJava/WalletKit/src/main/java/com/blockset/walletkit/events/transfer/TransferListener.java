@@ -14,5 +14,5 @@ import com.blockset.walletkit.Transfer;
 
 public interface TransferListener {
 
-    void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event);
+    void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event);
 }

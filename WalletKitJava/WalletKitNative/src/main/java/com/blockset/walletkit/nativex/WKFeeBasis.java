@@ -52,6 +52,13 @@ public class WKFeeBasis extends PointerType {
         return WKBoolean.WK_TRUE == WKNativeLibraryDirect.wkFeeBasisIsEqual(thisPtr, other.getPointer());
     }
 
+    public WKFeeBasis take() {
+        return new WKFeeBasis(
+            WKNativeLibraryDirect.wkFeeBasisTake(
+                    this.getPointer()
+        ));
+    }
+
     public void give() {
         Pointer thisPtr = this.getPointer();
 

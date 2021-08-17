@@ -9,7 +9,7 @@ package com.blockset.walletkit.events.transfer;
 
 import com.blockset.walletkit.TransferState;
 
-public final class TransferChangedEvent implements TranferEvent {
+public final class TransferChangedEvent implements TransferEvent {
 
     private final TransferState oldState;
     private final TransferState newState;

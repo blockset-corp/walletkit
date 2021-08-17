@@ -57,8 +57,8 @@ public class WKListener extends PointerType {
 
     public interface SystemEventCallback extends BRCryptoListenerSystemEvent {
         void handle(Cookie context,
-                    WKSystem system,
-                    WKSystemEvent.ByValue event);
+                /* OwnershipGiven */ WKSystem system,
+                /* OwnershipGiven */ WKSystemEvent.ByValue event);
 
         @Override
         default void callback(Pointer context,
@@ -72,8 +72,8 @@ public class WKListener extends PointerType {
 
     public interface NetworkEventCallback extends BRCryptoListenerNetworkEvent {
         void handle(Cookie context,
-                    WKNetwork network,
-                    WKNetworkEvent.ByValue event);
+                /* OwnershipGiven */ WKNetwork network,
+                /* OwnershipGiven */ WKNetworkEvent.ByValue event);
 
         @Override
         default void callback(Pointer context,
@@ -87,8 +87,8 @@ public class WKListener extends PointerType {
 
     public interface WalletManagerEventCallback extends BRCryptoListenerWalletManagerEvent {
         void handle(Cookie context,
-                    WKWalletManager manager,
-                    WKWalletManagerEvent.ByValue event);
+                /* OwnershipGiven */ WKWalletManager manager,
+                /* OwnershipGiven */ WKWalletManagerEvent.ByValue event);
 
         @Override
         default void callback(Pointer context,
@@ -102,9 +102,9 @@ public class WKListener extends PointerType {
 
     public interface WalletEventCallback extends BRCryptoListenerWalletEvent {
         void handle(Cookie context,
-                    WKWalletManager manager,
-                    WKWallet wallet,
-                    WKWalletEvent event);
+                /* OwnershipGiven */ WKWalletManager manager,
+                /* OwnershipGiven */ WKWallet wallet,
+                /* OwnershipGiven */ WKWalletEvent event);
 
         @Override
         default void callback(Pointer context,
@@ -120,10 +120,10 @@ public class WKListener extends PointerType {
 
     public interface TransferEventCallback extends BRCryptoListenerTransferEvent {
         void handle(Cookie context,
-                    WKWalletManager manager,
-                    WKWallet wallet,
-                    WKTransfer transfer,
-                    WKTransferEvent.ByValue event);
+                /* OwnershipGiven */ WKWalletManager manager,
+                /* OwnershipGiven */ WKWallet wallet,
+                /* OwnershipGiven */ WKTransfer transfer,
+                /* OwnershipGiven */ WKTransferEvent.ByValue event);
 
         @Override
         default void callback(Pointer context,
