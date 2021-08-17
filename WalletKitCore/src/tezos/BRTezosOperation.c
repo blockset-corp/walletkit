@@ -82,11 +82,11 @@ static void
 tezosOperationFeeBasisShow (BRTezosOperationFeeBasis feeBasis) {
     printf ("XTZ: FeeBasis\n");
     printf ("    Kind: %d\n", feeBasis.kind);
-    printf ("    Fee : %llu\n", feeBasis.fee);
-    printf ("    GasL: %llu\n", feeBasis.gasLimit);
-    printf ("    StoL: %llu\n", feeBasis.storageLimit);
-    printf ("    Cntr: %llu\n", feeBasis.counter);
-    printf ("    FeeX: %llu\n", feeBasis.feeExtra);
+    printf ("    Fee : %"PRIu64"\n", feeBasis.fee);
+    printf ("    GasL: %"PRIu64"\n", feeBasis.gasLimit);
+    printf ("    StoL: %"PRIu64"\n", feeBasis.storageLimit);
+    printf ("    Cntr: %"PRIu64"\n", feeBasis.counter);
+    printf ("    FeeX: %"PRIu64"\n", feeBasis.feeExtra);
 }
 
 extern BRTezosOperationFeeBasis

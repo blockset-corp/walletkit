@@ -90,7 +90,7 @@ static void printByteString(const char* message, uint8_t * bytes, size_t byteSiz
 
 // MARK: - Account Tests
 
-static BRStellarAccount createTestAccount(const char* paper_key,
+static void createTestAccount(const char* paper_key,
                               const char* public_key_string, const char* expected_address)
 {
     BRStellarAccount account = stellarAccountCreate(paper_key);
