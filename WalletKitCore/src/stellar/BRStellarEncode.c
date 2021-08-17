@@ -76,7 +76,7 @@ uint8_t * pack_fopaque(uint8_t *data, int32_t dataSize, uint8_t *buffer)
     // bytes we need to pad at the end of this opaque data
     size_t paddedSize = (((size_t)dataSize+3)/4) * 4;
     size_t padding = paddedSize - (size_t)dataSize;
-    memcpy(buffer, data, dataSize);
+    memcpy(buffer, data, (size_t) dataSize);
     return (buffer + dataSize + padding);
 }
 

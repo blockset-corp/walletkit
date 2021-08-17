@@ -77,14 +77,14 @@ static unsigned char encode_char(unsigned char c)
  */
 static int decode_char(unsigned char c)
 {
-	char retval = -1;
+	char retval = (char) -1;
 
 	if (c >= 'A' && c <= 'Z')
 		retval = c - 'A';
 	if (c >= '2' && c <= '7')
 		retval = c - '2' + 26;
 
-	assert(retval == -1 || ((retval & 0x1F) == retval));
+	assert(retval == ((char) -1) || ((retval & 0x1F) == retval));
 
 	return  retval;
 }
@@ -214,7 +214,7 @@ size_t base32_decode(const unsigned char *coded, unsigned char *plain)
 	size_t written = 0;
 	for (size_t i = 0, j = 0; ; i += 8, j += 5) {
 		int n = decode_sequence(&coded[i], &plain[j]);
-		written += n;
+		written += (size_t) n;
 		if (n < 5)
 			return written;
 	}

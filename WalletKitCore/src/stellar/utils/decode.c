@@ -124,7 +124,7 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
 
     // write remainer decoded buffer to `dec'
-    dec = (unsigned char *) b64_realloc(dec, size + (i - 1));
+    dec = (unsigned char *) b64_realloc(dec, size + (size_t) (i - 1));
     if (dec != NULL){
       for (j = 0; (j < i - 1); ++j) {
         dec[size++] = buf[j];
