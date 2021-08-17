@@ -173,7 +173,7 @@ extern WKTransfer // OwnershipKept, all arguments
 wkTransferAllocAndInit (size_t sizeInBytes,
                             WKNetworkType type,
                             WKTransferListener listener,
-                        const char *uids,
+                            const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKFeeBasis feeBasisEstimated,
@@ -535,18 +535,18 @@ wkTransferGetFee (WKTransfer transfer) {
     return amount;
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeForSubmission (WKTransfer transfer,
-                                      WKNetwork  network,
-                                      size_t *serializationCount) {
+                                  WKNetwork  network,
+                                  size_t *serializationCount) {
     assert (NULL != serializationCount);
     return transfer->handlers->serialize (transfer, network, WK_TRUE, serializationCount);
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeForFeeEstimation (WKTransfer transfer,
-                                         WKNetwork  network,
-                                         size_t *bytesCount) {
+                                     WKNetwork  network,
+                                     size_t *bytesCount) {
     assert (NULL != bytesCount);
     return (NULL != transfer->handlers->getBytesForFeeEstimate
             ? transfer->handlers->getBytesForFeeEstimate (transfer, network, bytesCount)

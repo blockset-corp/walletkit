@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 
 import com.blockset.walletkit.Key;
+import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
 import com.blockset.walletkit.nativex.WKClientCallbackState;
@@ -72,7 +73,7 @@ import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.blockset.walletkit.events.system.SystemManagerAddedEvent;
 import com.blockset.walletkit.events.system.SystemNetworkAddedEvent;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.transfer.TransferChangedEvent;
 import com.blockset.walletkit.events.transfer.TransferCreatedEvent;
 import com.blockset.walletkit.events.transfer.TransferDeletedEvent;
@@ -102,6 +103,7 @@ import com.blockset.walletkit.brd.systemclient.BlocksetAmount;
 import com.blockset.walletkit.brd.systemclient.BlocksetCurrency;
 import com.blockset.walletkit.brd.systemclient.BlocksetTransfer;
 import com.blockset.walletkit.utility.CompletionHandler;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
 import com.google.common.primitives.UnsignedInteger;
@@ -127,7 +129,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.blockset.walletkit.nativex.WKTransferEventType.CHANGED;
 import static com.google.common.base.Preconditions.checkState;
 
 /* package */
@@ -325,8 +326,128 @@ final class System implements com.blockset.walletkit.System {
         }
     }
 
-    private static Optional<System> getSystem(Cookie context) {
-        return Optional.fromNullable(SYSTEMS_ACTIVE.get(context));
+    /** Extraction: Allows system and related classes to be incrementally resolved
+     *              by creating Java objects directly, using the native WalletKit
+     *              objects directly, and without recourse to querying WalletKit
+     *              for related structures.
+     *
+     *              Extraction does not take ownership of any of the provided
+     *              core objects.
+     */
+    private final static class Extraction {
+
+        // Valid Extraction object implies system is valid
+        System          system;
+
+        // Following objects are 'add-ons' utilitizing provided
+        // WKCore objects + the known system, and may or may not
+        // be available depending upon how much information was
+        // provided at Extraction creation time
+        WalletManager   manager;
+        Wallet          wallet;
+        Transfer        transfer;
+
+        Extraction (System system) {
+            this.system = system;
+        }
+
+        /** A Function to create Extraction from System
+         *
+         */
+        private static final Function<System, Extraction> toSystemExtraction =
+            new Function<System, Extraction>() {
+                @Override
+                public Extraction apply(final System system) {
+                    return new Extraction(system);
+                }
+            };
+
+        /** Working with system 'context', create an extraction involving the System.
+         *
+         * @param context The system context
+         * @return An Optional containing the System if system is found.
+         */
+        static Optional<Extraction> extract(Cookie context) {
+            Optional<Extraction> extraction = Optional.fromNullable(SYSTEMS_ACTIVE.get(context)).transform(toSystemExtraction);
+            if (!extraction.isPresent()) {
+                Log.log(Level.SEVERE, "Extraction missed system");
+            }
+            return extraction;
+        }
+
+        /** Create an Extraction involving system 'context' and the core wallet manager object.
+         *
+         * @param context The system context
+         * @param coreWalletManager The WalletKit manager object
+         * @return An Optional containing System and WalletManager if the optional is present.
+         */
+        static Optional<Extraction> extract(Cookie            context,
+                                            WKWalletManager   coreWalletManager   ) {
+            return extract(context).transform((e)-> {
+                e.manager = WalletManager.create(coreWalletManager,
+                                                 true,
+                                                 e.system,
+                                                 e.system.callbackCoordinator);
+
+
+                if (e.manager == null) {
+                    Log.log(Level.SEVERE, "Extraction missed wallet manager");
+                }
+                return e;
+            });
+        }
+
+        /** Create an Extraction involving system 'context', core wallet manager and core
+         *  wallet objects.
+         *
+         * @param context The system context
+         * @param coreWalletManager The WalletKit manager object
+         * @param coreWallet The WalletKit wallet object
+         * @return An Optional containing System, WalletManager and Wallet if the optional is present.
+         */
+        static Optional<Extraction> extract(Cookie            context,
+                                            WKWalletManager   coreWalletManager,
+                                            WKWallet          coreWallet          ) {
+            return extract(context,
+                           coreWalletManager).transform((e)-> {
+                if (e.manager != null) {
+                    e.wallet = e.manager.walletByCoreOrCreate(coreWallet, true);
+                    if (e.wallet == null) {
+                        Log.log(Level.SEVERE, "Extraction missed wallet");
+                    }
+                }
+                return e;
+            });
+        }
+
+        /** Create an Extraction involving all of system 'context', core wallet manager, core
+         *  wallet, and core transfer.
+         *
+         * @param context The system context
+         * @param coreWalletManager The WalletKit manager object
+         * @param coreWallet The WalletKit wallet object
+         * @param coreTransfer The WalletKit transfer object
+         * @return An Optional containing System, WalletManager, Wallet and Transfer
+         *         if the optional is present.
+         */
+        static Optional<Extraction> extract(Cookie            context,
+                                            WKWalletManager   coreWalletManager,
+                                            WKWallet          coreWallet,
+                                            WKTransfer        coreTransfer) {
+
+            return extract(context,
+                           coreWalletManager,
+                           coreWallet).transform((e)-> {
+                if (e.manager != null && e.wallet != null) {
+                    e.transfer = e.wallet.transferByCoreOrCreate(coreTransfer, true);
+                    if (e.transfer == null) {
+                        Log.log(Level.SEVERE, "Extraction missed transfer");
+                    }
+                }
+                return e;  });
+        }
+
+
     }
 
     private static System from(com.blockset.walletkit.System system) {
@@ -404,6 +525,15 @@ final class System implements com.blockset.walletkit.System {
 //                announceSystemEvent(new SystemDiscoveredNetworksEvent(networks));
 //            }
 //        });
+    }
+
+    /* package */
+    Network networkBy(WKNetwork coreNetwork) {
+        for (Network n: getNetworks()) {
+            if (n.getCoreBRCryptoNetwork().equals(coreNetwork))
+                return n;
+        }
+        return null;
     }
 
     @Override
@@ -609,18 +739,14 @@ final class System implements com.blockset.walletkit.System {
     public List<? extends Network> getNetworks() {
         List<Network> networks = new ArrayList<>();
         for (WKNetwork coreNetwork: core.getNetworks())
-            networks.add (Network.create(coreNetwork));
+            networks.add (Network.create(coreNetwork, false));
         return networks;
     }
 
     private Optional<Network> getNetwork(WKNetwork coreNetwork) {
         return (core.hasNetwork(coreNetwork)
-                ? Optional.of (createNetwork(coreNetwork, true))
+                ? Optional.of (Network.create(coreNetwork, true))
                 : Optional.absent());
-    }
-
-    private Network createNetwork (WKNetwork coreNetwork, boolean needTake) {
-        return Network.create(needTake ? coreNetwork.take() : coreNetwork);
     }
 
     // WalletManager management
@@ -681,7 +807,7 @@ final class System implements com.blockset.walletkit.System {
         executor.submit(() -> listener.handleWalletEvent(this, walletManager, wallet, event));
     }
 
-    private void announceTransferEvent(WalletManager walletManager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    private void announceTransferEvent(WalletManager walletManager, Wallet wallet, Transfer transfer, TransferEvent event) {
         executor.submit(() -> listener.handleTransferEvent(this, walletManager, wallet, transfer, event));
     }
 
@@ -690,501 +816,253 @@ final class System implements com.blockset.walletkit.System {
     //
 
     private static void systemEventCallback(Cookie context,
-                                            WKSystem coreSystem,
-                                            WKSystemEvent event) {
+            /* OwnershipGiven */ WKSystem coreSystem,
+            /* OwnershipGiven */ WKSystemEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
+
             try {
-                Log.log(Level.FINE, "SystemEventCallback");
+
+                Optional<Extraction> optExtraction = Extraction.extract(context);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                         String.format("%s: missed within extraction", event.type().toString()));
+                    return;
+                }
+
+                System system = optExtraction.get().system;
+
+                SystemEvent sysEvent = null;
 
                 switch (event.type()) {
+
                     case CREATED:
-                        handleSystemCreated(context, coreSystem);
+
+                        Log.log(Level.FINE, "SystemCreated");
+                        sysEvent = new SystemCreatedEvent();
                         break;
 
                     case CHANGED:
-                        handleSystemChanged(context, coreSystem, event);
+
+                        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState());
+                        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState());
+                        Log.log(Level.FINE, String.format("SystemChanged (%s -> %s)", oldState, newState));
+                        sysEvent = new SystemChangedEvent(oldState, newState);
                         break;
 
                     case DELETED:
-                        handleSystemDeleted(context, coreSystem);
+
+                        Log.log(Level.FINE, "System Deleted");
+                        sysEvent = new SystemDeletedEvent();
                         break;
 
                     case NETWORK_ADDED:
-                        handleSystemNetworkAdded(context, coreSystem, event);
+
+                        Log.log(Level.FINE, "System Network Added");
+                        Network network = Network.create(event.u.network, true);
+                        sysEvent = new SystemNetworkAddedEvent(network);
                         break;
 
                     case MANAGER_ADDED:
-                        handleSystemManagerAdded(context, coreSystem, event);
+
+                        Log.log(Level.FINE, "System WalletManager Added");
+                        WalletManager manager = WalletManager.create(event.u.walletManager,
+                                                                     true,
+                                                                     system,
+                                                                     system.callbackCoordinator);
+                        sysEvent = new SystemManagerAddedEvent(manager);
                         break;
 
                     case DISCOVERED_NETWORKS:
-                        handleSystemDiscoveredNetworks(context, coreSystem);
+
+                        Log.log(Level.FINE, "System Discovered Networks");
+                        sysEvent = new SystemDiscoveredNetworksEvent(system.getNetworks());
+                        break;
+
+                    default:
+                        Log.log(Level.SEVERE,
+                                String.format("Untreated System Event %s",
+                                              event.type().toString()));
                         break;
                 }
+
+                if (sysEvent != null)
+                    system.announceSystemEvent(sysEvent);
+
             } finally {
                 coreSystem.give();
+                switch (event.type()) {
+                    case CHANGED:
+                        break;
+                    case MANAGER_ADDED:
+                    case MANAGER_CHANGED:
+                    case MANAGER_DELETED:
+                        if (null != event.u.walletManager) event.u.walletManager.give();
+                        break;
+                    case NETWORK_ADDED:
+                    case NETWORK_CHANGED:
+                    case NETWORK_DELETED:
+                        if (null != event.u.network) event.u.network.give();
+                        break;
+                    default:
+                        break;
+                }
             }
         });
     }
 
-    private static void handleSystemCreated(Cookie context, WKSystem coreSystem) {
-        Log.log(Level.FINE, "SystemCreated");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            system.announceSystemEvent(new SystemCreatedEvent());
-        } else {
-            Log.log(Level.SEVERE, "SystemCreated: missed system");
-        }
-    }
-
-    private static void handleSystemChanged(Cookie context, WKSystem coreSystem, WKSystemEvent event) {
-        SystemState oldState = Utilities.systemStateFromCrypto(event.u.state.oldState());
-        SystemState newState = Utilities.systemStateFromCrypto(event.u.state.newState());
-
-        Log.log(Level.FINE, String.format("SystemChanged (%s -> %s)", oldState, newState));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            system.announceSystemEvent(new SystemChangedEvent(oldState, newState));
-        } else {
-            Log.log(Level.SEVERE, "SystemChanged: missed system");
-        }
-    }
-
-    private static void handleSystemDeleted(Cookie context, WKSystem coreSystem) {
-        Log.log(Level.FINE, "System Deleted");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            system.announceSystemEvent(new SystemDeletedEvent());
-
-        } else {
-            Log.log(Level.SEVERE, "SystemCreated: missed system");
-        }
-
-    }
-
-    private static void handleSystemNetworkAdded(Cookie context, WKSystem coreSystem, WKSystemEvent event) {
-        WKNetwork coreNetwork = event.u.network;
-
-        Log.log(Level.FINE, "System Network Added");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<Network> optional = system.getNetwork(coreNetwork);
-            if (optional.isPresent()) {
-                Network network = optional.get();
-                system.announceSystemEvent(new SystemNetworkAddedEvent(network));
-            } else {
-                Log.log(Level.SEVERE, "SystemNetworkAdded: missed network");
-            }
-        } else {
-            Log.log(Level.SEVERE, "SystemNetworkAdded: missed system");
-        }
-    }
-
-    private static void handleSystemManagerAdded(Cookie context, WKSystem coreSystem, WKSystemEvent event) {
-        WKWalletManager coreManagar = event.u.walletManager;
-
-        Log.log(Level.FINE, "System WalletManager Added");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optional = system.getWalletManager(coreManagar);
-            if (optional.isPresent()) {
-                WalletManager manager = optional.get();
-                system.announceSystemEvent(new SystemManagerAddedEvent(manager));
-            } else {
-                Log.log(Level.SEVERE, "SystemManagerAdded: missed manager");
-            }
-        } else {
-            Log.log(Level.SEVERE, "SystemManagerAdded: missed system");
-        }
-    }
-
-
-    private static void handleSystemDiscoveredNetworks(Cookie context, WKSystem coreSystem) {
-        Log.log(Level.FINE, "System Discovered Networks");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            system.announceSystemEvent(new SystemDiscoveredNetworksEvent(system.getNetworks()));
-
-        } else {
-            Log.log(Level.SEVERE, "SystemDiscoveredNetworks: missed system");
-        }
-    }
-
     private static void networkEventCallback(Cookie context,
-                                             WKNetwork coreNetwork,
-                                             WKNetworkEvent event) {
+            /* OwnershipGiven */ WKNetwork coreNetwork,
+            /* OwnershipGiven */ WKNetworkEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
             try {
-                Log.log(Level.FINE, "NetworkEventCallback");
-
-                switch (event.type()) {
-                    case CREATED:
-                        break;
-                    case FEES_UPDATED:
-                        break;
-                    case CURRENCIES_UPDATED:
-                        break;
-                    case DELETED:
-                        break;
-                    }
+                // Nothing
             } finally {
                 coreNetwork.give();
+                // Nothing to give in `event`
             }
         });
     }
 
     private static void walletManagerEventCallback(Cookie context,
-                                                   WKWalletManager coreWalletManager,
-                                                   WKWalletManagerEvent event) {
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWalletManagerEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
+
             try {
-                Log.log(Level.FINE, "WalletManagerEventCallback");
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    event.type().toString()));
+                    return;
+                }
+
+                System        system  = optExtraction.get().system;
+                WalletManager manager = optExtraction.get().manager;
+
+                Wallet wallet = null;
+
+                WalletManagerEvent mgrEvent = null;
 
                 switch (event.type()) {
-                    case CREATED: {
-                        handleWalletManagerCreated(context, coreWalletManager);
+
+                    case CREATED:
+
+                        Log.log(Level.FINE, "WalletManagerCreated");
+                        mgrEvent = new WalletManagerCreatedEvent();
                         break;
-                    }
-                    case CHANGED: {
-                        handleWalletManagerChanged(context, coreWalletManager, event);
+
+                    case CHANGED:
+
+                        WalletManagerState oldState = Utilities.walletManagerStateFromCrypto(event.u.state.oldValue);
+                        WalletManagerState newState = Utilities.walletManagerStateFromCrypto(event.u.state.newValue);
+                        Log.log(Level.FINE, String.format("WalletManagerChanged (%s -> %s)", oldState, newState));
+                        mgrEvent = new WalletManagerChangedEvent(oldState, newState);
                         break;
-                    }
-                    case DELETED: {
-                        handleWalletManagerDeleted(context, coreWalletManager);
+
+                    case DELETED:
+
+                        Log.log(Level.FINE, "WalletManagerDeleted");
+                        mgrEvent = new WalletManagerDeletedEvent();
                         break;
-                    }
-                    case WALLET_ADDED: {
-                        handleWalletManagerWalletAdded(context, coreWalletManager, event);
+
+                    case WALLET_ADDED:
+
+                        Log.log(Level.FINE, "WalletManagerWalletAdded");
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
+                            Log.log(Level.SEVERE, "WalletManagerWalletAdded: Extraction missed wallet");
+                            return;
+                        }
+                        mgrEvent = new WalletManagerWalletAddedEvent(wallet);
                         break;
-                    }
-                    case WALLET_CHANGED: {
-                        handleWalletManagerWalletChanged(context, coreWalletManager, event);
+
+                    case WALLET_CHANGED:
+
+                        Log.log(Level.FINE, "WalletManagerWalletChanged");
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
+                            Log.log(Level.SEVERE, "WalletManagerWalletChanged: Extraction missed wallet");
+                            return;
+                        }
+                        mgrEvent = new WalletManagerWalletChangedEvent(wallet);
                         break;
-                    }
-                    case WALLET_DELETED: {
-                        handleWalletManagerWalletDeleted(context, coreWalletManager, event);
+
+                    case WALLET_DELETED:
+
+                        Log.log(Level.FINE, "WalletManagerWalletDeleted");
+                        wallet = manager.walletBy(event.u.wallet);
+                        if (null == wallet) {
+                            Log.log(Level.SEVERE, "WalletManagerWalletDeleted: Extraction missed wallet");
+                            return;
+                        }
+                        mgrEvent = new WalletManagerWalletDeletedEvent(wallet);
                         break;
-                    }
-                    case SYNC_STARTED: {
-                        handleWalletManagerSyncStarted(context, coreWalletManager);
+
+                    case SYNC_STARTED:
+
+                        Log.log(Level.FINE, "WalletManagerSyncStarted");
+                        mgrEvent = new WalletManagerSyncStartedEvent();
                         break;
-                    }
-                    case SYNC_CONTINUES: {
-                        handleWalletManagerSyncProgress(context, coreWalletManager, event);
+
+                    case SYNC_CONTINUES:
+
+                        float percent = event.u.syncContinues.percentComplete;
+                        Date timestamp = 0 == event.u.syncContinues.timestamp ? null : new Date(TimeUnit.SECONDS.toMillis(event.u.syncContinues.timestamp));
+                        Log.log(Level.FINE, String.format("WalletManagerSyncProgress (%s)", percent));
+                        mgrEvent = new WalletManagerSyncProgressEvent(percent, timestamp);
                         break;
-                    }
-                    case SYNC_STOPPED: {
-                        handleWalletManagerSyncStopped(context, coreWalletManager, event);
+
+                    case SYNC_STOPPED:
+
+                        WalletManagerSyncStoppedReason reason = Utilities.walletManagerSyncStoppedReasonFromCrypto(event.u.syncStopped.reason);
+                        Log.log(Level.FINE, String.format("WalletManagerSyncStopped: (%s)", reason));
+                        mgrEvent = new WalletManagerSyncStoppedEvent(reason);
                         break;
-                    }
-                    case SYNC_RECOMMENDED: {
-                        handleWalletManagerSyncRecommended(context, coreWalletManager, event);
+
+                    case SYNC_RECOMMENDED:
+
+                        WalletManagerSyncDepth depth = Utilities.syncDepthFromCrypto(event.u.syncRecommended.depth());
+                        Log.log(Level.FINE, String.format("WalletManagerSyncRecommended: (%s)", depth));
+                        mgrEvent = new WalletManagerSyncRecommendedEvent(depth);
                         break;
-                    }
-                    case BLOCK_HEIGHT_UPDATED: {
-                        handleWalletManagerBlockHeightUpdated(context, coreWalletManager, event);
+
+
+                    case BLOCK_HEIGHT_UPDATED:
+
+                        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight);
+                        Log.log(Level.FINE, String.format("WalletManagerBlockHeightUpdated (%s)", blockHeight));
+                        mgrEvent = new WalletManagerBlockUpdatedEvent(blockHeight);
                         break;
-                    }
+
+                    default:
+                        Log.log(Level.SEVERE,
+                                String.format("Untreated Wallet Manager Event %s",
+                                        event.type().toString()));
+                        break;
                 }
+
+                if (mgrEvent != null)
+                    system.announceWalletManagerEvent(manager, mgrEvent);
+
+
             } finally {
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case CHANGED:
+                        break;
+
+                    case WALLET_ADDED:
+                    case WALLET_CHANGED:
+                    case WALLET_DELETED:
+                        if (null != event.u.wallet) event.u.wallet.give();
+                        break;
+                    default:
+                        break;
+                }
             }
         });
-    }
-
-    private static void handleWalletManagerCreated(Cookie context, WKWalletManager coreWalletManager) {
-        Log.log(Level.FINE, "WalletManagerCreated");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            WalletManager walletManager = system.createWalletManager (coreWalletManager, true);
-            system.announceWalletManagerEvent(walletManager, new WalletManagerCreatedEvent());
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerCreated: missed system");
-        }
-    }
-
-    private static void handleWalletManagerChanged(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WalletManagerState oldState = Utilities.walletManagerStateFromCrypto(event.u.state.oldValue);
-        WalletManagerState newState = Utilities.walletManagerStateFromCrypto(event.u.state.newValue);
-
-        Log.log(Level.FINE, String.format("WalletManagerChanged (%s -> %s)", oldState, newState));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerChangedEvent(oldState, newState));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerChanged: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerChanged: missed system");
-        }
-    }
-
-    private static void handleWalletManagerDeleted(Cookie context, WKWalletManager coreWalletManager) {
-        Log.log(Level.FINE, "WalletManagerDeleted");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerDeletedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerDeleted: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerDeleted: missed system");
-        }
-    }
-
-    private static void handleWalletManagerWalletAdded(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WKWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletAdded");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletAddedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletAdded: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
-        }
-    }
-
-    private static void handleWalletManagerWalletChanged(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WKWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletChanged");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletChangedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletChanged: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
-        }
-    }
-
-    private static void handleWalletManagerWalletDeleted(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WKWallet coreWallet = event.u.wallet;
-        try {
-            Log.log(Level.FINE, "WalletManagerWalletDeleted");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optional = walletManager.getWallet(coreWallet);
-                    if (optional.isPresent()) {
-                        Wallet wallet = optional.get();
-                        system.announceWalletManagerEvent(walletManager, new WalletManagerWalletDeletedEvent(wallet));
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerWalletDeleted: missed system");
-            }
-
-        } finally {
-            coreWallet.give();
-        }
-    }
-
-    private static void handleWalletManagerSyncStarted(Cookie context, WKWalletManager coreWalletManager) {
-        Log.log(Level.FINE, "WalletManagerSyncStarted");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncStartedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncStarted: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerSyncStarted: missed system");
-        }
-    }
-
-    private static void handleWalletManagerSyncProgress(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        float percent = event.u.syncContinues.percentComplete;
-        Date timestamp = 0 == event.u.syncContinues.timestamp ? null : new Date(TimeUnit.SECONDS.toMillis(event.u.syncContinues.timestamp));
-
-        Log.log(Level.FINE, String.format("WalletManagerSyncProgress (%s)", percent));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncProgressEvent(percent, timestamp));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncProgress: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerSyncProgress: missed system");
-        }
-    }
-
-    private static void handleWalletManagerSyncStopped(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WalletManagerSyncStoppedReason reason = Utilities.walletManagerSyncStoppedReasonFromCrypto(event.u.syncStopped.reason);
-        Log.log(Level.FINE, String.format("WalletManagerSyncStopped: (%s)", reason));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncStoppedEvent(reason));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncStopped: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerSyncStopped: missed system");
-        }
-    }
-
-    private static void handleWalletManagerSyncRecommended(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        WalletManagerSyncDepth depth = Utilities.syncDepthFromCrypto(event.u.syncRecommended.depth());
-        Log.log(Level.FINE, String.format("WalletManagerSyncRecommended: (%s)", depth));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerSyncRecommendedEvent(depth));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerSyncRecommended: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerSyncRecommended: missed system");
-        }
-    }
-
-    private static void handleWalletManagerBlockHeightUpdated(Cookie context, WKWalletManager coreWalletManager, WKWalletManagerEvent event) {
-        UnsignedLong blockHeight = UnsignedLong.fromLongBits(event.u.blockHeight);
-
-        Log.log(Level.FINE, String.format("WalletManagerBlockHeightUpdated (%s)", blockHeight));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-                system.announceWalletManagerEvent(walletManager, new WalletManagerBlockUpdatedEvent(blockHeight));
-
-            } else {
-                Log.log(Level.SEVERE, "WalletManagerBlockHeightUpdated: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletManagerBlockHeightUpdated: missed system");
-        }
     }
 
     //
@@ -1192,55 +1070,152 @@ final class System implements com.blockset.walletkit.System {
     //
 
     private static void walletEventCallback(Cookie context,
-                                            WKWalletManager coreWalletManager,
-                                            WKWallet coreWallet,
-                                            WKWalletEvent coreEvent) {
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWallet coreWallet,
+            /* OwnershipGiven */ WKWalletEvent coreEvent) {
         EXECUTOR_LISTENER.execute(() -> {
+
             try {
-                Log.log(Level.FINE, "WalletEventCallback");
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager, coreWallet);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    coreEvent.type().toString()));
+                    return;
+                }
+
+                System        system  = optExtraction.get().system;
+                WalletManager manager = optExtraction.get().manager;
+                Wallet        wallet  = optExtraction.get().wallet;
+
+                Transfer         transfer = null;
+                TransferFeeBasis feeBasis = null;
+
+                WalletEvent walletEvent = null;
 
                 switch (coreEvent.type()) {
-                    case CREATED: {
-                        handleWalletCreated(context, coreWalletManager, coreWallet);
+                    case CREATED:
+
+                        Log.log(Level.FINE, "WalletCreated");
+                        walletEvent = new WalletCreatedEvent();
                         break;
-                    }
-                    case CHANGED: {
-                        handleWalletChanged(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case CHANGED:
+
+                        WKWalletEvent.States states = coreEvent.states();
+                        WalletState oldState = Utilities.walletStateFromCrypto(states.oldState);
+                        WalletState newState = Utilities.walletStateFromCrypto(states.newState);
+                        Log.log(Level.FINE, String.format("WalletChanged (%s -> %s)",
+                                                          oldState, newState));
+                        walletEvent = new WalletChangedEvent(oldState, newState);
                         break;
-                    }
-                    case DELETED: {
-                        handleWalletDeleted(context, coreWalletManager, coreWallet);
+
+                    case DELETED:
+
+                        Log.log(Level.FINE, "WalletDeleted");
+                        walletEvent = new WalletDeletedEvent();
                         break;
-                    }
-                    case TRANSFER_ADDED: {
-                        handleWalletTransferAdded(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case TRANSFER_ADDED:
+
+                        Log.log(Level.FINE, "WalletTransferAdded");
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferAdded: Extraction missed transfer");
+                            return;
+                        }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferAddedEvent(transfer);
                         break;
-                    }
-                    case TRANSFER_CHANGED: {
-                        handleWalletTransferChanged(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case TRANSFER_CHANGED:
+
+                        Log.log(Level.FINE, "WalletTransferChanged");
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferChanged: Extraction missed transfer");
+                            return;
+                        }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferChangedEvent(transfer);
                         break;
-                    }
-                    case TRANSFER_SUBMITTED: {
-                        handleWalletTransferSubmitted(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case TRANSFER_SUBMITTED:
+
+                        Log.log(Level.FINE, "WalletTransferSubmitted");
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferSubmitted: Extraction missed transfer");
+                            return;
+                        }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferSubmittedEvent(transfer);
                         break;
-                    }
-                    case TRANSFER_DELETED: {
-                        handleWalletTransferDeleted(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case TRANSFER_DELETED:
+
+                        Log.log(Level.FINE, "WalletTransferDeleted");
+                        if (null == coreEvent.transfer()) {
+                            Log.log(Level.SEVERE, "WalletTransferDeleted: Extraction missed transfer");
+                            return;
+                        }
+                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        walletEvent = new WalletTransferDeletedEvent(transfer);
                         break;
-                    }
-                    case BALANCE_UPDATED: {
-                        handleWalletBalanceUpdated(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case BALANCE_UPDATED:
+
+                        Amount amount = Amount.create(coreEvent.balance().take());
+                        Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
+                        walletEvent = new WalletBalanceUpdatedEvent(amount);
                         break;
-                    }
-                    case FEE_BASIS_UPDATED: {
-                        handleWalletFeeBasisUpdated(context, coreWalletManager, coreWallet, coreEvent);
+
+                    case FEE_BASIS_UPDATED:
+
+                        WKFeeBasis coreFeeBasis = coreEvent.feeBasisUpdate().take();
+
+                        feeBasis = TransferFeeBasis.create(coreFeeBasis);
+                        Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
+                        walletEvent = new WalletFeeBasisUpdatedEvent(feeBasis);
                         break;
-                    }
-                    case FEE_BASIS_ESTIMATED: {
-                        handleWalletFeeBasisEstimated(context, coreEvent);
+
+                    case FEE_BASIS_ESTIMATED:
+
+                        // estimate.basis has ownership taken here.  It is not given with `coreEvent.give()`
+                        WKWalletEvent.FeeBasisEstimate estimate = coreEvent.feeBasisEstimate();
+                        Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)",
+                                                          estimate.status));
+
+                        if (estimate.status == WKStatus.SUCCESS) {
+                            feeBasis = TransferFeeBasis.create(estimate.basis.take());
+                        }
+
+                        // Giving `estimate.basis` to release ownership
+                        estimate.basis.give();
+
+                        Cookie opCookie = new Cookie(estimate.cookie);
+                        if (estimate.status == WKStatus.SUCCESS) {
+                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", feeBasis));
+                            system.callbackCoordinator.completeFeeBasisEstimateHandlerWithSuccess(opCookie, feeBasis);
+
+                        } else {
+                            FeeEstimationError error = Utilities.feeEstimationErrorFromStatus(estimate.status);
+
+                            Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", error));
+                            system.callbackCoordinator.completeFeeBasisEstimateHandlerWithError(opCookie, error);
+                        }
+
+                        // walletEvent is `null`, by design.
                         break;
-                    }
+
+                    default:
+                        Log.log(Level.SEVERE,
+                                String.format("Untreated Wallet Event %s",
+                                              coreEvent.toString()));
+                        break;
                 }
+
+                if (walletEvent != null)
+                    system.announceWalletEvent(manager, wallet, walletEvent);
+
             } finally {
                 coreEvent.give();
                 coreWallet.give();
@@ -1249,520 +1224,102 @@ final class System implements com.blockset.walletkit.System {
         });
     }
 
-    private static void handleWalletCreated(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet) {
-        Log.log(Level.FINE, "WalletCreated");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Wallet wallet = walletManager.createWallet(coreWallet);
-                system.announceWalletEvent(walletManager, wallet, new WalletCreatedEvent());
-
-            } else {
-                Log.log(Level.SEVERE, "WalletCreated: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletCreated: missed system");
-        }
-    }
-
-    private static void handleWalletChanged(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        WKWalletEvent.States states = event.states();
-
-        WalletState oldState = Utilities.walletStateFromCrypto(states.oldState);
-        WalletState newState = Utilities.walletStateFromCrypto(states.newState);
-
-        Log.log(Level.FINE, String.format("WalletChanged (%s -> %s)", oldState, newState));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-                    system.announceWalletEvent(walletManager, wallet, new WalletChangedEvent(oldState, newState));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletChanged: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletChanged: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletChanged: missed system");
-        }
-    }
-
-    private static void handleWalletDeleted(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet) {
-        Log.log(Level.FINE, "WalletDeleted");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-                    system.announceWalletEvent(walletManager, wallet, new WalletDeletedEvent());
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletDeleted: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletDeleted: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletDeleted: missed system");
-        }
-    }
-
-    private static void handleWalletTransferAdded(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        WKTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferAdded");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferAddedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferAdded: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferAdded: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferAdded: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferAdded: missed system");
-            }
-        } finally {
-            coreTransfer.give();
-        }
-    }
-
-    private static void handleWalletTransferChanged(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        WKTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferChanged");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferChangedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferChanged: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferChanged: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferChanged: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferChanged: missed system");
-            }
-        } finally {
-            coreTransfer.give();
-        }
-    }
-
-    private static void handleWalletTransferSubmitted(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        WKTransfer coreTransfer = event.transferSubmit();
-        try {
-            Log.log(Level.FINE, "WalletTransferSubmitted");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferSubmittedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferSubmitted: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferSubmitted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferSubmitted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferSubmitted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
-        }
-    }
-
-    private static void handleWalletTransferDeleted(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        WKTransfer coreTransfer = event.transfer();
-        try {
-            Log.log(Level.FINE, "WalletTransferDeleted");
-
-            Optional<System> optSystem = getSystem(context);
-            if (optSystem.isPresent()) {
-                System system = optSystem.get();
-
-                Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                if (optWalletManager.isPresent()) {
-                    WalletManager walletManager = optWalletManager.get();
-
-                    Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                    if (optWallet.isPresent()) {
-                        Wallet wallet = optWallet.get();
-                        Optional<Transfer> optional = wallet.getTransfer(coreTransfer);
-
-                        if (optional.isPresent()) {
-                            Transfer transfer = optional.get();
-                            system.announceWalletEvent(walletManager, wallet, new WalletTransferDeletedEvent(transfer));
-
-                        } else {
-                            Log.log(Level.SEVERE, "WalletTransferDeleted: missed transfer");
-                        }
-
-                    } else {
-                        Log.log(Level.SEVERE, "WalletTransferDeleted: missed wallet");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletTransferDeleted: missed wallet manager");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletTransferDeleted: missed system");
-            }
-        } finally {
-            coreTransfer.give();
-        }
-    }
-
-    private static void handleWalletBalanceUpdated(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        Log.log(Level.FINE, "WalletBalanceUpdated");
-
-        Amount amount = Amount.create(event.balance());
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Log.log(Level.FINE, String.format("WalletBalanceUpdated: %s", amount));
-                    system.announceWalletEvent(walletManager, wallet, new WalletBalanceUpdatedEvent(amount));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletBalanceUpdated: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletBalanceUpdated: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletBalanceUpdated: missed system");
-        }
-    }
-
-    private static void handleWalletFeeBasisUpdated(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKWalletEvent event) {
-        Log.log(Level.FINE, "WalletFeeBasisUpdate");
-
-        TransferFeeBasis feeBasis = TransferFeeBasis.create(event.feeBasisUpdate());
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Log.log(Level.FINE, String.format("WalletFeeBasisUpdate: %s", feeBasis));
-                    system.announceWalletEvent(walletManager, wallet, new WalletFeeBasisUpdatedEvent(feeBasis));
-
-                } else {
-                    Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletFeeBasisUpdate: missed system");
-        }
-    }
-
-    private static void handleWalletFeeBasisEstimated(Cookie context, WKWalletEvent event) {
-        WKWalletEvent.FeeBasisEstimate estimate = event.feeBasisEstimate();
-        // estimate.basis needs to be given
-
-        Log.log(Level.FINE, String.format("WalletFeeBasisEstimated (%s)", estimate.status));
-
-        boolean success = estimate.status == WKStatus.SUCCESS;
-        TransferFeeBasis feeBasis = success ? TransferFeeBasis.create(estimate.basis) : null;
-        if (null == feeBasis) estimate.basis.give();
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-            Cookie opCookie = new Cookie(estimate.cookie);
-
-            if (success) {
-                Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", feeBasis));
-                system.callbackCoordinator.completeFeeBasisEstimateHandlerWithSuccess(opCookie, feeBasis);
-            } else {
-                FeeEstimationError error = Utilities.feeEstimationErrorFromStatus(estimate.status);
-                Log.log(Level.FINE, String.format("WalletFeeBasisEstimated: %s", error));
-                system.callbackCoordinator.completeFeeBasisEstimateHandlerWithError(opCookie, error);
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "WalletFeeBasisEstimated: missed system");
-        }
-    }
-
     //
     // Transfer Events
     //
 
     private static void transferEventCallback(Cookie context,
-                                              WKWalletManager coreWalletManager,
-                                              WKWallet coreWallet,
-                                              WKTransfer coreTransfer,
-                                              WKTransferEvent event) {
+            /* OwnershipGiven */ WKWalletManager coreWalletManager,
+            /* OwnershipGiven */ WKWallet coreWallet,
+            /* OwnershipGiven */ WKTransfer coreTransfer,
+            /* OwnershipGiven */ WKTransferEvent event) {
         EXECUTOR_LISTENER.execute(() -> {
-            try {
-                Log.log(Level.FINE, "TransferEventCallback");
 
-                switch (event.type()) {
-                    case CREATED: {
-                        handleTransferCreated(context, coreWalletManager, coreWallet, coreTransfer);
-                        break;
-                    }
-                    case CHANGED: {
-                        handleTransferChanged(context, coreWalletManager, coreWallet, coreTransfer, event);
-                        break;
-                    }
-                    case DELETED: {
-                        handleTransferDeleted(context, coreWalletManager, coreWallet, coreTransfer);
-                        break;
-                    }
+            try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager, coreWallet, coreTransfer);
+                if (!optExtraction.isPresent()) {
+                    Log.log(Level.SEVERE,
+                            String.format("%s: missed within extraction",
+                                    event.type().toString()));
+                    return;
                 }
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+                Wallet        wallet   = optExtraction.get().wallet;
+                Transfer      transfer = optExtraction.get().transfer;
+
+                TransferEvent transferEvent = null;
+
+                 switch (event.type()) {
+                    case CREATED:
+
+                        Log.log(Level.FINE, "TransferCreated");
+                        transferEvent = new TransferCreatedEvent();
+                        break;
+
+                    case CHANGED:
+
+                        TransferState oldState = Utilities.transferStateFromCrypto(event.u.state.oldState);
+                        TransferState newState = Utilities.transferStateFromCrypto(event.u.state.newState);
+                        Log.log(Level.FINE, String.format("TransferChanged (%s -> %s)", oldState, newState));
+                        transferEvent = new TransferChangedEvent(oldState, newState);
+                        break;
+
+                    case DELETED:
+
+                        Log.log(Level.FINE, "TransferDeleted");
+                        transferEvent = new TransferDeletedEvent();
+                        break;
+
+                    default:
+                        Log.log(Level.SEVERE,
+                                String.format("Untreated Transfer Event %s",
+                                               event.type().toString()));
+                        break;
+
+                }
+
+                system.announceTransferEvent(manager, wallet, transfer, transferEvent);
+
             } finally {
-                if (CHANGED == event.type()) {
-                    event.u.state.oldState.give();
-                    event.u.state.newState.give();
-                }
                 coreTransfer.give();
                 coreWallet.give();
                 coreWalletManager.give();
+                switch (event.type()) {
+                    case CHANGED:
+                        event.u.state.oldState.give();
+                        event.u.state.newState.give();;
+                        break;
+                    default:
+                        break;
+                }
             }
         });
-    }
-
-    private static void handleTransferCreated(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKTransfer coreTransfer) {
-        Log.log(Level.FINE, "TransferCreated");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Transfer transfer = wallet.createTransfer(coreTransfer);
-                    system.announceTransferEvent(walletManager, wallet, transfer, new TransferCreatedEvent());
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferCreated: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferCreated: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "TransferCreated: missed system");
-        }
-    }
-
-    private static void handleTransferChanged(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKTransfer coreTransfer,
-                                              WKTransferEvent event) {
-        TransferState oldState = Utilities.transferStateFromCrypto(event.u.state.oldState);
-        TransferState newState = Utilities.transferStateFromCrypto(event.u.state.newState);
-
-        Log.log(Level.FINE, String.format("TransferChanged (%s -> %s)", oldState, newState));
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Optional<Transfer> optTransfer = wallet.getTransfer(coreTransfer);
-                    if (optTransfer.isPresent()) {
-                        Transfer transfer = optTransfer.get();
-
-                        system.announceTransferEvent(walletManager, wallet, transfer, new TransferChangedEvent(oldState, newState));
-
-                    } else {
-                        Log.log(Level.SEVERE, "TransferChanged: missed transfer");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferChanged: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferChanged: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "TransferChanged: missed system");
-        }
-    }
-
-    private static void handleTransferDeleted(Cookie context, WKWalletManager coreWalletManager, WKWallet coreWallet, WKTransfer coreTransfer) {
-        Log.log(Level.FINE, "TransferDeleted");
-
-        Optional<System> optSystem = getSystem(context);
-        if (optSystem.isPresent()) {
-            System system = optSystem.get();
-
-            Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-            if (optWalletManager.isPresent()) {
-                WalletManager walletManager = optWalletManager.get();
-
-                Optional<Wallet> optWallet = walletManager.getWallet(coreWallet);
-                if (optWallet.isPresent()) {
-                    Wallet wallet = optWallet.get();
-
-                    Optional<Transfer> optTransfer = wallet.getTransfer(coreTransfer);
-                    if (optTransfer.isPresent()) {
-                        Transfer transfer = optTransfer.get();
-                        system.announceTransferEvent(walletManager, wallet, transfer, new TransferDeletedEvent());
-
-                    } else {
-                        Log.log(Level.SEVERE, "TransferDeleted: missed transfer");
-                    }
-
-                } else {
-                    Log.log(Level.SEVERE, "TransferDeleted: missed wallet");
-                }
-
-            } else {
-                Log.log(Level.SEVERE, "TransferDeleted: missed wallet manager");
-            }
-
-        } else {
-            Log.log(Level.SEVERE, "TransferDeleted: missed system");
-        }
     }
 
     // BTC client
 
     private static void getBlockNumber(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState) {
         EXECUTOR_CLIENT.execute(() -> {
+
+            Extraction extract = null;
+
             try {
                 Log.log(Level.FINE, "BRCryptoCWMGetBlockNumberCallback");
 
-                Optional<System> optSystem = getSystem(context);
-                if (optSystem.isPresent()) {
-                    System system = optSystem.get();
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing extraction");
+                }
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
-                        system.query.getBlockchain(walletManager.getNetwork().getUids(), new CompletionHandler<Blockchain, QueryError>() {
+                system.query.getBlockchain(manager.getNetwork().getUids(),
+                        new CompletionHandler<Blockchain, QueryError>() {
+
                             @Override
                             public void handleData(Blockchain blockchain) {
                                 Optional<UnsignedLong> maybeBlockHeight = blockchain.getBlockHeight();
@@ -1771,26 +1328,29 @@ final class System implements com.blockset.walletkit.System {
                                     UnsignedLong blockchainHeight = maybeBlockHeight.get();
                                     String verifiedBlockHash = maybeVerifiedBlockHash.get();
                                     Log.log(Level.FINE, String.format("BRCryptoCWMGetBlockNumberCallback: succeeded (%s, %s)", blockchainHeight, verifiedBlockHash));
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, true, blockchainHeight, verifiedBlockHash);
+                                    manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                            true,
+                                            blockchainHeight,
+                                            verifiedBlockHash);
                                 } else {
                                     Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed with missing block height");
-                                    walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
+                                    manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                            false,
+                                            UnsignedLong.ZERO,
+                                            "");
                                 }
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMGetBlockNumberCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
+                                manager.getCoreBRCryptoWalletManager().announceGetBlockNumber(callbackState,
+                                        false,
+                                        UnsignedLong.ZERO,
+                                        "");
                             }
                         });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing manager");
-                    }
 
-                } else {
-                    throw new IllegalStateException("BRCryptoCWMGetBlockNumberCallback: missing system");
-                }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceGetBlockNumber(callbackState, false, UnsignedLong.ZERO, "");
@@ -1860,64 +1420,65 @@ final class System implements com.blockset.walletkit.System {
      private static void getTransactions(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                          List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
+
             try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing extraction");
+                }
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
                 UnsignedLong endBlockNumberUnsigned = UnsignedLong.fromLongBits(endBlockNumber);
 
-                Log.log(Level.FINE, String.format("BRCryptoCWMGetTransactionsCallback (%s -> %s)", begBlockNumberUnsigned, endBlockNumberUnsigned));
+                Log.log(Level.FINE, String.format("BRCryptoCWMGetTransactionsCallback (%s -> %s)",
+                        begBlockNumberUnsigned,
+                        endBlockNumberUnsigned));
 
-                Optional<System> optSystem = getSystem(context);
-                if (optSystem.isPresent()) {
-                    System system = optSystem.get();
+                final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                system.query.getTransactions(manager.getNetwork().getUids(),
+                        canonicalAddresses,
+                        begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                        endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                        true,
+                        false,
+                        false,
+                        null,
+                        new CompletionHandler<List<Transaction>, QueryError>() {
+                            @Override
+                            public void handleData(List<Transaction> transactions) {
+                                boolean success = false;
+                                Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
 
-                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
-
-                        system.query.getTransactions(walletManager.getNetwork().getUids(),
-                                canonicalAddresses,
-                                begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
-                                endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                true,
-                                false,
-                                false,
-                                null,
-                                new CompletionHandler<List<Transaction>, QueryError>() {
-                                    @Override
-                                    public void handleData(List<Transaction> transactions) {
-                                        boolean success = false;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
-
-                                        List<WKClientTransactionBundle> bundles = new ArrayList<>();
-                                        for (Transaction transaction : transactions) {
-                                            Optional<WKClientTransactionBundle> bundle = makeTransactionBundle(transaction);
-                                            if (bundle.isPresent()) {
-                                                bundles.add(bundle.get());
-                                            }
-                                        }
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, true, bundles);
-
-                                        success = true;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
+                                List<WKClientTransactionBundle> bundles = new ArrayList<>();
+                                for (Transaction transaction : transactions) {
+                                    Optional<WKClientTransactionBundle> bundle = makeTransactionBundle(transaction);
+                                    if (bundle.isPresent()) {
+                                        bundles.add(bundle.get());
                                     }
+                                }
+                                manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
+                                        true,
+                                        bundles);
 
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransactions(callbackState, false, new ArrayList<>());
+                                success = true;
+                                Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback: complete");
+                            }
 
-                                    }
-                                });
+                            @Override
+                            public void handleError(QueryError error) {
+                                Log.log(Level.SEVERE, "BRCryptoCWMGetTransactionsCallback received an error, completing with failure: ", error);
+                                manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
+                                        false,
+                                        new ArrayList<>());
 
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing manager");
-                    }
+                            }
+                        });
 
-                } else {
-                    throw new IllegalStateException("BRCryptoCWMGetTransactionsCallback: missing system");
-                }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceTransactions(callbackState, false, new ArrayList<>());
@@ -1925,7 +1486,7 @@ final class System implements com.blockset.walletkit.System {
                 coreWalletManager.give();
             }
         });
-    }
+     }
 
     protected static List<WKClientTransferBundle> makeTransferBundles (Transaction transaction, List<String> addresses) {
         List<WKClientTransferBundle> result = new ArrayList<>();
@@ -1970,67 +1531,67 @@ final class System implements com.blockset.walletkit.System {
     private static void getTransfers(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                      List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
+
             try {
+
+                Optional<Extraction> optExtraction = Extraction.extract(context, coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing extraction");
+                }
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+
                 UnsignedLong begBlockNumberUnsigned = UnsignedLong.fromLongBits(begBlockNumber);
                 UnsignedLong endBlockNumberUnsigned = UnsignedLong.fromLongBits(endBlockNumber);
 
                 Log.log(Level.FINE, String.format("BRCryptoCWMGetTransfersCallback (%s -> %s)", begBlockNumberUnsigned, endBlockNumberUnsigned));
 
-                Optional<System> optSystem = getSystem(context);
-                if (optSystem.isPresent()) {
-                    System system = optSystem.get();
+                final List<String> canonicalAddresses = canonicalAddresses(addresses, manager.getNetwork().getType());
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                system.query.getTransactions(
+                        manager.getNetwork().getUids(),
+                        canonicalAddresses,
+                        begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
+                        endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
+                        false,
+                        false,
+                        true,
+                        null,
+                        new CompletionHandler<List<Transaction>, QueryError>() {
+                            @Override
+                            public void handleData(List<Transaction> transactions) {
+                                boolean success = false;
+                                Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
 
-                        final List<String> canonicalAddresses = canonicalAddresses(addresses, walletManager.getNetwork().getType());
+                                List<WKClientTransferBundle> bundles = new ArrayList<>();
 
-                        system.query.getTransactions(
-                                walletManager.getNetwork().getUids(),
-                                canonicalAddresses,
-                                begBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : begBlockNumberUnsigned,
-                                endBlockNumberUnsigned.equals(WKConstants.BLOCK_HEIGHT_UNBOUND) ? null : endBlockNumberUnsigned,
-                                false,
-                                false,
-                                true,
-                                null,
-                                new CompletionHandler<List<Transaction>, QueryError>() {
-                                    @Override
-                                    public void handleData(List<Transaction> transactions) {
-                                        boolean success = false;
-                                        Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
-
-                                        List<WKClientTransferBundle> bundles = new ArrayList<>();
-
-                                        try {
-                                            for (Transaction transaction : transactions) {
-                                                bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
-                                             }
-
-                                            success = true;
-                                            Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
-                                        } finally {
-                                            walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, true, bundles);
-                                        }
+                                try {
+                                    for (Transaction transaction : transactions) {
+                                        bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
                                     }
 
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceTransfers(callbackState, false, new ArrayList<>());
-                                    }
-                                });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing manager");
-                    }
+                                    success = true;
+                                    Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
+                                } finally {
+                                    manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                            true,
+                                            bundles);
+                                }
+                            }
 
-                } else {
-                    throw new IllegalStateException("BRCryptoCWMGetTransfersCallback : missing system");
-                }
+                            @Override
+                            public void handleError(QueryError error) {
+                                Log.log(Level.SEVERE, "BRCryptoCWMGetTransfersCallback  received an error, completing with failure: ", error);
+                                manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                        false,
+                                        new ArrayList<>());
+                            }
+                        });
+
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceTransfers(callbackState,false, new ArrayList<>());
+                coreWalletManager.announceTransfers(callbackState, false, new ArrayList<>());
             } finally {
                 coreWalletManager.give();
             }
@@ -2041,39 +1602,41 @@ final class System implements com.blockset.walletkit.System {
                                           String identifier,
                                           byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
+
             try {
                 Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback");
 
-                Optional<System> optSystem = getSystem(context);
-                if (optSystem.isPresent()) {
-                    System system = optSystem.get();
-
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
-
-                        system.query.createTransaction(walletManager.getNetwork().getUids(), transaction, identifier,
-                                new CompletionHandler<TransactionIdentifier, QueryError>() {
-                                    @Override
-                                    public void handleData(TransactionIdentifier tid) {
-                                        Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, tid.getIdentifier(), tid.getHash().orNull(), true);
-                                    }
-
-                                    @Override
-                                    public void handleError(QueryError error) {
-                                        Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
-                                        walletManager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState, null, null, false);
-                                    }
-                                });
-
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing manager");
-                    }
-
-                } else {
-                    throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing system");
+                Optional<Extraction> optExtraction = Extraction.extract(context,
+                                                                        coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    throw new IllegalStateException("BRCryptoCWMSubmitTransactionCallback: missing extraction");
                 }
+
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
+
+                system.query.createTransaction(manager.getNetwork().getUids(), transaction, identifier,
+                        new CompletionHandler<TransactionIdentifier, QueryError>() {
+                            @Override
+                            public void handleData(TransactionIdentifier tid) {
+                                Log.log(Level.FINE, "BRCryptoCWMSubmitTransactionCallback: succeeded");
+                                manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
+                                        tid.getIdentifier(),
+                                        tid.getHash().orNull(),
+                                        true);
+                            }
+
+                            @Override
+                            public void handleError(QueryError error) {
+                                Log.log(Level.SEVERE, "BRCryptoCWMSubmitTransactionCallback: failed", error);
+                                manager.getCoreBRCryptoWalletManager().announceSubmitTransfer(callbackState,
+                                        null,
+                                        null,
+                                        false);
+                            }
+                        });
+
+
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceSubmitTransfer(callbackState, null, null, false);
@@ -2086,37 +1649,40 @@ final class System implements com.blockset.walletkit.System {
     private static void estimateTransactionFee(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                                byte[] transaction) {
         EXECUTOR_CLIENT.execute(() -> {
+
             try {
                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback");
 
-                Optional<System> optSystem = getSystem(context);
-                if (optSystem.isPresent()) {
-                    System system = optSystem.get();
+                Optional<Extraction> optExtraction = Extraction.extract(context,
+                                                                        coreWalletManager);
+                if (!optExtraction.isPresent()) {
+                    throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing extraction");
+                }
 
-                    Optional<WalletManager> optWalletManager = system.getWalletManager(coreWalletManager);
-                    if (optWalletManager.isPresent()) {
-                        WalletManager walletManager = optWalletManager.get();
+                System        system   = optExtraction.get().system;
+                WalletManager manager  = optExtraction.get().manager;
 
-                        system.query.estimateTransactionFee(walletManager.getNetwork().getUids(), transaction, new CompletionHandler<TransactionFee, QueryError>() {
+                system.query.estimateTransactionFee(manager.getNetwork().getUids(),
+                        transaction,
+                        new CompletionHandler<TransactionFee, QueryError>() {
                             @Override
                             public void handleData(TransactionFee fee) {
                                 Log.log(Level.FINE, "BRCryptoCWMEstimateTransactionFeeCallback: succeeded");
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, true, fee.getCostUnits(), fee.getProperties());
+                                manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
+                                        true,
+                                        fee.getCostUnits(),
+                                        fee.getProperties());
                             }
 
                             @Override
                             public void handleError(QueryError error) {
                                 Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
-                                walletManager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
+                                manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
+                                        false,
+                                        UnsignedLong.ZERO,
+                                        new ArrayMap<>());
                             }
                         });
-                    } else {
-                        throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing manager");
-                    }
-
-                } else {
-                    throw new IllegalStateException("BRCryptoCWMEstimateTransactionFeeCallback: missing system");
-                }
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
                 coreWalletManager.announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());

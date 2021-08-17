@@ -104,7 +104,7 @@ wkTransferGetHashXRP (WKTransfer transfer) {
             : wkHashCreateAsXRP (hash));
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXRP (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,

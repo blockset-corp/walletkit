@@ -11,7 +11,7 @@ import com.blockset.walletkit.events.network.NetworkEvent;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
 import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 
@@ -55,7 +55,7 @@ public final class DispatchingSystemListener implements SystemListener {
     }
 
     @Override
-    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
         for (SystemListener listener: listeners) {
             listener.handleTransferEvent(system, manager, wallet, transfer, event);
         }
@@ -82,7 +82,7 @@ public final class DispatchingSystemListener implements SystemListener {
     /**
      * Add a listener for events scoped to a {@link WalletManager}.
      *
-     * This includes {@link WalletManagerEvent}, {@link WalletEvent} and {@link TranferEvent} events.
+     * This includes {@link WalletManagerEvent}, {@link WalletEvent} and {@link TransferEvent} events.
      */
     public void addWalletManagerListener(WalletManager manager, SystemListener listener) {
         listeners.add(new ScopedWalletManagerListener(manager, listener));
@@ -100,7 +100,7 @@ public final class DispatchingSystemListener implements SystemListener {
     /**
      * Add a listener for events scoped to a {@link Wallet}.
      *
-     * This includes {@link WalletEvent} and {@link TranferEvent} events.
+     * This includes {@link WalletEvent} and {@link TransferEvent} events.
      */
     public void addWalletListener(Wallet wallet, SystemListener listener) {
         listeners.add(new ScopedWalletListener(wallet, listener));
@@ -118,7 +118,7 @@ public final class DispatchingSystemListener implements SystemListener {
     /**
      * Add a listener for events scoped to a {@link Transfer}.
      *
-     * This includes {@link TranferEvent} events.
+     * This includes {@link TransferEvent} events.
      */
     public void addTransferListener(Transfer transfer, SystemListener listener) {
         listeners.add(new ScopedTransferListener(transfer, listener));
@@ -156,7 +156,7 @@ public final class DispatchingSystemListener implements SystemListener {
         }
 
         @Override
-        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
             if (this.manager.equals(manager)) {
                 listener.handleTransferEvent(system, manager, wallet, transfer, event);
             }
@@ -201,7 +201,7 @@ public final class DispatchingSystemListener implements SystemListener {
         }
 
         @Override
-        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
             if (this.wallet.equals(wallet)) {
                 listener.handleTransferEvent(system, manager, wallet, transfer, event);
             }
@@ -239,7 +239,7 @@ public final class DispatchingSystemListener implements SystemListener {
         }
 
         @Override
-        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+        public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
             if (this.transfer.equals(transfer)) {
                 listener.handleTransferEvent(system, manager, wallet, transfer, event);
             }

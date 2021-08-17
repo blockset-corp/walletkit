@@ -70,17 +70,17 @@ uint8_t * pack_int64(int64_t i, uint8_t* buffer)
     return buffer+8;
 }
 
-uint8_t * pack_fopaque(uint8_t *data, size_t dataSize, uint8_t *buffer)
+uint8_t * pack_fopaque(uint8_t *data, int32_t dataSize, uint8_t *buffer)
 {
     // See if the datasize is a multiple of 4 - and determine how many
     // bytes we need to pad at the end of this opaque data
-    size_t paddedSize = ((dataSize+3)/4) * 4;
-    size_t padding = paddedSize - dataSize;
-    memcpy(buffer, data, dataSize);
+    size_t paddedSize = (((size_t)dataSize+3)/4) * 4;
+    size_t padding = paddedSize - (size_t)dataSize;
+    memcpy(buffer, data, (size_t) dataSize);
     return (buffer + dataSize + padding);
 }
 
-uint8_t * pack_opaque(uint8_t *data, int dataSize, uint8_t *buffer)
+uint8_t * pack_opaque(uint8_t *data, int32_t dataSize, uint8_t *buffer)
 {
     // See if the datasize is a multiple of 4 - and determine how many
     // bytes we need to pad at the end of this opaque data
@@ -107,27 +107,12 @@ uint8_t * pack_AccountID(BRStellarAccountID *accountId, uint8_t *buffer)
     return pack_fopaque(accountId->accountID, sizeof(accountId->accountID), buffer);
 }
 
-uint8_t * pack_TimeBounds(BRStellarTimeBounds *timeBounds, int numTimeBounds, uint8_t *buffer)
-{
-    // TimeBounds is an array - so first write out the number of elements
-    if (!timeBounds) {
-        return pack_int(0, buffer); // array size is zero
-    }
-    buffer = pack_int(numTimeBounds, buffer);
-    for(int i = 0; i < numTimeBounds; i++) {
-        // TimeBounds is make up of 2 TimePoint objects (uint64_t)
-        buffer = pack_uint64(timeBounds[i].minTime, buffer);
-        buffer = pack_uint64(timeBounds[i].maxTime, buffer);
-    }
-    return buffer;
-}
-
 uint8_t * pack_Memo(BRStellarMemo *memo, uint8_t *buffer)
 {
     if (!memo) {
         return pack_int(0, buffer); // no memo
     }
-    buffer = pack_int(memo->memoType, buffer);
+    buffer = pack_int((int32_t)memo->memoType, buffer);
     switch (memo->memoType) {
         case MEMO_NONE:
             break;
@@ -163,7 +148,7 @@ uint8_t * pack_Asset(BRStellarAsset *asset, uint8_t *buffer)
     return buffer;
 }
 
-uint8_t * pack_Op(BRStellarOperation *op, uint8_t *buffer)
+uint8_t * pack_Payment(BRStellarOperation *op, uint8_t *buffer)
 {
     // SourceID - for some strange reason the sourceID (optional) is packed as
     // an array. So at a minimum we need to pack the array size (0 or 1).
@@ -174,15 +159,45 @@ uint8_t * pack_Op(BRStellarOperation *op, uint8_t *buffer)
         buffer = pack_int(0, buffer);
     }
 
-    buffer = pack_int(op->type, buffer); // Operation type
+    buffer = pack_int((int32_t)op->type, buffer); // Operation type
     buffer = pack_AccountID(&op->operation.payment.destination, buffer); // DestinationID
     buffer = pack_Asset(&op->operation.payment.asset, buffer); // Asset
 
     // Amount See `Stellar's documentation on Asset Precision
     // <https://www.stellar.org/developers/guides/concepts/assets.html#amount-precision-and-representation>`_
     // for more information.
-    buffer = pack_int64(op->operation.payment.amount, buffer);
+    // Amounts in Walletkit are uint64_t, but for Stellar they are encoded as int64_t
+    buffer = pack_int64((int64_t)op->operation.payment.amount, buffer);
     return buffer;
+}
+
+uint8_t * pack_CreateAccount(BRStellarOperation *op, uint8_t *buffer)
+{
+    // SourceID - for some strange reason the sourceID (optional) is packed as
+    // an array. So at a minimum we need to pack the array size (0 or 1).
+    if (validAccountID(&op->source)) {
+        buffer = pack_int(1, buffer);
+        buffer = pack_AccountID(&op->source, buffer);
+    } else {
+        buffer = pack_int(0, buffer);
+    }
+
+    buffer = pack_int((int32_t)op->type, buffer); // Operation type
+    buffer = pack_AccountID(&op->operation.createAccount.account, buffer); // DestinationID
+    // Amounts in Walletkit are uint64_t, but for Stellar they are encoded as int64_t
+    buffer = pack_int64((int64_t)op->operation.createAccount.startingBalance, buffer);
+    return buffer;
+}
+
+uint8_t * pack_Op(BRStellarOperation *op, uint8_t * buffer)
+{
+    if (op->type == ST_OP_PAYMENT) {
+        return pack_Payment(op, buffer);
+    } else if (op->type == ST_OP_CREATE_ACCOUNT) {
+        return pack_CreateAccount(op, buffer);
+    } else {
+        return buffer;
+    }
 }
 
 uint8_t * pack_SingleOperation(BRStellarOperation * operation, uint8_t *buffer)
@@ -217,14 +232,12 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
                                           BRStellarFee fee,
                                           BRStellarAmount amount,
                                           BRStellarSequence sequence,
-                                          BRStellarTimeBounds *timeBounds,
-                                          int numTimeBounds,
                                           BRStellarMemo *memo,
                                           int32_t version,
                                           uint8_t *signature,
                                           uint8_t **buffer)
 {
-    size_t approx_size = 24 + 4 + 8 + (4 + numTimeBounds*16) + 4 + 32; // First 4 fields + version + buffer
+    size_t approx_size = 24 + 4 + 8 + 4 + 4 + 32; // First 4 fields + version + buffer
     approx_size += (4 + 128) + (4 + (memo ? 32 : 0)) + 72;
 
     *buffer = calloc(1, approx_size);
@@ -240,8 +253,8 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
     // Sequence - SequenceNumber object
     pCurrent = pack_int64(sequence, pCurrent);
 
-    // TimeBounds - TimeBounds (array of TimePoints)
-    pCurrent = pack_TimeBounds(timeBounds, numTimeBounds,pCurrent);
+    // TimeBounds - TimeBounds we don't use them so set the timebounds array count to 0
+    pCurrent = pack_int(0, pCurrent);
 
     // Memo - Memo object
     pCurrent = pack_Memo(memo, pCurrent);
@@ -261,5 +274,5 @@ extern size_t stellarSerializeTransaction(BRStellarAddress from,
         pCurrent = pack_SingleSignature(signature, pCurrent);
     }
 
-    return (pCurrent - pStart);
+    return (size_t)(pCurrent - pStart);
 }

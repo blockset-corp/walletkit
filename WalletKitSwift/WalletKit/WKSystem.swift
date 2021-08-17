@@ -1307,8 +1307,6 @@ extension System {
 
                 // On 'FEE_BASIS_ESTIMATED' invoke the callbackCoordinator
                 if WK_WALLET_EVENT_FEE_BASIS_ESTIMATED == wkWalletEventGetType(event!) {
-                    print (printString)
-
                     var status:   WKStatus = WK_SUCCESS
                     var cookie:   WKCookie!
                     var feeBasis: WKFeeBasis!
@@ -1316,9 +1314,11 @@ extension System {
                     wkWalletEventExtractFeeBasisEstimate (event, &status, &cookie, &feeBasis);
 
                     if status == WK_SUCCESS {
+                        print (printString + ": Fee = \(TransferFeeBasis (core: feeBasis, take: true).fee)")
                         system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: TransferFeeBasis (core: feeBasis, take: false))
                     }
                     else {
+                        print (printString + ": FAILED")
                         system.callbackCoordinator.handleWalletFeeEstimateFailure (cookie, error: Wallet.FeeEstimationError.fromStatus(status))
                     }
                 }
@@ -1342,7 +1342,7 @@ extension System {
                 }
             },
 
-            // WKListenerWalletCallback
+            // WKListenerTransferCallback
             { (context, cwm, wid, tid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid && nil != tid)
                 defer { wkWalletManagerGive(cwm); wkWalletGive(wid); wkTransferGive(tid) }

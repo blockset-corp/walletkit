@@ -447,14 +447,12 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.c
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.h
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosBase.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.h
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.c
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.h
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosOperation.c
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosOperation.h
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.h)
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.h)
 
 # Tezos Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -481,8 +479,6 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarBase.h
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.c
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarFeeBasis.c

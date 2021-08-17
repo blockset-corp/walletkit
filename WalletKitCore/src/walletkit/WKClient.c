@@ -1123,6 +1123,9 @@ wkClientHandleEstimateTransactionFee (OwnershipKept WKWalletManager manager,
     wkAmountGive (pricePerCostFactor);
 
     wkClientCallbackStateRelease (callbackState);
+
+    array_free_all (attributeKeys, wkMemoryFree);
+    array_free_all (attributeVals, wkMemoryFree);
 }
 
 static void
@@ -1217,6 +1220,8 @@ wkClientQRYEstimateTransferFee (WKClientQRYManager qry,
                                             serialization,
                                             serializationCount,
                                             hashAsHex);
+
+    free (serialization);
 }
 
 // MARK: - Transfer Bundle
@@ -1525,6 +1530,7 @@ wkClientTransferBundleRlpDecode (BRRlpItem item,
     free (amount);
     free (to);
     free (from);
+    free (ident);
     free (uids);
     free (hash);
 

@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.nativex.WKAddressScheme;
+import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.WKNetworkType;
 import com.blockset.walletkit.nativex.WKPaymentProtocolError;
 import com.blockset.walletkit.nativex.WKPaymentProtocolType;
@@ -181,6 +182,7 @@ final class Utilities {
                             included.transactionIndex,
                             included.blockTimestamp,
                             Optional.fromNullable(included.feeBasis)
+                                    .transform(WKFeeBasis::take)
                                     .transform(TransferFeeBasis::create)
                                     .transform(TransferFeeBasis::getFee),
                             included.success,

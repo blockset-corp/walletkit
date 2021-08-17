@@ -141,6 +141,13 @@ public class WKAmount extends PointerType {
         }
     }
 
+    public WKAmount take() {
+        return new WKAmount(
+                WKNativeLibraryDirect.wkAmountTake(
+                        this.getPointer()
+                ));
+    }
+
     public void give() {
         Pointer thisPtr = this.getPointer();
 

@@ -12,10 +12,8 @@
 #ifndef BRTezos_h
 #define BRTezos_h
 
-#include <stdint.h>
 #include "BRTezosAccount.h"
 #include "BRTezosTransaction.h"
-#include "BRTezosTransfer.h"
 
 #ifdef __cplusplus
 extern "C" {
