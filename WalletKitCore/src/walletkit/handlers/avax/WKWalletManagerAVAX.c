@@ -227,8 +227,8 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     // Get the `source` and `target` addresses.  We'll only use `source` if we need to create a
     // transfer; we'll use `target` both if a transfer is created and to identify a pre-existing
     // transfer held by wallet.
-    BRAvalancheAddress avaxTarget = avalancheAddressCreateFromString (bundle->to,   false);
-    BRAvalancheAddress avaxSource = avalancheAddressCreateFromString (bundle->from, false);
+    BRAvalancheAddress avaxTarget = avalancheAddressCreateFromString (bundle->to,   false, AVALANCHE_CHAIN_TYPE_X);
+    BRAvalancheAddress avaxSource = avalancheAddressCreateFromString (bundle->from, false, AVALANCHE_CHAIN_TYPE_X);
 
     WKAddress target = wkAddressCreateAsAVAX (avaxTarget);
     WKAddress source = wkAddressCreateAsAVAX (avaxSource);

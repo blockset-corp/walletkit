@@ -11,16 +11,30 @@
 #ifndef BRAvalancheAddress_h
 #define BRAvalancheAddress_h
 
-#include <stdbool.h>
-
-#include "support/BRKey.h"
+#include "BRAvalancheBase.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Possibly a 'value' type instead of this 'reference' type
-typedef struct BRAvalancheAddressRecord *BRAvalancheAddress;
+// Avalanche defines two address formats: X and C
+#define AVALANCHE_ADDRESS_BYTES_X   (20)
+#define AVALANCHE_ADDRESS_BYTES_C   (20)
+
+// An Avalance X address is based on RMD16 (SHA256 (pubkey)
+typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_X]; } BRAvalancheAddressX;
+
+// An Avalanche C address is identical to an Ethereum address
+typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_C]; } BRAvalancheAddressC;
+
+typedef struct {
+    BRAvalancheChainType type;
+    union {
+        BRAvalancheAddressX x;
+        BRAvalancheAddressC c;
+    } u;
+} BRAvalancheAddress;
+
 
 /**
  * Get the avalanche address string representation of the address.
@@ -43,7 +57,7 @@ avalancheAddressAsString (BRAvalancheAddress address);
  * @return address  - a BRAvalancheAddress object
  */
 extern BRAvalancheAddress
-avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen);
+avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen, BRAvalancheChainType type);
 
 /**
  * Create a avalanche address from a valid avalanche manager address string
@@ -53,18 +67,10 @@ avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen);
  * @return address  - a BRAvalancheAddress object
  */
 extern BRAvalancheAddress
-avalancheAddressCreateFromString(const char * avalancheAddressString, bool strict);
+avalancheAddressCreateFromString(const char * avalancheAddressString, bool strict, BRAvalancheChainType type);
 
-/**
- * Free the memory associated with a BRAvalancheAddress
- *
- * @param address   - a BRAvalancheAddress
- *
- * @return void
- */
-extern void
-avalancheAddressFree (BRAvalancheAddress address);
 
+#if 0
 /**
  * Check is this address is the
  *
@@ -77,18 +83,10 @@ avalancheAddressIsFeeAddress (BRAvalancheAddress address);
 
 extern bool
 avalancheAddressIsUnknownAddress (BRAvalancheAddress address);
+#endif
 
-/**
- * Copy a BRAvalancheAddress
- *
- * @param address   - a BRAvalancheAddress
- *
- * @return copy     - an exact copy of the specified address
- */
-extern BRAvalancheAddress
-avalancheAddressClone (BRAvalancheAddress address);
 
-/**
+#if 0/**
  * Get the size of the raw bytes for this address
  *
  * @param address   - a BRAvalancheAddress
@@ -109,6 +107,7 @@ avalancheAddressGetRawSize (BRAvalancheAddress address);
  */
 extern void
 avalancheAddressGetRawBytes (BRAvalancheAddress address, uint8_t *buffer, size_t bufferSize);
+#endif
 
 /**
  * Compare 2 avalanche addresses

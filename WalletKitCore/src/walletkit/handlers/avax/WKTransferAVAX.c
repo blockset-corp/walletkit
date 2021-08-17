@@ -125,10 +125,7 @@ avalancheTransactionGetDirection (BRAvalancheTransaction transfer,
     
     int isSource = avalancheAccountHasAddress (account, source);
     int isTarget = avalancheAccountHasAddress (account, target);
-    
-    avalancheAddressFree (target);
-    avalancheAddressFree (source);
-    
+        
     return (isSource && isTarget
             ? WK_TRANSFER_RECOVERED
             : (isSource

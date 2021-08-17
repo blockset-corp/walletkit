@@ -29,6 +29,14 @@
 extern "C" {
 #endif
 
+typedef enum {
+    AVALANCHE_CHAIN_TYPE_X,
+    AVALANCHE_CHAIN_TYPE_C,
+    AVALANCHE_CHAIN_TYPE_P,
+} BRAvalancheChainType;
+
+#define NUMBER_OF_AVALANCHE_CHAIN_TYPES    (1 + AVALANCHE_CHAIN_TYPE_P)
+
 // The integer amount for Avalanche
 typedef uint64_t BRAvalancheAmount;
 
@@ -93,6 +101,24 @@ avalancheHashSetValue (const BRAvalancheHash *hash) {
     // First foun bytes as a uint32; unlikely to be sufficient (?)
     return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
 }
+
+
+// Support
+
+extern bool
+avax_bech32_encode(char *const output, size_t *const out_len,
+                   const char *const hrp, const size_t hrp_len,
+                   const uint8_t *const data, const size_t data_len);
+
+extern bool
+avax_base32_encode(uint8_t *const out, size_t *out_len,
+                   const uint8_t *const in, const size_t in_len);
+
+extern int
+avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input);
+
+extern int
+avax_addr_bech32_decode(uint8_t *addr_data, size_t *addr_len, const char *hrp, const char *addr_str);
 
 #ifdef __cplusplus
 }
