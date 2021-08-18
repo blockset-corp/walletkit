@@ -74,17 +74,6 @@ avalancheAccountSignData (BRAvalancheAccount account,
                          UInt512 seed,
                          size_t  *count);
 
-#if 0
-/**
- * Get the public key for this Avalanche account
- *
- * @param account
- *
- * @return public key
- */
-extern BRKey
-avalancheAccountGetPublicKey (BRAvalancheAccount account);
-#endif
 /**
  * Get the Avalanche Address from the specified account.
  *
