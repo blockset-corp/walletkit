@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "support/BRInt.h"
 #include "support/BRBIP32Sequence.h"
 
 #include "BRAvalancheAccount.h"
@@ -98,47 +99,34 @@ avalancheAccountFree (BRAvalancheAccount account)
 
 // MARK: - Signing
 
-extern OwnershipGiven uint8_t *
+extern BRAvalancheSignature
 avalancheAccountSignData (BRAvalancheAccount account,
                          uint8_t *bytes,
                          size_t   bytesCount,
-                         UInt512  seed,
-                         size_t  *count) {
+                         UInt512  seed) {
+    BRAvalancheSignature signature = { 0 };
 
-#if 0
-    BRKey keyPublic  = avalancheAccountGetPublicKey (account);
-#endif
+    // Derive the private key from `seed`
     BRKey keyPrivate = avalancheDerivePrivateKeyFromSeed (seed, /* index */ 0);
 
+    /*
+     * https://docs.avax.network/build/references/cryptographic-primitives#secp-256-k1-recoverable-signatures
+     *
+     * "Recoverable signatures are stored as the 65-byte [R || S || V] where V is 0 or 1 to allow
+     * quick public key recoverability. S must be in the lower half of the possible range to
+     * prevent signature malleability. Before signing a message, the message is hashed using sha256."
+     */
+    UInt256 md;
+    BRSHA256 (md.u8, bytes, bytesCount);
 
-#if 0
-    uint8_t privateKeyBytes[64];
-    avalancheKeyGetPrivateKey(privateKey, privateKeyBytes);
-    
-    uint8_t watermark[] = { 0x03 };
-    size_t watermarkSize = sizeof(watermark);
-    
-    WKData watermarkedData = wkDataNew(data.size + watermarkSize);
-    
-    memcpy(watermarkedData.bytes, watermark, watermarkSize);
-    memcpy(&watermarkedData.bytes[watermarkSize], data.bytes, data.size);
-    
-    uint8_t hash[32];
-    blake2b(hash, sizeof(hash), NULL, 0, watermarkedData.bytes, watermarkedData.size);
-    
-    WKData signature = wkDataNew(64);
-    ed25519_sign(signature.bytes, hash, sizeof(hash), publicKey.pubKey, privateKeyBytes);
-    
-    mem_clean(privateKeyBytes, 64);
-    wkDataFree(watermarkedData);
-    
+    size_t  signatureBytesSize = BRKeyCompactSignEthereum (&keyPrivate, NULL, 0, md);   // RSV
+    assert (65 == signatureBytesSize);
+    assert (65 == sizeof(BRAvalancheSignature));
+
+    BRKeyCompactSignEthereum (&keyPrivate, &signature, sizeof(BRAvalancheSignature), md);
+    BRKeyClean(&keyPrivate);
+
     return signature;
-#endif
-
-    ASSERT_UNIMPLEMENTED; (void) keyPrivate;
-
-    *count = 0;
-    return NULL;
 }
 
 // MARK: - Accessors
