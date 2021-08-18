@@ -517,9 +517,11 @@ target_sources (WalletKitCore
         ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheBase.h
         ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.c
         ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheFeeBasis.h
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheSupport.c
+        ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheSupport.h
         ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.c
         ${PROJECT_SOURCE_DIR}/src/avalanche/BRAvalancheTransaction.h)
-        
+
 # __NEW_BLOCKCHAIN_IMPL__
 
 # Avalanche Tests
