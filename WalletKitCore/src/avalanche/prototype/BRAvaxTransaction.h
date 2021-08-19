@@ -10,6 +10,7 @@
 
 #include "support/BRBase58.h"
 #include "support/util/BRHex.h"
+#include "BRAvalancheAddress.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,17 +28,24 @@ typedef enum {
 
 //unit32_t
 typedef enum {
+    SECP256K1TransferInput = 0x00000005, //input
+} input_type;
+
+typedef enum{
     SECP256K1TransferOutput = 0x00000007, //output
     SECP256K1OutputOwners= 0x0000000b, //output
-    SECP256K1TransferInput = 0x00000005, //input
-} type_id_t;
+} output_type;
+
+typedef enum{
+    BaseTx = 0x01,
+}tx_type;
 
 struct AddressRecord{
-    char address[20];
+    char rmd160[20];
 };
 
-struct AssetRecord{
-    char asset_id[33];
+struct BRAssetRecord{
+    char asset_id[33]; //null terminated asset id
     uint8_t bytes[32];
 };
 
@@ -46,47 +54,62 @@ struct TxIdRecord{
     uint8_t bytes[32];
 };
 
-struct BaseOutputRecord{
-    type_id_t type_id;
+struct SECP256K1TransferOutputRecord{
     uint64_t amount;
     uint64_t locktime;
     uint32_t threshold;
-    size_t addresses_len;
-    struct AddressRecord * addresses;
+    size_t addresses_len; //must be set to 0 if address is null
+    struct AddressRecord ** addresses;
 };
 
-struct SECP256K1TransferOutputRecord{
-    struct BaseOutputRecord base;
-    uint64_t amount;
+//=====Unsupported Ouptput Types
+struct SECP256K1MintOutputRecord{
+    uint64_t locktime;
+    uint32_t threshold;
+    size_t addresses_len; //must be set to 0 if address is null
+    BRAvalancheXAddress ** addresses;
 };
-//SECP256K1TransferOutputRecord_Default = { .base.type_id= SECP256K1TransferOutput};
 
+struct NFTTransferOutputRecord{
+    uint64_t locktime;
+    uint64_t threshold;
+    uint32_t group_id;
+    size_t payload_len;
+    uint8_t ** payload; //variable lenghh array
+    size_t addresses_len; //must be set to 0 if address is null
+    BRAvalancheXAddress ** addresses;
+};
+//=====End
 
 struct TransferableOutputRecord{
-    struct AssetRecord asset; //32 bytes
-    size_t outputs_len;
-    struct BaseOutputRecord ** outputs;
-   
+    output_type type_id;
+    struct BRAssetRecord asset; //32 bytes
+    //void * output; //Ugly as we have to cast by type_id and manage memory seperately potentially :(
+    union{
+            struct SECP256K1TransferOutputRecord secp256k1;
+            struct SECP256K1MintOutputRecord mint;
+    }output;
 };
 
-struct BaseInputRecord{
-    type_id_t type_id;                  // 04 bytes
+struct SECP256K1TransferInputRecord{
     uint64_t amount;                   // 08 bytes
     size_t address_indices_len;
     uint32_t * address_indices; //variable array of 04 bytes
 };
-//BaseInputRecord_Default = {.type_id = SECP256K1TransferInput };
 
 struct TranferableInputRecord{
+    input_type type_id;
     struct TxIdRecord tx; //32 byte txid
     uint32_t utxo_index;
-    struct AssetRecord asset; //32 byte
-    size_t inputs_len;
-    struct BaseInputRecord ** inputs;
+    struct BRAssetRecord asset; //32 byte
+    union {
+        struct SECP256K1TransferInputRecord secp256k1;
+    } input;
+
  };
 
 struct BaseTxRecord{
-    type_id_t type_id; // 4 bytes
+    tx_type type_id; // 4 bytes
     network_id_t network_id; //4 bytes
     char blockchain_id[32];//no null terminating char
     struct TransferableOutputRecord ** outputs;
@@ -99,19 +122,12 @@ struct BaseTxRecord{
 
 extern void avaxCreateBaseTx();
 
-extern void serializeOutputs();
+extern struct BaseTxRecord *
+avaxTransactionCreate(const char* sourceAddress,
+                      const char* targetAddress,
+                      uint64_t amount);
 
-extern void serializeSECP256K1TransferOutputRecord(struct SECP256K1TransferOutputRecord * secp256k1TransferOutput );
-
-extern void serializeBaseInputRecord(struct BaseInputRecord * secp256k1TransferInput );
-
-
-extern void serializeInput(struct TranferableInputRecord * input);
-
-extern void serializeInput(struct TranferableInputRecord * input);
-
-
-extern void serializeBaseTx();
+extern void releaseTransaction(struct BaseTxRecord * tx);
 
 extern void signTx();
 

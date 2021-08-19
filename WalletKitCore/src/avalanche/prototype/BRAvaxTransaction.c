@@ -7,28 +7,36 @@
 
 #include "BRAvaxTransaction.h"
 
-extern void avaxCreateBaseTx(){
+extern struct BaseTxRecord * avaxTransactionCreate(const char* sourceAddress,
+                             const char* targetAddress,
+                                uint64_t amount){
    
 //
     
-    struct TransferableOutputRecord * outputs = calloc (1, sizeof(struct TransferableOutputRecord));
-    struct SECP256K1TransferOutputRecord * secpOutput = calloc(1, sizeof(struct SECP256K1TransferOutputRecord));
+    struct BaseTxRecord * tx = calloc(1, sizeof(struct BaseTxRecord));
+    struct TransferableOutputRecord * output = calloc (1, sizeof(struct TransferableOutputRecord));
+
+    struct TranferableInputRecord * input = calloc(1, sizeof(struct TranferableInputRecord));
     
-    struct TranferableInputRecord * inputs = calloc(1, sizeof(struct TranferableInputRecord));
+    input->type_id = SECP256K1TransferInput;
+    input->input.secp256k1.address_indices_len = 4;
     
-    struct BaseInputRecord * secInput = calloc(1, sizeof(struct BaseInputRecord));
+    output->type_id = SECP256K1TransferOutput;
+    output->output.secp256k1.amount = 166;
     
-    inputs->inputs_len = 1;
-    inputs->inputs = calloc(1, sizeof(struct BaseInputRecord *));
-    inputs->inputs[0] = secInput;
-    secInput->type_id = SECP256K1TransferInput;
+    tx->network_id = NETWORK_ID_FUJI;
+    //tx->blockchain_id
+    //tx->memo
     
+    tx->outputs = calloc(1, sizeof(struct TransferableOutputRecord *));
+    tx->outputs[0] = output;
+    tx->outputs_len = 1;
+    tx->inputs = calloc(1, sizeof(struct TranferableInputRecord *));
+    tx->inputs_len = 1;
+    tx->inputs[0]=input;
+   
     
-    free(outputs);
-    free(inputs);
-    free(secInput);
-    free(secpOutput);
-    
+    return tx;
 //    BRAvalancheTransferOutputBase tout = calloc(1, sizeof(struct BRAvalancheTransferOutputBaseRecord));
 //    tout->target.amount = 101;
 //
@@ -69,3 +77,15 @@ extern void avaxCreateBaseTx(){
 //    free(output1);
 }
 
+extern void releaseTransaction(struct BaseTxRecord * tx){
+    
+    for(int i=0; i < tx->inputs_len; i++){
+        free(tx->inputs[i]);
+    }
+    
+    for(int i=0; i < tx->outputs_len; i++){
+        free(tx->outputs[i]);
+    }
+    
+    free(tx);
+}
