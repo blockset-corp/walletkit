@@ -20,6 +20,7 @@
 #include "support/BRBase58.h"
 
 #include "avalanche/prototype/BRAvalancheAccount.h"
+#include "avalanche/prototype/BRAvalancheAddress.h"
 #include "avalanche/prototype/BRAvalancheTransaction.h"
 #include "avalanche/prototype/BRAvaxTransaction.h"
 
@@ -76,6 +77,7 @@ typedef struct {
     const char * privKey;
     const char * xaddress;
     const char * caddress;
+    const char * ripemd160;
 } TestAccount;
 
 //test account was made via :
@@ -85,9 +87,10 @@ TestAccount avaxTestAccount = {
     "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
     "029dc79308883267bb49f3924e9eb58d60bcecd17ad3f2f53681ecc5c668b2ba5f",
     "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466",
-    //expected ripemd160: cc30e2015780a6c72efaef2280e3de4a954e770c
     "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",
-    "bbc9bf879c06b13274c200c8b246881ef1ca33a0"
+    "bbc9bf879c06b13274c200c8b246881ef1ca33a0",
+    "cc30e2015780a6c72efaef2280e3de4a954e770c"
+    
 };
 
 // caller must free
@@ -99,6 +102,7 @@ makeAccount(TestAccount accountInfo) {
     return avalancheAccountCreateWithSeed(seed);
 }
 
+
 //Test-Case resource
 //https://github.com/ava-labs/ledger-app-avalanche/blob/a340702ec427b15e7e4ed31c47cc5e2fb170ebdf/tests/basic-tests.js#L19
 
@@ -108,6 +112,23 @@ makeAccount(TestAccount accountInfo) {
 //Get test cases from ava project itself
 //https://github.com/ava-labs/avalanche-wallet/blob/master/tests/js/wallets/SingletonWallet.test.ts
 //https://github.com/ava-labs/ledger-app-avalanche/blob/develop/tests/basic-tests.js
+
+void testAddressDecode(){
+    //test:
+    uint8_t recovered[20];
+    size_t rec_len;
+   
+    avax_addr_bech32_decode(recovered, &rec_len, "avax","avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal" );
+    printf("expected:");
+    
+    for(int i=0; i < rec_len; i++){
+        printf("%02x", recovered[i]);
+    }
+    uint8_t ripemd160[20];
+    hex2bin(avaxTestAccount.ripemd160, ripemd160);
+    assert(0==memcmp(recovered,ripemd160, sizeof(ripemd160)));
+}
+
 extern void runAvalancheTest (void) {
     printf("Running avalanche unit tests...\n");
     BRAvalancheAccount account = makeAccount(avaxTestAccount);
@@ -119,10 +140,12 @@ extern void runAvalancheTest (void) {
     hex2bin(avaxTestAccount.caddress, ethAddress);
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
     
+    struct BaseTxRecord * tx = avaxTransactionCreate("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", 100);
     
-    avaxCreateBaseTx();
-    createBaseTx();
-   
+    releaseTransaction(tx);
+    
+    testAddressDecode();
+    printf("DONE");
 }
 
 
