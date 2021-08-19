@@ -461,6 +461,41 @@ function update_walletkitcoretests() {
     sed -i '' -e "1,\$s/\/\/[ ]__NEW_BLOCKCHAIN_TEST_DEFN__/$test_defn/" $wkcoretests_include
 }
 
+# Checks for the WKAccount.c file and if not existant, create a test file
+function check_create_wkaccount() {
+    wk_account_file=${output_path[$WKCORE_OUTPUT]}/src/walletkit/WKAccount.c
+    if [ ! -f $wk_account_file ]; then
+
+        echov "  Creating new WKAccount.c file"
+        mkdir -p ${output_path[$WKCORE_OUTPUT]}/src/walletkit
+        touch $wk_account_file
+       
+        echo // Version 6: The prior version >> $wk_account_file
+        echo "#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  6"  >> $wk_account_file 
+    fi
+}
+
+# Create if necessary WKAccount.c and then update with the required
+# account serialization version which is bumped with each new blockchain
+#
+# @param ucsymbol The UpperCase blockchain mnemonic
+function update_wkaccount() {
+    
+    ucsymbol=$1
+
+    wk_account_file=${output_path[$WKCORE_OUTPUT]}/src/walletkit/WKAccount.c
+    check_create_wkaccount
+
+    # WKNetworkType private static decl for new VALUE requires picking up
+    # the last emitted 'next value' which is part of the commented section
+    acct_ser_vers_repl="#define ACCOUNT_SERIALIZE_DEFAULT_VERSION\\s+[0-9]{1,}"
+    last_vers_value=`grep -Eo "$acct_ser_vers_repl" $wk_account_file | grep -Eo '[0-9]{1,}'`
+    next_vers_value=$((last_vers_value + 1))
+    next_vers_comment="\/\/ Version ${next_vers_value}: V${last_vers_value} + ${ucsymbol}"
+    next_vers="#define ACCOUNT_SERIALIZE_DEFAULT_VERSION ${next_vers_value}"
+    sed -i '' -e "1,\$s/#define ACCOUNT_SERIALIZE_DEFAULT_VERSION[[:space:]]*${last_vers_value}/$next_vers_comment\n$next_vers/" $wk_account_file 
+}
+
 # Updates the WKBase.h header file with required definitions
 #
 # @param ucsymbol The UpperCase blockchain mnemonic
@@ -815,9 +850,12 @@ pkg_enabled $HANDLER_PKG $BLOCKCHAIN_PKG
 if [ $pkg_enabled_result -eq 1 ]; then
     # check for and create a new WKConfig.h if necessary
     check_create_wkconfig
-
+    
     # check for and create a new WKBase.h if necessary
     update_wkbase $bc_symbol $bc_symbol_lc
+
+    # check for and create a new WKAccount.c if necessary
+    update_wkaccount $bc_symbol
 fi
 
 # Update naked templates for handlers
