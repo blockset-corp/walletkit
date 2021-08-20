@@ -88,7 +88,7 @@ wkWalletGetAddressAVAX (WKWallet wallet,
                            WKAddressScheme addressScheme) {
     assert (WK_ADDRESS_SCHEME_NATIVE == addressScheme);
     WKWalletAVAX walletAVAX = wkWalletCoerce (wallet);
-    return wkAddressCreateAsAVAX (avalancheAccountGetAddress(walletAVAX->avaxAccount));
+    return wkAddressCreateAsAVAX (avalancheAccountGetAddress(walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X));
 }
 
 static bool
@@ -202,7 +202,7 @@ wkWalletCreateTransferAVAX (WKWallet  wallet,
 
     BRAvalancheAccount avaxAcount = walletAVAX->avaxAccount;
     
-    BRAvalancheAddress avaxSource  = avalancheAccountGetAddress (walletAVAX->avaxAccount);
+    BRAvalancheAddress avaxSource  = avalancheAccountGetAddress (walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X);
     BRAvalancheAddress avaxTarget  = wkAddressAsAVAX (target);
 
     WKBoolean amountIsNegative = WK_FALSE;
@@ -215,8 +215,6 @@ wkWalletCreateTransferAVAX (WKWallet  wallet,
                                                                              avaxTarget,
                                                                              avaxAmount,
                                                                              avaxFeeBasis);
-    
-    avalancheAddressFree (avaxSource);
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsAVAX (wallet->listenerTransfer,
@@ -252,7 +250,7 @@ wkWalletGetAddressesForRecoveryAVAX (WKWallet wallet) {
     WKWalletAVAX walletAVAX = wkWalletCoerce(wallet);
     BRAvalancheAccount avaxAccount = walletAVAX->avaxAccount;
 
-    BRSetAdd (addresses, wkAddressCreateAsAVAX (avalancheAccountGetAddress (avaxAccount)));
+    BRSetAdd (addresses, wkAddressCreateAsAVAX (avalancheAccountGetAddress (avaxAccount, AVALANCHE_CHAIN_TYPE_X)));
 
     return addresses;
 }

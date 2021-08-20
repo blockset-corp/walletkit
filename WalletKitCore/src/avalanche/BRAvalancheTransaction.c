@@ -50,8 +50,8 @@ avalancheTransactionCreateTransactionInternal (BRAvalancheAddress source,
                                               BRAvalancheSignature signature) {
     BRAvalancheTransaction transaction = calloc (1, sizeof(struct BRAvalancheTransactionRecord));
 
-    transaction->source = avalancheAddressClone (source);
-    transaction->target = avalancheAddressClone (target);
+    transaction->source = source;
+    transaction->target = target;
 
     transaction->amount   = amount;
     transaction->feeBasis = feeBasis;
@@ -91,9 +91,6 @@ extern void
 avalancheTransactionFree (BRAvalancheTransaction transaction)
 {
     assert (transaction);
-
-    avalancheAddressFree (transaction->source);
-    avalancheAddressFree (transaction->target);
 
     ASSERT_UNIMPLEMENTED;
 
@@ -170,13 +167,13 @@ avalancheTransactionGetAmount(BRAvalancheTransaction transaction){
 extern BRAvalancheAddress
 avalancheTransactionGetSource(BRAvalancheTransaction transaction){
     assert(transaction);
-    return avalancheAddressClone (transaction->source);
+    return transaction->source;
 }
 
 extern BRAvalancheAddress
 avalancheTransactionGetTarget(BRAvalancheTransaction transaction){
     assert(transaction);
-    return avalancheAddressClone (transaction->target);
+    return transaction->target;
 }
 
 extern bool

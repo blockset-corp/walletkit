@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-#define AVALANCHE_PUBLIC_KEY_SIZE 32
-
 typedef struct BRAvalancheAccountRecord *BRAvalancheAccount;
 
 /**
@@ -76,6 +74,7 @@ avalancheAccountSignData (BRAvalancheAccount account,
                          UInt512 seed,
                          size_t  *count);
 
+#if 0
 /**
  * Get the public key for this Avalanche account
  *
@@ -85,7 +84,7 @@ avalancheAccountSignData (BRAvalancheAccount account,
  */
 extern BRKey
 avalancheAccountGetPublicKey (BRAvalancheAccount account);
-
+#endif
 /**
  * Get the Avalanche Address from the specified account.
  *
@@ -94,7 +93,8 @@ avalancheAccountGetPublicKey (BRAvalancheAccount account);
  * @return address
  */
 extern BRAvalancheAddress
-avalancheAccountGetAddress (BRAvalancheAccount account);
+avalancheAccountGetAddress (BRAvalancheAccount account,
+                            BRAvalancheChainType type);
 
 /**
 *
@@ -118,7 +118,7 @@ avalancheAccountGetSerialization (BRAvalancheAccount account,
 */
 extern int
 avalancheAccountHasAddress (BRAvalancheAccount account,
-                           BRAvalancheAddress address);
+                            BRAvalancheAddress address);
 
 /**
  * Return the balance limit, either asMaximum or asMinimum

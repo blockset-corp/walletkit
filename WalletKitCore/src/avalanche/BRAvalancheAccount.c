@@ -21,8 +21,7 @@
 // #include "blake2/blake2b.h"
 
 struct BRAvalancheAccountRecord {
-    BRAvalancheAddress address;
-    uint8_t publicKey[AVALANCHE_PUBLIC_KEY_SIZE];
+    BRAvalancheAddress addresses [NUMBER_OF_AVALANCHE_CHAIN_TYPES];
 };
 
 // MARK: Forward Declarations
@@ -30,11 +29,13 @@ struct BRAvalancheAccountRecord {
 static BRKey
 avalancheDerivePrivateKeyFromSeed (UInt512 seed, uint32_t index);
 
-static void
-avalancheKeyGetPublicKey (BRKey key, uint8_t * publicKey);
+static size_t
+avalancheKeyGetPublicKey (BRKey key, uint8_t * publicKey, size_t publicKeyLen, bool compresses);
 
+#if 0
 static void
 avalancheKeyGetPrivateKey (BRKey key, uint8_t * privateKey);
+#endif
 
 // MARK: - Init/Free
 
@@ -45,22 +46,53 @@ avalancheAccountCreateWithSeed (UInt512 seed) {
     // Private key
     BRKey privateKey = avalancheDerivePrivateKeyFromSeed(seed, 0);
 
-    avalancheKeyGetPublicKey(privateKey, account->publicKey);
+    // The X privateKey is compresses; the C privateKey is uncompressed
+    BRKey privateKeyX = privateKey; privateKeyX.compressed = 1; BRKeyPubKey(&privateKeyX, NULL, 0);
+    BRKey privateKeyC = privateKey; privateKeyC.compressed = 0; BRKeyPubKey(&privateKeyC, NULL, 0);
 
-    account->address = avalancheAddressCreateFromKey(account->publicKey, AVALANCHE_PUBLIC_KEY_SIZE);
+    BRKeyClean (&privateKey);
+    
+    // Determine the X and C addresses
+    account->addresses[AVALANCHE_CHAIN_TYPE_X] = avalancheAddressCreateFromKey (privateKeyX.pubKey, 33, AVALANCHE_CHAIN_TYPE_X);
+    account->addresses[AVALANCHE_CHAIN_TYPE_C] = avalancheAddressCreateFromKey (privateKeyC.pubKey, 65, AVALANCHE_CHAIN_TYPE_C);
+
+    BRKeyClean(&privateKeyX);
+    BRKeyClean(&privateKeyC);
 
     return account;
+
+#if 0
+    privateKey.compressed=0;
+    BRKeyPubKey(&privateKey, &(privateKey.pubKey) , 65);
+    //we need uncompressed pubkey to generate address
+    account->caddress = ethAddressCreateKey(&privateKey);
+    //zero out the pubkey so we can reuse
+    memset(&privateKey.pubKey, 0,65);
+
+    //Avalanche requires compressed pub key
+    privateKey.compressed=1;
+    BRKeyPubKey(&privateKey, &privateKey.pubKey, 33);
+    account->xaddress = avalancheAddressCreateFromKey(&privateKey.pubKey, 33);
+
+    //memcpy(&(account->caddress), ethAddress.bytes, sizeof(ethAddress.bytes));
+    //cleanup the privateKey
+    BRKeyClean(&privateKey);
+    return account;
+#endif
 }
 
 extern BRAvalancheAccount
 avalancheAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
 {
-    assert (bytesCount == AVALANCHE_PUBLIC_KEY_SIZE);
     BRAvalancheAccount account = calloc(1, sizeof(struct BRAvalancheAccountRecord));
-    
+
+#if 0
+    assert (bytesCount == AVALANCHE_PUBLIC_KEY_SIZE);
+
     memcpy(account->publicKey, bytes, AVALANCHE_PUBLIC_KEY_SIZE);
-    account->address = avalancheAddressCreateFromKey(account->publicKey, AVALANCHE_PUBLIC_KEY_SIZE);
-    
+    account->addresses[AVALANCHE_CHAIN_TYPE_X] = avalancheAddressCreateFromKey(account->publicKey, AVALANCHE_PUBLIC_KEY_SIZE, AVALANCHE_CHAIN_TYPE_X);
+    account->addresses[AVALANCHE_CHAIN_TYPE_C] = avalancheAddressCreateFromKey(account->publicKey, AVALANCHE_PUBLIC_KEY_SIZE, AVALANCHE_CHAIN_TYPE_C);
+#endif
     return account;
 }
 
@@ -68,7 +100,6 @@ extern void
 avalancheAccountFree (BRAvalancheAccount account)
 {
     assert (account);
-    avalancheAddressFree (account->address);
     free (account);
 }
 
@@ -81,7 +112,9 @@ avalancheAccountSignData (BRAvalancheAccount account,
                          UInt512 seed,
                          size_t  *count) {
 
+#if 0
     BRKey keyPublic  = avalancheAccountGetPublicKey (account);
+#endif
     BRKey keyPrivate = avalancheDerivePrivateKeyFromSeed (seed, /* index */ 0);
 
 
@@ -109,7 +142,7 @@ avalancheAccountSignData (BRAvalancheAccount account,
     return signature;
 #endif
 
-    ASSERT_UNIMPLEMENTED; (void) keyPublic; (void) keyPrivate;
+    ASSERT_UNIMPLEMENTED; (void) keyPrivate;
 
     *count = 0;
     return NULL;
@@ -117,6 +150,7 @@ avalancheAccountSignData (BRAvalancheAccount account,
 
 // MARK: - Accessors
 
+#if 0
 extern BRKey
 avalancheAccountGetPublicKey (BRAvalancheAccount account) {
     assert(account);
@@ -125,13 +159,14 @@ avalancheAccountGetPublicKey (BRAvalancheAccount account) {
     memcpy(key.pubKey, account->publicKey, AVALANCHE_PUBLIC_KEY_SIZE);
     return key;
 }
+#endif
 
 extern BRAvalancheAddress
-avalancheAccountGetAddress (BRAvalancheAccount account)
+avalancheAccountGetAddress (BRAvalancheAccount account,
+                            BRAvalancheChainType type)
 {
     assert(account);
-    assert(account->address);
-    return avalancheAddressClone (account->address);
+    return account->addresses[type];
 }
 
 extern uint8_t *
@@ -157,11 +192,9 @@ avalancheAccountGetSerialization (BRAvalancheAccount account, size_t *bytesCount
 
 extern int
 avalancheAccountHasAddress (BRAvalancheAccount account,
-                        BRAvalancheAddress address) {
+                            BRAvalancheAddress address) {
     assert(account);
-    assert(address);
-    assert(account->address);
-    return avalancheAddressEqual (account->address, address);
+    return avalancheAddressEqual (account->addresses[address.type], address);
 }
 
 extern BRAvalancheAmount
@@ -173,106 +206,32 @@ avalancheAccountGetBalanceLimit (BRAvalancheAccount account,
     return 0;
 }
 
-// MARK: - Crypto
+// MARK: - Keys
 
-#if 0
-// ed25519 child key derivation
-static void
-_CKDpriv(UInt256 *k, UInt256 *c, uint32_t i)
-{
-    uint8_t buf[sizeof(BRECPoint) + sizeof(i)];
-    UInt512 I;
-    
-    if (i & BIP32_HARD) {
-        buf[0] = 0;
-        UInt256Set(&buf[1], *k);
-    } else {
-        //ed25519 only supports hardened key paths
-        return;
-    }
-    
-    UInt32SetBE(&buf[sizeof(BRECPoint)], i);
-    
-    BRHMAC(&I, BRSHA512, sizeof(UInt512), c, sizeof(*c), buf, sizeof(buf)); // I = HMAC-SHA512(c, k|P(k) || i)
-    
-    // Split I into two 32-byte sequences, IL and IR
-    *k = *(UInt256 *)&I; // child key = IL
-    *c = *(UInt256 *)&I.u8[sizeof(UInt256)]; // chain code = IR
-    
-    var_clean(&I);
-    mem_clean(buf, sizeof(buf));
-}
-#endif
 
-#if 0
-// https://github.com/satoshilabs/slips/blob/master/slip-0010.md
-#define ED25519_SEED_KEY "ed25519 seed"
-static void
-ed25519vPrivKeyPath(BRKey *key, const void *seed, size_t seedLen, int depth, va_list vlist)
-{
+//44'/9000'/0'/0/0
+#define AVAX_BIP32_CHILD ((const uint32_t []){ 44 | BIP32_HARD, 9000 | BIP32_HARD, 0 | BIP32_HARD, 0, 0 })
+#define AVAX_BIP32_DEPTH 5
 
-    UInt512 I;
-    UInt256 secret, chainCode;
-    
-    assert(key != NULL);
-    assert(seed != NULL || seedLen == 0);
-    assert(depth >= 0);
-    
-    if (key && (seed || seedLen == 0)) {
-        BRHMAC(&I, BRSHA512, sizeof(UInt512), ED25519_SEED_KEY, strlen
-               (ED25519_SEED_KEY), seed, seedLen);
-        secret = *(UInt256 *)&I;
-        chainCode = *(UInt256 *)&I.u8[sizeof(UInt256)];
-        var_clean(&I);
-        
-        for (int i = 0; i < depth; i++) {
-            _CKDpriv(&secret, &chainCode, va_arg(vlist, uint32_t));
-        }
-        
-        BRKeySetSecret(key, &secret, 1);
-        var_clean(&secret, &chainCode);
-    }
-}
-#undef ED25519_SEED_KEY
-
-static void
-ed25519PrivKeyPath(BRKey * key, const void * seed, size_t seedLen, int depth , ... ){
-    ASSERT_UNIMPLEMENTED;
-
-#if 0
-    va_list ap;
-
-    va_start(ap, depth);
-    ed25519vPrivKeyPath(key, seed, seedLen, depth, ap);
-    va_end(ap);
-#endif
-}
-#endif // 0
+#define AVAX_PUBKEY_LENGTH 33
 
 static BRKey
 avalancheDerivePrivateKeyFromSeed (UInt512 seed, uint32_t index) {
     BRKey privateKey;
-
-    ASSERT_UNIMPLEMENTED;
-#if 0
-    ed25519PrivKeyPath (&privateKey, &seed, sizeof(UInt512), 4,
-                        44 | BIP32_HARD,   // purpose  : BIP-44
-                        1729 | BIP32_HARD, // coin_type: Avalanche
-                        0 | BIP32_HARD,    // account
-                        index | BIP32_HARD);
-#endif
+    BRBIP32PrivKeyPath(&privateKey, &seed, sizeof(UInt512), AVAX_BIP32_DEPTH, AVAX_BIP32_CHILD);
     return privateKey;
 }
 
-static void
-avalancheKeyGetPublicKey (BRKey key, uint8_t * publicKey) {
-    unsigned char privateKey[64] = {0};
-    ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
-    memset(privateKey, 0x00, 64);
+static size_t
+avalancheKeyGetPublicKey (BRKey key, uint8_t * publicKey, size_t publicKeyLen, bool compressed) {
+    key.compressed = compressed;
+    return BRKeyPubKey (&key, publicKey, publicKeyLen);
 }
 
-static void
-avalancheKeyGetPrivateKey (BRKey key, uint8_t * privateKey) {
+#if 0
+static size_t
+avalancheKeyGetPrivateKey (BRKey key, uint8_t * privateKey, size_t privateKeyLen) {
     unsigned char publicKey[32] = {0};
     ed25519_create_keypair(publicKey, privateKey, key.secret.u8);
 }
+#endif
