@@ -185,7 +185,7 @@ wkWalletManagerEstimateFeeBasisAVAX (WKWalletManager manager,
     // Require QRY with cookie - made above
     return NULL;
 #endif
-    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate ();
+    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate (0);
     return wkFeeBasisCreateAsAVAX (wallet->unitForFee, avaxFeeBasis);
 }
 
@@ -240,7 +240,7 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     WKHash         hash = wkHashCreateFromStringAsAVAX (bundle->hash);
     WKTransfer transfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
 
-    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate();
+    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate(0);
     WKFeeBasis  feeBasis = wkFeeBasisCreateAsAVAX (wallet->unitForFee, avaxFeeBasis);
 
     WKTransferState state = wkClientTransferBundleGetTransferState (bundle, feeBasis);
@@ -310,7 +310,7 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimateAVAX (WKWalletManager cwm,
                                                             counter);
 #endif
 
-    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate ();
+    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate (0);
     return wkFeeBasisCreateAsAVAX (networkFee->pricePerCostFactorUnit, avaxFeeBasis);
 }
 

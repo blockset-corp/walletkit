@@ -18,14 +18,15 @@
 
 
 extern BRAvalancheFeeBasis
-avalancheFeeBasisCreate(void /* arguments */) {
-    ASSERT_UNIMPLEMENTED;
-    return (BRAvalancheFeeBasis) { };
+avalancheFeeBasisCreate(BRAvalancheAmount avaxPerTransaction) {
+    return (BRAvalancheFeeBasis) {
+        avaxPerTransaction
+    };
 }
 
 extern BRAvalancheAmount
 avalancheFeeBasisGetFee (BRAvalancheFeeBasis *feeBasis) {
-    ASSERT_UNIMPLEMENTED;
+    return feeBasis->avaxPerTransaction * 1 /* transaction */;
 }
 
 extern bool
@@ -33,8 +34,6 @@ avalancheFeeBasisIsEqual (BRAvalancheFeeBasis *fb1, BRAvalancheFeeBasis *fb2) {
     assert(fb1);
     assert(fb2);
 
-    ASSERT_UNIMPLEMENTED;
     return (fb1 == fb2 ||
-            // Compare
-            (false));
+            (fb1->avaxPerTransaction == fb2->avaxPerTransaction));
 }
