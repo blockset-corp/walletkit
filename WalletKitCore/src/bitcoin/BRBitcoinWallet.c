@@ -809,6 +809,52 @@ int btcWalletRegisterTransaction(BRBitcoinWallet *wallet, BRBitcoinTransaction *
     return r;
 }
 
+// adds any of the given transactions that are associated with the wallet, and returns the number added
+size_t btcWalletRegisterTxArray(BRBitcoinWallet *wallet, BRBitcoinTransaction *transactions[], size_t txCount)
+{
+    BRBitcoinTransaction *tx, *addedTx[txCount];
+    size_t i, j, addedCount = 0;
+    const uint8_t *pkh;
+    
+    assert(wallet != NULL);
+    assert(transactions != NULL || txCount == 0);
+    pthread_mutex_lock(&wallet->lock);
+
+    for (i = 0; i < txCount; i++) {
+        tx = transactions[i];
+        assert(tx != NULL && btcTransactionIsSigned(tx));
+        if (! tx || ! btcTransactionIsSigned(tx) || BRSetContains(wallet->allTx, tx)) continue;
+
+        if (_btcWalletContainsTx(wallet, tx)) {
+            // TODO: verify signatures when possible
+            // TODO: handle tx replacement with input sequence numbers
+            //       (for now, replacements appear invalid until confirmation)
+            BRSetAdd(wallet->allTx, tx);
+            _btcWalletInsertTx(wallet, tx);
+
+            for (j = 0; j < tx->outCount; j++) {
+                pkh = BRScriptPKH(tx->outputs[j].script, tx->outputs[j].scriptLen);
+                if (pkh && BRSetContains(wallet->allPKH, pkh)) BRSetAdd(wallet->usedPKH, (void *)pkh);
+            }
+
+            addedTx[addedCount++] = tx;
+            btcWalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_EXTERNAL, SEQUENCE_EXTERNAL_CHAIN);
+            btcWalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_INTERNAL, SEQUENCE_INTERNAL_CHAIN);
+        }
+        else if (tx->blockHeight == TX_UNCONFIRMED) BRSetAdd(wallet->allTx, tx);
+    }
+
+    _btcWalletUpdateBalance(wallet);
+    pthread_mutex_unlock(&wallet->lock);
+    if (addedCount && wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
+
+    for (i = 0; wallet->txAdded && i < addedCount; i++) {
+        wallet->txAdded(wallet->callbackInfo, addedTx[i]);
+    }
+
+    return addedCount;
+}
+
 // removes a tx from the wallet, along with any tx that depend on its outputs
 void btcWalletRemoveTransaction(BRBitcoinWallet *wallet, UInt256 txHash)
 {
