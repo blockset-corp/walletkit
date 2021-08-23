@@ -10,6 +10,7 @@
 
 #include "support/BRBase58.h"
 #include "support/util/BRHex.h"
+#include "support/BRKey.h"
 #include "BRAvalancheAddress.h"
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +41,7 @@ typedef enum{
     BaseTx = 0x01,
 }tx_type;
 
+
 struct AddressRecord{
     char rmd160[20];
 };
@@ -52,6 +54,12 @@ struct BRAssetRecord{
 struct TxIdRecord{
     char id[33];
     uint8_t bytes[32];
+};
+
+struct BRAvaxUtxoRecord{
+    struct TxIdRecord tx;
+    uint64_t amount;
+    uint64_t locktime;
 };
 
 struct SECP256K1TransferOutputRecord{
@@ -125,11 +133,12 @@ extern void avaxCreateBaseTx();
 extern struct BaseTxRecord *
 avaxTransactionCreate(const char* sourceAddress,
                       const char* targetAddress,
-                      uint64_t amount);
+                      uint64_t amount,
+                      struct BRAvaxUtxoRecord ** utxos);
 
 extern void releaseTransaction(struct BaseTxRecord * tx);
 
-extern void signTx();
+extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len);
 
 
 #ifdef __cplusplus
