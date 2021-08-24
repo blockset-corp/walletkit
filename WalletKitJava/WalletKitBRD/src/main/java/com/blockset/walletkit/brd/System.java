@@ -1142,11 +1142,11 @@ final class System implements com.blockset.walletkit.System {
                     case TRANSFER_SUBMITTED:
 
                         Log.log(Level.FINE, "WalletTransferSubmitted");
-                        if (null == coreEvent.transfer()) {
+                        if (null == coreEvent.transferSubmit()) {
                             Log.log(Level.SEVERE, "WalletTransferSubmitted: Extraction missed transfer");
                             return;
                         }
-                        transfer = Transfer.create(coreEvent.transfer(), wallet, true);
+                        transfer = Transfer.create(coreEvent.transferSubmit(), wallet, true);
                         walletEvent = new WalletTransferSubmittedEvent(transfer);
                         break;
 
