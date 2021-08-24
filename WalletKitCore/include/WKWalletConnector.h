@@ -17,6 +17,11 @@
 extern "C" {
 #endif
 
+typedef enum {
+    WALLET_CONNECT_ERROR_UNSUPPORTED_CONNECTOR
+    // ...
+} WKWalletConnectorError;
+
 typedef struct WKWalletConnectorRecord *WKWalletConnector;
 
 extern WKWalletConnector

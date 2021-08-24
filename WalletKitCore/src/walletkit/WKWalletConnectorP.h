@@ -20,7 +20,7 @@ extern "C" {
 // MARK: - Connector Handlers
 
 typedef WKWalletConnector
-(*WKConnectorCreateHandler) (WKWalletManager manager);
+(*WKWalletConnectorCreateHandler) (WKWalletManager manager);
 
 typedef void
 (*WKWalletConnectorReleaseHandler) (WKWalletConnector connector);
@@ -28,7 +28,7 @@ typedef void
 // ...
 
 typedef struct {
-    WKConnectorCreateHandler create;
+    WKWalletConnectorCreateHandler create;
     WKWalletConnectorReleaseHandler release;
     // ...
 } WKWalletConnectorHandlers;
