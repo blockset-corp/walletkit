@@ -52,7 +52,7 @@ wkWalletCreateAsAVAX (WKWalletListener listener,
     WKAmount minBalance = hasMinBalance ? wkAmountCreateAsAVAX(unit, WK_FALSE, minBalanceAVAX) : NULL;
     WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAsAVAX(unit, WK_FALSE, maxBalanceAVAX) : NULL;
 
-    BRAvalancheFeeBasis avalancheFeeBasis = avalancheFeeBasisCreate ();
+    BRAvalancheFeeBasis avalancheFeeBasis = avalancheFeeBasisCreate (AVALANCHE_DEFAULT_AVAX_PER_TRANSACTION);
     WKFeeBasis feeBasis   = wkFeeBasisCreateAsAVAX (unitForFee, avalancheFeeBasis);
 
     WKWalletCreateContextAVAX contextAVAX = {

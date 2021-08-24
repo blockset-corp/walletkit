@@ -42,7 +42,7 @@ typedef uint64_t BRAvalancheAmount;
 
 #if 0
 #define AVALANCHE_AMOUNT_DIGITS          (8)
-#define AVALANCHE_AMOUNT_SCALE_FACTOR    (100000000)  // 1
+#define AVALANCHE_AMOUNT_SCALE_FACTOR    (100_000_000)  // 1
 #endif
 
 // MARK: - Avalanche Hash

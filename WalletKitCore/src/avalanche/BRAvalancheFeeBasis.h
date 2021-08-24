@@ -18,13 +18,15 @@
 extern "C" {
 #endif
 
+#define AVALANCHE_DEFAULT_AVAX_PER_TRANSACTION   100000
 
 typedef struct
 {
+    BRAvalancheAmount avaxPerTransaction;
 } BRAvalancheFeeBasis;
 
 extern BRAvalancheFeeBasis
-avalancheFeeBasisCreate(void /* arguments */);
+avalancheFeeBasisCreate (BRAvalancheAmount avaxPerTransaction);
 
 extern BRAvalancheAmount
 avalancheFeeBasisGetFee(BRAvalancheFeeBasis *feeBasis);

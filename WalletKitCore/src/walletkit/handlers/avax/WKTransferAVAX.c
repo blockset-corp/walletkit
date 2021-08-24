@@ -45,7 +45,7 @@ wkTransferCreateAsAVAX (WKTransferListener listener,
     BRAvalancheAmount avaxAmount = avalancheTransactionGetAmount (avaxTransaction);
     WKAmount amount = wkAmountCreateAsAVAX (unit, WK_FALSE, avaxAmount);
 
-    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate ();
+    BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate (0);
     WKFeeBasis feeBasis = wkFeeBasisCreateAsAVAX (unitForFee, avaxFeeBasis);
     
     WKAddress sourceAddress = wkAddressCreateAsAVAX (avalancheTransactionGetSource (avaxTransaction));
