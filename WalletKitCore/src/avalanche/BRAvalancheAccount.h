@@ -22,6 +22,11 @@
 extern "C" {
 #endif
 
+// MARK: - Account
+
+/**
+ * BRAvalancheAccount
+ */
 typedef struct BRAvalancheAccountRecord *BRAvalancheAccount;
 
 /**
@@ -56,35 +61,6 @@ avalancheAccountCreateWithSerialization (uint8_t *bytes,
 extern void
 avalancheAccountFree (BRAvalancheAccount account);
 
-/**
- * Signs a message using the account private key.
- *
- * @param account
- * @param bytes - the bytes to sign
- * @param bytesCount - the number of byes
- * @param seed - account seed
- * @param count - Filled with number of result bytes
- *
- * @return result bytes
-*/
-extern OwnershipGiven uint8_t *
-avalancheAccountSignData (BRAvalancheAccount account,
-                         uint8_t *bytes,
-                         size_t   bytesCount,
-                         UInt512 seed,
-                         size_t  *count);
-
-#if 0
-/**
- * Get the public key for this Avalanche account
- *
- * @param account
- *
- * @return public key
- */
-extern BRKey
-avalancheAccountGetPublicKey (BRAvalancheAccount account);
-#endif
 /**
  * Get the Avalanche Address from the specified account.
  *
@@ -133,6 +109,47 @@ extern BRAvalancheAmount
 avalancheAccountGetBalanceLimit (BRAvalancheAccount account,
                             int asMaximum,
                             int *hasLimit);
+
+// MARK: - Signature
+
+typedef struct {
+    uint8_t r[32];
+    uint8_t s[32];
+    uint8_t v;
+} BRAvalancheSignature; // RSV
+
+static inline bool
+avalancheSignatureIsEmpty (const BRAvalancheSignature *signature) {
+    BRAvalancheSignature empty = { 0 };
+    return 0 == memcmp (signature, &empty, sizeof(BRAvalancheSignature));
+}
+
+static inline uint8_t *
+avalancheSignatureGetBytes (const BRAvalancheSignature *signature, size_t *count) {
+    size_t   resultCount = sizeof (BRAvalancheSignature);
+    uint8_t *result      = malloc (resultCount);
+
+    memcpy (result, signature, resultCount);
+    if (NULL != count) *count = resultCount;
+
+    return result;
+}
+
+/**
+ * Signs a message using the account private key.
+ *
+ * @param account
+ * @param bytes - the bytes to sign
+ * @param bytesCount - the number of byes
+ * @param seed - account seed
+ *
+ * @return result BRAvalancheSignature
+ */
+extern BRAvalancheSignature
+avalancheAccountSignData (BRAvalancheAccount account,
+                          uint8_t *bytes,
+                          size_t   bytesCount,
+                          UInt512 seed);
 
 #ifdef __cplusplus
 }

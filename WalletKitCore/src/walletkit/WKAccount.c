@@ -40,7 +40,8 @@ checksumFletcher16 (const uint8_t *data, size_t count);
 // Version 4: V3 + XTZ
 // Version 5: V4 + LTC, DOGE, XLM
 // Version 6: V5 + serialization of BCH and BSV with their own keys
-#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  6
+// Version 7: V6 + AVAX
+#define ACCOUNT_SERIALIZE_DEFAULT_VERSION  7
 
 IMPLEMENT_WK_GIVE_TAKE (WKAccount, wkAccount);
 

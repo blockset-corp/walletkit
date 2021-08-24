@@ -22,20 +22,6 @@
 extern "C" {
 #endif
 
-// MARK: - Signature
-
-#define AVALANCHE_SIGNATURE_BYTES (64)
-
-typedef struct {
-    uint8_t bytes[AVALANCHE_SIGNATURE_BYTES];
-} BRAvalancheSignature;
-
-static inline bool
-avalancheSignatureIsEmpty (const BRAvalancheSignature *signature) {
-    BRAvalancheSignature empty = { 0 };
-    return 0 == memcmp (signature->bytes, empty.bytes, AVALANCHE_SIGNATURE_BYTES);
-}
-
 // MARK: - Attributes
 
 extern const char **
