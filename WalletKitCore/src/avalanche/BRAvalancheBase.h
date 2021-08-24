@@ -47,53 +47,31 @@ typedef uint64_t BRAvalancheAmount;
 
 // MARK: - Avalanche Hash
 
-#define AVALANCHE_HASH_BYTES 34
+#define AVALANCHE_HASH_BYTES 32
 
 typedef struct {
-    uint8_t bytes[AVALANCHE_HASH_BYTES];
+    uint8_t bytes[AVALANCHE_HASH_BYTES];            // SHA256, generally
 } BRAvalancheHash;
 
 #define AVALANCHE_HASH_EMPTY  ((BRAvalancheHash) { \
-    0, 0,                       \
     0, 0, 0, 0,     0, 0, 0, 0, \
     0, 0, 0, 0,     0, 0, 0, 0, \
     0, 0, 0, 0,     0, 0, 0, 0, \
     0, 0, 0, 0,     0, 0, 0, 0, \
 })
 
-static inline bool
+extern bool
 avalancheHashIsEqual (const BRAvalancheHash h1,
-                     const BRAvalancheHash h2) {
-    return 0 == memcmp (h1.bytes, h2.bytes, AVALANCHE_HASH_BYTES);
-}
+                      const BRAvalancheHash h2);
 
-static inline bool
-avalancheHashIsEmpty (BRAvalancheHash hash) {
-    return avalancheHashIsEqual (hash, AVALANCHE_HASH_EMPTY);
-}
+extern bool
+avalancheHashIsEmpty (BRAvalancheHash hash);
 
-static inline BRAvalancheHash
-avalancheHashFromString(const char *input) {
-    assert (0);
-#if 0
-    size_t length = BRBase58CheckDecode(NULL, 0, input);
-    assert(length == AVALANCHE_HASH_BYTES);
-    BRAvalancheHash hash;
-    BRBase58CheckDecode(hash.bytes, length, input);
-#endif
-    BRAvalancheHash hash = { 0 };
-    return hash;
-}
+extern BRAvalancheHash
+avalancheHashFromString(const char *input);
 
-static inline char *
-avalancheHashToString (BRAvalancheHash hash) {
-#if 0
-    char string[64] = {0};
-    BRBase58CheckEncode(string, sizeof(string), hash.bytes, sizeof(hash.bytes));
-    return strdup(string);
-#endif
-    return strdup ("");
-}
+extern char *
+avalancheHashToString (BRAvalancheHash hash);
 
 // For use with BRSet
 static inline uint32_t
