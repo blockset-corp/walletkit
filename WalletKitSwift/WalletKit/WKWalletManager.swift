@@ -235,6 +235,10 @@ public final class WalletManager: Equatable, CustomStringConvertible {
         return ExportablePaperWallet.create(manager: self)
     }
 
+    public func createConnector () -> Result<WalletConnector, WalletConnectorError> {
+        return WalletConnector.create (manager:self)
+    }
+
     internal init (core: WKWalletManager,
                    system: System,
                    callbackCoordinator: SystemCallbackCoordinator,
@@ -498,6 +502,120 @@ public final class ExportablePaperWallet {
     }
 }
 
+///
+/// WalletConnector
+///
+
+public enum WalletConnectorError: Error {
+    case unsupportedError
+}
+
+public final class WalletConnector {
+    internal static func create (manager: WalletManager) -> Result<WalletConnector, WalletConnectorError> {
+        return wkWalletConnectorCreate (manager.core)
+            .map { Result.success (WalletConnector (core: $0)) }
+            ?? Result.failure(.unsupportedError)
+    }
+
+    internal let core: WKWalletConnector
+
+    private init (core: WKWalletConnector) {
+        self.core = core
+    }
+
+    deinit {
+        wkWalletConnectorRelease (core)
+    }
+
+    // sign
+    // sign-typed-date
+    // send-transaction
+    // sign-transaction
+    // send-raw-transaction
+
+    ///
+    /// Sign arbitrary data
+    ///
+    /// - Parameter message: <#message description#>
+    /// - Parameter key: <#key description#>
+    ///
+    /// - Returns: <#description#>
+    ///
+    public func sign (message: Data, using key: Key, prefix: Bool = true) -> Data? /* Signature */ {
+        // or return (digest: Data32, signature: Data)
+        //  and provide `func recover (digest: Data32, signature: Data) -> Key? (public)`
+
+        // if prefix - prepend "\x19Ethereum..." + data.count + data
+        return nil
+    }
+
+    ///
+    /// Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
+    /// the connector's network.  For ETH the Dictionary keys are: {...}
+    ///
+    /// - Parameter arguments: <#arguments description#>
+    ///
+    /// - Returns: <#description#>
+    ///
+    public func createTransaction (arguments: /* JSON-RPC */ Dictionary<String,String>) -> Transaction? { // Result<>
+        // return wkWalletConnectCreateTransactionFromArguments (...).map { Transaction (core: $0) }
+        return nil
+    }
+
+    ///
+    /// Create a Transaction from a serialization of a signed transaction
+    ///
+    /// - Parameter serialization: <#raw description#>
+    ///
+    /// - Returns: <#description#>
+    ///
+    public func createTransaction (serialization: Data) -> Transaction? { // Result<>
+        // return wkWalletConnectCreateTransactionFromSerialization (...).map { Transaction (core: $0) }
+        return nil
+    }
+
+    ///
+    /// Sign a transaction
+    ///
+    /// - Parameter transaction: <#transaction description#>
+    /// - Parameter key: <#key description#>
+    ///
+    /// - Returns: <#description#>
+    ////
+    public func sign (transaction: Transaction, using key: Key) -> Void {
+        // ?? and provide `func recover (transaction: Transaction, signature: Data) -> Key`
+    }
+
+    ///
+    /// Send a transaction to the connector's network
+    ///
+    /// - Parameter transaction: <#transaction description#>
+    ///
+    /// - Returns: <#description#>
+    ///
+    public func submit (transaction: Transaction) -> Void /* Error: not signed, ... */ {
+    }
+
+    public final class Transaction {
+        // internal let core: WKWalletConnectorTransaction
+        // internal init (core: WKWalletConnectorTransaction, signed: bool) { ... }
+        // deinit { ... }
+
+        /// Check if the Transaction is signed
+        var isSigned: Bool {
+            return false;
+        }
+
+        /// Return the serialization of the signed transaction iff the transaction is signed
+        var serialization: Data? {
+            return nil
+        }
+    }
+}
+
+///
+///
+///
 public enum WalletManagerDisconnectReason: Equatable {
     case requested
     case unknown
