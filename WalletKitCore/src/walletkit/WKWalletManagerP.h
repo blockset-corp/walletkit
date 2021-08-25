@@ -108,12 +108,12 @@ typedef void
                                                    OwnershipKept WKClientTransferBundle bundle);
 
 typedef void
-(*WKWalletManagerRecoverTransfersFromTransactionBundleHandler) (WKWalletManager cwm,
-                                                                      OwnershipKept WKClientTransactionBundle bundle);
+(*WKWalletManagerRecoverTransfersFromTransactionBundlesHandler) (WKWalletManager cwm,
+                                                                      OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles);
 
 typedef void
-(*WKWalletManagerRecoverTransferFromTransferBundleHandler) (WKWalletManager cwm,
-                                                                  OwnershipKept WKClientTransferBundle bundle);
+(*WKWalletManagerRecoverTransfersFromTransferBundlesHandler) (WKWalletManager cwm,
+                                                                  OwnershipKept BRArrayOf (WKClientTransferBundle) bundles);
 
 typedef WKFeeBasis
 (*WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler) (WKWalletManager cwm,
@@ -147,9 +147,9 @@ typedef struct {
     WKWalletManagerEstimateFeeBasisHandler estimateFeeBasis;
     WKWalletManagerSaveTransactionBundleHandler saveTransactionBundle;
     WKWalletManagerSaveTransferBundleHandler    saveTransferBundle;
-    WKWalletManagerRecoverTransfersFromTransactionBundleHandler recoverTransfersFromTransactionBundle;
-    WKWalletManagerRecoverTransferFromTransferBundleHandler     recoverTransferFromTransferBundle;
-    WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler        recoverFeeBasisFromFeeEstimate;
+    WKWalletManagerRecoverTransfersFromTransactionBundlesHandler recoverTransfersFromTransactionBundles;
+    WKWalletManagerRecoverTransfersFromTransferBundlesHandler    recoverTransfersFromTransferBundles;
+    WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler         recoverFeeBasisFromFeeEstimate;
     WKWalletManagerWalletSweeperValidateSupportedHandler validateSweeperSupported;
     WKWalletManagerCreateWalletSweeperHandler createSweeper;
 } WKWalletManagerHandlers;
@@ -282,14 +282,14 @@ wkWalletManagerCreateWalletInitialized (WKWalletManager cwm,
                                             Nullable BRArrayOf(WKClientTransferBundle) transfers);
 
 private_extern void
-wkWalletManagerRecoverTransfersFromTransactionBundle (WKWalletManager cwm,
-                                                          OwnershipKept WKClientTransactionBundle bundle);
+wkWalletManagerRecoverTransfersFromTransactionBundles (WKWalletManager cwm,
+                                                       OwnershipKept BRArrayOf(WKClientTransactionBundle) bundles);
 
 // Is it possible that the transfers do not have the 'submitted' state?  In some race between
 // the submit call and the included call?  Highly, highly unlikely but possible?
 private_extern void
-wkWalletManagerRecoverTransferFromTransferBundle (WKWalletManager cwm,
-                                                      OwnershipKept WKClientTransferBundle bundle);
+wkWalletManagerRecoverTransferFromTransferBundles (WKWalletManager cwm,
+                                                   OwnershipKept BRArrayOf(WKClientTransferBundle) bundles);
 
 private_extern void
 wkWalletManagerRecoverTransferAttributesFromTransferBundle (WKWallet wallet,

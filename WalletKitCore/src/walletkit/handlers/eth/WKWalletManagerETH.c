@@ -834,8 +834,8 @@ wkWalletManagerRecoverExchange (WKWalletManager manager,
 #endif //defined (INCLUDE_UNUSED_RecoverExchange)
 
 static void
-wkWalletManagerRecoverTransfersFromTransactionBundleETH (WKWalletManager manager,
-                                                             OwnershipKept WKClientTransactionBundle bundle) {
+wkWalletManagerRecoverTransfersFromTransactionBundlesETH (WKWalletManager manager,
+                                                         OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (manager);
     (void) managerETH;
     assert (0);
@@ -1007,6 +1007,13 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     wkNetworkGive (network);
 }
 
+static void
+wkWalletManagerRecoverTransfersFromTransferBundlesETH (WKWalletManager manager,
+                                                       OwnershipKept BRArrayOf (WKClientTransferBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        wkWalletManagerRecoverTransferFromTransferBundleETH (manager, bundles[index]);
+}
+
 WKWalletManagerHandlers wkWalletManagerHandlersETH = {
     wkWalletManagerCreateETH,
     wkWalletManagerReleaseETH,
@@ -1020,8 +1027,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersETH = {
     wkWalletManagerEstimateFeeBasisETH,
     NULL, // WKWalletManagerSaveTransactionBundleHandler
     NULL, // WKWalletManagerSaveTransactionBundleHandler
-    wkWalletManagerRecoverTransfersFromTransactionBundleETH,
-    wkWalletManagerRecoverTransferFromTransferBundleETH,
+    wkWalletManagerRecoverTransfersFromTransactionBundlesETH,
+    wkWalletManagerRecoverTransfersFromTransferBundlesETH,
     wkWalletManagerRecoverFeeBasisFromFeeEstimateETH,
     NULL,//WKWalletManagerWalletSweeperValidateSupportedHandler not supported
     NULL,//WKWalletManagerCreateWalletSweeperHandler not supported

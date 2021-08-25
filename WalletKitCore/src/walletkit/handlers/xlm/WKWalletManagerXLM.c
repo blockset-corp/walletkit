@@ -167,8 +167,8 @@ wkWalletManagerEstimateFeeBasisXLM (WKWalletManager manager,
 }
 
 static void
-wkWalletManagerRecoverTransfersFromTransactionBundleXLM (WKWalletManager manager,
-                                                              OwnershipKept WKClientTransactionBundle bundle) {
+wkWalletManagerRecoverTransfersFromTransactionBundlesXLM (WKWalletManager manager,
+                                                         OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
     // Not Stellar functionality
     assert (0);
 }
@@ -248,6 +248,13 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
         stellarTransactionFree (xlmTransaction);
 }
 
+static void
+wkWalletManagerRecoverTransfersFromTransferBundlesXLM (WKWalletManager manager,
+                                                       OwnershipKept BRArrayOf (WKClientTransferBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        wkWalletManagerRecoverTransferFromTransferBundleXLM (manager, bundles[index]);
+}
+
 extern WKWalletSweeperStatus
 wkWalletManagerWalletSweeperValidateSupportedXLM (WKWalletManager manager,
                                                        WKWallet wallet,
@@ -303,8 +310,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersXLM = {
     wkWalletManagerEstimateFeeBasisXLM,
     NULL, // WKWalletManagerSaveTransactionBundleHandler
     NULL, // WKWalletManagerSaveTransactionBundleHandler
-    wkWalletManagerRecoverTransfersFromTransactionBundleXLM,
-    wkWalletManagerRecoverTransferFromTransferBundleXLM,
+    wkWalletManagerRecoverTransfersFromTransactionBundlesXLM,
+    wkWalletManagerRecoverTransfersFromTransferBundlesXLM,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedXLM,
     wkWalletManagerCreateWalletSweeperXLM

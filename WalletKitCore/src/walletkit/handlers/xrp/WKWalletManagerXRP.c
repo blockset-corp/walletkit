@@ -176,8 +176,8 @@ wkWalletManagerEstimateFeeBasisXRP (WKWalletManager manager,
 }
 
 static void
-wkWalletManagerRecoverTransfersFromTransactionBundleXRP (WKWalletManager manager,
-                                                             OwnershipKept WKClientTransactionBundle bundle) {
+wkWalletManagerRecoverTransfersFromTransactionBundlesXRP (WKWalletManager manager,
+                                                         OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
     // Not XRP functionality
     assert (0);
 }
@@ -256,6 +256,13 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
         rippleTransactionFree (xrpTransaction);
 }
 
+static void
+wkWalletManagerRecoverTransfersFromTransferBundlesXRP (WKWalletManager manager,
+                                                       OwnershipKept BRArrayOf (WKClientTransferBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        wkWalletManagerRecoverTransferFromTransferBundleXRP (manager, bundles[index]);
+}
+
 extern WKWalletSweeperStatus
 wkWalletManagerWalletSweeperValidateSupportedXRP (WKWalletManager manager,
                                                       WKWallet wallet,
@@ -311,8 +318,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersXRP = {
     wkWalletManagerEstimateFeeBasisXRP,
     NULL, // WKWalletManagerSaveTransactionBundleHandler
     NULL, // WKWalletManagerSaveTransactionBundleHandler
-    wkWalletManagerRecoverTransfersFromTransactionBundleXRP,
-    wkWalletManagerRecoverTransferFromTransferBundleXRP,
+    wkWalletManagerRecoverTransfersFromTransactionBundlesXRP,
+    wkWalletManagerRecoverTransfersFromTransferBundlesXRP,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedXRP,
     wkWalletManagerCreateWalletSweeperXRP

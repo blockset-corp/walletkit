@@ -173,8 +173,8 @@ wkWalletManagerEstimateFeeBasisHBAR (WKWalletManager manager,
 }
 
 static void
-wkWalletManagerRecoverTransfersFromTransactionBundleHBAR (WKWalletManager manager,
-                                                              OwnershipKept WKClientTransactionBundle bundle) {
+wkWalletManagerRecoverTransfersFromTransactionBundlesHBAR (WKWalletManager manager,
+                                                          OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
     // Not Hedera functionality
     assert (0);
 }
@@ -255,6 +255,13 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
         hederaTransactionFree (hbarTransaction);
 }
 
+static void
+wkWalletManagerRecoverTransfersFromTransferBundlesHBAR (WKWalletManager manager,
+                                                        OwnershipKept BRArrayOf (WKClientTransferBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        wkWalletManagerRecoverTransferFromTransferBundleHBAR (manager, bundles[index]);
+}
+
 extern WKWalletSweeperStatus
 wkWalletManagerWalletSweeperValidateSupportedHBAR (WKWalletManager manager,
                                                        WKWallet wallet,
@@ -310,8 +317,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersHBAR = {
     wkWalletManagerEstimateFeeBasisHBAR,
     NULL, // WKWalletManagerSaveTransactionBundleHandler
     NULL, // WKWalletManagerSaveTransactionBundleHandler
-    wkWalletManagerRecoverTransfersFromTransactionBundleHBAR,
-    wkWalletManagerRecoverTransferFromTransferBundleHBAR,
+    wkWalletManagerRecoverTransfersFromTransactionBundlesHBAR,
+    wkWalletManagerRecoverTransfersFromTransferBundlesHBAR,
     NULL,//WKWalletManagerRecoverFeeBasisFromFeeEstimateHandler not supported
     wkWalletManagerWalletSweeperValidateSupportedHBAR,
     wkWalletManagerCreateWalletSweeperHBAR

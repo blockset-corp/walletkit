@@ -171,9 +171,7 @@ wkWalletManagerInitialTransferBundlesLoad (WKWalletManager manager) {
 static void // called wtih manager->lock
 wkWalletManagerInitialTransferBundlesRecover (WKWalletManager manager) {
     if (NULL != manager->bundleTransfers) {
-        for (size_t index = 0; index < array_count(manager->bundleTransfers); index++) {
-            wkWalletManagerRecoverTransferFromTransferBundle (manager, manager->bundleTransfers[index]);
-        }
+        wkWalletManagerRecoverTransferFromTransferBundles (manager, manager->bundleTransfers);
 
         array_free_all (manager->bundleTransfers, wkClientTransferBundleRelease);
         manager->bundleTransfers = NULL;
@@ -217,10 +215,8 @@ wkWalletManagerInitialTransactionBundlesLoad (WKWalletManager manager) {
 static void // called wtih manager->lock
 wkWalletManagerInitialTransactionBundlesRecover (WKWalletManager manager) {
     if (NULL != manager->bundleTransactions) {
-        for (size_t index = 0; index < array_count(manager->bundleTransactions); index++) {
-            wkWalletManagerRecoverTransfersFromTransactionBundle (manager, manager->bundleTransactions[index]);
-        }
-
+        wkWalletManagerRecoverTransfersFromTransactionBundles (manager, manager->bundleTransactions);
+        
         array_free_all (manager->bundleTransactions, wkClientTransactionBundleRelease);
         manager->bundleTransactions = NULL;
     }
@@ -1186,15 +1182,15 @@ wkWalletManagerSaveTransferBundle (WKWalletManager manager,
 }
 
 private_extern void
-wkWalletManagerRecoverTransfersFromTransactionBundle (WKWalletManager cwm,
-                                                          OwnershipKept WKClientTransactionBundle bundle) {
-    cwm->handlers->recoverTransfersFromTransactionBundle (cwm, bundle);
+wkWalletManagerRecoverTransfersFromTransactionBundles (WKWalletManager cwm,
+                                                       OwnershipKept BRArrayOf(WKClientTransactionBundle) bundles) {
+    cwm->handlers->recoverTransfersFromTransactionBundles (cwm, bundles);
 }
 
 private_extern void
-wkWalletManagerRecoverTransferFromTransferBundle (WKWalletManager cwm,
-                                                      OwnershipKept WKClientTransferBundle bundle) {
-    cwm->handlers->recoverTransferFromTransferBundle (cwm, bundle);
+wkWalletManagerRecoverTransferFromTransferBundles (WKWalletManager cwm,
+                                                   OwnershipKept BRArrayOf(WKClientTransferBundle) bundles) {
+    cwm->handlers->recoverTransfersFromTransferBundles (cwm, bundles);
 }
 
 private_extern void

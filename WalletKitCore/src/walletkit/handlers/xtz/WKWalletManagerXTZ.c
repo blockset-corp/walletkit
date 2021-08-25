@@ -192,8 +192,8 @@ wkWalletManagerEstimateFeeBasisXTZ (WKWalletManager manager,
 }
 
 static void
-wkWalletManagerRecoverTransfersFromTransactionBundleXTZ (WKWalletManager manager,
-                                                             OwnershipKept WKClientTransactionBundle bundle) {
+wkWalletManagerRecoverTransfersFromTransactionBundlesXTZ (WKWalletManager manager,
+                                                             OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
     // Not XTZ functionality
     assert (0);
 }
@@ -320,6 +320,13 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
     wkTransferStateGive (state);
 
     wkWalletGive (wallet);
+}
+
+static void
+wkWalletManagerRecoverTransfersFromTransferBundlesXTZ (WKWalletManager manager,
+                                                       OwnershipKept BRArrayOf (WKClientTransferBundle) bundles) {
+    for (size_t index = 0; index < array_count(bundles); index++)
+        wkWalletManagerRecoverTransferFromTransferBundleXTZ (manager, bundles[index]);
 }
 
 static int64_t
@@ -457,8 +464,8 @@ WKWalletManagerHandlers wkWalletManagerHandlersXTZ = {
     wkWalletManagerEstimateFeeBasisXTZ,
     NULL, // WKWalletManagerSaveTransactionBundleHandler
     NULL, // WKWalletManagerSaveTransactionBundleHandler
-    wkWalletManagerRecoverTransfersFromTransactionBundleXTZ,
-    wkWalletManagerRecoverTransferFromTransferBundleXTZ,
+    wkWalletManagerRecoverTransfersFromTransactionBundlesXTZ,
+    wkWalletManagerRecoverTransfersFromTransferBundlesXTZ,
     wkWalletManagerRecoverFeeBasisFromFeeEstimateXTZ,
     wkWalletManagerWalletSweeperValidateSupportedXTZ,
     wkWalletManagerCreateWalletSweeperXTZ

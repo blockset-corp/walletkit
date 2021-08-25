@@ -622,8 +622,7 @@ wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
                                wkClientTransactionBundleCompareForSort);
 
                 // Recover transfers from each bundle
-                for (size_t index = 0; index < bundlesCount; index++)
-                   wkWalletManagerRecoverTransfersFromTransactionBundle (manager, bundles[index]);
+                wkWalletManagerRecoverTransfersFromTransactionBundles (manager, bundles);
 
                 // The following assumes `bundles` has produced transfers which may have
                 // impacted the wallet's addresses.  Thus the recovery must be *serial w.r.t. the
@@ -750,8 +749,7 @@ wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
                                wkClientTransferBundleCompareForSort);
 
                 // Recover transfers from each bundle
-                for (size_t index = 0; index < bundlesCount; index++)
-                   wkWalletManagerRecoverTransferFromTransferBundle (manager, bundles[index]);
+                wkWalletManagerRecoverTransferFromTransferBundles (manager, bundles);
 
                 WKWallet wallet = wkWalletManagerGetWallet(manager);
 
