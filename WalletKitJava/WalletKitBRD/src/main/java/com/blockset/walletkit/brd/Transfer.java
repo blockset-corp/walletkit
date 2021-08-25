@@ -26,13 +26,10 @@ import static com.google.common.base.Preconditions.checkState;
 final class Transfer implements com.blockset.walletkit.Transfer {
 
     /* package */
-    static Transfer takeAndCreate(WKTransfer core, Wallet wallet) {
-        return Transfer.create(core.take(), wallet);
-    }
-
-    /* package */
-    static Transfer create(WKTransfer core, Wallet wallet) {
-        Transfer transfer = new Transfer(core, wallet);
+    static Transfer create (WKTransfer core, Wallet wallet, boolean take) {
+        Transfer transfer = new Transfer(
+                (take ? core.take() : core),
+                wallet);
         ReferenceCleaner.register(transfer, core::give);
         return transfer;
     }

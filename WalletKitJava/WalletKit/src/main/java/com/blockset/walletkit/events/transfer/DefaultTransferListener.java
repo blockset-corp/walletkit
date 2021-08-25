@@ -14,7 +14,7 @@ import com.blockset.walletkit.WalletManager;
 
 public interface DefaultTransferListener extends TransferListener {
 
-    default void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    default void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
 
     }
 }

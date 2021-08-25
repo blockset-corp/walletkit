@@ -36,8 +36,10 @@ import static com.google.common.base.Preconditions.checkState;
 /* package */
 final class Network implements com.blockset.walletkit.Network {
 
-    static Network create(WKNetwork core) {
-        Network network = new Network(core);
+    static Network create(WKNetwork core, boolean needTake) {
+        Network network = new Network(
+                (needTake ? core.take() : core)
+        );
         ReferenceCleaner.register(network, core::give);
         return network;
     }

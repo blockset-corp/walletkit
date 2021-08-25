@@ -72,6 +72,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkAmountConvertToUnit(Pointer amount, Pointer unit);
     public static native double wkAmountGetDouble(Pointer amount, Pointer unit, IntByReference overflow);
     public static native Pointer wkAmountGetStringPrefaced (Pointer amount, int base, String preface);
+    public static native Pointer wkAmountTake(Pointer obj);
     public static native void wkAmountGive(Pointer obj);
 
     // crypto/BRCryptoCurrency.h
@@ -88,6 +89,7 @@ public final class WKNativeLibraryDirect {
     public static native double wkFeeBasisGetCostFactor (Pointer feeBasis);
     public static native Pointer wkFeeBasisGetFee (Pointer feeBasis);
     public static native int wkFeeBasisIsEqual(Pointer f1, Pointer f2);
+    public static native Pointer wkFeeBasisTake(Pointer obj);
     public static native void wkFeeBasisGive(Pointer obj);
 
     // crypto/BRCryptoHash.h
