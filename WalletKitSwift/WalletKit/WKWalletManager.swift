@@ -508,13 +508,15 @@ public final class ExportablePaperWallet {
 
 public enum WalletConnectorError: Error {
     case unsupportedConnector
+    case unknownEntity
     case invalidTransactionArguments
     case invalidTransactionSerialization
     case invalidKeyForSigning
     case unrecoverableKey
     case unsignedTransaction
 
-    // Submit errors...
+    // Submit errors... enumerate all of these... or `case submitFailed(SubmitError)`
+    case submitFailed
     // ...
 
     internal init (core: WKWalletConnectorError) {
@@ -529,20 +531,26 @@ public final class WalletConnector {
     ///
     /// Create a WalletConnector is supported for the manager's network
     ///
-    /// - Parameter manager: <#manager description#>
+    /// - Parameter manager: The `WalletManager` for this connector
     ///
-    /// - Returns: <#description#>
+    /// - Returns: On success, a WalletConnector for `manager`.  On failure, a WalletConnectError of:
+    ///     .unsupportedConnector - If `manager` does not support the WalletConnect 1.0 specification
     ///
     internal static func create (manager: WalletManager) -> Result<WalletConnector, WalletConnectorError> {
         return wkWalletConnectorCreate (manager.core)
-            .map { Result.success (WalletConnector (core: $0)) }
+            .map { Result.success (WalletConnector (core: $0, manager: manager)) }
             ?? Result.failure(.unsupportedConnector)
     }
 
+    /// The core reference
     internal let core: WKWalletConnector
 
-    private init (core: WKWalletConnector) {
+    /// The manager for this connector
+    internal unowned let manager: WalletManager
+
+    private init (core: WKWalletConnector, manager: WalletManager) {
         self.core = core
+        self.manager = manager
     }
 
     deinit {
@@ -552,28 +560,45 @@ public final class WalletConnector {
     ///
     /// Sign arbitrary data
     ///
-    /// - Parameter message: <#message description#>
-    /// - Parameter key: <#key description#>
+    /// - Parameter message: Arbitrary data to be signed
+    /// - Parameter key: A private key 
     ///
-    /// - Returns: A pair of {digest,Signature} or nil.  The digeest will exist if the connector's
-    /// signing algorithm is recoverable.
+    /// - Returns: On success a pair {digest,Signature}.  The digeest will exist if the connector's
+    /// signing algorithm is recoverable.  On failure a WalletConnectorError of:
+    ///     .invalidKeyForSigning - if `key` is not private
     ///
-    public func sign (message: Data, using key: Key, prefix: Bool = true) -> (digest: Digest?, signature: Signature)? {
+    public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> {
+        guard key.hasSecret else { return Result.failure(.invalidKeyForSigning) }
+
         // if prefix - prepend "\x19Ethereum..." + data.count + data
-        return nil
+        return Result.failure(.unsupportedConnector)
     }
 
     ///
     /// Recover the public key
     ///
     /// - Parameters:
-    ///   - digest: <#digest description#>
-    ///   - signature: <#signature description#>
+    ///   - digest: the digest
+    ///   - signature: the corresponding signature
     ///
-    /// - Returns: <#description#>
+    /// - Returns: On success, a public key.  On failure, a WalletConnectError of:
+    ///       .unknownEntity - `digest` or `signature` are not from `self`
     ///
     public func recover (digest: Digest, signature: Signature) -> Result<Key, WalletConnectorError> {
+        guard core == digest.core, core == signature.core else { return Result.failure(.unknownEntity) }
+
         return Result.failure(.unrecoverableKey)
+    }
+
+    ///
+    /// Create a Serialization from a transaction's unsigned or signed data.
+    ///
+    /// - Parameter data: The data
+    ///
+    /// - Returns: A serialization
+    ///
+    public func createSerialization (data: Data) -> Serialization {
+        return Serialization (core: core, data: data)
     }
 
     ///
@@ -582,9 +607,10 @@ public final class WalletConnector {
     ///
     /// This function is the 'create' part of the ETH JSON-RPC `eth_sendTransaction`
     ///
-    /// - Parameter arguments: JSON-RPC-like dictionary
+    /// - Parameter arguments: A dictionary (JSON-RPC-like) of create arguments
     ///
-    /// - Returns: <#description#>
+    /// - Returns: On success, an unsigned `Transaction`.  On failure, a WalletConnectError of:
+    ///      TBD
     ///
     public func createTransaction (arguments: Dictionary<String,String>) -> Result<Transaction, WalletConnectorError> {
         // return wkWalletConnectCreateTransactionFromArguments (...).map { Transaction (core: $0) }
@@ -592,13 +618,17 @@ public final class WalletConnector {
     }
 
     ///
-    /// Create a Transaction from a serialization of a signed transaction
+    /// Create a Transaction from a serialization
     ///
-    /// - Parameter serialization: <#raw description#>
+    /// - Parameter serialization: A transaction serialization, signed or unsigned
     ///
-    /// - Returns: <#description#>
+    /// - Returns: On success, an unsigned or signed `Transaction`.  On failure, a WalletConnectError of:
+    ///     .unknownEntity - if serialization if not from `self`
+    ///      TBD
     ///
-    public func createTransaction (serialization: Data) -> Result<Transaction, WalletConnectorError> {
+    public func createTransaction (serialization: Serialization) -> Result<Transaction, WalletConnectorError> {
+        guard core == serialization.core else { return Result.failure(.unknownEntity) }
+
         // return wkWalletConnectCreateTransactionFromSerialization (...).map { Transaction (core: $0) }
         return Result.failure(.invalidTransactionSerialization)
     }
@@ -609,37 +639,20 @@ public final class WalletConnector {
     /// This function is the 'sign' part of the ETH JSON-RPC `eth_sendTransaction` and
     /// `eth_sendRawTransaction`.
     ///
-    /// - Parameter transaction: <#transaction description#>
-    /// - Parameter key: <#key description#>
+    /// - Parameter transaction: The transaction to sign
+    /// - Parameter key: A private key
     ///
-    /// - Returns: A Result with the serialized bytes (as if returned by `transactionSerialization`
-    /// or an error.
+    /// - Returns: On success, a signed `Transaction` which will be distinct from the provided
+    ///  `transaction` argument.  On failure, a WalletConnectError of:
+    ///     .unknownEntity - `transaction` is not from `self`
+    ///     .invalidKeyForSigning - if `key` is not private
     ///
-    public func sign (transaction: Transaction, using key: Key) -> Result<Data, WalletConnectorError> {
+    public func sign (transaction: Transaction, using key: Key) -> Result<Transaction, WalletConnectorError> {
+        guard core == transaction.core else { return Result.failure(.unknownEntity) }
+        guard key.hasSecret            else { return Result.failure(.invalidKeyForSigning) }
+
         // ?? and provide `func recover (transaction: Transaction, signature: Data) -> Key`
         return Result.failure(.invalidKeyForSigning)
-    }
-
-    ///
-    /// Check if `transaction` is signed
-    ///
-    /// - Parameter transaction: <#transaction description#>
-    ///
-    /// - Returns: <#description#>
-    ///
-    public func transactionIsSigned (_ transaction: Transaction) -> Bool {
-        return false
-    }
-
-    ///
-    /// Return the transaction's serialization, if it exists.
-    ///
-    /// - Parameter transaction: <#transaction description#>
-    ///
-    /// - Returns: <#description#>
-    ///
-    public func transactionSerialization (_ transaction: Transaction) -> Result<Data, WalletConnectorError> {
-        return Result.failure(.unsignedTransaction)
     }
 
     ///
@@ -648,17 +661,89 @@ public final class WalletConnector {
     /// This function is the 'submit' part of the ETH JSON-RPC `eth_sendTransaction` and
     /// `eth_sendRawTransaction`.
     ///
-    /// - Parameter transaction:
+    /// - Parameter The `transaction` to submit
     ///
-    /// - Returns: <#description#>
+    /// - Returns: On success, a submitted transaction which may be distinct from the provided
+    ///   transaction argument.  On failure, a WalletConnectError of:
+    ///     .unknownEntity - `transaction` is not from `self`
+    ///     .unsignedTransaction - `transaaction` is not signed
+    ///     .submitFailed - the `transaction` was not submitted
     ///
-    public func submit (transaction: Transaction) -> Result<Void, WalletConnectorError> {
-        return Result.failure(.unsignedTransaction)
+    public func submit (transaction: Transaction,
+                        completion: @escaping (Result<Transaction, WalletConnectorError>) -> Void) {
+        guard core == transaction.core else { return completion (Result.failure(.unknownEntity)) }
+        guard transaction.isSigned     else { return completion (Result.failure(.unsignedTransaction)) }
+
+        manager.client.createTransaction (blockchainId: manager.network.uids,
+                                          transaction: transaction.serialization.data,
+                                          identifier: "WalletConnect: \(manager.network.uids): \(transaction.serialization.data.prefix(through: 10).base64EncodedString())") {
+            (res: Result<SystemClient.TransactionIdentifier, SystemClientError>) in
+
+            res.resolve(
+                success: { (ti) in completion (Result.success (transaction)) },
+                failure: { ( e) in completion (Result.failure (.submitFailed)) }
+            )
+        }
     }
 
-    public final class Digest {}     // data32
-    public final class Signature {}  // data (65 byte RSV Eth signaature)
-    public final class Transaction { }
+    ///
+    /// A Digest holds '32 hash bytes'
+    ///
+    public struct Digest {
+        /// The owning connector.
+        internal var core: WKWalletConnector
+
+        /// The data as 32 bytes (typically)
+        public var data32: Data
+    }
+
+    ///
+    /// A Signature holds the signature bytes in a form specific to the WalletConnector
+    ///
+    public struct Signature {
+        /// The owning connector.
+        internal var core: WKWalletConnector
+
+        /// The data
+        public var data: Data          // (65 byte RSV Eth signaature)
+    }
+
+    ///
+    /// A Serialization is a byte sequence representing an unsigned or signed transaction
+    ///
+    public struct Serialization {
+        /// The owning connector.
+        internal var core: WKWalletConnector
+
+        // The data
+        public var data: Data
+    }
+
+    ///
+    /// A Transaction
+    ///
+    public struct Transaction {
+        /// The owning connector.
+        internal var core: WKWalletConnector
+
+        /// Check if signed
+        public var isSigned: Bool
+
+        /// The serialization - this could be unsigned (if `!isSigned`) or signed (if `isSigned`)
+        public var serialization: Serialization
+
+        // Adding these two properties, for `isSubmitted` and `submissionError` requires a change
+        // to the `completion` argument to `func submit (...)`.  I don't want to make that change.
+        // The change might be `completion: (Transaction) -> Void` with the transaction having
+        // set `isSubmitted=true` and `submissionError=<error`
+        #if false
+        /// Check if submitted.  A value of `true` does not indicate submission success
+        public var isSubmitted: Bool
+
+        /// An optional submission error
+        public var submissionError: WalletConnectorError? = nil
+        #endif
+    }
 }
 
 ///
