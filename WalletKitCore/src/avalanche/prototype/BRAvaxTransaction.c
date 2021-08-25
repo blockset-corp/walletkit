@@ -6,12 +6,18 @@
 //
 
 #include "BRAvaxTransaction.h"
+#include "support/BRCrypto.h"
+#include "support/BRInt.h"
+#include "support/BRKey.h"
 
+void createTx(char * sourceAddress, char * targetAddress, char ** txids, uint64_t amount, char * changeAddress){
+    
+}
+
+//void avaxTransactionCreate(BRAvalancheXAddress source, BRAvalancheXAddress target, uint64_t amount);
 extern struct BaseTxRecord * avaxTransactionCreate(const char* sourceAddress,
                              const char* targetAddress,
-                                uint64_t amount){
-   
-//
+                                uint64_t amount, struct BRAvaxUtxoRecord ** utxos){
     
     struct BaseTxRecord * tx = calloc(1, sizeof(struct BaseTxRecord));
     struct TransferableOutputRecord * output = calloc (1, sizeof(struct TransferableOutputRecord));
@@ -37,44 +43,6 @@ extern struct BaseTxRecord * avaxTransactionCreate(const char* sourceAddress,
    
     
     return tx;
-//    BRAvalancheTransferOutputBase tout = calloc(1, sizeof(struct BRAvalancheTransferOutputBaseRecord));
-//    tout->target.amount = 101;
-//
-//
-//    SECP256K1TransferOutput output1 = calloc(1, sizeof(struct SECP256K1TransferOutputRecord));
-//    *output1 = SECP256K1TransferOutput_DEFAULT;
-//    output1->amount = 666;
-//
-//
-//    BRAvalancheBaseTx tx = calloc(1, sizeof(struct BRAvalancheBaseTxRecord));
-//    *tx = BRAvalancheBaseTx_DEFAULT;
-//    tx->outputs = calloc(1, sizeof(struct BRAvalancheTransferableOutputRecord) );
-//    tx->outputs[0].outputlen =2 ;
-//    tx->outputs[0].output = calloc(2, sizeof(struct BRAvalancheTransferOutputBaseRecord));
-//    tx->outputs[0].output[0].type_id = 0xa;
-//    tx->outputs[0].output[0].target.amount = 666;
-//    tx->outputs[0].output[0].type=BRAvalancheSECP256K1TransferOutput;
-//    tx->outputs[0].output[1].type_id = 0xb;
-//    tx->outputs[0].output[1].target.amount = 808;
-//    tx->outputs[0].output[1].type=BRAvalancheSECP256K1OutputOwners;
-//
-//    for(int i=0; i < tx->outputs[0].outputlen; i++){
-//        printf("%d - %d \r\n", tx->outputs[0].output[i].type, tx->outputs[0].output[i].target.amount);
-//        BRAvalancheTransferOutputType type = tx->outputs[0].output[i].type;
-//        switch(type){
-//            case BRAvalancheSECP256K1TransferOutput: printf("got a transfer \r\n"); break;
-//            case BRAvalancheSECP256K1OutputOwners: printf("owner swap\r\n");
-//                break;
-//            default: printf("!!!unknown transfer type!!!\r\n"); break;
-//        }
-//
-//    }
-//
-//    free(tx->outputs[0].output);
-//    free(tx->outputs);
-//    free(tx);
-//    free(tout);
-//    free(output1);
 }
 
 extern void releaseTransaction(struct BaseTxRecord * tx){
@@ -89,3 +57,62 @@ extern void releaseTransaction(struct BaseTxRecord * tx){
     
     free(tx);
 }
+
+
+const char * MSG_PREFIX = "\x1A""Avalanche Signed Message:\n";
+/*
+ function digestMessage(msgStr: string) {
+     let mBuf = Buffer.from(msgStr, 'utf8')
+     let msgSize = Buffer.alloc(4)
+     msgSize.writeUInt32BE(mBuf.length, 0)
+     let msgBuf = Buffer.from(`\x1AAvalanche Signed Message:\n${msgSize}${msgStr}`, 'utf8')
+     return createHash('sha256').update(msgBuf).digest()
+ }
+ 
+ */
+
+void digestMessage(uint8_t * buffer32, uint8_t * bytes, size_t len){
+    printf("creating array of size: %d",strlen(MSG_PREFIX)+4+len);
+    size_t buffer_len =strlen(MSG_PREFIX)+len+4;
+    uint8_t * buffer = calloc(buffer_len, sizeof(uint8_t));
+    memcpy(buffer, (uint8_t*)MSG_PREFIX, strlen(MSG_PREFIX));
+    uint8_t msgsize[4];
+    UInt32SetBE(&msgsize[0],len);
+    memcpy(&buffer[strlen(MSG_PREFIX)], &msgsize[0]  , sizeof(msgsize));
+    memcpy(&buffer[strlen(MSG_PREFIX) + 4], bytes, len);
+    
+//    printf("result buffer:");
+//    for(int i=0; i < strlen(MSG_PREFIX)+len+4 ; i++){
+//        printf("%02x", buffer[i]);
+//    }
+//    printf("expected:1a4176616c616e636865205369676e6564204d6573736167653a0a0000000568656c6c6f\r\n");
+    
+    BRSHA256(buffer32, buffer,buffer_len);
+    free(buffer);
+    
+}
+extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len){
+    uint8_t buffer[32];
+    //generate digest
+    digestMessage(&buffer[0],bytes, len);
+        printf("digest created buffer:");
+        for(int i=0; i < 32 ; i++){
+            printf("%02x", buffer[i]);
+        }
+        printf("expected:006915e9a6444a3d68ac8fb053eb943e2efa9a54659be2148d2ede63a688c339");
+    
+    //get safe sig length
+    size_t sigLen =BRKeySign(key, NULL, NULL, UInt256Get(buffer));
+    uint8_t  sig[sigLen];
+    BRKeySign(key, sig, sigLen, UInt256Get(buffer));
+    
+    
+    //this is bizzare, we get the 2 coordinates but a bunch of junk around it
+    printf("signature created:");
+    for(int i=0; i < sigLen ; i++){
+        printf("%02x", sig[i]);
+    }
+    printf("expected:");
+    
+}
+

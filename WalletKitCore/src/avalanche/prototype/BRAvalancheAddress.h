@@ -23,7 +23,7 @@ extern "C" {
 
 //typedef struct BRAvalancheXAddressRecord *BRAvalancheXAddress;
 
-typedef struct {
+typedef struct BRAvalancheXAddressRecord{
     //This is the vanity address from bech32, we also need the 20 byte address
     uint8_t bytes[AVAX_X_ADDRESS_BYTES];
     //TODO populate below

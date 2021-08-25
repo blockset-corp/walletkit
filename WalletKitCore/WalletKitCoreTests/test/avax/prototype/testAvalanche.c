@@ -102,6 +102,15 @@ makeAccount(TestAccount accountInfo) {
     return avalancheAccountCreateWithSeed(seed);
 }
 
+static BRKey
+makeKey(TestAccount accountInfo){
+    UInt512 seed = UINT512_ZERO;
+    //generate seed from paperKey
+    BRBIP39DeriveKey(seed.u8, accountInfo.paperKey, NULL);
+    BRKey key = deriveAvalanchePrivateKeyFromSeed(seed);
+    return key;
+}
+
 
 //Test-Case resource
 //https://github.com/ava-labs/ledger-app-avalanche/blob/a340702ec427b15e7e4ed31c47cc5e2fb170ebdf/tests/basic-tests.js#L19
@@ -140,7 +149,13 @@ extern void runAvalancheTest (void) {
     hex2bin(avaxTestAccount.caddress, ethAddress);
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
     
-    struct BaseTxRecord * tx = avaxTransactionCreate("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", 100);
+    struct BaseTxRecord * tx = avaxTransactionCreate("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", 100, NULL);
+    
+   
+    BRKey key = makeKey(avaxTestAccount);
+    key.compressed=0;
+    uint8_t msg[5] = { 104,101,108,108,111};
+    avaxSignBytes(&key, &msg[0], sizeof(msg));
     
     releaseTransaction(tx);
     

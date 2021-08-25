@@ -15,7 +15,7 @@
 
 
 //derives the root key for
-static BRKey
+extern BRKey
 deriveAvalanchePrivateKeyFromSeed (UInt512 seed) {
     BRKey privateKey;
     BRBIP32PrivKeyPath(&privateKey, &seed, sizeof(UInt512), AVAX_BIP32_DEPTH, AVAX_BIP32_CHILD);

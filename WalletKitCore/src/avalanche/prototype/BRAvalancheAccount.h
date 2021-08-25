@@ -36,7 +36,8 @@ struct BRAvalancheAccountRecord {
 extern BRAvalancheAccount  /* caller must free - using "free" function */
 avalancheAccountCreateWithSeed (UInt512 seed);
 
-
+extern BRKey
+deriveAvalanchePrivateKeyFromSeed (UInt512 seed);
 
 
 #ifdef __cplusplus
