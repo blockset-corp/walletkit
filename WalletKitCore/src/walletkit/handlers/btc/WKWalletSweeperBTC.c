@@ -125,9 +125,6 @@ wkWalletSweeperCreateTransferForWalletSweepBTC (WKWalletManager cwm,
                                                     WKWallet wallet,
                                                     WKWalletSweeper sweeper,
                                                     WKFeeBasis estimatedFeeBasis) {
-    WKUnit unit       = wkWalletGetUnit (wallet);
-    WKUnit unitForFee = wkWalletGetUnitForFee(wallet);
-    
     WKWalletBTC walletBTC = (WKWalletBTC) wallet;
     BRBitcoinWallet *wid = walletBTC->wid;
     
@@ -139,11 +136,11 @@ wkWalletSweeperCreateTransferForWalletSweepBTC (WKWalletManager cwm,
                                                                       wkFeeBasisAsBTC(estimatedFeeBasis));
     return (NULL != tid
             ? wkTransferCreateAsBTC (wallet->listenerTransfer,
-                                         unit,
-                                         unitForFee,
-                                         wid,
-                                         tid,
-                                         cwm->type)
+                                     wallet->unit,
+                                     wallet->unitForFee,
+                                     wid,
+                                     tid,
+                                     cwm->type)
             : NULL);
 }
 
