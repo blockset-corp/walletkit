@@ -496,6 +496,69 @@ function update_wkaccount() {
     sed -i '' -e "1,\$s/#define ACCOUNT_SERIALIZE_DEFAULT_VERSION[[:space:]]*${last_vers_value}/$next_vers_comment\n$next_vers/" $wk_account_file 
 }
 
+# Checks for the WKNetwork.c file and if not existant, create a test file
+function check_create_wknetwork() {
+    wknetwork_c_file=${output_path[$WKCORE_OUTPUT]}/src/walletkit/WKNetwork.c
+    if [ ! -f $wknetwork_c_file ]; then
+
+        echov "  Creating new WKNetwork.c file"
+        mkdir -p ${output_path[$WKCORE_OUTPUT]}/src/walletkit
+        touch $wknetwork_c_file
+       
+        # wkNetworkTypeGetCurrencyCode
+        echo "extern const char *" >> $wknetwork_c_file
+        echo "wkNetworkTypeGetCurrencyCode (WKNetworkType type) {" >> $wknetwork_c_file
+        echo "    static const char *currencies [NUMBER_OF_NETWORK_TYPES] = {" >> $wknetwork_c_file
+        echo "        WK_NETWORK_CURRENCY_XLM," >> $wknetwork_c_file
+        echo "        /* WK_NETWORK_CURRENCY___SYMBOL__, */" >> $wknetwork_c_file
+        echo "     };" >> $wknetwork_c_file
+        echo "     return currencies[type];" >> $wknetwork_c_file
+        echo "}" >> $wknetwork_c_file
+
+        # wkNetworkTypeIsBitcoinBased
+        echo "private_extern bool" >> $wknetwork_c_file
+        echo "wkNetworkTypeIsBitcoinBased (WKNetworkType type) {" >> $wknetwork_c_file
+        echo "    static const char isBitcoinBased [NUMBER_OF_NETWORK_TYPES] = {" >> $wknetwork_c_file
+        echo "        false,      // XLM" >> $wknetwork_c_file
+        echo "     /* false,      // __SYMBOL__ */" >> $wknetwork_c_file
+        echo "    };" >> $wknetwork_c_file
+        echo "    return isBitcoinBased[type];" >> $wknetwork_c_file
+        echo "}" >> $wknetwork_c_file
+    fi
+}
+
+# Create if necessary WKNetwork.c and then update with the required
+# account serialization version which is bumped with each new blockchain
+#
+# @param ucsymbol The UpperCase blockchain mnemonic
+function update_wknetwork() {
+    
+    ucsymbol=$1
+
+    wknetwork_c_file=${output_path[$WKCORE_OUTPUT]}/src/walletkit/WKNetwork.c
+    check_create_wknetwork
+
+    # Update wkNetworkTypeGetCurrencyCode 
+    cur_def_repl="/* WK_NETWORK_CURRENCY___SYMBOL__, */"
+    cur_def_val=${cur_def_repl//__SYMBOL__/$ucsymbol}
+    cur_def_repl_escpd=${cur_def_repl//\//\\/}
+    cur_def_repl_escpd=${cur_def_repl_escpd//\*/\\*}
+    cur_def_val=${cur_def_val//\/\*/}
+    cur_def_val=${cur_def_val//\*\//}
+    cur_def_val=${cur_def_val// /}
+    sed -i '' -e "1,\$s/$cur_def_repl_escpd/$cur_def_val\n        $cur_def_repl_escpd/" $wknetwork_c_file 
+
+    # Update wkNetworkTypeIsBitcoinBased
+    bc_based_repl="/* false,      // __SYMBOL__ */"
+    bc_based_val="  ${bc_based_repl//__SYMBOL__/$ucsymbol}"
+    bc_based_repl_escpd=${bc_based_repl//\//\\/}
+    bc_based_repl_escpd=${bc_based_repl_escpd//\*/\\*}
+    bc_based_val=${bc_based_val//\/\*/}
+    bc_based_val=${bc_based_val//\*\//}
+    bc_based_val=${bc_based_val//\//\\/}
+    sed -i '' -e "1,\$s/$bc_based_repl_escpd/$bc_based_val\n     $bc_based_repl_escpd/" $wknetwork_c_file 
+}
+
 # Updates the WKBase.h header file with required definitions
 #
 # @param ucsymbol The UpperCase blockchain mnemonic
@@ -856,6 +919,9 @@ if [ $pkg_enabled_result -eq 1 ]; then
 
     # check for and create a new WKAccount.c if necessary
     update_wkaccount $bc_symbol
+
+    # check for and create a new WKNetwork.c if necessary
+    update_wknetwork $bc_symbol
 fi
 
 # Update naked templates for handlers
