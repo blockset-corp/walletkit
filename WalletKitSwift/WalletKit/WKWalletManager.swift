@@ -563,7 +563,7 @@ public final class WalletConnector {
     /// - Parameter message: Arbitrary data to be signed
     /// - Parameter key: A private key 
     ///
-    /// - Returns: On success a pair {digest,Signature}.  The digeest will exist if the connector's
+    /// - Returns: On success a pair {Digest,Signature}.  The digest will exist if the connector's
     /// signing algorithm is recoverable.  On failure a WalletConnectorError of:
     ///     .invalidKeyForSigning - if `key` is not private
     ///
@@ -623,7 +623,7 @@ public final class WalletConnector {
     /// - Parameter serialization: A transaction serialization, signed or unsigned
     ///
     /// - Returns: On success, an unsigned or signed `Transaction`.  On failure, a WalletConnectError of:
-    ///     .unknownEntity - if serialization if not from `self`
+    ///     .unknownEntity - if serialization is not from `self`
     ///      TBD
     ///
     public func createTransaction (serialization: Serialization) -> Result<Transaction, WalletConnectorError> {
@@ -705,7 +705,7 @@ public final class WalletConnector {
         internal var core: WKWalletConnector
 
         /// The data
-        public var data: Data          // (65 byte RSV Eth signaature)
+        public var data: Data          // (65 byte RSV Eth signature)
     }
 
     ///
