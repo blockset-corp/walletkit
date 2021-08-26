@@ -19,16 +19,31 @@
 #include <memory.h>
 #include <assert.h>
 
-// temporary
-
-#if !defined (OwnershipGiven)
-#define OwnershipGiven
-#endif
-
+//
+// An OwnershipKept annotation on a function's arguments implies that ownership is not passed into
+// the function; instead the caller continues having ownership.  If the return value is annotated
+// with OwnershipKept then the caller, receiving the return value, does not own the value and must
+// take or copy if held beyond the caller's scope
+//
+// OwnershipKept is the default for any parameters that are not annotated.
+//
 #if !defined (OwnershipKept)
 #define OwnershipKept
 #endif
 
+//
+// An Ownership annotation on a function's arguments implies that ownership is passed into the
+// function; the body of the function takes ownership and must release/free the objects - either
+// directly or by passing to another function declaring the argument as OwnershipGiven.  If the
+// return value is annotaed with OwnershipGiven then the caller, receiving the return value, owns
+// the object and must dispose of the object.
+#if !defined (OwnershipGiven)
+#define OwnershipGiven
+#endif
+
+//
+// A Nullable annotation declares that an argument or return value can be NULL
+//
 #if !defined (Nullable)
 #define Nullable
 #endif
