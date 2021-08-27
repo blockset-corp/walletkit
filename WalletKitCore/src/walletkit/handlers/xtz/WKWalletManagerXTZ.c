@@ -318,6 +318,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
 
     wkFeeBasisGive (feeBasis);
     wkTransferStateGive (state);
+    wkAmountGive(amount);
 
     wkWalletGive (wallet);
 }
