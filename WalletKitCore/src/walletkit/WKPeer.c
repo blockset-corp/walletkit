@@ -72,9 +72,9 @@ wkPeerRelease (WKPeer peer) {
     free (peer);
 }
 
-extern WKData16
+extern WKPeerAddrAsInt
 wkPeerGetAddrAsInt (WKPeer peer) {
-    WKData16 addrAsInt;
+    WKPeerAddrAsInt addrAsInt;
     memcpy (addrAsInt.data, peer->addressAsInt.u8, sizeof (addrAsInt.data));
     return addrAsInt;
 }

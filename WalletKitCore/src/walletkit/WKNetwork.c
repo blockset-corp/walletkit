@@ -41,6 +41,7 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_XTZ,
         WK_NETWORK_CURRENCY_XLM,
         WK_NETWORK_CURRENCY_AVAX,
+        /* WK_NETWORK_CURRENCY___SYMBOL__, */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
@@ -61,6 +62,7 @@ wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
         false,      // XTZ
         false,      // XLM
         false,      // AVAZ
+     /* false,      // __SYMBOL__ */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return isBitcoinBased[type];

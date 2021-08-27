@@ -314,7 +314,7 @@ tezosOperationEqual (BRTezosOperation op1,
 
 // MARK: - Tezos Serialization
 
-static WKData
+static BRData
 encodeAddress (BRTezosAddress address) {
     // address bytes with 3-byte TZx prefix replaced with a 1-byte prefix
 
@@ -340,19 +340,19 @@ encodeAddress (BRTezosAddress address) {
     memcpy(&encoded[0], &prefix, 1);
     memcpy(&encoded[1], &bytes[3], len-3);
 
-    return wkDataCopy (encoded, sizeof(encoded));
+    return dataCopy (encoded, sizeof(encoded));
 }
 
-static WKData
+static BRData
 encodePublicKey (BRTezosPublicKey pubKey) {
     uint8_t prefix = 0x0; // ed25519
-    WKData encoded = wkDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
+    BRData encoded = dataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
     memcpy(encoded.bytes, &prefix, 1);
     memcpy(&encoded.bytes[1], pubKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     return encoded;
 }
 
-extern WKData
+extern BRData
 encodeZarith (int64_t value) {
     assert (value >= 0);
     uint8_t result[32] = {0};
@@ -365,41 +365,41 @@ encodeZarith (int64_t value) {
     }
     result[resultSize++] = (uint8_t)input;
 
-    return wkDataCopy(&result[0], resultSize);
+    return dataCopy(&result[0], resultSize);
 }
 
-static WKData
+static BRData
 encodeBool (bool value) {
-    WKData encoded = wkDataNew(1);
+    BRData encoded = dataNew(1);
     encoded.bytes[0] = value ? 0xff : 0x00;
     return encoded;
 }
 
-static WKData
+static BRData
 encodeOperationKind (BRTezosOperationKind kind) {
     uint8_t bytes[1] = { kind };
-    return wkDataCopy (bytes, 1);
+    return dataCopy (bytes, 1);
 }
 
-static WKData
+static BRData
 encodeBranch (BRTezosHash blockHash) {
     // omit prefix
     size_t numPrefixBytes = 2;
     size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
 
-    WKData branchData = wkDataNew(branchSize);
+    BRData branchData = dataNew(branchSize);
     memcpy(branchData.bytes, &blockHash.bytes[numPrefixBytes], branchSize);
 
     return branchData;
 }
 
 
-extern WKData
+extern BRData
 tezosOperationSerialize (BRTezosOperation op) {
     assert (op);
 
     size_t maxFields = 10;
-    WKData fields[maxFields];
+    BRData fields[maxFields];
     size_t numFields = 0;
     fields[numFields++] = encodeOperationKind (op->kind);
     fields[numFields++] = encodeAddress (op->source);
@@ -440,21 +440,21 @@ tezosOperationSerialize (BRTezosOperation op) {
             break;
     }
 
-    WKData serialized = wkDataConcat(fields, numFields);
+    BRData serialized = dataConcat(fields, numFields);
     
     for (int i=0; i < numFields; i++) {
-        wkDataFree(fields[i]);
+        dataFree(fields[i]);
     }
     
     return serialized;
 }
 
-extern WKData
+extern BRData
 tezosOperationSerializeList (BRTezosOperation * ops,
                              size_t opsCount,
                              BRTezosHash blockHash) {
     
-    WKData fields[opsCount + 1];
+    BRData fields[opsCount + 1];
     size_t numFields = 0;
     
     // operation list = branch + [reveal op bytes] + transaction/delegation op bytes
@@ -466,10 +466,10 @@ tezosOperationSerializeList (BRTezosOperation * ops,
         fields[numFields++] = tezosOperationSerialize (ops[i]);
     }
     
-    WKData serialized = wkDataConcat(fields, numFields);
+    BRData serialized = dataConcat(fields, numFields);
     
     for (int i=0; i < numFields; i++) {
-        wkDataFree(fields[i]);
+        dataFree(fields[i]);
     }
 
     printf ("XTZ: Serialize TX Count: %zu\n", opsCount);
