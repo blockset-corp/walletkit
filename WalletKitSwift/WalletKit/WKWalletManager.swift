@@ -521,7 +521,7 @@ public enum WalletConnectorError: Error {
 
     internal init (core: WKWalletConnectorError) {
         switch core {
-            case WALLET_CONNECT_ERROR_UNSUPPORTED_CONNECTOR: self = .unsupportedConnector
+            case WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR: self = .unsupportedConnector
             default: preconditionFailure()
         }
     }

@@ -9,28 +9,21 @@ package com.blockset.walletkit.nativex;
 
 public enum WKWalletConnectorError {
 
-    SUCCESS {
-        @Override
-        public int toCore() { return SUCCESS_VALUE; }
-    },
-
-    ERROR_UNSUPPORTED_CONNECTOR {
+    UNSUPPORTED_CONNECTOR {
         @Override
         public int toCore () {
-            return ERROR_UNSUPPORTED_CONNECTOR_VALUE;
+            return UNSUPPORTED_CONNECTOR_VALUE;
         }
     };
 
     public static WKWalletConnectorError fromCore(int nativeValue) {
         switch (nativeValue) {
-            case SUCCESS_VALUE:                             return SUCCESS;
-            case ERROR_UNSUPPORTED_CONNECTOR_VALUE:         return ERROR_UNSUPPORTED_CONNECTOR;
+            case UNSUPPORTED_CONNECTOR_VALUE:         return UNSUPPORTED_CONNECTOR;
             default: throw new IllegalArgumentException("Invalid WKWalletConnectorError core value");
         }
     }
 
-    private static final int SUCCESS_VALUE                              = 0;
-    private static final int ERROR_UNSUPPORTED_CONNECTOR_VALUE          = 1;
+    private static final int UNSUPPORTED_CONNECTOR_VALUE          = 0;
 
     public abstract int toCore();
 }

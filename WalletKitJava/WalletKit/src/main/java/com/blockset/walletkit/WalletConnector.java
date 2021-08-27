@@ -9,7 +9,6 @@ package com.blockset.walletkit;
 
 import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.utility.CompletionHandler;
-import com.google.common.base.Optional;
 
 import java.util.Map;
 
@@ -20,7 +19,7 @@ public interface WalletConnector {
      *  A signature holds the signature bytes in the form
      *  specific to the WalletConnector.
      */
-    public interface Signature {
+    interface Signature {
         /**
          * Get signature data
          * @return The signature bytes
@@ -32,7 +31,7 @@ public interface WalletConnector {
      *
      *  A Digest holds '32 hash bytes'
      */
-    public interface Digest {
+    interface Digest {
         /**
          * Get digest data, typically 32 bytes
          * @return The digest data
@@ -43,7 +42,7 @@ public interface WalletConnector {
     /** Transaction
      *
      */
-    public interface Transaction {
+    interface Transaction {
 
         /** Check if the transaction is signed
          *
@@ -57,10 +56,6 @@ public interface WalletConnector {
          *
          */
         Serialization getSerialization();
-
-        /** Future change as indicated by swift: */
-        // boolean isSubmitted();
-        // WalletConnectionError getSubmissionError();
     }
 
     /** Serialization
@@ -69,11 +64,11 @@ public interface WalletConnector {
      *  unsigned or signed transaction.
      *
      */
-    public interface Serialization {
+    interface Serialization {
 
         /**
          *  Get serialization data
-         * @return
+         * @return the serialization bytes
          */
         byte[] getData();
     }
@@ -81,7 +76,7 @@ public interface WalletConnector {
     /** Composite wrapper of a {@link Digest} and {@link Signature}
      *  to allow returning them together.
      */
-    public class DigestAndSignaturePair {
+    class DigestAndSignaturePair {
         public final Digest digest;
         public final Signature signature;
         public DigestAndSignaturePair(Digest    digest,

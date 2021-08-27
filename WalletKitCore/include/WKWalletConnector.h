@@ -18,8 +18,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    WK_WALLET_CONNECTOR_SUCCESS,
-    WK_WALLET_CONNECT_ERROR_UNSUPPORTED_CONNECTOR,
+    WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR
     // ...
 
 } WKWalletConnectorError;

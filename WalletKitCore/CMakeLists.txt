@@ -574,6 +574,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKUnit.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWallet.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletConnectorP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletConnector.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManagerP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManager.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletSweeperP.h
@@ -612,6 +614,7 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKNetworkETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKSupportETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKTransferETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletConnectorETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletManagerETH.c
                 )
