@@ -11,6 +11,8 @@
 #include "support/BRBase58.h"
 #include "support/util/BRHex.h"
 #include "support/BRKey.h"
+#include "support/BRSet.h"
+#include "support/BRArray.h"
 #include "BRAvalancheAddress.h"
 #include <stdlib.h>
 #include <string.h>
@@ -43,31 +45,34 @@ typedef enum{
 
 
 struct AddressRecord{
-    char rmd160[20];
+    uint8_t rmd160[20];
 };
 
 struct BRAssetRecord{
-    char asset_id[33]; //null terminated asset id
-    uint8_t bytes[32];
+    char asset_id[65]; //null terminated asset id
+    UInt256 id;
 };
 
 struct TxIdRecord{
-    char id[33];
-    uint8_t bytes[32];
+    char base58[50]; //Base58 encoded string
+    UInt256 id;
 };
+
 
 struct BRAvaxUtxoRecord{
     struct TxIdRecord tx;
+    struct BRAssetRecord asset;
+    uint32_t output_index;
     uint64_t amount;
     uint64_t locktime;
+    BRArrayOf(struct AddressRecord) addresses;
 };
 
 struct SECP256K1TransferOutputRecord{
     uint64_t amount;
     uint64_t locktime;
     uint32_t threshold;
-    size_t addresses_len; //must be set to 0 if address is null
-    struct AddressRecord ** addresses;
+    BRArrayOf(struct AddressRecord) addresses;
 };
 
 //=====Unsupported Ouptput Types
@@ -105,7 +110,7 @@ struct SECP256K1TransferInputRecord{
     uint32_t * address_indices; //variable array of 04 bytes
 };
 
-struct TranferableInputRecord{
+struct TransferableInputRecord{
     input_type type_id;
     struct TxIdRecord tx; //32 byte txid
     uint32_t utxo_index;
@@ -120,26 +125,29 @@ struct BaseTxRecord{
     tx_type type_id; // 4 bytes
     network_id_t network_id; //4 bytes
     char blockchain_id[32];//no null terminating char
-    struct TransferableOutputRecord ** outputs;
-    size_t outputs_len;
-    struct TranferableInputRecord ** inputs;
-    size_t inputs_len;
+    BRArrayOf( struct TransferableOutputRecord) outputs;
+    BRArrayOf(struct TransferableInputRecord) inputs;
     char memo [256];//no null terminating char
 };
 
 
 extern void avaxCreateBaseTx();
 
-extern struct BaseTxRecord *
+extern struct BaseTxRecord
 avaxTransactionCreate(const char* sourceAddress,
                       const char* targetAddress,
+                      const char* changeAddress,
+                      const char* assetId,
                       uint64_t amount,
-                      struct BRAvaxUtxoRecord ** utxos);
+                      BRArrayOf(struct BRAvaxUtxoRecord ) utxos);
 
 extern void releaseTransaction(struct BaseTxRecord * tx);
 
-extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len);
+extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
 
+extern UInt256 avaxAssetDecodeAssetId(struct BRAssetRecord asset);
+
+extern UInt256 avaxTxidDecodeBase58(struct TxIdRecord tx);
 
 #ifdef __cplusplus
 }

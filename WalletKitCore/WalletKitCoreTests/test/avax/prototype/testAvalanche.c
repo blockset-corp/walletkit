@@ -138,6 +138,18 @@ void testAddressDecode(){
     assert(0==memcmp(recovered,ripemd160, sizeof(ripemd160)));
 }
 
+void testSignatureGeneration(){
+    
+    BRKey key = makeKey(avaxTestAccount);
+    key.compressed=0;
+    uint8_t msg[5] = { 104,101,108,108,111};
+    uint8_t sig[65];
+    avaxSignBytes(&key, &msg[0], sizeof(msg), &sig[0]);
+    uint8_t exp_sig[65];
+    hex2bin("f72ca286c8e6f1a0ddf1fb6ee18c93cd649cf058b4ce7e75fab3ab2cabeb29af2fdafd1b57bdefddfaddc3b89d333f5b5dbb02928a416f500792df201ad4424a01", exp_sig);
+    assert(0==memcmp(sig, exp_sig, 65));
+}
+
 extern void runAvalancheTest (void) {
     printf("Running avalanche unit tests...\n");
     BRAvalancheAccount account = makeAccount(avaxTestAccount);
@@ -149,17 +161,51 @@ extern void runAvalancheTest (void) {
     hex2bin(avaxTestAccount.caddress, ethAddress);
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
     
-    struct BaseTxRecord * tx = avaxTransactionCreate("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", 100, NULL);
     
+    struct TxIdRecord parentTx;
+    memcpy(parentTx.base58,"XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 50);
+    parentTx.id = avaxTxidDecodeBase58(parentTx);
+    
+    struct BRAssetRecord asset;
+    memcpy(asset.asset_id,
+    "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa", 65);
+    asset.id = avaxAssetDecodeAssetId(asset);
+    
+    BRArrayOf(struct AddressRecord) addresses;
+    array_new(addresses, 2);
+    
+    struct AddressRecord addy;
+    size_t addressLen;
+    avax_addr_bech32_decode(&(addy.rmd160[0]), &addressLen, "fuji", "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q");
+    array_add(addresses,addy);
+    
+    struct BRAvaxUtxoRecord utxo1;
+    utxo1.amount=10;
+    utxo1.asset = asset;
+    utxo1.tx = parentTx;
+    utxo1.addresses = addresses;
    
-    BRKey key = makeKey(avaxTestAccount);
-    key.compressed=0;
-    uint8_t msg[5] = { 104,101,108,108,111};
-    avaxSignBytes(&key, &msg[0], sizeof(msg));
     
-    releaseTransaction(tx);
+
+
+    struct BRAvaxUtxoRecord utxo2;
+    utxo2.amount=2;
+    utxo2.asset = asset;
+    utxo2.tx = parentTx;
+    utxo2.addresses= addresses;
+    
+    
+    BRArrayOf(struct BRAvaxUtxoRecord) utxos;
+    array_new (utxos, 2);
+    array_add(utxos, utxo1);
+    array_add(utxos, utxo2);
+    
+    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa",11, utxos);
+    
+    //releaseTransaction(tx);
     
     testAddressDecode();
+    testSignatureGeneration();
     printf("DONE");
 }
 
