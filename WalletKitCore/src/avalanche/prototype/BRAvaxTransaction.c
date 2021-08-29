@@ -6,15 +6,14 @@
 //
 
 #include "BRAvaxTransaction.h"
+#include "BRAvaxEncode.h"
 #include "support/BRCrypto.h"
 #include "support/BRInt.h"
 #include "support/BRKey.h"
 #include <assert.h>
 
-void createTx(char * sourceAddress, char * targetAddress, char ** txids, uint64_t amount, char * changeAddress){
-    
-}
-static size_t // This is BRBase58CheckDecode but w/ only BRSHA256
+
+static size_t // This is BRBase58CheckDecode but w/ only BRSHA256 --
 BRAvalancheCB58CheckDecode(uint8_t *data, size_t dataLen, const char *str) {
     size_t len, bufLen = (str) ? strlen(str) : 0;
     uint8_t _buf[0x1000], *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
@@ -38,8 +37,10 @@ BRAvalancheCB58CheckDecode(uint8_t *data, size_t dataLen, const char *str) {
 }
 
 extern UInt256 avaxAssetDecodeAssetId(struct BRAssetRecord asset){
-    size_t len;
-    return  UInt256Get(hexDecodeCreate(&len, asset.asset_id, 64));
+    size_t asset_len = 32;
+    uint8_t data[asset_len];
+    BRAvalancheCB58CheckDecode(&data[0], asset_len, asset.base58);
+    return  UInt256Get(data);
 }
 
 extern UInt256 avaxTxidDecodeBase58(struct TxIdRecord tx){
@@ -59,8 +60,9 @@ static uint64_t total(BRArrayOf(struct BRAvaxUtxoRecord) utxos){
     return accum;
 }
 
+//static fee for send: https://docs.avax.network/learn/platform-overview/transaction-fees
 static uint64_t fee(){
-    return (uint64_t)1000000;
+    return (uint64_t)(1000000000 * 0.001);
 }
 
 static int find_utxo_amount(struct BRAvaxUtxoRecord utxo, void * params){
@@ -80,33 +82,42 @@ static int find_utxo_amount(struct BRAvaxUtxoRecord utxo, void * params){
 //    }while(
 //}
 
-//void avaxTransactionCreate(BRAvalancheXAddress source, BRAvalancheXAddress target, uint64_t amount);
-
-uint32_t findAddressIndex(BRArrayOf(struct AddressRecord) addresses, uint8_t * rmd160){
+int findAddressIndex(uint32_t * index, BRArrayOf(struct AddressRecord) addresses, uint8_t * rmd160){
+    assert(index!=NULL);
     for(int i = 0; i < array_count(addresses); i++){
         if(memcmp(addresses[i].rmd160,rmd160,20)==0){
-            return (uint32_t)i;
+            *index = (uint32_t)i;
+            return 1;
         }
     }
-    return NULL;
+    return 0;
 }
 
 //expects a sorted list of utxos
-BRArrayOf(struct TransferableInputRecord) getMinSpend(BRArrayOf(struct BRAvaxUtxoRecord) utxos, uint8_t * rmd160Source, char * assetId, uint64_t amount, uint64_t * change){
+BRArrayOf(struct TransferableInputRecord) getMinSpend(BRArrayOf(struct BRAvaxUtxoRecord) utxos, uint8_t * rmd160Source, struct BRAssetRecord asset, uint64_t amount, uint64_t * change){
     uint64_t accum =0;
     size_t num_inputs;
     BRArrayOf(struct TransferableInputRecord) inputs;
     array_new(inputs, 1);
     for(int i=0; i < array_count(utxos) && accum < amount ; i++){
-        if(strcmp(utxos[i].asset.asset_id, assetId)==0){
+        if(strcmp(utxos[i].asset.base58, asset.base58)==0){
+            BRArrayOf(uint32_t) address_indices;
+            array_new(address_indices, 1);
             struct TransferableInputRecord input;
-            input.asset = utxos[i].asset;
+            input.asset = asset;
             input.tx = utxos[i].tx;
-            //TODO: how to set address_indices
-//            input.input.secp256k1.address_indices = findAddressIndex(utxos[i].addresses, rmd160Source);
-            
+            //NOTE: we do not support multiple output addresses
+            uint32_t index;
+            if(!findAddressIndex(&index, utxos[i].addresses, rmd160Source)){
+                return NULL;
+            }
+            array_add(address_indices,index);
+            input.input.secp256k1.address_indices = address_indices;
+            input.input.secp256k1.address_indices_len = array_count(address_indices);
+            input.type_id = SECP256K1TransferInput;
+            input.utxo_index = utxos[i].output_index;
             //NOTE: we do not support musig
-            input.input.secp256k1.address_indices_len = 1;
+            //input.input.secp256k1.address_indices_len = 1;
             input.input.secp256k1.amount = utxos[i].amount;
             array_add(inputs,input);
             accum+=utxos[i].amount;
@@ -126,7 +137,7 @@ BRArrayOf(struct TransferableInputRecord) getMinSpend(BRArrayOf(struct BRAvaxUtx
 
 extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
                              const char* targetAddress,const char * changeAddress,
-                                                 const char *  assetId,
+                                                 const char *  cb58AssetId,
                                 uint64_t amount, BRArrayOf(struct BRAvaxUtxoRecord) utxos){
     
    
@@ -137,17 +148,21 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
 //    int search_amount = 6;
     
     assert(utxos!=NULL);
+    //Convert char AssetId -> BRAssetRecord
+    struct BRAssetRecord asset;
+    memcpy(&asset.base58[0], cb58AssetId,strlen(cb58AssetId));
+    asset.id = avaxAssetDecodeAssetId(asset);
+    
+    //Convert char sourceAddress -> uint8_t rmd160
     uint8_t rmd160Source[20];
     size_t rec_len;
     avax_addr_bech32_decode(rmd160Source, &rec_len, "fuji", sourceAddress);
     uint64_t changeAmount;
-    BRArrayOf(struct TransferableInputRecord) inputs = getMinSpend(utxos,&rmd160Source[0], assetId, amount, &changeAmount);
+    BRArrayOf(struct TransferableInputRecord) inputs = getMinSpend(utxos,&rmd160Source[0], asset, amount, &changeAmount);
     size_t num_inputs = array_count(inputs);
 
     
     //SET OUTPUTS
-    
-    
     BRArrayOf(struct AddressRecord) taddresses;
     array_new(taddresses, 1);
     
@@ -164,6 +179,8 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     targetOutput.output.secp256k1.amount = amount;
     targetOutput.output.secp256k1.locktime = 0;
     targetOutput.output.secp256k1.threshold = 1;
+    targetOutput.type_id = SECP256K1TransferOutput;
+    targetOutput.asset = asset;
     array_add(outputs, targetOutput);
     
     
@@ -176,43 +193,23 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     array_add(caddresses,cAddress);
     struct TransferableOutputRecord changeOutput;
     changeOutput.output.secp256k1.addresses = caddresses;
-    changeOutput.output.secp256k1.amount = changeAmount; //TODO: how to sweep leftovers ?
+    changeOutput.output.secp256k1.amount = changeAmount - fee();
+    changeOutput.output.secp256k1.locktime = 0;
+    changeOutput.output.secp256k1.threshold = 1;
+    changeOutput.asset = asset;
     array_add(outputs, changeOutput);
     struct BaseTxRecord tx;
+    //TODO: inputs and outputs need to be LEXOGRAPHICALLY SORTED by  buffer
     tx.inputs = inputs;
     tx.outputs = outputs;
     
-    //TODO how to set fee and change address?
-
-    
-    
-//
-//    struct BaseTxRecord * tx = calloc(1, sizeof(struct BaseTxRecord));
-//    struct TransferableOutputRecord * output = calloc (1, sizeof(struct TransferableOutputRecord));
-//
-//    struct TranferableInputRecord * input = calloc(1, sizeof(struct TranferableInputRecord));
-//
-//    input->type_id = SECP256K1TransferInput;
-//    input->input.secp256k1.address_indices_len = 4;
-//
-//    output->type_id = SECP256K1TransferOutput;
-//    output->output.secp256k1.amount = 166;
-//
-//    tx->network_id = NETWORK_ID_FUJI;
-//    //tx->blockchain_id
-//    //tx->memo
-//
-//    tx->outputs = calloc(1, sizeof(struct TransferableOutputRecord *));
-//    tx->outputs[0] = output;
-//    tx->outputs_len = 1;
-//    tx->inputs = calloc(1, sizeof(struct TranferableInputRecord *));
-//    tx->inputs_len = 1;
-//    tx->inputs[0]=input;
-   
-    
-//    return tx;
+    uint8_t buffer[0];
+    avaxPackTransferableOutput(outputs[0],&buffer[0]);
+    avaxPackTransferableOutput(outputs[1],&buffer[0]);
     return tx;
 }
+
+
 
 extern void releaseTransaction(struct BaseTxRecord * tx){
     array_free(tx->inputs);

@@ -31,16 +31,16 @@ typedef enum {
 
 //unit32_t
 typedef enum {
-    SECP256K1TransferInput = 0x00000005, //input
+    SECP256K1TransferInput = 5, //input
 } input_type;
 
 typedef enum{
-    SECP256K1TransferOutput = 0x00000007, //output
-    SECP256K1OutputOwners= 0x0000000b, //output
+    SECP256K1TransferOutput = 7, //output
+    SECP256K1OutputOwners= 11, //output
 } output_type;
 
 typedef enum{
-    BaseTx = 0x01,
+    BaseTx = 1,
 }tx_type;
 
 
@@ -49,7 +49,7 @@ struct AddressRecord{
 };
 
 struct BRAssetRecord{
-    char asset_id[65]; //null terminated asset id
+    char base58[50]; //null terminated asset id
     UInt256 id;
 };
 

@@ -150,6 +150,68 @@ void testSignatureGeneration(){
     assert(0==memcmp(sig, exp_sig, 65));
 }
 
+void testBasicSend(){
+    
+    struct TxIdRecord parentTx1;
+    memcpy(parentTx1.base58,"XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 50);
+    parentTx1.id = avaxTxidDecodeBase58(parentTx1);
+    
+    struct BRAssetRecord asset;
+    memcpy(asset.base58,
+    "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 50);
+    asset.id = avaxAssetDecodeAssetId(asset);
+    
+    BRArrayOf(struct AddressRecord) addresses;
+    array_new(addresses, 1);
+    struct AddressRecord addy;
+    size_t addressLen;
+    avax_addr_bech32_decode(&(addy.rmd160[0]), &addressLen, "fuji", "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q");
+    array_add(addresses,addy);
+    
+    struct BRAvaxUtxoRecord utxo1;
+    utxo1.amount=9964000000;
+    utxo1.asset = asset;
+    utxo1.tx = parentTx1;
+    utxo1.addresses = addresses;
+    utxo1.output_index= 0;
+    
+   
+    struct TxIdRecord parentTx2;
+    memcpy(parentTx2.base58,"Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWv9P7DnF", 50);
+    parentTx2.id = avaxTxidDecodeBase58(parentTx1);
+    
+    struct BRAvaxUtxoRecord utxo2;
+    utxo2.amount=2000000000;
+    utxo2.asset = asset;
+    utxo2.tx = parentTx2;
+    utxo2.addresses= addresses;
+    utxo2.output_index = 0;
+    
+    
+    BRArrayOf(struct BRAvaxUtxoRecord) utxos;
+    array_new (utxos, 2);
+    array_add(utxos, utxo1);
+    array_add(utxos, utxo2);
+    
+    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos);
+    
+    array_clear(tx.inputs[0].input.secp256k1.address_indices);
+    array_free(tx.inputs[0].input.secp256k1.address_indices);
+    array_clear(tx.inputs);
+    array_free(tx.inputs);
+    array_clear(tx.outputs);
+    array_free(tx.outputs);
+    
+    
+    //outputs[0] buffer: 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c
+    
+    //outputs[1] buffer:3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c
+    
+    //input[0] asserts 450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000
+    
+    //cb58assetId-> 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa
+}
+
 extern void runAvalancheTest (void) {
     printf("Running avalanche unit tests...\n");
     BRAvalancheAccount account = makeAccount(avaxTestAccount);
@@ -162,51 +224,65 @@ extern void runAvalancheTest (void) {
     assert(0==memcmp(ethAddress, (char*)account->caddress.bytes,sizeof(account->caddress.bytes)));
     
     
-    struct TxIdRecord parentTx;
-    memcpy(parentTx.base58,"XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 50);
-    parentTx.id = avaxTxidDecodeBase58(parentTx);
-    
-    struct BRAssetRecord asset;
-    memcpy(asset.asset_id,
-    "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa", 65);
-    asset.id = avaxAssetDecodeAssetId(asset);
-    
-    BRArrayOf(struct AddressRecord) addresses;
-    array_new(addresses, 2);
-    
-    struct AddressRecord addy;
-    size_t addressLen;
-    avax_addr_bech32_decode(&(addy.rmd160[0]), &addressLen, "fuji", "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q");
-    array_add(addresses,addy);
-    
-    struct BRAvaxUtxoRecord utxo1;
-    utxo1.amount=10;
-    utxo1.asset = asset;
-    utxo1.tx = parentTx;
-    utxo1.addresses = addresses;
-   
-    
-
-
-    struct BRAvaxUtxoRecord utxo2;
-    utxo2.amount=2;
-    utxo2.asset = asset;
-    utxo2.tx = parentTx;
-    utxo2.addresses= addresses;
-    
-    
-    BRArrayOf(struct BRAvaxUtxoRecord) utxos;
-    array_new (utxos, 2);
-    array_add(utxos, utxo1);
-    array_add(utxos, utxo2);
-    
-    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa",11, utxos);
+//    struct TxIdRecord parentTx;
+//    memcpy(parentTx.base58,"XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 50);
+//    parentTx.id = avaxTxidDecodeBase58(parentTx);
+//
+//    struct BRAssetRecord asset;
+//    memcpy(asset.asset_id,
+//    "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa", 65);
+//    asset.id = avaxAssetDecodeAssetId(asset);
+//
+//    BRArrayOf(struct AddressRecord) addresses;
+//    array_new(addresses, 2);
+//
+//    struct AddressRecord addy;
+//    size_t addressLen;
+//    avax_addr_bech32_decode(&(addy.rmd160[0]), &addressLen, "fuji", "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q");
+//    array_add(addresses,addy);
+//
+//    struct BRAvaxUtxoRecord utxo1;
+//    utxo1.amount=10;
+//    utxo1.asset = asset;
+//    utxo1.tx = parentTx;
+//    utxo1.addresses = addresses;
+//    utxo1.output_index= 2;
+//
+//
+//
+//
+//
+//    struct BRAvaxUtxoRecord utxo2;
+//    utxo2.amount=2;
+//    utxo2.asset = asset;
+//    utxo2.tx = parentTx;
+//    utxo2.addresses= addresses;
+//    utxo2.output_index = 3;
+//
+//
+//    BRArrayOf(struct BRAvaxUtxoRecord) utxos;
+//    array_new (utxos, 2);
+//    array_add(utxos, utxo1);
+//    array_add(utxos, utxo2);
+//
+//    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa",11, utxos);
+//    //TODO typically need to free? :tx.inputs[0].input.secp256k1.address_indices;
+//    array_clear(tx.inputs[0].input.secp256k1.address_indices);
+//    array_clear(tx.inputs[1].input.secp256k1.address_indices);
+//    array_free(tx.inputs[0].input.secp256k1.address_indices);
+//    array_free(tx.inputs[1].input.secp256k1.address_indices);
+//    array_clear(tx.inputs);
+//    array_clear(tx.outputs);
+//    array_free(tx.inputs);
+//    array_free(tx.outputs);
     
     //releaseTransaction(tx);
-    
+    testBasicSend();
     testAddressDecode();
     testSignatureGeneration();
     printf("DONE");
 }
+
+
 
 
