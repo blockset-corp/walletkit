@@ -141,75 +141,11 @@ BRArrayOf(struct TransferableInputRecord) getMinSpend(BRArrayOf(struct BRAvaxUtx
     return inputs;
 }
 
-extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size_t * out_size){
-    //const barr = [codec, txtype, this.networkid, this.blockchainid, this.numouts, all outs , numins, all ins, memolen, memo];
-    size_t final_buffer_size=2+4+4+32+4+4+4+strlen(baseTx.memo);
-    size_t bufferSize;
-    for(int i=0; i < array_count(baseTx.outputs); i++){
-        avaxPackTransferableOutput(baseTx.outputs[i],NULL,&bufferSize);
-        final_buffer_size+=bufferSize;
-    }
-    
-    for(int i=0; i < array_count(baseTx.inputs); i++){
-        avaxPackTransferableInput(baseTx.inputs[i],NULL,&bufferSize);
-        final_buffer_size+=bufferSize;
-    }
-    
-    if(out_buffer==NULL){
-        *out_size = final_buffer_size;
-        return 1;
-    }
-    
-    uint8_t buffer[final_buffer_size];
-    uint32_t offset=0;
-    UInt16SetBE(&buffer[offset], baseTx.codec);
-    offset+=2;
-    UInt32SetBE(&buffer[offset], baseTx.type_id);
-    offset+=4;
-    UInt32SetBE(&buffer[offset], baseTx.network_id);
-    offset+=4;
-    memcpy(&buffer[offset], baseTx.blockchain_id, 32);
-    offset+=32;
-    UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.outputs));
-    offset+=4;
-    for(int i=0; i < array_count(baseTx.outputs); i++ ,offset+= bufferSize){
-        avaxPackTransferableOutput(baseTx.outputs[i],NULL,&bufferSize);
-        uint8_t out_buffer[bufferSize];
-        avaxPackTransferableOutput(baseTx.outputs[i],&out_buffer[0],&bufferSize);
-        memcpy(&buffer[offset], &out_buffer[0], bufferSize);
-    }
-    
-    UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.inputs));
-    offset+=4;
-    for(int i=0; i < array_count(baseTx.inputs); i++,offset+= bufferSize){
-        avaxPackTransferableInput(baseTx.inputs[i],NULL,&bufferSize);
-        uint8_t out_buffer[bufferSize];
-        avaxPackTransferableInput(baseTx.inputs[i],&out_buffer[0],&bufferSize);
-        memcpy(&buffer[offset], &out_buffer[0], bufferSize);
-        
-    }
-    UInt32SetBE(&buffer[offset],(uint32_t) strlen(baseTx.memo));
-    offset+=4;
-    memcpy(&buffer[offset],&baseTx.memo[0], strlen(baseTx.memo));
-    offset+=strlen(baseTx.memo);
-    assert(out_buffer!=NULL);
-    memcpy(out_buffer, &buffer[0], offset);
-    
-}
-
-
 extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
                              const char* targetAddress,const char * changeAddress,
                                                  const char *  cb58AssetId,
                                 uint64_t amount, BRArrayOf(struct BRAvaxUtxoRecord) utxos, const char * memo,
-                                                network_id_t network_id, const char * blockhain_id){
-    
-   
-    //
-    //  mergesort_brd (bundles, bundlesCount, sizeof (WKClientTransactionBundle),
-    //wkClientTransactionBundleCompareForSort);
-//    int64_t filter_idx=-1;
-//    int search_amount = 6;
+                                                network_id_t networkId, const char * cb58BlockchainId){
     
     assert(utxos!=NULL);
     
@@ -224,8 +160,6 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     avax_addr_bech32_decode(rmd160Source, &rec_len, "fuji", sourceAddress);
     uint64_t changeAmount;
     BRArrayOf(struct TransferableInputRecord) inputs = getMinSpend(utxos,&rmd160Source[0], asset, amount, &changeAmount);
-    size_t num_inputs = array_count(inputs);
-
     
     //SET OUTPUTS
     BRArrayOf(struct AddressRecord) taddresses;
@@ -240,6 +174,7 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     array_add(taddresses, tAddress);
     
     struct TransferableOutputRecord targetOutput;
+    //TODO:These addresses should be sorted in multi spend environments
     targetOutput.output.secp256k1.addresses = taddresses;
     targetOutput.output.secp256k1.amount = amount;
     targetOutput.output.secp256k1.locktime = 0;
@@ -257,6 +192,7 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     
     array_add(caddresses,cAddress);
     struct TransferableOutputRecord changeOutput;
+    //TODO:These addresses should be sorted in multi spend environments
     changeOutput.output.secp256k1.addresses = caddresses;
     changeOutput.output.secp256k1.amount = changeAmount - fee();
     changeOutput.output.secp256k1.locktime = 0;
@@ -265,12 +201,13 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     changeOutput.asset = asset;
     array_add(outputs, changeOutput);
     struct BaseTxRecord tx;
-    //TODO: inputs and outputs need to be LEXOGRAPHICALLY SORTED by  buffer
+    
     tx.inputs = inputs;
     tx.outputs = outputs;
+    
     memcpy(&tx.memo[0], memo, strlen(memo));
-    tx.network_id = network_id;
-    memcpy(&tx.blockchain_id[0], avaxBlockchainIdDecodeBase58(blockhain_id).u8, sizeof(tx.blockchain_id));
+    tx.network_id = networkId;
+    memcpy(&tx.blockchain_id[0], avaxBlockchainIdDecodeBase58(cb58BlockchainId).u8, sizeof(tx.blockchain_id));
     tx.type_id =BaseTx;
     tx.codec = 0x00;
     return tx;
@@ -278,17 +215,14 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
 
 
 extern void releaseTransaction(struct BaseTxRecord * tx){
+    for(uint i = 0; i < array_count(tx->inputs); i++){
+        array_clear(tx->inputs[i].input.secp256k1.address_indices);
+        array_free(tx->inputs[i].input.secp256k1.address_indices);
+    }
+    array_clear(tx->inputs);
     array_free(tx->inputs);
+    array_clear(tx->outputs);
     array_free(tx->outputs);
-//    for(int i=0; i < tx->inputs_len; i++){
-//        free(tx->inputs[i]);
-//    }
-//
-//    for(int i=0; i < tx->outputs_len; i++){
-//        free(tx->outputs[i]);
-//    }
-    
-    free(tx);
 }
 
 

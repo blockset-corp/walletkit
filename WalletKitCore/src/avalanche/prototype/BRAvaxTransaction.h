@@ -141,8 +141,8 @@ avaxTransactionCreate(const char* sourceAddress,
                       uint64_t amount,
                       BRArrayOf(struct BRAvaxUtxoRecord ) utxos,
                       const char * memo,
-                      network_id_t network_id,
-                      const char * cb58chainId);
+                      network_id_t networkId,
+                      const char * cb58BlockchainId);
 
 extern void releaseTransaction(struct BaseTxRecord * tx);
 
