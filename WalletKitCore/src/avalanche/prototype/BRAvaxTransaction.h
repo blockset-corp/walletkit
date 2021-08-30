@@ -118,7 +118,6 @@ struct TransferableInputRecord{
     union {
         struct SECP256K1TransferInputRecord secp256k1;
     } input;
-
  };
 
 struct BaseTxRecord{

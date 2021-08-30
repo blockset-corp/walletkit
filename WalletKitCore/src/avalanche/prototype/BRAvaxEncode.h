@@ -16,9 +16,9 @@
 extern "C" {
 #endif
 
-extern void avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * buffer );
+void avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * buffer );
 
-extern void avaxPackTransferableInput(struct TranferableInputRecord input, uint8_t * buffer);
+void avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * buffer);
 
 extern uint8_t * avaxPackAddress(struct AddressRecord address, uint8_t * buffer);
 

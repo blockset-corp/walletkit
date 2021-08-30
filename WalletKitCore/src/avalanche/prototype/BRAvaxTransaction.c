@@ -203,12 +203,8 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     tx.inputs = inputs;
     tx.outputs = outputs;
     
-    uint8_t buffer[0];
-    avaxPackTransferableOutput(outputs[0],&buffer[0]);
-    avaxPackTransferableOutput(outputs[1],&buffer[0]);
     return tx;
 }
-
 
 
 extern void releaseTransaction(struct BaseTxRecord * tx){
