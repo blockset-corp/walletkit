@@ -23,6 +23,7 @@
 #include "avalanche/prototype/BRAvalancheAddress.h"
 #include "avalanche/prototype/BRAvalancheTransaction.h"
 #include "avalanche/prototype/BRAvaxTransaction.h"
+#include "avalanche/prototype/BRAvaxEncode.h"
 
 static int debug_log = 0;
 
@@ -168,12 +169,13 @@ void testBasicSend(){
     avax_addr_bech32_decode(&(addy.rmd160[0]), &addressLen, "fuji", "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q");
     array_add(addresses,addy);
     
+    //this was a change address so it would have been second in the utxo
     struct BRAvaxUtxoRecord utxo1;
     utxo1.amount=9964000000;
     utxo1.asset = asset;
     utxo1.tx = parentTx1;
     utxo1.addresses = addresses;
-    utxo1.output_index= 0;
+    utxo1.output_index= 1;
     
    
     struct TxIdRecord parentTx2;
@@ -195,6 +197,14 @@ void testBasicSend(){
     
     struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos);
     
+    uint8_t buffer[0];
+    avaxPackTransferableOutput(tx.outputs[0],&buffer[0]);
+    avaxPackTransferableOutput(tx.outputs[1],&buffer[0]);
+    //outputs[0] buffer: expected 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c
+    
+    //outputs[1] buffer: expected 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c
+    avaxPackTransferableInput(tx.inputs[0], &buffer[0]);
+    //inputs[0] buffer: expected 450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000
     array_clear(tx.inputs[0].input.secp256k1.address_indices);
     array_free(tx.inputs[0].input.secp256k1.address_indices);
     array_clear(tx.inputs);
@@ -203,9 +213,7 @@ void testBasicSend(){
     array_free(tx.outputs);
     
     
-    //outputs[0] buffer: 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c
-    
-    //outputs[1] buffer:3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c
+  
     
     //input[0] asserts 450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000
     
