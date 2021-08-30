@@ -182,8 +182,8 @@ void testBasicSend(){
     
    
     struct TxIdRecord parentTx2;
-    memcpy(parentTx2.base58,"Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWv9P7DnF", 50);
-    parentTx2.id = avaxTxidDecodeBase58(parentTx1);
+    memcpy(parentTx2.base58,"Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWvAbWmqP", 50);
+    parentTx2.id = avaxTxidDecodeBase58(parentTx2);
     
     struct BRAvaxUtxoRecord utxo2;
     utxo2.amount=2000000000;
@@ -200,8 +200,7 @@ void testBasicSend(){
     
     //CREATE THE BASE UNSIGNED TX FROM UTXOS
     
-    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos, "hello",NETWORK_ID_FUJI, "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm"
-                                                    );
+    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos, "hello",NETWORK_ID_FUJI, "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm");
     
     //SERIALIZE INPUTS AND OUTPUTS
     char result_hex_string[200];
@@ -244,13 +243,31 @@ void testBasicSend(){
     printf("\r\nfinal buffer: %s\rn", &buffer_hex[0]);
     //CLEANUP
     assert(0==strcmp(&buffer_hex[0], "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c00000001450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
+    releaseTransaction(&tx);
     
-    array_clear(tx.inputs[0].input.secp256k1.address_indices);
-    array_free(tx.inputs[0].input.secp256k1.address_indices);
-    array_clear(tx.inputs);
-    array_free(tx.inputs);
-    array_clear(tx.outputs);
-    array_free(tx.outputs);
+    
+    tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",10300000000, utxos, "hello",NETWORK_ID_FUJI, "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm");
+    
+    avaxPackBaseTx(tx, NULL, &final_buffer_size);
+    //assert(307 == final_buffer_size);
+    uint8_t bufferTx[final_buffer_size];
+    avaxPackBaseTx(tx, &bufferTx[0], &final_buffer_size);
+    
+    
+    char buffer_hex2[final_buffer_size*4];
+    bin2HexString(&bufferTx[0], final_buffer_size, &buffer_hex2[0]);
+    printf("\r\nfinal buffer2: %s\rn", &buffer_hex2[0]);
+    assert(0==strcmp(&buffer_hex2[0], "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000000631f5dc000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000265ed870000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c000000021c8acd205ff6161efce0952071fc63ca8e99717bb829e74ce33997c2b369334b000000003d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000500000000773594000000000100000000450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
+    
+    releaseTransaction(&tx);
+    
+    
+//    array_clear(tx.inputs[0].input.secp256k1.address_indices);
+//    array_free(tx.inputs[0].input.secp256k1.address_indices);
+//    array_clear(tx.inputs);
+//    array_free(tx.inputs);
+//    array_clear(tx.outputs);
+//    array_free(tx.outputs);
     
 }
 
