@@ -16,9 +16,9 @@
 extern "C" {
 #endif
 
-void avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * buffer );
+int avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * out_buffer , size_t * out_size);
 
-void avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * buffer);
+int avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * out_buffer , size_t * out_size);
 
 extern uint8_t * avaxPackAddress(struct AddressRecord address, uint8_t * buffer);
 
@@ -35,7 +35,7 @@ extern uint32_t avaxOutputTypeToInt32(output_type type);
 extern uint32_t avaxInputTypeToInt32(output_type type);
 
 
-extern void avaxPackBaseTx(struct BaseTxRecord baseTx);
+extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size_t * out_size);
 
 #ifdef __cplusplus
 }

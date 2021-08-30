@@ -153,6 +153,9 @@ void testSignatureGeneration(){
 
 void testBasicSend(){
     
+    char * memo = "hello";
+    //SETUP THE WALLET TO WALLET TRANSFER
+    
     struct TxIdRecord parentTx1;
     memcpy(parentTx1.base58,"XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 50);
     parentTx1.id = avaxTxidDecodeBase58(parentTx1);
@@ -195,16 +198,53 @@ void testBasicSend(){
     array_add(utxos, utxo1);
     array_add(utxos, utxo2);
     
-    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos);
+    //CREATE THE BASE UNSIGNED TX FROM UTXOS
     
-    uint8_t buffer[0];
-    avaxPackTransferableOutput(tx.outputs[0],&buffer[0]);
-    avaxPackTransferableOutput(tx.outputs[1],&buffer[0]);
-    //outputs[0] buffer: expected 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c
+    struct BaseTxRecord  tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",12300000, utxos, "hello",NETWORK_ID_FUJI, "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm"
+                                                    );
     
-    //outputs[1] buffer: expected 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c
-    avaxPackTransferableInput(tx.inputs[0], &buffer[0]);
-    //inputs[0] buffer: expected 450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000
+    //SERIALIZE INPUTS AND OUTPUTS
+    char result_hex_string[200];
+    
+    size_t buffer1size;
+    avaxPackTransferableOutput(tx.outputs[0],NULL,&buffer1size);
+    uint8_t buffer1[buffer1size];
+    avaxPackTransferableOutput(tx.outputs[0],&buffer1[0],&buffer1size);
+    
+    bin2HexString(&buffer1[0], buffer1size, &result_hex_string[0]);
+    assert(0==strcmp(&result_hex_string[0], "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c"));
+    
+    result_hex_string[0]='\0';
+    size_t buffer2size;
+    avaxPackTransferableOutput(tx.outputs[1],NULL,&buffer2size);
+    uint8_t buffer2[buffer2size];
+    avaxPackTransferableOutput(tx.outputs[1],&buffer2[0],&buffer2size);
+    bin2HexString(&buffer2[0], buffer2size, &result_hex_string[0]);
+    assert(0==strcmp(&result_hex_string[0], "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c"));
+    
+    
+    result_hex_string[0]='\0';
+    size_t buffer3size;
+    avaxPackTransferableInput(tx.inputs[0],NULL,&buffer3size);
+    uint8_t buffer3[buffer3size];
+    avaxPackTransferableInput(tx.inputs[0], &buffer3[0],&buffer3size);
+    bin2HexString(&buffer3[0], buffer3size, &result_hex_string[0]);
+    assert(0==strcmp(&result_hex_string[0], "450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000"));
+    
+    size_t final_buffer_size;
+    avaxPackBaseTx(tx, NULL, &final_buffer_size);
+    assert(307 == final_buffer_size);
+    
+    uint8_t buffer[final_buffer_size];
+    avaxPackBaseTx(tx, &buffer[0], &final_buffer_size);
+    
+    
+    char buffer_hex[final_buffer_size*4];
+    bin2HexString(&buffer[0], final_buffer_size, &buffer_hex[0]);
+    printf("\r\nfinal buffer: %s\rn", &buffer_hex[0]);
+    //CLEANUP
+    assert(0==strcmp(&buffer_hex[0], "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c00000001450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
+    
     array_clear(tx.inputs[0].input.secp256k1.address_indices);
     array_free(tx.inputs[0].input.secp256k1.address_indices);
     array_clear(tx.inputs);
@@ -212,12 +252,6 @@ void testBasicSend(){
     array_clear(tx.outputs);
     array_free(tx.outputs);
     
-    
-  
-    
-    //input[0] asserts 450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000
-    
-    //cb58assetId-> 3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa
 }
 
 extern void runAvalancheTest (void) {

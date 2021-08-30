@@ -50,6 +50,12 @@ extern UInt256 avaxTxidDecodeBase58(struct TxIdRecord tx){
     return UInt256Get(data);
 }
 
+extern UInt256 avaxBlockchainIdDecodeBase58(char * cb58chainId){
+    size_t tx_len=32;
+    uint8_t data[tx_len];
+    BRAvalancheCB58CheckDecode(&data[0], tx_len,cb58chainId);
+    return UInt256Get(data);
+}
 
 static uint64_t total(BRArrayOf(struct BRAvaxUtxoRecord) utxos){
     size_t len = array_count(utxos);
@@ -135,10 +141,68 @@ BRArrayOf(struct TransferableInputRecord) getMinSpend(BRArrayOf(struct BRAvaxUtx
     return inputs;
 }
 
+extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size_t * out_size){
+    //const barr = [codec, txtype, this.networkid, this.blockchainid, this.numouts, all outs , numins, all ins, memolen, memo];
+    size_t final_buffer_size=2+4+4+32+4+4+4+strlen(baseTx.memo);
+    size_t bufferSize;
+    for(int i=0; i < array_count(baseTx.outputs); i++){
+        avaxPackTransferableOutput(baseTx.outputs[i],NULL,&bufferSize);
+        final_buffer_size+=bufferSize;
+    }
+    
+    for(int i=0; i < array_count(baseTx.inputs); i++){
+        avaxPackTransferableInput(baseTx.inputs[i],NULL,&bufferSize);
+        final_buffer_size+=bufferSize;
+    }
+    
+    if(out_buffer==NULL){
+        *out_size = final_buffer_size;
+        return 1;
+    }
+    
+    uint8_t buffer[final_buffer_size];
+    uint32_t offset=0;
+    UInt16SetBE(&buffer[offset], baseTx.codec);
+    offset+=2;
+    UInt32SetBE(&buffer[offset], baseTx.type_id);
+    offset+=4;
+    UInt32SetBE(&buffer[offset], baseTx.network_id);
+    offset+=4;
+    memcpy(&buffer[offset], baseTx.blockchain_id, 32);
+    offset+=32;
+    UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.outputs));
+    offset+=4;
+    for(int i=0; i < array_count(baseTx.outputs); i++ ,offset+= bufferSize){
+        avaxPackTransferableOutput(baseTx.outputs[i],NULL,&bufferSize);
+        uint8_t out_buffer[bufferSize];
+        avaxPackTransferableOutput(baseTx.outputs[i],&out_buffer[0],&bufferSize);
+        memcpy(&buffer[offset], &out_buffer[0], bufferSize);
+    }
+    
+    UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.inputs));
+    offset+=4;
+    for(int i=0; i < array_count(baseTx.inputs); i++,offset+= bufferSize){
+        avaxPackTransferableInput(baseTx.inputs[i],NULL,&bufferSize);
+        uint8_t out_buffer[bufferSize];
+        avaxPackTransferableInput(baseTx.inputs[i],&out_buffer[0],&bufferSize);
+        memcpy(&buffer[offset], &out_buffer[0], bufferSize);
+        
+    }
+    UInt32SetBE(&buffer[offset],(uint32_t) strlen(baseTx.memo));
+    offset+=4;
+    memcpy(&buffer[offset],&baseTx.memo[0], strlen(baseTx.memo));
+    offset+=strlen(baseTx.memo);
+    assert(out_buffer!=NULL);
+    memcpy(out_buffer, &buffer[0], offset);
+    
+}
+
+
 extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
                              const char* targetAddress,const char * changeAddress,
                                                  const char *  cb58AssetId,
-                                uint64_t amount, BRArrayOf(struct BRAvaxUtxoRecord) utxos){
+                                uint64_t amount, BRArrayOf(struct BRAvaxUtxoRecord) utxos, const char * memo,
+                                                network_id_t network_id, const char * blockhain_id){
     
    
     //
@@ -148,6 +212,7 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
 //    int search_amount = 6;
     
     assert(utxos!=NULL);
+    
     //Convert char AssetId -> BRAssetRecord
     struct BRAssetRecord asset;
     memcpy(&asset.base58[0], cb58AssetId,strlen(cb58AssetId));
@@ -196,13 +261,18 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     changeOutput.output.secp256k1.amount = changeAmount - fee();
     changeOutput.output.secp256k1.locktime = 0;
     changeOutput.output.secp256k1.threshold = 1;
+    changeOutput.type_id = SECP256K1TransferOutput;
     changeOutput.asset = asset;
     array_add(outputs, changeOutput);
     struct BaseTxRecord tx;
     //TODO: inputs and outputs need to be LEXOGRAPHICALLY SORTED by  buffer
     tx.inputs = inputs;
     tx.outputs = outputs;
-    
+    memcpy(&tx.memo[0], memo, strlen(memo));
+    tx.network_id = network_id;
+    memcpy(&tx.blockchain_id[0], avaxBlockchainIdDecodeBase58(blockhain_id).u8, sizeof(tx.blockchain_id));
+    tx.type_id =BaseTx;
+    tx.codec = 0x00;
     return tx;
 }
 

@@ -45,11 +45,15 @@ extern uint32_t avaxOutputTypeToInt32(output_type type){
 };
 
 
-void avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * outbuffer){
+int avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t * out_buffer, size_t * output_size){
+   
    
     uint32_t numAddresses =(uint32_t) array_count(output.output.secp256k1.addresses);
     uint32_t offset = 0;
-    
+    if(out_buffer==NULL){
+        *output_size =32+4+8+8+4+4+numAddresses*AVAX_RMD_BYTES;
+        return 1;
+    }
     uint8_t buffer[32+4+8+8+4+4+numAddresses*AVAX_RMD_BYTES]; //bytes type_id+ amount+ locktime + threshold + addresses_len + addresses[20]...
     //TODO: can I use the enum directly for its value or will it break portability ? If mapping then use avaxOutputTypeToInt32
     UInt256Set(&buffer[offset], output.asset.id);
@@ -73,14 +77,19 @@ void avaxPackTransferableOutput(struct TransferableOutputRecord output, uint8_t 
         printf("%02x", buffer[i]);
     }
     printf("\r\n");
-    
+    *output_size = offset;
+    memcpy(out_buffer, &buffer[0], offset);
+    return 1;
 }
 
-void avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * outputBuffer){
+int avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * out_buffer, size_t * output_size){
 
     uint32_t numAddresses =(uint32_t) array_count(input.input.secp256k1.address_indices);
     uint32_t offset = 0;
-    
+    if(out_buffer==NULL){
+        *output_size =32+4+32+4+8+4+numAddresses*4;
+        return 1;
+    }
     uint8_t buffer[32+4+32+4+8+4+numAddresses*4]; //bytes txid , output_idx + assetId +  type_id+ amount+ addresses_len + address_indices[4]...
     
     UInt256Set(&buffer[offset], input.tx.id);
@@ -108,17 +117,7 @@ void avaxPackTransferableInput(struct TransferableInputRecord input, uint8_t * o
         printf("%02x", buffer[i]);
     }
     printf("\r\n");
-    
-}
-extern void avaxPackBaseTx(struct BaseTxRecord baseTx){
-//
-//    size_t len = array_count(baseTx.inputs);
-//    for(int i=0; i < len; i++){
-//        packTransferableInput(baseTx.inputs[i]);
-//    }
-//
-//    len = array_count(baseTx.outputs);
-//    for(int i=0; i < len; i++){
-//        packTransferableOutput(baseTx.outputs[i]);
-//    }
+    *output_size = offset;
+    memcpy(out_buffer, &buffer[0], offset);
+    return 1;
 }

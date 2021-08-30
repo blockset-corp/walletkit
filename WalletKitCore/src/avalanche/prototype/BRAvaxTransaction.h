@@ -40,7 +40,7 @@ typedef enum{
 } output_type;
 
 typedef enum{
-    BaseTx = 1,
+    BaseTx = 0x0000,
 }tx_type;
 
 
@@ -121,6 +121,7 @@ struct TransferableInputRecord{
  };
 
 struct BaseTxRecord{
+    uint16_t codec;
     tx_type type_id; // 4 bytes
     network_id_t network_id; //4 bytes
     char blockchain_id[32];//no null terminating char
@@ -138,7 +139,10 @@ avaxTransactionCreate(const char* sourceAddress,
                       const char* changeAddress,
                       const char* assetId,
                       uint64_t amount,
-                      BRArrayOf(struct BRAvaxUtxoRecord ) utxos);
+                      BRArrayOf(struct BRAvaxUtxoRecord ) utxos,
+                      const char * memo,
+                      network_id_t network_id,
+                      const char * cb58chainId);
 
 extern void releaseTransaction(struct BaseTxRecord * tx);
 
