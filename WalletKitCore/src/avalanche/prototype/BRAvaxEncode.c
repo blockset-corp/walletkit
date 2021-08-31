@@ -36,6 +36,46 @@ int freeOutputBuffers(BRArrayOf(struct OutputBuffer) buffers){
     }
 }
 
+
+/*
+ Inputs is an array of transferable input objects. Inputs must be sorted and unique. Inputs are sorted first lexicographically by their TxID and then by the UTXOIndex from low to high. If there are inputs that have the same TxID and UTXOIndex, then the transaction is invalid as this would result in a double spend.
+ */
+int inputBufferCompare(struct TransferableInputRecord * v1, struct TransferableInputRecord * v2)
+{
+//    uint8_t buffer1[32+4];
+//    uint8_t buffer2[32+4];
+//    size_t offset=0;
+//    UInt256Set(&buffer1[offset], v1->tx.id);
+//    UInt256Set(&buffer2[offset], v2->tx.id);
+//    offset+=32;
+//    UInt32SetBE(&buffer1[offset], v1->utxo_index);
+//    UInt32SetBE(&buffer2[offset], v2->utxo_index);
+//    int compare = memcmp(buffer1,buffer2, 36);
+//    return compare;
+    
+    //Note:memcmp does lexographic sort , not sure what UInt256Eq will do
+    int compare = memcmp(&v1->tx.id.u8[0], &v2->tx.id.u8[0], 32);
+    if(compare==0){
+        if( v1->utxo_index > v2->utxo_index){
+            return 1;
+        }else if(v1->utxo_index < v2->utxo_index){
+            return -1;
+        }else{
+            // Error: This is a double spend condition
+            return 0;
+        }
+    }
+    return compare;
+}
+
+int inputBufferCompareHelper(const void * i1, const void * i2){
+    struct TransferableInputRecord * v1 = (struct TransferableInputRecord *)i1;
+    struct TransferableInputRecord * v2 = (struct TransferableInputRecord *)i2;
+    return inputBufferCompare(v1, v2);
+}
+
+
+
 uint8_t * avaxPackUInt32(uint32_t value, uint8_t * buffer)
 {
     
@@ -208,7 +248,8 @@ extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size
     UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.inputs));
     offset+=4;
     //TODO: array_new(buffers,  (uint32_t)array_count(baseTx.inputs));
-    array_new(buffers, 2);
+    mergesort_brd(baseTx.inputs, array_count(baseTx.inputs), sizeof(struct TransferableInputRecord), inputBufferCompareHelper);
+    array_new(buffers,2);
     for(int i=0; i < array_count(baseTx.inputs); i++){
         struct OutputBuffer ibuffer;
         avaxPackTransferableInput(baseTx.inputs[i],NULL,&ibuffer.len);
@@ -216,8 +257,6 @@ extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size
         avaxPackTransferableInput(baseTx.inputs[i],ibuffer.bytes,&ibuffer.len);
         array_add(buffers,ibuffer);
     }
-    
-    mergesort_brd(buffers, array_count(buffers), sizeof(struct OutputBuffer), ouputBufferCompareHelper);
     for(int i=0; i < array_count(buffers); i++){
         memcpy(&buffer[offset], buffers[i].bytes, buffers[i].len);
         offset+=buffers[i].len;
