@@ -145,7 +145,7 @@ void testSignatureGeneration(){
     key.compressed=0;
     uint8_t msg[5] = { 104,101,108,108,111};
     uint8_t sig[65];
-    avaxSignBytes(&key, &msg[0], sizeof(msg), &sig[0]);
+    avaxDigestHashAndSignBytes(&key, &msg[0], sizeof(msg), &sig[0]);
     uint8_t exp_sig[65];
     hex2bin("f72ca286c8e6f1a0ddf1fb6ee18c93cd649cf058b4ce7e75fab3ab2cabeb29af2fdafd1b57bdefddfaddc3b89d333f5b5dbb02928a416f500792df201ad4424a01", exp_sig);
     assert(0==memcmp(sig, exp_sig, 65));
@@ -264,15 +264,14 @@ void testBasicSend(){
     char txHashHex[65];
     bin2HexString(&txHash[0], 32, &txHashHex[0]);
     assert(0==strcmp(txHashHex,"31d3ab6136b423dc0b4ed69769dcfd3207067d94534357e6410a61e5a6859b48"));
-    releaseTransaction(&tx);
     
-    
-//    array_clear(tx.inputs[0].input.secp256k1.address_indices);
-//    array_free(tx.inputs[0].input.secp256k1.address_indices);
-//    array_clear(tx.inputs);
-//    array_free(tx.inputs);
-//    array_clear(tx.outputs);
-//    array_free(tx.outputs);
+    BRKey key = makeKey(avaxTestAccount);
+    key.compressed=0;
+    uint8_t sig[65];
+    avaxHashAndSignBytes(&key, &bufferTx[0], final_buffer_size, &sig[0]);
+    uint8_t exp_sig[65];
+    hex2bin("c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900", exp_sig);
+    assert(0==memcmp(sig, exp_sig, 65));
     
 }
 

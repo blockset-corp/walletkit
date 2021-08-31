@@ -148,7 +148,9 @@ extern void releaseTransaction(struct BaseTxRecord * tx);
 
 extern void avaxTxHash(uint8_t * buffer32, uint8_t * bytes, size_t len);
 
-extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
+extern void avaxHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
+
+extern void avaxDigestHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
 
 extern UInt256 avaxAssetDecodeAssetId(struct BRAssetRecord asset);
 
