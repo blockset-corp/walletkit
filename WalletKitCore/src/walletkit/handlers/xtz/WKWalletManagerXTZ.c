@@ -120,19 +120,65 @@ wkWalletManagerSignTransactionWithKeyXTZ (WKWalletManager manager,
 
 static WKAmount
 wkWalletManagerEstimateLimitXTZ (WKWalletManager manager,
-                                     WKWallet  wallet,
-                                     WKBoolean asMaximum,
-                                     WKAddress target,
-                                     WKNetworkFee networkFee,
-                                     WKBoolean *needEstimate,
-                                     WKBoolean *isZeroIfInsuffientFunds,
-                                     WKUnit unit) {
-    // We always need an estimate as we do not know the fees.
-    *needEstimate = asMaximum;
+                                 WKWallet  wallet,
+                                 WKBoolean asMaximum,
+                                 WKAddress target,
+                                 WKNetworkFee networkFee,
+                                 WKBoolean *needEstimate,
+                                 WKBoolean *isZeroIfInsuffientFunds,
+                                 WKUnit unit) {
 
-    return (WK_TRUE == asMaximum
-            ? wkWalletGetBalance (wallet)        // Maximum is balance - fees 'needEstimate'
-            : wkAmountCreateInteger (0, unit));  // No minimum
+    // Default is `false`
+    *needEstimate = WK_FALSE;
+
+    // Tezos makes it insanely difficult to determine fees when the amount is near the balance.
+    // When you query a Tezos node with `estimateFee(balance)` you will get 'balance_too_low'
+    // (because you can't send the full balance; yeah, duh).  The result is that, and Tezos
+    // developers have admitted this, you need to do a full binary search between {0, balance} to
+    // find the amount that does not produce 'balance_too_low'.  That is insane for us to do -
+    // it means hitting Blockset ~25 times (if like 0 to 1 XTZ) and then Blockset hits the
+    // Tezos node ~25 times.  Like I said, insane.
+    //
+    // So we are going to do something right here, right now.  We are going to compute the default
+    // XTZ fee and then multiple by 10.  Yes, we will pay an increased fee to exactly the same
+    // poeple who have made fee estimation utterly opaque - 'transfer fee', 'reveal fee', 'burn
+    // fee', the list goes on.
+
+    WKAmount amountLimit = (WK_TRUE == asMaximum
+                            ? wkWalletGetBalance (wallet)
+                            : wkAmountCreateInteger (0, unit));
+
+    if (asMaximum) {
+        // We'll compute a default fee basis.  And then scale it up.
+
+        // The WKNetworkFee determines the mutezPerKByte
+        BRTezosUnitMutez mutezPerKByte = 1000 * tezosMutezCreate (networkFee->pricePerCostFactor /* mutez/byte */);
+
+        // Get the fee basis - will be for 'no delegation' and 'maybe reveal'.  Probably 'no
+        // delegation' is a problem - but we've got no way to process `attributes` herein.
+        BRTezosFeeBasis xtzFeeBasis = tezosFeeBasisCreateDefault (mutezPerKByte, false, wkWalletNeedsRevealXTZ(wallet));
+
+        // Now we scale up the xtzFeeBasis to 10x (yeah, a gift).
+        xtzFeeBasis = tezosFeeBasisGiveTezosAGift (xtzFeeBasis, 900);
+
+        // Get an actual `feeBasis` and the `fee`
+        WKFeeBasis feeBasis = wkFeeBasisCreateAsXTZ (networkFee->pricePerCostFactorUnit, xtzFeeBasis);
+        WKAmount   fee      = wkFeeBasisGetFee (feeBasis);
+
+        // Adjust the `balance`
+        WKAmount newAmountLimit = (wkAmountCompare (fee, amountLimit) == WK_COMPARE_LT
+                                   ? wkAmountSub (amountLimit, fee)
+                                   : wkAmountCreateInteger (0, unit));
+
+        wkAmountGive   (fee);
+        wkFeeBasisGive (feeBasis);
+        wkAmountGive   (amountLimit);
+
+        amountLimit = newAmountLimit;
+        *needEstimate = WK_TRUE;
+    }
+
+    return amountLimit;
 }
 
 static WKFeeBasis
