@@ -277,6 +277,32 @@ wkWalletManagerSaveTransactionBundleBTC (WKWalletManager manager,
 }
 
 static void
+wkWalletManagerRecoverTransfersUpdateBlockHeight (WKWallet wallet, uint32_t btcBlockHeight) {
+    BRBitcoinWallet      *btcWallet      = wkWalletAsBTC(wallet);
+
+    for (size_t index = 0; index < array_count (wallet->transfers); index++) {
+        WKTransfer oldTransfer = wallet->transfers[index];
+        BRBitcoinTransaction *tid = wkTransferCoerceBTC(oldTransfer)->tid;
+
+        if (TX_UNCONFIRMED   != tid->blockHeight &&
+            tid->blockHeight >= btcBlockHeight   &&
+            WK_TRUE == wkTransferChangedAmountBTC (oldTransfer, btcWallet)) {
+            wkTransferTake (oldTransfer);
+
+            WKTransfer newTransfer  = wkTransferCreateAsBTC (oldTransfer->listener,
+                                                             oldTransfer->unit,
+                                                             oldTransfer->unitForFee,
+                                                             btcWallet,
+                                                             btcTransactionCopy (tid),
+                                                             oldTransfer->type);
+
+            wkWalletReplaceTransfer (wallet, oldTransfer, newTransfer);
+            wkTransferGive (oldTransfer);
+        }
+    }
+}
+
+static void
 wkWalletManagerRecoverTransfersFromTransactionBundleBTC (WKWalletManager manager,
                                                              OwnershipKept WKClientTransactionBundle bundle) {
     BRBitcoinWallet      *btcWallet      = wkWalletAsBTC(manager->wallet);
@@ -337,34 +363,90 @@ wkWalletManagerRecoverTransfersFromTransactionBundleBTC (WKWalletManager manager
     // it is possible that some other transaction in the wallet now has inputs or outputs that are
     // now in BRBitcoinWallet.  This changes the amount and fee, possibly.  Find those and replace them.
     else if (TX_UNCONFIRMED != btcBlockHeight) {
-        for (size_t index = 0; index < array_count (manager->wallet->transfers); index++) {
-            WKTransfer oldTransfer = manager->wallet->transfers[index];
-            BRBitcoinTransaction *tid = wkTransferCoerceBTC(oldTransfer)->tid;
-
-            if (TX_UNCONFIRMED   != tid->blockHeight &&
-                tid->blockHeight >= btcBlockHeight   &&
-                WK_TRUE == wkTransferChangedAmountBTC (oldTransfer, btcWallet)) {
-                wkTransferTake (oldTransfer);
-
-                WKTransfer newTransfer  = wkTransferCreateAsBTC (oldTransfer->listener,
-                                                                           oldTransfer->unit,
-                                                                           oldTransfer->unitForFee,
-                                                                           btcWallet,
-                                                                           btcTransactionCopy (tid),
-                                                                           oldTransfer->type);
-
-                wkWalletReplaceTransfer (manager->wallet, oldTransfer, newTransfer);
-                wkTransferGive (oldTransfer);
-            }
-        }
+        wkWalletManagerRecoverTransfersUpdateBlockHeight (manager->wallet, btcBlockHeight);
     }
 }
 
 static void
 wkWalletManagerRecoverTransfersFromTransactionBundlesBTC (WKWalletManager manager,
                                                          OwnershipKept BRArrayOf (WKClientTransactionBundle) bundles) {
-    for (size_t index = 0; index < array_count(bundles); index++)
-        wkWalletManagerRecoverTransfersFromTransactionBundleBTC (manager, bundles[index]);
+    size_t bundlesCount = array_count(bundles);
+    if (0 == bundlesCount) return;
+
+    BRBitcoinWallet *btcWallet = wkWalletAsBTC(manager->wallet);
+
+    // We'll register all the bundle transctions at once; then we'll go back for some additional
+    // recovery steps.  Define a structure to keep the intermediate state.
+    struct RecoverState {
+        BRBitcoinTransaction *btcTransaction;
+        uint32_t btcBlockHeight;
+        uint32_t btcTimestamp;
+        bool needRegistration;
+        bool didRegister;
+        bool error;
+    };
+
+    BRArrayOf(struct RecoverState) recoverStates;
+    array_new(recoverStates, bundlesCount);
+
+    BRArrayOf(BRBitcoinTransaction*) transactionsToRegister;
+    array_new (transactionsToRegister, bundlesCount);
+
+    // Extract some bundle state
+    for (size_t index = 0; index < bundlesCount; index++) {
+        WKClientTransactionBundle bundle = bundles[index];
+        struct RecoverState *state = &recoverStates[index];  // get an updatable reference
+
+        state->btcTransaction = btcTransactionParse (bundle->serialization, bundle->serializationCount);
+        state->btcBlockHeight = (BLOCK_HEIGHT_UNBOUND == bundle->blockHeight ? TX_UNCONFIRMED : (uint32_t) bundle->blockHeight);
+        state->btcTimestamp   = (uint32_t) bundle->timestamp;
+
+        state->error            = WK_TRANSFER_STATE_ERRORED == bundle->status;
+        state->needRegistration = (!state->error                                 &&
+                                   NULL != state->btcTransaction                 &&
+                                   btcTransactionIsSigned(state->btcTransaction) &&
+                                   NULL == btcWalletTransactionForHash (btcWallet, state->btcTransaction->txHash));
+        state->didRegister      = false;
+
+        if (state->needRegistration)
+            array_add (transactionsToRegister, state->btcTransaction);
+    }
+
+    // Register all the transactionsToRegister, in one gulp
+    btcWalletRegisterTxArray (btcWallet, transactionsToRegister, array_count(transactionsToRegister));
+    array_free (transactionsToRegister);
+
+    // Check which ones are now registered
+    for (size_t index = 0; index < bundlesCount; index++) {
+        struct RecoverState *state = &recoverStates[index];  // get an updatable reference
+        state->didRegister = (state->btcTransaction == btcWalletTransactionForHash (btcWallet, state->btcTransaction->txHash));
+    }
+
+    // Post process each registered
+    for (size_t index = 0; index < bundlesCount; index++) {
+        struct RecoverState *state = &recoverStates[index];  // get an updatable reference
+
+        if (btcWalletContainsTransaction (btcWallet, state->btcTransaction)) {
+            if (state->error) {
+                btcWalletRemoveTransaction (btcWallet, state->btcTransaction->txHash);
+            }
+            else {
+                btcWalletUpdateTransactions (btcWallet, &state->btcTransaction->txHash, 1,
+                                             state->btcBlockHeight,
+                                             state->btcTimestamp);
+            }
+        }
+
+        if (!state->didRegister) {
+            btcTransactionFree (state->btcTransaction);
+        }
+        else if (TX_UNCONFIRMED != state->btcBlockHeight) {
+            wkWalletManagerRecoverTransfersUpdateBlockHeight (manager->wallet, state->btcBlockHeight);
+        }
+    }
+
+    //
+    array_free (recoverStates);
 }
 
 static void

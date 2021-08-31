@@ -340,14 +340,14 @@ void btcWalletSetCallbacks(BRBitcoinWallet *wallet, void *info,
 // the internal chain is used for change addresses and the external chain for receive addresses
 // addrs may be NULL to only generate addresses for btcWalletContainsAddress()
 // returns the number addresses written to addrs
-size_t btcWalletUnusedAddrs(BRBitcoinWallet *wallet, BRAddress addrs[], uint32_t gapLimit, uint32_t internal)
+static size_t _btcWalletUnusedAddrsLocked(BRBitcoinWallet *wallet, BRAddress addrs[], uint32_t gapLimit, uint32_t internal, int needsLock)
 {
     UInt160 *chain = NULL, *origChain;
     size_t i, j = 0, count, startCount;
 
     assert(wallet != NULL);
     assert(gapLimit > 0);
-    pthread_mutex_lock(&wallet->lock);
+    if (needsLock) pthread_mutex_lock(&wallet->lock);
     if (internal == SEQUENCE_EXTERNAL_CHAIN) chain = wallet->externalChain;
     if (internal == SEQUENCE_INTERNAL_CHAIN) chain = wallet->internalChain;
     assert(chain != NULL);
@@ -395,8 +395,19 @@ size_t btcWalletUnusedAddrs(BRBitcoinWallet *wallet, BRAddress addrs[], uint32_t
         }
     }
 
-    pthread_mutex_unlock(&wallet->lock);
+    if (needsLock) pthread_mutex_unlock(&wallet->lock);
     return j;
+}
+
+// wallets are composed of chains of addresses
+// each chain is traversed until a gap of a number of addresses is found that haven't been used in any transactions
+// this function writes to addrs an array of <gapLimit> unused addresses following the last used address in the chain
+// the internal chain is used for change addresses and the external chain for receive addresses
+// addrs may be NULL to only generate addresses for btcWalletContainsAddress()
+// returns the number addresses written to addrs
+size_t btcWalletUnusedAddrs(BRBitcoinWallet *wallet, BRAddress addrs[], uint32_t gapLimit, uint32_t internal)
+{
+    return _btcWalletUnusedAddrsLocked (wallet, addrs, gapLimit, internal, 1);
 }
 
 // current wallet balance, not including transactions known to be invalid
@@ -838,8 +849,8 @@ size_t btcWalletRegisterTxArray(BRBitcoinWallet *wallet, BRBitcoinTransaction *t
             }
 
             addedTx[addedCount++] = tx;
-            btcWalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_EXTERNAL, SEQUENCE_EXTERNAL_CHAIN);
-            btcWalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_INTERNAL, SEQUENCE_INTERNAL_CHAIN);
+            _btcWalletUnusedAddrsLocked(wallet, NULL, SEQUENCE_GAP_LIMIT_EXTERNAL, SEQUENCE_EXTERNAL_CHAIN, 0);
+            _btcWalletUnusedAddrsLocked(wallet, NULL, SEQUENCE_GAP_LIMIT_INTERNAL, SEQUENCE_INTERNAL_CHAIN, 0);
         }
         else if (tx->blockHeight == TX_UNCONFIRMED) BRSetAdd(wallet->allTx, tx);
     }
