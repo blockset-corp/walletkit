@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-
 //uint32_t
 typedef enum {
   NETWORK_ID_MAINNET  = 1,
@@ -41,6 +40,7 @@ typedef enum{
 
 typedef enum{
     BaseTx = 0x0000,
+    SECP256K1Credential = 0x00000009,
 }tx_type;
 
 
@@ -56,6 +56,10 @@ struct BRAssetRecord{
 struct TxIdRecord{
     char base58[50]; //Base58 encoded string
     UInt256 id;
+};
+
+struct BRAvaxCompactSignature{
+    uint8_t bytes[65];
 };
 
 
@@ -141,12 +145,16 @@ avaxTransactionCreate(const char* sourceAddress,
                       uint64_t amount,
                       BRArrayOf(struct BRAvaxUtxoRecord ) utxos,
                       const char * memo,
-                      network_id_t network_id,
-                      const char * cb58chainId);
+                      network_id_t networkId,
+                      const char * cb58BlockchainId);
 
 extern void releaseTransaction(struct BaseTxRecord * tx);
 
-extern void avaxSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
+extern void avaxTxHash(uint8_t * buffer32, uint8_t * bytes, size_t len);
+
+extern void avaxHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, struct BRAvaxCompactSignature * outSig);
+
+extern void avaxDigestHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65);
 
 extern UInt256 avaxAssetDecodeAssetId(struct BRAssetRecord asset);
 

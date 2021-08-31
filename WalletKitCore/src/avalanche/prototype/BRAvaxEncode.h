@@ -37,6 +37,8 @@ extern uint32_t avaxInputTypeToInt32(output_type type);
 
 extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size_t * out_size);
 
+extern int avaxPackSignatures(uint8_t * outbuffer,size_t * outbufferSize, BRArrayOf(struct BRAvaxCompactSignature) signatures);
+
 #ifdef __cplusplus
 }
 #endif

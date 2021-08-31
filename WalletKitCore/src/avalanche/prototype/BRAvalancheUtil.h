@@ -16,6 +16,7 @@ extern "C" {
 
 //extern uint8_t* avaxEncodeInt32(uint32_t input);
 
+
 #define to_uint64(buffer,n) ((uint64_t)buffer[n+7] << 56 | (uint64_t)buffer[n+6] << 48 | (uint64_t)buffer[n+5] << 40  | (uint64_t)buffer[n+4] << 32 | (uint64_t) buffer[n+3] << 24 | (uint64_t)buffer[n+2] << 16 | (uint64_t)buffer[n+1] << 8  | (uint64_t)buffer[n])
 
 int avax_bech32_encode(char *const output, size_t *const out_len,
