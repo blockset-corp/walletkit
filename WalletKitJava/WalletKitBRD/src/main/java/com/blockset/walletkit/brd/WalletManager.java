@@ -143,8 +143,8 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
     }
 
     @Override
-    public void createConnector() throws WalletConnectorError {
-        WalletConnector.create(this);
+    public WalletConnector createConnector() throws WalletConnectorError {
+        return WalletConnector.create(this);
     }
 
     @Override

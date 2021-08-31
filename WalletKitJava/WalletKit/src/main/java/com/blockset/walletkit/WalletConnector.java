@@ -124,7 +124,7 @@ public interface WalletConnector {
      * Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
      * the connector's network.  For ETH the Dictionary keys are: {...}
      * @param arguments Connector networks arguments for transaction, in the form of key/value pairs
-     * @result A creation result for the created {@link Transaction}
+     * @result An unsigned {@link Transaction}
      * @throws {@link WalletConnectorError.InvalidTransactionArguments}
      */
     Transaction createTransaction ( Map<String, String> arguments ) throws WalletConnectorError;
