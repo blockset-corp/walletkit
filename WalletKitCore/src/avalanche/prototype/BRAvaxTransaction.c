@@ -238,6 +238,9 @@ const char * MSG_PREFIX = "\x1A""Avalanche Signed Message:\n";
  
  */
 
+extern void avaxTxHash(uint8_t * buffer32, uint8_t * bytes, size_t len){
+    BRSHA256(buffer32, bytes, len);
+}
 void digestMessage(uint8_t * buffer32, uint8_t * bytes, size_t len){
     printf("creating array of size: %d",strlen(MSG_PREFIX)+4+len);
     size_t buffer_len =strlen(MSG_PREFIX)+len+4;
