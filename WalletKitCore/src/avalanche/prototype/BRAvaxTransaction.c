@@ -262,8 +262,8 @@ void digestMessage(uint8_t * buffer32, uint8_t * bytes, size_t len){
     
 }
 
-extern void avaxHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65){
-    assert(sig65!=NULL);
+extern void avaxHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, struct BRAvaxCompactSignature * outSig){
+    assert(outSig!=NULL);
     uint8_t  sig[65];
     uint8_t hash[32];
     avaxTxHash(&hash[0], bytes, len);
@@ -272,7 +272,7 @@ extern void avaxHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8
     for(int i=0; i < 65 ; i++){
         printf("%02x", sig[i]);
     }
-    memcpy(sig65, &sig[0], 65);
+    memcpy(&outSig->bytes[0], &sig[0], 65);
 }
 
 extern void avaxDigestHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len, uint8_t * sig65){

@@ -246,33 +246,66 @@ void testBasicSend(){
     releaseTransaction(&tx);
     
     
+    //0.Create Transaction struct
     tx = avaxTransactionCreate("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0","fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q","U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",10300000000, utxos, "hello",NETWORK_ID_FUJI, "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm");
     
+    //1. serialize Transaction
     avaxPackBaseTx(tx, NULL, &final_buffer_size);
     assert(395 == final_buffer_size);
     uint8_t bufferTx[final_buffer_size];
     avaxPackBaseTx(tx, &bufferTx[0], &final_buffer_size);
     
-    
+    //Assert serializatoin
     char buffer_hex2[final_buffer_size*4];
     bin2HexString(&bufferTx[0], final_buffer_size, &buffer_hex2[0]);
     printf("\r\nfinal buffer2: %s\rn", &buffer_hex2[0]);
     assert(0==strcmp(&buffer_hex2[0], "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000000631f5dc000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000265ed870000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c000000021c8acd205ff6161efce0952071fc63ca8e99717bb829e74ce33997c2b369334b000000003d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000500000000773594000000000100000000450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
     
+    //2. Generate TxHash to sign
     uint8_t txHash[32];
     avaxTxHash(&txHash[0], bufferTx, final_buffer_size);
+    
+    //assert hash
     char txHashHex[65];
     bin2HexString(&txHash[0], 32, &txHashHex[0]);
     assert(0==strcmp(txHashHex,"31d3ab6136b423dc0b4ed69769dcfd3207067d94534357e6410a61e5a6859b48"));
     
+    
     BRKey key = makeKey(avaxTestAccount);
     key.compressed=0;
-    uint8_t sig[65];
-    avaxHashAndSignBytes(&key, &bufferTx[0], final_buffer_size, &sig[0]);
+    
+    //assert single signature
+    struct BRAvaxCompactSignature sig;
+    avaxHashAndSignBytes(&key, &bufferTx[0], final_buffer_size, &sig.bytes[0]);
     uint8_t exp_sig[65];
     hex2bin("c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900", exp_sig);
-    assert(0==memcmp(sig, exp_sig, 65));
+    assert(0==memcmp(sig.bytes, exp_sig, 65));
     
+    //3.Generate Signatures for Tx
+    BRArrayOf(struct BRAvaxCompactSignature) signatures;
+    array_new(signatures, 2);
+    for(int i=0; i < array_count(tx.inputs); i++){
+        //Note: we only support Singleton Wallet
+        assert(tx.inputs[i].input.secp256k1.address_indices_len == 1);
+        struct BRAvaxCompactSignature sigBuffer;
+        avaxHashAndSignBytes(&key, &bufferTx[0], final_buffer_size, &sigBuffer.bytes[0]);
+        array_add(signatures, sigBuffer);
+    }
+    
+    //4.Pack Signatures
+    size_t signatureBufferSize;
+    avaxPackSignatures(NULL, &signatureBufferSize, signatures);
+    uint8_t signatureBuffer[signatureBufferSize];
+    avaxPackSignatures(&signatureBuffer[0], &signatureBufferSize, signatures);
+    
+    //assert packed signatures
+    uint8_t exp_sigs[signatureBufferSize];
+    hexDecode(&exp_sigs[0], signatureBufferSize, "000000020000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d89000000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900", 300);
+    assert(0==memcmp(&signatureBuffer[0], exp_sigs, signatureBufferSize));
+    array_clear(signatures);
+    array_free(signatures);
+    
+    //5. Append txBuffer with signature buffer
 }
 
 extern void runAvalancheTest (void) {

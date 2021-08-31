@@ -12,6 +12,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
+#define AVAX_X_COMPACT_SIG_SIZE (65)
 
 struct OutputBuffer{
     uint8_t * bytes;
@@ -275,3 +276,27 @@ extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size
     return 1;
 }
 
+
+extern int avaxPackSignatures(uint8_t * outbuffer,size_t * outbufferSize, BRArrayOf(struct BRAvaxCompactSignature) signatures){
+    //[numsignatures [typeid==0x00000009 + numsignature + signature[65]]...
+    *outbufferSize =4+array_count(signatures)* (4+4+AVAX_X_COMPACT_SIG_SIZE);
+    
+    if(outbuffer == NULL){
+        return 1;
+    }
+    size_t offset = 0;
+    UInt32SetBE(&outbuffer[offset],(uint32_t)array_count(signatures));
+    offset+=4;
+    for(int i=0; i < array_count(signatures); i++){
+        //signature type id
+        UInt32SetBE(&outbuffer[offset], (uint32_t)SECP256K1Credential);
+        offset+=4;
+        //NOTE: num creds: we only support Singleton Wallet
+        UInt32SetBE(&outbuffer[offset], (uint32_t)0x1);
+        offset+=4;
+        memcpy(&outbuffer[offset], &signatures[i].bytes[0], AVAX_X_COMPACT_SIG_SIZE);
+        offset+=AVAX_X_COMPACT_SIG_SIZE;
+    }
+    
+    return 1;
+}
