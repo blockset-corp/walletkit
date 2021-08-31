@@ -134,7 +134,10 @@ tezosOperationFeeBasisApplyMargin (BRTezosOperationFeeBasis feeBasis,
                                    BRTezosUnitMutez mutezPerKByte,
                                    size_t sizeInByte,
                                    unsigned int marginInPercentage) {
-    // Given a valid, best-estimate `feeBasis`, apply to margin
+    // Given a valid, best-estimate `feeBasis`, apply margin
+
+    // Get a non-zero sizeInByte
+    sizeInByte = (0 == sizeInByte ? TEZOS_TX_SIZE_DEFAULT : sizeInByte);
 
     int64_t mutezPerKByteWithMargin = applyMargin (mutezPerKByte,         MAX (marginInPercentage, TEZOS_TX_SIZE_MARGIN_PERCENTAGE));
     int64_t gasLimitWithMargin      = applyMargin (feeBasis.gasLimit,     MAX (marginInPercentage, TEZOS_GAS_LIMIT_MARGIN_PERCENTAGE));
