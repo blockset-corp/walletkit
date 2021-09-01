@@ -96,7 +96,7 @@ wkAddressAsAVAX (WKAddress address);
 
 typedef struct WKNetworkAVAXRecord {
     struct WKNetworkRecord base;
-    // Nothing more needed
+    const BRAvalancheNetwork avax;
 } *WKNetworkAVAX;
 
 static inline WKNetworkAVAX
@@ -104,6 +104,9 @@ wkNetworkCoerceAVAX (WKNetwork network) {
     assert (WK_NETWORK_TYPE_AVAX == network->type);
     return (WKNetworkAVAX) network;
 }
+
+private_extern BRAvalancheNetwork
+wkNetworkAsAVAX (WKNetwork network);
 
 // MARK: - Account
 
