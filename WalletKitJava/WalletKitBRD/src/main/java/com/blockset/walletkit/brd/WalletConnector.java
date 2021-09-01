@@ -121,12 +121,12 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
-    public com.blockset.walletkit.WalletConnector.Serialization createSerialization(byte[] data) {
+    public Serialization createSerialization(byte[] data) {
         return new Serialization(core, data);
     }
 
     @Override
-    public com.blockset.walletkit.WalletConnector.Transaction createTransaction(Map<String, String> arguments) throws WalletConnectorError {
+    public Transaction createTransaction(Map<String, String> arguments) throws WalletConnectorError {
 
         List<String> keys = new ArrayList<String>();
         List<String> vals = new ArrayList<String>();
@@ -134,7 +134,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         keys.addAll(arguments.keySet());
         vals.addAll(arguments.values());
         
-        Optional<byte[]> optionalSerialization = core.createTransactionFromArguments(keys, vals);
+        Optional<byte[]> optionalSerialization = core.createTransactionFromArguments(keys, vals, arguments.size());
         if (!optionalSerialization.isPresent()) {
             // *may* throw new WalletConnectorError.InvalidTransactionArguments();
             // throw/return error
@@ -145,7 +145,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
-    public com.blockset.walletkit.WalletConnector.Transaction createTransaction(com.blockset.walletkit.WalletConnector.Serialization serialization ) throws WalletConnectorError {
+    public Transaction createTransaction(com.blockset.walletkit.WalletConnector.Serialization serialization ) throws WalletConnectorError {
         if (!(serialization instanceof Serialization) ||
              ((Serialization)serialization).core.getPointer() != core.getPointer() )
             throw new WalletConnectorError.UnknownEntity();
@@ -161,7 +161,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
-    public com.blockset.walletkit.WalletConnector.Transaction sign(
+    public Transaction sign(
             com.blockset.walletkit.WalletConnector.Transaction  transaction,
             com.blockset.walletkit.Key                          key          ) throws WalletConnectorError {
     
@@ -282,13 +282,13 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
      */
     class Transaction implements com.blockset.walletkit.WalletConnector.Transaction {
 
-        private final com.blockset.walletkit.WalletConnector.Serialization  serialization;
-        final WKWalletConnector                                             core;
-        final boolean                                                       isSigned;
+        private final Serialization     serialization;
+        final WKWalletConnector         core;
+        final boolean                   isSigned;
 
-        Transaction(WKWalletConnector                                       core,
-                    com.blockset.walletkit.WalletConnector.Serialization    serialization,
-                    boolean                                                 isSigned ) {
+        Transaction(WKWalletConnector   core,
+                    Serialization       serialization,
+                    boolean             isSigned        ) {
 
             this.core = core;
             this.serialization = serialization;
@@ -296,7 +296,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         }
 
         @Override
-        public com.blockset.walletkit.WalletConnector.Serialization getSerialization() { return serialization; }
+        public Serialization getSerialization() { return serialization; }
 
         @Override
         public boolean isSigned() { return isSigned; }

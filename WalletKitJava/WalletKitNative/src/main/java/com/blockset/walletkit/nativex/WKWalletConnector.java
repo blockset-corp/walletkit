@@ -100,7 +100,10 @@ public class WKWalletConnector extends PointerType {
         return signatureOptional;
     }
     
-    public Optional<byte[]> createTransactionFromArguments(List<String> keys, List<String> values) {
+    public Optional<byte[]> createTransactionFromArguments(
+            List<String> keys, 
+            List<String> values,
+            int          countOfKeyValuePairs) {
         
         StringArray keysArray = new StringArray(keys.toArray(new String[0]), "UTF-8");
         StringArray valuesArray = new StringArray(values.toArray(new String[0]), "UTF-8");
@@ -108,10 +111,12 @@ public class WKWalletConnector extends PointerType {
         IntByReference err = new IntByReference();
         Optional<byte[]> serializationOptional = Optional.absent();
         
+        // There are equal number of keys and values
         Pointer serializationPtr = 
             WKNativeLibraryDirect.wkWalletConnectorCreateTransactionFromArguments(this.getPointer(),
                                                                                   keysArray,
                                                                                   valuesArray,
+                                                                                  new SizeT(countOfKeyValuePairs),
                                                                                   serLengthRef,
                                                                                   err   );
         
