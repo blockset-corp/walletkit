@@ -321,8 +321,10 @@ public final class WKNativeLibraryDirect {
     // include/WKWalletConnector.h (WKWalletConnector)
     public static native Pointer wkWalletConnectorCreate(Pointer manager);
     public static native void wkWalletConnectorRelease(Pointer connector);
-    /* TODO: Expose wkMethods needed by WKWalletConnector.h
-     */
+    public static native Pointer wkWalletConnectorGetDigest(Pointer connector, byte[] msg, SizeT msgLen, boolean prefix, SizeTByReference digestLength,IntByReference err);
+    public static native Pointer wkWalletConnectorSignData(Pointer connector, byte[] data, SizeT dataLen, Pointer key, SizeTByReference signatureLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateTransactionFromArguments(Pointer connector, StringArray keysArray, StringArray valuesArray, SizeTByReference serializationLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateTransactionFromSerialization(Pointer connector, byte[] data, SizeT dataLength, SizeTByReference serializationLength, IntByReference isSigned, IntByReference err);
 
     // include/WKWalletManager.h (WKWalletManager)
     public static native Pointer wkWalletManagerWipe(Pointer network, String path);

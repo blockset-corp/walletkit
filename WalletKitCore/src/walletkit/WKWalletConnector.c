@@ -46,3 +46,58 @@ wkWalletConnectorRelease (WKWalletConnector connector) {
     memset (connector, 0, connector->sizeInBytes);
     free (connector);
 }
+
+extern uint8_t*
+wkWalletConnectorGetDigest (
+        WKWalletConnector       connector,
+        const uint8_t           *msg,
+        size_t                  msgLen,
+        WKBoolean               addPrefix,
+        size_t                  *digestLength,
+        WKWalletConnectorError  *err            ) {
+
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+
+    return NULL;
+}
+
+extern uint8_t*
+wkWalletConnectorSignData   (
+        WKWalletConnector         connector,
+        const uint8_t*            data,
+        size_t                    dataLen,
+        WKKey                     key,
+        size_t                    *signatureLength,
+        WKWalletConnectorError    *err            ) {
+
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+
+    return NULL;
+}
+
+extern uint8_t*
+wkWalletConnectorCreateTransactionFromArguments  (
+        WKWalletConnector         connector,
+        const char*               keys,
+        const char*               values,
+        size_t*                   serializationLength,
+        WKWalletConnectorError    *err            ) {
+
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+
+    return NULL;
+}
+
+extern uint8_t*
+wkWalletConnectorCreateTransactionFromSerialization  (
+        WKWalletConnector       connector,
+        uint8_t                 *data,
+        size_t                  dataLength,
+        size_t                  *serializationLength,
+        WKBoolean               *isSigned,
+        WKWalletConnectorError  *err           ) {
+
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+
+    return NULL;
+}
