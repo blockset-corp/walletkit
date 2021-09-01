@@ -18,10 +18,14 @@ extern "C" {
 #endif
 
 typedef enum {
-    WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR = 1,
 
-    // Insufficient buffer for digest production has been supplied
-    WK_WALLET_CONNECTOR_ERROR_DIGEST_LEN_32 = 2,
+    // TBD
+    WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR,
+
+    // Crucial setup has not been done properly, one of
+    // network handlers, WalletConnect handlers, or individual
+    // handler methods for this particular network are not defined.
+    WK_WALLET_CONNECTOR_ILLEGAL_OPERATION,
 
     // ...
 
@@ -73,7 +77,7 @@ wkWalletConnectorGetDigest (
 extern uint8_t*
 wkWalletConnectorSignData (
         WKWalletConnector       connector,
-        const uint8_t*          data,
+        const uint8_t           *data,
         size_t                  dataLen,
         WKKey                   key,
         size_t                  *signatureLength,
@@ -87,18 +91,22 @@ wkWalletConnectorSignData (
  * the keys and values, and serializes the transaction.
  *
  * @param connector The wallet connector object
- * @param keys A NULL terminated series of NULL terminated c-strings
- * @param values A NULL terminated series of NULL terminated c-strings, corresponding to keys
- * @param serializationLength The length of the serialization created
+ * @param keys A NULL terminated series of NULL terminated c-strings.
+ * @param values A NULL terminated series of NULL terminated c-strings, corresponding to strings
+ *               of 'keys' and in the correct order
+ * @param keyValuePairsCount The number of key and corresponding values, of which there are expected
+ *                           to be an equal number
+ * @param serialization Length The length of the serialization created
  * @param err An error when a failure has occurred
  * @return When successful, a series of bytes of length serializationLength representing
- *         the serialization. THe caller is responsible for returning native memory allocated here.
+ *         the serialization. The caller is responsible for returning native memory allocated here.
  */
 extern uint8_t*
 wkWalletConnectorCreateTransactionFromArguments  (
         WKWalletConnector       connector,
-        const char*             keys,
-        const char*             values,
+        const char              **keys,
+        const char              **values,
+        size_t                  keyValuePairsCount,
         size_t                  *serializationLength,
         WKWalletConnectorError  *err            );
 
