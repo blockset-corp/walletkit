@@ -301,7 +301,7 @@ final class Wallet implements com.blockset.walletkit.Wallet {
 
         //
         // We are forced to deal with XTZ.  Not by our choosing.  The value returned by the above
-        // `wkWalletManagerEstimateLimit()` is something well below `self.balance` for XTZ - becuase
+        // `coreManager.estimateLimit` is something well below `self.balance` for XTZ - because
         // we are desperate to get a non-error response from the XTZ node.  And, if we provide the
         // balance for the estimate, we get a `balance_too_low` error.  This then forces us into
         // a binary search until 'not balance_too_low' which for a range of {0, 1 xtz} is ~25

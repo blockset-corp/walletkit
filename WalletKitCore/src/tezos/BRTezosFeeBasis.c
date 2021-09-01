@@ -80,7 +80,7 @@ tezosFeeBasisGetFee (BRTezosFeeBasis feeBasis) {
 extern BRTezosFeeBasis
 tezosFeeBasisGiveTezosAGift (BRTezosFeeBasis feeBasis, unsigned int marginPercentage) {
     BRTezosOperationFeeBasis primaryOperationFeeBasis = feeBasis.primaryOperationFeeBasis;
-    primaryOperationFeeBasis.fee *= (marginPercentage + 100) / 100;
+    primaryOperationFeeBasis.fee = (primaryOperationFeeBasis.fee * (marginPercentage + 100)) / 100;
 
     return (BRTezosFeeBasis) {
         feeBasis.mutezPerKByte,
