@@ -216,7 +216,7 @@ extern int avaxPackBaseTx(struct BaseTxRecord baseTx, uint8_t * out_buffer, size
     offset+=4;
     UInt32SetBE(&buffer[offset], baseTx.network_id);
     offset+=4;
-    memcpy(&buffer[offset], baseTx.blockchain_id, 32);
+    memcpy(&buffer[offset], baseTx.blockchainId, AVAX_BLOCKCHAIN_ID_SIZE);
     offset+=32;
     
     UInt32SetBE(&buffer[offset], (uint32_t)array_count(baseTx.outputs));

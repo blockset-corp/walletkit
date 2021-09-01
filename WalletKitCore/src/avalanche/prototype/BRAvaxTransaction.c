@@ -151,7 +151,8 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     
     //Convert char AssetId -> BRAssetRecord
     struct BRAssetRecord asset;
-    memcpy(&asset.base58[0], cb58AssetId,strlen(cb58AssetId));
+    assert(49==strlen(cb58AssetId));
+    strcpy(asset.base58, cb58AssetId);
     asset.id = avaxAssetDecodeAssetId(asset);
     
     //Convert char sourceAddress -> uint8_t rmd160
@@ -205,9 +206,10 @@ extern struct BaseTxRecord avaxTransactionCreate(const char* sourceAddress,
     tx.inputs = inputs;
     tx.outputs = outputs;
     
-    memcpy(&tx.memo[0], memo, strlen(memo));
+    assert(strlen(memo)<=AVAX_MEMO_SIZE);
+    strcpy(tx.memo, memo);
     tx.network_id = networkId;
-    memcpy(&tx.blockchain_id[0], avaxBlockchainIdDecodeBase58(cb58BlockchainId).u8, sizeof(tx.blockchain_id));
+    memcpy(tx.blockchainId, avaxBlockchainIdDecodeBase58(cb58BlockchainId).u8, AVAX_BLOCKCHAIN_ID_SIZE);
     tx.type_id =BaseTx;
     tx.codec = 0x00;
     return tx;

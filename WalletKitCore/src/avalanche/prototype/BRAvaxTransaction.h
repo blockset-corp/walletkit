@@ -43,6 +43,11 @@ typedef enum{
     SECP256K1Credential = 0x00000009,
 }tx_type;
 
+struct BRAvaxNetwork{
+    char hrp[5]; //null terminated bech32 hrp
+    network_id_t networkId;
+    char b58chainId[50]; //null terminated base58 chainId
+};
 
 struct AddressRecord{
     uint8_t rmd160[20];
@@ -54,7 +59,7 @@ struct BRAssetRecord{
 };
 
 struct TxIdRecord{
-    char base58[50]; //Base58 encoded string
+    char base58[50]; //null terminated Base58 encoded string
     UInt256 id;
 };
 
@@ -124,14 +129,17 @@ struct TransferableInputRecord{
     } input;
  };
 
+#define AVAX_MEMO_SIZE (256)
+#define AVAX_BLOCKCHAIN_ID_SIZE (32)
+
 struct BaseTxRecord{
     uint16_t codec;
     tx_type type_id; // 4 bytes
     network_id_t network_id; //4 bytes
-    char blockchain_id[32];//no null terminating char
+    uint8_t blockchainId[AVAX_BLOCKCHAIN_ID_SIZE];//no null terminating char
     BRArrayOf( struct TransferableOutputRecord) outputs;
     BRArrayOf(struct TransferableInputRecord) inputs;
-    char memo [256];//no null terminating char
+    char memo [AVAX_MEMO_SIZE+1];//no null terminating char
 };
 
 
@@ -159,6 +167,7 @@ extern void avaxDigestHashAndSignBytes(BRKey * key, uint8_t * bytes, size_t len,
 extern UInt256 avaxAssetDecodeAssetId(struct BRAssetRecord asset);
 
 extern UInt256 avaxTxidDecodeBase58(struct TxIdRecord tx);
+
 
 #ifdef __cplusplus
 }

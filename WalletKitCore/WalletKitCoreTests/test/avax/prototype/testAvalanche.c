@@ -264,6 +264,7 @@ void testBasicSend(){
     //2. Generate TxHash to sign
     uint8_t txHash[32];
     avaxTxHash(&txHash[0], bufferTx, final_buffer_size);
+    //txHash [32] -> cb58CheckEncoded (Explorer View)
     
     //assert hash
     char txHashHex[65];
@@ -305,7 +306,30 @@ void testBasicSend(){
     array_clear(signatures);
     array_free(signatures);
     
-    //5. Append txBuffer with signature buffer
+    //5. buffer = Concat [txBuffer | signature] -> hash = avaxTxHash(buffer)
+    //  -> explorere TxID = AvaxBase58CheckEncode(hash)
+    //  https://explorer.avax-test.network/tx/2T7WkhEYnypDQFGfB8LgNKkfPhVsmBsdyfPfy7fTm6XnaV2DXS
+    assert(545 == signatureBufferSize+final_buffer_size);
+    
+    uint8_t completeTx[signatureBufferSize+final_buffer_size];
+    memcpy(&completeTx[0],&bufferTx[0],final_buffer_size);
+    memcpy(&completeTx[final_buffer_size], &signatureBuffer[0], signatureBufferSize);
+    avaxTxHash(&txHash[0], &completeTx[0], 545);
+    
+    char cb58TxId[2*sizeof(txHash)+1];
+    //TODO: Change this to avax flavor of base58 encode or the last 4 checksum bytes dont make sense
+    BRBase58CheckEncode(&cb58TxId[0], sizeof(cb58TxId), &txHash[0], sizeof(txHash));
+    
+    
+  
+    //assert final txId and cb58txid found on explorere (minus the checksum)
+    bin2HexString(&txHash[0], 32, &txHashHex[0]);
+    assert(0==strcmp(txHashHex,"befcbc77362d6534f8deca34077da5b7b1b0107ea8a2274baf81a17aa07b82ff"));
+    
+    char exp_cb58TxId[51];
+    //assert cb58 encoding EXCEPT the checksum
+    assert(0==strncmp(cb58TxId,"2T7WkhEYnypDQFGfB8LgNKkfPhVsmBsdyfPfy7fTm6XnaV2DXS", strlen(cb58TxId)-5));
+    
 }
 
 extern void runAvalancheTest (void) {
