@@ -7,6 +7,7 @@
  */
 package com.blockset.walletkit.brd;
 
+import com.blockset.walletkit.NetworkType;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKAddress;
 import com.blockset.walletkit.nativex.WKAmount;
@@ -295,6 +296,44 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                     handler.handleError(LimitEstimationError.from(error));
                 }
             });
+            return;
+        }
+
+        //
+        // We are forced to deal with XTZ.  Not by our choosing.  The value returned by the above
+        // `coreManager.estimateLimit` is something well below `self.balance` for XTZ - because
+        // we are desperate to get a non-error response from the XTZ node.  And, if we provide the
+        // balance for the estimate, we get a `balance_too_low` error.  This then forces us into
+        // a binary search until 'not balance_too_low' which for a range of {0, 1 xtz} is ~25
+        // queries of Blockset and the XTZ Node.  Insane.  We will unfortunately sacrifice our
+        // User's funds until XTZ matures.
+        //
+        if (NetworkType.XTZ == walletManager.getNetwork().getType()) {
+            
+            // The absolute minimum value that can be transferred.  If we can't get an estimate for
+            // this we are utterly dead in the water.
+            Amount amountAbsoluteMinimum = Amount.create(1, walletManager.getBaseUnit());
+
+            CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError> estimationHandlerXTZ =
+                    new CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError>() {
+                        @Override
+                        public void handleData(com.blockset.walletkit.TransferFeeBasis feeBasis) {
+                            Amount amountEstimated = amount.sub(feeBasis.getFee()).or (Amount.create(0, walletManager.getBaseUnit()));
+                            handler.handleData(amountEstimated.compareTo(amount) == -1
+                                    ? amountEstimated
+                                    : amount);
+                        }
+
+                        @Override
+                        public void handleError(FeeEstimationError error) {
+                            // The request failed.  We will assume that the original amount was correct
+                            // and will use it.  Probably it won't be correct; but this is XTZ
+                            handler.handleData(amount);
+                        }
+                    };
+
+            estimateFee(target, amountAbsoluteMinimum, fee, null, estimationHandlerXTZ);
+
             return;
         }
 
