@@ -104,13 +104,13 @@ wkWalletConnectorSignData   (
         const uint8_t             *data,
         size_t                    dataLen,
         WKKey                     key,
-        size_t                    *signatureLength,
+        size_t                    *signedLength,
         WKWalletConnectorError    *err            ) {
 
     assert (NULL != connector       &&
             NULL != data            &&
             NULL != key             &&
-            NULL != signatureLength &&
+            NULL != signedLength &&
             NULL != err );
 
     uint8_t* signedData = NULL;
@@ -126,7 +126,7 @@ wkWalletConnectorSignData   (
                                                    data,
                                                    dataLen,
                                                    key,
-                                                   signatureLength,
+                                                   signedLength,
                                                    err);
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;

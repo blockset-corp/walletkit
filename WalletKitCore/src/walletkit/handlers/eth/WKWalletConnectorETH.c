@@ -11,6 +11,7 @@
 
 #include "walletkit/WKHandlersP.h"
 #include "WKETH.h"
+#include <stdlib.h>
 
 #include "support/BRCrypto.h"
 
@@ -73,16 +74,54 @@ wkWalletConnectorGetDigestETH (
     return digest;
 }
 
+/** Input data is expected to be already serialized in RLP fashion
+ *
+ */
 static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLen,
         WKKey                   key,
-        size_t                  *signatureLength,
+        size_t                  *signedLength,
         WKWalletConnectorError  *err    ) {
 
-    return NULL;
+    WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumNetwork   ethNetwork  = managerETH->network;
+    BRKey               *brKey      = wkKeyGetCore (key);
+    BREthereumAccount   ethAccount  = managerETH->account;
+    BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
+
+    // Step 1: deserialize RLP encoded transaction data into an ETH transaction which can be signed
+    BRRlpCoder              coder           = rlpCoderCreate ();
+    BRRlpData               rlpData         = { .bytesCount = dataLen,
+                                                .bytes      = data };
+    BRRlpItem               item            = rlpDataGetItem (coder, rlpData);
+    BREthereumTransaction   ethTransaction  = ethTransactionRlpDecode (item,
+                                                                       ethNetwork,
+                                                                       RLP_TYPE_TRANSACTION_UNSIGNED,
+                                                                       coder);
+    rlpItemRelease  (coder, item);
+    rlpCoderRelease (coder);
+
+    // Step 2: create a signature directly on the input data and add it onto the
+    //         ETH transaction
+    BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
+                                                                       ethAddress,
+                                                                       SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+                                                                       data,
+                                                                       dataLen,
+                                                                       *brKey   );
+    ethTransactionSign (ethTransaction, signature);
+    BRKeyClean (key);
+
+    // Step 3: Add the signature to the ETH transaction and serialize it
+    BRRlpData signedData = ethTransactionGetRlpData(ethTransaction,
+                                                    ethNetwork,
+                                                    RLP_TYPE_TRANSACTION_SIGNED);
+
+    *signedLength = signedData.bytesCount;
+    return signedData.bytes;
 }
 
 typedef enum {
@@ -110,13 +149,19 @@ static const char* transactionFromArgsFieldNames[WK_WALLET_CONNECT_ETH_FIELD_MAX
 #define WK_WALLET_CONNECT_ETH_MANDATORY_MET(met) ((met & MANDATORY_FIELDS) == MANDATORY_FIELDS)
 
 
-static WKBoolean isTransactionKeyField(
-        const char*                             fieldValue,
-        WKWalletConnectEthTransactionFields     field ) {
+static WKWalletConnectEthTransactionFields getTransactionFieldFromKey(const char* keyValue) {
 
-    return strncmp (transactionFromArgsFieldNames[field],
-                    fieldValue,
-                    strlen(transactionFromArgsFieldNames[field])) == 0;
+    for (WKWalletConnectEthTransactionFields field=WK_WALLET_CONNECT_ETH_FROM;
+         field < WK_WALLET_CONNECT_ETH_FIELD_MAX;
+         field++ ) {
+
+        if (strncmp(transactionFromArgsFieldNames[field],
+                    keyValue,
+                    strlen(transactionFromArgsFieldNames[field])) == 0)
+
+            return field;
+    }
+    return WK_WALLET_CONNECT_ETH_FIELD_MAX;
 }
 
 static uint8_t*
@@ -151,48 +196,63 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         char *field = keys[elemNo];
         char *value = values[elemNo];
 
-        if (isTransactionKeyField (field, WK_WALLET_CONNECT_ETH_FROM)) {
+        switch (getTransactionFieldFromKey (field)) {
+            case WK_WALLET_CONNECT_ETH_FROM:
 
-            sourceAddress = ethAddressCreate (value);
-            if (ETHEREUM_BOOLEAN_FALSE == ethAddressEqual(sourceAddress, ETHEREUM_EMPTY_ADDRESS_INIT))
-                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_FROM);
+                sourceAddress = ethAddressCreate(value);
+                if (ETHEREUM_BOOLEAN_FALSE ==
+                    ethAddressEqual(sourceAddress, ETHEREUM_EMPTY_ADDRESS_INIT))
+                    reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_FROM);
+                break;
 
-        } else if (isTransactionKeyField (field, WK_WALLET_CONNECT_ETH_TO)) {
+            case WK_WALLET_CONNECT_ETH_TO:
 
-            targetAddress = ethAddressCreate (value);
-            if (ETHEREUM_BOOLEAN_FALSE == ethAddressEqual(sourceAddress, ETHEREUM_EMPTY_ADDRESS_INIT))
-                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_TO);
+                targetAddress = ethAddressCreate (value);
+                if (ETHEREUM_BOOLEAN_FALSE == ethAddressEqual(targetAddress, ETHEREUM_EMPTY_ADDRESS_INIT))
+                    reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_TO);
+                break;
 
-        } else if (isTransactionKeyField(field, WK_WALLET_CONNECT_ETH_DATA)) {
+            case WK_WALLET_CONNECT_ETH_DATA:
 
-            data = value;
-            reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_DATA);
+                data = value;
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_DATA);
+                break;
 
-        } else if (isTransactionKeyField(field, WK_WALLET_CONNECT_ETH_GAS)) {
+            case WK_WALLET_CONNECT_ETH_GAS: {
 
-            uint64_t amountOfGas = strtoull (value, NULL, 10);
-            gas = ethGasCreate (amountOfGas);
-            reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GAS);
+                uint64_t amountOfGas = strtoull(value, NULL, 0);
+                gas = ethGasCreate(amountOfGas);
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GAS);
+                break;
+            }
 
-        } else if (isTransactionKeyField(field, WK_WALLET_CONNECT_ETH_GASPRICE)) {
+            case WK_WALLET_CONNECT_ETH_GASPRICE: {
 
-            UInt256 gasPriceInWei = uint256Create(strtoull (value, NULL, 10));
-            BREthereumEther gasEthers = ethEtherCreate(gasPriceInWei);
-            gasPrice = ethGasPriceCreate (gasEthers);
-            reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE);
+                UInt256 gasPriceInWei = uint256Create(strtoull(value, NULL, 0));
+                BREthereumEther gasEthers = ethEtherCreate(gasPriceInWei);
+                gasPrice = ethGasPriceCreate(gasEthers);
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE);
+                break;
+            }
 
-        } else if (isTransactionKeyField(field, WK_WALLET_CONNECT_ETH_VALUE)) {
+            case WK_WALLET_CONNECT_ETH_VALUE: {
 
-            uint64_t amountInGwei = strtoull (value, NULL, 10);
-            amount = ethEtherCreateNumber (amountInGwei, GWEI);
-            reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_VALUE);
+                uint64_t amountInWei = strtoull(value, NULL, 0);
+                amount = ethEtherCreateNumber(amountInWei, WEI);
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_VALUE);
+                break;
+            }
 
-        } else if (isTransactionKeyField(field, WK_WALLET_CONNECT_ETH_NONCE)) {
+            case WK_WALLET_CONNECT_ETH_NONCE:
 
-            nonce = strtoull (value, NULL, 10);
-            reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_NONCE);
+                nonce = strtoull (value, NULL, 0);
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_NONCE);
+                break;
 
-        } // else ignore
+            // Ignore
+            default:
+                break;
+        }
     }
 
     if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet) ) {
@@ -208,16 +268,13 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
                                                              data,
                                                              nonce);
 
+    // Allocates memory to rlpData for the serialization.
     BRRlpData rlpData = ethTransactionGetRlpData(transaction,
                                                  wkNetworkAsETH(walletConnector->type),
                                                  RLP_TYPE_TRANSACTION_UNSIGNED);
 
-    uint8_t* serializedData = malloc (rlpData.bytesCount);
-    assert (serializedData != NULL);
-    memcpy (serializedData, rlpData.bytes, rlpData.bytesCount);
     *serializationLength = rlpData.bytesCount;
-
-    return serializedData;
+    return rlpData.bytes;
 }
 
 uint8_t*

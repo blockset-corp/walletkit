@@ -41,7 +41,7 @@ typedef uint8_t*
         const uint8_t           *data,
         size_t                  dataLen,
         WKKey                   key,
-        size_t                  *signatureLength,
+        size_t                  *signedLength,
         WKWalletConnectorError  *err    );
 
 /** It can be assumed that there are equal number of elements in

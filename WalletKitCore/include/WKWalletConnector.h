@@ -73,7 +73,7 @@ wkWalletConnectorGetDigest (
  * @param data The input data to be signed
  * @param dataLen The length of input data
  * @param key The key for signing
- * @param signatureLength The length of signature created (on success > 0)
+ * @param signedLength The length of returned data after signing (on success > 0)
  * @param err An error when a failure has occurred
  * @return When successful an allocated signature buffer of length signatureLength. The caller
  *         is responsible for freeing native memory allocated here.
@@ -84,7 +84,7 @@ wkWalletConnectorSignData (
         const uint8_t           *data,
         size_t                  dataLen,
         WKKey                   key,
-        size_t                  *signatureLength,
+        size_t                  *signedLength,
         WKWalletConnectorError  *err            );
 
 /** Uses the wallet connector provided to organize the key-value pairs
