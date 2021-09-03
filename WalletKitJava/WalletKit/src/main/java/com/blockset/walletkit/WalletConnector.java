@@ -10,9 +10,11 @@ package com.blockset.walletkit;
 
 import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.utility.CompletionHandler;
+import com.google.common.base.Preconditions;
 
 import java.util.Map;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 public interface WalletConnector {
@@ -94,8 +96,12 @@ public interface WalletConnector {
             this.failure = failure;
         }
 
-        public @Nullable Success    getSuccess()   { return success; }
-        public @Nullable Failure    getFailure()   { return failure; }
+        public @NonNull Success     getSuccess()   { return Preconditions.checkNotNull(success); }
+        public @NonNull Failure     getFailure()   { return Preconditions.checkNotNull(failure); }
+
+        public @Nullable Success    getSuccessOrNull() { return success; }
+        public @Nullable Failure    getFailureOrNull() { return failure; }
+
         public boolean              isFailure()    { return failure != null; }
         public boolean              isSuccess()    { return !isFailure(); }
 
@@ -158,7 +164,7 @@ public interface WalletConnector {
      */
      Result<Key, WalletConnectorError>
      recover (  Digest     digest,
-                Signature  signature   ) throws WalletConnectorError;
+                Signature  signature   );
 
     /**
      *  Create a serialization from a transaction's unsigned or signed data.
