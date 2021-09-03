@@ -8,7 +8,7 @@
 package com.blockset.walletkit.demo;
 
 import android.os.Build;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 import java.lang.String;
