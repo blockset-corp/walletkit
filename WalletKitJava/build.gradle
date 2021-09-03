@@ -6,6 +6,7 @@ buildscript {
     ]
     ext.versions = [
         'androidxAppcompat':        '1.3.1',
+        'androidxAnnotation':       '1.2.0',
         'androidxConstraintLayout': '1.1.3',
         'androidxRecyclerView':     '1.2.1',
         'androidxTestRunner':       '1.4.0',
@@ -20,6 +21,7 @@ buildscript {
     ]
     ext.deps = [
         'androidxAppcompat':        "androidx.appcompat:appcompat:${versions.androidxAppcompat}",
+        'androidxAnnotation':       "androidx.annotation:annotation:${versions.androidxAnnotation}",
         'androidxConstraintLayout': "androidx.constraintlayout:constraintlayout:${versions.androidxConstraintLayout}",
         'androidxRecyclerView':     "androidx.recyclerview:recyclerview:${versions.androidxRecyclerView}",
         'androidxTestRunner':       "androidx.test:runner:${versions.androidxTestRunner}",
