@@ -27,6 +27,10 @@ typedef enum {
     // handler methods for this particular network are not defined.
     WK_WALLET_CONNECTOR_ILLEGAL_OPERATION,
 
+    // One or more transaction arguments key-value pairs are not
+    // provided, or values are invalid
+    WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS,
+
     // ...
 
 } WKWalletConnectorError;

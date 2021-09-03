@@ -44,17 +44,20 @@ typedef uint8_t*
         size_t                  *signatureLength,
         WKWalletConnectorError  *err    );
 
+/** It can be assumed that there are equal number of elements in
+ *  keys & values, so array_count() of either will be the same.
+ */
 typedef uint8_t*
 (*WKWalletConnectorCreateTransactionFromArgumentsHandler) (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         BRArrayOf (char*)       keys,
         BRArrayOf (char*)       values,
         size_t                  *serializationLength,
         WKWalletConnectorError  *err           );
 
 typedef uint8_t*
-(*WKWalletConnectorCreateTransactionFromSerialization) (
-        WKWalletConnector       connector,
+(*WKWalletConnectorCreateTransactionFromSerializationHandler) (
+        WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLength,
         size_t                  *signatureLength,
@@ -62,12 +65,12 @@ typedef uint8_t*
         WKWalletConnectorError  *err            );
 
 typedef struct {
-    WKWalletConnectorCreateHandler                          create;
-    WKWalletConnectorReleaseHandler                         release;
-    WKWalletConnectorGetDigestHandler                       getDigest;
-    WKWalletConnectorSignDataHandler                        sign;
-    WKWalletConnectorCreateTransactionFromArgumentsHandler  createTransactionFromArguments;
-    WKWalletConnectorCreateTransactionFromSerialization     createTransactionFromSerialization;
+    WKWalletConnectorCreateHandler                              create;
+    WKWalletConnectorReleaseHandler                             release;
+    WKWalletConnectorGetDigestHandler                           getDigest;
+    WKWalletConnectorSignDataHandler                            sign;
+    WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
+    WKWalletConnectorCreateTransactionFromSerializationHandler  createTransactionFromSerialization;
 } WKWalletConnectorHandlers;
 
 // MARK: - Connector
