@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.demo;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.Account;
 import com.blockset.walletkit.AddressScheme;

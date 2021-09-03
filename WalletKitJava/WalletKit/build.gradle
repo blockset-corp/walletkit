@@ -8,7 +8,7 @@ dependencies {
     api deps.guavaAndroid
     api deps.okhttp
 
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAnnotation
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind
