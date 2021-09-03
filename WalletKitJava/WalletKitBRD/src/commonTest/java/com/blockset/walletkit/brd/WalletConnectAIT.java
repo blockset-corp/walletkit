@@ -37,6 +37,7 @@ import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.WalletState;
 import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.errors.WalletConnectorError;
+import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -57,6 +58,7 @@ public class WalletConnectAIT {
 
     private static File         coreDataDir;
     private static System       system;
+    private com.blockset.walletkit.WalletConnector wc;
 
     @BeforeClass
     public static void setup() {
@@ -100,12 +102,17 @@ public class WalletConnectAIT {
         WalletManager ethMgr = system.getWalletManagers().get(0);
         Log.log(Level.FINE, String.format("WalletConnectTest: %s", ethMgr.toString()));
 
-        com.blockset.walletkit.WalletConnector wc = null;
-        try {
-            wc = ethMgr.createConnector();
-        } catch (WalletConnectorError e) {
-            Log.log(Level.FINE, "Error raised creating connector: " + e.toString());
-        }
-        assertNotNull("Got valid WalletConnector for ETH", wc);
+        ethMgr.createWalletConnector(new CompletionHandler<com.blockset.walletkit.WalletConnector, WalletConnectorError>() {
+
+            @Override
+            public void handleData(com.blockset.walletkit.WalletConnector data) {
+                wc = data;
+            }
+
+            @Override
+            public void handleError(WalletConnectorError error) {
+                assertTrue("No wallet connector! " + error.toString(), false);
+            }
+        });
     }
 }

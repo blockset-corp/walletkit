@@ -7,6 +7,11 @@
  */
 package com.blockset.walletkit.errors;
 
+/* Declares all possible WalletConnect errors for supported methods
+ *
+ * N.B. This list is TBD and likely to be pruned once the full
+ * top-bottom handling of WalletConnect through Ethereum is finalized
+ */
 public abstract class WalletConnectorError extends Exception {
 
     WalletConnectorError() { super(); }
@@ -48,9 +53,29 @@ public abstract class WalletConnectorError extends Exception {
         public UnsignedTransaction(String message) { super(message); }
         public UnsignedTransaction(Throwable throwable) { super(throwable); }
     }
+    public static class PreviouslySignedTransaction extends WalletConnectorError {
+        public PreviouslySignedTransaction() { super(); }
+        public PreviouslySignedTransaction(String message) { super(message); }
+        public PreviouslySignedTransaction(Throwable throwable) { super(throwable); }
+    }
     public static class SubmitFailed extends WalletConnectorError {
         public SubmitFailed() { super(); }
         public SubmitFailed(String message) { super(message); }
         public SubmitFailed(Throwable throwable) { super(throwable); }
+    }
+    public static class InvalidDigest extends WalletConnectorError {
+        public InvalidDigest() { super(); }
+        public InvalidDigest(String message) { super(message); }
+        public InvalidDigest(Throwable throwable) { super(throwable); }
+    }
+    public static class InvalidSignature extends WalletConnectorError {
+        public InvalidSignature() { super(); }
+        public InvalidSignature(String message) { super(message); }
+        public InvalidSignature(Throwable throwable) { super(throwable); }
+    }
+    public static class InvalidSerialization extends WalletConnectorError {
+        public InvalidSerialization() { super(); }
+        public InvalidSerialization(String message) { super(message); }
+        public InvalidSerialization(Throwable throwable) { super(throwable); }
     }
 }
