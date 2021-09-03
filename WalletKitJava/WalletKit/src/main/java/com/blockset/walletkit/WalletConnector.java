@@ -7,10 +7,15 @@
  */
 package com.blockset.walletkit;
 
+
 import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.utility.CompletionHandler;
+import com.google.common.base.Preconditions;
 
 import java.util.Map;
+
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 public interface WalletConnector {
 
@@ -73,6 +78,52 @@ public interface WalletConnector {
         byte[] getData();
     }
 
+    /** Result class that can indicate Success with success object
+     *  of a failure with a suitable failure (error) object.
+     *
+     *  Use static creation methods {@link Result#success} or {@link Result#failure}
+     *  to create Result indications.
+     * @param <Success>
+     * @param <Failure>
+     */
+    class Result<Success, Failure> {
+        private Success success;
+        private Failure failure;
+
+        private Result(   @Nullable Success success,
+                          @Nullable Failure failure)  {
+            this.success = success;
+            this.failure = failure;
+        }
+
+        public @NonNull Success     getSuccess()   { return Preconditions.checkNotNull(success); }
+        public @NonNull Failure     getFailure()   { return Preconditions.checkNotNull(failure); }
+
+        public @Nullable Success    getSuccessOrNull() { return success; }
+        public @Nullable Failure    getFailureOrNull() { return failure; }
+
+        public boolean              isFailure()    { return failure != null; }
+        public boolean              isSuccess()    { return !isFailure(); }
+
+        /** Create a successful result with the object for celebration
+         *
+         * @param success A successful result object
+         * @return A successfull result object
+         */
+        public static <Success> Result success(Success success) {
+            return new Result(success, null);
+        }
+
+        /** Create a failed result with the object giving pause
+         *
+         * @param failure A successful result object
+         * @return A failed result object
+         */
+        public static <Failure> Result failure(Failure failure) {
+            return new Result(null, failure);
+        }
+    }
+
     /** Composite wrapper of a {@link Digest} and {@link Signature}
      *  to allow returning them together.
      */
@@ -93,25 +144,27 @@ public interface WalletConnector {
      * @param key: Private signing {@link Key} key
      * @param prefix Indicates to include optional prefix in the signature (TBD: may not need
      *               to be mandated)
-     * @return The pair of the {@link Digest} and {@link Signature}
-     * @throws {@link WalletConnectorError.InvalidKeyForSigning}
+     * @return The pair of the {@link Digest} and {@link Signature}, or on failure
+     *         a {@link Result} composed with {@link WalletConnectorError.InvalidKeyForSigning}
      */
-    DigestAndSignaturePair sign(   byte[]       message,
-                                   Key          key,
-                                   boolean      prefix  ) throws WalletConnectorError;
+    Result<DigestAndSignaturePair, WalletConnectorError>
+    sign(   byte[]       message,
+            Key          key,
+            boolean      prefix  );
 
     /**
      * Recover the public key
      *
      * @param digest The {@link Digest} digest
      * @param signature The corresponding {@link Signature} signature
-     * @return On success, a public key.
-     * @throws {@link WalletConnectorError.UnknownEntity}
+     * @return On success, a public key or on failure a {@link Result} composed with
+     *         {@link WalletConnectorError.UnknownEntity}
      *         to indicate the 'digest' or 'signature' are not from 'self'
      *
      */
-     Key recover (  Digest     digest,
-                    Signature  signature   ) throws WalletConnectorError;
+     Result<Key, WalletConnectorError>
+     recover (  Digest     digest,
+                Signature  signature   );
 
     /**
      *  Create a serialization from a transaction's unsigned or signed data.
@@ -124,20 +177,22 @@ public interface WalletConnector {
      * Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
      * the connector's network.  For ETH the Dictionary keys are: {...}
      * @param arguments Connector networks arguments for transaction, in the form of key/value pairs
-     * @result An unsigned {@link Transaction}
-     * @throws {@link WalletConnectorError.InvalidTransactionArguments}
+     * @result An unsigned {@link Transaction} or {@link Result} composed with
+     *         {@link WalletConnectorError.InvalidTransactionArguments}
      */
-    Transaction createTransaction ( Map<String, String> arguments ) throws WalletConnectorError;
+    Result<Transaction, WalletConnectorError>
+    createTransaction ( Map<String, String> arguments );
 
     /**
      * Create a Transaction from a serialization of a signed transaction
      *
      * @param serialization A transaction serialization, signed or unsigned
      * @return On success, an unsigned or signed {@link Transaction}. On failure
-     * @throws {@link WalletConnectorError.UnknownEntity}
+     *         a {@link Result} composed with {@link WalletConnectorError.UnknownEntity}
      *         if the serialization is not from 'self'
      */
-    Transaction createTransaction ( Serialization serialization ) throws WalletConnectorError;
+    Result<Transaction, WalletConnectorError>
+    createTransaction ( Serialization serialization );
 
     /**
      * Sign a transaction
@@ -148,14 +203,13 @@ public interface WalletConnector {
      * @param transaction The input transaction to be signed
      * @param key A private key
      * @return On success, a signed {@link Transaction} which will be distinct from the provided
-     *         'transaction' argument.
-     * @throws {@link WalletConnectorError.UnknownEntity}
-     *            if the 'transaction' is not from 'self'
-     * @throws {@link WalletConnectorError.InvalidKeyForSigning}
-     *            if 'key' is not private
+     *         'transaction' argument. On failure, a {@link Result} with one of
+     *         {@link WalletConnectorError.UnknownEntity} if the 'transaction' is not from 'self',
+     *         or {@link WalletConnectorError.InvalidKeyForSigning} if 'key' is not private
      */
-    Transaction sign ( Transaction     transaction,
-                       Key             key         ) throws WalletConnectorError;
+    Result<Transaction, WalletConnectorError>
+    sign ( Transaction     transaction,
+           Key             key         );
 
     /**
      * Send a transaction to the connector's network. As implied by the presence of a
@@ -167,16 +221,11 @@ public interface WalletConnector {
      *
      * @param transaction The transaction to be submitted
      * @param completion The handler to which {@link Transaction} result and potential errors
-     *                   are directed.
-     * @return On success, a submitted transaction which may be distinct from the provided
-     *         transaction argument.
-     * @throws {@link WalletConnectorError.UnknownEntity}
-     *           if `transaction` is not from `self`
-     * @throws {@link WalletConnectorError.UnsignedTransaction}
-     *           if `transaaction` is not signed
-     * May also indicate {@link WalletConnectorError.SubmitFailed}
-     * to the completion if the `transaction` was not submitted
+     *                   are directed. This method may indicate:
+     *                   - {@link WalletConnectorError.SubmitFailed} to the completion if the `transaction` was not submitted
+     *                   - {@link WalletConnectorError.UnknownEntity} if `transaction` is not from `self`, or,
+     *                   - {@link WalletConnectorError.UnsignedTransaction} if `transaction` is not signed
      */
     void submit ( Transaction                                           transaction,
-                  CompletionHandler<Transaction, WalletConnectorError>  completion  ) throws WalletConnectorError;
+                  CompletionHandler<Transaction, WalletConnectorError>  completion  );
 }
