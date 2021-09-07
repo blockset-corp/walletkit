@@ -13,6 +13,12 @@
 #include "walletkit/WKHashP.h"
 #include "support/BRBase58.h"
 
+private_extern BRAvalancheNetwork
+wkNetworkAsAVAX (WKNetwork network) {
+    WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(network);
+    return networkAVAX->avax;
+}
+
 static WKNetwork
 cyptoNetworkCreateAVAX (WKNetworkListener listener,
                        const char *uids,

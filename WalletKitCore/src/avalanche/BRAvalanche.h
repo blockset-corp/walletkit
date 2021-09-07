@@ -13,6 +13,7 @@
 #define BRAvalanche_h
 
 #include "BRAvalancheBase.h"
+#include "BRAvalancheNetwork.h"
 #include "BRAvalancheAddress.h"
 #include "BRAvalancheAccount.h"
 #include "BRAvalancheFeeBasis.h"
