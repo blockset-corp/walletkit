@@ -42,7 +42,7 @@ static uint8_t*
 wkWalletConnectorGetDigestETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *msg,
-        size_t                  msgLen,
+        size_t                  msgLength,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorError  *err    ) {
@@ -55,17 +55,17 @@ wkWalletConnectorGetDigestETH (
 
     if (addPrefix) {
         size_t prefixLen = strlen(ethereumSignedMessagePrefix);
-        finalMsg = malloc (msgLen + prefixLen);
+        finalMsg = malloc (msgLength + prefixLen);
         assert (NULL != finalMsg);
         memcpy (finalMsg, ethereumSignedMessagePrefix, prefixLen);
-        memcpy (finalMsg + prefixLen, msg, msgLen);
+        memcpy (finalMsg + prefixLen, msg, msgLength);
         msg = finalMsg;
-        msgLen += prefixLen;
+        msgLength += prefixLen;
     }
 
     digest = malloc (ETHEREUM_HASH_BYTES);
     assert (NULL != digest);
-    BRKeccak256 (digest, msg, msgLen);
+    BRKeccak256 (digest, msg, msgLength);
     *digestLength = ETHEREUM_HASH_BYTES;
 
     if (NULL != finalMsg)
@@ -81,7 +81,7 @@ static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
-        size_t                  dataLen,
+        size_t                  dataLength,
         WKKey                   key,
         size_t                  *signedLength,
         WKWalletConnectorError  *err    ) {
@@ -92,9 +92,9 @@ wkWalletConnectorSignDataETH (
     BREthereumAccount   ethAccount  = managerETH->account;
     BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
 
-    // Step 1: deserialize RLP encoded transaction data into an ETH transaction which can be signed
+    // Step 1: Deserialize RLP encoded transaction data into an ETH transaction which can be signed
     BRRlpCoder              coder           = rlpCoderCreate ();
-    BRRlpData               rlpData         = { .bytesCount = dataLen,
+    BRRlpData               rlpData         = { .bytesCount = dataLength,
                                                 .bytes      = data };
     BRRlpItem               item            = rlpDataGetItem (coder, rlpData);
     BREthereumTransaction   ethTransaction  = ethTransactionRlpDecode (item,
@@ -104,13 +104,13 @@ wkWalletConnectorSignDataETH (
     rlpItemRelease  (coder, item);
     rlpCoderRelease (coder);
 
-    // Step 2: create a signature directly on the input data and add it onto the
+    // Step 2: Create a signature directly on the input data and add it onto the
     //         ETH transaction
     BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
                                                                        ethAddress,
                                                                        SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
                                                                        data,
-                                                                       dataLen,
+                                                                       dataLength,
                                                                        *brKey   );
     ethTransactionSign (ethTransaction, signature);
     BRKeyClean (key);
@@ -282,11 +282,40 @@ wkWalletConnectorCreateTransactionFromSerializationETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLength,
-        size_t                  *signatureLength,
+        size_t                  *serializationLength,
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err            ) {
 
-    return NULL;
+    WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumNetwork   ethNetwork  = managerETH->network;
+
+    // Step 1: Get an ETH transaction back from serialization assuming
+    //         it's unsigned. The detection and parsing of the signature, if
+    //         present will be based on the chain id field (item 6). We will
+    //         miss transaction hash and source address, but neither of these are
+    //         important for reserialization
+    BRRlpCoder              coder           = rlpCoderCreate ();
+    BRRlpData               rlpData         = { .bytesCount = dataLength,
+                                                .bytes      = data };
+    BRRlpItem               item            = rlpDataGetItem (coder, rlpData);
+    BREthereumTransaction   ethTransaction  = ethTransactionRlpDecode (item,
+                                                                       ethNetwork,
+                                                                       RLP_TYPE_TRANSACTION_UNSIGNED,
+                                                                       coder);
+    rlpItemRelease  (coder, item);
+    rlpCoderRelease (coder);
+
+    // Step 2: Signing status is available on the transaction
+    *isSigned = (ETHEREUM_BOOLEAN_TRUE == ethTransactionIsSigned (ethTransaction));
+
+    // Step 3: Reserialize// Allocates memory to rlpData for the serialization.
+    BRRlpData serializationData = ethTransactionGetRlpData(ethTransaction,
+                                                           wkNetworkAsETH(walletConnector->type),
+                                                           (*isSigned ? RLP_TYPE_TRANSACTION_SIGNED:
+                                                                        RLP_TYPE_TRANSACTION_UNSIGNED));
+
+    *serializationLength = serializationData.bytesCount;
+    return serializationData.bytes;
 }
 
 WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {

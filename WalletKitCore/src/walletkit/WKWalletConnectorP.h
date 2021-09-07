@@ -30,7 +30,7 @@ typedef uint8_t*
 (*WKWalletConnectorGetDigestHandler) (
         WKWalletConnector       walletConnector,
         const uint8_t           *msg,
-        size_t                  msgLen,
+        size_t                  msgLength,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorError  *err    );
@@ -39,7 +39,7 @@ typedef uint8_t*
 (*WKWalletConnectorSignDataHandler) (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
-        size_t                  dataLen,
+        size_t                  dataLength,
         WKKey                   key,
         size_t                  *signedLength,
         WKWalletConnectorError  *err    );
@@ -60,7 +60,7 @@ typedef uint8_t*
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLength,
-        size_t                  *signatureLength,
+        size_t                  *serializationLength,
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err            );
 
