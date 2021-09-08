@@ -8,6 +8,7 @@
 package com.blockset.walletkit.nativex;
 
 import com.blockset.walletkit.nativex.library.WKNativeLibraryDirect;
+import com.blockset.walletkit.nativex.support.WKResult;
 import com.blockset.walletkit.nativex.utility.SizeT;
 import com.blockset.walletkit.nativex.utility.SizeTByReference;
 import com.google.common.base.Optional;
@@ -20,6 +21,9 @@ import com.sun.jna.ptr.IntByReference;
 
 import java.util.List;
 
+/** WKWalletConnector processes interactions with WalletKit native code
+ *  and transmits expected results or errors in the form of WKResults.
+ */
 public class WKWalletConnector extends PointerType {
 
     public WKWalletConnector() {
@@ -30,16 +34,18 @@ public class WKWalletConnector extends PointerType {
         super (address);
     }
 
-    /* May wrap return types with an WKError which can be promoted to class
-     * by the connector?
-     * 
-     * public class DigestResult {
-     *  Optional<byte[]> digest;
-     *  int wkError;
-     *  }
+    /** Gets a digest of the message bytes using native WalletKit calls
+     *
+     * @param message The message to be processed
+     * @param prefix An optional prefix to add to the message before digestion
+     * @return A {@link WKResult} object containing the digest byte buffer, or
+     *         WalletKit native error representation.
      */
-    public /*DigestResult*/Optional<byte[]> getDigest(byte[] message, boolean prefix) {
+    public WKResult<byte[], WKWalletConnectorError>
+    getDigest(  byte[]      message,
+                boolean     prefix  ) {
 
+        WKResult res;
         SizeTByReference digestLenRef = new SizeTByReference();
         IntByReference err = new IntByReference();
         
@@ -49,32 +55,43 @@ public class WKWalletConnector extends PointerType {
                                                                              prefix,
                                                                              digestLenRef,
                                                                              err    );
-        Optional<byte[]> digestOptional = Optional.absent();
         try {
-            
-            // TODO: properly treat WKWalletConnectorError
+
             int digestLen = UnsignedInts.checkedCast(digestLenRef.getValue().intValue());
-            if (!digestPtr.equals(Pointer.NULL) && digestLen > 0) {
-                byte[] digest = digestPtr.getByteArray(0, digestLen);
-                digestOptional = Optional.of(digest);
+
+            // Firstly deal with the potential of an indicated error
+            if (WKWalletConnectorError.isAnError(err.getValue())) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+
+            // Secondly treat a potentially bad or incoherent digest value
+            } else if (digestPtr.equals(Pointer.NULL) || digestLen == 0) {
+                res = WKResult.failure(WKWalletConnectorError.INVALID_DIGEST);
+
             } else {
-                // Log error
+                res = WKResult.success(digestPtr.getByteArray(0, digestLen));
             }
         } finally {
             Native.free(Pointer.nativeValue(digestPtr));
         }
 
-        return digestOptional;
+        return res;
     }
-    
-    
-    // Similar question wrt errors as in getDigest
-    public Optional<byte[]> sign(byte[] data, WKKey key) {
-        
+
+    /** Signs the byte buffer using native WalletKit calls
+     *
+     * @param data The data to be signed
+     * @param key The key, presumed to have private key information, to sign with
+     * @return A {@link WKResult} object containing the signature buffer, or a
+     *         WalletKit native error representation.
+     */
+    public WKResult<byte[], WKWalletConnectorError>
+    sign(   byte[]  data,
+            WKKey   key ) {
+
+        WKResult res;
         Pointer keyPtr = key.getPointer();
         SizeTByReference signatureLenRef = new SizeTByReference();
         IntByReference err = new IntByReference();
-        Optional<byte[]> signatureOptional = Optional.absent();
 
         // First find the required buffer length for the signature.
         Pointer signaturePtr = WKNativeLibraryDirect.wkWalletConnectorSignData(this.getPointer(),
@@ -84,32 +101,48 @@ public class WKWalletConnector extends PointerType {
                                                                                signatureLenRef,
                                                                                err  );
         try {
-            
-            // TODO: properly treat WKWalletConnectorError
+
             int signatureLen = UnsignedInts.checkedCast(signatureLenRef.getValue().intValue());
-            if (!signaturePtr.equals(Pointer.NULL) && signatureLen > 0) {
-                byte[] signature = signaturePtr.getByteArray(0, signatureLen);
-                signatureOptional = Optional.of(signature);
+
+            // Firstly deal with the potential directly indicated error of signing
+            if (WKWalletConnectorError.isAnError(err.getValue())) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+
+            // Secondly treat a potentially bad or incoherent signature value
+            } else if (signaturePtr.equals(Pointer.NULL) || signatureLen == 0) {
+                res = WKResult.failure(WKWalletConnectorError.INVALID_SIGNATURE);
+
             } else {
-                // Log error
+                res = WKResult.success(signaturePtr.getByteArray(0, signatureLen));
             }
         } finally {
             Native.free(Pointer.nativeValue(signaturePtr));
         }
 
-        return signatureOptional;
+        return res;
     }
-    
-    public Optional<byte[]> createTransactionFromArguments(
+
+    /** Creates a transaction serialization in the form of byte array,
+     *  from a list of key & associated value pairs, using native WalletKit calls.
+     *  The count of keys is provided explicitly so that it may be assumed
+     *  the number of values corresponds directly to keys.
+     *
+     * @param keys The list of key values
+     * @param values The associated values
+     * @return A {@link WKResult} object containing the transaction buffer, or a
+     *         WalletKit native error representation.
+     */
+    public WKResult<byte[], WKWalletConnectorError>
+    createTransactionFromArguments(
             List<String> keys, 
             List<String> values,
             int          countOfKeyValuePairs) {
-        
+
+        WKResult res;
         StringArray keysArray = new StringArray(keys.toArray(new String[0]), "UTF-8");
         StringArray valuesArray = new StringArray(values.toArray(new String[0]), "UTF-8");
         SizeTByReference serLengthRef = new SizeTByReference();
         IntByReference err = new IntByReference();
-        Optional<byte[]> serializationOptional = Optional.absent();
         
         // There are equal number of keys and values
         Pointer serializationPtr = 
@@ -120,40 +153,61 @@ public class WKWalletConnector extends PointerType {
                                                                                   serLengthRef,
                                                                                   err   );
         
-        // TODO: properly treat WKWalletConnectorError
+
         try {
             int serializationLen = UnsignedInts.checkedCast(serLengthRef.getValue().intValue());
-            
-            // Failure deduced by bad return. Should we have a representative error code out of native
-            // and returned in some fasion (return value, or argument)
-            if (!serializationPtr.equals(Pointer.NULL) && serializationLen > 0) {
-                byte[] serialization = serializationPtr.getByteArray(0, serializationLen);
-                serializationOptional = Optional.of(serialization);
+
+            // Firstly deal with explicity communicated issues via error value
+            if (WKWalletConnectorError.isAnError(err.getValue())) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+
+            // There should never be a null return value or a 0-length serialization for a
+            // valid input. A particular native impl may communicate an invalid transaction
+            // serialization for their own reasons; they may even indicate that error for precisely
+            // this reason, but its still worthwhile to impose this general restriction.
+            } else if (serializationPtr.equals(Pointer.NULL) || serializationLen == 0) {
+                res = WKResult.failure(WKWalletConnectorError.INVALID_SERIALIZATION);
+
+            } else {
+                res = WKResult.success(serializationPtr.getByteArray(0, serializationLen));
             }
         } finally {
             Native.free(Pointer.nativeValue(serializationPtr));
         }
         
-        return serializationOptional;
-        
+        return res;
+
     }
 
+    /** An object to hold both the serialization of the transaction and
+     *  an indication of its signing status.
+     */
     public class CreateTransactionFromSerializationResult {
-        public final Optional<byte[]>   serializationOptional;
-        public final boolean            isSigned;
-        // Plus error when revisiting errors at this level
+        public final byte[]     serialization;
+        public final boolean    isSigned;
         
-        public CreateTransactionFromSerializationResult(Optional<byte[]>    serOptional,
-                                                        boolean             isSigned ) {
-            this.serializationOptional = serOptional;
+        public CreateTransactionFromSerializationResult(byte[]    serialization,
+                                                        boolean   isSigned ) {
+            this.serialization = serialization;
             this.isSigned = isSigned;
         }
     }
-    
-    public CreateTransactionFromSerializationResult createTransactionFromSerialization(byte[] data) {
 
+    /** Creates a transaction serialization in the form of byte array,
+     *  from a provided serialization, through WalletKit native code.
+     *
+     *  This implies that the input serialization may be processed, validated
+     *  and re-serialized correctly.
+     *
+     * @param data The previously serialized transaction data]
+     * @return A {@link WKResult} object containing the serialized transaction buffer, or a
+     *         WalletKit native error representation.
+     */
+    public WKResult<CreateTransactionFromSerializationResult, WKWalletConnectorError>
+    createTransactionFromSerialization(byte[] data) {
+
+        WKResult res;
         SizeTByReference serLengthRef = new SizeTByReference();
-        Optional<byte[]> serializationOptional = Optional.absent();
         IntByReference isSignedRef = new IntByReference();
         IntByReference err = new IntByReference();
         
@@ -165,22 +219,26 @@ public class WKWalletConnector extends PointerType {
                 isSignedRef,
                 err );
         
-        // TODO: properly treat WKWalletConnectorError
         try {
             int serializationLen = UnsignedInts.checkedCast(serLengthRef.getValue().intValue());
-            
-            // Failure deduced by bad return. Should we have a representative error code out of native
-            // and returned in some fasion (return value, or argument)
-            if (!serializationPtr.equals(Pointer.NULL) && serializationLen > 0) {
-                byte[] serialization = serializationPtr.getByteArray(0, serializationLen);
-                serializationOptional = Optional.of(serialization);
+
+            if (WKWalletConnectorError.isAnError(err.getValue())) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+
+            } else if (serializationPtr.equals(Pointer.NULL) || serializationLen == 0) {
+                res = WKResult.failure(WKWalletConnectorError.INVALID_SERIALIZATION);
+
+            } else {
+                res = WKResult.success(
+                        new CreateTransactionFromSerializationResult(
+                                serializationPtr.getByteArray(0, serializationLen),
+                                isSignedRef.getValue() > 0 ? true : false));
             }
         } finally {
             Native.free(Pointer.nativeValue(serializationPtr));
         }
         
-        return new CreateTransactionFromSerializationResult(serializationOptional,
-                                                            isSignedRef.getValue() > 0 ? true : false);
+        return res;
     }
     
     public static Optional<WKWalletConnector> create(WKWalletManager coreManager) {
@@ -193,8 +251,4 @@ public class WKWalletConnector extends PointerType {
         Pointer thisPtr = this.getPointer();
         WKNativeLibraryDirect.wkWalletConnectorRelease(thisPtr);
     }
-
-    /* TODO: Hook WKWalletConnector methods to the actual wkMethods exposed by WKWalletConnector.h
-       as needed by WalletConnector.
-     */
 }

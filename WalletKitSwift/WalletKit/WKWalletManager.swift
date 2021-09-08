@@ -514,6 +514,7 @@ public enum WalletConnectorError: Error {
     case invalidKeyForSigning
     case unrecoverableKey
     case unsignedTransaction
+    case previouslySignedTransaction
 
     // Submit errors... enumerate all of these... or `case submitFailed(SubmitError)`
     case submitFailed
@@ -650,7 +651,8 @@ public final class WalletConnector {
     public func sign (transaction: Transaction, using key: Key) -> Result<Transaction, WalletConnectorError> {
         guard core == transaction.core else { return Result.failure(.unknownEntity) }
         guard key.hasSecret            else { return Result.failure(.invalidKeyForSigning) }
-
+        guard !transaction.isSigned    else { return Result.failure(.previouslySignedTransaction) }
+        
         // ?? and provide `func recover (transaction: Transaction, signature: Data) -> Key`
         return Result.failure(.invalidKeyForSigning)
     }

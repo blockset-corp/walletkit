@@ -25,7 +25,7 @@ public interface WalletManager {
 
     void createExportablePaperWallet(CompletionHandler<ExportablePaperWallet, ExportablePaperWalletError> completion);
 
-    WalletConnector createConnector() throws WalletConnectorError;
+    void createWalletConnector(CompletionHandler<WalletConnector, WalletConnectorError> completion);
 
     void connect(@Nullable NetworkPeer peer);
 

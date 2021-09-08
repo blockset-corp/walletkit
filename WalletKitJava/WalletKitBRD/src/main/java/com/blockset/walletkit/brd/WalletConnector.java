@@ -13,6 +13,7 @@ import com.blockset.walletkit.nativex.WKWalletConnectorError;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.nativex.WKWalletConnector;
+import com.blockset.walletkit.nativex.support.WKResult;
 import com.blockset.walletkit.utility.CompletionHandler;
 
 import com.google.common.base.Optional;
@@ -56,68 +57,78 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
      * Create a WalletConnector is supported for the manager's network
      *
      * @param manager: The `WalletManager` for this connector
-     *
-     * @return On success, a WalletConnector for `manager`.
-     * @throws {@link WalletConnectorError.UnsupportedConnector}
-     *   if `manager` does not support the WalletConnect 1.0 specification
+     * @param completion A completion handler for the result and potential
+     *                  {@link WalletConnectorError.UnsupportedConnector} error
+     *                  if `manager` does not support the WalletConnect 1.0 specification
      */
-    static WalletConnector create(WalletManager manager) throws WalletConnectorError {
+    static void create(  WalletManager manager,
+                         CompletionHandler<com.blockset.walletkit.WalletConnector, WalletConnectorError> completion) {
 
         Optional<WKWalletConnector> walletConnector =
                 WKWalletConnector.create(manager.getCoreBRCryptoWalletManager());
 
         if (walletConnector.isPresent())
-            return WalletConnector.create(walletConnector.get(), manager);
+            completion.handleData(WalletConnector.create(walletConnector.get(), manager));
         else
-            throw new WalletConnectorError.UnsupportedConnector();
+            completion.handleError(new WalletConnectorError.UnsupportedConnector());
     }
 
     @Override
-    public DigestAndSignaturePair sign( byte[]                      message,
-                                        com.blockset.walletkit.Key  key,
-                                        boolean                     prefix  ) throws WalletConnectorError {
-        if (!key.hasSecret())
-            throw new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key");
+    public Result<DigestAndSignaturePair, WalletConnectorError>
+    sign( byte[]                      message,
+          com.blockset.walletkit.Key  key,
+          boolean                     prefix  ) {
+
+        if (!key.hasSecret()) {
+
+            // Opportunity to Logger.log something here...
+            Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
+        }
 
         // Digest algorithm may be different per network type and optional prefix must be included
         // per network definition prior to doing the hash
         byte[] digestData = null;
         byte[] signatureData = null;
         
-        Optional<byte[]> digestOptional = core.getDigest(message, prefix);
-        if (digestOptional.isPresent()) {
+        WKResult<byte[], WKWalletConnectorError> digestResult = core.getDigest(message, prefix);
+        if (digestResult.isSuccess()) {
             
-            digestData = digestOptional.get();
+            digestData = digestResult.getSuccess();
             Key cryptoKey = Key.from(key);
-            Optional<byte[]> sigOptional = core.sign(digestData,
-                                                     cryptoKey.getBRCryptoKey());
+            WKResult<byte[], WKWalletConnectorError> sigResult = core.sign(digestData,
+                                                                           cryptoKey.getBRCryptoKey());
             
-            if (sigOptional.isPresent()) {
-                signatureData = sigOptional.get();
+            if (sigResult.isSuccess()) {
+                signatureData = sigResult.getSuccess();
             } else {
-                // return/throw something
+                return Result.failure(wkErrorToError(sigResult.getFailure()));
             }
         } else {
-        	// return/throw something
+            return Result.failure(wkErrorToError(digestResult.getFailure()));
         }
 
         Digest digest = new Digest(this.core, digestData);
         Signature signature = new Signature(this.core, signatureData);
-        return new DigestAndSignaturePair(digest, signature);
+        return Result.success(new DigestAndSignaturePair(digest, signature));
     }
 
     @Override
-    public Key recover (com.blockset.walletkit.WalletConnector.Digest digest,
-                        com.blockset.walletkit.WalletConnector.Signature signature   ) throws WalletConnectorError {
+    public Result<com.blockset.walletkit.Key, WalletConnectorError>
+    recover (com.blockset.walletkit.WalletConnector.Digest      digest,
+             com.blockset.walletkit.WalletConnector.Signature   signature   ) {
 
         // Check objects validity
         if (!(digest instanceof Digest) ||
             !(signature instanceof Signature) ||
             ( ((Digest)digest).core.getPointer() != core.getPointer() ||
-              ((Signature)signature).core.getPointer() != core.getPointer()))
-            throw new WalletConnectorError.UnknownEntity();
+              ((Signature)signature).core.getPointer() != core.getPointer())) {
 
-        return null;
+            // Opportunity to Logger.log something here...
+
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+
+        return Result.failure(new WalletConnectorError.UnrecoverableKey());
     }
 
     @Override
@@ -126,7 +137,8 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
-    public Transaction createTransaction(Map<String, String> arguments) throws WalletConnectorError {
+    public Result<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>
+    createTransaction(Map<String, String> arguments) {
 
         List<String> keys = new ArrayList<String>();
         List<String> vals = new ArrayList<String>();
@@ -134,43 +146,58 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         keys.addAll(arguments.keySet());
         vals.addAll(arguments.values());
         
-        Optional<byte[]> optionalSerialization = core.createTransactionFromArguments(keys, vals, arguments.size());
-        if (!optionalSerialization.isPresent()) {
-            // *may* throw new WalletConnectorError.InvalidTransactionArguments();
-            // throw/return error
+        WKResult<byte[], WKWalletConnectorError> serializationRes =
+                core.createTransactionFromArguments(keys, vals, arguments.size());
+
+        if (serializationRes.isFailure()) {
+            return Result.failure(wkErrorToError(serializationRes.getFailure()));
         }
 
-        Serialization serialization = new Serialization(this.core, optionalSerialization.get());
-        return new Transaction(this.core, serialization, false);
+        Serialization serialization = new Serialization(this.core,
+                                                        serializationRes.getSuccess());
+        return Result.success(new Transaction(this.core, serialization, false));
     }
 
     @Override
-    public Transaction createTransaction(com.blockset.walletkit.WalletConnector.Serialization serialization ) throws WalletConnectorError {
+    public Result<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>
+    createTransaction(com.blockset.walletkit.WalletConnector.Serialization serialization ) {
         if (!(serialization instanceof Serialization) ||
-             ((Serialization)serialization).core.getPointer() != core.getPointer() )
-            throw new WalletConnectorError.UnknownEntity();
+             ((Serialization)serialization).core.getPointer() != core.getPointer()) {
 
-        WKWalletConnector.CreateTransactionFromSerializationResult res = core.createTransactionFromSerialization(serialization.getData());
-        if (!res.serializationOptional.isPresent()) {
-            // throw/return error
+            // Opportunity to Logger.log something here...
+
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+
+        WKResult<WKWalletConnector.CreateTransactionFromSerializationResult,
+                 WKWalletConnectorError> serializationRes = core.createTransactionFromSerialization(serialization.getData());
+        if (!serializationRes.isFailure()) {
+            return Result.failure(wkErrorToError(serializationRes.getFailure()));
         }
         
-        return new Transaction(this.core, 
-                               new Serialization(this.core, res.serializationOptional.get()),
-                               res.isSigned);
+        return Result.success(new Transaction(this.core,
+                              new Serialization(this.core, serializationRes.getSuccess().serialization),
+                              serializationRes.getSuccess().isSigned));
     }
 
     @Override
-    public Transaction sign(
-            com.blockset.walletkit.WalletConnector.Transaction  transaction,
-            com.blockset.walletkit.Key                          key          ) throws WalletConnectorError {
+    public Result<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>
+    sign(   com.blockset.walletkit.WalletConnector.Transaction  transaction,
+            com.blockset.walletkit.Key                          key          ) {
     
         if (!(transaction instanceof Transaction) ||
-             ((Transaction)transaction).core.getPointer() != core.getPointer() )
-            throw new WalletConnectorError.UnknownEntity();
-        if (!key.hasSecret())
-            throw new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key");
-        // throw/return when Transaction is already signed per the Ed Aug30 discussion...
+             ((Transaction)transaction).core.getPointer() != core.getPointer() ) {
+
+            // perhaps log an error?
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+        if (!key.hasSecret()) {
+            // Log a log?
+            return Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
+        }
+        if (transaction.isSigned()) {
+            return Result.failure(new WalletConnectorError.PreviouslySignedTransaction());
+        }
         
         Key cryptoKey = Key.from(key);
 
@@ -178,26 +205,31 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         Optional<byte[]> signedTransactionRlpSerializationOptional = core.sign/*Transaction*/(transaction.getSerialization().getData(),
                                                                          cryptoKey.getBRCryptoKey());
         
-        if (!signedTransactionRlpSerializationOptional.isPresent()) {
-            // return/throw ...
+        if (signedTransactionRlpSerializationOptional.isFailure()) {
+            return Result.failure(wkErrorToError(signedData.getFailure()));
         }
         
         // Return fresh signed transaction
-        return new Transaction(this.core,
-                               new Serialization(this.core, signedTransactionRlpSerializationOptional.get()),
-                               true);
+        return Result.success(new Transaction(this.core,
+                              new Serialization(this.core, signedTransactionRlpSerializationOptional.getSuccess()),
+                              true));
     }
 
     @Override
     public void submit(
             com.blockset.walletkit.WalletConnector.Transaction transaction,
-            CompletionHandler<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>    completion  ) throws WalletConnectorError {
+            CompletionHandler<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError> completion  ) {
 
         if (!(transaction instanceof Transaction) ||
-             ((Transaction)transaction).core.getPointer() != core.getPointer() )
-            throw new WalletConnectorError.UnknownEntity();
-        if (!transaction.isSigned())
-            throw new WalletConnectorError.UnsignedTransaction();
+             ((Transaction)transaction).core.getPointer() != core.getPointer() ) {
+            completion.handleError(new WalletConnectorError.UnknownEntity());
+            return;
+        }
+
+        if (!transaction.isSigned()) {
+            completion.handleError(new WalletConnectorError.UnsignedTransaction());
+            return;
+        }
 
         byte[] data = transaction.getSerialization().getData();
         String base64 = BaseEncoding.base64().encode(
@@ -315,6 +347,12 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         switch (error) {
             case UNSUPPORTED_CONNECTOR:
                 return new WalletConnectorError.UnsupportedConnector();
+            case INVALID_DIGEST:
+                return new WalletConnectorError.InvalidDigest();
+            case INVALID_SIGNATURE:
+                return new WalletConnectorError.InvalidSignature();
+            case INVALID_SERIALIZATION:
+                return new WalletConnectorError.InvalidSerialization();
         }
         return null;
     }
