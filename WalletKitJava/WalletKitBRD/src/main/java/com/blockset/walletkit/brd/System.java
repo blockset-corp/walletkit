@@ -1676,7 +1676,7 @@ final class System implements com.blockset.walletkit.System {
 
                             @Override
                             public void handleError(QueryError error) {
-                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
+                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed ", error);
                                 manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
                                         false,
                                         UnsignedLong.ZERO,

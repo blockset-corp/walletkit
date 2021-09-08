@@ -266,6 +266,38 @@ public final class Wallet: Equatable {
     
     /// MARK: Estimate Limit
 
+    func hackTheAmountIfTezos (amount: Amount) -> Amount {
+        let network = self.manager.network
+        switch network.type {
+        case .xtz:
+            // See BRTezosOperation.c
+            let TEZOS_FEE_DEFAULT: Int64 = 0
+
+            let unitBase   = network.baseUnitFor(currency: amount.currency)!
+            let amountSlop = Amount.create (integer: 1 + TEZOS_FEE_DEFAULT, unit: unitBase)
+
+            //
+            // A Tezos fee estimation for an amount such that:
+            //     `(balance - TEZOS_FEE_DEFAULT) <= amount <= balance`
+            // will return "balance_too_low" but you can actually send a tranaction with roughly
+            //     `amount < (balance - 424)`
+            // where 424 is the fee for 1mutez (424 is typical)
+            //
+            // So, if asked to perform a fee estimate for an amount within TEZOS_FEE_DEFAULT of
+            // balance we'll instead use an amount of (balance - TEZOS_FEE_DEFAULT - 1).  Note: if
+            // balance < TEZOS_FEE_DEFAULT, we'll use an amout of 1.
+            //
+            return (self.balance > (amount + amountSlop)!
+                        ? amount
+                        : (self.balance > amountSlop
+                                ? (self.balance - amountSlop)!
+                                : Amount.create (integer: 1, unit: unitBase)))
+
+        default:
+            return amount
+        }
+    }
+
     ///
     /// A `Wallet.EstimateLimitHandler` is a function th handle the result of `Wallet.estimateLimit`
     /// with return type of `Amount`.
@@ -428,6 +460,13 @@ public final class Wallet: Equatable {
             return
         }
 
+        // The base unit for `currency`
+        let transferBaseUnit = self.manager.network.baseUnitFor(currency: self.currency)!
+
+        // The minimum non-zero transfer amount
+        let transferMin  = Amount.create (integer: 1, unit: transferBaseUnit)
+        let transferZero = Amount.create (integer: 0, unit: transferBaseUnit)
+
         //
         // We are forced to deal with XTZ.  Not by our choosing.  The value returned by the above
         // `wkWalletManagerEstimateLimit()` is something well below `self.balance` for XTZ - becuase
@@ -438,46 +477,35 @@ public final class Wallet: Equatable {
         // User's funds until XTZ matures.
         //
         if (.xtz == manager.network.type) {
-            
-            // The absolute minimum value that can be transferred.  If we can't get an estimate for
-            // this we are utterly dead in the water.
-            let amountAbsoluteMinimum = Amount.create (integer: 1, unit: manager.baseUnit)
-
-            func estimationCompleterXTZ (res: Result<TransferFeeBasis, Wallet.FeeEstimationError>) {
+            // Make a request with the lowest possible amount; hopefully we get a result.
+            estimateFee (target: target,
+                         amount: transferMin,
+                         fee: fee,
+                         attributes: attributes) { (res: Result<TransferFeeBasis, FeeEstimationError>) in
                 switch res {
                 case .success (let feeBasis):
-                    let amountEstimated = (self.balance - feeBasis.fee) ?? Amount.create(integer: 0, unit: manager.baseUnit)
+                    let amountEstimated = (self.balance - feeBasis.fee) ?? transferZero
                     completion (Result.success (amountEstimated < amount
                                                         ? amountEstimated
                                                         : amount))
-                    break
 
                 case .failure (_):
-                    // The request failed.  We will assume that the original amount was correct
-                    // and will use it.  Probably it won't be correct; but this is XTZ
-                    completion (Result.success(amount))
-                    break
+                    //
+                    // The request failed but we don't know why (limits in the current interface).
+                    // Could be a network failure; could be something with the XTZ wallet; could
+                    // be a protocol change for XTZ - no matter, we'll return the maximum amount
+                    // as zero.
+                    //
+                    completion (Result.success(transferZero))
                 }
             }
-
-            func estimateFeeFor (amount: Amount) {
-                // Record `amount` as `amountReqeust`
-                estimateFee (target: target,
-                             amount: amount,
-                             fee: fee,
-                             attributes: attributes,
-                             completion: estimationCompleterXTZ)
-            }
-
-            // Make a request with the lowest possible amount; hopefully we get a result.
-            estimateFeeFor (amount: amountAbsoluteMinimum)
 
             return
         }
 
         // If the `walletForFee` and `wallet` are identical, then we need to iteratively estimate
         // the fee and adjust the amount until the fee stabilizes.
-        var transferFee = Amount.create (integer: 0, unit: self.unit)
+        var transferFee = transferZero
 
         // We'll limit the number of iterations
         let estimationCompleterRecurseLimit = 3
@@ -525,7 +553,11 @@ public final class Wallet: Equatable {
             }
         }
 
-        estimateFee (target: target, amount: amount, fee: fee, attributes: attributes, completion: estimationCompleter)
+        estimateFee (target: target,
+                     amount: (manager.network.type == .xtz ? transferMin : amount),
+                     fee: fee,
+                     attributes: attributes,
+                     completion: estimationCompleter)
     }
 
     private func estimateLimitCompleteInQueue (_ completion: @escaping Wallet.EstimateLimitHandler,
@@ -587,13 +619,15 @@ public final class Wallet: Equatable {
 
         let coreAttributesCount = attributes?.count ?? 0
         var coreAttributes: [WKTransferAttribute?] = attributes?.map { $0.core } ?? []
-        
+
+        let amountHackedIfXTZ = hackTheAmountIfTezos(amount: amount)
+
         // 'Redirect' up to the 'manager'
         wkWalletManagerEstimateFeeBasis (self.manager.core,
                                              self.core,
                                              callbackCoordinator.addWalletFeeEstimateHandler(completion),
                                              target.core,
-                                             amount.core,
+                                             amountHackedIfXTZ.core,
                                              fee.core,
                                              coreAttributesCount,
                                              &coreAttributes)
