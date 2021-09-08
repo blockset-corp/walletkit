@@ -173,16 +173,18 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         // throw/return when Transaction is already signed per the Ed Aug30 discussion...
         
         Key cryptoKey = Key.from(key);
-        Optional<byte[]> signedDataOptional = core.sign(transaction.getSerialization().getData(),
-                                                        cryptoKey.getBRCryptoKey());
+
+        // Returns the RLP serialization of a signed transaction
+        Optional<byte[]> signedTransactionRlpSerializationOptional = core.sign/*Transaction*/(transaction.getSerialization().getData(),
+                                                                         cryptoKey.getBRCryptoKey());
         
-        if (!signedDataOptional.isPresent()) {
+        if (!signedTransactionRlpSerializationOptional.isPresent()) {
             // return/throw ...
         }
         
         // Return fresh signed transaction
         return new Transaction(this.core,
-                               new Serialization(this.core, signedDataOptional.get()),
+                               new Serialization(this.core, signedTransactionRlpSerializationOptional.get()),
                                true);
     }
 

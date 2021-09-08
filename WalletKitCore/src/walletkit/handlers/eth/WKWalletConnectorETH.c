@@ -74,54 +74,34 @@ wkWalletConnectorGetDigestETH (
     return digest;
 }
 
-/** Input data is expected to be already serialized in RLP fashion
- *
- */
 static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLength,
         WKKey                   key,
-        size_t                  *signedLength,
+        size_t                  *signatureLength,
         WKWalletConnectorError  *err    ) {
 
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumNetwork   ethNetwork  = managerETH->network;
     BRKey               *brKey      = wkKeyGetCore (key);
-    BREthereumAccount   ethAccount  = managerETH->account;
-    BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
 
-    // Step 1: Deserialize RLP encoded transaction data into an ETH transaction which can be signed
-    BRRlpCoder              coder           = rlpCoderCreate ();
-    BRRlpData               rlpData         = { .bytesCount = dataLength,
-                                                .bytes      = data };
-    BRRlpItem               item            = rlpDataGetItem (coder, rlpData);
-    BREthereumTransaction   ethTransaction  = ethTransactionRlpDecode (item,
-                                                                       ethNetwork,
-                                                                       RLP_TYPE_TRANSACTION_UNSIGNED,
-                                                                       coder);
-    rlpItemRelease  (coder, item);
-    rlpCoderRelease (coder);
+    // No error
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
 
-    // Step 2: Create a signature directly on the input data and add it onto the
-    //         ETH transaction
-    BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
-                                                                       ethAddress,
-                                                                       SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
-                                                                       data,
-                                                                       dataLength,
-                                                                       *brKey   );
-    ethTransactionSign (ethTransaction, signature);
+    // Direct sign the data as arbitrary data
+    BREthereumSignature signature = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+                                                        data,
+                                                        dataLength,
+                                                        *brKey   );
     BRKeyClean (key);
 
-    // Step 3: Add the signature to the ETH transaction and serialize it
-    BRRlpData signedData = ethTransactionGetRlpData(ethTransaction,
-                                                    ethNetwork,
-                                                    RLP_TYPE_TRANSACTION_SIGNED);
+    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
+    assert (signatureData != NULL);
+    memcpy (signatureData, &signature.sig.vrs, sizeof (BREthereumSignatureVRS));
+    *signatureLength = sizeof (BREthereumSignatureVRS);
 
-    *signedLength = signedData.bytesCount;
-    return signedData.bytes;
+    return signatureData;
 }
 
 typedef enum {
@@ -277,6 +257,8 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
     return rlpData.bytes;
 }
 
+// Will require validation of the input data adhering to serialized
+// RLP transaction before this can be exposed to public data (CORE-1281)
 uint8_t*
 wkWalletConnectorCreateTransactionFromSerializationETH (
         WKWalletConnector       walletConnector,
@@ -289,6 +271,10 @@ wkWalletConnectorCreateTransactionFromSerializationETH (
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumNetwork   ethNetwork  = managerETH->network;
 
+    // No result, no error
+    *serializationLength = 0;
+    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+
     // Step 1: Get an ETH transaction back from serialization assuming
     //         it's unsigned. The detection and parsing of the signature, if
     //         present will be based on the chain id field (item 6). We will
@@ -297,6 +283,10 @@ wkWalletConnectorCreateTransactionFromSerializationETH (
     BRRlpCoder              coder           = rlpCoderCreate ();
     BRRlpData               rlpData         = { .bytesCount = dataLength,
                                                 .bytes      = data };
+
+    // TODO: CORE-1281: data must be checked to adhere to Item structure
+    //                  and RLP decode requirements before doing the following...
+    //                  Arbitrary data in any form may cause asserts within.
     BRRlpItem               item            = rlpDataGetItem (coder, rlpData);
     BREthereumTransaction   ethTransaction  = ethTransactionRlpDecode (item,
                                                                        ethNetwork,

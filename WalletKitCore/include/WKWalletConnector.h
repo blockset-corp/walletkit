@@ -67,13 +67,13 @@ wkWalletConnectorGetDigest (
         size_t                  *digestLength,
         WKWalletConnectorError  *err            );
 
-/** Uses the wallet connector to sign the indicated data using the provided key
+/** Uses the wallet connector to sign the arbitrary data.
  *
  * @param connector The wallet connector object
- * @param data The input data to be signed
- * @param dataLen The length of input data
+ * @param data The input serialized transaction data to be signed
+ * @param dataLen The length of input transaction data
  * @param key The key for signing
- * @param signedLength The length of returned data after signing (on success > 0)
+ * @param signatureLength The length of returned signature data (on success > 0)
  * @param err An error when a failure has occurred
  * @return When successful an allocated signature buffer of length signatureLength. The caller
  *         is responsible for freeing native memory allocated here.
@@ -84,7 +84,7 @@ wkWalletConnectorSignData (
         const uint8_t           *data,
         size_t                  dataLen,
         WKKey                   key,
-        size_t                  *signedLength,
+        size_t                  *signatureLength,
         WKWalletConnectorError  *err            );
 
 /** Uses the wallet connector provided to organize the key-value pairs
@@ -115,8 +115,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
         WKWalletConnectorError  *err            );
 
 /** Uses the wallet connector provided to create a serialized transaction
- *  out of the serialized input. In the process, the input serialization is
- *  validated according to the network conventions, verifying this data is
+ *  out of the input. In the process, the input serialization is
+ *  validated according to the network conventions (TBD: CORE-1281), verifying this data is
  *  formulated correctly. In addition, whether or no the transaction is already
  *  signed, is determined.
  *

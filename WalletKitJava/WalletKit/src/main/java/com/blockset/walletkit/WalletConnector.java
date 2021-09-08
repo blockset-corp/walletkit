@@ -114,7 +114,8 @@ public interface WalletConnector {
                     Signature  signature   ) throws WalletConnectorError;
 
     /**
-     *  Create a serialization from a transaction's unsigned or signed data.
+     *  Create a serialization from arbitrary data, typically the data should
+     *  be signed or unsigned transaction data, but no checks are performed.
      * @param data The data
      * @return A {@link Serialization} serialization
      */
@@ -130,7 +131,10 @@ public interface WalletConnector {
     Transaction createTransaction ( Map<String, String> arguments ) throws WalletConnectorError;
 
     /**
-     * Create a Transaction from a serialization of a signed transaction
+     * Create a Transaction from a signed or unsigned serialization. Creation of a
+     * Transaction from the Serialization object implies that this Serialization data
+     * conforms to the Network's conventions regarding serialization (i.e. it may
+     * not be just arbitrary data).
      *
      * @param serialization A transaction serialization, signed or unsigned
      * @return On success, an unsigned or signed {@link Transaction}. On failure
