@@ -142,12 +142,51 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                 .transform(t -> Transfer.create(t, this, false));
     }
 
+    private com.blockset.walletkit.Amount hackTheAmountIfTezos(com.blockset.walletkit.Amount amount) {
+        Network network = getWalletManager().getNetwork();
+
+        switch (network.getType()) {
+            case XTZ:
+                // See BRTezosOperation.c
+                long TEZOS_FEE_DEFAULT = 0;
+
+                Unit unitBase = network.baseUnitFor(amount.getCurrency()).get();
+                Amount amountSlop = Amount.create(1 + TEZOS_FEE_DEFAULT, unitBase);
+
+                //
+                // A Tezos fee estimation for an amount such that:
+                //     `(balance - TEZOS_FEE_DEFAULT) <= amount <= balance`
+                // will return "balance_too_low" but you can actually send a tranaction with roughly
+                //     `amount < (balance - 424)`
+                // where 424 is the fee for 1mutez (424 is typical)
+                //
+                // So, if asked to perform a fee estimate for an amount within TEZOS_FEE_DEFAULT of
+                // balance we'll instead use an amount of (balance - TEZOS_FEE_DEFAULT - 1).  Note: if
+                // balance < TEZOS_FEE_DEFAULT, we'll use an amout of 1.
+                //
+
+                return (this.getBalance().compareTo(amount.add(amountSlop).get()) > 0 /* GT */
+                        ? amount
+                        : (this.getBalance().compareTo(amountSlop) > 0 /* GT */
+                           ? this.getBalance().sub(amountSlop).get()
+                           : Amount.create(1, unitBase)));
+
+            default:
+                return amount;
+        }
+    }
+
     @Override
-    public void estimateFee(com.blockset.walletkit.Address target, com.blockset.walletkit.Amount amount,
-                            com.blockset.walletkit.NetworkFee fee, @Nullable Set<com.blockset.walletkit.TransferAttribute> attributes, CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError> handler) {
+    public void estimateFee(com.blockset.walletkit.Address target,
+                            com.blockset.walletkit.Amount amount,
+                            com.blockset.walletkit.NetworkFee fee,
+                            @Nullable Set<com.blockset.walletkit.TransferAttribute> attributes,
+                            CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError> handler) {
+        com.blockset.walletkit.Amount amountHackedIfXTZ = hackTheAmountIfTezos(amount);
+
         WKWalletManager coreManager = getWalletManager().getCoreBRCryptoWalletManager();
         WKAddress coreAddress = Address.from(target).getCoreBRCryptoAddress();
-        WKAmount coreAmount = Amount.from(amount).getCoreBRCryptoAmount();
+        WKAmount coreAmount = Amount.from(amountHackedIfXTZ).getCoreBRCryptoAmount();
         WKNetworkFee coreFee = NetworkFee.from(fee).getCoreBRCryptoNetworkFee();
         List<WKTransferAttribute> coreAttributes = new ArrayList<>();
         if (null != attributes)
@@ -309,16 +348,17 @@ final class Wallet implements com.blockset.walletkit.Wallet {
         // User's funds until XTZ matures.
         //
         if (NetworkType.XTZ == walletManager.getNetwork().getType()) {
-            
+
             // The absolute minimum value that can be transferred.  If we can't get an estimate for
             // this we are utterly dead in the water.
-            Amount amountAbsoluteMinimum = Amount.create(1, walletManager.getBaseUnit());
+            Amount transferMin  = Amount.create(1, walletManager.getBaseUnit());
+            Amount transferZero = Amount.create(0, walletManager.getBaseUnit());
 
             CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError> estimationHandlerXTZ =
                     new CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError>() {
                         @Override
                         public void handleData(com.blockset.walletkit.TransferFeeBasis feeBasis) {
-                            Amount amountEstimated = amount.sub(feeBasis.getFee()).or (Amount.create(0, walletManager.getBaseUnit()));
+                            Amount amountEstimated = amount.sub(feeBasis.getFee()).or(transferZero);
                             handler.handleData(amountEstimated.compareTo(amount) == -1
                                     ? amountEstimated
                                     : amount);
@@ -326,13 +366,17 @@ final class Wallet implements com.blockset.walletkit.Wallet {
 
                         @Override
                         public void handleError(FeeEstimationError error) {
-                            // The request failed.  We will assume that the original amount was correct
-                            // and will use it.  Probably it won't be correct; but this is XTZ
-                            handler.handleData(amount);
+                            //
+                            // The request failed but we don't know why (limits in the current interface).
+                            // Could be a network failure; could be something with the XTZ wallet; could
+                            // be a protocol change for XTZ - no matter, we'll return the maximum amount
+                            // as zero.
+                            //
+                            handler.handleData(transferZero);
                         }
                     };
 
-            estimateFee(target, amountAbsoluteMinimum, fee, null, estimationHandlerXTZ);
+            estimateFee(target, transferMin, fee, null, estimationHandlerXTZ);
 
             return;
         }

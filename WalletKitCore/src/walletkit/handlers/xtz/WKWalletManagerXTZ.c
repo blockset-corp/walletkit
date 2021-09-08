@@ -356,6 +356,7 @@ wkWalletManagerRecoverOperationFeeBasis (const char *suffix, size_t count, const
                                          (BRTezosUnitMutez) fee,
                                          gasUsed,
                                          0,
+                                         0,
                                          counter,
                                          (BRTezosUnitMutez) burn);
 }

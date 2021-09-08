@@ -270,19 +270,22 @@ public final class Wallet: Equatable {
         let network = self.manager.network
         switch network.type {
         case .xtz:
+            // See BRTezosOperation.c
+            let TEZOS_FEE_DEFAULT: Int64 = 0
+
             let unitBase   = network.baseUnitFor(currency: amount.currency)!
-            let amountSlop = Amount.create (integer: 1420, unit: unitBase)
+            let amountSlop = Amount.create (integer: 1 + TEZOS_FEE_DEFAULT, unit: unitBase)
 
             //
             // A Tezos fee estimation for an amount such that:
-            //     `(balance - 1420) <= amount <= balance`
+            //     `(balance - TEZOS_FEE_DEFAULT) <= amount <= balance`
             // will return "balance_too_low" but you can actually send a tranaction with roughly
             //     `amount < (balance - 424)`
             // where 424 is the fee for 1mutez (424 is typical)
             //
-            // So, if asked to perform a fee estimate for an amount within 1420 of balance
-            // we'll instead use an amount of (balance - 1420).  Note: if balance < 1420, we'll
-            // use an amout of 1mutez.
+            // So, if asked to perform a fee estimate for an amount within TEZOS_FEE_DEFAULT of
+            // balance we'll instead use an amount of (balance - TEZOS_FEE_DEFAULT - 1).  Note: if
+            // balance < TEZOS_FEE_DEFAULT, we'll use an amout of 1.
             //
             return (self.balance > (amount + amountSlop)!
                         ? amount
@@ -456,10 +459,53 @@ public final class Wallet: Equatable {
             }
             return
         }
-    
+
+        // The base unit for `currency`
+        let transferBaseUnit = self.manager.network.baseUnitFor(currency: self.currency)!
+
+        // The minimum non-zero transfer amount
+        let transferMin  = Amount.create (integer: 1, unit: transferBaseUnit)
+        let transferZero = Amount.create (integer: 0, unit: transferBaseUnit)
+
+        //
+        // We are forced to deal with XTZ.  Not by our choosing.  The value returned by the above
+        // `wkWalletManagerEstimateLimit()` is something well below `self.balance` for XTZ - becuase
+        // we are desperate to get a non-error response from the XTZ node.  And, if we provide the
+        // balance for the estimate, we get a `balance_too_low` error.  This then forces us into
+        // a binary search until 'not balance_too_low' which for a range of {0, 1 xtz} is ~25
+        // queries of Blockset and the XTZ Node.  Insane.  We will unfortunately sacrifice our
+        // User's funds until XTZ matures.
+        //
+        if (.xtz == manager.network.type) {
+            // Make a request with the lowest possible amount; hopefully we get a result.
+            estimateFee (target: target,
+                         amount: transferMin,
+                         fee: fee,
+                         attributes: attributes) { (res: Result<TransferFeeBasis, FeeEstimationError>) in
+                switch res {
+                case .success (let feeBasis):
+                    let amountEstimated = (self.balance - feeBasis.fee) ?? transferZero
+                    completion (Result.success (amountEstimated < amount
+                                                        ? amountEstimated
+                                                        : amount))
+
+                case .failure (_):
+                    //
+                    // The request failed but we don't know why (limits in the current interface).
+                    // Could be a network failure; could be something with the XTZ wallet; could
+                    // be a protocol change for XTZ - no matter, we'll return the maximum amount
+                    // as zero.
+                    //
+                    completion (Result.success(transferZero))
+                }
+            }
+
+            return
+        }
+
         // If the `walletForFee` and `wallet` are identical, then we need to iteratively estimate
         // the fee and adjust the amount until the fee stabilizes.
-        var transferFee = Amount.create (integer: 0, unit: self.unit)
+        var transferFee = transferZero
 
         // We'll limit the number of iterations
         let estimationCompleterRecurseLimit = 3
@@ -507,7 +553,11 @@ public final class Wallet: Equatable {
             }
         }
 
-        estimateFee (target: target, amount: amount, fee: fee, attributes: attributes, completion: estimationCompleter)
+        estimateFee (target: target,
+                     amount: (manager.network.type == .xtz ? transferMin : amount),
+                     fee: fee,
+                     attributes: attributes,
+                     completion: estimationCompleter)
     }
 
     private func estimateLimitCompleteInQueue (_ completion: @escaping Wallet.EstimateLimitHandler,

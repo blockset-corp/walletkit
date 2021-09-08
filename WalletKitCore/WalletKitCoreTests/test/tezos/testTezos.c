@@ -362,7 +362,7 @@ testTransactionSerialize() {
     counter = 3;
     amount = 100000000;
 
-    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
 
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
@@ -377,7 +377,7 @@ testTransactionSerialize() {
     wkDataFree(unsignedBytes);
     
     // reveal
-    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
 
     publicKey     = tezosAccountGetPublicKey(account);
     operation     = tezosOperationCreateReveal(sourceAddress, targetAddress, operationFeeBasis, publicKey);
@@ -390,7 +390,7 @@ testTransactionSerialize() {
     wkDataFree(unsignedBytes);
 
     // delegation on
-    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_DELEGATION, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_DELEGATION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
 
     tezosAddressFree(targetAddress);
     targetAddress = tezosAddressCreateFromString("tz1RKLoYm4vtLzo7TAgGifMDAkiWhjfyXwP4", true);
@@ -440,11 +440,11 @@ testBatchOperationSerialize() {
     BRTezosPublicKey publicKey = tezosAccountGetPublicKey(account);
 
     // reveal op
-    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
     BRTezosOperation         revealOperation = tezosOperationCreateReveal (sourceAddress, targetAddress, revealFeeBasis, publicKey);
     
     // transaction op
-    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
     BRTezosOperation         transferOperation = tezosOperationCreateTransaction (sourceAddress, targetAddress, transferFeeBasis, amount);
 
     BRTezosOperation operations[2] = {
@@ -480,7 +480,7 @@ testTransactionSign() {
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
     counter = 3;
     amount = 100000000;
-    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, counter, 0);  // mutez/kbyte = 48800
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
 
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
@@ -529,10 +529,10 @@ testTransactionSignWithReveal() {
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BLcz2Y6BikLFrwnejtRgBPSiGt1RLTjizUCg15BsUZ6x6JFazJS");
 
-    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL,      0, 24000, 0, counter,     0);  // mutez/kbyte = 48800
+    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL,      0, 24000, 0, 0, counter,     0);  // mutez/kbyte = 48800
     BRTezosOperation         revealOperation = tezosOperationCreateReveal   (sourceAddress, targetAddress, revealFeeBasis, publicKey);
 
-    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate    (TEZOS_OP_TRANSACTION, 10500, 24000, 0, counter + 1, 0);  // mutez/kbyte = 48800
+    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate    (TEZOS_OP_TRANSACTION, 10500, 24000, 0, 0, counter + 1, 0);  // mutez/kbyte = 48800
     BRTezosOperation         transferOperation = tezosOperationCreateTransaction (sourceAddress, targetAddress, transferFeeBasis, amount);
 
     BRTezosTransaction transaction       = tezosTransactionCreateWithReveal (transferOperation, revealOperation);
