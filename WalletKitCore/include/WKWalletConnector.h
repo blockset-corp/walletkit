@@ -71,7 +71,7 @@ wkWalletConnectorGetDigest (
  *
  * @param connector The wallet connector object
  * @param data The input serialized transaction data to be signed
- * @param dataLen The length of input transaction data
+ * @param dataLength The length of input transaction data
  * @param key The key for signing
  * @param signatureLength The length of returned signature data (on success > 0)
  * @param err An error when a failure has occurred
@@ -82,7 +82,7 @@ extern uint8_t*
 wkWalletConnectorSignData (
         WKWalletConnector       connector,
         const uint8_t           *data,
-        size_t                  dataLen,
+        size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
         WKWalletConnectorError  *err            );
@@ -141,6 +141,27 @@ wkWalletConnectorCreateTransactionFromSerialization  (
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err           );
+
+/** Uses the wallet connector to sign data representing a
+ *  validated, serialized transaction.
+ *
+ * @param connector The wallet connector object
+ * @param transactionData The input serialized transaction data to be signed
+ * @param dataLength The length of input transaction data
+ * @param key The key for signing
+ * @param signedDataLength The length of returned signed transaction data (on success > 0)
+ * @param err An error when a failure has occurred
+ * @return When successful the signed transaction serialization of length signedDataLength. The caller
+ *         is responsible for freeing native memory allocated here.
+ */
+extern uint8_t*
+wkWalletConnectorSignTransactionData (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorError  *err            );
 
 #ifdef __cplusplus
 }

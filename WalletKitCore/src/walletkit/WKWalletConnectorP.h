@@ -64,6 +64,15 @@ typedef uint8_t*
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err            );
 
+typedef uint8_t*
+(*WKWalletConnectorSignTransactionDataHandler) (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorError  *err            );
+
 typedef struct {
     WKWalletConnectorCreateHandler                              create;
     WKWalletConnectorReleaseHandler                             release;
@@ -71,6 +80,7 @@ typedef struct {
     WKWalletConnectorSignDataHandler                            sign;
     WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
     WKWalletConnectorCreateTransactionFromSerializationHandler  createTransactionFromSerialization;
+    WKWalletConnectorSignTransactionDataHandler                 signTransactionData;
 } WKWalletConnectorHandlers;
 
 // MARK: - Connector

@@ -202,16 +202,17 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         Key cryptoKey = Key.from(key);
 
         // Returns the RLP serialization of a signed transaction
-        Optional<byte[]> signedTransactionRlpSerializationOptional = core.sign/*Transaction*/(transaction.getSerialization().getData(),
-                                                                         cryptoKey.getBRCryptoKey());
+        WKResult<byte[], WKWalletConnectorError> signedTransactionRlpSerializationResult =
+                core.signTransaction(transaction.getSerialization().getData(),
+                                     cryptoKey.getBRCryptoKey());
         
-        if (signedTransactionRlpSerializationOptional.isFailure()) {
-            return Result.failure(wkErrorToError(signedData.getFailure()));
+        if (signedTransactionRlpSerializationResult.isFailure()) {
+            return Result.failure(wkErrorToError(signedTransactionRlpSerializationResult.getFailure()));
         }
         
         // Return fresh signed transaction
         return Result.success(new Transaction(this.core,
-                              new Serialization(this.core, signedTransactionRlpSerializationOptional.getSuccess()),
+                              new Serialization(this.core, signedTransactionRlpSerializationResult.getSuccess()),
                               true));
     }
 
