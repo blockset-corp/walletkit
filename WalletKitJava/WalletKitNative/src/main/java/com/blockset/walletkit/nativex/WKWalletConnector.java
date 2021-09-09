@@ -240,7 +240,53 @@ public class WKWalletConnector extends PointerType {
         
         return res;
     }
-    
+
+    /** Signs the data assuming it is a validated, serialized transaction.
+     *
+     * @param transactionData The transaction to be signed
+     * @param key The key, presumed to have private key information, to sign with
+     * @return A {@link WKResult} object containing the signature buffer, or a
+     *         WalletKit native error representation.
+     */
+    public WKResult<byte[], WKWalletConnectorError>
+    signTransaction(    byte[]  transactionData,
+                        WKKey   key ) {
+
+        WKResult res;
+        Pointer keyPtr = key.getPointer();
+        SizeTByReference signedDataLenRef = new SizeTByReference();
+        IntByReference err = new IntByReference();
+
+        // First find the required buffer length for the signature.
+        Pointer signedTransactionDataPtr = WKNativeLibraryDirect.wkWalletConnectorSignTransactionData(
+                this.getPointer(),
+                transactionData,
+                new SizeT(transactionData.length),
+                keyPtr,
+                signedDataLenRef,
+                err  );
+        try {
+
+            int signatureLen = UnsignedInts.checkedCast(signedDataLenRef.getValue().intValue());
+
+            // Firstly deal with the potential directly indicated error of signing
+            if (WKWalletConnectorError.isAnError(err.getValue())) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+
+                // Secondly treat a potentially bad or incoherent signature value
+            } else if (signedTransactionDataPtr.equals(Pointer.NULL) || signatureLen == 0) {
+                res = WKResult.failure(WKWalletConnectorError.INVALID_SIGNATURE);
+
+            } else {
+                res = WKResult.success(signedTransactionDataPtr.getByteArray(0, signatureLen));
+            }
+        } finally {
+            Native.free(Pointer.nativeValue(signedTransactionDataPtr));
+        }
+
+        return res;
+    }
+
     public static Optional<WKWalletConnector> create(WKWalletManager coreManager) {
         return Optional.fromNullable(
                 WKNativeLibraryDirect.wkWalletConnectorCreate(coreManager.getPointer())

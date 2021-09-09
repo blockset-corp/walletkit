@@ -27,6 +27,10 @@ typedef enum {
     // handler methods for this particular network are not defined.
     WK_WALLET_CONNECTOR_ILLEGAL_OPERATION,
 
+    // One or more transaction arguments key-value pairs are not
+    // provided, or values are invalid
+    WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS,
+
     // ...
 
 } WKWalletConnectorError;
@@ -63,13 +67,13 @@ wkWalletConnectorGetDigest (
         size_t                  *digestLength,
         WKWalletConnectorError  *err            );
 
-/** Uses the wallet connector to sign the indicated data using the provided key
+/** Uses the wallet connector to sign the arbitrary data.
  *
  * @param connector The wallet connector object
- * @param data The input data to be signed
- * @param dataLen The length of input data
+ * @param data The input serialized transaction data to be signed
+ * @param dataLength The length of input transaction data
  * @param key The key for signing
- * @param signatureLength The length of signature created (on success > 0)
+ * @param signatureLength The length of returned signature data (on success > 0)
  * @param err An error when a failure has occurred
  * @return When successful an allocated signature buffer of length signatureLength. The caller
  *         is responsible for freeing native memory allocated here.
@@ -78,7 +82,7 @@ extern uint8_t*
 wkWalletConnectorSignData (
         WKWalletConnector       connector,
         const uint8_t           *data,
-        size_t                  dataLen,
+        size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
         WKWalletConnectorError  *err            );
@@ -111,8 +115,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
         WKWalletConnectorError  *err            );
 
 /** Uses the wallet connector provided to create a serialized transaction
- *  out of the serialized input. In the process, the input serialization is
- *  validated according to the network conventions, verifying this data is
+ *  out of the input. In the process, the input serialization is
+ *  validated according to the network conventions (TBD: CORE-1281), verifying this data is
  *  formulated correctly. In addition, whether or no the transaction is already
  *  signed, is determined.
  *
@@ -137,6 +141,27 @@ wkWalletConnectorCreateTransactionFromSerialization  (
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err           );
+
+/** Uses the wallet connector to sign data representing a
+ *  validated, serialized transaction.
+ *
+ * @param connector The wallet connector object
+ * @param transactionData The input serialized transaction data to be signed
+ * @param dataLength The length of input transaction data
+ * @param key The key for signing
+ * @param signedDataLength The length of returned signed transaction data (on success > 0)
+ * @param err An error when a failure has occurred
+ * @return When successful the signed transaction serialization of length signedDataLength. The caller
+ *         is responsible for freeing native memory allocated here.
+ */
+extern uint8_t*
+wkWalletConnectorSignTransactionData (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorError  *err            );
 
 #ifdef __cplusplus
 }

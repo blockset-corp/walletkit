@@ -30,7 +30,7 @@ typedef uint8_t*
 (*WKWalletConnectorGetDigestHandler) (
         WKWalletConnector       walletConnector,
         const uint8_t           *msg,
-        size_t                  msgLen,
+        size_t                  msgLength,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorError  *err    );
@@ -39,35 +39,48 @@ typedef uint8_t*
 (*WKWalletConnectorSignDataHandler) (
         WKWalletConnector       walletConnector,
         const uint8_t           *data,
-        size_t                  dataLen,
+        size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
         WKWalletConnectorError  *err    );
 
+/** It can be assumed that there are equal number of elements in
+ *  keys & values, so array_count() of either will be the same.
+ */
 typedef uint8_t*
 (*WKWalletConnectorCreateTransactionFromArgumentsHandler) (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         BRArrayOf (char*)       keys,
         BRArrayOf (char*)       values,
         size_t                  *serializationLength,
         WKWalletConnectorError  *err           );
 
 typedef uint8_t*
-(*WKWalletConnectorCreateTransactionFromSerialization) (
-        WKWalletConnector       connector,
+(*WKWalletConnectorCreateTransactionFromSerializationHandler) (
+        WKWalletConnector       walletConnector,
         const uint8_t           *data,
         size_t                  dataLength,
-        size_t                  *signatureLength,
+        size_t                  *serializationLength,
         WKBoolean               *isSigned,
         WKWalletConnectorError  *err            );
 
+typedef uint8_t*
+(*WKWalletConnectorSignTransactionDataHandler) (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorError  *err            );
+
 typedef struct {
-    WKWalletConnectorCreateHandler                          create;
-    WKWalletConnectorReleaseHandler                         release;
-    WKWalletConnectorGetDigestHandler                       getDigest;
-    WKWalletConnectorSignDataHandler                        sign;
-    WKWalletConnectorCreateTransactionFromArgumentsHandler  createTransactionFromArguments;
-    WKWalletConnectorCreateTransactionFromSerialization     createTransactionFromSerialization;
+    WKWalletConnectorCreateHandler                              create;
+    WKWalletConnectorReleaseHandler                             release;
+    WKWalletConnectorGetDigestHandler                           getDigest;
+    WKWalletConnectorSignDataHandler                            sign;
+    WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
+    WKWalletConnectorCreateTransactionFromSerializationHandler  createTransactionFromSerialization;
+    WKWalletConnectorSignTransactionDataHandler                 signTransactionData;
 } WKWalletConnectorHandlers;
 
 // MARK: - Connector
