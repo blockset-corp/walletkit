@@ -182,7 +182,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
 extern uint8_t*
 wkWalletConnectorCreateTransactionFromSerialization  (
         WKWalletConnector       connector,
-        uint8_t                 *data,
+        const uint8_t           *data,
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
@@ -214,4 +214,41 @@ wkWalletConnectorCreateTransactionFromSerialization  (
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
     }
     return transaction;
+}
+
+extern uint8_t*
+wkWalletConnectorSignTransactionData (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorError  *err            ) {
+
+    assert (NULL != connector           &&
+            NULL == transactionData     &&
+            NULL == dataLength          &&
+            NULL == signedDataLength    &&
+            NULL == err );
+
+        uint8_t* transaction = NULL;
+
+        *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+        const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+        if (NULL != netHandlers             &&
+            NULL != netHandlers->connector  &&
+            NULL != netHandlers->connector->signTransactionData) {
+
+            transaction =  netHandlers->connector->signTransactionData(
+                    connector,
+                    transactionData,
+                    dataLength,
+                    key,
+                    signedDataLength,
+                    err);
+        } else {
+            *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
+        }
+        return transaction;
 }

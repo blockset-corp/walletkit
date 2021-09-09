@@ -136,7 +136,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
 extern uint8_t*
 wkWalletConnectorCreateTransactionFromSerialization  (
         WKWalletConnector       connector,
-        uint8_t                 *data,
+        const uint8_t           *data,
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,

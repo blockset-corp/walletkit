@@ -11,9 +11,11 @@
 
 #include "walletkit/WKHandlersP.h"
 #include "WKETH.h"
+#include "walletkit/WKKeyP.h"
+#include "support/BRCrypto.h"
+
 #include <stdlib.h>
 
-#include "support/BRCrypto.h"
 
 
 // Several RPC methods in WalletConnect 1.0 mandate a prefix as follows
