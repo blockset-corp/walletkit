@@ -41,9 +41,11 @@ wkAddressCreateAsAVAX (BRAvalancheAddress addr) {
 
 extern WKAddress
 wkAddressCreateFromStringAsAVAX (const char *string) {
-    assert(string);
+    BRAvalancheAddress address = avalancheAddressCreateFromString (string, true, AVALANCHE_CHAIN_TYPE_X);
 
-    return wkAddressCreateAsAVAX (avalancheAddressCreateFromString (string, true, AVALANCHE_CHAIN_TYPE_X));
+    return (avalancheAddressIsEmptyAddress(address)
+            ? NULL
+            : wkAddressCreateAsAVAX(address));
 }
 
 private_extern OwnershipKept BRAvalancheAddress
@@ -57,6 +59,7 @@ wkAddressAsAVAX (WKAddress address) {
 static void
 wkAddressReleaseAVAX (WKAddress address) {
     WKAddressAVAX addressAVAX = wkAddressCoerceAVAX (address);
+    (void) addressAVAX;
 }
 
 static char *

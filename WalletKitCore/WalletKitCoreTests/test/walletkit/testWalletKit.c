@@ -31,6 +31,7 @@
 #include "bitcoin/BRBitcoinWallet.h"
 
 #include "walletkit/handlers/btc/WKBTC.h"
+#include "walletkit/handlers/avax/WKAVAX.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -41,7 +42,7 @@
 #endif
 
 ///
-/// Mark: WKAmount Tests
+/// Mark: WalletKit Amount Tests
 ///
 
 static void
@@ -101,8 +102,117 @@ runWalletKitAmountTests (void) {
     wkCurrencyGive(currency);
 }
 
+/// MARK: WalletKit Address Tests
+
+static void
+runWalletKitAddressAVAXTests (OwnershipGiven WKNetwork networkAVAX) {
+    // createAddress
+    const char *addressStringAVAX = "abc";
+    WKAddress addressAVAX = wkNetworkCreateAddress (networkAVAX, addressStringAVAX);
+    char *addressStringEncodedAVAX = wkAddressAsString(addressAVAX);
+    assert (0 == strcmp (addressStringAVAX, addressStringEncodedAVAX));
+    free (addressStringEncodedAVAX);
+    wkAddressGive (addressAVAX);
+
+    wkNetworkGive (networkAVAX);
+}
+
+static void
+runWalletKitAddressTests (void) {
+    WKNetworkListener listener = wkListenerCreateNetworkListener (NULL, NULL);
+
+    // AVAX
+    runWalletKitAddressAVAXTests (wkNetworkFindBuiltin ("avalanche-mainnet", true));
+
+ }
+
+/// MARK: WalletKit Account Tests
+
+static void
+runWalletKitAccountAVAXTests (OwnershipKept WKAccount account,
+                              OwnershipKept WKAccount accountRecovered) {
+    BRAvalancheAccount accountAVAX = (BRAvalancheAccount) wkAccountAs (account, WK_NETWORK_TYPE_AVAX);
+    BRAvalancheAccount accountRecoveredAVAX = (BRAvalancheAccount) wkAccountAs (accountRecovered, WK_NETWORK_TYPE_AVAX);
+    assert (avalancheAddressEqual (avalancheAccountGetAddress(accountAVAX, AVALANCHE_CHAIN_TYPE_X),
+                                   avalancheAccountGetAddress(accountRecoveredAVAX, AVALANCHE_CHAIN_TYPE_X)));
+    assert (avalancheAddressEqual (avalancheAccountGetAddress(accountAVAX, AVALANCHE_CHAIN_TYPE_C),
+                                   avalancheAccountGetAddress(accountRecoveredAVAX, AVALANCHE_CHAIN_TYPE_C)));
+}
+
+static void
+runWalletKitAccountTests (void) {
+    wkAccountInstall();
+
+    WKAccount account = wkAccountCreate("ginger settle marine tissue robot crane night number ramp coast roast critic",
+                                        111,
+                                        "uids-ginger");
+    char *accountIdentifier = wkAccountGetFileSystemIdentifier(account);
+    assert (111 == wkAccountGetTimestamp(account));
+    assert(0 == strcmp ("uids-ginger", wkAccountGetUids(account)));
+
+
+    size_t bytesCount;
+    uint8_t *bytes = wkAccountSerialize (account, &bytesCount);
+
+    WKAccount accountRecovered = wkAccountCreateFromSerialization (bytes, bytesCount, "uids-ginger");
+    char *accountRecoveredIdentifier = wkAccountGetFileSystemIdentifier(accountRecovered);
+    assert (111 == wkAccountGetTimestamp(accountRecovered));
+    assert (0 == strcmp ("uids-ginger", wkAccountGetUids(accountRecovered)));
+
+    assert (0 == strcmp (accountIdentifier, accountRecoveredIdentifier));
+    free (accountIdentifier);
+    free (accountRecoveredIdentifier);
+
+    //
+    runWalletKitAccountAVAXTests (account, accountRecovered);
+
+    wkAccountGive(account);
+    wkAccountGive(accountRecovered);
+}
+
+/// MARK: WalletKit Network Tests
+
+static void
+runWalletKitNetworkAVAXTests (OwnershipGiven WKNetwork networkAVAX) {
+
+    assert (WK_NETWORK_TYPE_AVAX == wkNetworkGetType(networkAVAX));
+
+    // getBlockNumber...
+    WKBlockNumber blockNumberAVAX = wkNetworkGetBlockNumberAtOrBeforeTimestamp (networkAVAX, 1);
+
+    // accountInitialized
+
+    // createHashFromString / encodeHash
+    const char *hashStringAVAX = "hash";
+    WKHash hashAVAX = wkNetworkCreateHashFromString (networkAVAX, hashStringAVAX);
+    char * hashStringNetworkEncodedAVAX = wkNetworkEncodeHash(hashAVAX);
+    assert (0 == strcmp (hashStringAVAX, hashStringNetworkEncodedAVAX));
+    free (hashStringNetworkEncodedAVAX);
+
+    char *hashStringEncodedAVAX = wkHashEncodeString(hashAVAX);
+    assert (0 == strcmp (hashStringAVAX, hashStringEncodedAVAX));
+    free (hashStringEncodedAVAX);
+    wkHashGive(hashAVAX);
+
+    wkNetworkGive (networkAVAX);
+}
+
+static void
+runWalletKitNetworkTests (void) {
+    WKNetworkListener listener = wkListenerCreateNetworkListener (NULL, NULL);
+
+    WKCount networksCount;
+    WKNetwork *networks = wkNetworkInstallBuiltins (&networksCount, listener, true);
+
+    /// AVAX
+    runWalletKitNetworkAVAXTests (wkNetworkFindBuiltin ("avalanche-mainnet", true));
+
+    for (size_t index = 0; index < networksCount; index++)
+        wkNetworkGive (networks[index]);
+    free (networks);
+}
 ///
-/// Mark: WKTransfer Tests
+/// Mark: WalletKit Transfer Tests
 ///
 typedef struct {
     const char *hash;  // reversed
@@ -1616,6 +1726,9 @@ runWalletKitTestsWithAccountAndNetwork (WKAccount account,
 extern void
 runWalletKitTests (void) {
     runWalletKitAmountTests ();
+    runWalletKitAddressTests ();
+    runWalletKitAccountTests ();
+    runWalletKitNetworkTests ();
     runWalletKitTransferTests();
     return;
 }

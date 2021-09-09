@@ -26,20 +26,31 @@
 #define AVALANCHE_ADDRESS_BYTES     (AVALANCHE_ADDRESS_BYTES_X > AVALANCHE_ADDRESS_BYTES_C ? AVALANCHE_ADDRESS_BYTES_X : AVALANCHE_ADDRESS_BYTES_C)
 
 
-// MARK: Fee Address
+static bool
+avalancheAddressHasBytes (const BRAvalancheAddress *address, uint8_t *bytes) {
+    switch (address->type) {
+        case AVALANCHE_CHAIN_TYPE_X:
+            return 0 == memcmp (address->u.x.bytes, bytes, AVALANCHE_ADDRESS_BYTES_X);
 
-static uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+        case AVALANCHE_CHAIN_TYPE_C:
+            return 0 == memcmp (address->u.c.bytes, bytes, AVALANCHE_ADDRESS_BYTES_C);
+
+        case AVALANCHE_CHAIN_TYPE_P:
+            return false;
+    }
+}
 
 static BRAvalancheAddress
-avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
+avalancheAddressCreateWithBytes (BRAvalancheChainType type, uint8_t *bytes) {
     BRAvalancheAddress address = { type };
+
     switch (type) {
         case AVALANCHE_CHAIN_TYPE_X:
-            memcpy (address.u.x.bytes, feeAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
+            memcpy (address.u.x.bytes, bytes, AVALANCHE_ADDRESS_BYTES_X);
             break;
 
         case AVALANCHE_CHAIN_TYPE_C:
-            memcpy (address.u.c.bytes, feeAddressBytes, AVALANCHE_ADDRESS_BYTES_C);
+            memcpy (address.u.c.bytes, bytes, AVALANCHE_ADDRESS_BYTES_C);
             break;
 
         case AVALANCHE_CHAIN_TYPE_P:
@@ -49,21 +60,19 @@ avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
 
     return address;
 }
+// MARK: Fee Address
+
+static uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+
+static BRAvalancheAddress
+avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
+    return avalancheAddressCreateWithBytes(type, feeAddressBytes);
+}
 
 extern bool
 avalancheAddressIsFeeAddress (BRAvalancheAddress address) {
-    switch (address.type) {
-        case AVALANCHE_CHAIN_TYPE_X:
-            return 0 == memcmp (address.u.x.bytes, feeAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
-
-        case AVALANCHE_CHAIN_TYPE_C:
-            return 0 == memcmp (address.u.c.bytes, feeAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
-
-        case AVALANCHE_CHAIN_TYPE_P:
-            return false;
-    }
+    return avalancheAddressHasBytes (&address, feeAddressBytes);
 }
-
 
 // MARK: - Unknown Address
 
@@ -71,36 +80,26 @@ static uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
 
 static BRAvalancheAddress
 avalancheAddressCreateUnknownAddress(BRAvalancheChainType type) {
-    BRAvalancheAddress address = { type };
-    switch (type) {
-        case AVALANCHE_CHAIN_TYPE_X:
-            memcpy (address.u.x.bytes, unknownAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
-            break;
-
-        case AVALANCHE_CHAIN_TYPE_C:
-            memcpy (address.u.c.bytes, unknownAddressBytes, AVALANCHE_ADDRESS_BYTES_C);
-            break;
-
-        case AVALANCHE_CHAIN_TYPE_P:
-            assert (false);
-            break;
-    }
-
-    return address;
+    return avalancheAddressCreateWithBytes (type, unknownAddressBytes);
 }
 
 extern bool
 avalancheAddressIsUnknownAddress (BRAvalancheAddress address) {
-    switch (address.type) {
-        case AVALANCHE_CHAIN_TYPE_X:
-            return 0 == memcmp (address.u.x.bytes, unknownAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
+    return avalancheAddressHasBytes (&address, unknownAddressBytes);
+}
 
-        case AVALANCHE_CHAIN_TYPE_C:
-            return 0 == memcmp (address.u.c.bytes, unknownAddressBytes, AVALANCHE_ADDRESS_BYTES_X);
+// MARK: - Empty Address
 
-        case AVALANCHE_CHAIN_TYPE_P:
-            return false;
-    }
+static uint8_t emptyAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+
+extern bool
+avalancheAddressIsEmptyAddress (BRAvalancheAddress address) {
+    return avalancheAddressHasBytes (&address, emptyAddressBytes);
+ }
+
+static BRAvalancheAddress
+avalancheAddressCreateEmptyAddress(BRAvalancheChainType type) {
+    return avalancheAddressCreateWithBytes(type, emptyAddressBytes);
 }
 
 // MARK: - Address As String
@@ -220,9 +219,10 @@ avalancheAddressStringToAddressX (const char *input) {
     BRAvalancheAddress address = { AVALANCHE_CHAIN_TYPE_X };
 
     size_t addressBytesCount = AVALANCHE_ADDRESS_BYTES_X;
-    avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, "avax", input);
-    
-    return address;
+
+    bool success = avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, "avax", input);
+
+    return (success ? address : avalancheAddressCreateEmptyAddress (AVALANCHE_ADDRESS_BYTES_X));
 }
 
 static BRAvalancheAddress

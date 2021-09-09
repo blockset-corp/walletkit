@@ -70,7 +70,6 @@ extern BRAvalancheAddress
 avalancheAddressCreateFromString(const char * avalancheAddressString, bool strict, BRAvalancheChainType type);
 
 
-#if 0
 /**
  * Check is this address is the
  *
@@ -83,8 +82,9 @@ avalancheAddressIsFeeAddress (BRAvalancheAddress address);
 
 extern bool
 avalancheAddressIsUnknownAddress (BRAvalancheAddress address);
-#endif
 
+extern bool
+avalancheAddressIsEmptyAddress (BRAvalancheAddress);
 
 #if 0/**
  * Get the size of the raw bytes for this address

@@ -83,7 +83,6 @@ wkNetworkIsAccountInitializedAVAX (WKNetwork network,
     return AS_WK_BOOLEAN (true);
 }
 
-
 static uint8_t *
 wkNetworkGetAccountInitializationDataAVAX (WKNetwork network,
                                               WKAccount account,
@@ -116,21 +115,14 @@ wkNetworkInitializeAccountAVAX (WKNetwork network,
 
 static WKHash
 wkNetworkCreateHashFromStringAVAX (WKNetwork network,
-                                      const char *string) {
+                                   const char *string) {
     return wkHashCreateFromStringAsAVAX (string);
 }
 
 static char *
-wkNetworkEncodeHashAVAX (WKHash hash) {
-#if 0
-    size_t len = BRBase58CheckEncode (NULL, 0, hash->bytes, AVALANCHE_HASH_BYTES);
-    if (0 == len) return NULL;
-
-    char * string = calloc (1, len);
-    BRBase58CheckEncode (string, len, hash->bytes, AVALANCHE_HASH_BYTES);
-    return string;
-#endif
-    return NULL;
+wkNetworkCreateStringFromHashAVAX (WKHash hash) {
+    BRAvalancheHash hashAVAX = wkHashAsAVAX (hash);
+    return avalancheHashToString(hashAVAX);
 }
 
 // MARK: - Handlers
@@ -144,6 +136,6 @@ WKNetworkHandlers wkNetworkHandlersAVAX = {
     wkNetworkGetAccountInitializationDataAVAX,
     wkNetworkInitializeAccountAVAX,
     wkNetworkCreateHashFromStringAVAX,
-    wkNetworkEncodeHashAVAX
+    wkNetworkCreateStringFromHashAVAX
 };
 
