@@ -7,8 +7,6 @@
  */
 package com.blockset.walletkit.brd.systemclient;
 
-import android.support.annotation.Nullable;
-
 import com.blockset.walletkit.errors.QueryError;
 
 import java.util.Map;
@@ -39,7 +37,6 @@ public class QueryResponseError extends QueryError {
         return jsonError;
     }
 
-    @Nullable
     @Override
     public String getMessage() {
         return super.getMessage() + ", Message: " + json.toString();
