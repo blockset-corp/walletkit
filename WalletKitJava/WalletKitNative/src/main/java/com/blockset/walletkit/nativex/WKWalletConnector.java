@@ -60,13 +60,8 @@ public class WKWalletConnector extends PointerType {
             int digestLen = UnsignedInts.checkedCast(digestLenRef.getValue().intValue());
 
             // Firstly deal with the potential of an indicated error
-            if (WKWalletConnectorError.isAnError(err.getValue())) {
+            if (digestPtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
-
-            // Secondly treat a potentially bad or incoherent digest value
-            } else if (digestPtr.equals(Pointer.NULL) || digestLen == 0) {
-                res = WKResult.failure(WKWalletConnectorError.INVALID_DIGEST);
-
             } else {
                 res = WKResult.success(digestPtr.getByteArray(0, digestLen));
             }
@@ -105,13 +100,8 @@ public class WKWalletConnector extends PointerType {
             int signatureLen = UnsignedInts.checkedCast(signatureLenRef.getValue().intValue());
 
             // Firstly deal with the potential directly indicated error of signing
-            if (WKWalletConnectorError.isAnError(err.getValue())) {
+            if (signaturePtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
-
-            // Secondly treat a potentially bad or incoherent signature value
-            } else if (signaturePtr.equals(Pointer.NULL) || signatureLen == 0) {
-                res = WKResult.failure(WKWalletConnectorError.INVALID_SIGNATURE);
-
             } else {
                 res = WKResult.success(signaturePtr.getByteArray(0, signatureLen));
             }
@@ -158,16 +148,8 @@ public class WKWalletConnector extends PointerType {
             int serializationLen = UnsignedInts.checkedCast(serLengthRef.getValue().intValue());
 
             // Firstly deal with explicity communicated issues via error value
-            if (WKWalletConnectorError.isAnError(err.getValue())) {
+            if (serializationPtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
-
-            // There should never be a null return value or a 0-length serialization for a
-            // valid input. A particular native impl may communicate an invalid transaction
-            // serialization for their own reasons; they may even indicate that error for precisely
-            // this reason, but its still worthwhile to impose this general restriction.
-            } else if (serializationPtr.equals(Pointer.NULL) || serializationLen == 0) {
-                res = WKResult.failure(WKWalletConnectorError.INVALID_SERIALIZATION);
-
             } else {
                 res = WKResult.success(serializationPtr.getByteArray(0, serializationLen));
             }
@@ -222,12 +204,8 @@ public class WKWalletConnector extends PointerType {
         try {
             int serializationLen = UnsignedInts.checkedCast(serLengthRef.getValue().intValue());
 
-            if (WKWalletConnectorError.isAnError(err.getValue())) {
+            if (serializationPtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
-
-            } else if (serializationPtr.equals(Pointer.NULL) || serializationLen == 0) {
-                res = WKResult.failure(WKWalletConnectorError.INVALID_SERIALIZATION);
-
             } else {
                 res = WKResult.success(
                         new CreateTransactionFromSerializationResult(
@@ -270,13 +248,8 @@ public class WKWalletConnector extends PointerType {
             int signatureLen = UnsignedInts.checkedCast(signedDataLenRef.getValue().intValue());
 
             // Firstly deal with the potential directly indicated error of signing
-            if (WKWalletConnectorError.isAnError(err.getValue())) {
+            if (signedTransactionDataPtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
-
-                // Secondly treat a potentially bad or incoherent signature value
-            } else if (signedTransactionDataPtr.equals(Pointer.NULL) || signatureLen == 0) {
-                res = WKResult.failure(WKWalletConnectorError.INVALID_SIGNATURE);
-
             } else {
                 res = WKResult.success(signedTransactionDataPtr.getByteArray(0, signatureLen));
             }

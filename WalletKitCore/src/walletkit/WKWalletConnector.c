@@ -15,12 +15,12 @@
 /** Creates a shallow copy of strings in the input strs 'WordList' into
  *  a BRArray of c-strings.
  */
-static BRArrayOf(char*)
+static BRArrayOf(const char*)
 arrayOfStringFromWordlist(
-    char    **strs,
-    size_t  stringsCount    ) {
+    const char  **strs,
+    size_t      stringsCount    ) {
 
-    BRArrayOf(char*) arrayOfStrs;
+    BRArrayOf(const char*) arrayOfStrs;
 
     array_new(arrayOfStrs, stringsCount);
     array_add_array(arrayOfStrs, strs, stringsCount);
@@ -70,16 +70,16 @@ wkWalletConnectorGetDigest (
         size_t                  msgLen,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
-        WKWalletConnectorError  *err            ) {
+        WKWalletConnectorStatus *status            ) {
 
     assert (NULL != connector       &&
             NULL != msg             &&
             NULL != digestLength    &&
-            NULL != err );
+            NULL != status );
 
     uint8_t* digest = NULL;
 
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
     const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
 
     if (NULL != netHandlers             &&
@@ -91,9 +91,13 @@ wkWalletConnectorGetDigest (
                                                     msgLen,
                                                     addPrefix,
                                                     digestLength,
-                                                    err);
+                                                    status);
+
+        if (NULL == digest && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+            *status = WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST;
+
     } else {
-        *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
     }
     return digest;
 }
@@ -105,17 +109,17 @@ wkWalletConnectorSignData   (
         size_t                    dataLen,
         WKKey                     key,
         size_t                    *signatureLength,
-        WKWalletConnectorError    *err            ) {
+        WKWalletConnectorStatus  *status            ) {
 
     assert (NULL != connector       &&
             NULL != data            &&
             NULL != key             &&
             NULL != signatureLength &&
-            NULL != err );
+            NULL != status );
 
     uint8_t* signedData = NULL;
 
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
     const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
 
     if (NULL != netHandlers             &&
@@ -127,9 +131,13 @@ wkWalletConnectorSignData   (
                                                    dataLen,
                                                    key,
                                                    signatureLength,
-                                                   err);
+                                                   status);
+
+        if (NULL == signedData && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+            *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
+
     } else {
-        *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
     }
     return signedData;
 }
@@ -141,22 +149,22 @@ wkWalletConnectorCreateTransactionFromArguments  (
         const char                **values,
         size_t                    keyValuePairsCount,
         size_t                    *serializationLength,
-        WKWalletConnectorError    *err            ) {
+        WKWalletConnectorStatus *status            ) {
 
     assert (NULL != connector           &&
             NULL != keys                &&
             NULL != values              &&
             NULL != serializationLength &&
-            NULL != err );
+            NULL != status );
 
     uint8_t* unsignedTransaction = NULL;
 
     // Transform the 'WordList' based keys and values into BRArrayOf which is more
     // natural for handlers.
-    BRArrayOf(char*) arrayOfKeys = arrayOfStringFromWordlist(keys, keyValuePairsCount);
-    BRArrayOf(char*) arrayOfValues = arrayOfStringFromWordlist(values, keyValuePairsCount);
+    BRArrayOf(const char*) arrayOfKeys = arrayOfStringFromWordlist(keys, keyValuePairsCount);
+    BRArrayOf(const char*) arrayOfValues = arrayOfStringFromWordlist(values, keyValuePairsCount);
 
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
     const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
 
     if (NULL != netHandlers             &&
@@ -168,9 +176,13 @@ wkWalletConnectorCreateTransactionFromArguments  (
                 keys,
                 values,
                 serializationLength,
-                err);
+                status);
+
+        if (NULL == unsignedTransaction && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+            *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION;
+
     } else {
-        *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
     }
 
     array_free (arrayOfKeys);
@@ -182,21 +194,21 @@ wkWalletConnectorCreateTransactionFromArguments  (
 extern uint8_t*
 wkWalletConnectorCreateTransactionFromSerialization  (
         WKWalletConnector       connector,
-        uint8_t                 *data,
+        const uint8_t           *data,
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
-        WKWalletConnectorError  *err           ) {
+        WKWalletConnectorStatus *status           ) {
 
     assert (NULL != connector           &&
             NULL == data                &&
             NULL == serializationLength &&
             NULL == isSigned            &&
-            NULL == err );
+            NULL == status );
 
     uint8_t* transaction = NULL;
 
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
     const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
 
     if (NULL != netHandlers             &&
@@ -209,9 +221,53 @@ wkWalletConnectorCreateTransactionFromSerialization  (
                 dataLength,
                 serializationLength,
                 isSigned,
-                err);
+                status);
+
+        if (NULL == transaction && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+            *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION;
+
     } else {
-        *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
     }
     return transaction;
+}
+
+extern uint8_t*
+wkWalletConnectorSignTransactionData (
+        WKWalletConnector       connector,
+        const uint8_t           *transactionData,
+        size_t                  dataLength,
+        WKKey                   key,
+        size_t                  *signedDataLength,
+        WKWalletConnectorStatus *status            ) {
+
+    assert (NULL != connector           &&
+            NULL == transactionData     &&
+            NULL == signedDataLength    &&
+            NULL == status );
+
+        uint8_t* transaction = NULL;
+
+        *status = WK_WALLET_CONNECTOR_STATUS_OK;
+        const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+        if (NULL != netHandlers             &&
+            NULL != netHandlers->connector  &&
+            NULL != netHandlers->connector->signTransactionData) {
+
+            transaction =  netHandlers->connector->signTransactionData(
+                    connector,
+                    transactionData,
+                    dataLength,
+                    key,
+                    signedDataLength,
+                    status);
+
+            if (NULL == transaction && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+                *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
+
+        } else {
+            *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
+        }
+        return transaction;
 }

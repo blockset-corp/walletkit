@@ -348,16 +348,17 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         switch (error) {
             case UNSUPPORTED_CONNECTOR:
                 return new WalletConnectorError.UnsupportedConnector();
+            case ILLEGAL_OPERATION:
+                return new WalletConnectorError.IllegalOperation();
+            case INVALID_TRANSACTION_ARGUMENTS:
+                return new WalletConnectorError.InvalidTransactionArguments();
             case INVALID_DIGEST:
                 return new WalletConnectorError.InvalidDigest();
             case INVALID_SIGNATURE:
                 return new WalletConnectorError.InvalidSignature();
             case INVALID_SERIALIZATION:
-                return new WalletConnectorError.InvalidSerialization();
+                return new WalletConnectorError.InvalidTransactionSerialization();
         }
         return null;
     }
-
-    /* package */
- //   WKWalletConnector getWKWalletConnector() { return core; }
 }

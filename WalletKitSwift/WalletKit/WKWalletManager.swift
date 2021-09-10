@@ -507,7 +507,9 @@ public final class ExportablePaperWallet {
 ///
 
 public enum WalletConnectorError: Error {
+    
     case unsupportedConnector
+    case illegalOperation
     case unknownEntity
     case invalidTransactionArguments
     case invalidTransactionSerialization
@@ -515,15 +517,23 @@ public enum WalletConnectorError: Error {
     case unrecoverableKey
     case unsignedTransaction
     case previouslySignedTransaction
-
-    // Submit errors... enumerate all of these... or `case submitFailed(SubmitError)`
+    case invalidDigest
+    case invalidSignature
     case submitFailed
     // ...
 
-    internal init (core: WKWalletConnectorError) {
+    internal init (core: WKWalletConnectorStatus) {
         switch core {
-            case WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR: self = .unsupportedConnector
-            default: preconditionFailure()
+        case WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR:          self = .unsupportedConnector
+        case WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION:              self = .illegalOperation
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS:  self = .invalidTransactionArguments
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE:              self = .invalidSignature
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
+    
+        // Not an error and should never be passed to this enumeration
+        case WK_WALLET_CONNECTOR_STATUS_OK: preconditionFailure()
+        default: preconditionFailure()
         }
     }
 }
@@ -562,7 +572,8 @@ public final class WalletConnector {
     /// Sign arbitrary data
     ///
     /// - Parameter message: Arbitrary data to be signed
-    /// - Parameter key: A private key 
+    /// - Parameter key: A private key
+    /// - Parameter prefix: Indicates to include an optional prefix in the signature
     ///
     /// - Returns: On success a pair {Digest,Signature}.  The digest will exist if the connector's
     /// signing algorithm is recoverable.  On failure a WalletConnectorError of:
@@ -571,8 +582,47 @@ public final class WalletConnector {
     public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> {
         guard key.hasSecret else { return Result.failure(.invalidKeyForSigning) }
 
-        // if prefix - prepend "\x19Ethereum..." + data.count + data
-        return Result.failure(.unsupportedConnector)
+        return message.withUnsafeBytes { (messageBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
+            let messageAddr = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let messageLength = messageBytes.count
+            let corePrefix : WKBoolean = (prefix ? WK_TRUE : WK_FALSE)
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+            
+            var digestLength: size_t = 0
+            let digestBytes = wkWalletConnectorGetDigest(self.core,
+                                                         messageAddr,
+                                                         messageLength,
+                                                         corePrefix,
+                                                         &digestLength,
+                                                         &status   )
+            defer { wkMemoryFree(digestBytes) }
+            if (digestBytes == nil) {
+                return Result.failure(WalletConnectorError(core: status))
+            }
+            
+            let digestData = Data(bytes: digestBytes!, count: digestLength)
+            return digestData.withUnsafeBytes { (digestDataBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
+                let digestDataAddr = digestDataBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+                let digestDataLength = digestDataBytes.count
+                var signatureLength: size_t = 0
+                let signatureBytes = wkWalletConnectorSignData(self.core,
+                                                               digestDataAddr,
+                                                               digestDataLength,
+                                                               key.core,
+                                                               &signatureLength,
+                                                               &status )
+                defer { wkMemoryFree(signatureBytes) }
+                if (signatureBytes == nil) {
+                    return Result.failure(WalletConnectorError(core: status))
+                }
+                
+                let signatureData = Data(bytes: signatureBytes!, count: signatureLength)
+                let digest = Digest(core: self.core, data32: digestData)
+                let signature = Signature(core: self.core, data: signatureData)
+                
+                return Result.success((digest: digest, signature: signature))
+            }
+        }
     }
 
     ///
@@ -614,8 +664,35 @@ public final class WalletConnector {
     ///      TBD
     ///
     public func createTransaction (arguments: Dictionary<String,String>) -> Result<Transaction, WalletConnectorError> {
-        // return wkWalletConnectCreateTransactionFromArguments (...).map { Transaction (core: $0) }
-        return Result.failure(.invalidTransactionArguments)
+        
+        let keys = Array(arguments.keys)
+        let values = Array(arguments.values)
+        var serializationLength :size_t = 0
+        var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+        
+        // See WKAccount.swift validatePhrase which passes an array of words as
+        // const char *words[] through wkAccountValidatePaperKey
+        var keysStrs = keys.map {UnsafePointer<Int8> (strdup($0))}
+        var valuesStrs = values.map {UnsafePointer<Int8> (strdup($0))}
+        defer {
+            keysStrs.forEach { wkMemoryFree (UnsafeMutablePointer (mutating: $0))}
+            valuesStrs.forEach { wkMemoryFree (UnsafeMutablePointer (mutating: $0))}
+        }
+        
+        let serializationBytes = wkWalletConnectorCreateTransactionFromArguments(self.core,
+                                                                                 &(keysStrs),
+                                                                                 &(valuesStrs),
+                                                                                 keys.count,
+                                                                                 &serializationLength,
+                                                                                 &status)
+                                                      
+        defer { wkMemoryFree(serializationBytes) }
+        if (serializationBytes == nil) {
+            return Result.failure(WalletConnectorError(core: status))
+        }
+        let serializationData = Data(bytes: serializationBytes!, count: serializationLength)
+        let serialization = Serialization(core: self.core, data: serializationData)
+        return Result.success(Transaction(core: self.core, isSigned: false, serialization: serialization))
     }
 
     ///
@@ -630,8 +707,30 @@ public final class WalletConnector {
     public func createTransaction (serialization: Serialization) -> Result<Transaction, WalletConnectorError> {
         guard core == serialization.core else { return Result.failure(.unknownEntity) }
 
-        // return wkWalletConnectCreateTransactionFromSerialization (...).map { Transaction (core: $0) }
-        return Result.failure(.invalidTransactionSerialization)
+        return serialization.data.withUnsafeBytes { (serializationBytes: UnsafeRawBufferPointer) -> Result<Transaction, WalletConnectorError> in
+            
+            let serializationBytesAddr = serializationBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let serializationBytesLength = serializationBytes.count
+            var serializationLength : size_t = 0
+            var isSignedCore : WKBoolean = WK_FALSE
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+            
+            let serializedBytes = wkWalletConnectorCreateTransactionFromSerialization(self.core,
+                                                                                      serializationBytesAddr,
+                                                                                      serializationBytesLength,
+                                                                                      &serializationLength,
+                                                                                      &isSignedCore,
+                                                                                      &status           );
+            defer { wkMemoryFree(serializedBytes) }
+            if (serializedBytes == nil) {
+                return Result.failure(WalletConnectorError(core: status))
+            }
+            let serializationData = Data(bytes: serializedBytes!, count: serializationLength)
+            let serialization = Serialization(core: self.core, data: serializationData)
+            return Result.success(Transaction(core: self.core,
+                                              isSigned: (isSignedCore == WK_TRUE ? true : false),
+                                              serialization: serialization))
+        }
     }
 
     ///
@@ -653,8 +752,30 @@ public final class WalletConnector {
         guard key.hasSecret            else { return Result.failure(.invalidKeyForSigning) }
         guard !transaction.isSigned    else { return Result.failure(.previouslySignedTransaction) }
         
-        // ?? and provide `func recover (transaction: Transaction, signature: Data) -> Key`
-        return Result.failure(.invalidKeyForSigning)
+        return transaction.serialization.data.withUnsafeBytes { (transactionBytes: UnsafeRawBufferPointer) -> Result<Transaction, WalletConnectorError> in
+            
+            let transactionBytesAddr = transactionBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let transactionBytesLength = transactionBytes.count
+            var serializationLength : size_t = 0
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+            
+            let signedTransactionBytes = wkWalletConnectorSignTransactionData(self.core,
+                                                                              transactionBytesAddr,
+                                                                              transactionBytesLength,
+                                                                              key.core,
+                                                                              &serializationLength,
+                                                                              &status)
+            defer { wkMemoryFree(signedTransactionBytes) }
+            if (signedTransactionBytes == nil) {
+                return Result.failure(WalletConnectorError(core: status))
+            }
+            
+            let signedSerializationData = Data(bytes: signedTransactionBytes!, count: serializationLength)
+            let signedSerialization = Serialization(core: self.core, data: signedSerializationData)
+            return Result.success(Transaction(core: self.core,
+                                              isSigned: true,
+                                              serialization:signedSerialization))
+        }
     }
 
     ///
