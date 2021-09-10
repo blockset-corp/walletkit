@@ -63,6 +63,15 @@ wkWalletConnectorRelease (WKWalletConnector connector) {
     free (connector);
 }
 
+/// N.B. WalletConnector function implementations take the approach
+///      of returning the sought after object and indicating any possible
+///      error through 'err' argument.
+///      A null return object is never expected and so is caught and
+///      indicated through a general WK Error suitable to the method.
+///      However we do not preclude the possibility that the handler
+///      implementation may indicate a more refined error definition,
+///      thus a specialized error set supersedes a general error for
+///      unexpected return value.
 extern uint8_t*
 wkWalletConnectorGetDigest (
         WKWalletConnector       connector,
@@ -92,6 +101,10 @@ wkWalletConnectorGetDigest (
                                                     addPrefix,
                                                     digestLength,
                                                     err);
+
+        if (NULL == digest && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+            *err = WK_WALLET_CONNECTOR_INVALID_DIGEST;
+
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
     }
@@ -128,6 +141,10 @@ wkWalletConnectorSignData   (
                                                    key,
                                                    signatureLength,
                                                    err);
+
+        if (NULL == signedData && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+            *err = WK_WALLET_CONNECTOR_INVALID_SIGNATURE;
+
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
     }
@@ -169,6 +186,11 @@ wkWalletConnectorCreateTransactionFromArguments  (
                 values,
                 serializationLength,
                 err);
+
+        if (NULL == unsignedTransaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+            *err = WK_WALLET_CONNECTOR_INVALID_SERIALIZATION;
+
+
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
     }
@@ -210,6 +232,10 @@ wkWalletConnectorCreateTransactionFromSerialization  (
                 serializationLength,
                 isSigned,
                 err);
+
+        if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+            *err = WK_WALLET_CONNECTOR_INVALID_SERIALIZATION;
+
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
     }
@@ -247,6 +273,10 @@ wkWalletConnectorSignTransactionData (
                     key,
                     signedDataLength,
                     err);
+
+            if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+                *err = WK_WALLET_CONNECTOR_INVALID_SIGNATURE;
+
         } else {
             *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
         }

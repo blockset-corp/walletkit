@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+/// @brief An undefined WalletConnect error indicates no error has been set
+#define WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED  ((WKWalletConnectorError) -1)
+
 // MARK: - Connector Handlers
 
 typedef WKWalletConnector

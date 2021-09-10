@@ -507,7 +507,6 @@ public final class ExportablePaperWallet {
 ///
 
 public enum WalletConnectorError: Error {
-    case undefined /* WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED */
     
     case unsupportedConnector
     case illegalOperation
@@ -518,20 +517,19 @@ public enum WalletConnectorError: Error {
     case unrecoverableKey
     case unsignedTransaction
     case previouslySignedTransaction
-    
     case invalidDigest
     case invalidSignature
-    
-    // Submit errors... enumerate all of these... or `case submitFailed(SubmitError)`
     case submitFailed
     // ...
 
     internal init (core: WKWalletConnectorError) {
         switch core {
-            case WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR:   self = .unsupportedConnector
-            case WK_WALLET_CONNECTOR_ILLEGAL_OPERATION:             self = .illegalOperation
-            case WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS: self = .invalidTransactionArguments
-                
+        case WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR:   self = .unsupportedConnector
+        case WK_WALLET_CONNECTOR_ILLEGAL_OPERATION:             self = .illegalOperation
+        case WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS: self = .invalidTransactionArguments
+        case WK_WALLET_CONNECTOR_INVALID_SIGNATURE:             self = .invalidSignature
+        case WK_WALLET_CONNECTOR_INVALID_SERIALIZATION:         self = .invalidTransactionSerialization
+        case WK_WALLET_CONNECTOR_INVALID_DIGEST:                self = .invalidDigest
             default: preconditionFailure()
         }
     }

@@ -31,12 +31,17 @@ typedef enum {
     // provided, or values are invalid
     WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS,
 
+    // A general error to describe the digest creation has failed
+    WK_WALLET_CONNECTOR_INVALID_DIGEST,
+
+    // A general error indicating the signature has failed
+    WK_WALLET_CONNECTOR_INVALID_SIGNATURE,
+
+    // A general error specifying a failure to produce serialization
+    WK_WALLET_CONNECTOR_INVALID_SERIALIZATION
     // ...
 
 } WKWalletConnectorError;
-
-/// @brief An undefined WalletConnect error is no error at all (ie Success)
-#define WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED  ((WKWalletConnectorError) -1)
 
 typedef struct WKWalletConnectorRecord *WKWalletConnector;
 
@@ -90,10 +95,6 @@ wkWalletConnectorSignData (
 /** Uses the wallet connector provided to organize the key-value pairs
  *  into a suitable serialized transaction.
  *
- * (Aside, to be removed)
- * Creates a transaction (e.g. ETHTransactionCreate()) that will verify
- * the keys and values, and serializes the transaction.
- *
  * @param connector The wallet connector object
  * @param keys A NULL terminated series of NULL terminated c-strings.
  * @param values A NULL terminated series of NULL terminated c-strings, corresponding to strings
@@ -119,10 +120,6 @@ wkWalletConnectorCreateTransactionFromArguments  (
  *  validated according to the network conventions (TBD: CORE-1281), verifying this data is
  *  formulated correctly. In addition, whether or no the transaction is already
  *  signed, is determined.
- *
- * (Aside, to be removed)
- * Decodes the data into a native, network specific Transaction object (e.g. ETHTransactionRLPDecode())
- * and verifies the composition thereby. Will re-serialize the data from this transaction object.
  *
  * @param connector The wallet connector object
  * @param data The input serialized transaction data

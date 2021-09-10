@@ -23,6 +23,11 @@ public abstract class WalletConnectorError extends Exception {
         public UnsupportedConnector(String message) { super(message); }
         public UnsupportedConnector(Throwable throwable) { super(throwable); }
     }
+    public static class IllegalOperation extends WalletConnectorError {
+        public IllegalOperation() { super(); }
+        public IllegalOperation(String message) { super(message); }
+        public IllegalOperation(Throwable throwable) { super(throwable); }
+    }
     public static class UnknownEntity extends WalletConnectorError {
         public UnknownEntity() { super(); }
         public UnknownEntity(String message) { super(message); }
@@ -58,11 +63,6 @@ public abstract class WalletConnectorError extends Exception {
         public PreviouslySignedTransaction(String message) { super(message); }
         public PreviouslySignedTransaction(Throwable throwable) { super(throwable); }
     }
-    public static class SubmitFailed extends WalletConnectorError {
-        public SubmitFailed() { super(); }
-        public SubmitFailed(String message) { super(message); }
-        public SubmitFailed(Throwable throwable) { super(throwable); }
-    }
     public static class InvalidDigest extends WalletConnectorError {
         public InvalidDigest() { super(); }
         public InvalidDigest(String message) { super(message); }
@@ -73,9 +73,9 @@ public abstract class WalletConnectorError extends Exception {
         public InvalidSignature(String message) { super(message); }
         public InvalidSignature(Throwable throwable) { super(throwable); }
     }
-    public static class InvalidSerialization extends WalletConnectorError {
-        public InvalidSerialization() { super(); }
-        public InvalidSerialization(String message) { super(message); }
-        public InvalidSerialization(Throwable throwable) { super(throwable); }
+    public static class SubmitFailed extends WalletConnectorError {
+        public SubmitFailed() { super(); }
+        public SubmitFailed(String message) { super(message); }
+        public SubmitFailed(Throwable throwable) { super(throwable); }
     }
 }
