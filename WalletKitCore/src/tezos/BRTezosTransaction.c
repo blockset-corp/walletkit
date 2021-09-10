@@ -30,7 +30,7 @@ struct BRTezosTransactionRecord {
     const char * protocol; // protocol name
     const char * branch; // hash of head block
     
-    WKData signedBytes;
+    BRData signedBytes;
 };
 
 struct BRTezosSignatureRecord {
@@ -52,7 +52,7 @@ tezosTransactionCreateInternal (BRTezosHash hash,
     transaction->protocol = NULL;
     transaction->branch   = NULL;
 
-    transaction->signedBytes = wkDataCreateEmpty();
+    transaction->signedBytes = dataCreateEmpty();
     
     return transaction;
 }
@@ -78,7 +78,7 @@ tezosTransactionClone (BRTezosTransaction transaction) {
     result->protocol = transaction->protocol;
     result->branch   = transaction->branch;
 
-    result->signedBytes = wkDataClone (transaction->signedBytes);
+    result->signedBytes = dataClone (transaction->signedBytes);
 
     return result;
 }
@@ -91,7 +91,7 @@ extern void tezosTransactionFree (BRTezosTransaction transaction)
     transaction->protocol = NULL;
     transaction->branch   = NULL;
 
-    wkDataFree (transaction->signedBytes);
+    dataFree (transaction->signedBytes);
 
     memset (transaction, 0, sizeof (struct BRTezosTransactionRecord));
     free (transaction);
@@ -124,7 +124,7 @@ tezosTransactionAssignHash(BRTezosTransaction tx) {
     memcpy(&(tx->hash.bytes[sizeof(prefix)]), hash, sizeof(hash));
 }
 
-static WKData
+static BRData
 tezosTransactionSerialize (BRTezosTransaction transaction,
                            BRTezosHash lastBlockHash) {
     BRTezosOperation operations[2] = {
@@ -144,15 +144,15 @@ tezosTransactionSerializeForFeeEstimation (BRTezosTransaction transaction,
     assert (transaction);
     assert (account);
     
-    wkDataFree(transaction->signedBytes);
+    dataFree(transaction->signedBytes);
     
-    WKData unsignedBytes = tezosTransactionSerialize(transaction, lastBlockHash);
-    WKData signature     = wkDataNew(TEZOS_SIGNATURE_BYTES); // empty signature
+    BRData unsignedBytes = tezosTransactionSerialize(transaction, lastBlockHash);
+    BRData signature     = dataNew(TEZOS_SIGNATURE_BYTES); // empty signature
 
-    transaction->signedBytes = wkDataConcatTwo (unsignedBytes, signature);
+    transaction->signedBytes = dataConcatTwo (unsignedBytes, signature);
 
-    wkDataFree (unsignedBytes);
-    wkDataFree (signature);
+    dataFree (unsignedBytes);
+    dataFree (signature);
 
     //    tezosFeeBasisShow (transaction->feeBasis, "XTZ SerializeForFeeEstimation");
 }
@@ -165,13 +165,15 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     assert (transaction);
     assert (account);
     
-    wkDataFree(transaction->signedBytes);
+    dataFree(transaction->signedBytes);
     
-    WKData unsignedBytes = tezosTransactionSerialize (transaction, lastBlockHash);
-    WKData signature     = tezosAccountSignData(account, unsignedBytes, seed);
+    BRData unsignedBytes = tezosTransactionSerialize (transaction, lastBlockHash);
+    BRData signature     = tezosAccountSignData(account, unsignedBytes, seed);
     assert(TEZOS_SIGNATURE_BYTES == signature.size);
 
-    transaction->signedBytes = wkDataConcatTwo (unsignedBytes, signature);
+    transaction->signedBytes = dataConcatTwo (unsignedBytes, signature);
+    dataFree (unsignedBytes);
+    dataFree (signature);
 
     if (transaction->signedBytes.size > 0) {
         tezosTransactionAssignHash(transaction);

@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd.systemclient;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.common.base.Optional;
 
 import java.util.List;

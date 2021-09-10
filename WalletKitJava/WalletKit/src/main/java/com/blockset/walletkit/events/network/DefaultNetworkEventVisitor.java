@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.events.network;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public abstract class DefaultNetworkEventVisitor<T> implements NetworkEventVisitor<T> {
 

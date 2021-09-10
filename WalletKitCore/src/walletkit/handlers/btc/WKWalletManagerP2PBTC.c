@@ -18,6 +18,7 @@
 #include "walletkit/WKWalletSweeperP.h"
 
 #include "bitcoin/BRBitcoinPeerManager.h"
+#include "support/BRData.h"
 
 /// BRPeerManager Callbacks
 static void wkWalletManagerBTCSyncStarted (void *info);
@@ -91,7 +92,7 @@ wkClientP2PManagerConnectBTC (WKClientP2PManager baseManager,
         uint16_t port    = 0;
 
         if (NULL != peer) {
-            WKData16 addrAsInt = wkPeerGetAddrAsInt(peer);
+            WKPeerAddrAsInt addrAsInt = wkPeerGetAddrAsInt(peer);
             memcpy (address.u8, addrAsInt.data, sizeof (addrAsInt.data));
             port = wkPeerGetPort (peer);
         }

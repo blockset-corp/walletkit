@@ -169,6 +169,7 @@ wkWalletCreateTransferETH (WKWallet  wallet,
 
     BREthereumToken    ethToken         = walletETH->ethToken;
     BREthereumFeeBasis ethFeeBasis      = wkFeeBasisAsETH (estimatedFeeBasis);
+    BREthereumGas      ethGasLimit      = ethFeeBasisGetGasLimit(ethFeeBasis);
     BREthereumAddress  ethSourceAddress = ethAccountGetPrimaryAddress (walletETH->ethAccount);
     BREthereumAddress  ethTargetAddress = wkAddressAsETH (target);
 
@@ -189,7 +190,9 @@ wkWalletCreateTransferETH (WKWallet  wallet,
                           wkTransferProvideOriginatingTargetAddress (ethToken, ethTargetAddress),
                           wkTransferProvideOriginatingAmount (ethToken, value),
                           ethFeeBasisGetGasPrice(ethFeeBasis),
-                          ethFeeBasisGetGasLimit(ethFeeBasis),
+                          (DEFAULT_ETHER_GAS_LIMIT == ethGasLimit.amountOfGas && (NULL == data || '\0' == data[0])
+                           ? ethGasLimit
+                           : ethGasApplyLimitMargin(ethGasLimit)),
                           data,
                           nonce);
 

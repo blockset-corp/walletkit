@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd.systemclient;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.errors.QueryNoDataError;

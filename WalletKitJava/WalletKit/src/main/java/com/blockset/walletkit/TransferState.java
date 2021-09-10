@@ -9,7 +9,7 @@
  */
 package com.blockset.walletkit;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.errors.TransferSubmitError;
 import com.google.common.base.Optional;

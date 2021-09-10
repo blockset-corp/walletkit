@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKPaymentProtocolPaymentAck;

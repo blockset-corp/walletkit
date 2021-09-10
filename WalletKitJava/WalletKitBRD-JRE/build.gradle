@@ -22,7 +22,7 @@ dependencies {
 
     implementation project(':WalletKitNative-JRE')
     implementation deps.guavaJre
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAppcompat
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind

@@ -14,6 +14,7 @@
 #include "WKBase.h"   //
 #include "support/BRKey.h"
 #include "support/BRBase58.h"
+#include "support/BRData.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus

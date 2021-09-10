@@ -27,16 +27,18 @@
 
 // https://tezos.gitlab.io/protocols/004_Pt24m4xi.html#gas-and-fees
 #define TEZOS_FEE_BASELINE      ((BRTezosUnitMutez)  100)
-#define TEZOS_FEE_DEFAULT       ((BRTezosUnitMutez) 1420)
+#define TEZOS_FEE_DEFAULT       ((BRTezosUnitMutez)    0)
 
 #define TEZOS_TX_SIZE_MARGIN_PERCENTAGE  10
 #define TEZOS_TX_SIZE_FEE_RATE           ((BRTezosUnitMutez) 1000)  // mutez/kbyte
 #define TEZOS_TX_SIZE_DEFAULT           225                         // bytes - hackily
+#define TEZOS_TX_SIZE_MINIMUM           300
 
 #define TEZOS_GAS_LIMIT_MARGIN_PERCENTAGE        10
 #define TEZOS_GAS_LIMIT_MINIMUM                1000
 #define TEZOS_GAS_LIMIT_MAXIMUM             1040000         // gas
 #define TEZOS_GAS_LIMIT_DEFAULT_FEE_RATE        0.1         // mutez/gas
+#define TEZOS_GAS_LIMIT_EXTRA_FOR_HACKY_MAX     400
 
 #define TEZOS_STORAGE_LIMIT_MARGIN_PERCENTAGE          10
 #define TEZOS_STORAGE_LIMIT_MINIMUM                   300                 // sending to inactive accounts
@@ -85,6 +87,7 @@ tezosOperationFeeBasisShow (BRTezosOperationFeeBasis feeBasis) {
     printf ("    Fee : %"PRIu64"\n", feeBasis.fee);
     printf ("    GasL: %"PRIu64"\n", feeBasis.gasLimit);
     printf ("    StoL: %"PRIu64"\n", feeBasis.storageLimit);
+    printf ("    Size: %zu\n",       feeBasis.sizeInBytes);
     printf ("    Cntr: %"PRIu64"\n", feeBasis.counter);
     printf ("    FeeX: %"PRIu64"\n", feeBasis.feeExtra);
 }
@@ -94,6 +97,7 @@ tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
                               BRTezosUnitMutez fee,
                               int64_t gasLimit,
                               int64_t storageLimit,
+                              size_t  sizeInBytes,
                               int64_t counter,
                               BRTezosUnitMutez feeExtra) {
     return (BRTezosOperationFeeBasis) {
@@ -101,6 +105,7 @@ tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
         fee,
         MAX (gasLimit,     TEZOS_GAS_LIMIT_MINIMUM),
         MAX (storageLimit, TEZOS_STORAGE_LIMIT_MINIMUM),
+        sizeInBytes,
         counter,
         feeExtra
     };
@@ -110,12 +115,12 @@ extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisActual (BRTezosOperationKind kind,
                               BRTezosUnitMutez fee,
                               BRTezosUnitMutez feeExtra) {
-    return tezosOperationFeeBasisCreate (kind, fee, 0, 0, 0, feeExtra);
+    return tezosOperationFeeBasisCreate (kind, fee, 0, 0, 0, 0, feeExtra);
 }
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisCreateEmpty (BRTezosOperationKind kind) {
-    return tezosOperationFeeBasisCreate (kind, 0, 0, 0, 0, 0);
+    return tezosOperationFeeBasisCreate (kind, 0, 0, 0, 0, 0, 0);
 }
 
 extern BRTezosOperationFeeBasis
@@ -125,6 +130,7 @@ tezosOperationFeeBasisCreateDefault (BRTezosOperationKind kind) {
                                          tezosOperationFeeBasisGetDefaultFee (kind),
                                          TEZOS_GAS_LIMIT_MAXIMUM,
                                          TEZOS_STORAGE_LIMIT_MAXIMUM,
+                                         TEZOS_TX_SIZE_DEFAULT,
                                          0,
                                          0);
 }
@@ -132,9 +138,37 @@ tezosOperationFeeBasisCreateDefault (BRTezosOperationKind kind) {
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisApplyMargin (BRTezosOperationFeeBasis feeBasis,
                                    BRTezosUnitMutez mutezPerKByte,
-                                   size_t sizeInByte,
+                                   size_t sizeInBytes,
                                    unsigned int marginInPercentage) {
-    // Given a valid, best-estimate `feeBasis`, apply to margin
+    // Given a valid, best-estimate `feeBasis`, apply margin
+
+    // Get a non-zero sizeInByte
+    sizeInBytes = (0 == sizeInBytes ? TEZOS_TX_SIZE_DEFAULT : sizeInBytes);
+
+    // The sizeInBytes depends on the serialization size.  When we estimate the maximum, we use a
+    // value of 1 mutez.  Then when we try to send the max we use B-F mutez - which serializes to
+    // some extra bytes.  The result is that the size is increased and the fee is increased - so
+    // the max is now too large and the transaction is rejected.
+    //
+    // So, upcoming, another hack - because we will not do a binary search using Blockset
+    //
+    // Simply ignore the size; set it to some safely large value.  If the sizeInBytes is unexpectedly
+    // large (> TEZOS_TX_SIZE_MINIMUM) then the upcoming mutezPerKByteWithMargin will be too low,
+    // if derived from the size; but that is okay as we added some margin (hopefully enough).
+    //
+    sizeInBytes = TEZOS_TX_SIZE_MINIMUM;
+
+    // When getting a fee estimate for a transfer near the wallet balance we get a gasLimit of 1420
+    // as an estimate and, if we add 10% we have 1562... but then the transaction fails with
+    // 'exceeded gas quota'.  Successful transactions use 1820 it seems.  We'll blindly add
+    // TEZOS_GAS_LIMIT_EXTRA_FOR_HACKY_MAX (about 400) to the gasLimit and then apply a margin.
+    // See https://tzkt.io/tz1cXFqnTdazVEKTi1HZunRGjjW1VMPwG1nb/operations/ with 1820 used and
+    // 2002 as the limit (1820 + 10%)
+    //
+    // And then.... simply wait until something else fails and then we'll hack that.
+    // Because... Tezos fees.
+    //
+    feeBasis.gasLimit += TEZOS_GAS_LIMIT_EXTRA_FOR_HACKY_MAX;
 
     int64_t mutezPerKByteWithMargin = applyMargin (mutezPerKByte,         MAX (marginInPercentage, TEZOS_TX_SIZE_MARGIN_PERCENTAGE));
     int64_t gasLimitWithMargin      = applyMargin (feeBasis.gasLimit,     MAX (marginInPercentage, TEZOS_GAS_LIMIT_MARGIN_PERCENTAGE));
@@ -142,11 +176,12 @@ tezosOperationFeeBasisApplyMargin (BRTezosOperationFeeBasis feeBasis,
 
     return tezosOperationFeeBasisCreate (feeBasis.kind,
                                          tezosOperationFeeBasisComputeFee (mutezPerKByteWithMargin,
-                                                                           sizeInByte,
+                                                                           sizeInBytes,
                                                                            gasLimitWithMargin,
                                                                            storageLimitWithMargin),
                                          gasLimitWithMargin,
                                          feeBasis.storageLimit,
+                                         sizeInBytes,
                                          feeBasis.counter,
                                          feeBasis.feeExtra);
 }
@@ -314,7 +349,7 @@ tezosOperationEqual (BRTezosOperation op1,
 
 // MARK: - Tezos Serialization
 
-static WKData
+static BRData
 encodeAddress (BRTezosAddress address) {
     // address bytes with 3-byte TZx prefix replaced with a 1-byte prefix
 
@@ -340,19 +375,19 @@ encodeAddress (BRTezosAddress address) {
     memcpy(&encoded[0], &prefix, 1);
     memcpy(&encoded[1], &bytes[3], len-3);
 
-    return wkDataCopy (encoded, sizeof(encoded));
+    return dataCopy (encoded, sizeof(encoded));
 }
 
-static WKData
+static BRData
 encodePublicKey (BRTezosPublicKey pubKey) {
     uint8_t prefix = 0x0; // ed25519
-    WKData encoded = wkDataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
+    BRData encoded = dataNew(TEZOS_PUBLIC_KEY_SIZE + 1);
     memcpy(encoded.bytes, &prefix, 1);
     memcpy(&encoded.bytes[1], pubKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     return encoded;
 }
 
-extern WKData
+extern BRData
 encodeZarith (int64_t value) {
     assert (value >= 0);
     uint8_t result[32] = {0};
@@ -365,41 +400,41 @@ encodeZarith (int64_t value) {
     }
     result[resultSize++] = (uint8_t)input;
 
-    return wkDataCopy(&result[0], resultSize);
+    return dataCopy(&result[0], resultSize);
 }
 
-static WKData
+static BRData
 encodeBool (bool value) {
-    WKData encoded = wkDataNew(1);
+    BRData encoded = dataNew(1);
     encoded.bytes[0] = value ? 0xff : 0x00;
     return encoded;
 }
 
-static WKData
+static BRData
 encodeOperationKind (BRTezosOperationKind kind) {
     uint8_t bytes[1] = { kind };
-    return wkDataCopy (bytes, 1);
+    return dataCopy (bytes, 1);
 }
 
-static WKData
+static BRData
 encodeBranch (BRTezosHash blockHash) {
     // omit prefix
     size_t numPrefixBytes = 2;
     size_t branchSize = sizeof(blockHash.bytes) - numPrefixBytes;
 
-    WKData branchData = wkDataNew(branchSize);
+    BRData branchData = dataNew(branchSize);
     memcpy(branchData.bytes, &blockHash.bytes[numPrefixBytes], branchSize);
 
     return branchData;
 }
 
 
-extern WKData
+extern BRData
 tezosOperationSerialize (BRTezosOperation op) {
     assert (op);
 
     size_t maxFields = 10;
-    WKData fields[maxFields];
+    BRData fields[maxFields];
     size_t numFields = 0;
     fields[numFields++] = encodeOperationKind (op->kind);
     fields[numFields++] = encodeAddress (op->source);
@@ -408,7 +443,7 @@ tezosOperationSerialize (BRTezosOperation op) {
     fields[numFields++] = encodeZarith  (op->feeBasis.gasLimit);
     fields[numFields++] = encodeZarith  (op->feeBasis.storageLimit);
 
-#if 1
+#if 0
     printf ("XTZ: Serialize Tx\n");
     printf ("XTZ:    Type    : %s\n",   tezosOperationKindDescription(op->kind));
     tezosOperationFeeBasisShow (op->feeBasis);
@@ -440,39 +475,41 @@ tezosOperationSerialize (BRTezosOperation op) {
             break;
     }
 
-    WKData serialized = wkDataConcat(fields, numFields);
+    BRData serialized = dataConcat(fields, numFields);
     
     for (int i=0; i < numFields; i++) {
-        wkDataFree(fields[i]);
+        dataFree(fields[i]);
     }
     
     return serialized;
 }
 
-extern WKData
+extern BRData
 tezosOperationSerializeList (BRTezosOperation * ops,
                              size_t opsCount,
                              BRTezosHash blockHash) {
     
-    WKData fields[opsCount + 1];
+    BRData fields[opsCount + 1];
     size_t numFields = 0;
     
     // operation list = branch + [reveal op bytes] + transaction/delegation op bytes
     
     fields[numFields++] = encodeBranch(blockHash);
 
+#if 0
     printf ("XTZ: Serialize Operation List\n");
+#endif
     for (int i=0; i < opsCount; i++) {
         fields[numFields++] = tezosOperationSerialize (ops[i]);
     }
     
-    WKData serialized = wkDataConcat(fields, numFields);
+    BRData serialized = dataConcat(fields, numFields);
     
     for (int i=0; i < numFields; i++) {
-        wkDataFree(fields[i]);
+        dataFree(fields[i]);
     }
-
+#if 0
     printf ("XTZ: Serialize TX Count: %zu\n", opsCount);
-    
+#endif
     return serialized;
 }

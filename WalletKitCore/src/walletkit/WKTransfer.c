@@ -171,19 +171,19 @@ IMPLEMENT_WK_GIVE_TAKE (WKTransfer, wkTransfer)
 
 extern WKTransfer // OwnershipKept, all arguments
 wkTransferAllocAndInit (size_t sizeInBytes,
-                            WKNetworkType type,
-                            WKTransferListener listener,
-                            const char *uids,
-                            WKUnit unit,
-                            WKUnit unitForFee,
-                            WKFeeBasis feeBasisEstimated,
-                            WKAmount amount,
-                            WKTransferDirection direction,
-                            WKAddress sourceAddress,
-                            WKAddress targetAddress,
-                            WKTransferState state,
-                            WKTransferCreateContext  createContext,
-                            WKTransferCreateCallback createCallback) {
+                        WKNetworkType type,
+                        WKTransferListener listener,
+                         const char *uids,
+                        WKUnit unit,
+                        WKUnit unitForFee,
+                        WKFeeBasis feeBasisEstimated,
+                        WKAmount amount,
+                        WKTransferDirection direction,
+                        WKAddress sourceAddress,
+                        WKAddress targetAddress,
+                        WKTransferState state,
+                        WKTransferCreateContext  createContext,
+                        WKTransferCreateCallback createCallback) {
     assert (sizeInBytes >= sizeof (struct WKTransferRecord));
     WKTransfer transfer = calloc (1, sizeInBytes);
 

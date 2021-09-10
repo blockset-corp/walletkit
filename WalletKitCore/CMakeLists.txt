@@ -157,6 +157,7 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP39WordsEn.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.h
+                ${PROJECT_SOURCE_DIR}/src/support/BRData.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP38Key.c

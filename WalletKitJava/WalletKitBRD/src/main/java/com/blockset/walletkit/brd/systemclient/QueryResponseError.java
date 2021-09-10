@@ -36,4 +36,9 @@ public class QueryResponseError extends QueryError {
     public boolean isJsonError() {
         return jsonError;
     }
+
+    @Override
+    public String getMessage() {
+        return super.getMessage() + ", Message: " + json.toString();
+    }
 }

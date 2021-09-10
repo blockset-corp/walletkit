@@ -35,6 +35,9 @@ typedef struct {
     /// The storageLimit applicable to the operations; bounds the blockchain storage.
     int64_t storageLimit;
 
+    /// The transaction's sizeInBytes
+    size_t sizeInBytes;
+
     /// The counter (aka nonce) for the operation.
     int64_t counter;
 
@@ -53,6 +56,7 @@ tezosOperationFeeBasisEqual (const BRTezosOperationFeeBasis *fb1,
             fb1->fee          == fb2->fee          &&
             fb1->gasLimit     == fb2->gasLimit     &&
             fb1->storageLimit == fb2->storageLimit &&
+            fb1->sizeInBytes  == fb2->sizeInBytes  &&
             fb1->counter      == fb2->counter      &&
             fb1->feeExtra     == fb2->feeExtra);
 }
@@ -62,6 +66,7 @@ tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
                               BRTezosUnitMutez fee,
                               int64_t gasLimit,
                               int64_t storageLimit,
+                              size_t  sizeInBytes,
                               int64_t counter,
                               BRTezosUnitMutez feeExtra);
 
@@ -144,10 +149,10 @@ tezosOperationFree (BRTezosOperation operation);
 extern BRTezosOperation
 tezosOperationClone (Nullable BRTezosOperation operation);
 
-extern WKData
+extern BRData
 tezosOperationSerialize (BRTezosOperation operation);
 
-extern WKData
+extern BRData
 tezosOperationSerializeList (BRTezosOperation * operations,
                              size_t operationsCount,
                              BRTezosHash blockHash);

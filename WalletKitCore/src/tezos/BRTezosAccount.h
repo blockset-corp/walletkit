@@ -64,9 +64,9 @@ tezosAccountFree (BRTezosAccount account);
  *
  * @return signature
 */
-extern WKData
+extern BRData
 tezosAccountSignData (BRTezosAccount account,
-                      WKData data,
+                      BRData data,
                       UInt512 seed);
 
 /**
