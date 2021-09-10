@@ -172,6 +172,8 @@ tezosTransactionSerializeAndSign (BRTezosTransaction transaction,
     assert(TEZOS_SIGNATURE_BYTES == signature.size);
 
     transaction->signedBytes = dataConcatTwo (unsignedBytes, signature);
+    dataFree (unsignedBytes);
+    dataFree (signature);
 
     if (transaction->signedBytes.size > 0) {
         tezosTransactionAssignHash(transaction);

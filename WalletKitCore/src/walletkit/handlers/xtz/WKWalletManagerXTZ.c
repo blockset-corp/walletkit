@@ -120,13 +120,13 @@ wkWalletManagerSignTransactionWithKeyXTZ (WKWalletManager manager,
 
 static WKAmount
 wkWalletManagerEstimateLimitXTZ (WKWalletManager manager,
-                                     WKWallet  wallet,
-                                     WKBoolean asMaximum,
-                                     WKAddress target,
-                                     WKNetworkFee networkFee,
-                                     WKBoolean *needEstimate,
-                                     WKBoolean *isZeroIfInsuffientFunds,
-                                     WKUnit unit) {
+                                 WKWallet  wallet,
+                                 WKBoolean asMaximum,
+                                 WKAddress target,
+                                 WKNetworkFee networkFee,
+                                 WKBoolean *needEstimate,
+                                 WKBoolean *isZeroIfInsuffientFunds,
+                                 WKUnit unit) {
     // We always need an estimate as we do not know the fees.
     *needEstimate = asMaximum;
 
@@ -318,6 +318,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXTZ (WKWalletManager manager,
 
     wkFeeBasisGive (feeBasis);
     wkTransferStateGive (state);
+    wkAmountGive(amount);
 
     wkWalletGive (wallet);
 }
@@ -354,6 +355,7 @@ wkWalletManagerRecoverOperationFeeBasis (const char *suffix, size_t count, const
     return tezosOperationFeeBasisCreate (kind,
                                          (BRTezosUnitMutez) fee,
                                          gasUsed,
+                                         0,
                                          0,
                                          counter,
                                          (BRTezosUnitMutez) burn);

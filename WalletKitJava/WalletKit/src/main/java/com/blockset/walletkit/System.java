@@ -9,7 +9,7 @@
  */
 package com.blockset.walletkit;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.blockset.walletkit.SystemClient.HederaAccount;
 import com.blockset.walletkit.errors.AccountInitializationError;
 import com.blockset.walletkit.errors.CurrencyUpdateError;

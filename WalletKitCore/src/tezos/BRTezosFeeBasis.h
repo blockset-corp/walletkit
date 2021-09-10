@@ -50,6 +50,9 @@ tezosFeeBasisCreateDefault (BRTezosUnitMutez mutexPerKByte, bool isDelegate, boo
 extern BRTezosUnitMutez
 tezosFeeBasisGetFee(BRTezosFeeBasis feeBasis);
 
+extern BRTezosFeeBasis
+tezosFeeBasisGiveTezosAGift (BRTezosFeeBasis feeBasis, unsigned int marginPercentage);
+
 #if 0
 private_extern int64_t
 tezosFeeBasisGetGasLimit(BRTezosFeeBasis feeBasis);

@@ -75,7 +75,7 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
                                                                    wkAddressAsXTZ(source),
                                                                    wkAddressAsXTZ(target));
 
-    WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
+    return wkTransferAllocAndInit (sizeof (struct WKTransferXTZRecord),
                                    WK_NETWORK_TYPE_XTZ,
                                    listener,
                                    uids,
@@ -89,12 +89,6 @@ wkTransferCreateAsXTZ (WKTransferListener listener,
                                    state,
                                    &contextXTZ,
                                    wkTransferCreateCallbackXTZ);
-    wkFeeBasisGive (feeBasisEstimated);
-    wkAddressGive (source);
-    wkAddressGive (target);
-    wkAmountGive  (amount);
-    
-    return transfer;
 }
 
 static void

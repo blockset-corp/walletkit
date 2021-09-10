@@ -7,9 +7,6 @@
  */
 package com.blockset.walletkit.brd;
 
-import android.support.annotation.Nullable;
-import android.support.v4.util.ArrayMap;
-
 import com.blockset.walletkit.Key;
 import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
@@ -130,6 +127,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkState;
+
+import androidx.annotation.Nullable;
+import androidx.collection.ArrayMap;
 
 /* package */
 final class System implements com.blockset.walletkit.System {
@@ -1676,7 +1676,7 @@ final class System implements com.blockset.walletkit.System {
 
                             @Override
                             public void handleError(QueryError error) {
-                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed", error);
+                                Log.log(Level.SEVERE, "BRCryptoCWMEstimateTransactionFeeCallback: failed ", error);
                                 manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
                                         false,
                                         UnsignedLong.ZERO,

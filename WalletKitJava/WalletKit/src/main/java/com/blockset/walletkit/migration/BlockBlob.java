@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.migration;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;

@@ -16,7 +16,7 @@ android {
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         applicationId "com.blockset.walletkit.demo"
     }
@@ -46,9 +46,9 @@ android {
 
 dependencies {
     implementation project(':WalletKitBRD-Android')
-    implementation deps.androidAppCompatV7
-    implementation deps.androidRecyclerView
-    implementation deps.androidConstraintLayout
+    implementation deps.androidxAppcompat
+    implementation deps.androidxRecyclerView
+    implementation deps.androidxConstraintLayout
     implementation deps.guavaAndroid
     implementation deps.okhttp
     implementation deps.jacksonAnnotations
@@ -58,6 +58,6 @@ dependencies {
 
     testImplementation deps.junit
 
-    androidTestImplementation deps.androidTestRunner
-    androidTestImplementation deps.androidTestEspresso
+    androidTestImplementation deps.androidxTestRunner
+    androidTestImplementation deps.androidxTestEspresso
 }

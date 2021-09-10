@@ -30,7 +30,8 @@ wkPaymentProtocolRequestGetOutputsAsBTC (WKPaymentProtocolRequest protoReqBase);
 
 static WKPaymentProtocolRequestBitPayBuilderBTC
 wkPaymentProtocolRequestBitPayBuilderCoerceBTC (WKPaymentProtocolRequestBitPayBuilder builder) {
-    assert (WK_NETWORK_TYPE_BTC == builder->type);
+    assert (WK_NETWORK_TYPE_BTC == builder->type ||
+            WK_NETWORK_TYPE_BCH == builder->type);
     return (WKPaymentProtocolRequestBitPayBuilderBTC) builder;
 }
 
@@ -111,7 +112,8 @@ wkPaymentProtocolRequestBitPayBuilderReleaseBTC (WKPaymentProtocolRequestBitPayB
 
 static WKPaymentProtocolRequestBTC
 wkPaymentProtocolRequestCoerceBTC (WKPaymentProtocolRequest protoReq) {
-    assert (WK_NETWORK_TYPE_BTC == protoReq->chainType);
+    assert (WK_NETWORK_TYPE_BTC == protoReq->chainType ||
+            WK_NETWORK_TYPE_BCH == protoReq->chainType);
     return (WKPaymentProtocolRequestBTC) protoReq;
 }
 
@@ -129,7 +131,7 @@ wkPaymentProtocolRequestCreateForBitPayBTC (WKPaymentProtocolRequestBitPayBuilde
     
     WKPaymentProtocolRequest protoReqBase = NULL;
 
-    if ((WK_NETWORK_TYPE_BTC == type) &&
+    if ((WK_NETWORK_TYPE_BTC == type || WK_NETWORK_TYPE_BCH == type) &&
         wkNetworkHasCurrency(builderBase->wkNetwork, builderBase->wkCurrency) &&
         0 != array_count (builder->outputs) && 0 != builder->outputs[0].amount && 0 != builder->outputs[0].scriptLen) {
         
@@ -190,7 +192,7 @@ wkPaymentProtocolRequestCreateForBip70BTC (WKNetwork wkNetwork,
     
     WKPaymentProtocolRequest protoReqBase = NULL;
     
-    if ((WK_NETWORK_TYPE_BTC == type) &&
+    if ((WK_NETWORK_TYPE_BTC == type || WK_NETWORK_TYPE_BCH == type) &&
         (wkNetworkHasCurrency(wkNetwork, wkCurrency))) {
         
         BRBitcoinPaymentProtocolRequest *request = btcPaymentProtocolRequestParse (serialization,
@@ -245,7 +247,8 @@ wkPaymentProtocolRequestCreateTransferBTC (WKPaymentProtocolRequest protoReq,
     WKTransfer transfer = NULL;
     
     switch (wallet->type) {
-        case WK_NETWORK_TYPE_BTC: {
+        case WK_NETWORK_TYPE_BTC:
+        case WK_NETWORK_TYPE_BCH: {
             BRBitcoinWallet *wid = wkWalletAsBTC (wallet);
             
             switch (wkPaymentProtocolRequestGetType (protoReq)) {
