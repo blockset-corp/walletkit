@@ -27,7 +27,7 @@
 
 
 static bool
-avalancheAddressHasBytes (const BRAvalancheAddress *address, uint8_t *bytes) {
+avalancheAddressHasBytes (const BRAvalancheAddress *address, const uint8_t *bytes) {
     switch (address->type) {
         case AVALANCHE_CHAIN_TYPE_X:
             return 0 == memcmp (address->u.x.bytes, bytes, AVALANCHE_ADDRESS_BYTES_X);
@@ -41,7 +41,7 @@ avalancheAddressHasBytes (const BRAvalancheAddress *address, uint8_t *bytes) {
 }
 
 static BRAvalancheAddress
-avalancheAddressCreateWithBytes (BRAvalancheChainType type, uint8_t *bytes) {
+avalancheAddressCreateWithBytes (BRAvalancheChainType type, const uint8_t *bytes) {
     BRAvalancheAddress address = { type };
 
     switch (type) {
@@ -62,7 +62,7 @@ avalancheAddressCreateWithBytes (BRAvalancheChainType type, uint8_t *bytes) {
 }
 // MARK: Fee Address
 
-static uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
 
 static BRAvalancheAddress
 avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
@@ -76,7 +76,7 @@ avalancheAddressIsFeeAddress (BRAvalancheAddress address) {
 
 // MARK: - Unknown Address
 
-static uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
 
 static BRAvalancheAddress
 avalancheAddressCreateUnknownAddress(BRAvalancheChainType type) {
@@ -90,7 +90,7 @@ avalancheAddressIsUnknownAddress (BRAvalancheAddress address) {
 
 // MARK: - Empty Address
 
-static uint8_t emptyAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t emptyAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
 
 extern bool
 avalancheAddressIsEmptyAddress (BRAvalancheAddress address) {
