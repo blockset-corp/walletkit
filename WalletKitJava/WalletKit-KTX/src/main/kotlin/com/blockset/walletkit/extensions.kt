@@ -34,6 +34,14 @@ suspend fun WalletManager.createSweeper(wallet: Wallet, key: Key): WalletSweeper
     }
 }
 
+/** See [WalletManager.createWalletConnector]. */
+@throws(WalletConnectorError::class)
+suspend fun WalletManager.createWalletConnector(): WalletConnector {
+    return suspendForCompletion<WalletConnector, WalletConnectorError> {
+        createWalletConnector(it)
+    }
+}
+
 /** See [WalletSweeper.estimate]. */
 @Throws(FeeEstimationError::class)
 suspend fun WalletSweeper.estimate(networkFee: NetworkFee): TransferFeeBasis {
