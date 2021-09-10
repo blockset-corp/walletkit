@@ -15,7 +15,7 @@ public enum WKWalletConnectorError {
     UNSUPPORTED_CONNECTOR {
         @Override
         public int toCore() {
-            return UNSUPPORTED_CONNECTOR_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR_VALUE;
         }
     },
     
@@ -24,7 +24,7 @@ public enum WKWalletConnectorError {
     ILLEGAL_OPERATION {
         @Override
         public int toCore() {
-            return ILLEGAL_OPERATION_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION_VALUE;
         }
     },
     
@@ -34,7 +34,7 @@ public enum WKWalletConnectorError {
     INVALID_TRANSACTION_ARGUMENTS {
         @Override
         public int toCore() {
-            return INVALID_TRANSACTION_ARGUMENTS_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS_VALUE;
         }
     },
 
@@ -44,7 +44,7 @@ public enum WKWalletConnectorError {
     INVALID_DIGEST {
         @Override
         public int toCore() {
-            return INVALID_DIGEST_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST_VALUE;
         }
     },
 
@@ -53,7 +53,7 @@ public enum WKWalletConnectorError {
     INVALID_SIGNATURE {
         @Override
         public int toCore() {
-            return INVALID_SIGNATURE_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE;
         }
     },
 
@@ -62,30 +62,32 @@ public enum WKWalletConnectorError {
     INVALID_SERIALIZATION {
         @Override
         public int toCore() {
-            return INVALID_SERIALIZATION_VALUE;
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE;
         }
     };
     
     public static WKWalletConnectorError fromCore(int nativeValue) {
         switch (nativeValue) {
-            case UNSUPPORTED_CONNECTOR_VALUE:           return UNSUPPORTED_CONNECTOR;
-            case ILLEGAL_OPERATION_VALUE:               return ILLEGAL_OPERATION;
-            case INVALID_TRANSACTION_ARGUMENTS_VALUE:   return INVALID_TRANSACTION_ARGUMENTS;
-            case INVALID_DIGEST_VALUE:                  return INVALID_DIGEST;
-            case INVALID_SIGNATURE_VALUE:               return INVALID_SIGNATURE;
-            case INVALID_SERIALIZATION_VALUE:           return INVALID_SERIALIZATION;
+            case WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR_VALUE:            return UNSUPPORTED_CONNECTOR;
+            case WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION_VALUE:                return ILLEGAL_OPERATION;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS_VALUE:    return INVALID_TRANSACTION_ARGUMENTS;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST_VALUE:                   return INVALID_DIGEST;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE:                return INVALID_SIGNATURE;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE:            return INVALID_SERIALIZATION;
 
+            case WK_WALLET_CONNECTOR_STATUS_OK_VALUE: throw new IllegalArgumentException("Invalid WKWalletConnectorError for Success");
             default: throw new IllegalArgumentException("Invalid WKWalletConnectorError core value");
         }
     }
 
     // Valid WalletConnect native errors follow
-    private static final int UNSUPPORTED_CONNECTOR_VALUE            = 1;
-    private static final int ILLEGAL_OPERATION_VALUE                = 2;
-    private static final int INVALID_TRANSACTION_ARGUMENTS_VALUE    = 3;
-    private static final int INVALID_DIGEST_VALUE                   = 4;
-    private static final int INVALID_SIGNATURE_VALUE                = 5;
-    private static final int INVALID_SERIALIZATION_VALUE            = 6;
+    private static final int WK_WALLET_CONNECTOR_STATUS_OK_VALUE                            = 0;
+    private static final int WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR_VALUE         = 1;
+    private static final int WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION_VALUE             = 2;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS_VALUE = 3;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST_VALUE                = 4;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE             = 5;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE         = 6;
 
     public abstract int toCore();
 }

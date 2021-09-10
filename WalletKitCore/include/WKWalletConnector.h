@@ -19,29 +19,33 @@ extern "C" {
 
 typedef enum {
 
-    // TBD
-    WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR,
+    // A status code indicating success
+    WK_WALLET_CONNECTOR_STATUS_OK,
+    
+    // Unsupported for this network
+    WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR,
 
     // Crucial setup has not been done properly, one of
     // network handlers, WalletConnect handlers, or individual
     // handler methods for this particular network are not defined.
-    WK_WALLET_CONNECTOR_ILLEGAL_OPERATION,
+    WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION,
 
     // One or more transaction arguments key-value pairs are not
     // provided, or values are invalid
-    WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS,
+    WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS,
 
     // A general error to describe the digest creation has failed
-    WK_WALLET_CONNECTOR_INVALID_DIGEST,
+    WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST,
 
     // A general error indicating the signature has failed
-    WK_WALLET_CONNECTOR_INVALID_SIGNATURE,
+    WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE,
 
     // A general error specifying a failure to produce serialization
-    WK_WALLET_CONNECTOR_INVALID_SERIALIZATION
+    WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION
+    
     // ...
 
-} WKWalletConnectorError;
+} WKWalletConnectorStatus;
 
 typedef struct WKWalletConnectorRecord *WKWalletConnector;
 
@@ -51,6 +55,14 @@ wkWalletConnectorCreate (WKWalletManager manager);
 extern void
 wkWalletConnectorRelease (WKWalletConnector connector);
 
+/// N.B. WalletConnector functions return the sought after object and
+///      indicate any possible failure condition through a WKWalletConnectorStatus.
+///
+///      A NULL return object is always indicative of an error and should
+///      be accompanied by a descriptive status code. In the normal course
+///      of successful completion, WalletConnect functions indicate
+///      'WK_WALLET_CONNECTOR_STATUS_OK'
+
 /* Use the wallet connector to generate a digest of the provided message.
  *
  * @param connector The wallet connector object
@@ -58,7 +70,7 @@ wkWalletConnectorRelease (WKWalletConnector connector);
  * @param msgLen The length of input message
  * @param addPrefix A flag to indicate prepending an optional prefix known to the network
  * @param digestLength The length of digest created (on success > 0)
- * @param err An error when a failure has occurred
+ * @param status A status of the operation
  * @return When successful an allocated digest buffer of length digestLength. The caller
  *         is responsible for freeing native memory allocated here.
  *
@@ -70,7 +82,7 @@ wkWalletConnectorGetDigest (
         size_t                  msgLen,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status          );
 
 /** Uses the wallet connector to sign the arbitrary data.
  *
@@ -79,7 +91,7 @@ wkWalletConnectorGetDigest (
  * @param dataLength The length of input transaction data
  * @param key The key for signing
  * @param signatureLength The length of returned signature data (on success > 0)
- * @param err An error when a failure has occurred
+ * @param status A status of the operation
  * @return When successful an allocated signature buffer of length signatureLength. The caller
  *         is responsible for freeing native memory allocated here.
  */
@@ -90,7 +102,7 @@ wkWalletConnectorSignData (
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status            );
 
 /** Uses the wallet connector provided to organize the key-value pairs
  *  into a suitable serialized transaction.
@@ -102,7 +114,7 @@ wkWalletConnectorSignData (
  * @param keyValuePairsCount The number of key and corresponding values, of which there are expected
  *                           to be an equal number
  * @param serialization Length The length of the serialization created
- * @param err An error when a failure has occurred
+ * @param status A status of the operation
  * @return When successful, a series of bytes of length serializationLength representing
  *         the serialization. The caller is responsible for returning native memory allocated here.
  */
@@ -113,7 +125,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
         const char              **values,
         size_t                  keyValuePairsCount,
         size_t                  *serializationLength,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status            );
 
 /** Uses the wallet connector provided to create a serialized transaction
  *  out of the input. In the process, the input serialization is
@@ -126,7 +138,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
  * @param dataLength The length of this input
  * @param serializationLength The length of the serialization created
  * @param isSigned A flag indicating whether the transaction is signed or no
- * @param err An error when a failure has occurred
+ * @param status A status of the operation
  * @return When successful, a series of bytes of length serializationLength representing
  *         the serialization. THe caller is responsible for returning native memory allocated here.
  */
@@ -137,7 +149,7 @@ wkWalletConnectorCreateTransactionFromSerialization  (
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
-        WKWalletConnectorError  *err           );
+        WKWalletConnectorStatus *status           );
 
 /** Uses the wallet connector to sign data representing a
  *  validated, serialized transaction.
@@ -147,7 +159,7 @@ wkWalletConnectorCreateTransactionFromSerialization  (
  * @param dataLength The length of input transaction data
  * @param key The key for signing
  * @param signedDataLength The length of returned signed transaction data (on success > 0)
- * @param err An error when a failure has occurred
+ * @param status A status of the operation
  * @return When successful the signed transaction serialization of length signedDataLength. The caller
  *         is responsible for freeing native memory allocated here.
  */
@@ -158,7 +170,7 @@ wkWalletConnectorSignTransactionData (
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signedDataLength,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status            );
 
 #ifdef __cplusplus
 }

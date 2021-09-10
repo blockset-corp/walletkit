@@ -522,20 +522,19 @@ public enum WalletConnectorError: Error {
     case submitFailed
     // ...
 
-    internal init (core: WKWalletConnectorError) {
+    internal init (core: WKWalletConnectorStatus) {
         switch core {
-        case WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR:   self = .unsupportedConnector
-        case WK_WALLET_CONNECTOR_ILLEGAL_OPERATION:             self = .illegalOperation
-        case WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS: self = .invalidTransactionArguments
-        case WK_WALLET_CONNECTOR_INVALID_SIGNATURE:             self = .invalidSignature
-        case WK_WALLET_CONNECTOR_INVALID_SERIALIZATION:         self = .invalidTransactionSerialization
-        case WK_WALLET_CONNECTOR_INVALID_DIGEST:                self = .invalidDigest
-            default: preconditionFailure()
-        }
-    }
+        case WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR:          self = .unsupportedConnector
+        case WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION:              self = .illegalOperation
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS:  self = .invalidTransactionArguments
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE:              self = .invalidSignature
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
     
-    static func isAnError (nativeValue: WKWalletConnectorError) -> Bool {
-        return nativeValue.rawValue != /*WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED*/-1;
+        // Not an error and should never be passed to this enumeration
+        case WK_WALLET_CONNECTOR_STATUS_OK: preconditionFailure()
+        default: preconditionFailure()
+        }
     }
 }
 
@@ -587,7 +586,7 @@ public final class WalletConnector {
             let messageAddr = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
             let messageLength = messageBytes.count
             let corePrefix : WKBoolean = (prefix ? WK_TRUE : WK_FALSE)
-            var err : WKWalletConnectorError = WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR /* Must have a value to pass by pointer*/
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
             
             var digestLength: size_t = 0
             let digestBytes = wkWalletConnectorGetDigest(self.core,
@@ -595,10 +594,10 @@ public final class WalletConnector {
                                                          messageLength,
                                                          corePrefix,
                                                          &digestLength,
-                                                         &err   )
+                                                         &status   )
             defer { wkMemoryFree(digestBytes) }
             if (digestBytes == nil) {
-                return Result.failure(WalletConnectorError(core: err))
+                return Result.failure(WalletConnectorError(core: status))
             }
             
             let digestData = Data(bytes: digestBytes!, count: digestLength)
@@ -611,10 +610,10 @@ public final class WalletConnector {
                                                                digestDataLength,
                                                                key.core,
                                                                &signatureLength,
-                                                               &err )
+                                                               &status )
                 defer { wkMemoryFree(signatureBytes) }
                 if (signatureBytes == nil) {
-                    return Result.failure(WalletConnectorError(core: err))
+                    return Result.failure(WalletConnectorError(core: status))
                 }
                 
                 let signatureData = Data(bytes: signatureBytes!, count: signatureLength)
@@ -669,7 +668,7 @@ public final class WalletConnector {
         let keys = Array(arguments.keys)
         let values = Array(arguments.values)
         var serializationLength :size_t = 0
-        var err : WKWalletConnectorError = WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR /* Must have a value to pass by pointer*/
+        var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
         
         // See WKAccount.swift validatePhrase which passes an array of words as
         // const char *words[] through wkAccountValidatePaperKey
@@ -685,11 +684,11 @@ public final class WalletConnector {
                                                                                  &(valuesStrs),
                                                                                  keys.count,
                                                                                  &serializationLength,
-                                                                                 &err)
+                                                                                 &status)
                                                       
         defer { wkMemoryFree(serializationBytes) }
         if (serializationBytes == nil) {
-            return Result.failure(WalletConnectorError(core: err))
+            return Result.failure(WalletConnectorError(core: status))
         }
         let serializationData = Data(bytes: serializationBytes!, count: serializationLength)
         let serialization = Serialization(core: self.core, data: serializationData)
@@ -714,17 +713,17 @@ public final class WalletConnector {
             let serializationBytesLength = serializationBytes.count
             var serializationLength : size_t = 0
             var isSignedCore : WKBoolean = WK_FALSE
-            var err : WKWalletConnectorError = WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR /* Must have a value to pass by pointer*/
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
             
             let serializedBytes = wkWalletConnectorCreateTransactionFromSerialization(self.core,
                                                                                       serializationBytesAddr,
                                                                                       serializationBytesLength,
                                                                                       &serializationLength,
                                                                                       &isSignedCore,
-                                                                                      &err           );
+                                                                                      &status           );
             defer { wkMemoryFree(serializedBytes) }
             if (serializedBytes == nil) {
-                return Result.failure(WalletConnectorError(core: err))
+                return Result.failure(WalletConnectorError(core: status))
             }
             let serializationData = Data(bytes: serializedBytes!, count: serializationLength)
             let serialization = Serialization(core: self.core, data: serializationData)
@@ -758,17 +757,17 @@ public final class WalletConnector {
             let transactionBytesAddr = transactionBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
             let transactionBytesLength = transactionBytes.count
             var serializationLength : size_t = 0
-            var err : WKWalletConnectorError = WK_WALLET_CONNECTOR_ERROR_UNSUPPORTED_CONNECTOR /* Must have a value to pass by pointer*/
+            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
             
             let signedTransactionBytes = wkWalletConnectorSignTransactionData(self.core,
                                                                               transactionBytesAddr,
                                                                               transactionBytesLength,
                                                                               key.core,
                                                                               &serializationLength,
-                                                                              &err)
+                                                                              &status)
             defer { wkMemoryFree(signedTransactionBytes) }
             if (signedTransactionBytes == nil) {
-                return Result.failure(WalletConnectorError(core: err))
+                return Result.failure(WalletConnectorError(core: status))
             }
             
             let signedSerializationData = Data(bytes: signedTransactionBytes!, count: serializationLength)

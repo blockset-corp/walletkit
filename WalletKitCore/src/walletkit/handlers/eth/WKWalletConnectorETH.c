@@ -47,10 +47,10 @@ wkWalletConnectorGetDigestETH (
         size_t                  msgLength,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
-        WKWalletConnectorError  *err    ) {
+        WKWalletConnectorStatus *status    ) {
 
     // No error
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
     uint8_t* digest = NULL;
     uint8_t* finalMsg = NULL;
@@ -83,12 +83,12 @@ wkWalletConnectorSignDataETH (
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
-        WKWalletConnectorError  *err    ) {
+        WKWalletConnectorStatus *status   ) {
 
     BRKey *brKey = wkKeyGetCore (key);
 
     // No error
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
     // Direct sign the data as arbitrary data
     BREthereumSignature signature = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
@@ -151,10 +151,10 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         BRArrayOf (const char*) keys,
         BRArrayOf (const char*) values,
         size_t                  *serializationLength,
-        WKWalletConnectorError  *err           ) {
+        WKWalletConnectorStatus *status         ) {
 
     // No error
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
     BREthereumAddress   sourceAddress;
     BREthereumAddress   targetAddress;
@@ -237,7 +237,7 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
     }
 
     if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet) ) {
-        *err = WK_WALLET_CONNECTOR_INVALID_TRANSACTION_ARGUMENTS;
+        *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS;
         return NULL;
     }
 
@@ -267,14 +267,14 @@ wkWalletConnectorCreateTransactionFromSerializationETH (
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
-        WKWalletConnectorError  *err            ) {
+        WKWalletConnectorStatus *status) {
 
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumNetwork   ethNetwork  = managerETH->network;
 
     // No result, no error
     *serializationLength = 0;
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
     // Step 1: Get an ETH transaction back from serialization assuming
     //         it's unsigned. The detection and parsing of the signature, if
@@ -316,7 +316,7 @@ wkWalletConnectorSignTransactionDataETH (
     size_t                  dataLength,
     WKKey                   key,
     size_t                  *signedDataLength,
-    WKWalletConnectorError  *err    ) {
+    WKWalletConnectorStatus *status ) {
 
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumNetwork   ethNetwork  = managerETH->network;
@@ -325,7 +325,7 @@ wkWalletConnectorSignTransactionDataETH (
     BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
 
     // No error
-    *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
     // Step 1: Deserialize RLP encoded transaction data into an ETH transaction which can be signed
     BRRlpCoder              coder           = rlpCoderCreate ();

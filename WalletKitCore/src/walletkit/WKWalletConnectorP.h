@@ -18,9 +18,6 @@
 extern "C" {
 #endif
 
-/// @brief An undefined WalletConnect error indicates no error has been set
-#define WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED  ((WKWalletConnectorError) -1)
-
 // MARK: - Connector Handlers
 
 typedef WKWalletConnector
@@ -36,7 +33,7 @@ typedef uint8_t*
         size_t                  msgLength,
         WKBoolean               addPrefix,
         size_t                  *digestLength,
-        WKWalletConnectorError  *err    );
+        WKWalletConnectorStatus *status    );
 
 typedef uint8_t*
 (*WKWalletConnectorSignDataHandler) (
@@ -45,7 +42,7 @@ typedef uint8_t*
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signatureLength,
-        WKWalletConnectorError  *err    );
+        WKWalletConnectorStatus *status    );
 
 /** It can be assumed that there are equal number of elements in
  *  keys & values, so array_count() of either will be the same.
@@ -56,7 +53,7 @@ typedef uint8_t*
         BRArrayOf (const char*) keys,
         BRArrayOf (const char*) values,
         size_t                  *serializationLength,
-        WKWalletConnectorError  *err           );
+        WKWalletConnectorStatus *status           );
 
 typedef uint8_t*
 (*WKWalletConnectorCreateTransactionFromSerializationHandler) (
@@ -65,7 +62,7 @@ typedef uint8_t*
         size_t                  dataLength,
         size_t                  *serializationLength,
         WKBoolean               *isSigned,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status            );
 
 typedef uint8_t*
 (*WKWalletConnectorSignTransactionDataHandler) (
@@ -74,7 +71,7 @@ typedef uint8_t*
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signedDataLength,
-        WKWalletConnectorError  *err            );
+        WKWalletConnectorStatus *status            );
 
 typedef struct {
     WKWalletConnectorCreateHandler                              create;
