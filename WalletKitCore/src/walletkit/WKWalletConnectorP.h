@@ -53,8 +53,8 @@ typedef uint8_t*
 typedef uint8_t*
 (*WKWalletConnectorCreateTransactionFromArgumentsHandler) (
         WKWalletConnector       walletConnector,
-        BRArrayOf (char*)       keys,
-        BRArrayOf (char*)       values,
+        BRArrayOf (const char*) keys,
+        BRArrayOf (const char*) values,
         size_t                  *serializationLength,
         WKWalletConnectorError  *err           );
 

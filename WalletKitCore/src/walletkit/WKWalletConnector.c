@@ -15,12 +15,12 @@
 /** Creates a shallow copy of strings in the input strs 'WordList' into
  *  a BRArray of c-strings.
  */
-static BRArrayOf(char*)
+static BRArrayOf(const char*)
 arrayOfStringFromWordlist(
-    char    **strs,
-    size_t  stringsCount    ) {
+    const char  **strs,
+    size_t      stringsCount    ) {
 
-    BRArrayOf(char*) arrayOfStrs;
+    BRArrayOf(const char*) arrayOfStrs;
 
     array_new(arrayOfStrs, stringsCount);
     array_add_array(arrayOfStrs, strs, stringsCount);
@@ -102,7 +102,7 @@ wkWalletConnectorGetDigest (
                                                     digestLength,
                                                     err);
 
-        if (NULL == digest && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+        if (NULL == digest && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == *err)
             *err = WK_WALLET_CONNECTOR_INVALID_DIGEST;
 
     } else {
@@ -142,7 +142,7 @@ wkWalletConnectorSignData   (
                                                    signatureLength,
                                                    err);
 
-        if (NULL == signedData && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+        if (NULL == signedData && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == *err)
             *err = WK_WALLET_CONNECTOR_INVALID_SIGNATURE;
 
     } else {
@@ -170,8 +170,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
 
     // Transform the 'WordList' based keys and values into BRArrayOf which is more
     // natural for handlers.
-    BRArrayOf(char*) arrayOfKeys = arrayOfStringFromWordlist(keys, keyValuePairsCount);
-    BRArrayOf(char*) arrayOfValues = arrayOfStringFromWordlist(values, keyValuePairsCount);
+    BRArrayOf(const char*) arrayOfKeys = arrayOfStringFromWordlist(keys, keyValuePairsCount);
+    BRArrayOf(const char*) arrayOfValues = arrayOfStringFromWordlist(values, keyValuePairsCount);
 
     *err = WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED;
     const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
@@ -187,9 +187,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
                 serializationLength,
                 err);
 
-        if (NULL == unsignedTransaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+        if (NULL == unsignedTransaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == *err)
             *err = WK_WALLET_CONNECTOR_INVALID_SERIALIZATION;
-
 
     } else {
         *err = WK_WALLET_CONNECTOR_ILLEGAL_OPERATION;
@@ -233,7 +232,7 @@ wkWalletConnectorCreateTransactionFromSerialization  (
                 isSigned,
                 err);
 
-        if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+        if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == *err)
             *err = WK_WALLET_CONNECTOR_INVALID_SERIALIZATION;
 
     } else {
@@ -253,7 +252,6 @@ wkWalletConnectorSignTransactionData (
 
     assert (NULL != connector           &&
             NULL == transactionData     &&
-            NULL == dataLength          &&
             NULL == signedDataLength    &&
             NULL == err );
 
@@ -274,7 +272,7 @@ wkWalletConnectorSignTransactionData (
                     signedDataLength,
                     err);
 
-            if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == err)
+            if (NULL == transaction && WK_WALLET_CONNECTOR_ERROR_IS_UNDEFINED == *err)
                 *err = WK_WALLET_CONNECTOR_INVALID_SIGNATURE;
 
         } else {
