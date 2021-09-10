@@ -113,8 +113,28 @@ class WKNetworkTests: XCTestCase {
         let _ = Network (core: network.core, take: true)
     }
 
+    func testNetworkAVAX () {
+        guard let network = Network.findBuiltin(uids: "avalanche-mainnet")
+        else { XCTAssert(false); return }
+
+        XCTAssertNotNil (network.currency)
+        XCTAssertNotNil (network.baseUnitFor(currency: network.currency))
+        XCTAssertNotNil (network.defaultUnitFor(currency: network.currency))
+        XCTAssertNotNil (network.unitsFor(currency: network.currency))
+
+        // Only AVAX
+        XCTAssertTrue (1 == network.currencies.count)
+        XCTAssertTrue (2 == network.unitsFor(currency: network.currency)!.count)
+
+        if let units = network.unitsFor(currency: network.currency) {
+            XCTAssertTrue (units.contains (network.baseUnitFor    (currency: network.currency)!))
+            XCTAssertTrue (units.contains (network.defaultUnitFor (currency: network.currency)!))
+        }
+    }
+
     static var allTests = [
-        ("testNetworkBTC", testNetworkBTC),
-        ("testNetworkETH", testNetworkETH),
+        ("testNetworkBTC",  testNetworkBTC),
+        ("testNetworkETH",  testNetworkETH),
+        ("testNetworkAVAX", testNetworkAVAX),
     ]
 }

@@ -27,14 +27,14 @@ extern "C" {
 // Assumes sizeof(BRAvalancheAmount) <= sizeof(uint64_t)
 static inline WKAmount
 wkAmountCreateAsAVAX (WKUnit unit,
-                            WKBoolean isNegative,
-                            BRAvalancheAmount value) { // value is positive
+                      WKBoolean isNegative,
+                      BRAvalancheAmount value) { // value is positive
     return wkAmountCreate (unit, isNegative, uint256Create ((uint64_t)value));
 }
 
 static inline BRAvalancheAmount
 wkAmountAsAVAX (WKAmount amount,
-                      WKBoolean *isNegative) {
+                WKBoolean *isNegative) {
     WKBoolean overflow = WK_FALSE;
 
     BRAvalancheAmount avaxAmount = (BRAvalancheAmount) wkAmountGetIntegerRaw (amount, &overflow);
@@ -68,7 +68,6 @@ wkHashAsAVAX (WKHash hash) {
 
     return avax;
 }
-
 
 // MARK: - Address
 
@@ -132,7 +131,7 @@ wkFeeBasisCoerceAVAX (WKFeeBasis feeBasis) {
 
 private_extern WKFeeBasis
 wkFeeBasisCreateAsAVAX (WKUnit unit,
-                              BRAvalancheFeeBasis avaxFeeBasis);
+                        BRAvalancheFeeBasis avaxFeeBasis);
 
 static inline BRAvalancheFeeBasis
 wkFeeBasisAsAVAX (WKFeeBasis feeBasis) {
@@ -158,18 +157,18 @@ wkTransferCoerceAVAX (WKTransfer transfer) {
 
 extern WKTransfer
 wkTransferCreateAsAVAX (WKTransferListener listener,
-                           const char *uids,
-                           WKUnit unit,
-                           WKUnit unitForFee,
-                           WKTransferState state,
-                           BRAvalancheAccount avaxAccount,
-                           BRAvalancheTransaction avaxTransaction);
+                        const char *uids,
+                        WKUnit unit,
+                        WKUnit unitForFee,
+                        WKTransferState state,
+                        BRAvalancheAccount avaxAccount,
+                        BRAvalancheTransaction avaxTransaction);
 
 // MARK: - Wallet
 
 typedef struct WKWalletAVAXRecord {
     struct WKWalletRecord base;
-
+    
     // Typically the BRAvalancheAccount
     BRAvalancheAccount avaxAccount;
 } *WKWalletAVAX;
@@ -178,29 +177,29 @@ extern WKWalletHandlers wkWalletHandlersAVAX;
 
 private_extern WKWallet
 wkWalletCreateAsAVAX (WKWalletListener listener,
-                         WKUnit unit,
-                         WKUnit unitForFee,
-                         BRAvalancheAccount avaxAccount);
+                      WKUnit unit,
+                      WKUnit unitForFee,
+                      BRAvalancheAccount avaxAccount);
 
 extern WKTransfer
 wkWalletCreateTransferAVAX (WKWallet  wallet,
-                               WKAddress target,
-                               WKAmount  amount,
-                               WKFeeBasis estimatedFeeBasis,
-                               size_t attributesCount,
-                               OwnershipKept WKTransferAttribute *attributes,
-                               WKCurrency currency,
-                               WKUnit unit,
-                               WKUnit unitForFee);
+                            WKAddress target,
+                            WKAmount  amount,
+                            WKFeeBasis estimatedFeeBasis,
+                            size_t attributesCount,
+                            OwnershipKept WKTransferAttribute *attributes,
+                            WKCurrency currency,
+                            WKUnit unit,
+                            WKUnit unitForFee);
 
 private_extern bool
 wkWalletNeedsRevealAVAX (WKWallet wallet);
 
 private_extern WKTransfer
 wkWalletGetTransferByHashOrUIDSAndTargetAVAX (WKWallet wallet,
-                                             WKHash hashToMatch,
-                                             const char *uids,
-                                             WKAddress targetToMatch);
+                                              WKHash hashToMatch,
+                                              const char *uids,
+                                              WKAddress targetToMatch);
 
 // MARK: - Wallet Manager
 
