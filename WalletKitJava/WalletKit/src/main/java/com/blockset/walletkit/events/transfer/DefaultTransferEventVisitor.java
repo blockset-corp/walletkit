@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.events.transfer;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public abstract class DefaultTransferEventVisitor<T> implements TransferEventVisitor<T> {
 

@@ -86,8 +86,8 @@ WKHandlers wkHandlersBSV = {
     &wkTransferHandlersBSV,
     &wkWalletHandlersBSV,
     &wkWalletSweeperHandlersBSV,
-    NULL,//WKExportablePaperWalletHandlers
-    &wkPaymentProtocolHandlersBTC,
+    NULL, // WKExportablePaperWalletHandlers
+    NULL, // WKPaymentProtocolHandlers,
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersBSV
 };

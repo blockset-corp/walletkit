@@ -8,7 +8,8 @@
 package com.blockset.walletkit.brd;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+
+import androidx.test.InstrumentationRegistry;
 
 import com.blockset.walletkit.utility.TestConfiguration;
 

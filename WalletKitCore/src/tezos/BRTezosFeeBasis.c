@@ -77,6 +77,19 @@ tezosFeeBasisGetFee (BRTezosFeeBasis feeBasis) {
              : 0));
 }
 
+extern BRTezosFeeBasis
+tezosFeeBasisGiveTezosAGift (BRTezosFeeBasis feeBasis, unsigned int marginPercentage) {
+    BRTezosOperationFeeBasis primaryOperationFeeBasis = feeBasis.primaryOperationFeeBasis;
+    primaryOperationFeeBasis.fee = (primaryOperationFeeBasis.fee * (marginPercentage + 100)) / 100;
+
+    return (BRTezosFeeBasis) {
+        feeBasis.mutezPerKByte,
+        primaryOperationFeeBasis,
+        feeBasis.hasRevealOperationFeeBasis,
+        feeBasis.revealOperationFeeBasis
+    };
+}
+
 extern bool
 tezosFeeBasisIsEqual (BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2) {
     assert(fb1);
