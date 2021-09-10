@@ -21,7 +21,7 @@
 static unsigned int transactionAllocCount = 0;
 #endif
 
-static inline BREthereumGas
+extern BREthereumGas
 ethGasApplyLimitMargin (BREthereumGas gas) {
     return ethGasCreate(((100 + ETHEREUM_GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
 }

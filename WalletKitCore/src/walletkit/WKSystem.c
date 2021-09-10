@@ -358,7 +358,11 @@ wkSystemGetResolvedPath (WKSystem system) {
 
 extern WKSystemState
 wkSystemGetState (WKSystem system) {
-    return system->state;
+    pthread_mutex_lock (&system->lock);
+    WKSystemState state = system->state;
+    pthread_mutex_unlock (&system->lock);
+
+    return state;
 }
 
 private_extern void

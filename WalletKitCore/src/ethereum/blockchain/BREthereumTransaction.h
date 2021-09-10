@@ -27,6 +27,9 @@ extern "C" {
 /// If we get a gasEstimate we'll want the gasLimit to have a margin over the estimate
 #define ETHEREUM_GAS_LIMIT_MARGIN_PERCENT        (20)
 
+extern BREthereumGas
+ethGasApplyLimitMargin (BREthereumGas gas);
+
 /**
  * An Ethereum Transaction is a transaction on the Ethereum P2P network
  *
