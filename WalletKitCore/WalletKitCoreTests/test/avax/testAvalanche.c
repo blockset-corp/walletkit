@@ -79,7 +79,8 @@ runAvalancheAddressTest (void) {
         const char * paperKey;
         const char * pubKey;
         const char * privKey;
-        const char * ripemd160;
+        uint8_t     ripemd160[20];
+        const char * ripemd160Str;
         const char * xaddress;
         const char * caddress;
     } vectors[] = {
@@ -90,22 +91,21 @@ runAvalancheAddressTest (void) {
             "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
             "029dc79308883267bb49f3924e9eb58d60bcecd17ad3f2f53681ecc5c668b2ba5f",
             "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466",
+            { 0xcc, 0x30, 0xe2, 0x01, 0x57, 0x80, 0xa6, 0xc7, 0x2e, 0xfa, 0xef, 0x22, 0x80, 0xe3, 0xde, 0x4a, 0x95, 0x4e, 0x77, 0x0c },
             "cc30e2015780a6c72efaef2280e3de4a954e770c",
             "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",
             "bbc9bf879c06b13274c200c8b246881ef1ca33a0"
         },
-        { NULL, NULL, NULL, NULL, NULL, NULL }
+        { NULL, NULL, NULL, {0}, NULL, NULL, NULL }
     };
     printf("TST:    Avalanche Address\n");
 
     for (size_t index = 0; vectors[index].paperKey != NULL; index++) {
         // 'raw'
-        char addr_str[64]; size_t addr_len = 64;
-        avax_addr_bech32_decode ((uint8_t *)addr_str, &addr_len, "avax", vectors[index].xaddress);
-        addr_str[addr_len] = '\0';
-        printf("TST:    Avalanche Address --- FAILED #1\n");
-        //    assert (0 == strcmp (addr_str, "cc30e2015780a6c72efaef2280e3de4a954e770c"));
-    
+        uint8_t addr[20]; size_t addrLen;
+        avax_addr_bech32_decode (addr, &addrLen, "avax", vectors[index].xaddress);
+        assert (0 == memcmp (addr, vectors[index].ripemd160, 20));
+
         UInt512 seed = UINT512_ZERO;
         BRBIP39DeriveKey(seed.u8, vectors[index].paperKey, NULL);
         BRAvalancheAccount account = avalancheAccountCreateWithSeed (seed);
@@ -119,7 +119,6 @@ runAvalancheAddressTest (void) {
         assert (0 == strcmp (addressXString, vectors[index].xaddress));
         assert (0 == strcmp (addressCString, vectors[index].caddress));
 
-        printf("TST:    Avalanche Address --- FAILED #2\n");
         assert (avalancheAddressEqual (addressX, avalancheAddressCreateFromString(vectors[index].xaddress, true, AVALANCHE_CHAIN_TYPE_X)));
         assert (avalancheAddressEqual (addressC, avalancheAddressCreateFromString(vectors[index].caddress, true, AVALANCHE_CHAIN_TYPE_C)));
 

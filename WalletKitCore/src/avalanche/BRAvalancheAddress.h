@@ -27,6 +27,12 @@ typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_X]; } BRAvalancheAddress
 // An Avalanche C address is identical to an Ethereum address
 typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_C]; } BRAvalancheAddressC;
 
+///
+/// A BRAvalanceAddress represents an avalance address as an array of bytes, typically 20 bytes.
+/// The string representation depends on BRAvalanceNetwork.  Any given address, of 20 bytes
+/// typically, applies to any network.  The address itself does not maintain a reference to the
+/// network; that reference must be kept elsewhere
+///
 typedef struct {
     BRAvalancheChainType type;
     union {
@@ -34,7 +40,6 @@ typedef struct {
         BRAvalancheAddressC c;
     } u;
 } BRAvalancheAddress;
-
 
 /**
  * Get the avalanche address string representation of the address.

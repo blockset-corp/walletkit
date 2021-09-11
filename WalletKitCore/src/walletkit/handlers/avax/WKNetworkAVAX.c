@@ -16,7 +16,7 @@
 private_extern BRAvalancheNetwork
 wkNetworkAsAVAX (WKNetwork network) {
     WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(network);
-    return networkAVAX->avax;
+    return networkAVAX->avaxNetwork;
 }
 
 static WKNetwork

@@ -95,7 +95,7 @@ wkAddressAsAVAX (WKAddress address);
 
 typedef struct WKNetworkAVAXRecord {
     struct WKNetworkRecord base;
-    const BRAvalancheNetwork avax;
+    const BRAvalancheNetwork avaxNetwork;
 } *WKNetworkAVAX;
 
 static inline WKNetworkAVAX

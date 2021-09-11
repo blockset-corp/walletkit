@@ -60,9 +60,13 @@ avalancheAddressCreateWithBytes (BRAvalancheChainType type, const uint8_t *bytes
 
     return address;
 }
+
 // MARK: Fee Address
 
-static const uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = {
+    '_', '_', 'f', 'e',   'e', '_', '_', '\0', 0, 0,
+    0, 0, 0, 0,    0, 0, 0, 0,    0, 0
+};
 
 static BRAvalancheAddress
 avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
@@ -76,7 +80,10 @@ avalancheAddressIsFeeAddress (BRAvalancheAddress address) {
 
 // MARK: - Unknown Address
 
-static const uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = {
+    'u', 'n', 'k', 'n',   'o', 'w', 'n', '\0', 0, 0,
+    0, 0, 0, 0,    0, 0, 0, 0,    0, 0
+};
 
 static BRAvalancheAddress
 avalancheAddressCreateUnknownAddress(BRAvalancheChainType type) {
@@ -90,7 +97,10 @@ avalancheAddressIsUnknownAddress (BRAvalancheAddress address) {
 
 // MARK: - Empty Address
 
-static const uint8_t emptyAddressBytes [AVALANCHE_ADDRESS_BYTES] = { 0 };
+static const uint8_t emptyAddressBytes [AVALANCHE_ADDRESS_BYTES] = {
+    0, 0, 0, 0,    0, 0, 0, 0,    0, 0,
+    0, 0, 0, 0,    0, 0, 0, 0,    0, 0
+};
 
 extern bool
 avalancheAddressIsEmptyAddress (BRAvalancheAddress address) {

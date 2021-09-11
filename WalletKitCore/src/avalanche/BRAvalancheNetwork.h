@@ -37,8 +37,8 @@ avalancheNetworkGetBlockchain (BRAvalancheNetwork network);
 extern const char *
 avalancheNetworkGetAddressPrefix (BRAvalancheNetwork network);
 
-const extern BRAvalancheNetwork avaxNetworkMainnet;
-const extern BRAvalancheNetwork avaxNetworkTestnet;
+extern const BRAvalancheNetwork avaxNetworkMainnet;
+extern const BRAvalancheNetwork avaxNetworkTestnet;
 
 #ifdef __cplusplus
 }
