@@ -34,14 +34,6 @@ suspend fun WalletManager.createSweeper(wallet: Wallet, key: Key): WalletSweeper
     }
 }
 
-/** See [WalletManager.createWalletConnector]. */
-@throws(WalletConnectorError::class)
-suspend fun WalletManager.createWalletConnector(): WalletConnector {
-    return suspendForCompletion<WalletConnector, WalletConnectorError> {
-        createWalletConnector(it)
-    }
-}
-
 /** See [WalletSweeper.estimate]. */
 @Throws(FeeEstimationError::class)
 suspend fun WalletSweeper.estimate(networkFee: NetworkFee): TransferFeeBasis {
@@ -79,6 +71,14 @@ suspend fun Wallet.estimateLimitMinimum(address: Address, networkFee: NetworkFee
 suspend fun PaymentProtocolRequest.estimate(fee: NetworkFee): TransferFeeBasis {
     return suspendForCompletion<TransferFeeBasis, FeeEstimationError> {
         estimate(fee, it)
+    }
+}
+
+/** See [WalletManager.createWalletConnector]. */
+@Throws(WalletConnectorError::class)
+suspend fun WalletManager.createWalletConnector(): WalletConnector {
+    return suspendForCompletion<WalletConnector, WalletConnectorError> {
+        createWalletConnector(it)
     }
 }
 
