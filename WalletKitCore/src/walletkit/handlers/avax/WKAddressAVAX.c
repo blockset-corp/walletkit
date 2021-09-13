@@ -15,6 +15,7 @@
 
 typedef struct {
     BRAvalancheAddress avaxAddress;
+    BRAvalancheNetwork avaxNetwork;
 } WKAddressCreateContextAVAX;
 
 static void
@@ -23,35 +24,29 @@ wkAddressCreateCallbackAVAX (WKAddressCreateContext context,
     WKAddressCreateContextAVAX *contextAVAX = (WKAddressCreateContextAVAX*) context;
     WKAddressAVAX addressAVAX = wkAddressCoerceAVAX (address);
 
-    addressAVAX->addr = contextAVAX->avaxAddress;
+    addressAVAX->avaxAddress    = contextAVAX->avaxAddress;
+    addressAVAX->avaxNetwork = contextAVAX->avaxNetwork;
 }
 
 extern WKAddress
-wkAddressCreateAsAVAX (BRAvalancheAddress addr) {
+wkAddressCreateAsAVAX (BRAvalancheAddress avaxAddress,
+                       BRAvalancheNetwork avaxNetwork) {
     WKAddressCreateContextAVAX contextAVAX = {
-        addr
+        avaxAddress,
+        avaxNetwork
     };
 
     return wkAddressAllocAndInit (sizeof (struct WKAddressAVAXRecord),
                                       WK_NETWORK_TYPE_AVAX,
-                                      avalancheAddressHashValue (addr),
+                                      avalancheAddressHashValue (avaxAddress),
                                       &contextAVAX,
                                       wkAddressCreateCallbackAVAX);
-}
-
-extern WKAddress
-wkAddressCreateFromStringAsAVAX (const char *string) {
-    BRAvalancheAddress address = avalancheAddressCreateFromString (string, true, AVALANCHE_CHAIN_TYPE_X);
-
-    return (avalancheAddressIsEmptyAddress(address)
-            ? NULL
-            : wkAddressCreateAsAVAX(address));
 }
 
 private_extern OwnershipKept BRAvalancheAddress
 wkAddressAsAVAX (WKAddress address) {
     WKAddressAVAX addressAVAX = wkAddressCoerceAVAX (address);
-    return addressAVAX->addr;
+    return addressAVAX->avaxAddress;
 }
 
 // MARK: - Handlers
@@ -65,7 +60,8 @@ wkAddressReleaseAVAX (WKAddress address) {
 static char *
 wkAddressAsStringAVAX (WKAddress address) {
     WKAddressAVAX addressAVAX = wkAddressCoerceAVAX (address);
-    return avalancheAddressAsString (addressAVAX->addr);
+    return avalancheNetworkAddressToString(addressAVAX->avaxNetwork,
+                                           addressAVAX->avaxAddress);
 }
 
 static bool
@@ -73,7 +69,7 @@ wkAddressIsEqualAVAX (WKAddress address1, WKAddress address2) {
     WKAddressAVAX a1 = wkAddressCoerceAVAX (address1);
     WKAddressAVAX a2 = wkAddressCoerceAVAX (address2);
 
-    return avalancheAddressEqual (a1->addr, a2->addr);
+    return avalancheAddressEqual (a1->avaxAddress, a2->avaxAddress);
 }
 
 WKAddressHandlers wkAddressHandlersAVAX = {

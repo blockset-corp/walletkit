@@ -68,7 +68,7 @@ static const uint8_t feeAddressBytes [AVALANCHE_ADDRESS_BYTES] = {
     0, 0, 0, 0,    0, 0, 0, 0,    0, 0
 };
 
-static BRAvalancheAddress
+extern BRAvalancheAddress
 avalancheAddressCreateFeeAddress(BRAvalancheChainType type) {
     return avalancheAddressCreateWithBytes(type, feeAddressBytes);
 }
@@ -85,7 +85,7 @@ static const uint8_t unknownAddressBytes [AVALANCHE_ADDRESS_BYTES] = {
     0, 0, 0, 0,    0, 0, 0, 0,    0, 0
 };
 
-static BRAvalancheAddress
+extern BRAvalancheAddress
 avalancheAddressCreateUnknownAddress(BRAvalancheChainType type) {
     return avalancheAddressCreateWithBytes (type, unknownAddressBytes);
 }
@@ -107,18 +107,17 @@ avalancheAddressIsEmptyAddress (BRAvalancheAddress address) {
     return avalancheAddressHasBytes (&address, emptyAddressBytes);
  }
 
-static BRAvalancheAddress
+extern BRAvalancheAddress
 avalancheAddressCreateEmptyAddress(BRAvalancheChainType type) {
     return avalancheAddressCreateWithBytes(type, emptyAddressBytes);
 }
 
 // MARK: - Address As String
 
-static char *
-avalancheAddressAsStringX (BRAvalancheAddress address) {
+extern char *
+avalancheAddressAsStringX (BRAvalancheAddress address, const char *hrp) {
     assert (AVALANCHE_CHAIN_TYPE_X == address.type);
 
-    static const char *hrp = "avax";
     const size_t hrpLen = strlen (hrp);
 
     UInt256 pkh;
@@ -133,29 +132,10 @@ avalancheAddressAsStringX (BRAvalancheAddress address) {
     return result;
 }
 
-static char *
+extern char *
 avalancheAddressAsStringC (BRAvalancheAddress address) {
     assert (AVALANCHE_CHAIN_TYPE_C == address.type);
     return hexEncodeCreate (NULL, address.u.c.bytes, AVALANCHE_ADDRESS_BYTES_C);
-}
-
-extern char *
-avalancheAddressAsString (BRAvalancheAddress address) {
-    if (avalancheAddressIsFeeAddress (address)) {
-        return strdup ("__fee__");
-    } else if (avalancheAddressIsUnknownAddress (address)) {
-        return strdup ("unknown");
-    } else {
-        switch (address.type) {
-            case AVALANCHE_CHAIN_TYPE_X:
-                return avalancheAddressAsStringX (address);
-            case AVALANCHE_CHAIN_TYPE_C:
-                return avalancheAddressAsStringC (address);
-            case AVALANCHE_CHAIN_TYPE_P:
-                assert (false);
-                return NULL;
-        }
-    }
 }
 
 // MARK: - Create From Key
@@ -224,61 +204,25 @@ avalancheAddressCreateFromBytes (uint8_t * bytes, size_t length) {
 
 // MARK: - String to Address
 
-static BRAvalancheAddress
-avalancheAddressStringToAddressX (const char *input) {
+extern BRAvalancheAddress
+avalancheAddressStringToAddressX (const char *input,
+                                  const char *prefix) {
     BRAvalancheAddress address = { AVALANCHE_CHAIN_TYPE_X };
 
     size_t addressBytesCount = AVALANCHE_ADDRESS_BYTES_X;
 
-    bool success = avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, "avax", input);
+    bool success = avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, prefix, input);
 
     return (success ? address : avalancheAddressCreateEmptyAddress (AVALANCHE_ADDRESS_BYTES_X));
 }
 
-static BRAvalancheAddress
+extern BRAvalancheAddress
 avalancheAddressStringToAddressC (const char *input) {
     assert (40 == strlen(input));
 
     BRAvalancheAddress address = { AVALANCHE_CHAIN_TYPE_C };
     hexDecode (address.u.c.bytes, AVALANCHE_ADDRESS_BYTES_C, input, strlen(input));
     return address;
-}
-
-
-static BRAvalancheAddress
-avalancheAddressStringToAddress(const char *input, BRAvalancheChainType type) {
-    switch (type) {
-        case AVALANCHE_CHAIN_TYPE_X:
-            return avalancheAddressStringToAddressX (input);
-
-        case AVALANCHE_CHAIN_TYPE_C:
-            return avalancheAddressStringToAddressC (input);
-
-        case AVALANCHE_CHAIN_TYPE_P:
-            assert (false);
-            return ((BRAvalancheAddress) { (BRAvalancheChainType) -1 });
-    }
-}
-
-extern BRAvalancheAddress
-avalancheAddressCreateFromString(const char * addressString, bool strict, BRAvalancheChainType type) {
-    
-    if (addressString == NULL || strlen(addressString) == 0) {
-        assert (!strict);
-        return avalancheAddressCreateUnknownAddress (type);
-    }
-    else if (strict) {
-        return avalancheAddressStringToAddress (addressString, type);
-    }
-    else if (strcmp(addressString, "unknown") == 0) {
-        return avalancheAddressCreateUnknownAddress (type);
-    }
-    else if (strcmp(addressString, "__fee__") == 0) {
-        return avalancheAddressCreateFeeAddress (type);
-    }
-    else {
-        return avalancheAddressStringToAddress (addressString, type);
-    }
 }
 
 extern bool

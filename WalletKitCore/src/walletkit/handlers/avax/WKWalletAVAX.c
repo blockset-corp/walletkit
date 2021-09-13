@@ -28,6 +28,7 @@ wkWalletCoerce (WKWallet wallet) {
 
 typedef struct {
     BRAvalancheAccount avaxAccount;
+    BRAvalancheNetwork avaxNetwork;
 } WKWalletCreateContextAVAX;
 
 static void
@@ -37,26 +38,29 @@ wkWalletCreateCallbackAVAX (WKWalletCreateContext context,
     WKWalletAVAX walletAVAX = wkWalletCoerce (wallet);
 
     walletAVAX->avaxAccount = contextAVAX->avaxAccount;
+    walletAVAX->avaxNetwork = contextAVAX->avaxNetwork;
 }
 
 private_extern WKWallet
 wkWalletCreateAsAVAX (WKWalletListener listener,
-                         WKUnit unit,
-                         WKUnit unitForFee,
-                         BRAvalancheAccount avaxAccount) {
+                      WKUnit unit,
+                      WKUnit unitForFee,
+                      BRAvalancheAccount avaxAccount,
+                      BRAvalancheNetwork avaxNetwork) {
     int hasMinBalance;
     int hasMaxBalance;
     BRAvalancheAmount minBalanceAVAX = avalancheAccountGetBalanceLimit (avaxAccount, 0, &hasMinBalance);
     BRAvalancheAmount maxBalanceAVAX = avalancheAccountGetBalanceLimit (avaxAccount, 1, &hasMaxBalance);
-
+    
     WKAmount minBalance = hasMinBalance ? wkAmountCreateAsAVAX(unit, WK_FALSE, minBalanceAVAX) : NULL;
     WKAmount maxBalance = hasMaxBalance ? wkAmountCreateAsAVAX(unit, WK_FALSE, maxBalanceAVAX) : NULL;
-
+    
     BRAvalancheFeeBasis avalancheFeeBasis = avalancheFeeBasisCreate (AVALANCHE_DEFAULT_AVAX_PER_TRANSACTION);
     WKFeeBasis feeBasis   = wkFeeBasisCreateAsAVAX (unitForFee, avalancheFeeBasis);
-
+    
     WKWalletCreateContextAVAX contextAVAX = {
-        avaxAccount
+        avaxAccount,
+        avaxNetwork
     };
 
     WKWallet wallet = wkWalletAllocAndInit (sizeof (struct WKWalletAVAXRecord),
@@ -88,7 +92,7 @@ wkWalletGetAddressAVAX (WKWallet wallet,
                            WKAddressScheme addressScheme) {
     assert (WK_ADDRESS_SCHEME_NATIVE == addressScheme);
     WKWalletAVAX walletAVAX = wkWalletCoerce (wallet);
-    return wkAddressCreateAsAVAX (avalancheAccountGetAddress(walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X));
+    return wkAddressCreateAsAVAX (avalancheAccountGetAddress(walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X), walletAVAX->avaxNetwork);
 }
 
 static bool
@@ -190,17 +194,18 @@ wkWalletValidateTransferAttributeAVAX (WKWallet wallet,
 // create for send
 extern WKTransfer
 wkWalletCreateTransferAVAX (WKWallet  wallet,
-                                  WKAddress target,
-                                  WKAmount  amount,
-                                  WKFeeBasis estimatedFeeBasis,
-                                  size_t attributesCount,
-                                  OwnershipKept WKTransferAttribute *attributes,
-                                  WKCurrency currency,
-                                  WKUnit unit,
-                                  WKUnit unitForFee) {
+                            WKAddress target,
+                            WKAmount  amount,
+                            WKFeeBasis estimatedFeeBasis,
+                            size_t attributesCount,
+                            OwnershipKept WKTransferAttribute *attributes,
+                            WKCurrency currency,
+                            WKUnit unit,
+                            WKUnit unitForFee) {
     WKWalletAVAX walletAVAX = wkWalletCoerce (wallet);
 
-    BRAvalancheAccount avaxAcount = walletAVAX->avaxAccount;
+    BRAvalancheAccount avaxAccount = walletAVAX->avaxAccount;
+    BRAvalancheNetwork avaxNetwork = walletAVAX->avaxNetwork;
     
     BRAvalancheAddress avaxSource  = avalancheAccountGetAddress (walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X);
     BRAvalancheAddress avaxTarget  = wkAddressAsAVAX (target);
@@ -212,18 +217,19 @@ wkWalletCreateTransferAVAX (WKWallet  wallet,
     BRAvalancheFeeBasis avaxFeeBasis = wkFeeBasisCoerceAVAX (estimatedFeeBasis)->avaxFeeBasis;
     
     BRAvalancheTransaction avaxTransaction = avalancheTransactionCreate (avaxSource,
-                                                                             avaxTarget,
-                                                                             avaxAmount,
-                                                                             avaxFeeBasis);
+                                                                         avaxTarget,
+                                                                         avaxAmount,
+                                                                         avaxFeeBasis);
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsAVAX (wallet->listenerTransfer,
-                                                             NULL,
-                                                             unit,
-                                                             unitForFee,
-                                                             state,
-                                                             avaxAcount,
-                                                             avaxTransaction);
+                                                       NULL,
+                                                       unit,
+                                                       unitForFee,
+                                                       state,
+                                                       avaxAccount,
+                                                       avaxNetwork,
+                                                       avaxTransaction);
     
     wkTransferSetAttributes (transfer, attributesCount, attributes);
     wkTransferStateGive (state);
@@ -248,9 +254,7 @@ wkWalletGetAddressesForRecoveryAVAX (WKWallet wallet) {
     BRSetOf(WKAddress) addresses = wkAddressSetCreate (1);
 
     WKWalletAVAX walletAVAX = wkWalletCoerce(wallet);
-    BRAvalancheAccount avaxAccount = walletAVAX->avaxAccount;
-
-    BRSetAdd (addresses, wkAddressCreateAsAVAX (avalancheAccountGetAddress (avaxAccount, AVALANCHE_CHAIN_TYPE_X)));
+    BRSetAdd (addresses, wkAddressCreateAsAVAX (avalancheAccountGetAddress (walletAVAX->avaxAccount, AVALANCHE_CHAIN_TYPE_X), walletAVAX->avaxNetwork));
 
     return addresses;
 }

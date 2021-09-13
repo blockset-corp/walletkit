@@ -215,7 +215,9 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
                                                          OwnershipKept WKClientTransferBundle bundle) {
     // The wallet holds currency transfers
     WKWallet wallet = wkWalletManagerGetWallet (manager);
+    WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(manager->network);
 
+    BRAvalancheNetwork avaxNetwork = networkAVAX->avaxNetwork;
     BRAvalancheAccount avaxAccount = wkAccountGetAsAVAX (manager->account);
 
     BRAvalancheAmount avaxAmount;
@@ -227,11 +229,12 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     // Get the `source` and `target` addresses.  We'll only use `source` if we need to create a
     // transfer; we'll use `target` both if a transfer is created and to identify a pre-existing
     // transfer held by wallet.
-    BRAvalancheAddress avaxTarget = avalancheAddressCreateFromString (bundle->to,   false, AVALANCHE_CHAIN_TYPE_X);
-    BRAvalancheAddress avaxSource = avalancheAddressCreateFromString (bundle->from, false, AVALANCHE_CHAIN_TYPE_X);
 
-    WKAddress target = wkAddressCreateAsAVAX (avaxTarget);
-    WKAddress source = wkAddressCreateAsAVAX (avaxSource);
+    BRAvalancheAddress avaxTarget = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, bundle->to,   false);
+    BRAvalancheAddress avaxSource = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, bundle->from, false);
+
+    WKAddress target = wkAddressCreateAsAVAX (avaxTarget, networkAVAX->avaxNetwork);
+    WKAddress source = wkAddressCreateAsAVAX (avaxSource, networkAVAX->avaxNetwork);
 
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the
     // normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed
@@ -251,17 +254,18 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     }
     else {
         BRAvalancheTransaction avaxTransaction = avalancheTransactionCreate (avaxSource,
-                                                                                 avaxTarget,
-                                                                                 avaxAmount,
-                                                                                 avaxFeeBasis);
+                                                                             avaxTarget,
+                                                                             avaxAmount,
+                                                                             avaxFeeBasis);
 
         transfer = wkTransferCreateAsAVAX (wallet->listenerTransfer,
-                                                  bundle->uids,
-                                                  wallet->unit,
-                                                  wallet->unitForFee,
-                                                  state,
-                                                  avaxAccount,
-                                                  avaxTransaction);
+                                           bundle->uids,
+                                           wallet->unit,
+                                           wallet->unitForFee,
+                                           state,
+                                           avaxAccount,
+                                           avaxNetwork,
+                                           avaxTransaction);
         wkWalletAddTransfer (wallet, transfer);
     }
 
@@ -335,6 +339,7 @@ wkWalletManagerCreateWalletAVAX (WKWalletManager manager,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
     BRAvalancheAccount avaxAccount = wkAccountGetAsAVAX (manager->account);
+    BRAvalancheNetwork avaxNetwork = wkNetworkAsAVAX    (manager->network);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;
@@ -342,9 +347,10 @@ wkWalletManagerCreateWalletAVAX (WKWalletManager manager,
     WKUnit     unitAsDefault = wkNetworkGetUnitAsDefault (network, currency);
     
     WKWallet wallet = wkWalletCreateAsAVAX (manager->listenerWallet,
-                                                     unitAsDefault,
-                                                     unitAsDefault,
-                                                     avaxAccount);
+                                            unitAsDefault,
+                                            unitAsDefault,
+                                            avaxAccount,
+                                            avaxNetwork);
     wkWalletManagerAddWallet (manager, wallet);
     
     // TODO:AVAX load transfers from fileService

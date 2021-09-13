@@ -73,7 +73,12 @@ wkHashAsAVAX (WKHash hash) {
 
 typedef struct WKAddressAVAXRecord {
     struct WKAddressRecord base;
-    BRAvalancheAddress addr;
+
+    // The BRAvalanceAddress are, essentially, the AVALANCHE_ADDRESS_BYTES_{X,C,P} bytes
+    BRAvalancheAddress avaxAddress;
+
+    // The BRAvalanceNetwork is required to string-ify the address
+    BRAvalancheNetwork avaxNetwork;
 } *WKAddressAVAX;
 
 static inline WKAddressAVAX
@@ -83,10 +88,8 @@ wkAddressCoerceAVAX (WKAddress address) {
 }
 
 extern WKAddress
-wkAddressCreateAsAVAX (BRAvalancheAddress addr);
-
-extern WKAddress
-wkAddressCreateFromStringAsAVAX (const char *string);
+wkAddressCreateAsAVAX (BRAvalancheAddress addr,
+                       BRAvalancheNetwork network);
 
 private_extern BRAvalancheAddress
 wkAddressAsAVAX (WKAddress address);
@@ -161,7 +164,8 @@ wkTransferCreateAsAVAX (WKTransferListener listener,
                         WKUnit unit,
                         WKUnit unitForFee,
                         WKTransferState state,
-                        BRAvalancheAccount avaxAccount,
+                        BRAvalancheAccount     avaxAccount,
+                        BRAvalancheNetwork     avaxNetwork,
                         BRAvalancheTransaction avaxTransaction);
 
 // MARK: - Wallet
@@ -171,6 +175,7 @@ typedef struct WKWalletAVAXRecord {
     
     // Typically the BRAvalancheAccount
     BRAvalancheAccount avaxAccount;
+    BRAvalancheNetwork avaxNetwork;
 } *WKWalletAVAX;
 
 extern WKWalletHandlers wkWalletHandlersAVAX;
@@ -179,7 +184,8 @@ private_extern WKWallet
 wkWalletCreateAsAVAX (WKWalletListener listener,
                       WKUnit unit,
                       WKUnit unitForFee,
-                      BRAvalancheAccount avaxAccount);
+                      BRAvalancheAccount avaxAccount,
+                      BRAvalancheNetwork avaxNetwork);
 
 extern WKTransfer
 wkWalletCreateTransferAVAX (WKWallet  wallet,
