@@ -17,6 +17,7 @@
 #include "support/BRArray.h"
 #include "support/BRInt.h"
 #include "support/BRBIP39Mnemonic.h"
+#include "support/util/BRHex.h"
 
 #include "avalanche/BRAvalanche.h"
 #include "avalanche/BRAvalancheSupport.h"
@@ -61,13 +62,38 @@ runAvalancheUtilsTest (void) {
 
 static void
 runAvalancheHashTest (void) {
-    static struct { char *data; /* ... */ } vectors[] = {
-        { "Z8PYSYJHWJutjMDSdVBybSrFhmw1n8EYXEGb7drLg8mzrYEnq" },
-        { NULL }
+    static struct {
+        char *bytesHex;
+        char *hashHex;
+        char *hashString;
+
+    } vectors[] = {
+        {
+            "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000000631f5dc000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000265ed870000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c000000021c8acd205ff6161efce0952071fc63ca8e99717bb829e74ce33997c2b369334b000000003d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000500000000773594000000000100000000450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f",
+            "31d3ab6136b423dc0b4ed69769dcfd3207067d94534357e6410a61e5a6859b48",
+            "Nwm4H32eP8RsQB5iTeEyqqCJSam9qe9BWAvDhwkGssqpbQjfy"
+        },
+
+        { NULL, NULL }
     };
     printf("TST:    Avalanche Hash\n");
 
-    for (size_t index = 0; vectors[index].data != NULL; index++ ) {
+    for (size_t index = 0; vectors[index].bytesHex != NULL; index++ ) {
+        size_t   bytesCount;
+        uint8_t *bytes = hexDecodeCreate(&bytesCount, vectors[index].bytesHex, strlen (vectors[index].bytesHex));
+
+        BRAvalancheHash hash = avalancheHashCreate(bytes, bytesCount);
+        char *hashHex = hexEncodeCreate (NULL, hash.bytes, sizeof(hash.bytes));
+        assert (0 == strcmp (hashHex, vectors[index].hashHex));
+        free (hashHex);
+        free (bytes);
+
+        char *hashString = avalancheHashToString (hash);
+        assert (0 == strcmp (hashString, vectors[index].hashString));
+
+        BRAvalancheHash hashFromString = avalancheHashFromString(hashString);
+        assert (avalancheHashIsEqual (hash, hashFromString));
+        free (hashString);
     }
 }
 
@@ -186,6 +212,51 @@ runAvalancheAccountTest (void) {
     }
 }
 
+// MARK: - Signature Test
+
+static void
+runAvalancheSignatureTest (void) {
+    static struct {
+        const char *paperKey;
+        const char *message;
+        const char *signatureHexEncoded;
+    } vectors[] = {
+        {
+            "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
+            "hello",
+            "0xf72ca286c8e6f1a0ddf1fb6ee18c93cd649cf058b4ce7e75fab3ab2cabeb29af2fdafd1b57bdefddfaddc3b89d333f5b5dbb02928a416f500792df201ad4424a01"
+        },
+
+        { NULL, NULL, NULL }
+    };
+    printf("TST:    Avalanche Signature\n");
+
+    for (size_t index = 0; vectors[index].paperKey != NULL; index++) {
+        UInt512 seed = UINT512_ZERO;
+        BRBIP39DeriveKey(seed.u8, vectors[index].paperKey, NULL);
+        BRAvalancheAccount account = avalancheAccountCreateWithSeed (seed);
+
+        size_t   messageCount;
+        uint8_t *message = avalancheAccountCreateStandardMessage (account,
+                                                                  (uint8_t *) vectors[index].message,
+                                                                  strlen (vectors[index].message),
+                                                                  &messageCount);
+
+        BRAvalancheSignature signature = avalancheAccountSignData (account,
+                                                                   message,
+                                                                   messageCount,
+                                                                   seed);
+
+        size_t   signatureBytesCount;
+        uint8_t *signatureBytes      = avalancheSignatureGetBytes (&signature, &signatureBytesCount);
+        char    *signatureHexEncoded = hexEncodeCreate(NULL, signatureBytes, signatureBytesCount);
+
+        assert (0 == strcmp (signatureHexEncoded, &vectors[index].signatureHexEncoded[2]));
+        free (signatureBytes);
+        free (signatureHexEncoded);
+
+    }
+}
 // MARK: - Fee Basis Test
 
 static void
@@ -240,6 +311,7 @@ runAvalancheTest (void /* ... */) {
     runAvalancheHashTest ();
     runAvalancheAddressTest();
     runAvalancheAccountTest();
+    runAvalancheSignatureTest();
     runAvalancheFeeBasisTest ();
     runAvalancheTransactionTest ();
     runAvalancheWalletTest ();

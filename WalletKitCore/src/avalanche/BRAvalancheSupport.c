@@ -21,6 +21,13 @@
 // MARK: - Hash
 
 extern BRAvalancheHash
+avalancheHashCreate (uint8_t *bytes, size_t bytesCount) {
+    BRAvalancheHash hash;
+    BRSHA256 (hash.bytes, bytes, bytesCount);
+    return hash;
+}
+
+extern BRAvalancheHash
 avalancheHashFromString(const char *input) {
     size_t hashSize = BRAvalancheCB58CheckDecode (NULL, 0, input);
     assert (AVALANCHE_HASH_BYTES == hashSize);

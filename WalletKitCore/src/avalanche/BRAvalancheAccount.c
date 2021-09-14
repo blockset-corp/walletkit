@@ -99,6 +99,56 @@ avalancheAccountFree (BRAvalancheAccount account)
 
 // MARK: - Signing
 
+#define AVALANCHE_PREFIX_STRING     ("\x1A""Avalanche Signed Message:\n")
+
+extern uint8_t *
+avalancheAccountCreateStandardMessage (BRAvalancheAccount account,
+                                       uint8_t *bytes,
+                                       size_t bytesCount,
+                                       size_t *messageCount) {
+    static const char  *avalanchePrefix      = AVALANCHE_PREFIX_STRING;
+    static const size_t avalanchePrefixCount = strlen (AVALANCHE_PREFIX_STRING);
+
+    assert (bytesCount < UINT32_MAX);
+    assert (NULL != messageCount);
+
+    size_t offset = 0;
+
+    // https://docs.avax.network/build/references/cryptographic-primitives
+    // The encoding is (prefix || len(bytes) || bytes) where `len(bytes)` is a four byte,
+    // big-endian representation.
+    *messageCount = avalanchePrefixCount + sizeof(uint32_t) + bytesCount;
+    uint8_t *message = malloc (*messageCount);
+    assert (NULL != message);
+
+    memcpy (&message[offset], avalanchePrefix, avalanchePrefixCount);
+    offset += avalanchePrefixCount;
+
+    UInt32SetBE (&message[offset], (uint32_t) bytesCount);
+    offset += sizeof(uint32_t);
+
+    memcpy (&message[offset], bytes, bytesCount);
+
+    return message;
+#if 0
+    char  *bytesPrefix;
+    size_t bytesPrefixCount;
+    int    bytesPrefixCountOrError = asprintf (&bytesPrefix, "%s%zu", avalanchePrefix, bytesCount);
+    if (bytesPrefixCountOrError < 0) { *messageCount = 0; return NULL; }
+    bytesPrefixCount = (size_t) bytesPrefixCountOrError;
+
+    size_t   bytesAvalancheCount = bytesPrefixCount + bytesCount;
+    uint8_t *bytesAvalanche = malloc (bytesAvalancheCount);
+
+    memcpy (&bytesAvalanche[0],                bytesPrefix, bytesPrefixCount);
+    memcpy (&bytesAvalanche[bytesPrefixCount], bytes,       bytesCount);
+    free (bytesPrefix);
+
+    *messageCount = bytesAvalancheCount;
+    return bytesAvalanche;
+#endif
+}
+
 extern BRAvalancheSignature
 avalancheAccountSignData (BRAvalancheAccount account,
                          uint8_t *bytes,

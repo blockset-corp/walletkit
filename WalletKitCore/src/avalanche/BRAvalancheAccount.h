@@ -151,6 +151,24 @@ avalancheAccountSignData (BRAvalancheAccount account,
                           size_t   bytesCount,
                           UInt512 seed);
 
+/**
+ * Create a standad avalanche message for signing as:
+ *     ("\x1A""Avalanche Signed Message:\n" || bytesCount || bytes).
+ *
+ * @param account
+ * @param bytes - the bytes
+ * @param bytesCount - the number of bytes
+ * @param messageCount - pointer filled with the message size
+ *
+ * @return a byte array of a standard avalanche message or NULL if an error occurred.
+ *
+ */
+extern uint8_t *
+avalancheAccountCreateStandardMessage (BRAvalancheAccount account,
+                                       uint8_t *bytes,
+                                       size_t bytesCount,
+                                       size_t *messageCount);
+
 #ifdef __cplusplus
 }
 #endif

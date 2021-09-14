@@ -60,6 +60,16 @@ typedef struct {
     0, 0, 0, 0,     0, 0, 0, 0, \
 })
 
+extern BRAvalancheHash
+avalancheHashCreate (uint8_t *bytes, size_t bytesCount);
+
+extern BRAvalancheHash
+avalancheHashFromString(const char *input);
+
+extern char *
+avalancheHashToString (BRAvalancheHash hash);
+
+
 static inline bool
 avalancheHashIsEqual (const BRAvalancheHash h1,
                       const BRAvalancheHash h2) {
@@ -70,12 +80,6 @@ static inline bool
 avalancheHashIsEmpty (BRAvalancheHash hash) {
     return avalancheHashIsEqual (hash, AVALANCHE_HASH_EMPTY);
 }
-
-extern BRAvalancheHash
-avalancheHashFromString(const char *input);
-
-extern char *
-avalancheHashToString (BRAvalancheHash hash);
 
 // For use with BRSet
 static inline uint32_t
