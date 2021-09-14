@@ -64,6 +64,15 @@ public enum WKWalletConnectorError {
         public int toCore() {
             return WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE;
         }
+    },
+
+    /** Indicates that public key recovery failed.
+     */
+    KEY_RECOVERY {
+        @Override
+        public int toCore() {
+            return WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE;
+        }
     };
     
     public static WKWalletConnectorError fromCore(int nativeValue) {
@@ -74,6 +83,7 @@ public enum WKWalletConnectorError {
             case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST_VALUE:                   return INVALID_DIGEST;
             case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE:                return INVALID_SIGNATURE;
             case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE:            return INVALID_SERIALIZATION;
+            case WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE:              return KEY_RECOVERY;
 
             case WK_WALLET_CONNECTOR_STATUS_OK_VALUE: throw new IllegalArgumentException("Invalid WKWalletConnectorError for Success");
             default: throw new IllegalArgumentException("Invalid WKWalletConnectorError core value");
@@ -88,6 +98,7 @@ public enum WKWalletConnectorError {
     private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST_VALUE                = 4;
     private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE             = 5;
     private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE         = 6;
+    private static final int WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE           = 7;
 
     public abstract int toCore();
 }

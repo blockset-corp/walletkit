@@ -9,6 +9,7 @@ package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.nativex.WKKey;
 import com.blockset.walletkit.nativex.WKWalletConnectorError;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.errors.WalletConnectorError;
@@ -122,12 +123,14 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
             !(signature instanceof Signature) ||
             ( ((Digest)digest).core.getPointer() != core.getPointer() ||
               ((Signature)signature).core.getPointer() != core.getPointer())) {
-
-            // Opportunity to Logger.log something here...
-
             return Result.failure(new WalletConnectorError.UnknownEntity());
         }
-
+        WKResult<WKKey,WKWalletConnectorError> recoverResult = core.recover(((Digest) digest).data32,
+                                                                            ((Signature) signature).data);
+        if (recoverResult.isSuccess()) {
+            // The returned key will own the native WKKey core memory
+            return Result.success(Key.create(recoverResult.getSuccess()));
+        }
         return Result.failure(new WalletConnectorError.UnrecoverableKey());
     }
 
