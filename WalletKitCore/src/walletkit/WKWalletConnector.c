@@ -270,8 +270,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
 
         unsignedTransaction =  netHandlers->connector->createTransactionFromArguments(
                 connector,
-                keys,
-                values,
+                arrayOfKeys,
+                arrayOfValues,
                 serializationLength,
                 status);
 
