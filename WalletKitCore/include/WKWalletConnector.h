@@ -118,7 +118,7 @@ wkWalletConnectorSignData (
  * @return When successful, the recovered public key. Otherwise an error is set in status
  *         and the returned key is NULL.
  */
-extern uint8_t*
+extern WKKey
 wkWalletConnectorRecoverKey (
         WKWalletConnector       connector,
         const uint8_t           *digest,

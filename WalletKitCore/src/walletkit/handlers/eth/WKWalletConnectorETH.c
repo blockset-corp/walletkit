@@ -122,7 +122,7 @@ wkWalletConnectorRecoverKeyETH (
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST;
         return NULL;
     }
-    if (digestLength != 65) {
+    if (65 != signatureLength) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
     }
     if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), signature, signatureLength) ) {

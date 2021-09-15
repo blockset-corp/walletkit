@@ -639,13 +639,12 @@ public final class WalletConnector {
     public func recover (digest: Digest, signature: Signature) -> Result<Key, WalletConnectorError> {
         guard core == digest.core, core == signature.core else { return Result.failure(.unknownEntity) }
 
-        return digest.withUnsafeBytes { (digestBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
+        return digest.data32.withUnsafeBytes { (digestBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
             let digestAddr = digestBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
             let digestLength = digestBytes.count
-            
-            return signature.withUnsafeBytes { (signatureBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
+            return signature.data.withUnsafeBytes { (signatureBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
                 let signatureAddr = signatureBytes.baseAddress?.assumingMemoryBound(to:UInt8.self);
-                let signatureLength = signatureBytes.length
+                let signatureLength = signatureBytes.count
                 var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
                 let key = wkWalletConnectorRecoverKey(self.core,
                                                       digestAddr,
@@ -658,7 +657,7 @@ public final class WalletConnector {
                 }
                 
                 // Return key will own the walletkit native key memory hereafter
-                return Result.success(Key(core: key));
+                return Result.success(Key(core: key!));
             }
         }
     }
