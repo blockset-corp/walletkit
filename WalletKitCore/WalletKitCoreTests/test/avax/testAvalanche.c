@@ -92,7 +92,7 @@ runAvalancheHashTest (void) {
         assert (0 == strcmp (hashString, vectors[index].hashString));
 
         BRAvalancheHash hashFromString = avalancheHashFromString(hashString);
-        assert (avalancheHashIsEqual (hash, hashFromString));
+        assert (avalancheHashIsEqual (&hash, &hashFromString));
         free (hashString);
     }
 }
@@ -247,6 +247,10 @@ runAvalancheSignatureTest (void) {
                                                                    messageCount,
                                                                    seed);
 
+        BRData signatureData = avalancheSignatureGetBytes(&signature);
+        assert (dataEqualsHexString(signatureData, &vectors[index].signatureHexEncoded[2]));
+        dataFree (signatureData);
+#if 0
         size_t   signatureBytesCount;
         uint8_t *signatureBytes      = avalancheSignatureGetBytes (&signature, &signatureBytesCount);
         char    *signatureHexEncoded = hexEncodeCreate(NULL, signatureBytes, signatureBytesCount);
@@ -254,6 +258,7 @@ runAvalancheSignatureTest (void) {
         assert (0 == strcmp (signatureHexEncoded, &vectors[index].signatureHexEncoded[2]));
         free (signatureBytes);
         free (signatureHexEncoded);
+#endif
         free (message);
     }
 }
@@ -282,6 +287,130 @@ runAvalancheTransactionSignTest (void) {
 static void
 runAvalancheTransactionSerializeTest (void) {
     printf("TST:        Avalanche Transaction Serialize\n");
+    BRAvalancheNetwork network = avaxNetworkTestnet;
+
+    BRAvalancheHash assetIdentifier = avalancheHashFromString ("U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK");
+
+    BRAvalancheAddress utxoAddress = avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true);
+    BRArrayOf(BRAvalancheAddress) utxoAddresses;
+    array_new (utxoAddresses, 1);
+    array_add (utxoAddresses, utxoAddress);
+
+    BRAvalancheUTXO utxo1 = avalancheUTXOCreate (avalancheHashFromString("XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh"),
+                                             1,
+                                             assetIdentifier,
+                                             9964000000,
+                                             utxoAddresses);
+
+    BRAvalancheUTXO utxo2 = avalancheUTXOCreate (avalancheHashFromString("Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWvAbWmqP"),
+                                                 0,
+                                                 assetIdentifier,
+                                                 2000000000,
+                                                 utxoAddresses);
+
+    BRArrayOf(BRAvalancheUTXO) utxos;
+    array_new (utxos, 2);
+    array_add (utxos, utxo1);
+    array_add (utxos, utxo2);
+
+    BRAvalancheTransaction transaction1 =
+    avalancheTransactionCreate (avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+                                avalancheNetworkStringToAddress (network, "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0", true),
+                                avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+                                assetIdentifier,
+                                12300000,
+                                avalancheFeeBasisCreate((BRAvalancheAmount)(1000000000 * 0.001)),
+                                "hello",
+                                utxos,
+                                network);
+
+    //
+    // Check individual encodings
+    //
+
+    // output[0]
+    BRData output0Data = avalancheTransactionOutputEncode (transaction1->outputs[0]);
+    assert (dataEqualsHexString (output0Data, "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c"));
+    dataFree(output0Data);
+
+    // output[1]
+    BRData output1Data = avalancheTransactionOutputEncode (transaction1->outputs[1]);
+    assert (dataEqualsHexString (output1Data, "3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c"));
+    dataFree(output1Data);
+
+    // input[0]
+    BRData input0Data = avalancheTransactionInputEncode (transaction1->inputs[0]);
+    assert (dataEqualsHexString(input0Data, "450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e693000000000100000000"));
+    dataFree(input0Data);
+
+    BRData transaction1Data = avalancheTransactionEncode (transaction1);
+    assert (dataEqualsHexString (transaction1Data, "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000000bbaee000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000002511ba1e000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c00000001450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
+    assert (307 == transaction1Data.size);
+    dataFree(transaction1Data);
+
+//    avalancheTransactionRelease (transaction);
+
+    BRAvalancheTransaction transaction2 =
+    avalancheTransactionCreate (avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+                                avalancheNetworkStringToAddress (network, "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0", true),
+                                avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+                                assetIdentifier,
+                                10300000000,
+                                avalancheFeeBasisCreate((BRAvalancheAmount)(1000000000 * 0.001)),
+                                "hello",
+                                utxos,
+                                network);
+
+    BRData transaction2Data = avalancheTransactionEncode (transaction2);
+    assert (dataEqualsHexString (transaction2Data, "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000000631f5dc000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000265ed870000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c000000021c8acd205ff6161efce0952071fc63ca8e99717bb829e74ce33997c2b369334b000000003d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000500000000773594000000000100000000450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f"));
+
+    BRAvalancheHash transaction2HashUnsigned = avalancheHashCreate (transaction2Data.bytes, transaction2Data.size);
+    char *transaction2HashUnsignedHex = hexEncodeCreate (NULL, transaction2HashUnsigned.bytes, 32);
+    assert (0 == strcmp (transaction2HashUnsignedHex, "31d3ab6136b423dc0b4ed69769dcfd3207067d94534357e6410a61e5a6859b48"));
+    free (transaction2HashUnsignedHex);
+
+    //
+    // Signature
+    //
+
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone", NULL);
+    BRAvalancheAccount account = avalancheAccountCreateWithSeed (seed);
+
+
+    BRAvalancheSignature signature = avalancheAccountSignData (account,
+                                                               transaction2Data.bytes,
+                                                               transaction2Data.size,
+                                                               seed);
+    BRData signatureData = avalancheSignatureGetBytes(&signature);
+    assert (dataEqualsHexString(signatureData, "c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900"));
+    dataFree (signatureData);
+
+    // Encode multiple signatures
+    BRArrayOf(BRAvalancheSignature) signatures;
+    array_new (signatures, 1);
+    array_add (signatures, signature);
+    array_add (signatures, signature);
+    BRData signature2Data = avalancheSignatureArrayEncode (signatures);
+    assert (dataEqualsHexString (signature2Data, "000000020000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d89000000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900"));
+
+    // Derive the transaction hash.
+    BRData transactionDataSigned = dataConcatTwo (transaction2Data, signature2Data);
+    assert (dataEqualsHexString(transactionDataSigned, "00000000000000000005ab68eb1ee142a05cfe768c36e11f0b596db5a3c6c77aabe665dad9e638ca94f7000000023d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000700000000631f5dc000000000000000000000000100000001cc30e2015780a6c72efaef2280e3de4a954e770c3d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000070000000265ed870000000000000000000000000100000001b47e92d8d0d9125910d56fc1eba52c272b90876c000000021c8acd205ff6161efce0952071fc63ca8e99717bb829e74ce33997c2b369334b000000003d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa0000000500000000773594000000000100000000450a5390bcf287869b9dcef42ca6b4305fde20e5f29d40e719a87fe7dd043600000000013d9bdac0ed1d761330cf680efdeb1a42159eb387d6d2950c96f7d28f61bbe2aa000000050000000251e6930000000001000000000000000568656c6c6f000000020000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d89000000000900000001c7617e7e105b14481af67595376ab64d24e809f3986ee1133a5b77fafbda0db32cd46b17f884de9dccd1dcc13e9a9bfccb1999e49e6483f7e101a908bf4f6d8900"));
+
+    BRAvalancheHash transactionHashSigned = avalancheHashCreate (transactionDataSigned.bytes, transactionDataSigned.size);
+    char *transactionHashSignedHex = hexEncodeCreate (NULL, transactionHashSigned.bytes, 32);
+    assert (0 == strcmp (transactionHashSignedHex, "befcbc77362d6534f8deca34077da5b7b1b0107ea8a2274baf81a17aa07b82ff"));
+    free (transactionHashSignedHex);
+
+    char *transactionHashSignedString = avalancheHashToString(transactionHashSigned);
+    assert (0 == strcmp (transactionHashSignedString, "2T7WkhEYnypDQFGfB8LgNKkfPhVsmBsdyfPfy7fTm6XnaV2DXS"));
+    free (transactionHashSignedString);
+
+    dataFree (transactionDataSigned);
+    dataFree (signature2Data);
+    dataFree (transaction2Data);
+
     return;
 }
 

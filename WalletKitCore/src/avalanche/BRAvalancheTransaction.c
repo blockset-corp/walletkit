@@ -2,7 +2,7 @@
 //  BRAvalancheTransaction.c
 //  WalletKitCore
 //
-//  Created by Amit Shah on 2021-08-04.
+//  Created by Ed Gamble on 2021-09-15.
 //  Copyright © 2021 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
@@ -30,9 +30,23 @@
 
 #define AVALANCHE_TRANSACTION_OUTPUT_TYPE_ENCODING_SIZE         (sizeof (uint32_t))
 
-static int
+static int // (d1 < d2 ? +1 : (d1 > d2 ? -1 : 0))
 dataCompare (const BRData *d1, const BRData *d2) {
     return memcmp (d1->bytes, d2->bytes, MIN (d1->size, d2->size));
+}
+
+static int
+dataCompareHelper (const void * i1, const void * i2){
+    const BRData *v1 = (BRData *) i1;
+    const BRData *v2 = (BRData *) i2;
+    return dataCompare (v1, v2);
+}
+
+static int
+avalancheTransactionInputCompareHelper (const void * i1, const void * i2) {
+    const BRAvalancheTransactionInput * v1 = (const BRAvalancheTransactionInput *) i1;
+    const BRAvalancheTransactionInput * v2 = (const BRAvalancheTransactionInput *) i2;
+    return avalancheTransactionInputCompare (v1, v2);
 }
 
 static OwnershipGiven BRData
@@ -107,7 +121,7 @@ avalancheSignatureEncode (BRAvalancheSignature signature) {
     return result;
 }
 
-static OwnershipGiven BRData
+extern OwnershipGiven BRData
 avalancheSignatureArrayEncode (BRArrayOf(BRAvalancheSignature) signatures) {
     BRArrayOf (BRData) encodings;
     array_new (encodings, 1 + array_count(signatures));
@@ -152,7 +166,7 @@ avalancheAddressXArrayEncode (BRArrayOf(BRAvalancheAddressX) addresses) {
     return result;
 }
 
-static OwnershipGiven BRData
+extern OwnershipGiven BRData
 avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output) {
     BRData assetEncoding     = avalancheHashEncode(output.assetHash);
     BRData addressesEncoding = avalancheAddressXArrayEncode(output.addresses);
@@ -179,7 +193,7 @@ avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output) {
             UInt64SetBE (&variety[offset], output.locktime);
             offset += AVALANCHE_LOCKTIME_ENCODING_SIZE;
 
-            UInt64SetBE(&variety[offset], output.threshold);
+            UInt32SetBE(&variety[offset], output.threshold);
             offset += AVALANCHE_THRESHOLD_ENCODING_SIZE;
 
             typeEncodiing = dataCreate (variety, varietyCount);
@@ -214,7 +228,8 @@ avalancheTransactionOutputArrayEncode (BRArrayOf(BRAvalancheTransactionOutput) o
     for (size_t index = 0; index < outputsCount; index++)
         array_add (encodings, avalancheTransactionOutputEncode (outputs[index]));
 
-    // TODO: Sort encodings??
+    // The encodings are sorted based on a straight `memcmp` of the BRData bytes
+    mergesort_brd (&encodings[1], outputsCount, sizeof (BRData), dataCompareHelper);
 
     BRData result = dataConcat (encodings, array_count(encodings));
 
@@ -223,7 +238,7 @@ avalancheTransactionOutputArrayEncode (BRArrayOf(BRAvalancheTransactionOutput) o
     return  result;
 }
 
-static OwnershipGiven BRData
+extern OwnershipGiven BRData
 avalancheTransactionInputEncode (BRAvalancheTransactionInput input) {
     BRArrayOf (BRData) encodings;
     array_new (encodings, 6 + array_count(input.addressIndices));
@@ -263,6 +278,9 @@ avalancheTransactionInputArrayEncode (BRArrayOf(BRAvalancheTransactionInput) inp
 
     array_add (encodings, avalancheValueEncode (inputsCount, 4));
 
+    // Sort the inputs directly
+    mergesort (inputs, inputsCount, sizeof(BRAvalancheTransactionInput), avalancheTransactionInputCompareHelper);
+
     for (size_t index = 0; index < inputsCount; index++)
         array_add (encodings, avalancheTransactionInputEncode (inputs[index]));
 
@@ -275,19 +293,125 @@ avalancheTransactionInputArrayEncode (BRArrayOf(BRAvalancheTransactionInput) inp
     return  result;
 }
 
-static OwnershipGiven BRData
+extern OwnershipGiven BRData
 avalancheTransactionEncode (BRAvalancheTransaction transaction) {
     BRArrayOf(BRData) encodings;
     array_new (encodings, 6);
 
-    array_add (encodings, avalancheValueEncode (transaction->codec, 4));
+    array_add (encodings, avalancheValueEncode (transaction->codec, 2));
     array_add (encodings, avalancheValueEncode (avalancheTransactionPurposeGetEncoding (transaction->purpose), 4));
     array_add (encodings, avalancheValueEncode (avalancheNetworkGetIdentifier (transaction->network), 4));
     array_add (encodings, avalancheHashEncode  (avalancheNetworkGetBlockchain (transaction->network)));
     array_add (encodings, avalancheTransactionOutputArrayEncode (transaction->outputs));
     array_add (encodings, avalancheTransactionInputArrayEncode  (transaction->inputs));
     array_add (encodings, avalancheStringEncode (transaction->memo));
+
+    BRData result = dataConcat (encodings, array_count (encodings));
+
+    array_free_all (encodings, dataFree);
+
+    return result;
 }
+
+// MARK: - Transaction Input
+
+extern void
+avalancheTransactionInputRelease (BRAvalancheTransactionInput input) {
+    array_free (input.addressIndices);
+}
+
+// MARK: - Transaction Output
+
+extern void
+avalancheTransactionOutputRelease (BRAvalancheTransactionOutput output) {
+    array_free (output.addresses);
+}
+
+// MARK: - Transaction UTXO
+
+extern BRAvalancheUTXO
+avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
+                     BRAvalancheIndex  transactionIndex,
+                     BRAvalancheHash   assetIdentifier,
+                     BRAvalancheAmount amount,
+                     OwnershipKept BRArrayOf(BRAvalancheAddress) addresses) {
+    BRAvalancheUTXO utxo = {
+        AVALANCHE_HASH_EMPTY,
+        transactionIdentifier,
+        transactionIndex,
+        assetIdentifier,
+        amount,
+        NULL
+    };
+
+    //
+    // Build a unique identifier as transaction{Identifier,Index}
+    //
+    size_t  bytesCount = sizeof (BRAvalancheHash) + sizeof (BRAvalancheIndex);
+    uint8_t bytes [bytesCount];
+
+    size_t offset = 0;
+    memcpy (&bytes[offset], &transactionIdentifier, sizeof (BRAvalancheHash));
+    offset += sizeof (BRAvalancheHash);
+
+    memcpy (&bytes[offset], &transactionIndex, sizeof (BRAvalancheIndex));
+
+    utxo.identifier = avalancheHashCreate (bytes, bytesCount);
+
+    //
+    // Copy addresses array
+    //
+    array_new (utxo.addresses, array_count (addresses));
+    array_add_array (utxo.addresses, addresses, array_count(addresses));
+
+    return utxo;
+}
+
+extern void
+avalancheUTXORelease (BRAvalancheUTXO utxo) {
+    if (NULL != utxo.addresses) array_free (utxo.addresses);
+}
+
+extern bool
+avalancheUTXOHasAddress (const BRAvalancheUTXO *utxo,
+                         BRAvalancheAddress address,
+                         size_t *addressIndex) {
+    for (size_t index = 0; index < array_count(utxo->addresses); index++)
+        if (avalancheAddressEqual (utxo->addresses[index], address)) {
+            if (NULL != addressIndex) *addressIndex = index;
+            return true;
+        }
+    return false;
+}
+
+extern bool
+avalancheUTXOSValidate (BRArrayOf(BRAvalancheUTXO) utxos,
+                        BRAvalancheAddress source,
+                        BRAvalancheHash    asset,
+                        BRAvalancheAmount  amountWithFee) {
+    BRAvalancheAmount amount = 0;
+
+    for (size_t index = 0; index < array_count(utxos); index++) {
+        const BRAvalancheUTXO *utxo = &utxos[index];
+
+        if (!avalancheUTXOHasAsset   (utxo, asset) ||
+            !avalancheUTXOHasAddress (utxo, source, NULL))
+            return false;
+
+        amount += utxo->amount;
+    }
+
+    return amount >= amountWithFee;
+}
+
+extern BRAvalancheAmount
+avalancheUTXOAmountTotal (BRArrayOf(BRAvalancheUTXO) utxos) {
+    BRAvalancheAmount amount = 0;
+    for (size_t index = 0; index < array_count(utxos); index++)
+        amount += utxos[index].amount;
+    return amount;
+}
+
 
 // MARK: - Attributes
 
@@ -304,43 +428,158 @@ avalancheTransactionGetAttributeKeys (bool asRequired, size_t *count) {
 }
 
 
-// MARK - Transaction
+// MARK: - Transaction
 
 static BRAvalancheTransaction
-avalancheTransactionCreateTransactionInternal (BRAvalancheAddress source,
+avalancheTransactionCreateTransactionInternal (BRAvalancheTransactionPurpose purpose,
+                                               BRAvalancheCodec codec,
+                                               BRAvalancheNetwork network,
+                                               BRAvalancheAddress source,
                                               BRAvalancheAddress target,
                                               BRAvalancheAmount amount,
                                               BRAvalancheFeeBasis feeBasis,
                                               BRAvalancheHash hash,
-                                              BRAvalancheSignature signature) {
+                                              BRAvalancheSignature signature,
+                                               const char *memo) {
     BRAvalancheTransaction transaction = calloc (1, sizeof(struct BRAvalancheTransactionRecord));
 
-    transaction->source = source;
-    transaction->target = target;
-
+    transaction->purpose  = purpose;
+    transaction->codec    = codec;
+    transaction->network  = network;
+    transaction->source   = source;
+    transaction->target   = target;
     transaction->amount   = amount;
     transaction->feeBasis = feeBasis;
-
-    transaction->hash = AVALANCHE_HASH_EMPTY;
-    transaction->signature = ((BRAvalancheSignature) { 0 });
+    transaction->hash      = hash;
+    transaction->signature = signature;
 
     transaction->serialization = dataCreateEmpty();
+
+    strncpy (transaction->memo, memo, AVALANCHE_TRANSACTION_MEMO_SIZE);
+    transaction->memo[AVALANCHE_TRANSACTION_MEMO_SIZE] = '\0';
+
+    array_new (transaction->inputs,  2);
+    array_new (transaction->outputs, 2);
+
     return transaction;
 }
 
 extern BRAvalancheTransaction
-avalancheTransactionCreate (BRAvalancheAddress source,
-                           BRAvalancheAddress target,
-                           BRAvalancheAmount amount,
-                           BRAvalancheFeeBasis feeBasis) {
-    return avalancheTransactionCreateTransactionInternal (source,
-                                                         target,
-                                                         amount,
-                                                         feeBasis,
-                                                         ((BRAvalancheHash) { 0 }),
-                                                         ((BRAvalancheSignature) { 0 }));
+avalancheTransactionCreate (BRAvalancheAddress  source,
+                            BRAvalancheAddress  target,
+                            BRAvalancheAddress  change, // if needed
+                            BRAvalancheHash     asset,
+                            BRAvalancheAmount   amount,
+                            BRAvalancheFeeBasis feeBasis,
+                            const char *memo,
+                            OwnershipGiven BRArrayOf (BRAvalancheUTXO) utxos,
+                            BRAvalancheNetwork  network) {
+    // The total amount sent
+    BRAvalancheAmount amountTotal = amount + avalancheFeeBasisGetFee(&feeBasis);
+
+    // The UTXOS have been pre-selected to validate.
+    if (!avalancheUTXOSValidate (utxos, source, asset, amountTotal)) {
+        assert (false);
+        return NULL;
+    }
+
+    // TODO: check address types
+
+    BRAvalancheTransaction transaction =
+    avalancheTransactionCreateTransactionInternal (AVALANCHE_TRANSATION_PURPOSE_BASE,
+                                                   0,
+                                                   network,
+                                                   source,
+                                                   target,
+                                                   amount,
+                                                   feeBasis,
+                                                   AVALANCHE_HASH_EMPTY,
+                                                   avalancheSignatureCreateEmpty(),
+                                                   memo);
+
+    // A running total of UTXO amounts
+    BRAvalancheAmount amountTotalUTXOs = 0;
+
+    //
+    // Process UTXOs into inputs.
+    //
+    for (size_t index = 0; index < array_count(utxos); index++) {
+        // This UTXO is validated
+        const BRAvalancheUTXO *utxo = &utxos[index];
+
+        size_t addressIndex;
+        avalancheUTXOHasAddress (utxo, source, &addressIndex);
+
+        BRArrayOf(size_t) addressIndices;
+        array_new (addressIndices, 1);
+        array_add (addressIndices, addressIndex);
+
+        BRAvalancheTransactionInput input = (BRAvalancheTransactionInput) {
+            AVALANCHE_TRANSACTION_INPUT_TRANSFER,
+            utxos[index].transactionIdentifier,
+            utxos[index].transactionIndex,
+            asset,
+            { .transfer = { utxos[index].amount }},
+            addressIndices
+        };
+        array_add (transaction->inputs, input);
+
+        amountTotalUTXOs += utxos[index].amount;
+
+        // If we've accumulated enough for `amount + fee`, then skip out.
+        if (amountTotalUTXOs >= amountTotal)
+            break;
+    }
+
+    // The amountTotalUTXOs is already validated; belt-and-suspenders
+    assert (amountTotalUTXOs >= amountTotal);
+
+    // The change amount is anything left over after amountTotal
+    BRAvalancheAmount amountChange = amountTotalUTXOs - amountTotal;
+
+    //
+    // Create `output1`
+    //
+
+    BRArrayOf (BRAvalancheAddressX) targetAddresses;
+    array_new (targetAddresses, 1);
+    array_add (targetAddresses, target.u.x);
+
+    BRAvalancheTransactionOutput output1 = (BRAvalancheTransactionOutput) {
+        AVALANCHE_TRANSACTION_OUTPUT_TRANSFER,
+        asset,
+        0, // locktime
+        1, // threshold
+        { .transfer = { amount }},
+        targetAddresses
+    };
+    array_add (transaction->outputs, output1);
+
+    //
+    // Create `output2` if needed.
+    //
+
+    if (amountChange > 0) {
+
+        BRArrayOf (BRAvalancheAddressX) changeAddresses;
+        array_new (changeAddresses, 1);
+        array_add (changeAddresses, change.u.x);
+
+        BRAvalancheTransactionOutput output2 = (BRAvalancheTransactionOutput) {
+            AVALANCHE_TRANSACTION_OUTPUT_TRANSFER,
+            asset,
+            0, // locktime
+            1, // threshold
+            { .transfer = { amountChange }},
+            changeAddresses
+        };
+        array_add (transaction->outputs, output2);
+    }
+
+    return transaction;
 }
 
+#if 0
 extern BRAvalancheTransaction
 avalancheTransactionClone (BRAvalancheTransaction transaction) {
     assert(transaction);
@@ -352,13 +591,15 @@ avalancheTransactionClone (BRAvalancheTransaction transaction) {
                                                          transaction->hash,
                                                          transaction->signature);
 }
+#endif
 
 extern void
 avalancheTransactionFree (BRAvalancheTransaction transaction)
 {
     assert (transaction);
 
-    ASSERT_UNIMPLEMENTED;
+    array_free_all (transaction->inputs,  avalancheTransactionInputRelease);
+    array_free_all (transaction->outputs, avalancheTransactionOutputRelease);
 
     dataFree (transaction->serialization);
 

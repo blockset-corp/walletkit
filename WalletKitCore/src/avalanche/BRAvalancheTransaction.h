@@ -2,7 +2,7 @@
 //  BRAvalancheTransaction.h
 //  WalletKitCore
 //
-//  Created by Amit Shah on 2021-08-04.
+//  Created by Ed Gamble on 2021-09-15.
 //  Copyright © 2021 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
@@ -92,14 +92,17 @@ typedef struct {
             BRAvalancheAmount amount;
         } transfer;
     } u;
-    BRArrayOf(uint32_t) addressIndices;
+    BRArrayOf(size_t) addressIndices;
 } BRAvalancheTransactionInput;
+
+extern void
+avalancheTransactionInputRelease (BRAvalancheTransactionInput input);
 
 static inline int
 avalancheTransactionInputCompare (const BRAvalancheTransactionInput *input1,
                                   const BRAvalancheTransactionInput *input2) {
-    int hashCompre = avalancheHashCompre (&input1->transactionId, &input2->transactionId);
-    if (0 == hashCompre) return 0;
+    int hashCompre = avalancheHashCompare (&input1->transactionId, &input2->transactionId);
+    if (0 != hashCompre) return hashCompre;
 
     return (input1->transactionIndex > input2->transactionIndex
             ? +1
@@ -143,9 +146,52 @@ typedef struct {
     BRAvalancheIndex transactionIndex;
     BRAvalancheHash  assetIdentifier;
     // Locktime
-    // Amount
-    // Addresses
+    BRAvalancheAmount amount;
+    BRArrayOf(BRAvalancheAddress) addresses;
 } BRAvalancheUTXO;
+
+extern BRAvalancheUTXO
+avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
+                     BRAvalancheIndex  transactionIndex,
+                     BRAvalancheHash   assetIdentifier,
+                     BRAvalancheAmount amount,
+                     OwnershipKept BRArrayOf(BRAvalancheAddress) addresses);
+
+extern void
+avalancheUTXORelease (BRAvalancheUTXO utxo);
+
+static inline bool
+avalancheUTXOHasAsset (const BRAvalancheUTXO *utxo,
+                       const BRAvalancheHash asset) {
+    return avalancheHashIsEqual (&utxo->assetIdentifier, &asset);
+}
+
+extern bool
+avalancheUTXOHasAddress (const BRAvalancheUTXO *utxo,
+                         BRAvalancheAddress address,
+                         size_t *addressIndex);
+
+extern bool
+avalancheUTXOSValidate (BRArrayOf(BRAvalancheUTXO) utxos,
+                        BRAvalancheAddress source,
+                        BRAvalancheHash    asset,
+                        BRAvalancheAmount  amountWithFee);
+
+extern BRAvalancheAmount
+avalancheUTXOAmountTotal (BRArrayOf(BRAvalancheUTXO) utxos);
+
+// BRSet Support
+inline static size_t
+avalancheUTXOSetValue (const BRAvalancheUTXO *utxo) {
+    return avalancheHashSetValue (&utxo->identifier);
+}
+
+// BRSet Support
+inline static int
+avalancheUTXOSetEqual (const BRAvalancheUTXO *utxo1,
+                       const BRAvalancheUTXO *utxo2) {
+    return avalancheHashSetEqual (&utxo1->identifier, &utxo2->identifier);
+}
 
 typedef enum {
     AVALANCHE_UTXO_SEARCH_MIN_FIRST,
@@ -160,6 +206,8 @@ avalancheUTXOSearchForAmount (BRSetOf(BRAvalancheUTXO) utxos,
                               BRAvalancheUTXOSearchType type,
                               BRAvalancheAmount amount,
                               BRAvalancheAmount *fee);
+
+
 // MARK: - Transaction
 
 #define AVALANCHE_TRANSACTION_MEMO_SIZE     (265)
@@ -167,6 +215,8 @@ avalancheUTXOSearchForAmount (BRSetOf(BRAvalancheUTXO) utxos,
 typedef struct BRAvalancheTransactionRecord {
     BRAvalancheTransactionPurpose purpose;
     BRAvalancheCodec codec;
+
+    BRAvalancheNetwork network;
 
     BRAvalancheAddress source;
     BRAvalancheAddress target;
@@ -176,8 +226,6 @@ typedef struct BRAvalancheTransactionRecord {
 
     BRAvalancheHash hash;
     BRAvalancheSignature signature;
-
-    BRAvalancheNetwork network;
 
     // Serialization
     BRData serialization;
@@ -200,10 +248,15 @@ typedef struct BRAvalancheTransactionRecord {
  * @return transaction
  */
 extern BRAvalancheTransaction /* caller owns memory and must call "avalancheTransactionFree" function */
-avalancheTransactionCreate (BRAvalancheAddress source,
-                           BRAvalancheAddress target,
-                           BRAvalancheAmount amount,
-                           BRAvalancheFeeBasis feeBasis);
+avalancheTransactionCreate (BRAvalancheAddress  source,
+                            BRAvalancheAddress  target,
+                            BRAvalancheAddress  change, // if needed
+                            BRAvalancheHash     asset,
+                            BRAvalancheAmount   amount,
+                            BRAvalancheFeeBasis feeBasis,
+                            const char *memo,
+                            OwnershipGiven BRArrayOf (BRAvalancheUTXO) utxos,
+                            BRAvalancheNetwork  network);
 
 /**
 * Create a copy of a Avalanche transaction. Caller must free with avalancheTrasactionFree.
@@ -270,7 +323,19 @@ avalancheTransactionEqual (BRAvalancheTransaction t1, BRAvalancheTransaction t2)
 extern const char **
 avalancheTransactionGetAttributeKeys (bool asRequired, size_t *count);
 
+// Private-ish
 
+extern OwnershipGiven BRData
+avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output);
+
+extern OwnershipGiven BRData
+avalancheTransactionInputEncode (BRAvalancheTransactionInput input);
+
+extern OwnershipGiven BRData
+avalancheTransactionEncode (BRAvalancheTransaction transaction);
+
+extern OwnershipGiven BRData
+avalancheSignatureArrayEncode (BRArrayOf(BRAvalancheSignature) signatures);
 
 #ifdef __cplusplus
 }

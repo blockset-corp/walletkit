@@ -215,11 +215,14 @@ wkWalletCreateTransferAVAX (WKWallet  wallet,
     assert (WK_FALSE == amountIsNegative);
 
     BRAvalancheFeeBasis avaxFeeBasis = wkFeeBasisCoerceAVAX (estimatedFeeBasis)->avaxFeeBasis;
-    
+
+#if 0
     BRAvalancheTransaction avaxTransaction = avalancheTransactionCreate (avaxSource,
                                                                          avaxTarget,
                                                                          avaxAmount,
                                                                          avaxFeeBasis);
+#endif
+    BRAvalancheTransaction avaxTransaction = NULL;
 
     WKTransferState state    = wkTransferStateInit (WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsAVAX (wallet->listenerTransfer,

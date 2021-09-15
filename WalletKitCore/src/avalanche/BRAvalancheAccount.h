@@ -130,6 +130,11 @@ avalancheSignatureGetBytes (const BRAvalancheSignature *signature) {
     return dataCreate ((uint8_t *) signature, sizeof(BRAvalancheSignature));
 }
 
+static inline BRAvalancheSignature
+avalancheSignatureCreateEmpty (void) {
+    return (BRAvalancheSignature) { 0 };
+}
+
 /**
  * Signs a message using the account private key.
  *
