@@ -582,32 +582,56 @@ public final class WalletConnector {
     public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> {
         guard key.hasSecret else { return Result.failure(.invalidKeyForSigning) }
 
+        var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+        
         return message.withUnsafeBytes { (messageBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
+            
             let messageAddr = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
-            let messageLength = messageBytes.count
-            let corePrefix : WKBoolean = (prefix ? WK_TRUE : WK_FALSE)
-            var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+            var finalMessageAddr = messageAddr
+            var finalMessageLength = messageBytes.count
+            var standardMessageLength : size_t = 0
+            
+            if (prefix) {
+                let standardMessageBytes = wkWalletConnectorCreateStandardMessage(self.core,
+                                                                                  finalMessageAddr,
+                                                                                  finalMessageLength,
+                                                                                  &standardMessageLength,
+                                                                                  &status)
+                if (standardMessageBytes == nil) {
+                    return Result.failure(WalletConnectorError(core: status))
+                }
+                
+                // Re-assign for digest/signature and release later...
+                finalMessageAddr = UnsafePointer(standardMessageBytes)
+                finalMessageLength = standardMessageLength
+            }
             
             var digestLength: size_t = 0
             let digestBytes = wkWalletConnectorGetDigest(self.core,
-                                                         messageAddr,
-                                                         messageLength,
-                                                         corePrefix,
+                                                         finalMessageAddr,
+                                                         finalMessageLength,
                                                          &digestLength,
                                                          &status   )
-            defer { wkMemoryFree(digestBytes) }
+            defer {
+                // In case a standard message was created.
+                // messageAddr is not owned by us, but finalMessageAddr may be
+                if (messageAddr != finalMessageAddr) {
+                    wkMemoryFree(UnsafeMutablePointer(mutating: finalMessageAddr))
+                }
+                wkMemoryFree(digestBytes)
+                
+            }
             if (digestBytes == nil) {
                 return Result.failure(WalletConnectorError(core: status))
             }
             
             let digestData = Data(bytes: digestBytes!, count: digestLength)
             return digestData.withUnsafeBytes { (digestDataBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
-                let digestDataAddr = digestDataBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
-                let digestDataLength = digestDataBytes.count
+                
                 var signatureLength: size_t = 0
                 let signatureBytes = wkWalletConnectorSignData(self.core,
-                                                               digestDataAddr,
-                                                               digestDataLength,
+                                                               finalMessageAddr,
+                                                               finalMessageLength,
                                                                key.core,
                                                                &signatureLength,
                                                                &status )

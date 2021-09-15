@@ -34,16 +34,48 @@ public class WKWalletConnector extends PointerType {
         super (address);
     }
 
+    /** Creates a standard message out of the message input
+     * @param message The input message
+     * @return A {@link WKResult} object containing the new standard message, or
+     *         a WalletKit native error.
+     */
+    public WKResult<byte[], WKWalletConnectorError>
+    createStandardMessage (byte[] message) {
+        WKResult res;
+        SizeTByReference standardMessageLenRef = new SizeTByReference();
+        IntByReference err = new IntByReference();
+
+        Pointer standardMessagePtr = WKNativeLibraryDirect.wkWalletConnectorCreateStandardMessage(
+                this.getPointer(),
+                message,
+                new SizeT(message.length),
+                standardMessageLenRef,
+                err    );
+        try {
+
+            int standardMessageLen = UnsignedInts.checkedCast(standardMessageLenRef.getValue().intValue());
+
+            // Firstly deal with the potential of an indicated error
+            if (standardMessagePtr.equals(Pointer.NULL)) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+            } else {
+                res = WKResult.success(standardMessagePtr.getByteArray(0, standardMessageLen));
+            }
+        } finally {
+            Native.free(Pointer.nativeValue(standardMessagePtr));
+        }
+
+        return res;
+    }
+
     /** Gets a digest of the message bytes using native WalletKit calls
      *
      * @param message The message to be processed
-     * @param prefix An optional prefix to add to the message before digestion
      * @return A {@link WKResult} object containing the digest byte buffer, or
      *         WalletKit native error representation.
      */
     public WKResult<byte[], WKWalletConnectorError>
-    getDigest(  byte[]      message,
-                boolean     prefix  ) {
+    getDigest(  byte[]      message ) {
 
         WKResult res;
         SizeTByReference digestLenRef = new SizeTByReference();
@@ -52,7 +84,6 @@ public class WKWalletConnector extends PointerType {
         Pointer digestPtr = WKNativeLibraryDirect.wkWalletConnectorGetDigest(this.getPointer(),
                                                                              message,
                                                                              new SizeT(message.length),
-                                                                             prefix,
                                                                              digestLenRef,
                                                                              err    );
         try {

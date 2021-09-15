@@ -41,37 +41,38 @@ wkWalletConnectorReleaseETH (WKWalletConnector connector) {
 }
 
 static uint8_t*
+wkWalletConnectorCreateStandardMessageETH (
+        WKWalletConnector       walletConnector,
+        const uint8_t           *msg,
+        size_t                  msgLength,
+        size_t                  *standardMessageLength ) {
+
+    size_t prefixLen = strlen(ethereumSignedMessagePrefix);
+    uint8_t *standardMessage = malloc (msgLength + prefixLen);
+    assert (NULL != standardMessage);
+
+    memcpy (standardMessage, ethereumSignedMessagePrefix, prefixLen);
+    memcpy (standardMessage + prefixLen, msg, msgLength);
+    *standardMessageLength = msgLength + prefixLen;
+
+    return standardMessage;
+}
+
+static uint8_t*
 wkWalletConnectorGetDigestETH (
         WKWalletConnector       walletConnector,
         const uint8_t           *msg,
         size_t                  msgLength,
-        WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorStatus *status    ) {
 
     // No error
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
-    uint8_t* digest = NULL;
-    uint8_t* finalMsg = NULL;
-
-    if (addPrefix) {
-        size_t prefixLen = strlen(ethereumSignedMessagePrefix);
-        finalMsg = malloc (msgLength + prefixLen);
-        assert (NULL != finalMsg);
-        memcpy (finalMsg, ethereumSignedMessagePrefix, prefixLen);
-        memcpy (finalMsg + prefixLen, msg, msgLength);
-        msg = finalMsg;
-        msgLength += prefixLen;
-    }
-
-    digest = malloc (ETHEREUM_HASH_BYTES);
+    uint8_t *digest = malloc (ETHEREUM_HASH_BYTES);
     assert (NULL != digest);
     BRKeccak256 (digest, msg, msgLength);
     *digestLength = ETHEREUM_HASH_BYTES;
-
-    if (NULL != finalMsg)
-        free (finalMsg);
 
     return digest;
 }
@@ -362,6 +363,7 @@ wkWalletConnectorSignTransactionDataETH (
 WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {
     wkWalletConnectorCreateETH,
     wkWalletConnectorReleaseETH,
+    wkWalletConnectorCreateStandardMessageETH,
     wkWalletConnectorGetDigestETH,
     wkWalletConnectorSignDataETH,
     wkWalletConnectorCreateTransactionFromArgumentsETH,

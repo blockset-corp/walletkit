@@ -64,11 +64,42 @@ wkWalletConnectorRelease (WKWalletConnector connector) {
 }
 
 extern uint8_t*
+wkWalletConnectorCreateStandardMessage (
+        WKWalletConnector       connector,
+        const uint8_t           *msg,
+        size_t                  msgLen,
+        size_t                  *standardMessageLength,
+        WKWalletConnectorStatus *status            ) {
+
+    assert (NULL != connector               &&
+            NULL != msg                     &&
+            NULL != standardMessageLength   );
+
+    uint8_t* standardMessage = NULL;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+    if (NULL != netHandlers             &&
+        NULL != netHandlers->connector  &&
+        NULL != netHandlers->connector->getDigest) {
+
+        standardMessage =  netHandlers->connector->createStandardMessage(connector,
+                                                                         msg,
+                                                                         msgLen,
+                                                                         standardMessageLength );
+    } else {
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
+    }
+
+    return standardMessage;
+}
+
+extern uint8_t*
 wkWalletConnectorGetDigest (
         WKWalletConnector       connector,
         const uint8_t           *msg,
         size_t                  msgLen,
-        WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorStatus *status            ) {
 
@@ -89,7 +120,6 @@ wkWalletConnectorGetDigest (
         digest =  netHandlers->connector->getDigest(connector,
                                                     msg,
                                                     msgLen,
-                                                    addPrefix,
                                                     digestLength,
                                                     status);
 

@@ -27,11 +27,17 @@ typedef void
 (*WKWalletConnectorReleaseHandler) (WKWalletConnector connector);
 
 typedef uint8_t*
+(*WKWalletConnectorCreateStandardMessageHandler) (
+        WKWalletConnector       walletConnector,
+        const uint8_t           *msg,
+        size_t                  msgLength,
+        size_t                  *standardMessageLength );
+
+typedef uint8_t*
 (*WKWalletConnectorGetDigestHandler) (
         WKWalletConnector       walletConnector,
         const uint8_t           *msg,
         size_t                  msgLength,
-        WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorStatus *status    );
 
@@ -76,6 +82,7 @@ typedef uint8_t*
 typedef struct {
     WKWalletConnectorCreateHandler                              create;
     WKWalletConnectorReleaseHandler                             release;
+    WKWalletConnectorCreateStandardMessageHandler               createStandardMessage;
     WKWalletConnectorGetDigestHandler                           getDigest;
     WKWalletConnectorSignDataHandler                            sign;
     WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
