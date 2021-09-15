@@ -16,17 +16,15 @@
 #include "support/BRCrypto.h"
 #include "support/BRBase58.h"
 
+#include <ctype.h>
+
 // MARK: - Hash
 
-extern bool
-avalancheHashIsEqual (const BRAvalancheHash h1,
-                      const BRAvalancheHash h2) {
-    return 0 == memcmp (h1.bytes, h2.bytes, AVALANCHE_HASH_BYTES);
-}
-
-extern bool
-avalancheHashIsEmpty (BRAvalancheHash hash) {
-    return avalancheHashIsEqual (hash, AVALANCHE_HASH_EMPTY);
+extern BRAvalancheHash
+avalancheHashCreate (uint8_t *bytes, size_t bytesCount) {
+    BRAvalancheHash hash;
+    BRSHA256 (hash.bytes, bytes, bytesCount);
+    return hash;
 }
 
 extern BRAvalancheHash
@@ -42,6 +40,7 @@ avalancheHashFromString(const char *input) {
 
 extern char *
 avalancheHashToString (BRAvalancheHash hash) {
+
     //    "sign the transaction and issue it to the Avalanche network. If successful it will return a
     //    CB58 serialized string for the TxID."
     //
@@ -58,26 +57,40 @@ avalancheHashToString (BRAvalancheHash hash) {
 // MARK: - CB58
 
 // CB58 uses the final 4 bytes of SHA256(msg) as the checksum. Base58Check uses the first 4 bytes
-// of SHA256(SHA256(msg)) as the checksum.
+// of SHA256(SHA256(msg)) as the checksum. Because "I am Different, Special!"
 
-extern size_t // This is BRBase58CheckEncode but w/ only BRSHA256
-BRAvalancheCB58CheckEncode(char *str, size_t strLen, const uint8_t *data, size_t dataLen) {
-    size_t len = 0, bufLen = dataLen + 256/8;
-    uint8_t _buf[0x1000], *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
-
-    assert(buf != NULL);
+extern size_t
+BRAvalancheCB58CheckEncode(char *str, size_t strLen,
+                           const uint8_t *data, size_t dataLen) {
     assert(data != NULL || dataLen == 0);
 
+    // Return
+    size_t len = 0;
+
+    // We'll tack on 4 bytes, from a digest, to `dataLen`
+    size_t bufLen = dataLen + 4;
+
+    // Get some temporary storage
+    uint8_t _buf[0x1000];
+    uint8_t *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
+    assert(buf != NULL);
+
     if (data || dataLen == 0) {
-        memcpy(buf, data, dataLen);
         UInt256 md;
         BRSHA256(md.u8, data, dataLen);
-        memcpy (&buf[dataLen], &md.u8[28], 4);                 // last 4 bytes of `md`
-        len = BRBase58Encode(str, strLen, buf, dataLen + 4);   // Only b58 'first/last' 4
+
+        memcpy (&buf[0],        data,      dataLen);            // `data` into `buf`
+        memcpy (&buf[dataLen], &md.u8[28], 4);                  // last 4 bytes of `md` into `buf`
+
+        // Base58 encode the full buffer
+        len = BRBase58Encode(str, strLen, buf, bufLen);
     }
 
+    // Clean up
     mem_clean(buf, bufLen);
     if (buf != _buf) free(buf);
+
+    // Return the required length, more or less (see BRBase58Encode())
     return len;
 }
 
@@ -92,25 +105,38 @@ BRAvalancheCB58CheckEncodeCreate (const uint8_t *data, size_t dataLen) {
 }
 
 extern size_t // This is BRBase58CheckDecode but w/ only BRSHA256
-BRAvalancheCB58CheckDecode(uint8_t *data, size_t dataLen, const char *str) {
-    size_t len, bufLen = (str) ? strlen(str) : 0;
-    uint8_t _buf[0x1000], *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
-    UInt256 md;
-
+BRAvalancheCB58CheckDecode(uint8_t *data, size_t dataLen,
+                           const char *str) {
     assert(str != NULL);
+
+    size_t len;
+    size_t bufLen = (str) ? strlen(str) : 0;
+
+    uint8_t _buf[0x1000], *buf = (bufLen <= 0x1000) ? _buf : malloc(bufLen);
     assert(buf != NULL);
+
     len = BRBase58Decode(buf, bufLen, str);
 
     if (len >= 4) {
         len -= 4;
+
+        // Compute the digest of the decoded `buf` but skip the 4 checksum bytes at the end
+        UInt256 md;
         BRSHA256(md.u8, buf, len);
-        if (memcmp(&buf[len], &md.u8[28], sizeof(uint32_t)) != 0) len = 0; // verify checksum
-        if (data && len <= dataLen) memcpy(data, buf, len);
+
+        // Verify the checksum
+        if (0 != memcmp(&buf[len], &md.u8[28], 4)) len = 0;
+
+        // Fill in the result
+        if (data && len <= dataLen) memcpy (data, buf, len);
     }
     else len = 0;
 
+    // Cleanup
     mem_clean(buf, bufLen);
     if (buf != _buf) free(buf);
+
+    // Return the required length
     return (! data || len <= dataLen) ? len : 0;
 }
 
@@ -133,8 +159,12 @@ BRAvalancheCB58CheckDecodeCreate(const char *str, size_t *dataLen) {
 static uint32_t
 bech32_polymod_step(uint32_t pre) {
     uint8_t b = pre >> 25;
-    return ((pre & 0x1FFFFFF) << 5) ^ (-((b >> 0) & 1) & 0x3b6a57b2UL) ^ (-((b >> 1) & 1) & 0x26508e6dUL) ^
-    (-((b >> 2) & 1) & 0x1ea119faUL) ^ (-((b >> 3) & 1) & 0x3d4233ddUL) ^ (-((b >> 4) & 1) & 0x2a1462b3UL);
+    return (((pre & 0x1FFFFFF) << 5) ^
+            (-((b >> 0) & 1) & 0x3b6a57b2UL) ^
+            (-((b >> 1) & 1) & 0x26508e6dUL) ^
+            (-((b >> 2) & 1) & 0x1ea119faUL) ^
+            (-((b >> 3) & 1) & 0x3d4233ddUL) ^
+            (-((b >> 4) & 1) & 0x2a1462b3UL));
 }
 
 extern bool
@@ -208,24 +238,24 @@ avax_bech32_encode(char *const output, size_t *const out_len,
         return false;
     // Note we want <=, to account for the null at the end of the string
     // i.e. equivalent to out_len_max < final_out_len + 1
-    if (output == NULL || out_len_max <= final_out_len)
-        return false;
-    if (hrp == NULL || hrp_len <= 0)
-        return false;
-    if (data == NULL || data_len <= 0)
-        return false;
+    if (output == NULL || out_len_max <= final_out_len) return false;
+    if (hrp    == NULL || hrp_len  <= 0) return false;
+    if (data   == NULL || data_len <= 0) return false;
+
     for (size_t i = 0; i < hrp_len; ++i) {
         char ch = hrp[i];
         if (!(33 <= ch && ch <= 126))
             return false;
-        chk = bech32_polymod_step(chk) ^ (ch >> 5);
+        chk = bech32_polymod_step(chk) ^ ((uint32_t) (ch >> 5));
     }
+
     chk = bech32_polymod_step(chk);
     for (size_t i = 0; i < hrp_len; ++i) {
         char ch = hrp[i];
         chk = bech32_polymod_step(chk) ^ (ch & 0x1f);
         output[out_off++] = ch;
     }
+
     output[out_off++] = '1';
     for (size_t i = 0; i < data_len; ++i) {
         if (data[i] >> 5)
@@ -233,20 +263,23 @@ avax_bech32_encode(char *const output, size_t *const out_len,
         chk = bech32_polymod_step(chk) ^ data[i];
         output[out_off++] = charset_bech32[data[i]];
     }
+
     for (size_t i = 0; i < 6; ++i) {
         chk = bech32_polymod_step(chk);
     }
+
     chk ^= 1;
     for (size_t i = 0; i < 6; ++i) {
         output[out_off++] = charset_bech32[(chk >> ((5 - i) * 5)) & 0x1f];
     }
+
     output[out_off] = 0;
     *out_len = out_off;
     return (out_off == final_out_len);
 }
 
 //https://github.com/iotaledger/iota.c/blob/6b94ad03c915139d8292513d7849cb5e1a20df2f/tests/core/test_utils_bech32.c
-extern int
+extern bool
 avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input) {
     uint32_t chk = 1;
     size_t i;
@@ -254,30 +287,27 @@ avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input
     size_t hrp_len;
     int have_lower = 0, have_upper = 0;
     if (input_len < 8 || input_len > 108) {
-        return 0;
+        return false;
     }
     *data_len = 0;
     while (*data_len < input_len && input[(input_len - 1) - *data_len] != '1') {
         ++(*data_len);
     }
     if (1 + *data_len >= input_len || *data_len < 6) {
-        return 0;
+        return false;
     }
     hrp_len = input_len - (1 + *data_len);
     *(data_len) -= 6;
     for (i = 0; i < hrp_len; ++i) {
         int ch = input[i];
-        if (ch < 33 || ch > 126) {
-            return 0;
-        }
-        if (ch >= 'a' && ch <= 'z') {
-            have_lower = 1;
-        } else if (ch >= 'A' && ch <= 'Z') {
-            have_upper = 1;
-            ch = (ch - 'A') + 'a';
-        }
+
+        if (!isgraph(ch)) return false;
+        have_lower = islower(ch);
+        have_upper = isupper(ch);
+        if (have_upper) ch = tolower(ch);
+
         hrp[i] = ch;
-        chk = bech32_polymod_step(chk) ^ (ch >> 5);
+        chk = bech32_polymod_step(chk) ^ ((uint32_t) (ch >> 5));
     }
     hrp[i] = 0;
     chk = bech32_polymod_step(chk);
@@ -287,26 +317,25 @@ avax_bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input
     ++i;
     while (i < input_len) {
         int v = (input[i] & 0x80) ? -1 : charset_rev[(int)input[i]];
-        if (input[i] >= 'a' && input[i] <= 'z') have_lower = 1;
-        if (input[i] >= 'A' && input[i] <= 'Z') have_upper = 1;
-        if (v == -1) {
-            return 0;
-        }
-        chk = bech32_polymod_step(chk) ^ v;
+        have_lower = islower(input[i]);
+        have_upper = isupper(input[i]);
+        if (v == -1) return false;
+
+        chk = bech32_polymod_step(chk) ^ ((uint32_t) v);
         if (i + 6 < input_len) {
-//            printf("data[%i - (1 + %i)] = %i\r\n",i,hrp_len,v);
             data[i - (1 + hrp_len)] = v;
         }
         ++i;
     }
-    if (have_lower && have_upper) {
-        return 0;
-    }
-    return chk == 1;
+
+    return ((!have_lower || !have_upper) && (1 == chk));
 }
 
-static int avax_convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits,
-                             int pad) {
+
+static bool
+avax_convert_bits(uint8_t *out, size_t *outlen, int outbits,
+                  const uint8_t *in, size_t inlen, int inbits,
+                  int pad) {
     uint32_t val = 0;
     int bits = 0;
     uint32_t maxv = (((uint32_t)1) << outbits) - 1;
@@ -323,24 +352,25 @@ static int avax_convert_bits(uint8_t *out, size_t *outlen, int outbits, const ui
             out[(*outlen)++] = (val << (outbits - bits)) & maxv;
         }
     } else if (((val << (outbits - bits)) & maxv) || bits >= inbits) {
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
+#define THE_NUMBER_IS_FORTY_THREE   (43)
 
-extern int
+extern bool
 avax_addr_bech32_decode(uint8_t *addr_data, size_t *addr_len, const char *hrp, const char *addr_str) {
-    uint8_t data[AVALANCHE_ADDRESS_BYTES_X - (strlen(hrp)+1)]; // total - (hrp + 1) =
+    uint8_t data[THE_NUMBER_IS_FORTY_THREE - (strlen(hrp)+1)]; // total - (hrp + 1) =
     char hrp_actual[strlen(hrp)+1];//we only expect the hrp = avax\0
     size_t data_len = 0;
 
     if (!avax_bech32_decode(hrp_actual, data, &data_len, addr_str)) {
-        return 0;
+        return false;
     }
 
     if (data_len == 0 || data_len > 64) {
-        return 0;
+        return false;
     }
 
     //  if (strncmp(hrp, hrp_actual, 84) != 0) {
@@ -349,10 +379,10 @@ avax_addr_bech32_decode(uint8_t *addr_data, size_t *addr_len, const char *hrp, c
 
     *addr_len = 0;
     if (!avax_convert_bits(addr_data, addr_len, 8, data, data_len, 5, 0)) {
-        return 0;
+        return false;
     }
 
-    return 1;
+    return true;
 }
 
 

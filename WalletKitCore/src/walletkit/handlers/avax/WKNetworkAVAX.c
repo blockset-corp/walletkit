@@ -16,7 +16,7 @@
 private_extern BRAvalancheNetwork
 wkNetworkAsAVAX (WKNetwork network) {
     WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(network);
-    return networkAVAX->avax;
+    return networkAVAX->avaxNetwork;
 }
 
 static WKNetwork
@@ -54,11 +54,13 @@ wkNetworkReleaseAVAX (WKNetwork network) {
 
 static WKAddress
 wkNetworkCreateAddressAVAX (WKNetwork network,
-                               const char *addressAsString) {
-    WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX (network);
-    (void) networkAVAX;
+                            const char *addressAsString) {
+    WKNetworkAVAX      networkAVAX = wkNetworkCoerceAVAX (network);
+    BRAvalancheAddress avaxAddress = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, addressAsString, true);
 
-    return wkAddressCreateFromStringAsAVAX (addressAsString);
+    return (avalancheAddressIsEmptyAddress(avaxAddress)
+            ? NULL
+            : wkAddressCreateAsAVAX (avaxAddress, networkAVAX->avaxNetwork));
 }
 
 static WKBlockNumber

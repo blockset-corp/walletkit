@@ -12,6 +12,7 @@
 #define BRAvalancheNetwork_h
 
 #include "BRAvalancheBase.h"
+#include "BRAvalancheAddress.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +38,20 @@ avalancheNetworkGetBlockchain (BRAvalancheNetwork network);
 extern const char *
 avalancheNetworkGetAddressPrefix (BRAvalancheNetwork network);
 
-const extern BRAvalancheNetwork avaxNetworkMainnet;
-const extern BRAvalancheNetwork avaxNetworkTestnet;
+extern const BRAvalancheNetwork avaxNetworkMainnet;
+extern const BRAvalancheNetwork avaxNetworkTestnet;
+
+// MARK: - Address Handling
+
+extern char *
+avalancheNetworkAddressToString (BRAvalancheNetwork network,
+                                 BRAvalancheAddress address);
+
+extern BRAvalancheAddress
+avalancheNetworkStringToAddress (BRAvalancheNetwork network,
+                                 const char *string,
+                                 bool strict);
+
 
 #ifdef __cplusplus
 }

@@ -38,6 +38,7 @@ wkTransferCreateAsAVAX (WKTransferListener listener,
                               WKUnit unitForFee,
                               WKTransferState state,
                               OwnershipKept  BRAvalancheAccount     avaxAccount,
+                              OwnershipKept  BRAvalancheNetwork     avaxNetwork,
                               OwnershipGiven BRAvalancheTransaction avaxTransaction) {
     
     WKTransferDirection direction = avalancheTransactionGetDirection (avaxTransaction, avaxAccount);
@@ -48,8 +49,8 @@ wkTransferCreateAsAVAX (WKTransferListener listener,
     BRAvalancheFeeBasis avaxFeeBasis = avalancheFeeBasisCreate (0);
     WKFeeBasis feeBasis = wkFeeBasisCreateAsAVAX (unitForFee, avaxFeeBasis);
     
-    WKAddress sourceAddress = wkAddressCreateAsAVAX (avalancheTransactionGetSource (avaxTransaction));
-    WKAddress targetAddress = wkAddressCreateAsAVAX (avalancheTransactionGetTarget (avaxTransaction));
+    WKAddress sourceAddress = wkAddressCreateAsAVAX (avalancheTransactionGetSource (avaxTransaction), avaxNetwork);
+    WKAddress targetAddress = wkAddressCreateAsAVAX (avalancheTransactionGetTarget (avaxTransaction), avaxNetwork);
 
     WKTransferCreateContextAVAX contextAVAX = {
         avaxTransaction

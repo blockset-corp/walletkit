@@ -27,6 +27,12 @@ typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_X]; } BRAvalancheAddress
 // An Avalanche C address is identical to an Ethereum address
 typedef struct { uint8_t bytes [AVALANCHE_ADDRESS_BYTES_C]; } BRAvalancheAddressC;
 
+///
+/// A BRAvalanceAddress represents an avalanche address as an array of bytes, typically 20 bytes.
+/// The string representation depends on BRAvalanceNetwork.  Any given address, of 20 bytes
+/// typically, applies to any network.  The address itself does not maintain a reference to the
+/// network; that reference must be kept elsewhere
+///
 typedef struct {
     BRAvalancheChainType type;
     union {
@@ -34,18 +40,6 @@ typedef struct {
         BRAvalancheAddressC c;
     } u;
 } BRAvalancheAddress;
-
-
-/**
- * Get the avalanche address string representation of the address.
- * Caller must free using the "free" function.
- *
- * @param address   - a BRAvalancheAddress
- *
- * @return pointer to allocated buffer holding the null terminated string
- */
-extern char *
-avalancheAddressAsString (BRAvalancheAddress address);
 
 /**
  * Create a avalanche address from a valid public key.
@@ -60,15 +54,51 @@ extern BRAvalancheAddress
 avalancheAddressCreateFromKey (const uint8_t * pubKey, size_t pubKeyLen, BRAvalancheChainType type);
 
 /**
- * Create a avalanche address from a valid avalanche manager address string
+ * Create a avalanche address X from a valid avalanche manager address string
+ *
+ * @param address   - avalanche address string in the "tz1..." format
+ * @param prefix    - the network-specific prefix, like "X-avax"
+ *
+ * @return address  - a BRAvalancheAddress object
+ */
+extern BRAvalancheAddress
+avalancheAddressStringToAddressX (const char *input,
+                                  const char *prefix);
+
+/**
+ * Create a avalanche address C from a valid avalanche manager address string
  *
  * @param address   - avalanche address string in the "tz1..." format
  *
  * @return address  - a BRAvalancheAddress object
  */
 extern BRAvalancheAddress
-avalancheAddressCreateFromString(const char * avalancheAddressString, bool strict, BRAvalancheChainType type);
+avalancheAddressStringToAddressC (const char *input);
 
+/**
+ * Get the avalanche address X string representation of the address.
+ * Caller must free using the "free" function.
+ *
+ * @param address   - a BRAvalancheAddress
+ * @param prefix    - the network-specific prefix, like "X-avax"
+ *
+ * @return pointer to allocated buffer holding the null terminated string
+ */
+extern char *
+avalancheAddressAsStringX (BRAvalancheAddress address, const char *prefix);
+
+/**
+ * Get the avalanche address C string representation of the address.
+ * Caller must free using the "free" function.
+ *
+ * @param address   - a BRAvalancheAddress
+ *
+ * @return pointer to allocated buffer holding the null terminated string
+ */
+extern char *
+avalancheAddressAsStringC (BRAvalancheAddress address);
+
+// MARK: Address Fee
 
 /**
  * Check is this address is the
@@ -80,8 +110,21 @@ avalancheAddressCreateFromString(const char * avalancheAddressString, bool stric
 extern bool
 avalancheAddressIsFeeAddress (BRAvalancheAddress address);
 
+extern BRAvalancheAddress
+avalancheAddressCreateFeeAddress(BRAvalancheChainType type);
+
+// MARK: Address Unknown
+
+extern BRAvalancheAddress
+avalancheAddressCreateUnknownAddress(BRAvalancheChainType type);
+
 extern bool
 avalancheAddressIsUnknownAddress (BRAvalancheAddress address);
+
+// MARK: Address Empty
+
+extern BRAvalancheAddress
+avalancheAddressCreateEmptyAddress(BRAvalancheChainType type);
 
 extern bool
 avalancheAddressIsEmptyAddress (BRAvalancheAddress);
