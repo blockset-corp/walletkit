@@ -152,7 +152,7 @@ avalancheAccountSignData (BRAvalancheAccount account,
                           UInt512 seed);
 
 /**
- * Create a standad avalanche message for signing as:
+ * Create a standard avalanche message for signing as:
  *     ("\x1A""Avalanche Signed Message:\n" || bytesCount || bytes).
  *
  * @param account

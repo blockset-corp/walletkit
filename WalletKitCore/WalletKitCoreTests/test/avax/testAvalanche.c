@@ -74,7 +74,7 @@ runAvalancheHashTest (void) {
             "Nwm4H32eP8RsQB5iTeEyqqCJSam9qe9BWAvDhwkGssqpbQjfy"
         },
 
-        { NULL, NULL }
+        { NULL, NULL, NULL }
     };
     printf("TST:    Avalanche Hash\n");
 
@@ -254,7 +254,7 @@ runAvalancheSignatureTest (void) {
         assert (0 == strcmp (signatureHexEncoded, &vectors[index].signatureHexEncoded[2]));
         free (signatureBytes);
         free (signatureHexEncoded);
-
+        free (message);
     }
 }
 // MARK: - Fee Basis Test
