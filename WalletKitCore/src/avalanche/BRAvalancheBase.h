@@ -69,16 +69,22 @@ avalancheHashFromString(const char *input);
 extern char *
 avalancheHashToString (BRAvalancheHash hash);
 
+static inline int
+avalancheHashCompre (const BRAvalancheHash *h1,
+                     const BRAvalancheHash *h2) {
+    return memcmp (h1->bytes, h2->bytes, AVALANCHE_HASH_BYTES);
+}
 
 static inline bool
-avalancheHashIsEqual (const BRAvalancheHash h1,
-                      const BRAvalancheHash h2) {
-    return 0 == memcmp (h1.bytes, h2.bytes, AVALANCHE_HASH_BYTES);
+avalancheHashIsEqual (const BRAvalancheHash *h1,
+                      const BRAvalancheHash *h2) {
+    return 0 == avalancheHashCompre(h1, h2);
 }
 
 static inline bool
 avalancheHashIsEmpty (BRAvalancheHash hash) {
-    return avalancheHashIsEqual (hash, AVALANCHE_HASH_EMPTY);
+    BRAvalancheHash empty = AVALANCHE_HASH_EMPTY;
+    return avalancheHashIsEqual (&hash, &empty);
 }
 
 // For use with BRSet
