@@ -112,6 +112,38 @@ public class WKWalletConnector extends PointerType {
         return res;
     }
 
+    /** Recovers the public key in the form of WKKey using the provided
+     *  digest and signature
+     * @param digest The digest
+     * @param signature The signature
+     * @return A {@link WKResult} containing the recovered key or WalletKit WalletConnect
+     *         related error
+     */
+    public WKResult<WKKey, WKWalletConnectorError>
+    recover(    byte[] digest,
+                byte[] signature    ) {
+
+        WKResult res;
+        IntByReference err = new IntByReference();
+
+        Pointer keyPtr = WKNativeLibraryDirect.wkWalletConnectorRecoverKey(this.getPointer(),
+                                                                           digest,
+                                                                           new SizeT(digest.length),
+                                                                           signature,
+                                                                           new SizeT(signature.length),
+                                                                           err);
+
+        // A null return key is an indicator of error. Otherwise the core key is claimed
+        // in the result.
+        if (keyPtr.equals(Pointer.NULL)) {
+            res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+        } else {
+            res = WKResult.success(new WKKey(keyPtr));
+        }
+
+        return res;
+    }
+    
     /** Creates a transaction serialization in the form of byte array,
      *  from a list of key & associated value pairs, using native WalletKit calls.
      *  The count of keys is provided explicitly so that it may be assumed

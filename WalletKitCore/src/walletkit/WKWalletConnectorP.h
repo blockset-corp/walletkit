@@ -44,6 +44,15 @@ typedef uint8_t*
         size_t                  *signatureLength,
         WKWalletConnectorStatus *status    );
 
+typedef WKKey
+(*WKWalletConnectorRecoverKeyHandler) (
+        WKWalletConnector       walletConnector,
+        const uint8_t           *digest,
+        size_t                  digestLength,
+        const uint8_t           *signature,
+        size_t                  signatureLength,
+        WKWalletConnectorStatus *status);
+
 /** It can be assumed that there are equal number of elements in
  *  keys & values, so array_count() of either will be the same.
  */
@@ -78,6 +87,7 @@ typedef struct {
     WKWalletConnectorReleaseHandler                             release;
     WKWalletConnectorGetDigestHandler                           getDigest;
     WKWalletConnectorSignDataHandler                            sign;
+    WKWalletConnectorRecoverKeyHandler                          recover;
     WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
     WKWalletConnectorCreateTransactionFromSerializationHandler  createTransactionFromSerialization;
     WKWalletConnectorSignTransactionDataHandler                 signTransactionData;
