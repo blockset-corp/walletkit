@@ -569,6 +569,27 @@ public final class WalletConnector {
         wkWalletConnectorRelease (core)
     }
 
+    /// Create a 'standard message' from 'message'
+    internal func createStandardMessage (message: Data) -> Result<Data, WalletConnectorError> {
+        return message.withUnsafeBytes { (messageBytes: UnsafeRawBufferPointer) -> Result<Data, WalletConnectorError> in
+            let messageAddr   = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let messageLength = messageBytes.count
+
+            var standardMessageStatus: WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+            var standardMessageLength: size_t = 0
+
+            guard let standardMessageBytes = wkWalletConnectorCreateStandardMessage (self.core,
+                                                                                     messageAddr,
+                                                                                     messageLength,
+                                                                                     &standardMessageLength,
+                                                                                     &standardMessageStatus)
+            else { return Result.failure (WalletConnectorError (core: standardMessageStatus)) }
+            defer { wkMemoryFree (standardMessageBytes) }
+
+            return Result.success (Data (bytes: standardMessageBytes, count: standardMessageLength))
+        }
+    }
+
     ///
     /// Sign arbitrary data
     ///
@@ -580,69 +601,70 @@ public final class WalletConnector {
     /// signing algorithm is recoverable.  On failure a WalletConnectorError of:
     ///     .invalidKeyForSigning - if `key` is not private
     ///
-    public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> {
+    public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest, signature: Signature), WalletConnectorError> {
         guard key.hasSecret else { return Result.failure(.invalidKeyForSigning) }
 
-        var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
-        
-        return message.withUnsafeBytes { (messageBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
-            
-            let messageAddr = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
-            var finalMessageAddr = messageAddr
-            var finalMessageLength = messageBytes.count
-            var standardMessageLength : size_t = 0
-            
-            if (prefix) {
-                let standardMessageBytes = wkWalletConnectorCreateStandardMessage(self.core,
-                                                                                  finalMessageAddr,
-                                                                                  finalMessageLength,
-                                                                                  &standardMessageLength,
-                                                                                  &status)
-                if (standardMessageBytes == nil) {
-                    return Result.failure(WalletConnectorError(core: status))
-                }
-                
-                // Re-assign for digest/signature and release later...
-                finalMessageAddr = UnsafePointer(standardMessageBytes)
-                finalMessageLength = standardMessageLength
+        //
+        // Determine the `mesageToSign`
+        //
+
+        var messageToSign = message
+        if (prefix) {
+            // A little awkward but perhaps clearer
+            switch (createStandardMessage(message: message)) {
+            case .success(let standardMessage):
+                messageToSign = standardMessage
+            case .failure(let error):
+                return Result.failure(error)
             }
-            
+        }
+
+        return messageToSign.withUnsafeBytes { (messageBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest, signature: Signature), WalletConnectorError> in
+
+            let messageAddr   = messageBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let messageLength = messageBytes.count
+
+            //
+            // Get the Digest
+            //
+
+            var digestStatus: WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
             var digestLength: size_t = 0
-            let digestBytes = wkWalletConnectorGetDigest(self.core,
-                                                         finalMessageAddr,
-                                                         finalMessageLength,
-                                                         &digestLength,
-                                                         &status   )
-            defer {
-                // In case a standard message was created.
-                // messageAddr is not owned by us, but finalMessageAddr may be
-                if (messageAddr != finalMessageAddr) {
-                    wkMemoryFree(UnsafeMutablePointer(mutating: finalMessageAddr))
-                }
-                wkMemoryFree(digestBytes)
-                
-            }
-            if (digestBytes == nil) {
-                return Result.failure(WalletConnectorError(core: status))
-            }
-                
+
+            guard let digestBytes = wkWalletConnectorGetDigest (self.core,
+                                                                messageAddr,
+                                                                messageLength,
+                                                                &digestLength,
+                                                                &digestStatus)
+            else { return Result.failure (WalletConnectorError (core: digestStatus)) }
+            defer { wkMemoryFree (digestBytes) }
+
+            let digest = Digest (core: self.core, data32: Data (bytes: digestBytes, count: digestLength))
+
+            //
+            // Get the Signature
+            //
+
             var signatureLength: size_t = 0
-            let signatureBytes = wkWalletConnectorSignData(self.core,
-                                                           finalMessageAddr,
-                                                           finalMessageLength,
-                                                           key.core,
-                                                           &signatureLength,
-                                                           &status )
-            defer { wkMemoryFree(signatureBytes) }
-            if (signatureBytes == nil) {
-                return Result.failure(WalletConnectorError(core: status))
-            }
-            
-            let signatureData = Data(bytes: signatureBytes!, count: signatureLength)
-            let digestData = Data(bytes: digestBytes!, count: digestLength)
-            let digest = Digest(core: self.core, data32: digestData)
-            let signature = Signature(core: self.core, data: signatureData)
-            
+            var signatureStatus: WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+
+            // We pass the `message` - because wkWalletConnectorSignData() has an implicit 'hash'
+            // It is guaranteed that `wkWalletConnectorGetDigest()` uses the same 'hash'
+            guard let signatureBytes = wkWalletConnectorSignData (self.core,
+                                                                  messageAddr,
+                                                                  messageLength,
+                                                                  key.core,
+                                                                  &signatureLength,
+                                                                  &signatureStatus )
+            else { return Result.failure (WalletConnectorError (core: signatureStatus)) }
+            defer { wkMemoryFree (signatureBytes) }
+
+            let signature = Signature (core: self.core, data: Data (bytes: signatureBytes, count: signatureLength))
+
+            //
+            // Return the Digest and Signature
+            //
+
             return Result.success((digest: digest, signature: signature))
         }
     }
