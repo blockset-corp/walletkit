@@ -625,28 +625,25 @@ public final class WalletConnector {
             if (digestBytes == nil) {
                 return Result.failure(WalletConnectorError(core: status))
             }
-            
-            let digestData = Data(bytes: digestBytes!, count: digestLength)
-            return digestData.withUnsafeBytes { (digestDataBytes: UnsafeRawBufferPointer) -> Result<(digest: Digest?, signature: Signature), WalletConnectorError> in
                 
-                var signatureLength: size_t = 0
-                let signatureBytes = wkWalletConnectorSignData(self.core,
-                                                               finalMessageAddr,
-                                                               finalMessageLength,
-                                                               key.core,
-                                                               &signatureLength,
-                                                               &status )
-                defer { wkMemoryFree(signatureBytes) }
-                if (signatureBytes == nil) {
-                    return Result.failure(WalletConnectorError(core: status))
-                }
-                
-                let signatureData = Data(bytes: signatureBytes!, count: signatureLength)
-                let digest = Digest(core: self.core, data32: digestData)
-                let signature = Signature(core: self.core, data: signatureData)
-                
-                return Result.success((digest: digest, signature: signature))
+            var signatureLength: size_t = 0
+            let signatureBytes = wkWalletConnectorSignData(self.core,
+                                                           finalMessageAddr,
+                                                           finalMessageLength,
+                                                           key.core,
+                                                           &signatureLength,
+                                                           &status )
+            defer { wkMemoryFree(signatureBytes) }
+            if (signatureBytes == nil) {
+                return Result.failure(WalletConnectorError(core: status))
             }
+            
+            let signatureData = Data(bytes: signatureBytes!, count: signatureLength)
+            let digestData = Data(bytes: digestBytes!, count: digestLength)
+            let digest = Digest(core: self.core, data32: digestData)
+            let signature = Signature(core: self.core, data: signatureData)
+            
+            return Result.success((digest: digest, signature: signature))
         }
     }
 
