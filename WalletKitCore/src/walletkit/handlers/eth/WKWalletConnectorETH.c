@@ -106,6 +106,36 @@ wkWalletConnectorSignDataETH (
     return signatureData;
 }
 
+WKKey
+wkWalletConnectorRecoverKeyETH (
+        WKWalletConnector       walletConnector,
+        const uint8_t           *digest,
+        size_t                  digestLength,
+        const uint8_t           *signature,
+        size_t                  signatureLength,
+        WKWalletConnectorStatus *status) {
+
+    WKKey key = NULL;
+    BRKey k;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    if (sizeof(UInt256) != digestLength) {
+        *status = WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST;
+        return NULL;
+    }
+    if (65 != signatureLength) {
+        *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
+    }
+    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), signature, signatureLength) ) {
+        key = wkKeyCreateFromKey (&k);
+    } else {
+        *status = WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED;
+    }
+    BRKeyClean (&k);
+
+    return key;
+}
+
 typedef enum {
     WK_WALLET_CONNECT_ETH_FROM,
     WK_WALLET_CONNECT_ETH_TO,
@@ -366,6 +396,7 @@ WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {
     wkWalletConnectorCreateStandardMessageETH,
     wkWalletConnectorGetDigestETH,
     wkWalletConnectorSignDataETH,
+    wkWalletConnectorRecoverKeyETH,
     wkWalletConnectorCreateTransactionFromArgumentsETH,
     wkWalletConnectorCreateTransactionFromSerializationETH,
     wkWalletConnectorSignTransactionDataETH

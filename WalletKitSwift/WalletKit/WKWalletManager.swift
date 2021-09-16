@@ -530,6 +530,7 @@ public enum WalletConnectorError: Error {
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE:              self = .invalidSignature
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
         case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
+        case WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED:            self = .unrecoverableKey
     
         // Not an error and should never be passed to this enumeration
         case WK_WALLET_CONNECTOR_STATUS_OK: preconditionFailure()
@@ -662,7 +663,27 @@ public final class WalletConnector {
     public func recover (digest: Digest, signature: Signature) -> Result<Key, WalletConnectorError> {
         guard core == digest.core, core == signature.core else { return Result.failure(.unknownEntity) }
 
-        return Result.failure(.unrecoverableKey)
+        return digest.data32.withUnsafeBytes { (digestBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
+            let digestAddr = digestBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
+            let digestLength = digestBytes.count
+            return signature.data.withUnsafeBytes { (signatureBytes: UnsafeRawBufferPointer) -> Result<Key, WalletConnectorError> in
+                let signatureAddr = signatureBytes.baseAddress?.assumingMemoryBound(to:UInt8.self);
+                let signatureLength = signatureBytes.count
+                var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+                let key = wkWalletConnectorRecoverKey(self.core,
+                                                      digestAddr,
+                                                      digestLength,
+                                                      signatureAddr,
+                                                      signatureLength,
+                                                      &status)
+                if (key == nil) {
+                    return Result.failure(WalletConnectorError(core: status))
+                }
+                
+                // Return key will own the walletkit native key memory hereafter
+                return Result.success(Key(core: key!));
+            }
+        }
     }
 
     ///

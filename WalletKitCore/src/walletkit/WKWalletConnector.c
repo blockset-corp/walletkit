@@ -172,6 +172,45 @@ wkWalletConnectorSignData   (
     return signedData;
 }
 
+extern WKKey
+wkWalletConnectorRecoverKey (
+        WKWalletConnector       connector,
+        const uint8_t           *digest,
+        size_t                  digestLength,
+        const uint8_t           *signature,
+        size_t                  signatureLength,
+        WKWalletConnectorStatus *status         ) {
+
+    assert (NULL != connector       &&
+            NULL != digest          &&
+            NULL != signature       &&
+            NULL != status );
+
+    WKKey pubKey = NULL;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+    if (NULL != netHandlers             &&
+        NULL != netHandlers->connector  &&
+        NULL != netHandlers->connector->recover) {
+
+        pubKey =  netHandlers->connector->recover(connector,
+                                                  digest,
+                                                  digestLength,
+                                                  signature,
+                                                  signatureLength,
+                                                  status);
+
+        if (NULL == pubKey && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+            *status = WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED;
+
+    } else {
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
+    }
+    return pubKey;
+}
+
 extern uint8_t*
 wkWalletConnectorCreateTransactionFromArguments  (
         WKWalletConnector         connector,
