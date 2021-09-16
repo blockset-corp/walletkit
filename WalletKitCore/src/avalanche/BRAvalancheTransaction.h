@@ -138,7 +138,7 @@ typedef struct {
 
 // MARK: - Transaction UTXO
 
-typedef struct {
+typedef struct BRAvalancheUTXORecord {
     /// A unique identifier, derived from `transaction{Identifier,Index}, used for BRSet
     BRAvalancheHash  identifier;
 
@@ -148,7 +148,7 @@ typedef struct {
     // Locktime
     BRAvalancheAmount amount;
     BRArrayOf(BRAvalancheAddress) addresses;
-} BRAvalancheUTXO;
+} *BRAvalancheUTXO;
 
 extern BRAvalancheUTXO
 avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
@@ -160,14 +160,17 @@ avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
 extern void
 avalancheUTXORelease (BRAvalancheUTXO utxo);
 
+extern BRAvalancheUTXO
+avalancheUTXOClone (BRAvalancheUTXO utxo);
+
 static inline bool
-avalancheUTXOHasAsset (const BRAvalancheUTXO *utxo,
+avalancheUTXOHasAsset (const BRAvalancheUTXO utxo,
                        const BRAvalancheHash asset) {
     return avalancheHashIsEqual (&utxo->assetIdentifier, &asset);
 }
 
 extern bool
-avalancheUTXOHasAddress (const BRAvalancheUTXO *utxo,
+avalancheUTXOHasAddress (const BRAvalancheUTXO utxo,
                          BRAvalancheAddress address,
                          size_t *addressIndex);
 
@@ -182,31 +185,54 @@ avalancheUTXOAmountTotal (BRArrayOf(BRAvalancheUTXO) utxos);
 
 // BRSet Support
 inline static size_t
-avalancheUTXOSetValue (const BRAvalancheUTXO *utxo) {
+avalancheUTXOSetValue (const BRAvalancheUTXO utxo) {
     return avalancheHashSetValue (&utxo->identifier);
 }
 
 // BRSet Support
 inline static int
-avalancheUTXOSetEqual (const BRAvalancheUTXO *utxo1,
-                       const BRAvalancheUTXO *utxo2) {
+avalancheUTXOSetEqual (const BRAvalancheUTXO utxo1,
+                       const BRAvalancheUTXO utxo2) {
     return avalancheHashSetEqual (&utxo1->identifier, &utxo2->identifier);
+}
+
+static inline BRSetOf (BRAvalancheUTXO)
+avalancheUTXOSetCreate (size_t capacity) {
+    return BRSetNew ((size_t (*)(const void *)) avalancheUTXOSetValue,
+                     (int (*)(const void *, const void *))avalancheUTXOSetEqual,
+                     capacity);
 }
 
 typedef enum {
     AVALANCHE_UTXO_SEARCH_MIN_FIRST,
     AVALANCHE_UTXO_SEARCH_MAX_FIRST,
     AVALANCHE_UTXO_SEARCH_RANDOM,
-    AVALANCHE_UTXO_SERRCH_FIFO
+ //   AVALANCHE_UTXO_SERRCH_FIFO            // No data/blockNo/index for FIFO
 } BRAvalancheUTXOSearchType;
 
-// Modifies utxos, NULL if not found
+/**
+ * Find an array of utxos from the set of utxos that add up to greater than `amount`.  The `amount`
+ * should include any fee.
+ *
+ * @param utxos  - The set of utxos available
+ * @param type   - Indicates how to search the available utxos
+ * @param source - The address that must be in the utxo
+ * @param asset  - The asset that must be in the utxo
+ * @param amountWithFee - The amount that must be exceeded
+ * @param amountUTXOs   - The total amount in the returned utxos
+ * @param updateUTXOx   - If true, remove returned utxos from the set of utxos
+ *
+ * @return An array of UTXOs with an amount adding up to at least `amount`.  If `amount` cannot be
+ * reached, then the returned array as a count of 0.
+ */
 extern OwnershipGiven BRArrayOf(BRAvalancheUTXO)
 avalancheUTXOSearchForAmount (BRSetOf(BRAvalancheUTXO) utxos,
                               BRAvalancheUTXOSearchType type,
-                              BRAvalancheAmount amount,
-                              BRAvalancheAmount *fee);
-
+                              BRAvalancheAddress source,
+                              BRAvalancheHash    asset,
+                              BRAvalancheAmount  amountWithFee,
+                              BRAvalancheAmount *amountUTXOs,
+                              bool updateUTXOs);
 
 // MARK: - Transaction
 

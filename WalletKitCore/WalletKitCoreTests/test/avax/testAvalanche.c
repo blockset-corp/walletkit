@@ -273,6 +273,173 @@ runAvalancheFeeBasisTest (void) {
 // MARK: - Transaction Test
 
 static void
+runAvalancheTransactionUTXOTest () {
+    static struct {
+        char *transactionIdentifier;
+        BRAvalancheIndex transactionIndex;
+        char *assetIdentifier;
+        BRAvalancheAmount amount;
+        char *addresses[3];
+    } utxoSpecs[] = {
+        { "XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 1, "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 9964000000, { "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", NULL, NULL }},
+        { "Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWvAbWmqP", 0, "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 2000000000, { "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", NULL, NULL }},
+        { NULL, 0, NULL, 0, { NULL, NULL, NULL }}
+    };
+
+    static struct {
+        ssize_t utxoIndices[5];
+        BRAvalancheUTXOSearchType searchType;
+        char *source;
+        char *asset;
+        BRAvalancheAmount amount;
+        size_t utxosInSearchCount;
+        BRAvalancheAmount utxosInSearchAmount;
+    } vectors[] = {
+
+        // MIN First Order
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MIN_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            1000000000,
+            1,
+            2000000000
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MIN_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            3000000000,
+            2,
+            (9964000000 + 2000000000)
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MIN_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            (9964000000 + 1),
+            2,
+            (9964000000 + 2000000000)
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MIN_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            (9964000000 + 2000000000 + 1),
+            0,
+            0
+        },
+
+        // NAX First Order
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MAX_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            1000000000,
+            1,
+            9964000000
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MAX_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            3000000000,
+            1,
+            9964000000
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MAX_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            (9964000000 + 1),
+            2,
+            (9964000000 + 2000000000)
+        },
+
+        {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_MAX_FIRST,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            (9964000000 + 2000000000 + 1),
+            0,
+            0
+        },
+
+        // RANDOM
+         {
+            { 0, 1, -1, -1, -1 },
+            AVALANCHE_UTXO_SEARCH_RANDOM,
+            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+            3000000000,
+            1,
+            9964000000
+        },
+
+        { { -1, -1, -1, -1, -1 }, NULL, NULL, 0 }
+    };
+    printf("TST:        Avalanche Transaction UTXO\n");
+
+    BRAvalancheNetwork network = avaxNetworkTestnet;
+
+    BRArrayOf(BRAvalancheUTXO) utxos;
+    array_new (utxos, 1);
+
+    // Build the UTXOs
+    BRArrayOf(BRAvalancheAddress) addresses;
+    array_new (addresses, 1);
+    for (size_t index = 0; NULL != utxoSpecs[index].transactionIdentifier; index++) {
+        for (size_t indexAddr = 0; NULL != utxoSpecs[index].addresses[indexAddr]; indexAddr++)
+            array_add (addresses, avalancheNetworkStringToAddress (network, utxoSpecs[index].addresses[indexAddr], true));
+
+        BRAvalancheUTXO utxo = avalancheUTXOCreate (avalancheHashFromString (utxoSpecs[index].transactionIdentifier),
+                                                    utxoSpecs[index].transactionIndex,
+                                                    avalancheHashFromString (utxoSpecs[index].assetIdentifier),
+                                                    utxoSpecs[index].amount,
+                                                    addresses);
+        array_clear(addresses);
+        array_add (utxos, utxo);
+    }
+    array_free (addresses);
+
+    for (size_t index = 0; -1 != vectors[index].utxoIndices[0]; index++) {
+        BRSetOf (BRAvalanceUTXO) utxoSet = avalancheUTXOSetCreate (2);
+        for (size_t indexUTXO = 0; -1 != vectors[index].utxoIndices[indexUTXO]; indexUTXO++)
+            BRSetAdd (utxoSet, utxos[vectors[index].utxoIndices[indexUTXO]]);
+        size_t utxoCount = BRSetCount(utxoSet);
+
+        BRAvalancheAmount amountUTXOs;
+        BRArrayOf(BRAvalancheUTXO) utxosInSearch = avalancheUTXOSearchForAmount (utxoSet,
+                                                                                 vectors[index].searchType,
+                                                                                 avalancheNetworkStringToAddress (network, vectors[index].source, true),
+                                                                                 avalancheHashFromString (vectors[index].asset),
+                                                                                 vectors[index].amount,
+                                                                                 &amountUTXOs,
+                                                                                 false);
+        assert (vectors[index].utxosInSearchCount  == array_count(utxosInSearch));
+        assert (vectors[index].utxosInSearchAmount == amountUTXOs);
+
+        array_free_all(utxosInSearch, avalancheUTXORelease);
+        BRSetFree(utxoSet);
+    }
+
+    array_free_all(utxos, avalancheUTXORelease);
+}
+
+static void
 runAvalancheTransactionCreateTest (void) {
     printf("TST:        Avalanche Transaction Create\n");
     return;
@@ -417,6 +584,7 @@ runAvalancheTransactionSerializeTest (void) {
 static void
 runAvalancheTransactionTest (void) {
     printf("TST:    Avalanche Transaction\n");
+    runAvalancheTransactionUTXOTest ();
     runAvalancheTransactionCreateTest ();
     runAvalancheTransactionSignTest ();
     runAvalancheTransactionSerializeTest ();

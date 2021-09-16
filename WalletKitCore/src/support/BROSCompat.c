@@ -106,8 +106,7 @@ arc4random_uniform_brd(uint32_t upperBbound) {
 }
 
 extern int
-mergesort_brd (void *__base, size_t __nel, size_t __width,
-               int (*__compar)(const void *, const void *)) {
+mergesort_brd (void *__base, size_t __nel, size_t __width, SortCompareRoutine __compar) {
 #if defined (__ANDROID__)
     qsort (__base, __nel, __width, __compar);
     return 0;

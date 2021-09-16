@@ -335,7 +335,9 @@ avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
                      BRAvalancheHash   assetIdentifier,
                      BRAvalancheAmount amount,
                      OwnershipKept BRArrayOf(BRAvalancheAddress) addresses) {
-    BRAvalancheUTXO utxo = {
+    BRAvalancheUTXO utxo = malloc (sizeof (struct BRAvalancheUTXORecord));
+
+    *utxo = (struct BRAvalancheUTXORecord) {
         AVALANCHE_HASH_EMPTY,
         transactionIdentifier,
         transactionIndex,
@@ -356,24 +358,37 @@ avalancheUTXOCreate (BRAvalancheHash   transactionIdentifier,
 
     memcpy (&bytes[offset], &transactionIndex, sizeof (BRAvalancheIndex));
 
-    utxo.identifier = avalancheHashCreate (bytes, bytesCount);
+    utxo->identifier = avalancheHashCreate (bytes, bytesCount);
 
     //
     // Copy addresses array
     //
-    array_new (utxo.addresses, array_count (addresses));
-    array_add_array (utxo.addresses, addresses, array_count(addresses));
+    array_new (utxo->addresses, array_count (addresses));
+    array_add_array (utxo->addresses, addresses, array_count(addresses));
 
     return utxo;
 }
 
 extern void
 avalancheUTXORelease (BRAvalancheUTXO utxo) {
-    if (NULL != utxo.addresses) array_free (utxo.addresses);
+    if (NULL == utxo) return;
+
+    if (NULL != utxo->addresses) array_free (utxo->addresses);
+    memset (utxo, 0, sizeof (struct BRAvalancheUTXORecord));
+    free (utxo);
+}
+
+extern BRAvalancheUTXO
+avalancheUTXOClone (BRAvalancheUTXO utxo) {
+    return avalancheUTXOCreate (utxo->transactionIdentifier,
+                                utxo->transactionIndex,
+                                utxo->assetIdentifier,
+                                utxo->amount,
+                                utxo->addresses);
 }
 
 extern bool
-avalancheUTXOHasAddress (const BRAvalancheUTXO *utxo,
+avalancheUTXOHasAddress (const BRAvalancheUTXO utxo,
                          BRAvalancheAddress address,
                          size_t *addressIndex) {
     for (size_t index = 0; index < array_count(utxo->addresses); index++)
@@ -384,6 +399,10 @@ avalancheUTXOHasAddress (const BRAvalancheUTXO *utxo,
     return false;
 }
 
+/**
+ * Check of all of `utxos` has `source` and `asset` and if their total amount meets or exceeds
+ * `amountWithFee`.
+ */
 extern bool
 avalancheUTXOSValidate (BRArrayOf(BRAvalancheUTXO) utxos,
                         BRAvalancheAddress source,
@@ -392,7 +411,7 @@ avalancheUTXOSValidate (BRArrayOf(BRAvalancheUTXO) utxos,
     BRAvalancheAmount amount = 0;
 
     for (size_t index = 0; index < array_count(utxos); index++) {
-        const BRAvalancheUTXO *utxo = &utxos[index];
+        const BRAvalancheUTXO utxo = utxos[index];
 
         if (!avalancheUTXOHasAsset   (utxo, asset) ||
             !avalancheUTXOHasAddress (utxo, source, NULL))
@@ -408,10 +427,108 @@ extern BRAvalancheAmount
 avalancheUTXOAmountTotal (BRArrayOf(BRAvalancheUTXO) utxos) {
     BRAvalancheAmount amount = 0;
     for (size_t index = 0; index < array_count(utxos); index++)
-        amount += utxos[index].amount;
+        amount += utxos[index]->amount;
     return amount;
 }
 
+static int
+avalancheUTXOSortByAmountIncreasing (const void *v1, const void *v2) {
+    const BRAvalancheUTXO utxo1 = *(const BRAvalancheUTXO *) v1;
+    const BRAvalancheUTXO utxo2 = *(const BRAvalancheUTXO *) v2;
+
+    return (utxo1->amount < utxo2->amount
+            ? -1
+            : (utxo1->amount > utxo2->amount
+               ? +1
+               :  0));
+}
+
+static int
+avalanceUTXOSortByAmountDecreasing (const void *v1, const void *v2) {
+    return -avalancheUTXOSortByAmountIncreasing (v1, v2);  // negate
+}
+
+static int
+avalancheUTXOSortByDateIncreasing (const void *v1, const void *v2) {
+    const BRAvalancheUTXO utxo1 = *(const BRAvalancheUTXO *) v1;
+    const BRAvalancheUTXO utxo2 = *(const BRAvalancheUTXO *) v2;
+
+    (void) utxo1; (void) utxo2;
+
+    return 0;
+}
+
+static SortCompareRoutine
+avalancheUTXOSearchGetCompareRoutine (BRAvalancheUTXOSearchType type) {
+    static SortCompareRoutine routines[] = {
+        avalancheUTXOSortByAmountIncreasing,
+        avalanceUTXOSortByAmountDecreasing,
+        NULL,
+        avalancheUTXOSortByDateIncreasing
+    };
+    return routines[type];
+}
+
+extern OwnershipGiven BRArrayOf(BRAvalancheUTXO)
+avalancheUTXOSearchForAmount (BRSetOf(BRAvalancheUTXO) utxos,
+                              BRAvalancheUTXOSearchType type,
+                              BRAvalancheAddress source,
+                              BRAvalancheHash    asset,
+                              BRAvalancheAmount  amountWithFee,
+                              BRAvalancheAmount *amountUTXOs,
+                              bool updateUTXOs) {
+    assert (NULL != amountUTXOs);
+    *amountUTXOs = 0;
+
+    size_t utxosCount = BRSetCount(utxos);
+
+    BRArrayOf (BRAvalancheUTXO) utxosOrdered;
+    array_new (utxosOrdered, utxosCount);
+    array_set_count(utxosOrdered, utxosCount);
+
+    // Everything in `utxosOrdered` is a reference to UTXOS in `utxos`.  (Memory is shared)
+    BRSetAll(utxos, (void**) utxosOrdered, utxosCount);
+
+    // Optionally sort the utxos
+    SortCompareRoutine sorter = avalancheUTXOSearchGetCompareRoutine (type);
+    if (NULL != sorter)
+        mergesort_brd (utxosOrdered, utxosCount, sizeof (BRAvalancheUTXO), sorter);
+
+    BRArrayOf(BRAvalancheUTXO) result;
+    array_new (result, 1);
+
+    // Find the UTXOS
+    for (size_t index = 0; index < utxosCount; index++) {
+        BRAvalancheUTXO utxo = utxosOrdered[index];
+
+        if (avalancheUTXOHasAsset   (utxo, asset) &&
+            avalancheUTXOHasAddress (utxo, source, NULL)) {
+
+            // We'll add `utxo` to `result` but if we are removing it from `utxos` then we can
+            // simply take ownership of it; otherwise we need to copy it.
+            if (updateUTXOs) BRSetRemove (utxos, utxo);
+            else utxo = avalancheUTXOClone (utxo);
+
+            array_add (result, utxo);
+            *amountUTXOs += utxo->amount;
+
+            if (*amountUTXOs >= amountWithFee) break /* from for-loop */;
+        }
+    }
+
+    // Check if `amount` was met
+    if (*amountUTXOs < amountWithFee) {
+        // Return the utxos in `result`
+        for (size_t index = 0; index < array_count(result); index++) {
+            if (updateUTXOs) BRSetAdd (utxos, result[index]);
+            else avalancheUTXORelease(result[index]);
+        }
+        array_clear(result);
+        *amountUTXOs = 0;
+    }
+
+    return result;
+}
 
 // MARK: - Attributes
 
@@ -505,7 +622,7 @@ avalancheTransactionCreate (BRAvalancheAddress  source,
     //
     for (size_t index = 0; index < array_count(utxos); index++) {
         // This UTXO is validated
-        const BRAvalancheUTXO *utxo = &utxos[index];
+        const BRAvalancheUTXO utxo = utxos[index];
 
         size_t addressIndex;
         avalancheUTXOHasAddress (utxo, source, &addressIndex);
@@ -516,15 +633,15 @@ avalancheTransactionCreate (BRAvalancheAddress  source,
 
         BRAvalancheTransactionInput input = (BRAvalancheTransactionInput) {
             AVALANCHE_TRANSACTION_INPUT_TRANSFER,
-            utxos[index].transactionIdentifier,
-            utxos[index].transactionIndex,
+            utxos[index]->transactionIdentifier,
+            utxos[index]->transactionIndex,
             asset,
-            { .transfer = { utxos[index].amount }},
+            { .transfer = { utxos[index]->amount }},
             addressIndices
         };
         array_add (transaction->inputs, input);
 
-        amountTotalUTXOs += utxos[index].amount;
+        amountTotalUTXOs += utxos[index]->amount;
 
         // If we've accumulated enough for `amount + fee`, then skip out.
         if (amountTotalUTXOs >= amountTotal)
