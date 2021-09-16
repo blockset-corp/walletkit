@@ -34,14 +34,17 @@ typedef enum {
     // provided, or values are invalid
     WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS,
 
-    // A general error to describe the digest creation has failed
+    // The digest creation has failed or the digest is of an expected length
     WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST,
 
-    // A general error indicating the signature has failed
+    // Signature creation has failed or the signature is an invalid length
     WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE,
 
     // A general error specifying a failure to produce serialization
-    WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION
+    WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION,
+
+    // The public key cannot be recovered from the digest + signature
+    WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED
     
     // ...
 
@@ -119,6 +122,26 @@ wkWalletConnectorSignData (
         WKKey                   key,
         size_t                  *signatureLength,
         WKWalletConnectorStatus *status            );
+
+/** Returns the public key from the provide digest and signature.
+ *
+ * @param connector The wallet connector object.
+ * @param digest The digest
+ * @param digestLength The number of bytes of digest
+ * @param signature The signature
+ * @param signatureLength The number of bytes of signature
+ * @param status A status of the operation
+ * @return When successful, the recovered public key. Otherwise an error is set in status
+ *         and the returned key is NULL.
+ */
+extern WKKey
+wkWalletConnectorRecoverKey (
+        WKWalletConnector       connector,
+        const uint8_t           *digest,
+        size_t                  digestLength,
+        const uint8_t           *signature,
+        size_t                  signatureLength,
+        WKWalletConnectorStatus *status         );
 
 /** Uses the wallet connector provided to organize the key-value pairs
  *  into a suitable serialized transaction.
