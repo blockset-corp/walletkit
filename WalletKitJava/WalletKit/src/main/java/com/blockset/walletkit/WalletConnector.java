@@ -158,8 +158,10 @@ public interface WalletConnector {
      * @param digest The {@link Digest} digest
      * @param signature The corresponding {@link Signature} signature
      * @return On success, a public key or on failure a {@link Result} composed with
-     *         {@link WalletConnectorError.UnknownEntity}
-     *         to indicate the 'digest' or 'signature' are not from 'self'
+     *         {@link WalletConnectorError.UnknownEntity} to indicate the 'digest' or 'signature'
+     *                                                    are not from 'self'
+     *         {@link WalletConnectorError.UnrecoverableKey} if the signature was not produced by a
+     *                                                       recoverable signing algorithm
      *
      */
      Result<Key, WalletConnectorError>

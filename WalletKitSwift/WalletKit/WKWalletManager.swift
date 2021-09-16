@@ -597,8 +597,7 @@ public final class WalletConnector {
     /// - Parameter key: A private key
     /// - Parameter prefix: Indicates to include an optional prefix in the signature
     ///
-    /// - Returns: On success a pair {Digest,Signature}.  The digest will exist if the connector's
-    /// signing algorithm is recoverable.  On failure a WalletConnectorError of:
+    /// - Returns: On success a pair {Digest,Signature}.  On failure a WalletConnectorError of:
     ///     .invalidKeyForSigning - if `key` is not private
     ///
     public func sign (message: Data, using key: Key, prefix: Bool = true) -> Result<(digest: Digest, signature: Signature), WalletConnectorError> {
@@ -678,6 +677,7 @@ public final class WalletConnector {
     ///
     /// - Returns: On success, a public key.  On failure, a WalletConnectError of:
     ///       .unknownEntity - `digest` or `signature` are not from `self`
+    ///       .unrecoverableKey - in the event `signature` was not produced by a recoverable signing algorithm
     ///
     public func recover (digest: Digest, signature: Signature) -> Result<Key, WalletConnectorError> {
         guard core == digest.core, core == signature.core else { return Result.failure(.unknownEntity) }
