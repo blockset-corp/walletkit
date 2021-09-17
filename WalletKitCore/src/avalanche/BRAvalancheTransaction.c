@@ -170,7 +170,7 @@ extern OwnershipGiven BRData
 avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output) {
     BRData assetEncoding     = avalancheHashEncode(output.assetHash);
     BRData addressesEncoding = avalancheAddressXArrayEncode(output.addresses);
-    BRData typeEncodiing     = dataCreateEmpty();
+    BRData typeEncoding      = dataCreateEmpty();
 
     switch (output.type) {
         case AVALANCHE_TRANSACTION_OUTPUT_TRANSFER: {
@@ -196,7 +196,7 @@ avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output) {
             UInt32SetBE(&variety[offset], output.threshold);
             offset += AVALANCHE_THRESHOLD_ENCODING_SIZE;
 
-            typeEncodiing = dataCreate (variety, varietyCount);
+            typeEncoding = dataCreate (variety, varietyCount);
             break;
         }
         case AVALANCHE_TRANSACTION_OUTPUT_MINT:
@@ -205,11 +205,11 @@ avalancheTransactionOutputEncode (BRAvalancheTransactionOutput output) {
             break;
     }
 
-    BRData dataItems[3] = { assetEncoding, typeEncodiing, addressesEncoding};
+    BRData dataItems[3] = { assetEncoding, typeEncoding, addressesEncoding};
 
     BRData result = dataConcat (dataItems, 3);
 
-    dataFree(typeEncodiing);
+    dataFree(typeEncoding);
     dataFree(addressesEncoding);
     dataFree(assetEncoding);
 
@@ -464,7 +464,7 @@ avalancheUTXOSearchGetCompareRoutine (BRAvalancheUTXOSearchType type) {
         avalancheUTXOSortByAmountIncreasing,
         avalanceUTXOSortByAmountDecreasing,
         NULL,
-        avalancheUTXOSortByDateIncreasing
+//        avalancheUTXOSortByDateIncreasing
     };
     return routines[type];
 }

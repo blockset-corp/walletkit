@@ -51,7 +51,7 @@ avalancheNetworkGetAddressPrefix (BRAvalancheNetwork network) {
 #define AVALANCHE_NETWORK_STRIP_ADDRESS_LABEL(network, string)                        \
   do {                                                                                \
     char *label = network->addressLabel;                                              \
-    if (NULL != network->addressLabel && 0 == strncmp (label, string, strlen(label))) \
+    if (NULL != label && 0 == strncmp (label, string, strlen(label)))                 \
       string = &string[strlen(label)];                                                \
   } while (0)
 
