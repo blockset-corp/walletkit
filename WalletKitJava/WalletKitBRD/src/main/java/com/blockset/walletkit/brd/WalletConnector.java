@@ -86,17 +86,26 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
             Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
         }
 
-        // Digest algorithm may be different per network type and optional prefix must be included
+        // Digest algorithm may be different per network type and optional prefix may be included
         // per network definition prior to doing the hash
-        byte[] digestData = null;
         byte[] signatureData = null;
-        
-        WKResult<byte[], WKWalletConnectorError> digestResult = core.getDigest(message, prefix);
+        byte[] finalMessage = message;
+
+        if (prefix) {
+            WKResult<byte[], WKWalletConnectorError> standardMsg = core.createStandardMessage(message);
+            if (standardMsg.isFailure()) {
+                return Result.failure(wkErrorToError(standardMsg.getFailure()));
+            }
+
+            // Digest should be produced on the modified, and standard message
+            finalMessage = standardMsg.getSuccess();
+        }
+
+        WKResult<byte[], WKWalletConnectorError> digestResult = core.getDigest(finalMessage);
         if (digestResult.isSuccess()) {
-            
-            digestData = digestResult.getSuccess();
+
             Key cryptoKey = Key.from(key);
-            WKResult<byte[], WKWalletConnectorError> sigResult = core.sign(digestData,
+            WKResult<byte[], WKWalletConnectorError> sigResult = core.sign(finalMessage,
                                                                            cryptoKey.getBRCryptoKey());
             
             if (sigResult.isSuccess()) {
@@ -108,7 +117,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
             return Result.failure(wkErrorToError(digestResult.getFailure()));
         }
 
-        Digest digest = new Digest(this.core, digestData);
+        Digest digest = new Digest(this.core, digestResult.getSuccess());
         Signature signature = new Signature(this.core, signatureData);
         return Result.success(new DigestAndSignaturePair(digest, signature));
     }

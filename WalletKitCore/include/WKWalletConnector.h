@@ -66,12 +66,29 @@ wkWalletConnectorRelease (WKWalletConnector connector);
 ///      of successful completion, WalletConnect functions indicate
 ///      'WK_WALLET_CONNECTOR_STATUS_OK'
 
+/* Create a WalletConnect specific 'standard message' out of the input message.
+ *
+ * @param connector The wallet connector object
+ * @param msg The input message bytes
+ * @param msgLen The length of input message
+ * @param standardMessageLength The length of the standard message created
+ * @param status A status of the operation
+ * @return The standard message bytes or NULL on error
+ *
+ */
+extern uint8_t*
+wkWalletConnectorCreateStandardMessage (
+        WKWalletConnector       connector,
+        const uint8_t           *msg,
+        size_t                  msgLen,
+        size_t                  *standardMessageLength,
+        WKWalletConnectorStatus *status          );
+
 /* Use the wallet connector to generate a digest of the provided message.
  *
  * @param connector The wallet connector object
  * @param msg The input message bytes for which to create the digest
  * @param msgLen The length of input message
- * @param addPrefix A flag to indicate prepending an optional prefix known to the network
  * @param digestLength The length of digest created (on success > 0)
  * @param status A status of the operation
  * @return When successful an allocated digest buffer of length digestLength. The caller
@@ -83,7 +100,6 @@ wkWalletConnectorGetDigest (
         WKWalletConnector       connector,
         const uint8_t           *msg,
         size_t                  msgLen,
-        WKBoolean               addPrefix,
         size_t                  *digestLength,
         WKWalletConnectorStatus *status          );
 
