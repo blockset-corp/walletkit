@@ -50,14 +50,15 @@ avalancheNetworkGetAddressPrefix (BRAvalancheNetwork network) {
 
 #define AVALANCHE_NETWORK_STRIP_ADDRESS_LABEL(network, string)                        \
   do {                                                                                \
-    if (NULL != network->addressLabel && strcmp (network->addressLabel, string) <= 0) \
-      string = &string[strlen(network->addressLabel)];                                \
+    char *label = network->addressLabel;                                              \
+    if (NULL != label && 0 == strncmp (label, string, strlen(label)))                 \
+      string = &string[strlen(label)];                                                \
   } while (0)
 
 #define AVALANCE_NETWORK_PREPEND_ADDRESS_LABEL(network, string, release)              \
   do {                                                                                \
     if (NULL != network->addressLabel) {                                              \
-char *result = malloc (strlen(string) + strlen(network->addressLabel) + 1);           \
+      char *result = malloc (strlen(string) + strlen(network->addressLabel) + 1);     \
       strcpy (result, network->addressLabel);                                         \
       strcat (result, string);                                                        \
       if (release) free(string);                                                      \

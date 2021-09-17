@@ -14,6 +14,7 @@
 
 #include "support/BRKey.h"
 #include "support/BRInt.h"
+#include "support/BRData.h"
 
 #include "BRAvalancheBase.h"
 #include "BRAvalancheAddress.h"
@@ -124,15 +125,14 @@ avalancheSignatureIsEmpty (const BRAvalancheSignature *signature) {
     return 0 == memcmp (signature, &empty, sizeof(BRAvalancheSignature));
 }
 
-static inline uint8_t *
-avalancheSignatureGetBytes (const BRAvalancheSignature *signature, size_t *count) {
-    size_t   resultCount = sizeof (BRAvalancheSignature);
-    uint8_t *result      = malloc (resultCount);
+static inline OwnershipGiven BRData
+avalancheSignatureGetBytes (const BRAvalancheSignature *signature) {
+    return dataCreate ((uint8_t *) signature, sizeof(BRAvalancheSignature));
+}
 
-    memcpy (result, signature, resultCount);
-    if (NULL != count) *count = resultCount;
-
-    return result;
+static inline BRAvalancheSignature
+avalancheSignatureCreateEmpty (void) {
+    return (BRAvalancheSignature) { 0 };
 }
 
 /**

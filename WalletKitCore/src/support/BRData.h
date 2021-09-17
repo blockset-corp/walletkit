@@ -11,6 +11,9 @@
 #ifndef BRData_h
 #define BRData_h
 
+#include <stdbool.h>
+#include "support/util/BRHex.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,6 +76,20 @@ static inline BRData dataCopy (uint8_t * bytes, size_t size) {
 
 static inline BRData dataClone (BRData data) {
     return dataCopy (data.bytes, data.size);
+}
+
+static inline bool
+dataEquals (BRData data1, BRData data2) {
+    return (data1.size == data2.size && 0 == memcmp (data1.bytes, data2.bytes, data1.size));
+}
+
+static inline bool
+dataEqualsHexString (BRData data, const char *hex) {
+    size_t targetLen = 2 * data.size + 1;
+    char   target[targetLen];
+
+    hexEncode(target, targetLen, data.bytes, data.size);
+    return 0 == strcmp (target, hex);
 }
 
 static inline BRData

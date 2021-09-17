@@ -69,25 +69,36 @@ avalancheHashFromString(const char *input);
 extern char *
 avalancheHashToString (BRAvalancheHash hash);
 
+static inline int
+avalancheHashCompare (const BRAvalancheHash *h1,
+                      const BRAvalancheHash *h2) {
+    return memcmp (h1->bytes, h2->bytes, AVALANCHE_HASH_BYTES);
+}
 
 static inline bool
-avalancheHashIsEqual (const BRAvalancheHash h1,
-                      const BRAvalancheHash h2) {
-    return 0 == memcmp (h1.bytes, h2.bytes, AVALANCHE_HASH_BYTES);
+avalancheHashIsEqual (const BRAvalancheHash *h1,
+                      const BRAvalancheHash *h2) {
+    return 0 == avalancheHashCompare(h1, h2);
 }
 
 static inline bool
 avalancheHashIsEmpty (BRAvalancheHash hash) {
-    return avalancheHashIsEqual (hash, AVALANCHE_HASH_EMPTY);
+    BRAvalancheHash empty = AVALANCHE_HASH_EMPTY;
+    return avalancheHashIsEqual (&hash, &empty);
 }
 
-// For use with BRSet
-static inline uint32_t
+// BRSet support
+static inline size_t
 avalancheHashSetValue (const BRAvalancheHash *hash) {
-    // First foun bytes as a uint32; unlikely to be sufficient (?)
-    return (uint32_t) ((UInt256 *) hash->bytes)->u32[0];
+    return (size_t) ((UInt256 *) hash->bytes)->u32[0];
 }
 
+// BRSet suppot
+static inline int
+avalancheHashSetEqual (const BRAvalancheHash *hash1,
+                       const BRAvalancheHash *hash2) {
+    return (hash1 == hash2 || avalancheHashIsEqual (hash1, hash2));
+}
 
 // Support
 

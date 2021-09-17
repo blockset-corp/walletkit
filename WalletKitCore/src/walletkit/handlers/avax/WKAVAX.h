@@ -48,7 +48,7 @@ wkAmountAsAVAX (WKAmount amount,
 
 static inline WKHash
 wkHashCreateAsAVAX (BRAvalancheHash hash) {
-    return wkHashCreateInternal (avalancheHashSetValue (&hash),
+    return wkHashCreateInternal ((uint32_t) avalancheHashSetValue (&hash),
                                  AVALANCHE_HASH_BYTES,
                                  hash.bytes,
                                  WK_NETWORK_TYPE_AVAX);

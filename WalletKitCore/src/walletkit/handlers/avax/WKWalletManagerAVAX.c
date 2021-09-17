@@ -253,11 +253,14 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
         wkTransferSetState (transfer, state);
     }
     else {
+        assert (false);
+#if 0
         BRAvalancheTransaction avaxTransaction = avalancheTransactionCreate (avaxSource,
                                                                              avaxTarget,
                                                                              avaxAmount,
                                                                              avaxFeeBasis);
-
+#endif
+        BRAvalancheTransaction avaxTransaction = NULL;
         transfer = wkTransferCreateAsAVAX (wallet->listenerTransfer,
                                            bundle->uids,
                                            wallet->unit,
