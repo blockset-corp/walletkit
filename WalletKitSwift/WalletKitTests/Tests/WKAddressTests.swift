@@ -161,27 +161,34 @@ class WKAddressTests: XCTestCase {
     func testAddressAVAX () {
         if let network = Network.findBuiltin(uids: "avalanche-mainnet") {
 
-            let AddressParsablePairs:[(String, Bool)] = [ // (address, parsable)
-                ("abc", true),
-                ("def", false)
+            let AddressParsablePairs:[(String, Bool, String?)] = [ // (address, parsable)
+                ("X-avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", true,  nil),
+                ("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",   true,  "X-avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal"),
+                ("C-avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal", false, nil),
+                ("avac1escwyq2hsznvwth6au3gpc77f225uacvwldgal",   false, nil),
+                ("avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal3",  false, nil),
+                ("X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", false, nil),
             ]
 
-            for (string, parsable) in AddressParsablePairs {
+            for (string, parsable, match) in AddressParsablePairs {
                 let address = Address.create(string: string, network: network)
-                XCTAssert(parsable ? nil != address : nil == address)
-                XCTAssert(!parsable || string == address!.description)
+                XCTAssert(parsable ? (nil != address) : (nil == address))
+                XCTAssert(!parsable || address!.description == (match ?? string))
             }
         }
 
         if let network = Network.findBuiltin(uids: "avalanche-testnet") {
 
-            let AddressParsablePairs:[(String, Bool)] = [ // (address, parsable)
+            let AddressParsablePairs:[(String, Bool, String?)] = [ // (address, parsable)
+                ("X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",  true,  nil),
+                ("fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",    true,  "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q"),
+                ("X-avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",  false, nil),
             ]
 
-            for (string, parsable) in AddressParsablePairs {
+            for (string, parsable, match) in AddressParsablePairs {
                 let address = Address.create(string: string, network: network)
-                XCTAssert(parsable ? nil != address : nil == address)
-                XCTAssert(!parsable || string == address!.description)
+                XCTAssert(parsable ? (nil != address) : (nil == address))
+                XCTAssert(!parsable || address!.description == (match ?? string))
             }
         }
     }

@@ -16,7 +16,20 @@
 private_extern BRAvalancheNetwork
 wkNetworkAsAVAX (WKNetwork network) {
     WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(network);
-    return networkAVAX->avaxNetwork;
+    return networkAVAX->avax;
+}
+
+typedef struct {
+    BRAvalancheNetwork avax;
+} WKNetworkCreateContextAVAX;
+
+static void
+wkNetworkCreateCallbackAVAX (WKNetworkCreateContext context,
+                            WKNetwork network) {
+    WKNetworkCreateContextAVAX *contextAVAX = (WKNetworkCreateContextAVAX*) context;
+    WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX (network);
+
+    networkAVAX->avax = contextAVAX->avax;
 }
 
 static WKNetwork
@@ -29,9 +42,16 @@ cyptoNetworkCreateAVAX (WKNetworkListener listener,
                        WKAddressScheme defaultAddressScheme,
                        WKSyncMode defaultSyncMode,
                        WKCurrency nativeCurrency) {
-    assert (0 == strcmp (desc, (isMainnet ? "mainnet" : "testnet")));
-    
-    return wkNetworkAllocAndInit (sizeof (struct WKNetworkRecord),
+    bool useMainnet = (0 == strcmp ("mainnet", desc));
+    bool useTestnet = (0 == strcmp ("testnet", desc));
+
+    assert (useMainnet || useTestnet);
+
+    WKNetworkCreateContextAVAX contextAVAX = {
+        (useMainnet ? avaxNetworkMainnet : avaxNetworkTestnet)
+    };
+
+    return wkNetworkAllocAndInit (sizeof (struct WKNetworkAVAXRecord),
                                       WK_NETWORK_TYPE_AVAX,
                                       listener,
                                       uids,
@@ -42,8 +62,8 @@ cyptoNetworkCreateAVAX (WKNetworkListener listener,
                                       defaultAddressScheme,
                                       defaultSyncMode,
                                       nativeCurrency,
-                                      NULL,
-                                      NULL);
+                                      &contextAVAX,
+                                      wkNetworkCreateCallbackAVAX);
 }
 
 static void
@@ -56,11 +76,11 @@ static WKAddress
 wkNetworkCreateAddressAVAX (WKNetwork network,
                             const char *addressAsString) {
     WKNetworkAVAX      networkAVAX = wkNetworkCoerceAVAX (network);
-    BRAvalancheAddress avaxAddress = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, addressAsString, true);
+    BRAvalancheAddress avaxAddress = avalancheNetworkStringToAddress (networkAVAX->avax, addressAsString, true);
 
     return (avalancheAddressIsEmptyAddress(avaxAddress)
             ? NULL
-            : wkAddressCreateAsAVAX (avaxAddress, networkAVAX->avaxNetwork));
+            : wkAddressCreateAsAVAX (avaxAddress, networkAVAX->avax));
 }
 
 static WKBlockNumber

@@ -211,14 +211,16 @@ avalancheAddressStringToAddressX (const char *input,
 
     size_t addressBytesCount = AVALANCHE_ADDRESS_BYTES_X;
 
-    bool success = avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, prefix, input);
+    bool success = (0 == strncmp (input, prefix, strlen(prefix)) &&
+                    avax_addr_bech32_decode(address.u.x.bytes, &addressBytesCount, prefix, input));
 
-    return (success ? address : avalancheAddressCreateEmptyAddress (AVALANCHE_ADDRESS_BYTES_X));
+    return (success ? address : avalancheAddressCreateEmptyAddress (AVALANCHE_CHAIN_TYPE_X));
 }
 
 extern BRAvalancheAddress
 avalancheAddressStringToAddressC (const char *input) {
-    assert (40 == strlen(input));
+    if (40 != strlen(input) || !hexEncodeValidate(input))
+        return avalancheAddressCreateEmptyAddress (AVALANCHE_CHAIN_TYPE_C);
 
     BRAvalancheAddress address = { AVALANCHE_CHAIN_TYPE_C };
     hexDecode (address.u.c.bytes, AVALANCHE_ADDRESS_BYTES_C, input, strlen(input));
