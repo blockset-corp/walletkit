@@ -152,39 +152,44 @@ wkWalletConnectorRecoverKeyETH (
 }
 
 typedef enum {
-    WK_WALLET_CONNECT_ETH_FROM,
+
+    // The recipient address
     WK_WALLET_CONNECT_ETH_TO,
+
+    // Optional data of transaction
     WK_WALLET_CONNECT_ETH_DATA,
+
+    // The amount of gas presented
     WK_WALLET_CONNECT_ETH_GAS,
+
+    // Gas price
     WK_WALLET_CONNECT_ETH_GASPRICE,
+
+    // Transaction amount
     WK_WALLET_CONNECT_ETH_VALUE,
-    WK_WALLET_CONNECT_ETH_NONCE
-} WKWalletConnectEthTransactionFields;
-#define WK_WALLET_CONNECT_ETH_FIELD_MAX (WK_WALLET_CONNECT_ETH_NONCE + 1)
+} WKWalletConnectEthTransactionField;
+#define WK_WALLET_CONNECT_ETH_FIELD_MAX (WK_WALLET_CONNECT_ETH_VALUE + 1)
 
 static const char* transactionFromArgsFieldNames[WK_WALLET_CONNECT_ETH_FIELD_MAX] = {
-    "from", "to", "data", "gas", "gasPrice", "value", "nonce"
+    "to", "data", "gas", "gasPrice", "value"
 };
 
 // Mandatory transaction from arguments fields
-#define MANDATORY_FIELDS ((1 << WK_WALLET_CONNECT_ETH_FROM)       | \
-                          (1 << WK_WALLET_CONNECT_ETH_TO)         | \
-                          (1 << WK_WALLET_CONNECT_ETH_GAS)        | \
-                          (1 << WK_WALLET_CONNECT_ETH_GASPRICE)   | \
-                          (1 << WK_WALLET_CONNECT_ETH_NONCE) )
+#define MANDATORY_FIELDS ((1 << WK_WALLET_CONNECT_ETH_TO)           | \
+                          (1 << WK_WALLET_CONNECT_ETH_GAS)          | \
+                          (1 << WK_WALLET_CONNECT_ETH_GASPRICE) )
 #define WK_WALLET_CONNECT_ETH_MET(met, reqmet) (met | 1 << reqmet)
 #define WK_WALLET_CONNECT_ETH_MANDATORY_MET(met) ((met & MANDATORY_FIELDS) == MANDATORY_FIELDS)
 
+static WKWalletConnectEthTransactionField getTransactionFieldFromKey(const char* keyValue) {
 
-static WKWalletConnectEthTransactionFields getTransactionFieldFromKey(const char* keyValue) {
-
-    for (WKWalletConnectEthTransactionFields field=WK_WALLET_CONNECT_ETH_FROM;
+    for (WKWalletConnectEthTransactionField field=WK_WALLET_CONNECT_ETH_TO;
          field < WK_WALLET_CONNECT_ETH_FIELD_MAX;
          field++ ) {
 
-        if (strncmp(transactionFromArgsFieldNames[field],
-                    keyValue,
-                    strlen(transactionFromArgsFieldNames[field])) == 0)
+
+        if ((strlen (transactionFromArgsFieldNames[field]) == strlen (keyValue)) &&
+            (0 == strcmp (transactionFromArgsFieldNames[field], keyValue)) )
 
             return field;
     }
@@ -202,17 +207,19 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
     // No error
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
-    BREthereumAddress   sourceAddress;
     BREthereumAddress   targetAddress;
     BREthereumEther     amount;
     BREthereumGasPrice  gasPrice;
     BREthereumGas       gas;
     const char*         data;
-    uint64_t            nonce;
+    uint64_t            nonce = ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED;
 
     // Permissible 'optional' field defaults:
     // w/o DATA: Assume "" or NULL
     // w/o VALUE: Assume 0
+    //
+    // Nonce is provided by walletkit, if supplied
+    // by arguements, that value is ignored.
     amount = ethEtherCreateZero ();
     data = NULL;
 
@@ -222,15 +229,9 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
 
         const char *field = keys[elemNo];
         const char *value = values[elemNo];
+        WKWalletConnectEthTransactionField ethTransField = getTransactionFieldFromKey (field);
 
-        switch (getTransactionFieldFromKey (field)) {
-            case WK_WALLET_CONNECT_ETH_FROM:
-
-                sourceAddress = ethAddressCreate(value);
-                if (ETHEREUM_BOOLEAN_FALSE ==
-                    ethAddressEqual(sourceAddress, ETHEREUM_EMPTY_ADDRESS_INIT))
-                    reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_FROM);
-                break;
+        switch (ethTransField) {
 
             case WK_WALLET_CONNECT_ETH_TO:
 
@@ -249,7 +250,7 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
 
                 uint64_t amountOfGas = strtoull(value, NULL, 0);
                 gas = ethGasCreate(amountOfGas);
-                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GAS);
+                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, ethTransField);
                 break;
             }
 
@@ -270,13 +271,7 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
                 break;
             }
 
-            case WK_WALLET_CONNECT_ETH_NONCE:
-
-                nonce = strtoull (value, NULL, 0);
-                reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_NONCE);
-                break;
-
-            // Ignore
+            // Ignore: For example 'from', 'chainId', 'nonce' ...
             default:
                 break;
         }
@@ -287,6 +282,12 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         return NULL;
     }
 
+    // Set the source address 'from', and 'nonce' based on the current account
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumNetwork ethNetwork = managerETH->network;
+    BREthereumAccount ethAccount = managerETH->account;
+    BREthereumAddress sourceAddress = ethAccountGetPrimaryAddress (ethAccount);
+
     BREthereumTransaction transaction = ethTransactionCreate(sourceAddress,
                                                              targetAddress,
                                                              amount,
@@ -295,9 +296,12 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
                                                              data,
                                                              nonce);
 
+    ethTransactionSetNonce (transaction, ethAccountGetThenIncrementAddressNonce (ethAccount, sourceAddress));
+
+
     // Allocates memory to rlpData for the serialization.
     BRRlpData rlpData = ethTransactionGetRlpData(transaction,
-                                                 wkNetworkAsETH(wkWalletManagerGetNetwork(walletConnector->manager)),
+                                                 ethNetwork,
                                                  RLP_TYPE_TRANSACTION_UNSIGNED);
 
     *serializationLength = rlpData.bytesCount;
