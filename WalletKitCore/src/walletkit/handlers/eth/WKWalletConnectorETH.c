@@ -77,6 +77,21 @@ wkWalletConnectorGetDigestETH (
     return digest;
 }
 
+static WKKey
+wkWalletConnectorCreateKeyFromSeedETH(
+        WKWalletConnector       walletConnector,
+        UInt512                 seed    ) {
+
+    WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumAccount   ethAccount  = managerETH->account;
+    BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
+
+    BRKey key = ethAccountDerivePrivateKeyFromSeed (seed,
+                                                    ethAccountGetAddressIndex (ethAccount, ethAddress));
+
+    return wkKeyCreateFromKey(&key);
+}
+
 static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
@@ -395,6 +410,7 @@ WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {
     wkWalletConnectorReleaseETH,
     wkWalletConnectorCreateStandardMessageETH,
     wkWalletConnectorGetDigestETH,
+    wkWalletConnectorCreateKeyFromSeedETH,
     wkWalletConnectorSignDataETH,
     wkWalletConnectorRecoverKeyETH,
     wkWalletConnectorCreateTransactionFromArgumentsETH,

@@ -591,6 +591,22 @@ public final class WalletConnector {
     }
 
     ///
+    /// Creates a WalletConnector compatible signing Key
+    ///
+    /// - Parameter paperKey: A BIP39 phrase
+    ///
+    /// - Returns: A Key object which is suitable for
+    ///            sign() of either Data or Transaction
+    public func createKey (paperKey: String) -> Result<Key, WalletConnectorError> {
+        
+        var status: WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
+        guard let coreKey = wkWalletConnectorCreateKey(self.core, paperKey, &status)
+        else { return Result.failure(WalletConnectorError (core: status)) }
+        
+        return Result.success(Key (core: coreKey))
+    }
+    
+    ///
     /// Sign arbitrary data
     ///
     /// - Parameter message: Arbitrary data to be signed
@@ -874,6 +890,32 @@ public final class WalletConnector {
     }
 
     ///
+    ///  A Key that may be used for signing if it contains a secret
+    ///
+    public class Key {
+        /// The owning key
+        internal var core: WKKey
+        
+        /// Indicates the Key has a private key
+        public var hasSecret: Bool {
+            return 1 == wkKeyHasSecret  (self.core)
+        }
+        
+        deinit {
+            wkKeyGive (core)
+        }
+        
+        ///
+        /// Initialize based on chain specific WKKey object
+        ///
+        /// - Parameter core: The Core representaion
+        ///
+        internal init (core: WKKey) {
+            self.core = core
+        }
+        
+    }
+    
     /// A Digest holds '32 hash bytes'
     ///
     public struct Digest {

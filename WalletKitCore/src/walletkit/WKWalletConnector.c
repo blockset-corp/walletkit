@@ -132,6 +132,34 @@ wkWalletConnectorGetDigest (
     return digest;
 }
 
+extern WKKey
+wkWalletConnectorCreateKey (
+        WKWalletConnector           connector,
+        const char                  *phrase,
+        WKWalletConnectorStatus     *status           ) {
+
+    assert (NULL != connector &&
+            NULL != phrase && strlen(phrase) > 0);
+
+    WKKey key = NULL;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+    if (NULL != netHandlers             &&
+        NULL != netHandlers->connector  &&
+        NULL != netHandlers->connector->createKeyFromSeed) {
+
+        UInt512 seed = wkAccountDeriveSeed(phrase);
+        key =  netHandlers->connector->createKeyFromSeed(connector,
+                                                         seed);
+
+    } else {
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
+    }
+    return key;
+}
+
 extern uint8_t*
 wkWalletConnectorSignData   (
         WKWalletConnector         connector,
