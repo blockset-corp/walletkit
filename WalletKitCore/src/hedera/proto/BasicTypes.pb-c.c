@@ -277,6 +277,366 @@ void   proto__transaction_id__free_unpacked
   assert(message->base.descriptor == &proto__transaction_id__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   proto__account_amount__init
+                     (Proto__AccountAmount         *message)
+{
+  static const Proto__AccountAmount init_value = PROTO__ACCOUNT_AMOUNT__INIT;
+  *message = init_value;
+}
+size_t proto__account_amount__get_packed_size
+                     (const Proto__AccountAmount *message)
+{
+  assert(message->base.descriptor == &proto__account_amount__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__account_amount__pack
+                     (const Proto__AccountAmount *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__account_amount__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__account_amount__pack_to_buffer
+                     (const Proto__AccountAmount *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__account_amount__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__AccountAmount *
+       proto__account_amount__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__AccountAmount *)
+     protobuf_c_message_unpack (&proto__account_amount__descriptor,
+                                allocator, len, data);
+}
+void   proto__account_amount__free_unpacked
+                     (Proto__AccountAmount *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__account_amount__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__transfer_list__init
+                     (Proto__TransferList         *message)
+{
+  static const Proto__TransferList init_value = PROTO__TRANSFER_LIST__INIT;
+  *message = init_value;
+}
+size_t proto__transfer_list__get_packed_size
+                     (const Proto__TransferList *message)
+{
+  assert(message->base.descriptor == &proto__transfer_list__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__transfer_list__pack
+                     (const Proto__TransferList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__transfer_list__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__transfer_list__pack_to_buffer
+                     (const Proto__TransferList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__transfer_list__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TransferList *
+       proto__transfer_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TransferList *)
+     protobuf_c_message_unpack (&proto__transfer_list__descriptor,
+                                allocator, len, data);
+}
+void   proto__transfer_list__free_unpacked
+                     (Proto__TransferList *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__transfer_list__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__nft_transfer__init
+                     (Proto__NftTransfer         *message)
+{
+  static const Proto__NftTransfer init_value = PROTO__NFT_TRANSFER__INIT;
+  *message = init_value;
+}
+size_t proto__nft_transfer__get_packed_size
+                     (const Proto__NftTransfer *message)
+{
+  assert(message->base.descriptor == &proto__nft_transfer__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__nft_transfer__pack
+                     (const Proto__NftTransfer *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__nft_transfer__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__nft_transfer__pack_to_buffer
+                     (const Proto__NftTransfer *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__nft_transfer__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__NftTransfer *
+       proto__nft_transfer__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__NftTransfer *)
+     protobuf_c_message_unpack (&proto__nft_transfer__descriptor,
+                                allocator, len, data);
+}
+void   proto__nft_transfer__free_unpacked
+                     (Proto__NftTransfer *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__nft_transfer__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__token_transfer_list__init
+                     (Proto__TokenTransferList         *message)
+{
+  static const Proto__TokenTransferList init_value = PROTO__TOKEN_TRANSFER_LIST__INIT;
+  *message = init_value;
+}
+size_t proto__token_transfer_list__get_packed_size
+                     (const Proto__TokenTransferList *message)
+{
+  assert(message->base.descriptor == &proto__token_transfer_list__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__token_transfer_list__pack
+                     (const Proto__TokenTransferList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__token_transfer_list__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__token_transfer_list__pack_to_buffer
+                     (const Proto__TokenTransferList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__token_transfer_list__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TokenTransferList *
+       proto__token_transfer_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TokenTransferList *)
+     protobuf_c_message_unpack (&proto__token_transfer_list__descriptor,
+                                allocator, len, data);
+}
+void   proto__token_transfer_list__free_unpacked
+                     (Proto__TokenTransferList *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__token_transfer_list__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__fraction__init
+                     (Proto__Fraction         *message)
+{
+  static const Proto__Fraction init_value = PROTO__FRACTION__INIT;
+  *message = init_value;
+}
+size_t proto__fraction__get_packed_size
+                     (const Proto__Fraction *message)
+{
+  assert(message->base.descriptor == &proto__fraction__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__fraction__pack
+                     (const Proto__Fraction *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__fraction__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__fraction__pack_to_buffer
+                     (const Proto__Fraction *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__fraction__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__Fraction *
+       proto__fraction__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__Fraction *)
+     protobuf_c_message_unpack (&proto__fraction__descriptor,
+                                allocator, len, data);
+}
+void   proto__fraction__free_unpacked
+                     (Proto__Fraction *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__fraction__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__topic_id__init
+                     (Proto__TopicID         *message)
+{
+  static const Proto__TopicID init_value = PROTO__TOPIC_ID__INIT;
+  *message = init_value;
+}
+size_t proto__topic_id__get_packed_size
+                     (const Proto__TopicID *message)
+{
+  assert(message->base.descriptor == &proto__topic_id__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__topic_id__pack
+                     (const Proto__TopicID *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__topic_id__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__topic_id__pack_to_buffer
+                     (const Proto__TopicID *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__topic_id__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TopicID *
+       proto__topic_id__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TopicID *)
+     protobuf_c_message_unpack (&proto__topic_id__descriptor,
+                                allocator, len, data);
+}
+void   proto__topic_id__free_unpacked
+                     (Proto__TopicID *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__topic_id__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__token_id__init
+                     (Proto__TokenID         *message)
+{
+  static const Proto__TokenID init_value = PROTO__TOKEN_ID__INIT;
+  *message = init_value;
+}
+size_t proto__token_id__get_packed_size
+                     (const Proto__TokenID *message)
+{
+  assert(message->base.descriptor == &proto__token_id__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__token_id__pack
+                     (const Proto__TokenID *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__token_id__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__token_id__pack_to_buffer
+                     (const Proto__TokenID *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__token_id__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TokenID *
+       proto__token_id__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TokenID *)
+     protobuf_c_message_unpack (&proto__token_id__descriptor,
+                                allocator, len, data);
+}
+void   proto__token_id__free_unpacked
+                     (Proto__TokenID *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__token_id__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__schedule_id__init
+                     (Proto__ScheduleID         *message)
+{
+  static const Proto__ScheduleID init_value = PROTO__SCHEDULE_ID__INIT;
+  *message = init_value;
+}
+size_t proto__schedule_id__get_packed_size
+                     (const Proto__ScheduleID *message)
+{
+  assert(message->base.descriptor == &proto__schedule_id__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__schedule_id__pack
+                     (const Proto__ScheduleID *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__schedule_id__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__schedule_id__pack_to_buffer
+                     (const Proto__ScheduleID *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__schedule_id__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__ScheduleID *
+       proto__schedule_id__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__ScheduleID *)
+     protobuf_c_message_unpack (&proto__schedule_id__descriptor,
+                                allocator, len, data);
+}
+void   proto__schedule_id__free_unpacked
+                     (Proto__ScheduleID *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__schedule_id__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   proto__key__init
                      (Proto__Key         *message)
 {
@@ -862,6 +1222,51 @@ void   proto__current_and_next_fee_schedule__free_unpacked
   assert(message->base.descriptor == &proto__current_and_next_fee_schedule__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   proto__service_endpoint__init
+                     (Proto__ServiceEndpoint         *message)
+{
+  static const Proto__ServiceEndpoint init_value = PROTO__SERVICE_ENDPOINT__INIT;
+  *message = init_value;
+}
+size_t proto__service_endpoint__get_packed_size
+                     (const Proto__ServiceEndpoint *message)
+{
+  assert(message->base.descriptor == &proto__service_endpoint__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__service_endpoint__pack
+                     (const Proto__ServiceEndpoint *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__service_endpoint__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__service_endpoint__pack_to_buffer
+                     (const Proto__ServiceEndpoint *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__service_endpoint__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__ServiceEndpoint *
+       proto__service_endpoint__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__ServiceEndpoint *)
+     protobuf_c_message_unpack (&proto__service_endpoint__descriptor,
+                                allocator, len, data);
+}
+void   proto__service_endpoint__free_unpacked
+                     (Proto__ServiceEndpoint *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__service_endpoint__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   proto__node_address__init
                      (Proto__NodeAddress         *message)
 {
@@ -950,6 +1355,276 @@ void   proto__node_address_book__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &proto__node_address_book__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__semantic_version__init
+                     (Proto__SemanticVersion         *message)
+{
+  static const Proto__SemanticVersion init_value = PROTO__SEMANTIC_VERSION__INIT;
+  *message = init_value;
+}
+size_t proto__semantic_version__get_packed_size
+                     (const Proto__SemanticVersion *message)
+{
+  assert(message->base.descriptor == &proto__semantic_version__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__semantic_version__pack
+                     (const Proto__SemanticVersion *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__semantic_version__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__semantic_version__pack_to_buffer
+                     (const Proto__SemanticVersion *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__semantic_version__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__SemanticVersion *
+       proto__semantic_version__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__SemanticVersion *)
+     protobuf_c_message_unpack (&proto__semantic_version__descriptor,
+                                allocator, len, data);
+}
+void   proto__semantic_version__free_unpacked
+                     (Proto__SemanticVersion *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__semantic_version__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__setting__init
+                     (Proto__Setting         *message)
+{
+  static const Proto__Setting init_value = PROTO__SETTING__INIT;
+  *message = init_value;
+}
+size_t proto__setting__get_packed_size
+                     (const Proto__Setting *message)
+{
+  assert(message->base.descriptor == &proto__setting__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__setting__pack
+                     (const Proto__Setting *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__setting__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__setting__pack_to_buffer
+                     (const Proto__Setting *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__setting__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__Setting *
+       proto__setting__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__Setting *)
+     protobuf_c_message_unpack (&proto__setting__descriptor,
+                                allocator, len, data);
+}
+void   proto__setting__free_unpacked
+                     (Proto__Setting *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__setting__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__services_configuration_list__init
+                     (Proto__ServicesConfigurationList         *message)
+{
+  static const Proto__ServicesConfigurationList init_value = PROTO__SERVICES_CONFIGURATION_LIST__INIT;
+  *message = init_value;
+}
+size_t proto__services_configuration_list__get_packed_size
+                     (const Proto__ServicesConfigurationList *message)
+{
+  assert(message->base.descriptor == &proto__services_configuration_list__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__services_configuration_list__pack
+                     (const Proto__ServicesConfigurationList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__services_configuration_list__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__services_configuration_list__pack_to_buffer
+                     (const Proto__ServicesConfigurationList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__services_configuration_list__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__ServicesConfigurationList *
+       proto__services_configuration_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__ServicesConfigurationList *)
+     protobuf_c_message_unpack (&proto__services_configuration_list__descriptor,
+                                allocator, len, data);
+}
+void   proto__services_configuration_list__free_unpacked
+                     (Proto__ServicesConfigurationList *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__services_configuration_list__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__token_relationship__init
+                     (Proto__TokenRelationship         *message)
+{
+  static const Proto__TokenRelationship init_value = PROTO__TOKEN_RELATIONSHIP__INIT;
+  *message = init_value;
+}
+size_t proto__token_relationship__get_packed_size
+                     (const Proto__TokenRelationship *message)
+{
+  assert(message->base.descriptor == &proto__token_relationship__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__token_relationship__pack
+                     (const Proto__TokenRelationship *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__token_relationship__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__token_relationship__pack_to_buffer
+                     (const Proto__TokenRelationship *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__token_relationship__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TokenRelationship *
+       proto__token_relationship__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TokenRelationship *)
+     protobuf_c_message_unpack (&proto__token_relationship__descriptor,
+                                allocator, len, data);
+}
+void   proto__token_relationship__free_unpacked
+                     (Proto__TokenRelationship *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__token_relationship__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__token_balance__init
+                     (Proto__TokenBalance         *message)
+{
+  static const Proto__TokenBalance init_value = PROTO__TOKEN_BALANCE__INIT;
+  *message = init_value;
+}
+size_t proto__token_balance__get_packed_size
+                     (const Proto__TokenBalance *message)
+{
+  assert(message->base.descriptor == &proto__token_balance__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__token_balance__pack
+                     (const Proto__TokenBalance *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__token_balance__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__token_balance__pack_to_buffer
+                     (const Proto__TokenBalance *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__token_balance__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TokenBalance *
+       proto__token_balance__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TokenBalance *)
+     protobuf_c_message_unpack (&proto__token_balance__descriptor,
+                                allocator, len, data);
+}
+void   proto__token_balance__free_unpacked
+                     (Proto__TokenBalance *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__token_balance__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   proto__token_balances__init
+                     (Proto__TokenBalances         *message)
+{
+  static const Proto__TokenBalances init_value = PROTO__TOKEN_BALANCES__INIT;
+  *message = init_value;
+}
+size_t proto__token_balances__get_packed_size
+                     (const Proto__TokenBalances *message)
+{
+  assert(message->base.descriptor == &proto__token_balances__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t proto__token_balances__pack
+                     (const Proto__TokenBalances *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &proto__token_balances__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t proto__token_balances__pack_to_buffer
+                     (const Proto__TokenBalances *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &proto__token_balances__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Proto__TokenBalances *
+       proto__token_balances__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Proto__TokenBalances *)
+     protobuf_c_message_unpack (&proto__token_balances__descriptor,
+                                allocator, len, data);
+}
+void   proto__token_balances__free_unpacked
+                     (Proto__TokenBalances *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &proto__token_balances__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 static const ProtobufCFieldDescriptor proto__shard_id__field_descriptors[1] =
@@ -1233,7 +1908,7 @@ const ProtobufCMessageDescriptor proto__contract_id__descriptor =
   (ProtobufCMessageInit) proto__contract_id__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor proto__transaction_id__field_descriptors[2] =
+static const ProtobufCFieldDescriptor proto__transaction_id__field_descriptors[3] =
 {
   {
     "transactionValidStart",
@@ -1259,15 +1934,28 @@ static const ProtobufCFieldDescriptor proto__transaction_id__field_descriptors[2
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "scheduled",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TransactionID, scheduled),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned proto__transaction_id__field_indices_by_name[] = {
   1,   /* field[1] = accountID */
+  2,   /* field[2] = scheduled */
   0,   /* field[0] = transactionValidStart */
 };
 static const ProtobufCIntRange proto__transaction_id__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor proto__transaction_id__descriptor =
 {
@@ -1277,11 +1965,471 @@ const ProtobufCMessageDescriptor proto__transaction_id__descriptor =
   "Proto__TransactionID",
   "proto",
   sizeof(Proto__TransactionID),
-  2,
+  3,
   proto__transaction_id__field_descriptors,
   proto__transaction_id__field_indices_by_name,
   1,  proto__transaction_id__number_ranges,
   (ProtobufCMessageInit) proto__transaction_id__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__account_amount__field_descriptors[2] =
+{
+  {
+    "accountID",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__AccountAmount, accountid),
+    &proto__account_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "amount",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_SINT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__AccountAmount, amount),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__account_amount__field_indices_by_name[] = {
+  0,   /* field[0] = accountID */
+  1,   /* field[1] = amount */
+};
+static const ProtobufCIntRange proto__account_amount__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor proto__account_amount__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.AccountAmount",
+  "AccountAmount",
+  "Proto__AccountAmount",
+  "proto",
+  sizeof(Proto__AccountAmount),
+  2,
+  proto__account_amount__field_descriptors,
+  proto__account_amount__field_indices_by_name,
+  1,  proto__account_amount__number_ranges,
+  (ProtobufCMessageInit) proto__account_amount__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__transfer_list__field_descriptors[1] =
+{
+  {
+    "accountAmounts",
+    1,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__TransferList, n_accountamounts),
+    offsetof(Proto__TransferList, accountamounts),
+    &proto__account_amount__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__transfer_list__field_indices_by_name[] = {
+  0,   /* field[0] = accountAmounts */
+};
+static const ProtobufCIntRange proto__transfer_list__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor proto__transfer_list__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TransferList",
+  "TransferList",
+  "Proto__TransferList",
+  "proto",
+  sizeof(Proto__TransferList),
+  1,
+  proto__transfer_list__field_descriptors,
+  proto__transfer_list__field_indices_by_name,
+  1,  proto__transfer_list__number_ranges,
+  (ProtobufCMessageInit) proto__transfer_list__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__nft_transfer__field_descriptors[3] =
+{
+  {
+    "senderAccountID",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NftTransfer, senderaccountid),
+    &proto__account_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "receiverAccountID",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NftTransfer, receiveraccountid),
+    &proto__account_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "serialNumber",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NftTransfer, serialnumber),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__nft_transfer__field_indices_by_name[] = {
+  1,   /* field[1] = receiverAccountID */
+  0,   /* field[0] = senderAccountID */
+  2,   /* field[2] = serialNumber */
+};
+static const ProtobufCIntRange proto__nft_transfer__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__nft_transfer__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.NftTransfer",
+  "NftTransfer",
+  "Proto__NftTransfer",
+  "proto",
+  sizeof(Proto__NftTransfer),
+  3,
+  proto__nft_transfer__field_descriptors,
+  proto__nft_transfer__field_indices_by_name,
+  1,  proto__nft_transfer__number_ranges,
+  (ProtobufCMessageInit) proto__nft_transfer__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__token_transfer_list__field_descriptors[3] =
+{
+  {
+    "token",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenTransferList, token),
+    &proto__token_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "transfers",
+    2,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__TokenTransferList, n_transfers),
+    offsetof(Proto__TokenTransferList, transfers),
+    &proto__account_amount__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "nftTransfers",
+    3,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__TokenTransferList, n_nfttransfers),
+    offsetof(Proto__TokenTransferList, nfttransfers),
+    &proto__nft_transfer__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__token_transfer_list__field_indices_by_name[] = {
+  2,   /* field[2] = nftTransfers */
+  0,   /* field[0] = token */
+  1,   /* field[1] = transfers */
+};
+static const ProtobufCIntRange proto__token_transfer_list__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__token_transfer_list__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TokenTransferList",
+  "TokenTransferList",
+  "Proto__TokenTransferList",
+  "proto",
+  sizeof(Proto__TokenTransferList),
+  3,
+  proto__token_transfer_list__field_descriptors,
+  proto__token_transfer_list__field_indices_by_name,
+  1,  proto__token_transfer_list__number_ranges,
+  (ProtobufCMessageInit) proto__token_transfer_list__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__fraction__field_descriptors[2] =
+{
+  {
+    "numerator",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Fraction, numerator),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "denominator",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Fraction, denominator),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__fraction__field_indices_by_name[] = {
+  1,   /* field[1] = denominator */
+  0,   /* field[0] = numerator */
+};
+static const ProtobufCIntRange proto__fraction__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor proto__fraction__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.Fraction",
+  "Fraction",
+  "Proto__Fraction",
+  "proto",
+  sizeof(Proto__Fraction),
+  2,
+  proto__fraction__field_descriptors,
+  proto__fraction__field_indices_by_name,
+  1,  proto__fraction__number_ranges,
+  (ProtobufCMessageInit) proto__fraction__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__topic_id__field_descriptors[3] =
+{
+  {
+    "shardNum",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TopicID, shardnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "realmNum",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TopicID, realmnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "topicNum",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TopicID, topicnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__topic_id__field_indices_by_name[] = {
+  1,   /* field[1] = realmNum */
+  0,   /* field[0] = shardNum */
+  2,   /* field[2] = topicNum */
+};
+static const ProtobufCIntRange proto__topic_id__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__topic_id__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TopicID",
+  "TopicID",
+  "Proto__TopicID",
+  "proto",
+  sizeof(Proto__TopicID),
+  3,
+  proto__topic_id__field_descriptors,
+  proto__topic_id__field_indices_by_name,
+  1,  proto__topic_id__number_ranges,
+  (ProtobufCMessageInit) proto__topic_id__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__token_id__field_descriptors[3] =
+{
+  {
+    "shardNum",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenID, shardnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "realmNum",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenID, realmnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "tokenNum",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenID, tokennum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__token_id__field_indices_by_name[] = {
+  1,   /* field[1] = realmNum */
+  0,   /* field[0] = shardNum */
+  2,   /* field[2] = tokenNum */
+};
+static const ProtobufCIntRange proto__token_id__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__token_id__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TokenID",
+  "TokenID",
+  "Proto__TokenID",
+  "proto",
+  sizeof(Proto__TokenID),
+  3,
+  proto__token_id__field_descriptors,
+  proto__token_id__field_indices_by_name,
+  1,  proto__token_id__number_ranges,
+  (ProtobufCMessageInit) proto__token_id__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__schedule_id__field_descriptors[3] =
+{
+  {
+    "shardNum",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__ScheduleID, shardnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "realmNum",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__ScheduleID, realmnum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "scheduleNum",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__ScheduleID, schedulenum),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__schedule_id__field_indices_by_name[] = {
+  1,   /* field[1] = realmNum */
+  2,   /* field[2] = scheduleNum */
+  0,   /* field[0] = shardNum */
+};
+static const ProtobufCIntRange proto__schedule_id__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__schedule_id__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.ScheduleID",
+  "ScheduleID",
+  "Proto__ScheduleID",
+  "proto",
+  sizeof(Proto__ScheduleID),
+  3,
+  proto__schedule_id__field_descriptors,
+  proto__schedule_id__field_indices_by_name,
+  1,  proto__schedule_id__number_ranges,
+  (ProtobufCMessageInit) proto__schedule_id__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor proto__key__field_descriptors[6] =
@@ -1951,7 +3099,7 @@ const ProtobufCMessageDescriptor proto__fee_components__descriptor =
   (ProtobufCMessageInit) proto__fee_components__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor proto__transaction_fee_schedule__field_descriptors[2] =
+static const ProtobufCFieldDescriptor proto__transaction_fee_schedule__field_descriptors[3] =
 {
   {
     "hederaFunctionality",
@@ -1974,18 +3122,31 @@ static const ProtobufCFieldDescriptor proto__transaction_fee_schedule__field_des
     offsetof(Proto__TransactionFeeSchedule, feedata),
     &proto__fee_data__descriptor,
     NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "fees",
+    3,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__TransactionFeeSchedule, n_fees),
+    offsetof(Proto__TransactionFeeSchedule, fees),
+    &proto__fee_data__descriptor,
+    NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
 static const unsigned proto__transaction_fee_schedule__field_indices_by_name[] = {
   1,   /* field[1] = feeData */
+  2,   /* field[2] = fees */
   0,   /* field[0] = hederaFunctionality */
 };
 static const ProtobufCIntRange proto__transaction_fee_schedule__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor proto__transaction_fee_schedule__descriptor =
 {
@@ -1995,14 +3156,14 @@ const ProtobufCMessageDescriptor proto__transaction_fee_schedule__descriptor =
   "Proto__TransactionFeeSchedule",
   "proto",
   sizeof(Proto__TransactionFeeSchedule),
-  2,
+  3,
   proto__transaction_fee_schedule__field_descriptors,
   proto__transaction_fee_schedule__field_indices_by_name,
   1,  proto__transaction_fee_schedule__number_ranges,
   (ProtobufCMessageInit) proto__transaction_fee_schedule__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor proto__fee_data__field_descriptors[3] =
+static const ProtobufCFieldDescriptor proto__fee_data__field_descriptors[4] =
 {
   {
     "nodedata",
@@ -2040,16 +3201,29 @@ static const ProtobufCFieldDescriptor proto__fee_data__field_descriptors[3] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "subType",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(Proto__FeeData, subtype),
+    &proto__sub_type__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned proto__fee_data__field_indices_by_name[] = {
   1,   /* field[1] = networkdata */
   0,   /* field[0] = nodedata */
   2,   /* field[2] = servicedata */
+  3,   /* field[3] = subType */
 };
 static const ProtobufCIntRange proto__fee_data__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 4 }
 };
 const ProtobufCMessageDescriptor proto__fee_data__descriptor =
 {
@@ -2059,7 +3233,7 @@ const ProtobufCMessageDescriptor proto__fee_data__descriptor =
   "Proto__FeeData",
   "proto",
   sizeof(Proto__FeeData),
-  3,
+  4,
   proto__fee_data__field_descriptors,
   proto__fee_data__field_indices_by_name,
   1,  proto__fee_data__number_ranges,
@@ -2168,7 +3342,58 @@ const ProtobufCMessageDescriptor proto__current_and_next_fee_schedule__descripto
   (ProtobufCMessageInit) proto__current_and_next_fee_schedule__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[4] =
+static const ProtobufCFieldDescriptor proto__service_endpoint__field_descriptors[2] =
+{
+  {
+    "ipAddressV4",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(Proto__ServiceEndpoint, ipaddressv4),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "port",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__ServiceEndpoint, port),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__service_endpoint__field_indices_by_name[] = {
+  0,   /* field[0] = ipAddressV4 */
+  1,   /* field[1] = port */
+};
+static const ProtobufCIntRange proto__service_endpoint__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor proto__service_endpoint__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.ServiceEndpoint",
+  "ServiceEndpoint",
+  "Proto__ServiceEndpoint",
+  "proto",
+  sizeof(Proto__ServiceEndpoint),
+  2,
+  proto__service_endpoint__field_descriptors,
+  proto__service_endpoint__field_indices_by_name,
+  1,  proto__service_endpoint__number_ranges,
+  (ProtobufCMessageInit) proto__service_endpoint__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[10] =
 {
   {
     "ipAddress",
@@ -2179,7 +3404,7 @@ static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[4] 
     offsetof(Proto__NodeAddress, ipaddress),
     NULL,
     NULL,
-    0,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -2191,7 +3416,7 @@ static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[4] 
     offsetof(Proto__NodeAddress, portno),
     NULL,
     NULL,
-    0,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -2203,7 +3428,7 @@ static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[4] 
     offsetof(Proto__NodeAddress, memo),
     NULL,
     NULL,
-    0,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -2218,17 +3443,95 @@ static const ProtobufCFieldDescriptor proto__node_address__field_descriptors[4] 
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "nodeId",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NodeAddress, nodeid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "nodeAccountId",
+    6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NodeAddress, nodeaccountid),
+    &proto__account_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "nodeCertHash",
+    7,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NodeAddress, nodecerthash),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "serviceEndpoint",
+    8,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__NodeAddress, n_serviceendpoint),
+    offsetof(Proto__NodeAddress, serviceendpoint),
+    &proto__service_endpoint__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "description",
+    9,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NodeAddress, description),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "stake",
+    10,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__NodeAddress, stake),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned proto__node_address__field_indices_by_name[] = {
   3,   /* field[3] = RSA_PubKey */
+  8,   /* field[8] = description */
   0,   /* field[0] = ipAddress */
   2,   /* field[2] = memo */
+  5,   /* field[5] = nodeAccountId */
+  6,   /* field[6] = nodeCertHash */
+  4,   /* field[4] = nodeId */
   1,   /* field[1] = portno */
+  7,   /* field[7] = serviceEndpoint */
+  9,   /* field[9] = stake */
 };
 static const ProtobufCIntRange proto__node_address__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 10 }
 };
 const ProtobufCMessageDescriptor proto__node_address__descriptor =
 {
@@ -2238,7 +3541,7 @@ const ProtobufCMessageDescriptor proto__node_address__descriptor =
   "Proto__NodeAddress",
   "proto",
   sizeof(Proto__NodeAddress),
-  4,
+  10,
   proto__node_address__field_descriptors,
   proto__node_address__field_indices_by_name,
   1,  proto__node_address__number_ranges,
@@ -2283,14 +3586,561 @@ const ProtobufCMessageDescriptor proto__node_address_book__descriptor =
   (ProtobufCMessageInit) proto__node_address_book__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue proto__hedera_functionality__enum_values_by_number[37] =
+static const ProtobufCFieldDescriptor proto__semantic_version__field_descriptors[5] =
+{
+  {
+    "major",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__SemanticVersion, major),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "minor",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__SemanticVersion, minor),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "patch",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__SemanticVersion, patch),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "pre",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__SemanticVersion, pre),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "build",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__SemanticVersion, build),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__semantic_version__field_indices_by_name[] = {
+  4,   /* field[4] = build */
+  0,   /* field[0] = major */
+  1,   /* field[1] = minor */
+  2,   /* field[2] = patch */
+  3,   /* field[3] = pre */
+};
+static const ProtobufCIntRange proto__semantic_version__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 5 }
+};
+const ProtobufCMessageDescriptor proto__semantic_version__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.SemanticVersion",
+  "SemanticVersion",
+  "Proto__SemanticVersion",
+  "proto",
+  sizeof(Proto__SemanticVersion),
+  5,
+  proto__semantic_version__field_descriptors,
+  proto__semantic_version__field_indices_by_name,
+  1,  proto__semantic_version__number_ranges,
+  (ProtobufCMessageInit) proto__semantic_version__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__setting__field_descriptors[3] =
+{
+  {
+    "name",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Setting, name),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "value",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Setting, value),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "data",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Setting, data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__setting__field_indices_by_name[] = {
+  2,   /* field[2] = data */
+  0,   /* field[0] = name */
+  1,   /* field[1] = value */
+};
+static const ProtobufCIntRange proto__setting__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__setting__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.Setting",
+  "Setting",
+  "Proto__Setting",
+  "proto",
+  sizeof(Proto__Setting),
+  3,
+  proto__setting__field_descriptors,
+  proto__setting__field_indices_by_name,
+  1,  proto__setting__number_ranges,
+  (ProtobufCMessageInit) proto__setting__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__services_configuration_list__field_descriptors[1] =
+{
+  {
+    "nameValue",
+    1,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__ServicesConfigurationList, n_namevalue),
+    offsetof(Proto__ServicesConfigurationList, namevalue),
+    &proto__setting__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__services_configuration_list__field_indices_by_name[] = {
+  0,   /* field[0] = nameValue */
+};
+static const ProtobufCIntRange proto__services_configuration_list__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor proto__services_configuration_list__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.ServicesConfigurationList",
+  "ServicesConfigurationList",
+  "Proto__ServicesConfigurationList",
+  "proto",
+  sizeof(Proto__ServicesConfigurationList),
+  1,
+  proto__services_configuration_list__field_descriptors,
+  proto__services_configuration_list__field_indices_by_name,
+  1,  proto__services_configuration_list__number_ranges,
+  (ProtobufCMessageInit) proto__services_configuration_list__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__token_relationship__field_descriptors[6] =
+{
+  {
+    "tokenId",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, tokenid),
+    &proto__token_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "symbol",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, symbol),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "balance",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, balance),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "kycStatus",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, kycstatus),
+    &proto__token_kyc_status__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "freezeStatus",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, freezestatus),
+    &proto__token_freeze_status__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "decimals",
+    6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenRelationship, decimals),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__token_relationship__field_indices_by_name[] = {
+  2,   /* field[2] = balance */
+  5,   /* field[5] = decimals */
+  4,   /* field[4] = freezeStatus */
+  3,   /* field[3] = kycStatus */
+  1,   /* field[1] = symbol */
+  0,   /* field[0] = tokenId */
+};
+static const ProtobufCIntRange proto__token_relationship__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 6 }
+};
+const ProtobufCMessageDescriptor proto__token_relationship__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TokenRelationship",
+  "TokenRelationship",
+  "Proto__TokenRelationship",
+  "proto",
+  sizeof(Proto__TokenRelationship),
+  6,
+  proto__token_relationship__field_descriptors,
+  proto__token_relationship__field_indices_by_name,
+  1,  proto__token_relationship__number_ranges,
+  (ProtobufCMessageInit) proto__token_relationship__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__token_balance__field_descriptors[3] =
+{
+  {
+    "tokenId",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenBalance, tokenid),
+    &proto__token_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "balance",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT64,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenBalance, balance),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "decimals",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Proto__TokenBalance, decimals),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__token_balance__field_indices_by_name[] = {
+  1,   /* field[1] = balance */
+  2,   /* field[2] = decimals */
+  0,   /* field[0] = tokenId */
+};
+static const ProtobufCIntRange proto__token_balance__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor proto__token_balance__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TokenBalance",
+  "TokenBalance",
+  "Proto__TokenBalance",
+  "proto",
+  sizeof(Proto__TokenBalance),
+  3,
+  proto__token_balance__field_descriptors,
+  proto__token_balance__field_indices_by_name,
+  1,  proto__token_balance__number_ranges,
+  (ProtobufCMessageInit) proto__token_balance__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor proto__token_balances__field_descriptors[1] =
+{
+  {
+    "tokenBalances",
+    1,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Proto__TokenBalances, n_tokenbalances),
+    offsetof(Proto__TokenBalances, tokenbalances),
+    &proto__token_balance__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned proto__token_balances__field_indices_by_name[] = {
+  0,   /* field[0] = tokenBalances */
+};
+static const ProtobufCIntRange proto__token_balances__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor proto__token_balances__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "proto.TokenBalances",
+  "TokenBalances",
+  "Proto__TokenBalances",
+  "proto",
+  sizeof(Proto__TokenBalances),
+  1,
+  proto__token_balances__field_descriptors,
+  proto__token_balances__field_indices_by_name,
+  1,  proto__token_balances__number_ranges,
+  (ProtobufCMessageInit) proto__token_balances__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCEnumValue proto__token_type__enum_values_by_number[2] =
+{
+  { "FUNGIBLE_COMMON", "PROTO__TOKEN_TYPE__FUNGIBLE_COMMON", 0 },
+  { "NON_FUNGIBLE_UNIQUE", "PROTO__TOKEN_TYPE__NON_FUNGIBLE_UNIQUE", 1 },
+};
+static const ProtobufCIntRange proto__token_type__value_ranges[] = {
+{0, 0},{0, 2}
+};
+static const ProtobufCEnumValueIndex proto__token_type__enum_values_by_name[2] =
+{
+  { "FUNGIBLE_COMMON", 0 },
+  { "NON_FUNGIBLE_UNIQUE", 1 },
+};
+const ProtobufCEnumDescriptor proto__token_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "proto.TokenType",
+  "TokenType",
+  "Proto__TokenType",
+  "proto",
+  2,
+  proto__token_type__enum_values_by_number,
+  2,
+  proto__token_type__enum_values_by_name,
+  1,
+  proto__token_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue proto__sub_type__enum_values_by_number[5] =
+{
+  { "DEFAULT", "PROTO__SUB_TYPE__DEFAULT", 0 },
+  { "TOKEN_FUNGIBLE_COMMON", "PROTO__SUB_TYPE__TOKEN_FUNGIBLE_COMMON", 1 },
+  { "TOKEN_NON_FUNGIBLE_UNIQUE", "PROTO__SUB_TYPE__TOKEN_NON_FUNGIBLE_UNIQUE", 2 },
+  { "TOKEN_FUNGIBLE_COMMON_WITH_CUSTOM_FEES", "PROTO__SUB_TYPE__TOKEN_FUNGIBLE_COMMON_WITH_CUSTOM_FEES", 3 },
+  { "TOKEN_NON_FUNGIBLE_UNIQUE_WITH_CUSTOM_FEES", "PROTO__SUB_TYPE__TOKEN_NON_FUNGIBLE_UNIQUE_WITH_CUSTOM_FEES", 4 },
+};
+static const ProtobufCIntRange proto__sub_type__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex proto__sub_type__enum_values_by_name[5] =
+{
+  { "DEFAULT", 0 },
+  { "TOKEN_FUNGIBLE_COMMON", 1 },
+  { "TOKEN_FUNGIBLE_COMMON_WITH_CUSTOM_FEES", 3 },
+  { "TOKEN_NON_FUNGIBLE_UNIQUE", 2 },
+  { "TOKEN_NON_FUNGIBLE_UNIQUE_WITH_CUSTOM_FEES", 4 },
+};
+const ProtobufCEnumDescriptor proto__sub_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "proto.SubType",
+  "SubType",
+  "Proto__SubType",
+  "proto",
+  5,
+  proto__sub_type__enum_values_by_number,
+  5,
+  proto__sub_type__enum_values_by_name,
+  1,
+  proto__sub_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue proto__token_supply_type__enum_values_by_number[2] =
+{
+  { "INFINITE", "PROTO__TOKEN_SUPPLY_TYPE__INFINITE", 0 },
+  { "FINITE", "PROTO__TOKEN_SUPPLY_TYPE__FINITE", 1 },
+};
+static const ProtobufCIntRange proto__token_supply_type__value_ranges[] = {
+{0, 0},{0, 2}
+};
+static const ProtobufCEnumValueIndex proto__token_supply_type__enum_values_by_name[2] =
+{
+  { "FINITE", 1 },
+  { "INFINITE", 0 },
+};
+const ProtobufCEnumDescriptor proto__token_supply_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "proto.TokenSupplyType",
+  "TokenSupplyType",
+  "Proto__TokenSupplyType",
+  "proto",
+  2,
+  proto__token_supply_type__enum_values_by_number,
+  2,
+  proto__token_supply_type__enum_values_by_name,
+  1,
+  proto__token_supply_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue proto__token_freeze_status__enum_values_by_number[3] =
+{
+  { "FreezeNotApplicable", "PROTO__TOKEN_FREEZE_STATUS__FreezeNotApplicable", 0 },
+  { "Frozen", "PROTO__TOKEN_FREEZE_STATUS__Frozen", 1 },
+  { "Unfrozen", "PROTO__TOKEN_FREEZE_STATUS__Unfrozen", 2 },
+};
+static const ProtobufCIntRange proto__token_freeze_status__value_ranges[] = {
+{0, 0},{0, 3}
+};
+static const ProtobufCEnumValueIndex proto__token_freeze_status__enum_values_by_name[3] =
+{
+  { "FreezeNotApplicable", 0 },
+  { "Frozen", 1 },
+  { "Unfrozen", 2 },
+};
+const ProtobufCEnumDescriptor proto__token_freeze_status__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "proto.TokenFreezeStatus",
+  "TokenFreezeStatus",
+  "Proto__TokenFreezeStatus",
+  "proto",
+  3,
+  proto__token_freeze_status__enum_values_by_number,
+  3,
+  proto__token_freeze_status__enum_values_by_name,
+  1,
+  proto__token_freeze_status__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue proto__token_kyc_status__enum_values_by_number[3] =
+{
+  { "KycNotApplicable", "PROTO__TOKEN_KYC_STATUS__KycNotApplicable", 0 },
+  { "Granted", "PROTO__TOKEN_KYC_STATUS__Granted", 1 },
+  { "Revoked", "PROTO__TOKEN_KYC_STATUS__Revoked", 2 },
+};
+static const ProtobufCIntRange proto__token_kyc_status__value_ranges[] = {
+{0, 0},{0, 3}
+};
+static const ProtobufCEnumValueIndex proto__token_kyc_status__enum_values_by_name[3] =
+{
+  { "Granted", 1 },
+  { "KycNotApplicable", 0 },
+  { "Revoked", 2 },
+};
+const ProtobufCEnumDescriptor proto__token_kyc_status__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "proto.TokenKycStatus",
+  "TokenKycStatus",
+  "Proto__TokenKycStatus",
+  "proto",
+  3,
+  proto__token_kyc_status__enum_values_by_number,
+  3,
+  proto__token_kyc_status__enum_values_by_name,
+  1,
+  proto__token_kyc_status__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue proto__hedera_functionality__enum_values_by_number[64] =
 {
   { "NONE", "PROTO__HEDERA_FUNCTIONALITY__NONE", 0 },
   { "CryptoTransfer", "PROTO__HEDERA_FUNCTIONALITY__CryptoTransfer", 1 },
   { "CryptoUpdate", "PROTO__HEDERA_FUNCTIONALITY__CryptoUpdate", 2 },
   { "CryptoDelete", "PROTO__HEDERA_FUNCTIONALITY__CryptoDelete", 3 },
-  { "CryptoAddClaim", "PROTO__HEDERA_FUNCTIONALITY__CryptoAddClaim", 4 },
-  { "CryptoDeleteClaim", "PROTO__HEDERA_FUNCTIONALITY__CryptoDeleteClaim", 5 },
+  { "CryptoAddLiveHash", "PROTO__HEDERA_FUNCTIONALITY__CryptoAddLiveHash", 4 },
+  { "CryptoDeleteLiveHash", "PROTO__HEDERA_FUNCTIONALITY__CryptoDeleteLiveHash", 5 },
   { "ContractCall", "PROTO__HEDERA_FUNCTIONALITY__ContractCall", 6 },
   { "ContractCreate", "PROTO__HEDERA_FUNCTIONALITY__ContractCreate", 7 },
   { "ContractUpdate", "PROTO__HEDERA_FUNCTIONALITY__ContractUpdate", 8 },
@@ -2306,7 +4156,7 @@ static const ProtobufCEnumValue proto__hedera_functionality__enum_values_by_numb
   { "ContractGetBytecode", "PROTO__HEDERA_FUNCTIONALITY__ContractGetBytecode", 18 },
   { "GetBySolidityID", "PROTO__HEDERA_FUNCTIONALITY__GetBySolidityID", 19 },
   { "GetByKey", "PROTO__HEDERA_FUNCTIONALITY__GetByKey", 20 },
-  { "CryptoGetClaim", "PROTO__HEDERA_FUNCTIONALITY__CryptoGetClaim", 21 },
+  { "CryptoGetLiveHash", "PROTO__HEDERA_FUNCTIONALITY__CryptoGetLiveHash", 21 },
   { "CryptoGetStakers", "PROTO__HEDERA_FUNCTIONALITY__CryptoGetStakers", 22 },
   { "FileGetContents", "PROTO__HEDERA_FUNCTIONALITY__FileGetContents", 23 },
   { "FileGetInfo", "PROTO__HEDERA_FUNCTIONALITY__FileGetInfo", 24 },
@@ -2320,14 +4170,46 @@ static const ProtobufCEnumValue proto__hedera_functionality__enum_values_by_numb
   { "CreateTransactionRecord", "PROTO__HEDERA_FUNCTIONALITY__CreateTransactionRecord", 32 },
   { "CryptoAccountAutoRenew", "PROTO__HEDERA_FUNCTIONALITY__CryptoAccountAutoRenew", 33 },
   { "ContractAutoRenew", "PROTO__HEDERA_FUNCTIONALITY__ContractAutoRenew", 34 },
-  { "getVersion", "PROTO__HEDERA_FUNCTIONALITY__getVersion", 35 },
+  { "GetVersionInfo", "PROTO__HEDERA_FUNCTIONALITY__GetVersionInfo", 35 },
   { "TransactionGetReceipt", "PROTO__HEDERA_FUNCTIONALITY__TransactionGetReceipt", 36 },
+  { "ConsensusCreateTopic", "PROTO__HEDERA_FUNCTIONALITY__ConsensusCreateTopic", 50 },
+  { "ConsensusUpdateTopic", "PROTO__HEDERA_FUNCTIONALITY__ConsensusUpdateTopic", 51 },
+  { "ConsensusDeleteTopic", "PROTO__HEDERA_FUNCTIONALITY__ConsensusDeleteTopic", 52 },
+  { "ConsensusGetTopicInfo", "PROTO__HEDERA_FUNCTIONALITY__ConsensusGetTopicInfo", 53 },
+  { "ConsensusSubmitMessage", "PROTO__HEDERA_FUNCTIONALITY__ConsensusSubmitMessage", 54 },
+  { "UncheckedSubmit", "PROTO__HEDERA_FUNCTIONALITY__UncheckedSubmit", 55 },
+  { "TokenCreate", "PROTO__HEDERA_FUNCTIONALITY__TokenCreate", 56 },
+  { "TokenGetInfo", "PROTO__HEDERA_FUNCTIONALITY__TokenGetInfo", 58 },
+  { "TokenFreezeAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenFreezeAccount", 59 },
+  { "TokenUnfreezeAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenUnfreezeAccount", 60 },
+  { "TokenGrantKycToAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenGrantKycToAccount", 61 },
+  { "TokenRevokeKycFromAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenRevokeKycFromAccount", 62 },
+  { "TokenDelete", "PROTO__HEDERA_FUNCTIONALITY__TokenDelete", 63 },
+  { "TokenUpdate", "PROTO__HEDERA_FUNCTIONALITY__TokenUpdate", 64 },
+  { "TokenMint", "PROTO__HEDERA_FUNCTIONALITY__TokenMint", 65 },
+  { "TokenBurn", "PROTO__HEDERA_FUNCTIONALITY__TokenBurn", 66 },
+  { "TokenAccountWipe", "PROTO__HEDERA_FUNCTIONALITY__TokenAccountWipe", 67 },
+  { "TokenAssociateToAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenAssociateToAccount", 68 },
+  { "TokenDissociateFromAccount", "PROTO__HEDERA_FUNCTIONALITY__TokenDissociateFromAccount", 69 },
+  { "ScheduleCreate", "PROTO__HEDERA_FUNCTIONALITY__ScheduleCreate", 70 },
+  { "ScheduleDelete", "PROTO__HEDERA_FUNCTIONALITY__ScheduleDelete", 71 },
+  { "ScheduleSign", "PROTO__HEDERA_FUNCTIONALITY__ScheduleSign", 72 },
+  { "ScheduleGetInfo", "PROTO__HEDERA_FUNCTIONALITY__ScheduleGetInfo", 73 },
+  { "TokenGetAccountNftInfos", "PROTO__HEDERA_FUNCTIONALITY__TokenGetAccountNftInfos", 74 },
+  { "TokenGetNftInfo", "PROTO__HEDERA_FUNCTIONALITY__TokenGetNftInfo", 75 },
+  { "TokenGetNftInfos", "PROTO__HEDERA_FUNCTIONALITY__TokenGetNftInfos", 76 },
+  { "TokenFeeScheduleUpdate", "PROTO__HEDERA_FUNCTIONALITY__TokenFeeScheduleUpdate", 77 },
 };
 static const ProtobufCIntRange proto__hedera_functionality__value_ranges[] = {
-{0, 0},{0, 37}
+{0, 0},{50, 37},{58, 44},{0, 64}
 };
-static const ProtobufCEnumValueIndex proto__hedera_functionality__enum_values_by_name[37] =
+static const ProtobufCEnumValueIndex proto__hedera_functionality__enum_values_by_name[64] =
 {
+  { "ConsensusCreateTopic", 37 },
+  { "ConsensusDeleteTopic", 39 },
+  { "ConsensusGetTopicInfo", 40 },
+  { "ConsensusSubmitMessage", 41 },
+  { "ConsensusUpdateTopic", 38 },
   { "ContractAutoRenew", 34 },
   { "ContractCall", 6 },
   { "ContractCallLocal", 16 },
@@ -2339,14 +4221,14 @@ static const ProtobufCEnumValueIndex proto__hedera_functionality__enum_values_by
   { "ContractUpdate", 8 },
   { "CreateTransactionRecord", 32 },
   { "CryptoAccountAutoRenew", 33 },
-  { "CryptoAddClaim", 4 },
+  { "CryptoAddLiveHash", 4 },
   { "CryptoCreate", 27 },
   { "CryptoDelete", 3 },
-  { "CryptoDeleteClaim", 5 },
+  { "CryptoDeleteLiveHash", 5 },
   { "CryptoGetAccountBalance", 13 },
   { "CryptoGetAccountRecords", 14 },
-  { "CryptoGetClaim", 21 },
   { "CryptoGetInfo", 15 },
+  { "CryptoGetLiveHash", 21 },
   { "CryptoGetStakers", 22 },
   { "CryptoTransfer", 1 },
   { "CryptoUpdate", 2 },
@@ -2359,12 +4241,34 @@ static const ProtobufCEnumValueIndex proto__hedera_functionality__enum_values_by
   { "Freeze", 31 },
   { "GetByKey", 20 },
   { "GetBySolidityID", 19 },
+  { "GetVersionInfo", 35 },
   { "NONE", 0 },
+  { "ScheduleCreate", 56 },
+  { "ScheduleDelete", 57 },
+  { "ScheduleGetInfo", 59 },
+  { "ScheduleSign", 58 },
   { "SystemDelete", 28 },
   { "SystemUndelete", 29 },
+  { "TokenAccountWipe", 53 },
+  { "TokenAssociateToAccount", 54 },
+  { "TokenBurn", 52 },
+  { "TokenCreate", 43 },
+  { "TokenDelete", 49 },
+  { "TokenDissociateFromAccount", 55 },
+  { "TokenFeeScheduleUpdate", 63 },
+  { "TokenFreezeAccount", 45 },
+  { "TokenGetAccountNftInfos", 60 },
+  { "TokenGetInfo", 44 },
+  { "TokenGetNftInfo", 61 },
+  { "TokenGetNftInfos", 62 },
+  { "TokenGrantKycToAccount", 47 },
+  { "TokenMint", 51 },
+  { "TokenRevokeKycFromAccount", 48 },
+  { "TokenUnfreezeAccount", 46 },
+  { "TokenUpdate", 50 },
   { "TransactionGetReceipt", 36 },
   { "TransactionGetRecord", 25 },
-  { "getVersion", 35 },
+  { "UncheckedSubmit", 42 },
 };
 const ProtobufCEnumDescriptor proto__hedera_functionality__descriptor =
 {
@@ -2373,11 +4277,11 @@ const ProtobufCEnumDescriptor proto__hedera_functionality__descriptor =
   "HederaFunctionality",
   "Proto__HederaFunctionality",
   "proto",
-  37,
+  64,
   proto__hedera_functionality__enum_values_by_number,
-  37,
+  64,
   proto__hedera_functionality__enum_values_by_name,
-  1,
+  3,
   proto__hedera_functionality__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

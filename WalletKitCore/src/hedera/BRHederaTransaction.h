@@ -17,6 +17,7 @@
 #include "BRHederaAddress.h"
 #include "BRHederaFeeBasis.h"
 #include "BRHederaBase.h"
+#include "BRHederaToken.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,9 +37,10 @@ typedef struct BRHederaTransactionRecord *BRHederaTransaction;
 extern BRHederaTransaction /* caller owns memory and must call "hederaTransactionFree" function */
 hederaTransactionCreateNew(BRHederaAddress source,
                            BRHederaAddress target,
-                           BRHederaUnitTinyBar amount,
+                           BRHederaAmount amount,
                            BRHederaFeeBasis feeBasis,
-                           BRHederaTimeStamp *timeStamp);
+                           BRHederaTimeStamp *timeStamp,
+                           BRHederaToken token);
 
 /**
  * Create a Hedera transaction recovered from the blockset server
@@ -56,7 +58,7 @@ hederaTransactionCreateNew(BRHederaAddress source,
 extern BRHederaTransaction /* caller must free - hederaTransactionFree */
 hederaTransactionCreate(BRHederaAddress source,
                         BRHederaAddress target,
-                        BRHederaUnitTinyBar amount,
+                        BRHederaAmount amount,
                         BRHederaUnitTinyBar fee,
                         const char * transactionId,
                         BRHederaTransactionHash hash,
@@ -110,7 +112,7 @@ extern char * // Caller owns memory and must free calling "free"
 hederaTransactionGetTransactionId(BRHederaTransaction transaction);
 extern BRHederaFeeBasis hederaTransactionGetFeeBasis (BRHederaTransaction transaction);
 extern BRHederaUnitTinyBar hederaTransactionGetFee(BRHederaTransaction transaction);
-extern BRHederaUnitTinyBar hederaTransactionGetAmount(BRHederaTransaction transaction);
+extern BRHederaAmount hederaTransactionGetAmount(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetSource(BRHederaTransaction transaction);
 extern BRHederaAddress hederaTransactionGetTarget(BRHederaTransaction transaction);
 

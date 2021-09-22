@@ -12,6 +12,7 @@
 
 #include "BRHederaBase.h"
 #include "BRHederaAddress.h"
+#include "BRHederaToken.h"
 #include "support/BRKey.h"
 
 #ifdef __cplusplus
@@ -20,12 +21,13 @@ extern "C" {
 
 uint8_t * hederaTransactionBodyPack (BRHederaAddress source,
                                      BRHederaAddress target,
-                                          BRHederaAddress nodeAddress,
-                                          BRHederaUnitTinyBar amount,
-                                          BRHederaTimeStamp timeStamp,
-                                          BRHederaUnitTinyBar fee,
-                                          const char * memo,
-                                          size_t *size);
+                                     BRHederaAddress nodeAddress,
+                                     BRHederaAmount amount,
+                                     BRHederaTimeStamp timeStamp,
+                                     BRHederaUnitTinyBar fee,
+                                     const char * memo,
+                                     BRHederaToken token,
+                                     size_t *size);
 
 uint8_t * hederaTransactionPack (uint8_t * signature, size_t signatureSize,
                                       uint8_t * publicKey, size_t publicKeySize,

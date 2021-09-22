@@ -52,18 +52,18 @@ void   proto__transaction__free_unpacked
   assert(message->base.descriptor == &proto__transaction__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-static const ProtobufCFieldDescriptor proto__transaction__field_descriptors[4] =
+static const ProtobufCFieldDescriptor proto__transaction__field_descriptors[5] =
 {
   {
     "body",
     1,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Proto__Transaction, body_data_case),
+    0,   /* quantifier_offset */
     offsetof(Proto__Transaction, body),
     &proto__transaction_body__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -87,7 +87,7 @@ static const ProtobufCFieldDescriptor proto__transaction__field_descriptors[4] =
     offsetof(Proto__Transaction, sigmap),
     &proto__signature_map__descriptor,
     NULL,
-    0,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -95,11 +95,23 @@ static const ProtobufCFieldDescriptor proto__transaction__field_descriptors[4] =
     4,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
-    offsetof(Proto__Transaction, body_data_case),
+    0,   /* quantifier_offset */
     offsetof(Proto__Transaction, bodybytes),
     NULL,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_DEPRECATED,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "signedTransactionBytes",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(Proto__Transaction, signedtransactionbytes),
+    NULL,
+    NULL,
+    0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
@@ -107,12 +119,13 @@ static const unsigned proto__transaction__field_indices_by_name[] = {
   0,   /* field[0] = body */
   3,   /* field[3] = bodyBytes */
   2,   /* field[2] = sigMap */
+  4,   /* field[4] = signedTransactionBytes */
   1,   /* field[1] = sigs */
 };
 static const ProtobufCIntRange proto__transaction__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor proto__transaction__descriptor =
 {
@@ -122,7 +135,7 @@ const ProtobufCMessageDescriptor proto__transaction__descriptor =
   "Proto__Transaction",
   "proto",
   sizeof(Proto__Transaction),
-  4,
+  5,
   proto__transaction__field_descriptors,
   proto__transaction__field_indices_by_name,
   1,  proto__transaction__number_ranges,

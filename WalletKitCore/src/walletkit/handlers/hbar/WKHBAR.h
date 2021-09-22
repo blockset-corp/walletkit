@@ -17,6 +17,7 @@
 #include "hedera/BRHederaAddress.h"
 #include "hedera/BRHederaTransaction.h"
 #include "hedera/BRHederaAccount.h"
+#include "hedera/BRHederaToken.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +71,7 @@ wkTransferCreateAsHBAR (WKTransferListener listener,
 typedef struct WKWalletHBARRecord {
     struct WKWalletRecord base;
     BRHederaAccount hbarAccount;
+    BRHederaToken token;
 } *WKWalletHBAR;
 
 extern WKWalletHandlers wkWalletHandlersHBAR;
@@ -78,7 +80,8 @@ private_extern WKWallet
 wkWalletCreateAsHBAR (WKWalletListener listener,
                           WKUnit unit,
                           WKUnit unitForFee,
-                          BRHederaAccount hbarAccount);
+                          BRHederaAccount hbarAccount,
+                          BRHederaToken token);
 
 private_extern WKHash
 wkHashCreateAsHBAR (BRHederaTransactionHash hash);
@@ -93,6 +96,9 @@ wkHashAsHBAR (WKHash hash);
 
 typedef struct WKWalletManagerHBARRecord {
     struct WKWalletManagerRecord base;
+
+    BRSetOf(BRHederaToken) tokens;
+
 } *WKWalletManagerHBAR;
 
 extern WKWalletManagerHandlers wkWalletManagerHandlersHBAR;
@@ -130,6 +136,10 @@ private_extern const char **
 hederaWalletGetTransactionAttributeKeys (BRHederaAddress address,
                                          int asRequired,
                                          size_t *count);
+
+// MARK: - Misc
+
+#define HWM_INITIAL_SET_SIZE_DEFAULT  (10)
 
 
 #ifdef __cplusplus

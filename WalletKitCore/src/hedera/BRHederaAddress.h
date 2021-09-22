@@ -112,6 +112,17 @@ hederaAddressEqual (BRHederaAddress a1, BRHederaAddress a2);
 extern void
 hederaAddressSerialize(BRHederaAddress address, uint8_t * buffer, size_t bufferSize);
 
+static inline size_t
+hederaAddressHashValue (BRHederaAddress address) {
+    return (size_t) hederaAddressGetAccount(address);
+}
+
+static inline int
+hederaAddressHashEqual (BRHederaAddress address1,
+                     BRHederaAddress address2) {
+    return hederaAddressEqual(address1, address2);
+}
+
 #ifdef __cplusplus
 }
 #endif

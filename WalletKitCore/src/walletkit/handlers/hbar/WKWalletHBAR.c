@@ -26,6 +26,7 @@ wkWalletCoerce (WKWallet wallet) {
 
 typedef struct {
     BRHederaAccount hbarAccount;
+    BRHederaToken token;
 } WKWalletCreateContextHBAR;
 
 static void
@@ -35,13 +36,15 @@ wkWalletCreateCallbackHBAR (WKWalletCreateContext context,
     WKWalletHBAR walletHBAR = wkWalletCoerce (wallet);
 
     walletHBAR->hbarAccount = contextHBAR->hbarAccount;
+    walletHBAR->token = contextHBAR->token;
 }
 
 private_extern WKWallet
 wkWalletCreateAsHBAR (WKWalletListener listener,
                           WKUnit unit,
                           WKUnit unitForFee,
-                          BRHederaAccount hbarAccount) {
+                          BRHederaAccount hbarAccount,
+                          BRHederaToken token) {
     int hasMinBalance;
     int hasMaxBalance;
     BRHederaUnitTinyBar minBalanceHBAR = hederaAccountGetBalanceLimit (hbarAccount, 0, &hasMinBalance);
@@ -54,7 +57,8 @@ wkWalletCreateAsHBAR (WKWalletListener listener,
     WKFeeBasis feeBasis     = wkFeeBasisCreateAsHBAR (unitForFee, feeBasisHBAR);
 
     WKWalletCreateContextHBAR contextHBAR = {
-        hbarAccount
+        hbarAccount,
+        token
     };
 
     WKWallet wallet = wkWalletAllocAndInit (sizeof (struct WKWalletHBARRecord),
@@ -174,13 +178,14 @@ wkWalletCreateTransferHBAR (WKWallet  wallet,
 
     BRHederaAddress source = hederaAccountGetAddress(walletHBAR->hbarAccount);
     UInt256 value = wkAmountGetValue (amount);
-    BRHederaUnitTinyBar thbar = (BRHederaUnitTinyBar) value.u64[0];
+    BRHederaAmount transferAmount = (BRHederaAmount) value.u64[0];
     BRHederaFeeBasis hbarFeeBasis = wkFeeBasisCoerceHBAR (estimatedFeeBasis)->hbarFeeBasis;
     BRHederaTransaction hbarTransaction = hederaTransactionCreateNew (source,
                                                                       wkAddressAsHBAR (target),
-                                                                      thbar,
+                                                                      transferAmount,
                                                                       hbarFeeBasis,
-                                                                      NULL);
+                                                                      NULL, // timestamp will be geneated
+                                                                      walletHBAR->token);
     if (NULL == hbarTransaction)
         return NULL;
     

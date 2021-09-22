@@ -38,7 +38,7 @@ BRHederaTransactionHash hederaTransactionGetHashAtIndex (BRHederaTransaction tra
 struct BRHederaTransactionRecord {
     BRHederaAddress source;
     BRHederaAddress target;
-    BRHederaUnitTinyBar amount;
+    BRHederaAmount amount;
     char * transactionId;
     BRHederaUnitTinyBar fee;
     uint8_t * serializedBytes;
@@ -51,13 +51,15 @@ struct BRHederaTransactionRecord {
     char * memo;
     bool hashIsSet;
     BRArrayOf(BRHederaTransactionHash) hashes;
+    BRHederaToken token;
 };
 
 extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
                                                        BRHederaAddress target,
-                                                       BRHederaUnitTinyBar amount,
+                                                       BRHederaAmount amount,
                                                        BRHederaFeeBasis feeBasis,
-                                                       BRHederaTimeStamp *timeStamp)
+                                                       BRHederaTimeStamp *timeStamp,
+                                                       BRHederaToken token)
 {
     BRHederaTransaction transaction = calloc (1, sizeof(struct BRHederaTransactionRecord));
     transaction->source = hederaAddressClone (source);
@@ -75,12 +77,13 @@ extern BRHederaTransaction hederaTransactionCreateNew (BRHederaAddress source,
     transaction->transactionId = hederaCreateTransactionId(source, transaction->timeStamp);
     transaction->blockHeight = 0;
     transaction->error = 0;
+    transaction->token = hederaTokenClone(token);
     return transaction;
 }
 
 extern BRHederaTransaction hederaTransactionCreate (BRHederaAddress source,
                                                     BRHederaAddress target,
-                                                    BRHederaUnitTinyBar amount,
+                                                    BRHederaAmount amount,
                                                     BRHederaUnitTinyBar fee,
                                                     const char * transactionId,
                                                     BRHederaTransactionHash hash,
@@ -132,6 +135,7 @@ hederaTransactionClone (BRHederaTransaction transaction)
     newTransaction->amount = hederaTransactionGetAmount(transaction);
     newTransaction->fee = transaction->fee;
     newTransaction->feeBasis = transaction->feeBasis;
+    newTransaction->token = hederaTokenClone(transaction->token);
 
     if (transaction->transactionId && strlen(transaction->transactionId) > 1) {
         newTransaction->transactionId = strdup (transaction->transactionId);
@@ -170,6 +174,7 @@ extern void hederaTransactionFree (BRHederaTransaction transaction)
     if (transaction->target) hederaAddressFree (transaction->target);
     if (transaction->memo) free(transaction->memo);
     if (transaction->hashes) array_free(transaction->hashes);
+    if (transaction->token) hederaTokenFree(transaction->token);
     free (transaction);
 }
 
@@ -206,12 +211,16 @@ static uint8_t* hederaTransactionSignTransactionWithNode (BRHederaTransaction tr
                                                 transaction->timeStamp,
                                                 fee,
                                                 transaction->memo,
+                                                transaction->token,
                                                 &bodySize);
 
     // Create signature from the body bytes
     unsigned char signature[64];
     memset (signature, 0x00, 64);
     ed25519_sign(signature, body, bodySize, publicKey.pubKey, privateKey);
+
+    // Create a SigMap for this transaction
+
 
     // Serialize the full transaction including signature and public key
     uint8_t * serializedBytes = hederaTransactionPack (signature, 64,
@@ -252,8 +261,11 @@ hederaTransactionSignMultipleSerializations (BRHederaTransaction transaction, BR
             pSerializedBytes = transaction->serializedBytes;
 
             // Add the header info - version plus the number of serializations
-            *pSerializedBytes = (uint8_t)1; // Version 1 of the protocol
+            // The version is updated to #2 since we are using a new binary format that
+            // supports erc20 tokens
+            *pSerializedBytes = (uint8_t)2;
             pSerializedBytes++;
+            // Number of serializations
             UInt16SetBE(pSerializedBytes, numNodes);
             pSerializedBytes += 2; // Pointer to after the header
         }
@@ -293,6 +305,7 @@ hederaTransactionSignTransactionV0 (BRHederaTransaction transaction,
                                                 transaction->timeStamp,
                                                 fee,
                                                 transaction->memo,
+                                                transaction->token,
                                                 &bodySize);
 
     // Create signature from the body bytes
