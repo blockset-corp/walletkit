@@ -242,11 +242,9 @@ public class BlocksetSystemClient: SystemClient {
                 return nil
             }
 
-            guard let feeEstimates = json.asArray(name: "fee_estimates")?
-                .map ({ JSON (dict: $0) })
-                .map ({ asBlockchainFee (json: $0) }) as? [SystemClient.BlockchainFee]
+            guard let feeEstimates = json.asArrayMapped(name: "fee_estimates", transform: asBlockchainFee)
             else { return nil }
-            
+
             let verifiedBlockHash = json.asString(name: "verified_block_hash")
 
             return (id: id, name: name, network: network, isMainnet: isMainnet, currency: currency,
@@ -290,10 +288,8 @@ public class BlocksetSystemClient: SystemClient {
             let address = json.asString(name: "address")
 
             // All denomincations must parse
-            guard let demoninations = json.asArray (name: "denominations")?
-                .map ({ JSON (dict: $0 )})
-                .map ({ asCurrencyDenomination(json: $0)}) as? [SystemClient.CurrencyDenomination]
-                else { return nil }
+            guard let demoninations = json.asArrayMapped (name: "denominations", transform: asCurrencyDenomination)
+            else { return nil }
             
             return (id: id, name: name, code: code, type: type,
                     blockchainID: bid,
@@ -322,7 +318,7 @@ public class BlocksetSystemClient: SystemClient {
                 let index  = json.asUInt64 (name: "index"),
                 let amount = json.asDict (name: "amount")
                     .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0) }) as? SystemClient.Amount
+                    .flatMap ({ asAmount(json: $0) })
                 else { return nil }
 
             // TODO: Resolve if optional or not
@@ -364,7 +360,7 @@ public class BlocksetSystemClient: SystemClient {
                 let size       = json.asUInt64 (name: "size"),
                 let fee        = json.asDict (name: "fee")
                     .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0)}) as? SystemClient.Amount,
+                    .flatMap ({ asAmount(json: $0)}),
                 asTransactionValidateStatus(status)
                 else { return nil }
 
@@ -379,16 +375,13 @@ public class BlocksetSystemClient: SystemClient {
             let timestamp     = json.asDate   (name: "timestamp")
             let meta          = json.asDict(name: "meta")?.mapValues { return $0 as! String }
 
-            let raw = json.asData (name: "raw")
-
-            // Require "_embedded" : "transfers" as [JSON.Dict]
-            let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict] ?? []
-
-            // Require asTransfer is not .none
-            guard let transfers = transfersJSON
-                .map ({ JSON (dict: $0) })
-                .map ({ asTransfer (json: $0) }) as? [SystemClient.Transfer]
-                else { return nil }
+            let raw      = json.asData (name: "raw")
+            let embedded = json.asJSON (name: "_embedded")
+            
+            guard let transfers = (nil == embedded || nil == embedded!.asArray(name: "transfers")
+                                   ? [] // No "_embedded" or no "transfers"
+                                   : embedded!.asArrayMapped(name: "transfers", transform: asTransfer))
+            else { return nil   }
 
             return (id: id, blockchainId: bid,
                      hash: hash, identifier: identifier,
@@ -460,9 +453,7 @@ public class BlocksetSystemClient: SystemClient {
             let prevHash = json.asString (name: "prev_hash")
             let nextHash = json.asString (name: "next_hash")
 
-            let transactions = json.asArray (name: "transactions")?
-                .map ({ JSON (dict: $0 )})
-                .map ({ asTransaction (json: $0)}) as? [SystemClient.Transaction]  // not quite
+            let transactions = json.asArrayMapped (name: "transactions", transform: asTransaction)
 
             return (id: id, blockchainId: bid,
                     hash: hash, height: height, header: header, raw: raw, mined: mined, size: size,
@@ -525,11 +516,9 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asSubscriptionCurrency (json: JSON) -> SubscriptionCurrency? {
             guard let addresses = json.asStringArray (name: "addresses"),
-                let currencyId = json.asString (name: "currency_id"),
-                let events = json.asArray(name: "events")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asSubscriptionEvent(json: $0) }) as? [SubscriptionEvent] // not quite
-                else { return nil }
+                  let currencyId = json.asString (name: "currency_id"),
+                  let events = json.asArrayMapped(name: "events", transform: asSubscriptionEvent)
+            else { return nil }
 
             return (addresses: addresses, currencyId: currencyId, events: events)
         }
@@ -552,15 +541,13 @@ public class BlocksetSystemClient: SystemClient {
             currencies: [SubscriptionCurrency]
         )
 
-       static internal func asSubscription (json: JSON) -> Subscription? {
+        static internal func asSubscription (json: JSON) -> Subscription? {
             guard let id = json.asString (name: "subscription_id"),
-                let device = json.asString (name: "device_id"),
-                let endpoint = json.asDict(name: "endpoint")
+                  let device = json.asString (name: "device_id"),
+                  let endpoint = json.asDict(name: "endpoint")
                     .flatMap ({ asSubscriptionEndpoint (json: JSON (dict: $0)) }),
-                let currencies = json.asArray(name: "currencies")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asSubscriptionCurrency (json: $0) }) as? [SubscriptionCurrency]
-                else { return nil }
+                  let currencies = json.asArrayMapped(name: "currencies", transform: asSubscriptionCurrency)
+            else { return nil }
 
             return (id: id,
                     device: device,
@@ -581,12 +568,10 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asAddress (json: JSON) -> SystemClient.Address? {
             guard let bid     = json.asString (name: "blockchain_id"),
-                let address   = json.asString (name: "address"),
-                let timestamp = json.asUInt64 (name: "timestamp"),
-                let balances = json.asArray (name: "balances")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0)}) as? [SystemClient.Amount]
-                else { return nil }
+                  let address   = json.asString (name: "address"),
+                  let timestamp = json.asUInt64 (name: "timestamp"),
+                  let balances  = json.asArrayMapped(name: "balances", transform: asAmount)
+            else { return nil }
 
             let nonce = json.asUInt64 (name: "nonce")
             let meta  = json.asDict(name: "meta")?.mapValues { return $0 as! String }
@@ -1340,6 +1325,18 @@ public class BlocksetSystemClient: SystemClient {
 
         internal func asJSON (name: String) -> JSON? {
             return asDict(name: name).map { JSON (dict: $0) }
+        }
+
+        internal func asJSONArray (name: String) -> [JSON]? {
+            return asArray(name: name)?.map { JSON (dict: $0) }
+        }
+
+        internal func asArrayMapped<T> (name: String, transform: (JSON) -> T?) -> [T]? {
+            guard let result = asJSONArray(name: name)?.map (transform)
+            else { return nil }
+
+            let resultCompacted = result.compactMap { $0 }
+            return result.count != resultCompacted.count ? nil : resultCompacted
         }
     }
 
