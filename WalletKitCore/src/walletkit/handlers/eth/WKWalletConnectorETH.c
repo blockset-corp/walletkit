@@ -101,7 +101,10 @@ wkWalletConnectorSignDataETH (
         size_t                  *signatureLength,
         WKWalletConnectorStatus *status   ) {
 
-    BRKey *brKey = wkKeyGetCore (key);
+    BRKey brKey = *wkKeyGetCore (key);
+
+    // Ensure private key uncompressed
+    BRKeySetCompressed(&brKey, 0);
 
     // No error
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
@@ -110,8 +113,8 @@ wkWalletConnectorSignDataETH (
     BREthereumSignature signature = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
                                                         data,
                                                         dataLength,
-                                                        *brKey   );
-    BRKeyClean (brKey);
+                                                        brKey   );
+    BRKeyClean (&brKey);
 
     uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
     assert (signatureData != NULL);
@@ -295,9 +298,8 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
                                                              gas,
                                                              data,
                                                              nonce);
-
-    ethTransactionSetNonce (transaction, ethAccountGetThenIncrementAddressNonce (ethAccount, sourceAddress));
-
+    ethTransactionSetNonce (transaction,
+                            ethAccountGetThenIncrementAddressNonce (ethAccount, sourceAddress));
 
     // Allocates memory to rlpData for the serialization.
     BRRlpData rlpData = ethTransactionGetRlpData(transaction,
@@ -370,7 +372,7 @@ wkWalletConnectorSignTransactionDataETH (
 
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumNetwork   ethNetwork  = managerETH->network;
-    BRKey               *brKey      = wkKeyGetCore (key);
+    BRKey               brKey       = *wkKeyGetCore (key);
     BREthereumAccount   ethAccount  = managerETH->account;
     BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
 
@@ -390,15 +392,16 @@ wkWalletConnectorSignTransactionDataETH (
     rlpCoderRelease (coder);
 
     // Step 2: Create a signature directly on the input data and add it onto the
-    //         ETH transaction
+    //         ETH transaction. Ensure that private key is uncompressed
+    BRKeySetCompressed(&brKey, 0);
     BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
                                                                        ethAddress,
                                                                        SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
                                                                        rlpData.bytes,
                                                                        rlpData.bytesCount,
-                                                                       *brKey   );
+                                                                       brKey   );
     ethTransactionSign (ethTransaction, signature);
-    BRKeyClean (brKey);
+    BRKeyClean (&brKey);
 
     // Step 3: Add the signature to the ETH transaction and serialize it
     BRRlpData signedData = ethTransactionGetRlpData(ethTransaction,
