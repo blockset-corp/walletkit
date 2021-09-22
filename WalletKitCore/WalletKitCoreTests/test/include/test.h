@@ -117,6 +117,9 @@ extern void BRRandInit (void);
 // testWalletKit.c
 extern void runWalletKitTests (void);
 
+// testWalletConnect.c
+extern void runWalletConnectTests (void);
+
 extern WKBoolean
 runWalletKitTestsWithAccountAndNetwork (WKAccount account,
                                         WKNetwork network,

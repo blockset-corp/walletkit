@@ -218,7 +218,7 @@ final class WalletKitCoreTests: XCTestCase {
         XCTAssert(1 == BRRunTests())
 //        XCTAssert(1 == BRRunTestsBWM (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0)));
     }
-
+    
     func testBitcoinSyncOne() {
         BRRunTestsSync (paperKey, bitcoinChain, (isMainnet ? 1 : 0));
     }
@@ -298,6 +298,11 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
+    // MARK: - WalletConnect 1.0
+    func testWalletConnect() {
+        runWalletConnectTests();
+    }
+    
     private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
         let network = wkNetworkFindBuiltin(uids, isMainnet);
@@ -462,6 +467,9 @@ final class WalletKitCoreTests: XCTestCase {
         ("testSupportBTC",      testBitcoinSupport),
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
+        
+        // WalletConnect 1.0 Handler
+        ("testWalletConnect",   testWalletConnect),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
         
         // __NEW_BLOCKCHAIN_TEST__

@@ -270,8 +270,8 @@ wkWalletConnectorCreateTransactionFromArguments  (
 
         unsignedTransaction =  netHandlers->connector->createTransactionFromArguments(
                 connector,
-                keys,
-                values,
+                arrayOfKeys,
+                arrayOfValues,
                 serializationLength,
                 status);
 
@@ -298,10 +298,10 @@ wkWalletConnectorCreateTransactionFromSerialization  (
         WKWalletConnectorStatus *status           ) {
 
     assert (NULL != connector           &&
-            NULL == data                &&
-            NULL == serializationLength &&
-            NULL == isSigned            &&
-            NULL == status );
+            NULL != data                &&
+            NULL != serializationLength &&
+            NULL != isSigned            &&
+            NULL != status );
 
     uint8_t* transaction = NULL;
 
@@ -339,9 +339,9 @@ wkWalletConnectorSignTransactionData (
         WKWalletConnectorStatus *status            ) {
 
     assert (NULL != connector           &&
-            NULL == transactionData     &&
-            NULL == signedDataLength    &&
-            NULL == status );
+            NULL != transactionData     &&
+            NULL != signedDataLength    &&
+            NULL != status );
 
         uint8_t* transaction = NULL;
 
