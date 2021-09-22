@@ -120,6 +120,17 @@ runAvalancheAddressTest (void) {
             "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466",
             { 0xcc, 0x30, 0xe2, 0x01, 0x57, 0x80, 0xa6, 0xc7, 0x2e, 0xfa, 0xef, 0x22, 0x80, 0xe3, 0xde, 0x4a, 0x95, 0x4e, 0x77, 0x0c },
             "cc30e2015780a6c72efaef2280e3de4a954e770c",
+            "avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",
+            "0xbbc9bf879c06b13274c200c8b246881ef1ca33a0",
+            "AVAX Mainnet"
+        },
+        {
+            // Alternate address encodings: "X-" prefix
+            "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone",
+            "029dc79308883267bb49f3924e9eb58d60bcecd17ad3f2f53681ecc5c668b2ba5f",
+            "de7176242724956611e9a4f6dfb7a3b3b7eeeec0475b8bccdfec4e52a49c1466",
+            { 0xcc, 0x30, 0xe2, 0x01, 0x57, 0x80, 0xa6, 0xc7, 0x2e, 0xfa, 0xef, 0x22, 0x80, 0xe3, 0xde, 0x4a, 0x95, 0x4e, 0x77, 0x0c },
+            "cc30e2015780a6c72efaef2280e3de4a954e770c",
             "X-avax1escwyq2hsznvwth6au3gpc77f225uacvwldgal",
             "0xbbc9bf879c06b13274c200c8b246881ef1ca33a0",
             "AVAX Mainnet"
@@ -137,28 +148,46 @@ runAvalancheAddressTest (void) {
                                          : NULL));
         assert (NULL != network);
 
-        // 'raw'
-        uint8_t addr[20]; size_t addrLen;
-        avax_addr_bech32_decode (addr, &addrLen, "avax", &vectors[index].xaddress[2]);
-        assert (0 == memcmp (addr, vectors[index].ripemd160, 20));
+        // X and C Address parsed by `network`; only one will succeed...
+        BRAvalancheAddress addressX = avalancheNetworkStringToAddress (network, vectors[index].xaddress, true);
+        BRAvalancheAddress addressC = avalancheNetworkStringToAddress (network, vectors[index].caddress, true);
 
+        // X and C Addresses from account
         UInt512 seed = UINT512_ZERO;
         BRBIP39DeriveKey(seed.u8, vectors[index].paperKey, NULL);
-        BRAvalancheAccount account = avalancheAccountCreateWithSeed (seed);
+        BRAvalancheAccount account     = avalancheAccountCreateWithSeed (seed);
+        BRAvalancheAddress addressXAcct = avalancheAccountGetAddress    (account, AVALANCHE_CHAIN_TYPE_X);
+        BRAvalancheAddress addressCAcct = avalancheAccountGetAddress    (account, AVALANCHE_CHAIN_TYPE_C);
 
+        // Account parsed correctly - independent of `network`
+        assert (0 == memcmp (addressXAcct.u.x.bytes, vectors[index].ripemd160, 20));
 
-        // X address
-        BRAvalancheAddress addressX = avalancheAccountGetAddress (account, AVALANCHE_CHAIN_TYPE_X);
-        char *addressXString = avalancheNetworkAddressToString (network, addressX);
-        assert (0 == strcmp (addressXString, vectors[index].xaddress));
-        assert (avalancheAddressEqual (addressX, avalancheNetworkStringToAddress (network, vectors[index].xaddress, true)));
-        free (addressXString);
+        uint8_t cBytes[20];
+        hexDecode (cBytes, 20, &vectors[index].caddress[2], 40);
+        assert (0 == memcmp (addressCAcct.u.c.bytes, cBytes, 20));
 
-        // C address
-        BRAvalancheAddress addressC = avalancheAccountGetAddress (account, AVALANCHE_CHAIN_TYPE_C);
-        // char *addressCString = avalancheNetworkAddressToString (network, addressC);
-        //assert (0 == strcmp (addressCString, vectors[index].caddress));
-        // assert (avalancheAddressEqual (addressC, avalancheAddressCreateFromString(vectors[index].caddress, true, AVALANCHE_CHAIN_TYPE_C)));
+        switch (avalancheNetworkGetChainType(network)) {
+            case AVALANCHE_CHAIN_TYPE_X:
+                // X
+                assert (0 == memcmp (addressX.u.x.bytes, vectors[index].ripemd160, 20));
+                assert (avalancheAddressEqual(addressX, addressXAcct));
+
+                // C
+                assert (avalancheAddressEqual (addressC, avalancheAddressCreateEmptyAddress(AVALANCHE_CHAIN_TYPE_X)));  // Parsed as X
+                break;
+
+            case AVALANCHE_CHAIN_TYPE_C:
+                // X
+                assert (avalancheAddressEqual (addressX, avalancheAddressCreateEmptyAddress(AVALANCHE_CHAIN_TYPE_C)));  // Parsed as C
+
+                // C
+                assert (0 == memcmp (addressC.u.c.bytes, vectors[index].ripemd160, 20));
+                assert (avalancheAddressEqual(addressC, addressCAcct));
+                break;
+
+            case AVALANCHE_CHAIN_TYPE_P:
+                break;
+        }
 
         avalancheAccountFree (account);
     }
@@ -250,15 +279,6 @@ runAvalancheSignatureTest (void) {
         BRData signatureData = avalancheSignatureGetBytes(&signature);
         assert (dataEqualsHexString(signatureData, &vectors[index].signatureHexEncoded[2]));
         dataFree (signatureData);
-#if 0
-        size_t   signatureBytesCount;
-        uint8_t *signatureBytes      = avalancheSignatureGetBytes (&signature, &signatureBytesCount);
-        char    *signatureHexEncoded = hexEncodeCreate(NULL, signatureBytes, signatureBytesCount);
-
-        assert (0 == strcmp (signatureHexEncoded, &vectors[index].signatureHexEncoded[2]));
-        free (signatureBytes);
-        free (signatureHexEncoded);
-#endif
         free (message);
     }
 }
@@ -281,7 +301,7 @@ runAvalancheTransactionUTXOTest () {
         BRAvalancheAmount amount;
         char *addresses[3];
     } utxoSpecs[] = {
-        { "XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 1, "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 9964000000, { "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", NULL, NULL }},
+        { "XQYUrRZUMuHv6GXDer2oU9Gje6YkZWTVHLUdDWipWdMtpNVQh", 1, "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 9964000000, { "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", NULL, NULL }},
         { "Da5BCvPhMEXK2bPEC5H7rssQYXiS1jnhGUntFiejtWvAbWmqP", 0, "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK", 2000000000, { "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", NULL, NULL }},
         { NULL, 0, NULL, 0, { NULL, NULL, NULL }}
     };
@@ -300,7 +320,7 @@ runAvalancheTransactionUTXOTest () {
         {
             { 0, 1, -1, -1, -1 },
             AVALANCHE_UTXO_SEARCH_MIN_FIRST,
-            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
             "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
             1000000000,
             1,
@@ -320,7 +340,7 @@ runAvalancheTransactionUTXOTest () {
         {
             { 0, 1, -1, -1, -1 },
             AVALANCHE_UTXO_SEARCH_MIN_FIRST,
-            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
             "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
             (9964000000 + 1),
             2,
@@ -341,7 +361,7 @@ runAvalancheTransactionUTXOTest () {
         {
             { 0, 1, -1, -1, -1 },
             AVALANCHE_UTXO_SEARCH_MAX_FIRST,
-            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
             "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
             1000000000,
             1,
@@ -361,7 +381,7 @@ runAvalancheTransactionUTXOTest () {
         {
             { 0, 1, -1, -1, -1 },
             AVALANCHE_UTXO_SEARCH_MAX_FIRST,
-            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
             "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
             (9964000000 + 1),
             2,
@@ -382,7 +402,7 @@ runAvalancheTransactionUTXOTest () {
          {
             { 0, 1, -1, -1, -1 },
             AVALANCHE_UTXO_SEARCH_RANDOM,
-            "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
+            "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q",
             "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
             3000000000,
             1,
@@ -481,7 +501,7 @@ runAvalancheTransactionSerializeTest (void) {
     array_add (utxos, utxo2);
 
     BRAvalancheTransaction transaction1 =
-    avalancheTransactionCreate (avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+    avalancheTransactionCreate (avalancheNetworkStringToAddress (network, "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
                                 avalancheNetworkStringToAddress (network, "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0", true),
                                 avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
                                 assetIdentifier,
@@ -520,7 +540,7 @@ runAvalancheTransactionSerializeTest (void) {
     BRAvalancheTransaction transaction2 =
     avalancheTransactionCreate (avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
                                 avalancheNetworkStringToAddress (network, "fuji1k3lf9kxsmyf9jyx4dlq7hffvyu4eppmv89w2f0", true),
-                                avalancheNetworkStringToAddress (network, "fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
+                                avalancheNetworkStringToAddress (network, "X-fuji1escwyq2hsznvwth6au3gpc77f225uacvzdfh3q", true),
                                 assetIdentifier,
                                 10300000000,
                                 avalancheFeeBasisCreate((BRAvalancheAmount)(1000000000 * 0.001)),

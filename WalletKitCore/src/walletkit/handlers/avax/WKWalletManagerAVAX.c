@@ -217,7 +217,7 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKNetworkAVAX networkAVAX = wkNetworkCoerceAVAX(manager->network);
 
-    BRAvalancheNetwork avaxNetwork = networkAVAX->avaxNetwork;
+    BRAvalancheNetwork avaxNetwork = networkAVAX->avax;
     BRAvalancheAccount avaxAccount = wkAccountGetAsAVAX (manager->account);
 
     BRAvalancheAmount avaxAmount;
@@ -230,11 +230,11 @@ wkWalletManagerRecoverTransferFromTransferBundleAVAX (WKWalletManager manager,
     // transfer; we'll use `target` both if a transfer is created and to identify a pre-existing
     // transfer held by wallet.
 
-    BRAvalancheAddress avaxTarget = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, bundle->to,   false);
-    BRAvalancheAddress avaxSource = avalancheNetworkStringToAddress (networkAVAX->avaxNetwork, bundle->from, false);
+    BRAvalancheAddress avaxTarget = avalancheNetworkStringToAddress (networkAVAX->avax, bundle->to,   false);
+    BRAvalancheAddress avaxSource = avalancheNetworkStringToAddress (networkAVAX->avax, bundle->from, false);
 
-    WKAddress target = wkAddressCreateAsAVAX (avaxTarget, networkAVAX->avaxNetwork);
-    WKAddress source = wkAddressCreateAsAVAX (avaxSource, networkAVAX->avaxNetwork);
+    WKAddress target = wkAddressCreateAsAVAX (avaxTarget, networkAVAX->avax);
+    WKAddress source = wkAddressCreateAsAVAX (avaxSource, networkAVAX->avax);
 
     // A transaction may include a "burn" transfer to target address 'unknown' in addition to the
     // normal transfer, both sharing the same hash. Typically occurs when sending to an un-revealed
