@@ -80,6 +80,10 @@ tezosOperationFeeBasisGetDefaultFee (BRTezosOperationKind kind) {
     }
 }
 
+#pragma clang diagnostic push
+#pragma GCC diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-function"
 static void
 tezosOperationFeeBasisShow (BRTezosOperationFeeBasis feeBasis) {
     printf ("XTZ: FeeBasis\n");
@@ -110,6 +114,8 @@ tezosOperationFeeBasisCreate (BRTezosOperationKind kind,
         feeExtra
     };
 }
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 extern BRTezosOperationFeeBasis
 tezosOperationFeeBasisActual (BRTezosOperationKind kind,
