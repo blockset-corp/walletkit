@@ -19,6 +19,19 @@ import java.util.Map;
 
 public interface WalletConnector {
 
+    /** Key
+     *
+     * A Key that may be used for signing if it contains a secret
+     */
+    interface Key {
+
+        /**
+         * Indicates that the key has a private key
+         * @return True when the key has a secret
+         */
+        boolean hasSecret();
+    }
+
     /** Signature
      *
      *  A signature holds the signature bytes in the form
@@ -123,6 +136,16 @@ public interface WalletConnector {
             return new Result(null, failure);
         }
     }
+
+    /**
+     * Creates a WalletConnector compatible signing Key
+     * @param paperKey A BIP39 phrase
+     * @return A Key object which is suitable for
+     *        {@link WalletConnector#sign(byte[], Key, boolean)} or
+     *        {@link WalletConnector#sign(Transaction, Key)}
+     */
+    Result<Key, WalletConnectorError>
+    createKey( String paperKey );
 
     /** Composite wrapper of a {@link Digest} and {@link Signature}
      *  to allow returning them together.

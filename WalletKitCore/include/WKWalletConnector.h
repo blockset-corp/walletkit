@@ -103,6 +103,21 @@ wkWalletConnectorGetDigest (
         size_t                  *digestLength,
         WKWalletConnectorStatus *status          );
 
+/** Constructs a chain specific WKKey from the specified BIP39 mnemonic phrase
+ *
+ * @param connector The wallet connector object
+ * @param phrase The phrase
+ * @param status A status of the operation
+ * @return The constructed private key for signing on success or
+ *         NULL with a representative error code in status.
+ *
+ */
+extern WKKey
+wkWalletConnectorCreateKey (
+        WKWalletConnector       connector,
+        const char              *phrase,
+        WKWalletConnectorStatus *status           );
+
 /** Uses the wallet connector to sign the arbitrary data.
  *
  * @param connector The wallet connector object

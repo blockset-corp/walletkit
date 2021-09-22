@@ -103,6 +103,23 @@ public class WKWalletConnector extends PointerType {
         return res;
     }
 
+    /** Creates a signing key from BIP 39 mnemonic phrase
+     *
+     */
+    public WKResult<WKKey, WKWalletConnectorError>
+    createKey(  String phrase   ) {
+        WKResult res;
+        IntByReference err = new IntByReference();
+
+        Pointer key = WKNativeLibraryDirect.wkWalletConnectorCreateKey(this.getPointer(),
+                                                                       phrase,
+                                                                       err  );
+        if (key.equals(Pointer.NULL)) {
+            res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+        }
+        return WKResult.success(new WKKey(key));
+    }
+
     /** Signs the byte buffer using native WalletKit calls
      *
      * @param data The data to be signed

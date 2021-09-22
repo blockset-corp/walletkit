@@ -75,10 +75,24 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
+    public Result<com.blockset.walletkit.WalletConnector.Key, WalletConnectorError>
+    createKey(String paperKey) {
+        WKResult<WKKey, WKWalletConnectorError> createdKey = core.createKey(paperKey);
+        if (createdKey.isFailure())
+            return Result.failure(wkErrorToError(createdKey.getFailure()));
+
+        return Result.success(new Key(createdKey.getSuccess()));
+    }
+
+    @Override
     public Result<DigestAndSignaturePair, WalletConnectorError>
-    sign( byte[]                      message,
-          com.blockset.walletkit.Key  key,
-          boolean                     prefix  ) {
+    sign( byte[]                                        message,
+          com.blockset.walletkit.WalletConnector.Key    key,
+          boolean                                       prefix  ) {
+
+        if (!(key instanceof Key)) {
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
 
         if (!key.hasSecret()) {
 
@@ -104,9 +118,9 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         WKResult<byte[], WKWalletConnectorError> digestResult = core.getDigest(finalMessage);
         if (digestResult.isSuccess()) {
 
-            Key cryptoKey = Key.from(key);
+            WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
             WKResult<byte[], WKWalletConnectorError> sigResult = core.sign(finalMessage,
-                                                                           cryptoKey.getBRCryptoKey());
+                                                                           cryptoKey);
             
             if (sigResult.isSuccess()) {
                 signatureData = sigResult.getSuccess();
@@ -123,7 +137,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
-    public Result<com.blockset.walletkit.Key, WalletConnectorError>
+    public Result<com.blockset.walletkit.WalletConnector.Key, WalletConnectorError>
     recover (com.blockset.walletkit.WalletConnector.Digest      digest,
              com.blockset.walletkit.WalletConnector.Signature   signature   ) {
 
@@ -138,7 +152,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
                                                                             ((Signature) signature).data);
         if (recoverResult.isSuccess()) {
             // The returned key will own the native WKKey core memory
-            return Result.success(Key.create(recoverResult.getSuccess()));
+            return Result.success(new Key(recoverResult.getSuccess()));
         }
         return Result.failure(new WalletConnectorError.UnrecoverableKey());
     }
@@ -195,28 +209,29 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     @Override
     public Result<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>
     sign(   com.blockset.walletkit.WalletConnector.Transaction  transaction,
-            com.blockset.walletkit.Key                          key          ) {
+            com.blockset.walletkit.WalletConnector.Key          key          ) {
     
         if (!(transaction instanceof Transaction) ||
              ((Transaction)transaction).core.getPointer() != core.getPointer() ) {
 
-            // perhaps log an error?
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+        if (!(key instanceof Key)) {
             return Result.failure(new WalletConnectorError.UnknownEntity());
         }
         if (!key.hasSecret()) {
-            // Log a log?
             return Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
         }
         if (transaction.isSigned()) {
             return Result.failure(new WalletConnectorError.PreviouslySignedTransaction());
         }
         
-        Key cryptoKey = Key.from(key);
+        WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
 
         // Returns the RLP serialization of a signed transaction
         WKResult<byte[], WKWalletConnectorError> signedTransactionRlpSerializationResult =
                 core.signTransaction(transaction.getSerialization().getData(),
-                                     cryptoKey.getBRCryptoKey());
+                                     cryptoKey);
         
         if (signedTransactionRlpSerializationResult.isFailure()) {
             return Result.failure(wkErrorToError(signedTransactionRlpSerializationResult.getFailure()));
@@ -265,6 +280,27 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
                         completion.handleError(new WalletConnectorError.SubmitFailed());
                     }
                 });
+    }
+
+    /** Concrete Key with WKKey core object
+     *
+     */
+    class Key implements com.blockset.walletkit.WalletConnector.Key {
+
+        final WKKey core;
+
+        Key(WKKey core) {
+            this.core = core;
+            ReferenceCleaner.register(this, core::give);
+        }
+
+        @Override
+        public boolean hasSecret() {
+            return core.hasSecret();
+        }
+
+        /* package */
+        WKKey getCore() { return this.core; }
     }
 
     /** Concrete Digest with WKWalletConnector core object

@@ -13,6 +13,7 @@
 
 #include "WKWalletConnector.h"
 #include "support/BRArray.h"
+#include "support/BRInt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,11 @@ typedef uint8_t*
         size_t                  msgLength,
         size_t                  *digestLength,
         WKWalletConnectorStatus *status    );
+
+typedef WKKey
+(*WKWalletConnectorCreateKeyFromSeed) (
+        WKWalletConnector       walletConnector,
+        UInt512                 seed    );
 
 typedef uint8_t*
 (*WKWalletConnectorSignDataHandler) (
@@ -93,6 +99,7 @@ typedef struct {
     WKWalletConnectorReleaseHandler                             release;
     WKWalletConnectorCreateStandardMessageHandler               createStandardMessage;
     WKWalletConnectorGetDigestHandler                           getDigest;
+    WKWalletConnectorCreateKeyFromSeed                          createKeyFromSeed;
     WKWalletConnectorSignDataHandler                            sign;
     WKWalletConnectorRecoverKeyHandler                          recover;
     WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
