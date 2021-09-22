@@ -45,7 +45,8 @@ cyptoNetworkCreateAVAX (WKNetworkListener listener,
     bool useMainnet = (0 == strcmp ("mainnet", desc));
     bool useTestnet = (0 == strcmp ("testnet", desc));
 
-    assert (useMainnet || useTestnet);
+    // Ensure consistency with `isMainnet`.
+    assert (isMainnet ? useMainnet : useTestnet);
 
     WKNetworkCreateContextAVAX contextAVAX = {
         (useMainnet ? avaxNetworkMainnet : avaxNetworkTestnet)
