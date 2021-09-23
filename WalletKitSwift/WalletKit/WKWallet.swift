@@ -494,9 +494,10 @@ public final class Wallet: Equatable {
                     // The request failed but we don't know why (limits in the current interface).
                     // Could be a network failure; could be something with the XTZ wallet; could
                     // be a protocol change for XTZ - no matter, we'll return the maximum amount
-                    // as zero.
+                    // as the balance.  If the user attempts to send the 'balance' it will fail
+                    // as there won't be enough for the fee.
                     //
-                    completion (Result.success(transferZero))
+                    completion (Result.success(amount))
                 }
             }
 
