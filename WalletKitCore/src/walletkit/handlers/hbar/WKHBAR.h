@@ -71,7 +71,7 @@ wkTransferCreateAsHBAR (WKTransferListener listener,
 typedef struct WKWalletHBARRecord {
     struct WKWalletRecord base;
     BRHederaAccount hbarAccount;
-    BRHederaToken token;
+    BRHederaToken hbarToken;
 } *WKWalletHBAR;
 
 extern WKWalletHandlers wkWalletHandlersHBAR;
@@ -81,7 +81,7 @@ wkWalletCreateAsHBAR (WKWalletListener listener,
                           WKUnit unit,
                           WKUnit unitForFee,
                           BRHederaAccount hbarAccount,
-                          BRHederaToken token);
+                          BRHederaToken hbarToken);
 
 private_extern WKHash
 wkHashCreateAsHBAR (BRHederaTransactionHash hash);

@@ -411,6 +411,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaFeeBasis.h
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaSerialize.c
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaSerialize.h
+                ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaToken.c
+                ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaToken.h
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaTransaction.c
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaTransaction.h)
 

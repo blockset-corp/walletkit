@@ -26,7 +26,7 @@ wkWalletCoerce (WKWallet wallet) {
 
 typedef struct {
     BRHederaAccount hbarAccount;
-    BRHederaToken token;
+    BRHederaToken hbarToken;
 } WKWalletCreateContextHBAR;
 
 static void
@@ -36,7 +36,7 @@ wkWalletCreateCallbackHBAR (WKWalletCreateContext context,
     WKWalletHBAR walletHBAR = wkWalletCoerce (wallet);
 
     walletHBAR->hbarAccount = contextHBAR->hbarAccount;
-    walletHBAR->token = contextHBAR->token;
+    walletHBAR->hbarToken = contextHBAR->hbarToken;
 }
 
 private_extern WKWallet
@@ -44,7 +44,7 @@ wkWalletCreateAsHBAR (WKWalletListener listener,
                           WKUnit unit,
                           WKUnit unitForFee,
                           BRHederaAccount hbarAccount,
-                          BRHederaToken token) {
+                          BRHederaToken hbarToken) {
     int hasMinBalance;
     int hasMaxBalance;
     BRHederaUnitTinyBar minBalanceHBAR = hederaAccountGetBalanceLimit (hbarAccount, 0, &hasMinBalance);
@@ -58,7 +58,7 @@ wkWalletCreateAsHBAR (WKWalletListener listener,
 
     WKWalletCreateContextHBAR contextHBAR = {
         hbarAccount,
-        token
+        hbarToken
     };
 
     WKWallet wallet = wkWalletAllocAndInit (sizeof (struct WKWalletHBARRecord),
@@ -185,7 +185,7 @@ wkWalletCreateTransferHBAR (WKWallet  wallet,
                                                                       transferAmount,
                                                                       hbarFeeBasis,
                                                                       NULL, // timestamp will be geneated
-                                                                      walletHBAR->token);
+                                                                      walletHBAR->hbarToken);
     if (NULL == hbarTransaction)
         return NULL;
     

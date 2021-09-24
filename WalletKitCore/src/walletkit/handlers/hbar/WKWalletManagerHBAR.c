@@ -35,22 +35,22 @@ wkWalletManagerCoerceHBAR (WKWalletManager manager) {
 
 static void
 cryptoWalletManagerAddTokenHBAR (WKWalletManagerHBAR manager,
-                                BRHederaToken token) {
+                                BRHederaToken hbarToken) {
     pthread_mutex_lock (&manager->base.lock);
-    BRSetAdd (manager->tokens, token);
+    BRSetAdd (manager->tokens, hbarToken);
     pthread_mutex_unlock (&manager->base.lock);
 }
 
 static BRHederaToken
 cryptoWalletManagerGetTokenHBAR (WKWalletManagerHBAR manager,
                                 const BRHederaAddress *address) {
-    BRHederaToken token;
+    BRHederaToken hbarToken;
 
     pthread_mutex_lock (&manager->base.lock);
-    token = BRSetGet (manager->tokens, address);
+    hbarToken = BRSetGet (manager->tokens, address);
     pthread_mutex_unlock (&manager->base.lock);
 
-    return token;
+    return hbarToken;
 }
 
 static void
@@ -64,10 +64,10 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerHBAR manager,
 
     BRHederaAddress addr = hederaAddressCreateFromString(address, true);
 
-    // Check for an existing token
-    BRHederaToken token = cryptoWalletManagerGetTokenHBAR(manager, &addr);
+    // Check for an existing hbarToken
+    BRHederaToken hbarToken = cryptoWalletManagerGetTokenHBAR(manager, &addr);
 
-    if (NULL != token && !updateIfNeeded) return;
+    if (NULL != hbarToken && !updateIfNeeded) return;
 
     const char *code = wkCurrencyGetCode (currency);
     const char *name = wkCurrencyGetName (currency);
@@ -77,17 +77,17 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerHBAR manager,
     unsigned int decimals = wkUnitGetBaseDecimalOffset(unitDefault);
     wkUnitGive(unitDefault);
 
-    if (NULL == token) {
-        token = hederaTokenCreate (address,
+    if (NULL == hbarToken) {
+        hbarToken = hederaTokenCreate (address,
                                 code,
                                 name,
                                 desc,
                                 decimals);
-        cryptoWalletManagerAddTokenHBAR (manager, token);
+        cryptoWalletManagerAddTokenHBAR (manager, hbarToken);
     }
     else {
         pthread_mutex_lock (&manager->base.lock);
-        hederaTokenUpdate (token,
+        hederaTokenUpdate (hbarToken,
                         code,
                         name,
                         desc,
@@ -98,15 +98,15 @@ wkWalletManagerCreateTokenForCurrencyInternal (WKWalletManagerHBAR manager,
 
 static void
 wkWalletManagerCreateCurrencyForToken (WKWalletManagerHBAR manager,
-                                           BRHederaToken token) {
+                                           BRHederaToken hbarToken) {
     WKNetwork network = manager->base.network;
 
-    const char *issuer = hederaTokenGetAddressAsString (token);
+    const char *issuer = hederaTokenGetAddressAsString (hbarToken);
 
     WKCurrency currency = wkNetworkGetCurrencyForIssuer(network, issuer);
     if (NULL == currency) {
-        const char *tokenName = hederaTokenGetName (token);
-        const char *tokenSymb = hederaTokenGetSymbol (token);
+        const char *hbarTokenName = hederaTokenGetName (hbarToken);
+        const char *hbarTokenSymb = hederaTokenGetSymbol (hbarToken);
 
         const char *networkUids = wkNetworkGetUids(network);
 
@@ -115,22 +115,22 @@ wkWalletManagerCreateCurrencyForToken (WKWalletManagerHBAR manager,
         sprintf (uids, "%s:%s", networkUids, issuer);
 
         currency = wkCurrencyCreate (uids,
-                                         tokenName,
-                                         tokenSymb,
+                                         hbarTokenName,
+                                         hbarTokenSymb,
                                          "erc20",
                                          issuer);
 
-        const char *code = tokenSymb;
+        const char *code = hbarTokenSymb;
         char codeBase[strlen(code) + strlen("i") + 1];
         sprintf (codeBase, "%si", code);
 
-        const char *name = tokenName;
-        char nameBase[strlen(tokenName) + strlen(" INT") + 1];
-        sprintf (nameBase, "%s INT", tokenName);
+        const char *name = hbarTokenName;
+        char nameBase[strlen(hbarTokenName) + strlen(" INT") + 1];
+        sprintf (nameBase, "%s INT", hbarTokenName);
 
-        size_t symbolCount = strlen(tokenSymb);
+        size_t symbolCount = strlen(hbarTokenSymb);
         char symbol[symbolCount + 1];
-        sprintf (symbol, "%s", tokenSymb);
+        sprintf (symbol, "%s", hbarTokenSymb);
         // Uppercase
         for (size_t index = 0; index < symbolCount; index++) symbol[index] = toupper (symbol[index]);
 
@@ -140,7 +140,7 @@ wkWalletManagerCreateCurrencyForToken (WKWalletManagerHBAR manager,
         WKUnit baseUnit = wkUnitCreateAsBase (currency, codeBase, nameBase, symbolBase);
 
         WKUnit defaultUnit = wkUnitCreate (currency, code, name, symbol,
-                                        baseUnit, hederaTokenGetDecimals(token));
+                                        baseUnit, hederaTokenGetDecimals(hbarToken));
 
         wkNetworkAddCurrency (network, currency, baseUnit, defaultUnit);
 
@@ -203,12 +203,12 @@ wkWalletManagerCreateHBAR (WKWalletManagerListener listener,
     WKWalletManagerHBAR managerHBAR = wkWalletManagerCoerceHBAR (manager);
     managerHBAR->tokens = hederaTokenSetCreate (HWM_INITIAL_SET_SIZE_DEFAULT);
 
-    // Ensure a token (but not a wallet) for each currency
+    // Ensure a hbarToken (but not a wallet) for each currency
     wkWalletManagerCreateTokensForNetwork (managerHBAR, network);
 
-    // Ensure a currency for each token
-    FOR_SET (BRHederaToken, token, managerHBAR->tokens) {
-        wkWalletManagerCreateCurrencyForToken (managerHBAR, token);
+    // Ensure a currency for each hbarToken
+    FOR_SET (BRHederaToken, hbarToken, managerHBAR->tokens) {
+        wkWalletManagerCreateCurrencyForToken (managerHBAR, hbarToken);
     }
 
     return manager;
@@ -440,34 +440,34 @@ wkWalletManagerCreateWalletHBAR (WKWalletManager manager,
     BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (manager->account,
                                                                  WK_NETWORK_TYPE_HBAR);
     WKWalletManagerHBAR managerHBAR  = wkWalletManagerCoerceHBAR (manager);
-    BRHederaToken token = NULL;
+    BRHederaToken hbarToken = NULL;
     const char *issuer = wkCurrencyGetIssuer (currency);
 
     if (NULL != issuer) {
-        BRHederaAddress tokenAddress = hederaAddressCreateFromString(issuer, true);
-        token = cryptoWalletManagerGetTokenHBAR(managerHBAR, &tokenAddress);
+        BRHederaAddress hbarTokenAddress = hederaAddressCreateFromString(issuer, true);
+        hbarToken = cryptoWalletManagerGetTokenHBAR(managerHBAR, &hbarTokenAddress);
 
-        // If there isn't an existing token, then create one.  A token is expected to exist (there
-        // used to be an assert here); however, we've seen a crash on a non-existent token so we'll
-        // create a token as 'belt-and-suspenders'.  Still, the currency is required to be in
-        // `manager->network`, which implies that there should be a token.
+        // If there isn't an existing hbarToken, then create one.  A hbarToken is expected to exist (there
+        // used to be an assert here); however, we've seen a crash on a non-existent hbarToken so we'll
+        // create a hbarToken as 'belt-and-suspenders'.  Still, the currency is required to be in
+        // `manager->network`, which implies that there should be a hbarToken.
 
-        if (NULL == token) {
-            printf ("SYS: HBAR: No token for: %s\n", issuer);
+        if (NULL == hbarToken) {
+            printf ("SYS: HBAR: No hbarToken for: %s\n", issuer);
             if (WK_TRUE != wkNetworkHasCurrency (manager->network, currency))
                 printf ("SYS: ETH: No currency in network: %s\n", issuer);
             assert (WK_TRUE == wkNetworkHasCurrency (manager->network, currency));
 
-            // Create the token
+            // Create the hbarToken
             wkWalletManagerCreateTokenForCurrency (managerHBAR, currency);
 
             // Must find one now, surely.
-            token = cryptoWalletManagerGetTokenHBAR (managerHBAR, &tokenAddress);
+            hbarToken = cryptoWalletManagerGetTokenHBAR (managerHBAR, &hbarTokenAddress);
         }
-        assert (NULL != token);
+        assert (NULL != hbarToken);
     }
 
-    // The `currency` unit: e.g. HBAR for Hedera or the Fungible token
+    // The `currency` unit: e.g. HBAR for Hedera or the Fungible hbarToken
     WKUnit unit = wkNetworkGetUnitAsDefault (manager->network, currency);
 
     // The `unitForFee` is always the default/base unit for the network.
@@ -477,7 +477,7 @@ wkWalletManagerCreateWalletHBAR (WKWalletManager manager,
                                                       unit,
                                                       unitForFee,
                                                       hbarAccount,
-                                                      token);
+                                                      hbarToken);
     wkWalletManagerAddWallet (manager, wallet);
 
     //TODO:HBAR load transfers from fileService
