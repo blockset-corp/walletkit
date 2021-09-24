@@ -15,22 +15,24 @@
 
 #define STELLAR_ADDRESS_STRING_SIZE   (56)
 
-static uint8_t unknownAddressBytes[20] = {
+static uint8_t unknownAddressBytes[32] = {
     0x42, 0x52, 0x44, //BRD
     0x5F, 0x5F, // __
     'u', 'n', 'k', 'n', 'o', 'w', 'n', // unknown
     0x5F, 0x5F, // __
     0x42, 0x52, 0x44, // BRD
-    0x00, 0x00, 0x00 // padding
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static uint8_t feeAddressBytes[20] = {
+static uint8_t feeAddressBytes[32] = {
     0x42, 0x52, 0x44, //BRD
     0x5F, 0x5F, // __
     'f', 'e', 'e', // fee
     0x5F, 0x5F, // __
     0x42, 0x52, 0x44, // BRD
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // padding
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 extern void
@@ -74,6 +76,20 @@ BRStellarAddress stellarAddressCreateFeeAddress()
 
 BRStellarAddress stellarAddressStringToAddress(const char* input)
 {
+    // Validate the input first...
+    // It should be 56 characters long
+    if (strlen(input) != 56) return NULL;
+    // It should contain only uppercase letters and digits 2-7
+    for(int i = 0; i < 56; i++) {
+        char c = input[i];
+        // 2 = 50, 7 = 55, A = 65, Z = 90
+        if (c < 50 || c > 90) { // Not in the full ascii range 2 - Z
+            return NULL;
+        } else if (c > 55 && c < 65) { // between ascii 7 and A
+            return NULL;
+        }
+    }
+
     BRStellarAddress address = calloc(1, sizeof(struct BRStellarAddressRecord));
 
     uint8_t rawBytes[36];
@@ -86,20 +102,26 @@ extern char *
 stellarAddressAsString(BRStellarAddress address)
 {
     assert(address);
-
-    // The public key is 32 bytes, we need 3 additional bytes
-    uint8_t rawBytes[35];
-    rawBytes[0] = 0x30; // account prefix
-    memcpy(&rawBytes[1], address->bytes, 32); // public key bytes
-
-    // Create a CRC16-XMODEM checksum and append to bytes
-    uint16_t checksum = crc16((const char*)rawBytes, 33);
-    rawBytes[33] = (checksum & 0x00FF);
-    rawBytes[34] = (checksum & 0xFF00) >> 8;
-
-    // Base32 the result
     char * addressAsString = (char*)calloc(1, STELLAR_ADDRESS_STRING_SIZE + 1);
-    base32_encode(rawBytes, 35, (unsigned char*)addressAsString);
+
+    if (0 == memcmp (address->bytes, feeAddressBytes, STELLAR_ADDRESS_BYTES)) {
+        strcpy(addressAsString, "__fee__");
+    } else if (0 == memcmp (address->bytes, unknownAddressBytes, STELLAR_ADDRESS_BYTES)) {
+        strcpy(addressAsString, "unknown");
+    } else {
+        // The public key is 32 bytes, we need 3 additional bytes
+        uint8_t rawBytes[35];
+        rawBytes[0] = 0x30; // account prefix
+        memcpy(&rawBytes[1], address->bytes, 32); // public key bytes
+
+        // Create a CRC16-XMODEM checksum and append to bytes
+        uint16_t checksum = crc16((const char*)rawBytes, 33);
+        rawBytes[33] = (checksum & 0x00FF);
+        rawBytes[34] = (checksum & 0xFF00) >> 8;
+
+        // Base32 the result
+        base32_encode(rawBytes, 35, (unsigned char*)addressAsString);
+    }
     return addressAsString;
 }
 
@@ -113,7 +135,7 @@ stellarAddressCreateFromString(const char * stellarAddressString, bool strict)
                 : stellarAddressCreateUnknownAddress ());
     }
 
-    //  If strict, only accept 'r...' addresses
+    //  If strict, only accept 'G...' addresses
     else if (strict) {
         return stellarAddressStringToAddress (stellarAddressString);
     }
@@ -128,10 +150,9 @@ stellarAddressCreateFromString(const char * stellarAddressString, bool strict)
         return stellarAddressCreateFeeAddress ();
     }
 
-    // Handle an 'r...' address (in a non-strict mode).
+    // Handle an 'G...' address (in a non-strict mode).
     else {
-        // Work backwards from this ripple address (string) to what is
-        // known as the acount ID (20 bytes)
+        // Work backwards from this Stellar address (32 bytes)
         return stellarAddressStringToAddress (stellarAddressString);
     }
 }
