@@ -493,9 +493,16 @@ static void createNewTokenTransaction()
     BRHederaToken token = hederaTokenCreate("0.0.127877", "JAM", "JAM", "Hedera JAM Token", 10);
     struct timeval txtime;
     gettimeofday (&txtime, NULL);
-    BRHederaTransaction tx1 = createSignedTransaction("37664", "38230", "node3", 5000000, txtime.tv_sec, txtime.tv_usec, 500000, "Single node", token);
+    BRHederaTransaction tx1 = createSignedTransaction("37664", "38230", NULL, 5000000, txtime.tv_sec, txtime.tv_usec, 500000, "Single node", token);
 
     assert(tx1 != NULL);
+
+    printf("txtime: %ld %d\n", txtime.tv_sec, txtime.tv_usec);
+
+    size_t bytesSize = 0;
+    uint8_t * bytes = hederaTransactionSerialize(tx1, &bytesSize);
+
+    printByteString("Token Transaction", bytes, bytesSize);
 
     hederaTransactionFree(tx1);
 }
@@ -507,13 +514,14 @@ static void token_transaction_tests()
 
 static void create_real_transactions() {
     // use the function to create sendable transactions to the hedera network
-    time_t now;
-    now = time(&now);
-    printf ("now: %ld\n", now);
-    // Send 10,000,000 tiny bars from patient to chose via node3
-    createNewTransaction (NULL, "patient", "choose", "node3", 10000000, now, 0, 500000, NULL, NULL, true, NULL);
+    struct timeval txtime;
+    gettimeofday (&txtime, NULL);
+    printf("txtime: %ld %d\n", txtime.tv_sec, txtime.tv_usec);
 
-    createNewTransaction (NULL, "choose", "patient", "node3", 50000000, now, 0, 500000, NULL, NULL, true, NULL);
+    // Send 10,000,000 tiny bars from patient to chose via node3
+    createNewTransaction (NULL, "37664", "38230", "node3", 5000000, txtime.tv_sec, txtime.tv_usec, 500000, NULL, NULL, true, NULL);
+
+    createNewTransaction (NULL, "37664", "38230", NULL, 5000000, txtime.tv_sec, txtime.tv_usec, 500000, NULL, NULL, true, NULL);
 
     // Create one with a memo
     const char * memo = "BRD Memo";
@@ -613,7 +621,7 @@ static void transaction_tests() {
     transaction_value_test(NULL, "patient", "choose", "node3", 10000000, 25, 4, 500000);
     serialize_tests();
     token_transaction_tests();
-    //create_real_transactions();
+    create_real_transactions();
 }
 
 // From BRHederaTransaction
