@@ -113,7 +113,8 @@ wkWalletConnectorSignDataETH (
     BREthereumSignature signature = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
                                                         data,
                                                         dataLength,
-                                                        brKey   );
+                                                        brKey,
+                                                        NULL    );
     BRKeyClean (&brKey);
 
     uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
