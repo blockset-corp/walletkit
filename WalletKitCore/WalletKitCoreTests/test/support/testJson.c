@@ -245,6 +245,29 @@ runJSONShowTest () {
 
 static void
 runJsonParseTest (void) {
+    BRJsonStatus status;
+    char *error = NULL;
+
+    const char *prefix = "      ";
+    BRJson json = jsonParse (PARSE_TEST_1, &status, &error);
+    assert (JSON_STATUS_OK == status && NULL == error);
+    printf ("    JSON Show Parse 1: ");
+    jsonShow(json, prefix);
+    printf ("\n");
+
+
+    json = jsonParse(PARSE_TEST_2, &status, &error);
+    assert (JSON_STATUS_OK == status && NULL == error);
+    printf ("    JSON Show Parse 2: ");
+    jsonShow(json, prefix);
+    printf ("\n");
+
+    json = jsonParse(PARSE_TEST_3, &status, &error);
+    assert (JSON_STATUS_OK != status && NULL != error);
+    printf ("    JSON Show Parse 3:\n");
+    printf ("       Input: %s\n", PARSE_TEST_3);
+    printf ("       Error: %s\n", error);
+    free (error);
 }
 
 extern void

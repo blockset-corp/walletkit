@@ -221,6 +221,11 @@ jsonShow (BRJson value,
     jsonWritePretty (value, stdout, 0, (NULL == linePrefix ? "" : linePrefix));
 }
 
+extern BRJson
+jsonParse (const char *string,
+           BRJsonStatus *status,
+           char **error);
+
 #ifdef __cplusplus
 }
 #endif
