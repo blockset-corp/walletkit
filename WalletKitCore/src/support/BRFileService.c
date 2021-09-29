@@ -357,7 +357,6 @@ fileServiceCreate (const char *basePath,
 #  endif
     // A shorter timeout for individual statements; we'll handle SQLITE_BUSY
     sqlite3_busy_timeout (fs->sdb, 2 * 1000); // 2 seconds
-
 #endif // !define(NEUTER_FILE_SERVICE)
 
     // Allocate the `entityTypes` array

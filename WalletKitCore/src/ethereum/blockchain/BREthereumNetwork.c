@@ -1,6 +1,6 @@
 //
 //  BREthereumNetwork
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/13/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -103,8 +103,8 @@ ethNetworkGetEnodesLocal (BREthereumNetwork network, int parity) {
 static struct BREthereumNetworkRecord ethNetworkMainnetRecord = {
     "mainnet",
     1,
-    EMPTY_HASH_INIT,
-    EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
     // Seeds
     { "seed.mainnet.eth.brd.breadwallet.com",
         "seed.mainnet.eth.community.breadwallet.com",
@@ -165,8 +165,8 @@ MainnetChainConfig = &ChainConfig{
 static struct BREthereumNetworkRecord ethNetworkTestnetRecord = {
     "testnet", // aka "ropsten"
     3,
-    EMPTY_HASH_INIT,
-    EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
     // Seeds
     {   "seed.ropsten.eth.brd.breadwallet.com",
         "seed.ropsten.eth.community.breadwallet.com",
@@ -204,8 +204,8 @@ TestnetChainConfig = &ChainConfig{
 static struct BREthereumNetworkRecord ethNetworkRinkebyRecord = {
     "rinkeby",
     4,
-    EMPTY_HASH_INIT,
-    EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
+    ETHEREUM_EMPTY_HASH_INIT,
     // Seeds
     { NULL },
 

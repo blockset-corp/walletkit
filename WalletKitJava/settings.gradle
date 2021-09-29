@@ -1,9 +1,15 @@
-include ':crypto'
-include ':crypto-ktx'
-include ':cryptodemo-android'
-include ':corenative'
-include ':corenative-android'
-include ':corenative-jre'
-include ':corecrypto'
-include ':corecrypto-android'
-include ':corecrypto-jre'
+include ':WalletKit'
+include ':WalletKitNative'
+include ':WalletKitBRD'
+
+// Android
+include ':WalletKitNative-Android'
+include ':WalletKitBRD-Android'
+include ':WalletKitDemo-Android'
+
+// JRE
+//include ':WalletKitNative-JRE'
+//include ':WalletKitBRD-JRE'
+
+// Kotlin
+include ':WalletKit-KTX'

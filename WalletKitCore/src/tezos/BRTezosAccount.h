@@ -1,6 +1,6 @@
 //
 //  BRTezosAccount.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -12,9 +12,8 @@
 #ifndef BRTezosAccount_h
 #define BRTezosAccount_h
 
-
-#include "support/BRKey.h"
 #include "support/BRInt.h"
+
 #include "BRTezosBase.h"
 #include "BRTezosAddress.h"
 
@@ -65,9 +64,9 @@ tezosAccountFree (BRTezosAccount account);
  *
  * @return signature
 */
-extern BRCryptoData
+extern WKData
 tezosAccountSignData (BRTezosAccount account,
-                      BRCryptoData data,
+                      WKData data,
                       UInt512 seed);
 
 /**
@@ -77,7 +76,8 @@ tezosAccountSignData (BRTezosAccount account,
  *
  * @return public key
  */
-extern BRKey tezosAccountGetPublicKey (BRTezosAccount account);
+extern BRTezosPublicKey
+tezosAccountGetPublicKey (BRTezosAccount account);
 
 /**
  * Get the Tezos Address from the specified account.
@@ -86,7 +86,8 @@ extern BRKey tezosAccountGetPublicKey (BRTezosAccount account);
  *
  * @return address
  */
-extern BRTezosAddress tezosAccountGetAddress (BRTezosAccount account);
+extern BRTezosAddress
+tezosAccountGetAddress (BRTezosAccount account);
 
 /**
 *

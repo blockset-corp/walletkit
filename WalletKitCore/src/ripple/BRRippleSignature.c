@@ -1,6 +1,6 @@
 //
 //  BRRippleSerialize.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 4/16/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -37,7 +37,7 @@ signBytes (BRKey *key, uint8_t *bytes, size_t bytesCount)
     // BRKeySign (not sure if this is a good name) but it signs the key and does DER encoding.
     // TODO - figure out what the max size the buffer needs to be, currently hard coded to 256 bytes
     // but all I have seen so far is either 70 or 71 bytes
-    sig->sig_length = (int)BRKeySign(key, sig->signature, (int)sizeof(sig->signature), messageDigest);
+    sig->sig_length = BRKeySign(key, sig->signature, (int)sizeof(sig->signature), messageDigest);
     
     return sig;
 }

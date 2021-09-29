@@ -1,6 +1,6 @@
 //
 //  BREthereumExchange.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 6/9/20.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -21,7 +21,7 @@ struct BREthereumExchangeRecord {
     BREthereumAddress source;
     BREthereumAddress target;
 
-    BREthereumAddress contract;  //  EMPTY_ADDRESS_INIT if 'Eth'
+    BREthereumAddress contract;  //  ETHEREUM_EMPTY_ADDRESS_INIT if 'Eth'
     size_t contractAssetIndex;
 
     UInt256 assetValue;
@@ -68,7 +68,7 @@ ethExchangeCreate (BREthereumAddress source,
 
     exchange->assetValue = value;
 
-    exchange->identifier.exchangeIndex = EXCHANGE_INDEX_UNKNOWN;
+    exchange->identifier.exchangeIndex = ETHEREUM_EXCHANGE_INDEX_UNKNOWN;
 
     return exchange;
 }
@@ -89,7 +89,7 @@ extern BREthereumBoolean
 ethExchangeExtractIdentifier (BREthereumExchange exchange,
                               BREthereumHash *transactionHash,
                               size_t *exchangeIndex) {
-    if (EXCHANGE_INDEX_UNKNOWN == exchange->identifier.exchangeIndex)
+    if (ETHEREUM_EXCHANGE_INDEX_UNKNOWN == exchange->identifier.exchangeIndex)
         return ETHEREUM_BOOLEAN_FALSE;
 
     if (NULL != transactionHash) *transactionHash = exchange->identifier.transactionHash;
@@ -100,15 +100,15 @@ ethExchangeExtractIdentifier (BREthereumExchange exchange,
 
 extern BREthereumHash
 ethExchangeGetIdentifier (BREthereumExchange exchange) {
-    return (EXCHANGE_INDEX_UNKNOWN == exchange->identifier.exchangeIndex
-            ? EMPTY_HASH_INIT
+    return (ETHEREUM_EXCHANGE_INDEX_UNKNOWN == exchange->identifier.exchangeIndex
+            ? ETHEREUM_EMPTY_HASH_INIT
             : exchange->identifier.transactionHash);
 }
 
 
 extern BREthereumHash
 ethExchangeGetHash (BREthereumExchange exchange) {
-    assert (EXCHANGE_INDEX_UNKNOWN != exchange->identifier.exchangeIndex);
+    assert (ETHEREUM_EXCHANGE_INDEX_UNKNOWN != exchange->identifier.exchangeIndex);
     return exchange->hash;
 }
 
@@ -203,7 +203,7 @@ ethExchangeIsErrored (BREthereumExchange exchange) {
 // Support BRSet
 extern size_t
 ethExchangeHashValue (const void *e) {
-    assert (EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) e)->identifier.exchangeIndex);
+    assert (ETHEREUM_EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) e)->identifier.exchangeIndex);
     return (size_t) ethHashSetValue(&((BREthereumExchange) e)->hash);
 }
 
@@ -212,8 +212,8 @@ extern int
 ethExchangeHashEqual (const void *l1, const void *l2) {
     if (l1 == l2) return 1;
 
-    assert (EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) l1)->identifier.exchangeIndex);
-    assert (EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) l2)->identifier.exchangeIndex);
+    assert (ETHEREUM_EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) l1)->identifier.exchangeIndex);
+    assert (ETHEREUM_EXCHANGE_INDEX_UNKNOWN != ((BREthereumExchange) l2)->identifier.exchangeIndex);
     return ethHashSetEqual (&((BREthereumExchange) l1)->hash,
                             &((BREthereumExchange) l2)->hash);
 
@@ -234,15 +234,15 @@ ethExchangeRlpDecode (BRRlpItem item,
     exchange->target   = ethAddressRlpDecode (items[1], coder);
     exchange->contract = ethAddressRlpDecode (items[2], coder);
 
-    exchange->contractAssetIndex = rlpDecodeUInt64  (coder, items[3], 0);
+    exchange->contractAssetIndex = (size_t) rlpDecodeUInt64  (coder, items[3], 0);
     exchange->assetValue         = rlpDecodeUInt256 (coder, items[4], 0);
 
     if (RLP_TYPE_ARCHIVE == type) {
         BREthereumHash hash = ethHashRlpDecode(items[5], coder);
-        size_t exchangeIndex = rlpDecodeUInt64 (coder, items[6], 0);
+        size_t exchangeIndex = (size_t) rlpDecodeUInt64 (coder, items[6], 0);
         ethExchangeInitializeIdentifier (exchange, hash, (size_t) exchangeIndex);
 
-        exchange->status = transactionStatusRLPDecode (items[7], NULL, coder);
+        exchange->status = ethTransactionStatusRLPDecode (items[7], NULL, coder);
     }
 
     return exchange;
@@ -265,7 +265,7 @@ ethExchangeRlpEncode(BREthereumExchange exchange,
     if (RLP_TYPE_ARCHIVE == type) {
         items[5] = ethHashRlpEncode(exchange->identifier.transactionHash, coder);
         items[6] = rlpEncodeUInt64(coder, exchange->identifier.exchangeIndex, 0);
-        items[7] = transactionStatusRLPEncode(exchange->status, coder);
+        items[7] = ethTransactionStatusRLPEncode(exchange->status, coder);
     }
 
     return rlpEncodeListItems(coder, items, (RLP_TYPE_ARCHIVE == type ? 8 : 5));

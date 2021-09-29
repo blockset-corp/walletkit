@@ -127,7 +127,7 @@ static const ProtobufCFieldDescriptor proto__transaction_body__field_descriptors
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "cryptoTransfer",
+    "wkTransfer",
     14,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
@@ -140,7 +140,7 @@ static const ProtobufCFieldDescriptor proto__transaction_body__field_descriptors
   },
 };
 static const unsigned proto__transaction_body__field_indices_by_name[] = {
-  6,   /* field[6] = cryptoTransfer */
+  6,   /* field[6] = wkTransfer */
   4,   /* field[4] = generateRecord */
   5,   /* field[5] = memo */
   1,   /* field[1] = nodeAccountID */

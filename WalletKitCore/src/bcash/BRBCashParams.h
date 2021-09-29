@@ -25,7 +25,7 @@
 #ifndef BRBCashParams_h
 #define BRBCashParams_h
 
-#include "bitcoin/BRChainParams.h"
+#include "bitcoin/BRBitcoinChainParams.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,15 +33,10 @@ extern "C" {
     
 #define BCASH_FORKID 0x40
 
-extern const BRChainParams *BRBCashParams;
-extern const BRChainParams *BRBCashTestNetParams;
+extern const BRBitcoinChainParams *bchChainParams(bool mainnet);
 
-static inline const BRChainParams *BRChainParamsGetBitcash (int mainnet) {
-    return mainnet ? BRBCashParams : BRBCashTestNetParams;
-}
-
-static inline int BRChainParamsIsBitcash (const BRChainParams *params) {
-    return BRBCashParams == params || BRBCashTestNetParams == params;
+static inline int bchChainParamsHasParams (const BRBitcoinChainParams *params) {
+    return bchChainParams(true) == params || bchChainParams(false) == params;
 }
 
 // aserti3-2d difficulty algorithm: https://upgradespecs.bitcoincashnode.org/2020-11-15-asert/

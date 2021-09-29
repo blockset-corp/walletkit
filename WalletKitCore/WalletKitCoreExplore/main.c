@@ -3,7 +3,7 @@
 //  CoreExplore
 //
 //  Created by Ed Gamble on 8/25/18.
-//  Copyright © 2018-2019 Breadwallet AG. All rights reserved.
+//  Copyright © 2018-2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
@@ -18,8 +18,8 @@
 #include "support/BRBIP39Mnemonic.h"
 #include "support/BRBIP32Sequence.h"
 #include "support/BRBIP39WordsEn.h"
-#include "bitcoin/BRTransaction.h"
-#include "bitcoin/BRWallet.h"
+#include "bitcoin/BRBitcoinTransaction.h"
+#include "bitcoin/BRBitcoinWallet.h"
 #include "bcash/BRBCashAddr.h"
 
 #include "support/rlp/BRRlp.h"
@@ -73,9 +73,9 @@ handleTrans (BRRlpCoder coder, const char *input) {
     rlpDataShow(data, "Trans:");
 
     // Extract a transaction
-    BREthereumTransaction transaction = transactionRlpDecode (item, ethNetworkTestnet, RLP_TYPE_TRANSACTION_SIGNED, coder);
+    BREthereumTransaction transaction = ethTransactionRlpDecode (item, ethNetworkTestnet, RLP_TYPE_TRANSACTION_SIGNED, coder);
 
-    transactionShow(transaction, "EXP");
+    ethTransactionShow(transaction, "EXP");
     eth_log ("EXP", "    Raw   : %s", input);
 }
 
@@ -193,7 +193,7 @@ handleBitcoinTransactionParse (const char *chars) {
     size_t bytesLen;
     uint8_t *bytes = hexDecodeCreate (&bytesLen, chars, strlen(chars));
     
-    BRTransaction *tx = BRTransactionParse(bytes, bytesLen);
+    BRBitcoinTransaction *tx = btcTransactionParse(bytes, bytesLen);
     assert (NULL != tx);
 }
 
@@ -254,17 +254,17 @@ handleEthTransactionDecode1 (BRRlpCoder coder, const char *rlpString) {
     BRRlpItem  item  = rlpDataGetItem(coder, data);
     rlpItemShow(coder, item, "FOO");
 
-    BREthereumTransaction transaction = transactionRlpDecode (item, ethNetworkMainnet, RLP_TYPE_TRANSACTION_SIGNED, coder);
-    BREthereumSignature sig1 = transactionGetSignature(transaction);
-    BREthereumAddress   add1 = transactionExtractAddress (transaction, ethNetworkMainnet, coder);
+    BREthereumTransaction transaction = ethTransactionRlpDecode (item, ethNetworkMainnet, RLP_TYPE_TRANSACTION_SIGNED, coder);
+    BREthereumSignature sig1 = ethTransactionGetSignature(transaction);
+    BREthereumAddress   add1 = ethTransactionExtractAddress (transaction, ethNetworkMainnet, coder);
 
     BREthereumTransfer transfer = transferCreateWithTransactionOriginating (transaction, TRANSFER_BASIS_TRANSACTION);
     BREthereumAccount  account = ethAccountCreate (ETH_PAPER_KEY);
     BREthereumAddress  address = ethAccountGetPrimaryAddress (account);
 
     transferSign (transfer, ethNetworkMainnet, account, address, ETH_PAPER_KEY);
-    BREthereumSignature sig2 = transactionGetSignature (transferGetOriginatingTransaction(transfer));
-    BREthereumAddress   add2 = transactionExtractAddress (transferGetOriginatingTransaction(transfer), ethNetworkMainnet, coder);
+    BREthereumSignature sig2 = ethTransactionGetSignature (transferGetOriginatingTransaction(transfer));
+    BREthereumAddress   add2 = ethTransactionExtractAddress (transferGetOriginatingTransaction(transfer), ethNetworkMainnet, coder);
 
     return add2;
 }
@@ -294,10 +294,10 @@ handleWalletAddrs (void) {
 
     BRMasterPubKey mpk = BRBIP32MasterPubKey(&seed, sizeof(seed));
 
-    BRWallet *wallet = BRWalletNew (BITCOIN_ADDRESS_PARAMS, NULL, 0, mpk);
+    BRBitcoinWallet *wallet = btcWalletNew (BITCOIN_ADDRESS_PARAMS, NULL, 0, mpk);
 
-    BRWalletUnusedAddrs (wallet, addrs1, WALLET_GAP, 0);
-    BRWalletUnusedAddrs (wallet, addrs2, WALLET_GAP, 0);
+    btcWalletUnusedAddrs (wallet, addrs1, WALLET_GAP, 0);
+    btcWalletUnusedAddrs (wallet, addrs2, WALLET_GAP, 0);
 
     for (size_t index = 0; index < WALLET_GAP; index++)
         assert (0 == strcmp (addrs1[index].s, addrs2[index].s));
@@ -333,7 +333,7 @@ static void
 handleRippleAccount (void) {
     installSharedWordList(BRBIP39WordsEn, BIP39_WORDLIST_COUNT);
 
-    UInt512 seed = deriveSeedFromPaperKey (IAN_COLEMAN_PAPER_KEY);
+    UInt512 seed = ethAccountDeriveSeedFromPaperKey (IAN_COLEMAN_PAPER_KEY);
     BRKey   key  = derivePrivateKeyFromSeedRipple (seed, 0);
     key.compressed = 1;
 
@@ -353,7 +353,7 @@ static void
 handleBRBCashAddrDecode (void) {
     char *bCashAddr = "77047ecdd5ae988f30d68e828dad668439ad3e5ebba05680089c80f0be82d889";
     char bitcoinAddr36 [37];
-    BRBCashAddrDecode(bitcoinAddr36, bCashAddr);
+    bchAddrDecode(bitcoinAddr36, bCashAddr);
 }
 
 //
@@ -398,11 +398,11 @@ void handleLogDecode (BRRlpCoder coder) {
 
     BRRlpItem  item  = rlpDataGetItem (coder, data);
 
-    BREthereumLog log = logRlpDecode(item, RLP_TYPE_ARCHIVE, coder);
+    BREthereumLog log = ethLogRlpDecode(item, RLP_TYPE_ARCHIVE, coder);
 
     rlpItemRelease (coder, item);
 
-    logRelease(log);
+    ethLogRelease(log);
 }
 
 static void handleHasherShowData (uint8_t *data, size_t dataLen) {

@@ -10,14 +10,14 @@ CORE_SRCS=../support/BRAddress.c \
 	../support/BRKeyECIES.c \
 	../support/BRSet.c \
 	../bitcoin/BRBIP38Key.c \
-	../bitcoin/BRBloomFilter.c \
-	../bitcoin/BRChainParams.c \
-	../bitcoin/BRMerkleBlock.c \
-	../bitcoin/BRPaymentProtocol.c \
-	../bitcoin/BRPeer.c \
-	../bitcoin/BRPeerManager.c \
-	../bitcoin/BRTransaction.c \
-	../bitcoin/BRWallet.c \
+	../bitcoin/BRBitcoinBloomFilter.c \
+	../bitcoin/BRBitcoinChainParams.c \
+	../bitcoin/BRBitcoinMerkleBlock.c \
+	../bitcoin/BRBitcoinPaymentProtocol.c \
+	../bitcoin/BRBitcoinPeer.c \
+	../bitcoin/BRBitcoinPeerManager.c \
+	../bitcoin/BRBitcoinTransaction.c \
+	../bitcoin/BRBitcoinWallet.c \
 	../bitcoin/BRWalletManager.c \
 	../bcash/BRBCashAddr.c \
 	../bcash/BRBCashParams.c \

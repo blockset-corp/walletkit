@@ -1,6 +1,6 @@
 //
 //  BREthereumMPT.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 8/21/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -48,25 +48,25 @@ typedef enum {
 typedef struct BREthereumMPTNodePathRecord *BREthereumMPTNodePath;
 
 extern void
-mptNodePathRelease (BREthereumMPTNodePath path);
+ethMptNodePathRelease (BREthereumMPTNodePath path);
 
 extern void
-mptNodePathsRelease (BRArrayOf(BREthereumMPTNodePath) paths);
+ethMptNodePathsRelease (BRArrayOf(BREthereumMPTNodePath) paths);
 
 extern BRRlpData
-mptNodePathGetValue (BREthereumMPTNodePath path,
+ethMptNodePathGetValue (BREthereumMPTNodePath path,
                      BREthereumData key,
                      BREthereumBoolean *found);
 
 extern BREthereumData
-mptNodePathGetKeyFragment (BREthereumMPTNodePath path);
+ethMptNodePathGetKeyFragment (BREthereumMPTNodePath path);
     
 extern BREthereumBoolean
-mptNodePathIsValid (BREthereumMPTNodePath path,
+ethMptNodePathIsValid (BREthereumMPTNodePath path,
                     BREthereumData key);
 
 extern BREthereumMPTNodePath
-mptNodePathDecode (BRRlpItem item,
+ethMptNodePathDecode (BRRlpItem item,
                    BRRlpCoder coder);
 
 /**
@@ -74,20 +74,20 @@ mptNodePathDecode (BRRlpItem item,
  * is an RLP List of RLP List of ...
  */
 extern BREthereumMPTNodePath
-mptNodePathDecodeFromBytes (BRRlpItem item,
+ethMptNodePathDecodeFromBytes (BRRlpItem item,
                             BRRlpCoder coder);
 
 /**
  * Create a Key Path from a value
  */
 extern BREthereumData
-mptKeyGetFromUInt64 (uint64_t value);
+ethMptKeyGetFromUInt64 (uint64_t value);
 
 /**
  * Create a Key Path from a hash
  */
 extern BREthereumData
-mptKeyGetFromHash (BREthereumHash hash);
+ethMptKeyGetFromHash (BREthereumHash hash);
 
 #ifdef __cplusplus
 }

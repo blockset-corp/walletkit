@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Crypto Demo</string>
+    <string name="wallets_list_title">Wallets</string>
+</resources>

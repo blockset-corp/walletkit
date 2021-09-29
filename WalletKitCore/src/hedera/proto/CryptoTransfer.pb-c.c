@@ -100,7 +100,7 @@ void   proto__transfer_list__free_unpacked
 void   proto__crypto_transfer_transaction_body__init
                      (Proto__CryptoTransferTransactionBody         *message)
 {
-  static const Proto__CryptoTransferTransactionBody init_value = PROTO__CRYPTO_TRANSFER_TRANSACTION_BODY__INIT;
+  static const Proto__CryptoTransferTransactionBody init_value = PROTO__WK_TRANSFER_TRANSACTION_BODY__INIT;
   *message = init_value;
 }
 size_t proto__crypto_transfer_transaction_body__get_packed_size

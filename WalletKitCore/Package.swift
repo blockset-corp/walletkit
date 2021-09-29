@@ -46,7 +46,7 @@ let package = Package(
                 "WalletKitBlake2"
             ],
             path: ".",
-            sources: ["src/version"],               // Holds BRCryptoVersion.c only
+            sources: ["src/version"],               // Holds WKVersion.c only
             publicHeadersPath: "include",           // Export all public includes
             linkerSettings: [
                 .linkedLibrary("resolv"),
@@ -69,7 +69,7 @@ let package = Package(
             ],
             publicHeadersPath: "version",   // A directory WITHOUT headers
             cSettings: [
-                .headerSearchPath("../include"),           // BRCrypto
+                .headerSearchPath("../include"),           // WK
                 .headerSearchPath("."),
                 .headerSearchPath("../vendor"),
                 .headerSearchPath("../vendor/secp256k1"),  // To compile vendor/secp256k1/secp256k1.c

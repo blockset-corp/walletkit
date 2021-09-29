@@ -1,6 +1,6 @@
 //
 //  BREthereumTransactionReceipt.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/10/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -31,42 +31,42 @@ extern "C" {
 typedef struct BREthereumTransactionReceiptRecord *BREthereumTransactionReceipt;
 
 extern uint64_t
-transactionReceiptGetGasUsed (BREthereumTransactionReceipt receipt);
+ethTransactionReceiptGetGasUsed (BREthereumTransactionReceipt receipt);
 
 extern size_t
-transactionReceiptGetLogsCount (BREthereumTransactionReceipt receipt);
+ethTransactionReceiptGetLogsCount (BREthereumTransactionReceipt receipt);
 
 extern BREthereumLog
-transactionReceiptGetLog (BREthereumTransactionReceipt receipt, size_t index);
+ethTransactionReceiptGetLog (BREthereumTransactionReceipt receipt, size_t index);
 
 extern BREthereumBloomFilter
-transactionReceiptGetBloomFilter (BREthereumTransactionReceipt receipt);
+ethTransactionReceiptGetBloomFilter (BREthereumTransactionReceipt receipt);
 
 extern BREthereumBoolean
-transactionReceiptMatch (BREthereumTransactionReceipt receipt,
+ethTransactionReceiptMatch (BREthereumTransactionReceipt receipt,
                          BREthereumBloomFilter filter);
 
 extern BREthereumBoolean
-transactionReceiptMatchAddress (BREthereumTransactionReceipt receipt,
+ethTransactionReceiptMatchAddress (BREthereumTransactionReceipt receipt,
                                 BREthereumAddress address);
 
 extern BREthereumTransactionReceipt
-transactionReceiptRlpDecode (BRRlpItem item,
+ethTransactionReceiptRlpDecode (BRRlpItem item,
                              BRRlpCoder coder);
     
 extern BRRlpItem
-transactionReceiptRlpEncode(BREthereumTransactionReceipt receipt,
+ethTransactionReceiptRlpEncode(BREthereumTransactionReceipt receipt,
                             BRRlpCoder coder);
 
 extern BRArrayOf (BREthereumTransactionReceipt)
-transactionReceiptDecodeList (BRRlpItem item,
+ethTransactionReceiptDecodeList (BRRlpItem item,
                               BRRlpCoder coder);
 
 extern void
-transactionReceiptRelease (BREthereumTransactionReceipt receipt);
+ethTransactionReceiptRelease (BREthereumTransactionReceipt receipt);
 
 extern void
-transactionReceiptsRelease (BRArrayOf(BREthereumTransactionReceipt) receipts);
+ethTransactionReceiptsRelease (BRArrayOf(BREthereumTransactionReceipt) receipts);
 
 #ifdef __cplusplus
 }

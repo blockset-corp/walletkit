@@ -1,6 +1,6 @@
 //
 //  BREthereumBCS.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/24/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -13,7 +13,7 @@
 
 #include "ethereum/base/BREthereumBase.h"
 #include "ethereum/les/BREthereumLES.h"
-#include "BRCryptoSync.h"
+#include "WKSync.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,7 +170,7 @@ extern BREthereumBCS
 bcsCreate (BREthereumNetwork network,
            BREthereumAddress address,
            BREthereumBCSListener listener,
-           BRCryptoSyncMode syncMode,
+           WKSyncMode syncMode,
            BRSetOf(BREthereumNodeConfig) peers,
            BRSetOf(BREthereumBlock) blocks,
            BRSetOf(BREthereumTransaction) transactions,

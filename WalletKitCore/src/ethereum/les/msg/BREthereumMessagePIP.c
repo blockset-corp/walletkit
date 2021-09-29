@@ -1,6 +1,6 @@
 //
 //  BREthereumMessagePIP.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/1/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -271,7 +271,7 @@ messagePIPRequestOutputDecode (BRRlpItem item,
         case PIP_REQUEST_HEADERS:
             return (BREthereumPIPRequestOutput) {
                 PIP_REQUEST_HEADERS,
-                { .headers = { blockOmmersRlpDecode (items[1], coder.network, RLP_TYPE_NETWORK, coder.rlp) } }
+                { .headers = { ethBlockOmmersRlpDecode (items[1], coder.network, RLP_TYPE_NETWORK, coder.rlp) } }
             };
 
         case PIP_REQUEST_HEADER_PROOF: {
@@ -282,7 +282,7 @@ messagePIPRequestOutputDecode (BRRlpItem item,
             // The MerkleProof, in outputItems[0] is an RLP list of bytes w/ the bytes being
             // individual RLP encodings of a MPT (w/ leafs, extensions, and branches).  [The
             // format is different between Partiy & Geth - here we 'DecodeFromBytes']
-            BREthereumMPTNodePath path = mptNodePathDecodeFromBytes (outputItems[0], coder.rlp);
+            BREthereumMPTNodePath path = ethMptNodePathDecodeFromBytes (outputItems[0], coder.rlp);
 
             return (BREthereumPIPRequestOutput) {
                 PIP_REQUEST_HEADER_PROOF,
@@ -312,7 +312,7 @@ messagePIPRequestOutputDecode (BRRlpItem item,
         case PIP_REQUEST_BLOCK_RECEIPTS:
             return (BREthereumPIPRequestOutput) {
                 PIP_REQUEST_BLOCK_RECEIPTS,
-                { .blockReceipt = { transactionReceiptDecodeList (items[1], coder.rlp) } }
+                { .blockReceipt = { ethTransactionReceiptDecodeList (items[1], coder.rlp) } }
             };
 
         case PIP_REQUEST_BLOCK_BODY: {
@@ -323,8 +323,8 @@ messagePIPRequestOutputDecode (BRRlpItem item,
             return (BREthereumPIPRequestOutput) {
                 PIP_REQUEST_BLOCK_BODY,
                 { .blockBody = {
-                    blockOmmersRlpDecode (outputItems[1], coder.network, RLP_TYPE_NETWORK, coder.rlp),
-                    blockTransactionsRlpDecode (outputItems[0], coder.network, RLP_TYPE_NETWORK, coder.rlp) }}
+                    ethBlockOmmersRlpDecode (outputItems[1], coder.network, RLP_TYPE_NETWORK, coder.rlp),
+                    ethBlockTransactionsRlpDecode (outputItems[0], coder.network, RLP_TYPE_NETWORK, coder.rlp) }}
             };
         }
 
@@ -355,23 +355,23 @@ static void
 messagePIPRequestOutputRelease (BREthereumPIPRequestOutput *output) {
     switch (output->identifier) {
         case PIP_REQUEST_HEADERS:
-            blockHeadersRelease (output->u.headers.headers);
+            ethBlockHeadersRelease (output->u.headers.headers);
             break;
 
         case PIP_REQUEST_HEADER_PROOF:
             if (NULL != output->u.headerProof.path)
-                mptNodePathRelease (output->u.headerProof.path);
+                ethMptNodePathRelease (output->u.headerProof.path);
             break;
 
         case PIP_REQUEST_TRANSACTION_INDEX:
             break;
 
         case PIP_REQUEST_BLOCK_RECEIPTS:
-            transactionReceiptsRelease (output->u.blockReceipt.receipts);
+            ethTransactionReceiptsRelease (output->u.blockReceipt.receipts);
             break;
 
         case PIP_REQUEST_BLOCK_BODY:
-            blockHeadersRelease (output->u.blockBody.headers);
+            ethBlockHeadersRelease (output->u.blockBody.headers);
             transactionsRelease (output->u.blockBody.transactions);
             break;
 
@@ -475,7 +475,7 @@ messagePIPRelayTransactionsEncode (BREthereumPIPMessageRelayTransactions *messag
     BRRlpItem items[itemsCount];
 
     for (size_t index = 0; index < itemsCount; index++)
-        items[index] = transactionRlpEncode (message->transactions[index],
+        items[index] = ethTransactionRlpEncode (message->transactions[index],
                                              coder.network,
                                              RLP_TYPE_TRANSACTION_SIGNED,
                                              coder.rlp);

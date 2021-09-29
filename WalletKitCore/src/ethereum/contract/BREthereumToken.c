@@ -1,6 +1,6 @@
 //
 //  BREthereumToken
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/25/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -266,7 +266,7 @@ ethTokenQuantityGetValueString(const BREthereumTokenQuantity quantity,
                                BREthereumTokenQuantityUnit unit) {
     return TOKEN_QUANTITY_TYPE_INTEGER == unit
     ? uint256CoerceString(quantity.valueAsInteger, 10)
-    : uint256CoerceStringDecimal(quantity.valueAsInteger, (int) quantity.token->decimals);
+    : uint256CoerceStringDecimal(quantity.valueAsInteger, (size_t) quantity.token->decimals);
 }
 
 extern BREthereumComparison
@@ -301,8 +301,8 @@ return "static struct BREthereumTokenRecord tokens[] = \n{" +
         ${token.decimal},
         "${token.colors[0]}",
         "${token.colors[1]}",
-        { TOKEN_BRD_DEFAULT_GAS_LIMIT },
-        { { { .u64 = {TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64, 0, 0, 0}}}},
+        { ETHEREUM_TOKEN_BRD_DEFAULT_GAS_LIMIT },
+        { { { .u64 = {ETHEREUM_TOKEN_BRD_DEFAULT_GAS_PRICE_IN_WEI_UINT64, 0, 0, 0}}}},
         1
     }`})
 .join (",\n") + "\n};"

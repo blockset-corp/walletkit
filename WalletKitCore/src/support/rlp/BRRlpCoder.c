@@ -1,6 +1,6 @@
 //
 //  rlp
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 2/25/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -970,7 +970,7 @@ rlpDataGetItem (BRRlpCoder coder, BRRlpData data) {
 #define RLP_SHOW_INDENT_INCREMENT  2
 
 static void
-rlpItemShowInternal (BRRlpCoder coder, BRRlpItem context, const char *topic, int indent) {
+rlpItemShowInternal (BRRlpCoder coder, BRRlpItem context, const char *topic, size_t indent) {
     if (indent > 256) indent = 256;
     char spaces [257];
     memset (spaces, ' ', indent);

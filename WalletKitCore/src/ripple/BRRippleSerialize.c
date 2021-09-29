@@ -1,6 +1,6 @@
 //
 //  BRRippleSerialize.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 4/16/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -160,13 +160,13 @@ int add_amount(uint64_t amount, uint8_t* buffer)
     return add_uint64(amount, buffer);
 }
 
-int add_raw(uint8_t* raw, int length, uint8_t* buffer)
+int add_raw(uint8_t* raw, size_t length, uint8_t* buffer)
 {
     memcpy(buffer, raw, length);
-    return length;
+    return (int) length;
 }
 
-int add_length(int length, uint8_t* buffer)
+int add_length(size_t length, uint8_t* buffer)
 {
     if (length <= 192)
     {
@@ -234,7 +234,7 @@ int add_content(BRRippleField *field, uint8_t *buffer)
             assert(field->fieldCode == 1 || field->fieldCode == 3);
             // As of now there is only 2 fields that are of type 8 that are supported
             // Both are Ripple addresses
-            int address_length = rippleAddressGetRawSize(field->data.address);
+            size_t address_length = rippleAddressGetRawSize(field->data.address);
             add_length(address_length, buffer);
 
             uint8_t address_bytes[address_length];
@@ -311,10 +311,10 @@ int get_fieldcode(uint8_t * buffer, BRRippleField *field)
 
 // For variable length fields - the length of the field
 // is also stored as a variable length integer.
-int get_length(uint8_t* buffer, int * length)
+int get_length(uint8_t* buffer, size_t * length)
 {
     // Get the value for the first bytes
-    int lengthLength = (int)buffer[0];
+    size_t lengthLength = buffer[0];
     if (lengthLength <= 192) {
         // We are done
         *length = lengthLength;
@@ -367,10 +367,10 @@ int get_u64(uint8_t * buffer, uint64_t * value)
 }
 
 // Binary data
-int get_bytes(uint8_t *buffer, uint8_t *output, int length)
+int get_bytes(uint8_t *buffer, uint8_t *output, size_t length)
 {
     memcpy(output, buffer, length);
-    return length;
+    return (int) length;
 }
 
 // Amount fields - either XRP or something else
@@ -409,7 +409,7 @@ int get_amount(uint8_t * buffer, BRRippleAmount * amount)
 // Get the Variable length content
 int get_VLContent(uint8_t *buffer, BRRippleField *field)
 {
-    int content_length = 0;
+    size_t content_length = 0;
     // Figure out how many bytes were used to store the length and also
     // get the content length
     int lengthLength = get_length(buffer, &content_length);
@@ -425,7 +425,7 @@ int get_VLContent(uint8_t *buffer, BRRippleField *field)
             field->data.address = rippleAddressCreateFromBytes(&buffer[1], 20);
         }
     }
-    return (lengthLength + content_length);
+    return (lengthLength + (int) content_length);
 }
 
 // STObject - not supported
@@ -445,7 +445,7 @@ int get_MemoField(uint8_t *buffer, BRRippleMemoNode *memoNode)
     if (7 == field.typeCode &&
         (field.fieldCode >= 12 && field.fieldCode <= 14)) {
         // Memo field - get the field type and content
-        int content_length = 0;
+        size_t content_length = 0;
         int lengthLength = get_length(&buffer[bytesRead], &content_length);
         bytesRead += lengthLength;
         VLBytes * content = createVLBytes(content_length);

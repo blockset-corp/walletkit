@@ -1,6 +1,6 @@
 //
 //  BRTezosAccount.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -22,7 +22,7 @@
 
 struct BRTezosAccountRecord {
     BRTezosAddress address;
-    uint8_t publicKey[TEZOS_PUBLIC_KEY_SIZE];
+    BRTezosPublicKey publicKey;
 };
 
 // MARK: Forward Declarations
@@ -46,9 +46,9 @@ tezosAccountCreateWithSeed (UInt512 seed) {
     // Private key
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
 
-    tezosKeyGetPublicKey(privateKey, account->publicKey);
+    tezosKeyGetPublicKey(privateKey, account->publicKey.bytes);
 
-    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    account->address = tezosAddressCreateFromKey(account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
 
     return account;
 }
@@ -59,8 +59,8 @@ tezosAccountCreateWithSerialization (uint8_t *bytes, size_t bytesCount)
     assert (bytesCount == TEZOS_PUBLIC_KEY_SIZE);
     BRTezosAccount account = calloc(1, sizeof(struct BRTezosAccountRecord));
     
-    memcpy(account->publicKey, bytes, TEZOS_PUBLIC_KEY_SIZE);
-    account->address = tezosAddressCreateFromKey(account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    memcpy(account->publicKey.bytes, bytes, TEZOS_PUBLIC_KEY_SIZE);
+    account->address = tezosAddressCreateFromKey(account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     
     return account;
 }
@@ -75,11 +75,11 @@ tezosAccountFree (BRTezosAccount account)
 
 // MARK: - Signing
 
-extern BRCryptoData
+extern WKData
 tezosAccountSignData (BRTezosAccount account,
-                      BRCryptoData data,
+                      WKData data,
                       UInt512 seed) {
-    BRKey publicKey = tezosAccountGetPublicKey ((BRTezosAccount)account);
+    BRKey publicKey  = tezosPublicKeyGetKey (account->publicKey);
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
     uint8_t privateKeyBytes[64];
     tezosKeyGetPrivateKey(privateKey, privateKeyBytes);
@@ -87,7 +87,7 @@ tezosAccountSignData (BRTezosAccount account,
     uint8_t watermark[] = { 0x03 };
     size_t watermarkSize = sizeof(watermark);
     
-    BRCryptoData watermarkedData = cryptoDataNew(data.size + watermarkSize);
+    WKData watermarkedData = wkDataNew(data.size + watermarkSize);
     
     memcpy(watermarkedData.bytes, watermark, watermarkSize);
     memcpy(&watermarkedData.bytes[watermarkSize], data.bytes, data.size);
@@ -95,24 +95,21 @@ tezosAccountSignData (BRTezosAccount account,
     uint8_t hash[32];
     blake2b(hash, sizeof(hash), NULL, 0, watermarkedData.bytes, watermarkedData.size);
     
-    BRCryptoData signature = cryptoDataNew(64);
+    WKData signature = wkDataNew(64);
     ed25519_sign(signature.bytes, hash, sizeof(hash), publicKey.pubKey, privateKeyBytes);
     
     mem_clean(privateKeyBytes, 64);
-    cryptoDataFree(watermarkedData);
+    wkDataFree(watermarkedData);
     
     return signature;
 }
 
 // MARK: - Accessors
 
-extern BRKey
+extern BRTezosPublicKey
 tezosAccountGetPublicKey (BRTezosAccount account) {
     assert(account);
-    BRKey key;
-    memset(&key, 0x00, sizeof(BRKey));
-    memcpy(key.pubKey, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
-    return key;
+    return account->publicKey;
 }
 
 extern BRTezosAddress
@@ -132,7 +129,7 @@ tezosAccountGetSerialization (BRTezosAccount account, size_t *bytesCount) {
     uint8_t *bytes = calloc (1, *bytesCount);
     
     // Copy the public key
-    memcpy(bytes, account->publicKey, TEZOS_PUBLIC_KEY_SIZE);
+    memcpy(bytes, account->publicKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
     
     return bytes;
 }

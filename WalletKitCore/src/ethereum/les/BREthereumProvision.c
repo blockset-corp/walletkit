@@ -1,6 +1,6 @@
 //
 //  BREthereumProvision.c
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 9/4/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -14,7 +14,7 @@
 static size_t minimum (size_t x, size_t  y) { return x < y ? x : y; }
 
 extern const char *
-provisionErrorGetReasonName (BREthereumProvisionErrorReason reason) {
+ethProvisionErrorGetReasonName (BREthereumProvisionErrorReason reason) {
     static const char *names[] = {
         "Node Inactive",
         "Node Data"
@@ -23,7 +23,7 @@ provisionErrorGetReasonName (BREthereumProvisionErrorReason reason) {
 }
 
 extern BREthereumLESMessageIdentifier
-provisionGetMessageLESIdentifier (BREthereumProvisionType type) {
+ethProvisionGetMessageLESIdentifier (BREthereumProvisionType type) {
     switch (type) {
         case PROVISION_BLOCK_HEADERS:        return LES_MESSAGE_GET_BLOCK_HEADERS;
         case PROVISION_BLOCK_PROOFS:         return LES_MESSAGE_GET_HEADER_PROOFS;;
@@ -36,7 +36,7 @@ provisionGetMessageLESIdentifier (BREthereumProvisionType type) {
 }
 
 extern BREthereumPIPRequestType
-provisionGetMessagePIPIdentifier (BREthereumProvisionType type) {
+ethProvisionGetMessagePIPIdentifier (BREthereumProvisionType type) {
     switch (type) {
         case PROVISION_BLOCK_HEADERS:        return PIP_REQUEST_HEADERS;
         case PROVISION_BLOCK_PROOFS:         return PIP_REQUEST_HEADER_PROOF;
@@ -49,7 +49,7 @@ provisionGetMessagePIPIdentifier (BREthereumProvisionType type) {
 }
 
 extern const char *
-provisionGetTypeName (BREthereumProvisionType type) {
+ethProvisionGetTypeName (BREthereumProvisionType type) {
     static const char *names[] = {
         "Headers",
         "Proofs",
@@ -66,7 +66,7 @@ provisionGetTypeName (BREthereumProvisionType type) {
 /// MARK: - LES
 
 static BREthereumMessage
-provisionCreateMessageLES (BREthereumProvision *provisionMulti,
+ethProvisionCreateMessageLES (BREthereumProvision *provisionMulti,
                            size_t messageContentLimit,
                            size_t messageIdBase,
                            size_t index) {
@@ -258,7 +258,7 @@ provisionCreateMessageLES (BREthereumProvision *provisionMulti,
 
                     // TODO: We don't have a way to avoid consuming 'transactions' - so copy
                     // the transaction thereby allow a complete release.
-                    array_add (transactions, transactionCopy (provision->transaction));
+                    array_add (transactions, ethTransactionCopy (provision->transaction));
 
                     return (BREthereumMessage) {
                         MESSAGE_LES,
@@ -270,7 +270,7 @@ provisionCreateMessageLES (BREthereumProvision *provisionMulti,
                 case 1: {
                     BRArrayOf(BREthereumHash) hashes;
                     array_new (hashes, 1);
-                    array_add (hashes, transactionGetHash (provision->transaction));
+                    array_add (hashes, ethTransactionGetHash (provision->transaction));
 
                     return (BREthereumMessage) {
                         MESSAGE_LES,
@@ -287,7 +287,7 @@ provisionCreateMessageLES (BREthereumProvision *provisionMulti,
 }
 
 static BREthereumProvisionStatus
-provisionHandleMessageLES (BREthereumProvision *provisionMulti,
+ethProvisionHandleMessageLES (BREthereumProvision *provisionMulti,
                            OwnershipGiven BREthereumLESMessage message,
                            size_t messageContentLimit,
                            size_t messageIdBase) {
@@ -343,10 +343,10 @@ provisionHandleMessageLES (BREthereumProvision *provisionMulti,
                     BREthereumBlockHeaderProof *proof = &provisionProofs[offset + index];
 
                     // Key for MPT proof
-                    BREthereumData key = mptKeyGetFromUInt64 (provision->numbers[offset + index]);
+                    BREthereumData key = ethMptKeyGetFromUInt64 (provision->numbers[offset + index]);
 
                     BREthereumBoolean isValid = ETHEREUM_BOOLEAN_FALSE;
-                    BRRlpData data = mptNodePathGetValue (path, key, &isValid);
+                    BRRlpData data = ethMptNodePathGetValue (path, key, &isValid);
 
                     if (ETHEREUM_BOOLEAN_IS_TRUE (isValid)) {
                         // When valid extract [hash, totalDifficulty] from the MPT proof's value
@@ -363,15 +363,15 @@ provisionHandleMessageLES (BREthereumProvision *provisionMulti,
                         rlpDataRelease(data);
                     }
                     else {
-                        proof->hash = EMPTY_HASH_INIT;
+                        proof->hash = ETHEREUM_EMPTY_HASH_INIT;
                         proof->totalDifficulty = UINT256_ZERO;
                     }
                     ethDataRelease(key);
                 }
                 rlpCoderRelease(coder);
             }
-            mptNodePathsRelease(messagePaths);
-            blockHeadersRelease(messageHeaders);
+            ethMptNodePathsRelease(messagePaths);
+            ethBlockHeadersRelease(messageHeaders);
             break;
         }
 
@@ -451,18 +451,18 @@ provisionHandleMessageLES (BREthereumProvision *provisionMulti,
                     // non-proofs.  That is surely an error (boot the node), but...
                     BREthereumMPTNodePath path = messagePaths[index];
                     BREthereumBoolean foundValue = ETHEREUM_BOOLEAN_FALSE;
-                    BRRlpData data = mptNodePathGetValue (path, key, &foundValue);
+                    BRRlpData data = ethMptNodePathGetValue (path, key, &foundValue);
                     if (ETHEREUM_BOOLEAN_IS_TRUE(foundValue)) {
                         BRRlpItem item = rlpDataGetItem (coder, data);
-                        provisionAccounts[offset + index] = accountStateRlpDecode (item, coder);
+                        provisionAccounts[offset + index] = ethAccountStateRlpDecode (item, coder);
                         rlpItemRelease (coder, item);
                     }
-                    else provisionAccounts[offset + index] = accountStateCreateEmpty();
+                    else provisionAccounts[offset + index] = ethAccountStateCreateEmpty();
                     rlpDataRelease(data);
                 }
                 rlpCoderRelease(coder);
             }
-            mptNodePathsRelease(messagePaths);
+            ethMptNodePathsRelease(messagePaths);
             break;
         }
 
@@ -502,7 +502,7 @@ provisionHandleMessageLES (BREthereumProvision *provisionMulti,
 /// MARK: - PIP
 
 static BREthereumMessage
-provisionCreateMessagePIP (BREthereumProvision *provisionMulti,
+ethProvisionCreateMessagePIP (BREthereumProvision *provisionMulti,
                            size_t messageContentLimit,
                            size_t messageIdBase,
                            size_t index) {
@@ -711,7 +711,7 @@ provisionCreateMessagePIP (BREthereumProvision *provisionMulti,
 
                     // TODO: We don't have a way to avoid consuming 'transactions' - so copy
                     // the transaction thereby allow a complete release.
-                    array_add (transactions, transactionCopy (provision->transaction));
+                    array_add (transactions, ethTransactionCopy (provision->transaction));
 
                     return (BREthereumMessage) {
                         MESSAGE_PIP,
@@ -727,7 +727,7 @@ provisionCreateMessagePIP (BREthereumProvision *provisionMulti,
 
                     BREthereumPIPRequestInput input = {
                         PIP_REQUEST_TRANSACTION_INDEX,
-                        { .transactionIndex = { transactionGetHash (provision->transaction) }}
+                        { .transactionIndex = { ethTransactionGetHash (provision->transaction) }}
                     };
                     array_add (inputs, input);
 
@@ -747,7 +747,7 @@ provisionCreateMessagePIP (BREthereumProvision *provisionMulti,
 }
 
 static BREthereumProvisionStatus
-provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
+ethProvisionHandleMessagePIP (BREthereumProvision *provisionMulti,
                            OwnershipGiven BREthereumPIPMessage message,
                            size_t messageContentLimit,
                            size_t messageIdBase) {
@@ -812,17 +812,17 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
 
                     messagePIPRequestHeaderProofOutputConsume (&outputs[index].u.headerProof, &path);
 
-                    if (ETHEREUM_BOOLEAN_IS_TRUE (mptNodePathIsValid (path, key))) {
+                    if (ETHEREUM_BOOLEAN_IS_TRUE (ethMptNodePathIsValid (path, key))) {
                         provisionProofs[offset + index].hash = outputs[index].u.headerProof.blockHash;
                         provisionProofs[offset + index].totalDifficulty = outputs[index].u.headerProof.blockTotalDifficulty;
                     }
                     else {
-                        provisionProofs[offset + index].hash = EMPTY_HASH_INIT;
+                        provisionProofs[offset + index].hash = ETHEREUM_EMPTY_HASH_INIT;
                         provisionProofs[offset + index].totalDifficulty = UINT256_ZERO;
                     }
 
                     rlpItemRelease (coder, item);
-                    mptNodePathRelease (path);
+                    ethMptNodePathRelease (path);
                 }
                 rlpCoderRelease(coder);
             }
@@ -892,7 +892,7 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
                 for (size_t index = 0; index < array_count(outputs); index++) {
                     assert (PIP_REQUEST_ACCOUNT == outputs[index].identifier);
                     provisionAccounts[offset + index] =
-                    accountStateCreate (outputs[index].u.account.nonce,
+                    ethAccountStateCreate (outputs[index].u.account.nonce,
                                         ethEtherCreate(outputs[index].u.account.balance),
                                         outputs[index].u.account.storageRootHash,
                                         outputs[index].u.account.codeHash);
@@ -930,16 +930,16 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
 
             if (limit != array_count(outputs)) {
                 for (size_t index = 0; index < limit; index++)
-                    provisionStatuses[offset + index] = transactionStatusCreate(TRANSACTION_STATUS_UNKNOWN);
+                    provisionStatuses[offset + index] = ethTransactionStatusCreate(TRANSACTION_STATUS_UNKNOWN);
             }
             else {
                 for (size_t index = 0; index < array_count(outputs); index++) {
                     assert (PIP_REQUEST_TRANSACTION_INDEX == outputs[index].identifier);
                     provisionStatuses[offset + index] =
-                    transactionStatusCreateIncluded (outputs[index].u.transactionIndex.blockHash,
+                    ethTransactionStatusCreateIncluded (outputs[index].u.transactionIndex.blockHash,
                                                      outputs[index].u.transactionIndex.blockNumber,
                                                      outputs[index].u.transactionIndex.transactionIndex,
-                                                     TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
+                                                     ETHEREUM_TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
                                                      ethGasCreate(0),
                                                      1);
 
@@ -958,15 +958,15 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
             switch (array_count(outputs)) {
                 case 0:
                     // TODO: probably 'unknown'
-                    provision->status = transactionStatusCreate (TRANSACTION_STATUS_QUEUED);
+                    provision->status = ethTransactionStatusCreate (TRANSACTION_STATUS_QUEUED);
                     break;
 
                 case 1:
                     provision->status =
-                    transactionStatusCreateIncluded (outputs[0].u.transactionIndex.blockHash,
+                    ethTransactionStatusCreateIncluded (outputs[0].u.transactionIndex.blockHash,
                                                      outputs[0].u.transactionIndex.blockNumber,
                                                      outputs[0].u.transactionIndex.transactionIndex,
-                                                     TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
+                                                     ETHEREUM_TRANSACTION_STATUS_BLOCK_TIMESTAMP_UNKNOWN,
                                                      ethGasCreate (0),
                                                      1);
                     break;
@@ -986,7 +986,7 @@ provisionHandleMessagePIP (BREthereumProvision *provisionMulti,
 /// MARK: - Create / Handle
 
 extern BREthereumMessage
-provisionCreateMessage (BREthereumProvision *provision,
+ethProvisionCreateMessage (BREthereumProvision *provision,
                         BREthereumMessageIdentifier type,
                         size_t messageContentLimit,
                         size_t messageIdBase,
@@ -998,10 +998,10 @@ provisionCreateMessage (BREthereumProvision *provision,
             assert (0);
 
         case MESSAGE_LES:
-            return provisionCreateMessageLES (provision, messageContentLimit, messageIdBase, index);
+            return ethProvisionCreateMessageLES (provision, messageContentLimit, messageIdBase, index);
 
         case MESSAGE_PIP:
-            return provisionCreateMessagePIP (provision, messageContentLimit, messageIdBase, index);
+            return ethProvisionCreateMessagePIP (provision, messageContentLimit, messageIdBase, index);
             break;
     }
 }
@@ -1015,7 +1015,7 @@ numbersCopy (BRArrayOf(uint64_t) numbers) {
 }
 
 extern BREthereumProvision
-provisionCopy (BREthereumProvision *provision,
+ethProvisionCopy (BREthereumProvision *provision,
                BREthereumBoolean copyResults) {
     assert (ETHEREUM_BOOLEAN_FALSE == copyResults); // for now,
     switch (provision->type) {
@@ -1082,19 +1082,19 @@ provisionCopy (BREthereumProvision *provision,
                 provision->identifier,
                 provision->type,
                 { .submission = {
-                    transactionCopy (provision->u.submission.transaction),
+                    ethTransactionCopy (provision->u.submission.transaction),
                     (BREthereumTransactionStatus) {} }}
             };
     }
 }
 
 extern void
-provisionReleaseResults (BREthereumProvision *provision) {
+ethProvisionReleaseResults (BREthereumProvision *provision) {
     switch (provision->type) {
         case PROVISION_BLOCK_HEADERS:
             if (NULL != provision->u.headers.headers)
                 // Sometimes the headers will be NULL - because we preallocated the response.
-                blockHeadersRelease(provision->u.headers.headers);
+                ethBlockHeadersRelease(provision->u.headers.headers);
             break;
 
         case PROVISION_BLOCK_PROOFS:
@@ -1104,14 +1104,14 @@ provisionReleaseResults (BREthereumProvision *provision) {
 
         case PROVISION_BLOCK_BODIES:
             if (NULL != provision->u.bodies.pairs)
-                blockBodyPairsRelease(provision->u.bodies.pairs);
+                ethBlockBodyPairsRelease(provision->u.bodies.pairs);
             break;
 
         case PROVISION_TRANSACTION_RECEIPTS:
             if (NULL != provision->u.receipts.receipts) {
                 size_t count = array_count(provision->u.receipts.receipts);
                 for (size_t index = 0; index < count; index++)
-                    transactionReceiptsRelease (provision->u.receipts.receipts[index]);
+                    ethTransactionReceiptsRelease (provision->u.receipts.receipts[index]);
                 array_free (provision->u.receipts.receipts);
             }
             break;
@@ -1132,7 +1132,7 @@ provisionReleaseResults (BREthereumProvision *provision) {
 }
 
 extern void
-provisionRelease (BREthereumProvision *provision,
+ethProvisionRelease (BREthereumProvision *provision,
                   BREthereumBoolean releaseResults) {
     switch (provision->type) {
         case PROVISION_BLOCK_HEADERS:
@@ -1165,16 +1165,16 @@ provisionRelease (BREthereumProvision *provision,
 
         case PROVISION_SUBMIT_TRANSACTION:
             if (NULL != provision->u.submission.transaction)
-                transactionRelease (provision->u.submission.transaction);
+                ethTransactionRelease (provision->u.submission.transaction);
             break;
     }
 
     if (ETHEREUM_BOOLEAN_IS_TRUE(releaseResults))
-        provisionReleaseResults(provision);
+        ethProvisionReleaseResults(provision);
 }
 
 extern void
-provisionHeadersConsume (BREthereumProvisionHeaders *provision,
+ethProvisionHeadersConsume (BREthereumProvisionHeaders *provision,
                           BRArrayOf(BREthereumBlockHeader) *headers) {
     if (NULL != headers) {
         *headers = provision->headers;
@@ -1183,7 +1183,7 @@ provisionHeadersConsume (BREthereumProvisionHeaders *provision,
 }
 
 extern void
-provisionProofsConsume (BREthereumProvisionProofs *provision,
+ethProvisionProofsConsume (BREthereumProvisionProofs *provision,
                         BRArrayOf(uint64_t) *numbers,
                         BRArrayOf(BREthereumBlockHeaderProof) *proofs) {
     if (NULL != numbers) { *numbers = provision->numbers; provision->numbers = NULL; }
@@ -1191,7 +1191,7 @@ provisionProofsConsume (BREthereumProvisionProofs *provision,
 }
 
 extern void
-provisionBodiesConsume (BREthereumProvisionBodies *provision,
+ethProvisionBodiesConsume (BREthereumProvisionBodies *provision,
                         BRArrayOf(BREthereumHash) *hashes,
                         BRArrayOf(BREthereumBlockBodyPair) *pairs) {
     if (NULL != hashes) { *hashes = provision->hashes; provision->hashes = NULL; }
@@ -1199,7 +1199,7 @@ provisionBodiesConsume (BREthereumProvisionBodies *provision,
 }
 
 extern void
-provisionReceiptsConsume (BREthereumProvisionReceipts *provision,
+ethProvisionReceiptsConsume (BREthereumProvisionReceipts *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BRArrayOf(BREthereumTransactionReceipt)) *receipts) {
     if (NULL != hashes)   { *hashes   = provision->hashes;   provision->hashes   = NULL; }
@@ -1207,7 +1207,7 @@ provisionReceiptsConsume (BREthereumProvisionReceipts *provision,
 }
 
 extern void
-provisionAccountsConsume (BREthereumProvisionAccounts *provision,
+ethProvisionAccountsConsume (BREthereumProvisionAccounts *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BREthereumAccountState) *accounts) {
     if (NULL != hashes)   { *hashes   = provision->hashes;   provision->hashes   = NULL; }
@@ -1216,7 +1216,7 @@ provisionAccountsConsume (BREthereumProvisionAccounts *provision,
 
 
 extern void
-provisionStatusesConsume (BREthereumProvisionStatuses *provision,
+ethProvisionStatusesConsume (BREthereumProvisionStatuses *provision,
                           BRArrayOf(BREthereumHash) *hashes,
                           BRArrayOf(BREthereumTransactionStatus) *statuses) {
     if (NULL != hashes)   { *hashes   = provision->hashes;   provision->hashes   = NULL; }
@@ -1224,7 +1224,7 @@ provisionStatusesConsume (BREthereumProvisionStatuses *provision,
 }
 
 extern void
-provisionSubmissionConsume (BREthereumProvisionSubmission *provision,
+ethProvisionSubmissionConsume (BREthereumProvisionSubmission *provision,
                             BREthereumTransaction *transaction,
                             BREthereumTransactionStatus *status) {
     if (NULL != transaction) { *transaction = provision->transaction; provision->transaction = NULL; }
@@ -1232,7 +1232,7 @@ provisionSubmissionConsume (BREthereumProvisionSubmission *provision,
 }
 
 extern BREthereumProvisionStatus
-provisionHandleMessage (BREthereumProvision *provision,
+ethProvisionHandleMessage (BREthereumProvision *provision,
                         OwnershipGiven BREthereumMessage message,
                         size_t messageContentLimit,
                         size_t messageIdBase) {
@@ -1244,15 +1244,15 @@ provisionHandleMessage (BREthereumProvision *provision,
             return PROVISION_SUCCESS;
 
         case MESSAGE_LES:
-            return provisionHandleMessageLES (provision, message.u.les, messageContentLimit, messageIdBase);
+            return ethProvisionHandleMessageLES (provision, message.u.les, messageContentLimit, messageIdBase);
 
         case MESSAGE_PIP:
-            return provisionHandleMessagePIP (provision, message.u.pip, messageContentLimit, messageIdBase);
+            return ethProvisionHandleMessagePIP (provision, message.u.pip, messageContentLimit, messageIdBase);
     }
 }
 
 extern BREthereumBoolean
-provisionMatches (BREthereumProvision *provision1,
+ethProvisionMatches (BREthereumProvision *provision1,
                   BREthereumProvision *provision2) {
     return AS_ETHEREUM_BOOLEAN (provision1->type == provision2->type &&
                                 provision1->identifier == provision2->identifier
@@ -1261,6 +1261,6 @@ provisionMatches (BREthereumProvision *provision1,
 }
 
 extern void
-provisionResultRelease (BREthereumProvisionResult *result) {
-    provisionRelease (&result->provision, ETHEREUM_BOOLEAN_TRUE);
+ethProvisionResultRelease (BREthereumProvisionResult *result) {
+    ethProvisionRelease (&result->provision, ETHEREUM_BOOLEAN_TRUE);
 }

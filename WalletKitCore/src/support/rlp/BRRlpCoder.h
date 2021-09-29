@@ -1,6 +1,6 @@
 //
 //  rlp
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 2/25/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.

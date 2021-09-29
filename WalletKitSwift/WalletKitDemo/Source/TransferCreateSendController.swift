@@ -1,16 +1,16 @@
 //
 //  TransferCreateController.swift
-//  CoreDemo
+//  WalletKitDemo
 //
 //  Created by Ed Gamble on 8/6/19.
-//  Copyright © 2018-2019 Breadwallet AG. All rights reserved.
+//  Copyright © 2018-2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 
 import UIKit
-@testable import WalletKit
+import WalletKit
 
 extension Amount {
     static func max (_ a: Amount, _ b: Amount) -> Amount {
@@ -142,7 +142,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
 
             let unit = self.wallet.unit
             let amount = Amount.min (Amount.max (Amount.create (double: Double(value), unit: unit), self.minimum), self.maximum)
-            print ("APP: TVV: Submit Amount: \(amount), \(amount.integerRawSmall)");
+            print ("APP: TVV: Submit Amount: \(amount)");
 
             guard let transferFeeBasis = self.feeBasis
                 else { self.submitTransferFailed ("no fee basis"); return }
@@ -170,6 +170,30 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
         self.dismiss(animated: true) {}
     }
 
+    func updateLimitMinimum (minimum: Amount) {
+        self.minimum = minimum
+
+        let minimumAsDouble = minimum.double (as: self.wallet.unit) ?? 0.0
+
+        self.amountSlider.minimumValue = Float (minimumAsDouble)
+        self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
+
+        self.amountSlider.value = max (Float(minimumAsDouble), self.amountSlider.value)
+        self.amountLabel.text = self.amountSlider.value.description
+    }
+
+    func updateLimitMaximum (maximum: Amount) {
+        self.maximum = maximum
+        let maximumAsDouble = maximum.double (as: self.wallet.unit) ?? 0.0
+
+        // Prone to Float <==> Double rounding errors
+        self.amountSlider.maximumValue = Float (maximumAsDouble)
+        self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
+
+        self.amountSlider.value = min (Float(maximumAsDouble), self.amountSlider.value)
+        self.amountLabel.text = self.amountSlider.value.description
+    }
+
     func updateLimits () {
         guard let target = target else { return }
 
@@ -181,16 +205,8 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 return Amount.create(double: 0.0, unit: self.wallet.unit)
             }
             DispatchQueue.main.async {
-                self.minimum = minimum
-
-                let minimumAsDouble = minimum.double (as: self.wallet.unit) ?? 0.0
-
-                self.amountSlider.minimumValue = Float (minimumAsDouble)
-                self.amountMinLabel.text = self.minimum.string(as: self.wallet.unit)
-
-                self.amountSlider.value = max (Float(minimumAsDouble), self.amountSlider.value)
-                self.amountLabel.text = self.amountSlider.value.description
-            }
+                self.updateLimitMinimum(minimum: minimum)
+             }
         }
 
         wallet.estimateLimitMaximum (target: target, fee: fee) {
@@ -201,15 +217,7 @@ UITextViewDelegate, UIPickerViewDelegate, UIPickerViewDataSource {
                 return self.wallet.balance
             }
             DispatchQueue.main.async {
-                self.maximum = maximum
-                let maximumAsDouble = maximum.double (as: self.wallet.unit) ?? 0.0
-
-                // Prone to Float <==> Double rounding errors
-                self.amountSlider.maximumValue = Float (maximumAsDouble)
-                self.amountMaxLabel.text = self.maximum.string(as: self.wallet.unit)
-
-                self.amountSlider.value = min (Float(maximumAsDouble), self.amountSlider.value)
-                self.amountLabel.text = self.amountSlider.value.description
+                self.updateLimitMaximum (maximum: maximum)
             }
         }
     }

@@ -1,6 +1,6 @@
 //
 //  BRTezos.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ehsan Rezaie on 2020-06-17.
 //  Copyright © 2020 Breadwinner AG. All rights reserved.
@@ -12,10 +12,8 @@
 #ifndef BRTezos_h
 #define BRTezos_h
 
-#include <stdint.h>
 #include "BRTezosAccount.h"
 #include "BRTezosTransaction.h"
-#include "BRTezosTransfer.h"
 
 #ifdef __cplusplus
 extern "C" {

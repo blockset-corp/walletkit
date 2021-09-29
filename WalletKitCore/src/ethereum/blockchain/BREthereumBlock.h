@@ -1,6 +1,6 @@
 //
 //  BBREthereumBlock.h
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 3/23/2018.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -56,7 +56,7 @@ typedef struct BREthereumProofOfWorkStruct *BREthereumProofOfWork;
 // Block Header
 //
 extern void
-blockHeaderRelease (BREthereumBlockHeader header);
+ethBlockHeaderRelease (BREthereumBlockHeader header);
 
 /**
  * Check if the block header is internally consistent
@@ -65,7 +65,7 @@ blockHeaderRelease (BREthereumBlockHeader header);
  * @return ETHEREUM_BOOLEAN_TRUE if valid
  */
 extern BREthereumBoolean
-blockHeaderIsInternallyValid (BREthereumBlockHeader header);
+ethBlockHeaderIsInternallyValid (BREthereumBlockHeader header);
 
 /**
  * Check if the block header is valid.  If `parent` is NULL, then `header` is consisder
@@ -83,81 +83,81 @@ blockHeaderIsInternallyValid (BREthereumBlockHeader header);
  * @return ETHEREUM_BOOLEAN_TRUE if consistent
  */
 extern BREthereumBoolean
-blockHeaderIsValid (BREthereumBlockHeader header,
+ethBlockHeaderIsValid (BREthereumBlockHeader header,
                     BREthereumBlockHeader parent,
                     size_t parentOmmersCount,
                     BREthereumBlockHeader genesis,
                     BREthereumProofOfWork pow);
 
 extern BREthereumBlockHeader
-blockHeaderRlpDecode (BRRlpItem item,
+ethBlockHeaderRlpDecode (BRRlpItem item,
                       BREthereumRlpType type,
                       BRRlpCoder coder);
 
 extern BRRlpItem
-blockHeaderRlpEncode (BREthereumBlockHeader header,
+ethBlockHeaderRlpEncode (BREthereumBlockHeader header,
                       BREthereumBoolean withNonce,
                       BREthereumRlpType type,
                       BRRlpCoder coder);
 
 extern BREthereumHash
-blockHeaderGetHash (BREthereumBlockHeader header);
+ethBlockHeaderGetHash (BREthereumBlockHeader header);
 
 extern uint64_t
-blockHeaderGetNumber (BREthereumBlockHeader header);
+ethBlockHeaderGetNumber (BREthereumBlockHeader header);
 
 extern UInt256
-blockHeaderGetDifficulty (BREthereumBlockHeader header);
+ethBlockHeaderGetDifficulty (BREthereumBlockHeader header);
 
 extern uint64_t
-blockHeaderGetGasUsed (BREthereumBlockHeader header);
+ethBlockHeaderGetGasUsed (BREthereumBlockHeader header);
 
 extern uint64_t
-blockHeaderGetTimestamp (BREthereumBlockHeader header);
+ethBlockHeaderGetTimestamp (BREthereumBlockHeader header);
 
 extern BREthereumHash
-blockHeaderGetParentHash (BREthereumBlockHeader header);
+ethBlockHeaderGetParentHash (BREthereumBlockHeader header);
 
 extern BREthereumHash
-blockHeaderGetMixHash (BREthereumBlockHeader header);
+ethBlockHeaderGetMixHash (BREthereumBlockHeader header);
 
 extern BREthereumBoolean
-blockHeaderIsCHTRoot (BREthereumBlockHeader header);
+ethBlockHeaderIsCHTRoot (BREthereumBlockHeader header);
 
 // ...
 
 extern uint64_t
-blockHeaderGetNonce (BREthereumBlockHeader header);
+ethBlockHeaderGetNonce (BREthereumBlockHeader header);
 
 extern BREthereumBoolean
-blockHeaderMatch (BREthereumBlockHeader header,
+ethBlockHeaderMatch (BREthereumBlockHeader header,
                   BREthereumBloomFilter filter);
 
 extern BREthereumBoolean
-blockHeaderMatchAddress (BREthereumBlockHeader header,
+ethBlockHeaderMatchAddress (BREthereumBlockHeader header,
                          BREthereumAddress address);
 
 // Support BRSet
 extern size_t
-blockHeaderHashValue (const void *h);
+ethBlockHeaderHashValue (const void *h);
 
 // Support BRSet
 extern int
-blockHeaderHashEqual (const void *h1, const void *h2);    
+ethBlockHeaderHashEqual (const void *h1, const void *h2);    
 
 extern void
-blockHeaderReleaseForSet (void *ignore, void *item);
+ethBlockHeaderReleaseForSet (void *ignore, void *item);
 
 // Support sorting
 extern BREthereumComparison
-blockHeaderCompare (BREthereumBlockHeader h1,
+ethBlockHeaderCompare (BREthereumBlockHeader h1,
                     BREthereumBlockHeader h2);
 
 extern BREthereumBlockHeader
-blockHeaderCopy (BREthereumBlockHeader source);
+ethBlockHeaderCopy (BREthereumBlockHeader source);
 
 extern void
-blockHeadersRelease (BRArrayOf(BREthereumBlockHeader) headers);
+ethBlockHeadersRelease (BRArrayOf(BREthereumBlockHeader) headers);
 
 /// MARK: - CHT Root (Number)
 
@@ -174,7 +174,7 @@ blockHeadersRelease (BRArrayOf(BREthereumBlockHeader) headers);
  *  so including it within a CHT would be redundant."
  */
 extern uint64_t
-blockHeaderGetCHTRootNumber (BREthereumBlockHeader header);
+ethBlockHeaderGetCHTRootNumber (BREthereumBlockHeader header);
 
 extern uint64_t
 chtRootNumberGetFromNumber (uint64_t number);
@@ -189,59 +189,59 @@ chtRootNumberGetFromNumber (uint64_t number);
 // Block
 //
 extern BREthereumBlock
-blockCreateMinimal(BREthereumHash hash,
+ethBlockCreateMinimal(BREthereumHash hash,
                    uint64_t number,
                    uint64_t timestamp,
                    UInt256 difficulty);
 
 extern BREthereumBlock
-blockCreateFull (BREthereumBlockHeader header,
+ethBlockCreateFull (BREthereumBlockHeader header,
                  BREthereumBlockHeader ommers[], size_t ommersCount,
                  BREthereumTransaction transactions[], size_t transactionCount);
 
 extern BREthereumBlock
-blockCreate (BREthereumBlockHeader header);
+ethBlockCreate (BREthereumBlockHeader header);
 
 extern void
-blockUpdateBody (BREthereumBlock block,
+ethBlockUpdateBody (BREthereumBlock block,
                  BRArrayOf(BREthereumBlockHeader) ommers,
                  BRArrayOf(BREthereumTransaction) transactions);
 
 extern void
-blockRelease (BREthereumBlock block);
+ethBlockRelease (BREthereumBlock block);
 
 extern BREthereumBlockHeader
-blockGetHeader (BREthereumBlock block);
+ethBlockGetHeader (BREthereumBlock block);
 
 extern unsigned long
-blockGetTransactionsCount (BREthereumBlock block);
+ethBlockGetTransactionsCount (BREthereumBlock block);
 
 extern BREthereumTransaction
-blockGetTransaction (BREthereumBlock block, size_t index);
+ethBlockGetTransaction (BREthereumBlock block, size_t index);
 
 extern BREthereumBoolean
-blockTransactionsAreValid (BREthereumBlock block);
+ethBlockTransactionsAreValid (BREthereumBlock block);
 
 extern unsigned long
-blockGetOmmersCount (BREthereumBlock block);
+ethBlockGetOmmersCount (BREthereumBlock block);
 
 extern BREthereumBlockHeader
-blockGetOmmer (BREthereumBlock block, unsigned int index);
+ethBlockGetOmmer (BREthereumBlock block, unsigned int index);
 
 extern BREthereumHash
-blockGetHash (BREthereumBlock block);
+ethBlockGetHash (BREthereumBlock block);
 
 extern uint64_t
-blockGetNumber (BREthereumBlock block);
+ethBlockGetNumber (BREthereumBlock block);
 
 extern uint64_t
-blockGetConfirmations (BREthereumBlock block);
+ethBlockGetConfirmations (BREthereumBlock block);
 
 extern uint64_t
-blockGetTimestamp (BREthereumBlock block);
+ethBlockGetTimestamp (BREthereumBlock block);
 
 extern UInt256
-blockGetDifficulty (BREthereumBlock block);
+ethBlockGetDifficulty (BREthereumBlock block);
 
 /*!
  * The total difficulty is computed as an emergent property of the entire chain by summing up
@@ -252,17 +252,17 @@ blockGetDifficulty (BREthereumBlock block);
  * Additionally, both Parity and Geth support a 'header proof' which provides the total difficulty.
  */
 extern UInt256
-blockGetTotalDifficulty (BREthereumBlock block);
+ethBlockGetTotalDifficulty (BREthereumBlock block);
 
 extern  void
-blockSetTotalDifficulty (BREthereumBlock block,
+ethBlockSetTotalDifficulty (BREthereumBlock block,
                          UInt256 totalDifficulty);
 
 extern void
-blockClrTotalDifficulty (BREthereumBlock block);
+ethBlockClrTotalDifficulty (BREthereumBlock block);
 
 extern BREthereumBoolean
-blockHasTotalDifficulty (BREthereumBlock block);
+ethBlockHasTotalDifficulty (BREthereumBlock block);
 
 /**
  * Update the totalDifficulty for `block` by recusively updating the totalDifficutly for
@@ -273,7 +273,7 @@ blockHasTotalDifficulty (BREthereumBlock block);
  * chain all at once anyways) and thus *will* be okay.
  */
 extern UInt256
-blockRecursivelyPropagateTotalDifficulty (BREthereumBlock block);
+ethBlockRecursivelyPropagateTotalDifficulty (BREthereumBlock block);
 
 /**
  * A block is valid if and only if it has a total difficulty.
@@ -283,35 +283,35 @@ blockRecursivelyPropagateTotalDifficulty (BREthereumBlock block);
  * @return true if valid; false otherwise.
  */
 static inline BREthereumBoolean
-blockIsValid (BREthereumBlock block) {
-    return blockHasTotalDifficulty (block);
+ethBlockIsValid (BREthereumBlock block) {
+    return ethBlockHasTotalDifficulty (block);
 }
 
 extern void
-blockLinkLogsWithTransactions (BREthereumBlock block);
+ethBlockLinkLogsWithTransactions (BREthereumBlock block);
     
 extern BRRlpItem
-blockRlpEncode (BREthereumBlock block,
+ethBlockRlpEncode (BREthereumBlock block,
                 BREthereumNetwork network,
                 BREthereumRlpType type,
                 BRRlpCoder coder);
     
 extern BREthereumBlock
-blockRlpDecode (BRRlpItem item,
+ethBlockRlpDecode (BRRlpItem item,
                 BREthereumNetwork network,
                 BREthereumRlpType type,
                 BRRlpCoder coder);
     
 // Support BRSet
 extern size_t
-blockHashValue (const void *h);
+ethBlockHashValue (const void *h);
 
 // Support BRSet
 extern int
-blockHashEqual (const void *h1, const void *h2);
+ethBlockHashEqual (const void *h1, const void *h2);
 
 extern void
-blockReleaseForSet (void *ignore, void *item);
+ethBlockReleaseForSet (void *ignore, void *item);
 
 extern void
 blocksRelease (OwnershipGiven BRArrayOf(BREthereumBlock) blocks);
@@ -321,18 +321,18 @@ blocksRelease (OwnershipGiven BRArrayOf(BREthereumBlock) blocks);
 #define BLOCK_NEXT_NONE   ((BREthereumBlock) 0)
 
 extern BREthereumBlock
-blockGetNext (BREthereumBlock block);
+ethBlockGetNext (BREthereumBlock block);
 
 extern BREthereumBlock // old 'next'
-blockSetNext (BREthereumBlock block,
+ethBlockSetNext (BREthereumBlock block,
               BREthereumBlock next);
 
 extern BREthereumBoolean
-blockHasNext (BREthereumBlock block);
+ethBlockHasNext (BREthereumBlock block);
 
 static inline BREthereumBlock // old 'next'
-blockClrNext (BREthereumBlock block) {
-    return blockSetNext(block, BLOCK_NEXT_NONE);
+ethBlockClrNext (BREthereumBlock block) {
+    return ethBlockSetNext(block, BLOCK_NEXT_NONE);
 }
 
 /// MARK: - Block Body Pair
@@ -346,10 +346,10 @@ typedef struct {
 } BREthereumBlockBodyPair;
 
 extern void
-blockBodyPairRelease (BREthereumBlockBodyPair *pair);
+ethBlockBodyPairRelease (BREthereumBlockBodyPair *pair);
 
 extern void
-blockBodyPairsRelease (BRArrayOf(BREthereumBlockBodyPair) pairs);
+ethBlockBodyPairsRelease (BRArrayOf(BREthereumBlockBodyPair) pairs);
 
 /// MARK: - Block Header Proof
 
@@ -390,27 +390,27 @@ typedef struct {
  * Get the block's status
  */
 extern BREthereumBlockStatus
-blockGetStatus (BREthereumBlock block);
+ethBlockGetStatus (BREthereumBlock block);
 
 extern BREthereumBoolean
-blockHasStatusComplete (BREthereumBlock block);
+ethBlockHasStatusComplete (BREthereumBlock block);
 
 extern BREthereumBoolean
-blockHasStatusError (BREthereumBlock block);
+ethBlockHasStatusError (BREthereumBlock block);
 
 extern void
-blockReportStatusError (BREthereumBlock block,
+ethBlockReportStatusError (BREthereumBlock block,
                         BREthereumBoolean error);
 
 //
 // Transaction Request
 //
 extern BREthereumBoolean
-blockHasStatusTransactionsRequest (BREthereumBlock block,
+ethBlockHasStatusTransactionsRequest (BREthereumBlock block,
                                    BREthereumBlockRequestState request);
 
 extern void
-blockReportStatusTransactionsRequest (BREthereumBlock block,
+ethBlockReportStatusTransactionsRequest (BREthereumBlock block,
                                       BREthereumBlockRequestState request);
 
 /**
@@ -419,22 +419,22 @@ blockReportStatusTransactionsRequest (BREthereumBlock block,
  * by `block`; the transactions are owned by another).
  */
 extern void
-blockReportStatusTransactions (BREthereumBlock block,
+ethBlockReportStatusTransactions (BREthereumBlock block,
                                OwnershipGiven BRArrayOf(BREthereumTransaction) transactions);
 
 extern void
-blockReportStatusGasUsed (BREthereumBlock block,
+ethBlockReportStatusGasUsed (BREthereumBlock block,
                           BRArrayOf(BREthereumGas) gasUsed);
 
 //
 // Log Request
 //
 extern BREthereumBoolean
-blockHasStatusLogsRequest (BREthereumBlock block,
+ethBlockHasStatusLogsRequest (BREthereumBlock block,
                            BREthereumBlockRequestState request);
 
 extern void
-blockReportStatusLogsRequest (BREthereumBlock block,
+ethBlockReportStatusLogsRequest (BREthereumBlock block,
                               BREthereumBlockRequestState request);
 
 /**
@@ -442,7 +442,7 @@ blockReportStatusLogsRequest (BREthereumBlock block,
  * `transactions` - see above
  */
 extern void
-blockReportStatusLogs (BREthereumBlock block,
+ethBlockReportStatusLogs (BREthereumBlock block,
                        OwnershipGiven  BRArrayOf(BREthereumLog) log);
 
 
@@ -450,48 +450,48 @@ blockReportStatusLogs (BREthereumBlock block,
 // Account State Reqeust
 //
 extern BREthereumBoolean
-blockHasStatusAccountStateRequest (BREthereumBlock block,
+ethBlockHasStatusAccountStateRequest (BREthereumBlock block,
                                    BREthereumBlockRequestState request);
 
 extern void
-blockReportStatusAccountStateRequest (BREthereumBlock block,
+ethBlockReportStatusAccountStateRequest (BREthereumBlock block,
                                       BREthereumBlockRequestState request);
 
 /**
  * Set the account state in the block's status.
  */
 extern void
-blockReportStatusAccountState (BREthereumBlock block,
+ethBlockReportStatusAccountState (BREthereumBlock block,
                                BREthereumAccountState accountState);
 
 //
 // Header Proof Request
 //
 extern BREthereumBoolean
-blockHasStatusHeaderProofRequest (BREthereumBlock block,
+ethBlockHasStatusHeaderProofRequest (BREthereumBlock block,
                                   BREthereumBlockRequestState request);
 
 extern void
-blockReportStatusHeaderProofRequest (BREthereumBlock block,
+ethBlockReportStatusHeaderProofRequest (BREthereumBlock block,
                                      BREthereumBlockRequestState request);
 
 extern void
-blockReportStatusHeaderProof (BREthereumBlock block,
+ethBlockReportStatusHeaderProof (BREthereumBlock block,
                               BREthereumBlockHeaderProof proof);
     
     //
     //
     //
 extern BREthereumBoolean
-blockHasStatusTransaction (BREthereumBlock block,
+ethBlockHasStatusTransaction (BREthereumBlock block,
                            BREthereumTransaction transaction);
 
 extern BREthereumBoolean
-blockHasStatusLog (BREthereumBlock block,
+ethBlockHasStatusLog (BREthereumBlock block,
                    BREthereumLog log);
 
 extern void
-blockReleaseStatus (BREthereumBlock block,
+ethBlockReleaseStatus (BREthereumBlock block,
                     BREthereumBoolean releaseTransactions,
                     BREthereumBoolean releaseLogs);
 
@@ -501,7 +501,7 @@ blockReleaseStatus (BREthereumBlock block,
  * Return BRArrayOf(BREthereumBlockHeader) w/ array owned by caller.
  */
 extern BRArrayOf(BREthereumBlockHeader)
-blockOmmersRlpDecode (BRRlpItem item,
+ethBlockOmmersRlpDecode (BRRlpItem item,
                       BREthereumNetwork network,
                       BREthereumRlpType type,
                       BRRlpCoder coder);
@@ -510,7 +510,7 @@ blockOmmersRlpDecode (BRRlpItem item,
  * Return BRArrayOf(BREthereumTransaction) w/ array owned by caller
  */
 extern BRArrayOf(BREthereumTransaction)
-blockTransactionsRlpDecode (BRRlpItem item,
+ethBlockTransactionsRlpDecode (BRRlpItem item,
                             BREthereumNetwork network,
                             BREthereumRlpType type,
                             BRRlpCoder coder);
@@ -548,32 +548,32 @@ typedef struct {
 #define BLOCK_CHECKPOINT_LAST_TIMESTAMP   (UINT64_MAX)
 
 extern const BREthereumBlockCheckpoint *
-blockCheckpointLookupLatest (BREthereumNetwork network);
+ethBlockCheckpointLookupLatest (BREthereumNetwork network);
 
 extern const BREthereumBlockCheckpoint *
-blockCheckpointLookupByNumber (BREthereumNetwork network,
+ethBlockCheckpointLookupByNumber (BREthereumNetwork network,
                                uint64_t number);
 
 extern const BREthereumBlockCheckpoint *
-blockCheckpointLookupByTimestamp (BREthereumNetwork network,
+ethBlockCheckpointLookupByTimestamp (BREthereumNetwork network,
                                   uint64_t timestamp);
 
 extern BREthereumBlockHeader
-blockCheckpointCreatePartialBlockHeader (const BREthereumBlockCheckpoint *checkpoint);
+ethBlockCheckpointCreatePartialBlockHeader (const BREthereumBlockCheckpoint *checkpoint);
 
 //
 // Private
 //
 private_extern void
-blockFree (BREthereumBlock block);
+ethBlockFree (BREthereumBlock block);
 
 /// MARK: - Proof of Work
 
 extern BREthereumProofOfWork
-proofOfWorkCreate (void);
+ethProofOfWorkCreate (void);
 
 extern void
-proofOfWorkRelease (BREthereumProofOfWork pow);
+ethProofOfWorkRelease (BREthereumProofOfWork pow);
 
 extern void
 proofOfWorkGenerate (BREthereumProofOfWork pow,

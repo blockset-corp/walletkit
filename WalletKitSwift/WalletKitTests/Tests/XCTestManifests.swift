@@ -3,15 +3,15 @@ import XCTest
 #if !canImport(ObjectiveC)
 public func allTests() -> [XCTestCaseEntry] {
     return [
-        testCase (BRCryptoBlocksetTests.allTests),
-        testCase (BRCryptoAccountTests.allTests),
-        testCase (BRCryptoAmountTests.allTests),
-        testCase (BRCryptoCommonTests.allTests),
-        testCase (BRCryptoNetworkTests.allTests),
-        testCase (BRCryptoTransferTests.allTests),
-        testCase (BRCryptoWalletTests.allTests),
-        testCase (BRCryptoWalletManagerTests.allTests),
-        testCase (BRCryptoSystemTests.allTests),
+        testCase (WKBlocksetTests.allTests),
+        testCase (WKAccountTests.allTests),
+        testCase (WKAmountTests.allTests),
+        testCase (WKCommonTests.allTests),
+        testCase (WKNetworkTests.allTests),
+        testCase (WKTransferTests.allTests),
+        testCase (WKWalletTests.allTests),
+        testCase (WKWalletManagerTests.allTests),
+        testCase (WKSystemTests.allTests),
         testCase (BRSupportTests.allTests),
     ]
 }

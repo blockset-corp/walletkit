@@ -85,73 +85,73 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
-    // MARK: - Crypto
+    // MARK: - WalletKit
 
-    func testCrypto () {
-        runCryptoTests ()
+    func testWalletKit () {
+        runWalletKitTests ()
     }
 
-    func testCryptoWithAccountAndNetworkBTC() {
-        let account = cryptoAccountCreate(paperKey, 0, uids)
-        defer { cryptoAccountGive (account) }
+    func testWalletKitWithAccountAndNetworkBTC() {
+        let account = wkAccountCreate(paperKey, 0, uids)
+        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
             let network = createBitcoinNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
-            defer { cryptoNetworkGive (network) }
+            defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
-            XCTAssertEqual(CRYPTO_TRUE, success)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
+            XCTAssertEqual(WK_TRUE, success)
         }
     }
 
-    func testCryptoWithAccountAndNetworkBCH() {
-        let account = cryptoAccountCreate(paperKey, 0, uids)
-        defer { cryptoAccountGive (account) }
+    func testWalletKitWithAccountAndNetworkBCH() {
+        let account = wkAccountCreate(paperKey, 0, uids)
+        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
             let network = createBitcoinCashNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
-            defer { cryptoNetworkGive (network) }
+            defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
-            XCTAssertEqual(CRYPTO_TRUE, success)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
+            XCTAssertEqual(WK_TRUE, success)
         }
     }
     
-    func testCryptoWithAccountAndNetworkBSV() {
-        let account = cryptoAccountCreate(paperKey, 0, uids)
-        defer { cryptoAccountGive (account) }
+    func testWalletKitWithAccountAndNetworkBSV() {
+        let account = wkAccountCreate(paperKey, 0, uids)
+        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
             let network = createBitcoinSVNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
-            defer { cryptoNetworkGive (network) }
+            defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
-            XCTAssertEqual(CRYPTO_TRUE, success)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
+            XCTAssertEqual(WK_TRUE, success)
         }
     }
 
-    func testCryptoWithAccountAndNetworkETH() {
-        let account = cryptoAccountCreate(paperKey, 0, uids)
-        defer { cryptoAccountGive (account) }
+    func testWalletKitWithAccountAndNetworkETH() {
+        let account = wkAccountCreate(paperKey, 0, uids)
+        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 8_000_000), (false, 4_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
             let network = createEthereumNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
-            defer { cryptoNetworkGive (network) }
+            defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
-            XCTAssertEqual(CRYPTO_TRUE, success)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
+            XCTAssertEqual(WK_TRUE, success)
         }
     }
 
@@ -200,9 +200,16 @@ final class WalletKitCoreTests: XCTestCase {
     func testTezos () {
         runTezosTest()
     }
+
+    // MARK: - Stellar
+    func testStellar () {
+        runStellarTest()
+    }
+
+    // __NEW_BLOCKCHAIN_TEST_IMPL__
     
     // MARK: - Bitcoin
-
+    
     func testBitcoinSupport () {
         XCTAssert(1 == BRRunSupTests ())
     }
@@ -291,144 +298,144 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
-    private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
+    private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
-        defer { cryptoNetworkGive (network) }
+        let network = wkNetworkFindBuiltin(uids, isMainnet);
+        defer { wkNetworkGive (network) }
 
-        let currency = cryptoCurrencyCreate ("bitcoin", "bitcoin", "btc", "native", nil)
-        defer { cryptoCurrencyGive (currency) }
+        let currency = wkCurrencyCreate ("bitcoin", "bitcoin", "btc", "native", nil)
+        defer { wkCurrencyGive (currency) }
 
-        let satUnit = cryptoUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
-        defer { cryptoUnitGive (satUnit) }
+        let satUnit = wkUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
+        defer { wkUnitGive (satUnit) }
 
-        let btcUnit = cryptoUnitCreate (currency, "btc", "bitcoin", "B", satUnit, 8)
-        defer { cryptoUnitGive (btcUnit) }
+        let btcUnit = wkUnitCreate (currency, "btc", "bitcoin", "B", satUnit, 8)
+        defer { wkUnitGive (btcUnit) }
 
-        let factor = cryptoAmountCreateInteger (1_000, satUnit)
-        defer { cryptoAmountGive (factor) }
+        let factor = wkAmountCreateInteger (1_000, satUnit)
+        defer { wkAmountGive (factor) }
 
-        let fee = cryptoNetworkFeeCreate (30_000, factor, satUnit)
-        defer { cryptoNetworkFeeGive (fee) }
+        let fee = wkNetworkFeeCreate (30_000, factor, satUnit)
+        defer { wkNetworkFeeGive (fee) }
 
-        cryptoNetworkSetHeight (network, blockHeight)
+        wkNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
+        wkNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
-        cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
-        cryptoNetworkAddCurrencyUnit(network, currency, btcUnit)
+        wkNetworkAddCurrencyUnit(network, currency, satUnit)
+        wkNetworkAddCurrencyUnit(network, currency, btcUnit)
 
-        cryptoNetworkAddNetworkFee(network, fee)
+        wkNetworkAddNetworkFee(network, fee)
 
-        return cryptoNetworkTake (network)
+        return wkNetworkTake (network)
     }
 
-    private func createBitcoinCashNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
+    private func createBitcoinCashNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoincash-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
-        defer { cryptoNetworkGive (network) }
+        let network = wkNetworkFindBuiltin(uids, isMainnet);
+        defer { wkNetworkGive (network) }
 
-        let currency = cryptoCurrencyCreate ("bitcoin-cash", "bitcoin cash", "bch", "native", nil)
-        defer { cryptoCurrencyGive (currency) }
+        let currency = wkCurrencyCreate ("bitcoin-cash", "bitcoin cash", "bch", "native", nil)
+        defer { wkCurrencyGive (currency) }
 
-        let satUnit = cryptoUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
-        defer { cryptoUnitGive (satUnit) }
+        let satUnit = wkUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
+        defer { wkUnitGive (satUnit) }
 
-        let btcUnit = cryptoUnitCreate (currency, "btc", "bitcoin", "B", satUnit, 8)
-        defer { cryptoUnitGive (btcUnit) }
+        let btcUnit = wkUnitCreate (currency, "btc", "bitcoin", "B", satUnit, 8)
+        defer { wkUnitGive (btcUnit) }
 
-        let factor = cryptoAmountCreateInteger (1_000, satUnit)
-        defer { cryptoAmountGive (factor) }
+        let factor = wkAmountCreateInteger (1_000, satUnit)
+        defer { wkAmountGive (factor) }
 
-        let fee = cryptoNetworkFeeCreate (30_000, factor, satUnit)
-        defer { cryptoNetworkFeeGive (fee) }
+        let fee = wkNetworkFeeCreate (30_000, factor, satUnit)
+        defer { wkNetworkFeeGive (fee) }
 
-        cryptoNetworkSetHeight (network, blockHeight)
+        wkNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
+        wkNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
-        cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
-        cryptoNetworkAddCurrencyUnit(network, currency, btcUnit)
+        wkNetworkAddCurrencyUnit(network, currency, satUnit)
+        wkNetworkAddCurrencyUnit(network, currency, btcUnit)
 
-        cryptoNetworkAddNetworkFee(network, fee)
+        wkNetworkAddNetworkFee(network, fee)
 
-        return cryptoNetworkTake (network)
+        return wkNetworkTake (network)
     }
     
-    private func createBitcoinSVNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
+    private func createBitcoinSVNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoinsv-" + (isMainnet ? "mainnet" : "testnet")
-        let network = cryptoNetworkFindBuiltin(uids, isMainnet);
-        defer { cryptoNetworkGive (network) }
+        let network = wkNetworkFindBuiltin(uids, isMainnet);
+        defer { wkNetworkGive (network) }
 
-        let currency = cryptoCurrencyCreate ("bitcoin-sv", "bitcoin sv", "bsv", "native", nil)
-        defer { cryptoCurrencyGive (currency) }
+        let currency = wkCurrencyCreate ("bitcoin-sv", "bitcoin sv", "bsv", "native", nil)
+        defer { wkCurrencyGive (currency) }
 
-        let satUnit = cryptoUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
-        defer { cryptoUnitGive (satUnit) }
+        let satUnit = wkUnitCreateAsBase (currency, "sat", "satoshis", "SAT")
+        defer { wkUnitGive (satUnit) }
 
-        let btcUnit = cryptoUnitCreate (currency, "bsv", "bitcoinsv", "B", satUnit, 8)
-        defer { cryptoUnitGive (btcUnit) }
+        let btcUnit = wkUnitCreate (currency, "bsv", "bitcoinsv", "B", satUnit, 8)
+        defer { wkUnitGive (btcUnit) }
 
-        let factor = cryptoAmountCreateInteger (1_000, satUnit)
-        defer { cryptoAmountGive (factor) }
+        let factor = wkAmountCreateInteger (1_000, satUnit)
+        defer { wkAmountGive (factor) }
 
-        let fee = cryptoNetworkFeeCreate (30_000, factor, satUnit)
-        defer { cryptoNetworkFeeGive (fee) }
+        let fee = wkNetworkFeeCreate (30_000, factor, satUnit)
+        defer { wkNetworkFeeGive (fee) }
 
-        cryptoNetworkSetHeight (network, blockHeight)
+        wkNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkAddCurrency (network, currency, satUnit, btcUnit)
+        wkNetworkAddCurrency (network, currency, satUnit, btcUnit)
 
-        cryptoNetworkAddCurrencyUnit(network, currency, satUnit)
-        cryptoNetworkAddCurrencyUnit(network, currency, btcUnit)
+        wkNetworkAddCurrencyUnit(network, currency, satUnit)
+        wkNetworkAddCurrencyUnit(network, currency, btcUnit)
 
-        cryptoNetworkAddNetworkFee(network, fee)
+        wkNetworkAddNetworkFee(network, fee)
 
-        return cryptoNetworkTake (network)
+        return wkNetworkTake (network)
     }
 
-    private func createEthereumNetwork(isMainnet: Bool, blockHeight: UInt64) -> BRCryptoNetwork {
+    private func createEthereumNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "ethereum-" + (isMainnet ? "mainnet" : "ropsten")
-        let network = cryptoNetworkFindBuiltin (uids, isMainnet)
-        defer { cryptoNetworkGive (network) }
+        let network = wkNetworkFindBuiltin (uids, isMainnet)
+        defer { wkNetworkGive (network) }
 
-        let currency = cryptoCurrencyCreate ("ethereum", "ethereum", "eth", "native", nil)
-        defer { cryptoCurrencyGive (currency) }
+        let currency = wkCurrencyCreate ("ethereum", "ethereum", "eth", "native", nil)
+        defer { wkCurrencyGive (currency) }
 
-        let weiUnit = cryptoUnitCreateAsBase (currency, "wei", "wei", "wei")
-        defer { cryptoUnitGive (weiUnit) }
+        let weiUnit = wkUnitCreateAsBase (currency, "wei", "wei", "wei")
+        defer { wkUnitGive (weiUnit) }
 
-        let gweiUnit = cryptoUnitCreate (currency, "gwei", "gwei", "gwei", weiUnit, 9)
-        defer { cryptoUnitGive (gweiUnit) }
+        let gweiUnit = wkUnitCreate (currency, "gwei", "gwei", "gwei", weiUnit, 9)
+        defer { wkUnitGive (gweiUnit) }
 
-        let etherUnit = cryptoUnitCreate (currency, "ether", "ether", "ether", weiUnit, 18)
-        defer { cryptoUnitGive (etherUnit) }
+        let etherUnit = wkUnitCreate (currency, "ether", "ether", "ether", weiUnit, 18)
+        defer { wkUnitGive (etherUnit) }
 
-        let factor = cryptoAmountCreateDouble (2.0, gweiUnit)
-        defer { cryptoAmountGive (factor) }
+        let factor = wkAmountCreateDouble (2.0, gweiUnit)
+        defer { wkAmountGive (factor) }
 
-        let fee = cryptoNetworkFeeCreate (1_000, factor, gweiUnit)
-        defer { cryptoNetworkFeeGive (fee) }
+        let fee = wkNetworkFeeCreate (1_000, factor, gweiUnit)
+        defer { wkNetworkFeeGive (fee) }
 
-        cryptoNetworkSetHeight (network, blockHeight)
+        wkNetworkSetHeight (network, blockHeight)
 
-        cryptoNetworkAddCurrency (network, currency, weiUnit, etherUnit)
+        wkNetworkAddCurrency (network, currency, weiUnit, etherUnit)
 
-        cryptoNetworkAddCurrencyUnit(network, currency, weiUnit)
-        cryptoNetworkAddCurrencyUnit(network, currency, gweiUnit)
-        cryptoNetworkAddCurrencyUnit(network, currency, etherUnit)
+        wkNetworkAddCurrencyUnit(network, currency, weiUnit)
+        wkNetworkAddCurrencyUnit(network, currency, gweiUnit)
+        wkNetworkAddCurrencyUnit(network, currency, etherUnit)
 
-        cryptoNetworkAddNetworkFee(network, fee)
+        wkNetworkAddNetworkFee(network, fee)
 
-        return cryptoNetworkTake (network)
+        return wkNetworkTake (network)
     }
 
     static var allTests = [
         // Crypto
-        ("testCrypto",          testCrypto),
-        ("testCryptoBTC",       testCryptoWithAccountAndNetworkBTC),
-        ("testCryptoBCH",       testCryptoWithAccountAndNetworkBCH),
-        ("testCryptoETH",       testCryptoWithAccountAndNetworkETH),
+        ("testWalletKit",       testWalletKit),
+        ("testWalletKitBTC",    testWalletKitWithAccountAndNetworkBTC),
+        ("testWalletKitBCH",    testWalletKitWithAccountAndNetworkBCH),
+        ("testWalletKitETH",    testWalletKitWithAccountAndNetworkETH),
 
         // Ethereum
         ("testRLP",             testRLPETH),
@@ -448,10 +455,15 @@ final class WalletKitCoreTests: XCTestCase {
         // Tezos
         ("testTezos",           testTezos),
 
+        // Stellar
+        ("testStellar",         testStellar),
+
         // Bitcoin
         ("testSupportBTC",      testBitcoinSupport),
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
+        
+        // __NEW_BLOCKCHAIN_TEST__
     ]
 }

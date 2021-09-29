@@ -1,6 +1,6 @@
 //
 //  BRRippleBase.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on 4/16/19.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.
@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "BRCryptoBase.h"
+#include "WKBase.h"
 
 // Even though we only support the Payment type - plan for
 // the future
@@ -54,6 +54,17 @@ typedef struct {
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0  \
 })
 
+static inline bool
+rippleTransactionHashIsEqual (BRRippleTransactionHash h1,
+                              BRRippleTransactionHash h2) {
+    return 0 == memcmp (h1.bytes, h2.bytes, 32);
+}
+
+static inline bool
+rippleTransactionHashIsEmpty (BRRippleTransactionHash hash) {
+    return rippleTransactionHashIsEqual (hash, RIPPLE_TRANSACTION_HASH_EMPTY);
+}
+
 typedef struct {
     int currencyType; // 0 - ripple, 1 - other, -1 unknown/invalid
     uint8_t currencyCode[20];
@@ -73,7 +84,7 @@ typedef enum {
 // Stucture to hold the calculated signature
 typedef struct {
     uint8_t signature[256];
-    int sig_length;
+    size_t sig_length;
 } BRRippleSignatureRecord;
 typedef BRRippleSignatureRecord *BRRippleSignature;
 

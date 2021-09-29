@@ -40,7 +40,7 @@
     (-(((x) >> 38) & 1) & 0xae2eabe2a8) ^ (-(((x) >> 39) & 1) & 0x1e4f43e470))
 
 // returns the number of bytes written to data21 (maximum of 21)
-static size_t _BRBCashAddrDecode(char *hrp12, uint8_t *data21, const char *addr)
+static size_t _bchAddrDecode(char *hrp12, uint8_t *data21, const char *addr)
 {
     size_t i, j, bufLen, addrLen = (addr) ? strlen(addr) : 0, sep = addrLen;
     uint64_t x, chk = 1;
@@ -91,7 +91,7 @@ static size_t _BRBCashAddrDecode(char *hrp12, uint8_t *data21, const char *addr)
 }
 
 // returns the number of bytes written to addr55 (maximum of 55)
-static size_t _BRBCashAddrEncode(char *addr55, const char *hrp, const uint8_t data[], size_t dataLen)
+static size_t _bchAddrEncode(char *addr55, const char *hrp, const uint8_t data[], size_t dataLen)
 {
     static const char chars[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
     char addr[55];
@@ -132,7 +132,7 @@ static size_t _BRBCashAddrEncode(char *addr55, const char *hrp, const uint8_t da
 }
 
 // returns the number of bytes written to bitcoinAddr36 (maximum of 36)
-size_t BRBCashAddrDecode(char *bitcoinAddr36, const char *bCashAddr)
+size_t bchAddrDecode(char *bitcoinAddr36, const char *bCashAddr)
 {
     uint8_t data[21], ver = UINT8_MAX;
     char bchaddr[55] = "bitcoincash:", bchtest[55] = "bchtest:", bchreg[55] = "bchreg:",
@@ -141,7 +141,7 @@ size_t BRBCashAddrDecode(char *bitcoinAddr36, const char *bCashAddr)
     assert(bitcoinAddr36 != NULL);
     assert(bCashAddr != NULL);
     
-    if (_BRBCashAddrDecode(hrp, data, bCashAddr) == 21) {
+    if (_bchAddrDecode(hrp, data, bCashAddr) == 21) {
         if (strcmp(hrp, "bitcoincash") == 0) {
             if (data[0] == 0x00) ver = BITCOIN_PUBKEY_PREFIX;
             if (data[0] == 0x08) ver = BITCOIN_SCRIPT_PREFIX;
@@ -163,12 +163,12 @@ size_t BRBCashAddrDecode(char *bitcoinAddr36, const char *bCashAddr)
         strncpy(&BCHtest[8], bCashAddr, 46), BCHtest[54] = '\0';
         strncpy(&BCHreg[7], bCashAddr, 47), BCHreg[54] = '\0';
 
-        if (_BRBCashAddrDecode(hrp, data, bchaddr) == 21 || _BRBCashAddrDecode(hrp, data, BCHaddr) == 21) {
+        if (_bchAddrDecode(hrp, data, bchaddr) == 21 || _bchAddrDecode(hrp, data, BCHaddr) == 21) {
             if (data[0] == 0x00) ver = BITCOIN_PUBKEY_PREFIX;
             if (data[0] == 0x08) ver = BITCOIN_SCRIPT_PREFIX;
         }
-        else if (_BRBCashAddrDecode(hrp, data, bchtest) == 21 || _BRBCashAddrDecode(hrp, data, BCHtest) == 21 ||
-                 _BRBCashAddrDecode(hrp, data, bchreg) == 21 || _BRBCashAddrDecode(hrp, data, BCHreg) == 21) {
+        else if (_bchAddrDecode(hrp, data, bchtest) == 21 || _bchAddrDecode(hrp, data, BCHtest) == 21 ||
+                 _bchAddrDecode(hrp, data, bchreg) == 21 || _bchAddrDecode(hrp, data, BCHreg) == 21) {
             if (data[0] == 0x00) ver = BITCOIN_PUBKEY_PREFIX_TEST;
             if (data[0] == 0x08) ver = BITCOIN_SCRIPT_PREFIX_TEST;
         }
@@ -179,7 +179,7 @@ size_t BRBCashAddrDecode(char *bitcoinAddr36, const char *bCashAddr)
 }
 
 // returns the number of bytes written to bCashAddr55 (maximum of 55)
-size_t BRBCashAddrEncode(char *bCashAddr55, const char *bitcoinAddr)
+size_t bchAddrEncode(char *bCashAddr55, const char *bitcoinAddr)
 {
     uint8_t data[21], ver = 0;
     const char *hrp = NULL;
@@ -192,6 +192,6 @@ size_t BRBCashAddrEncode(char *bCashAddr55, const char *bitcoinAddr)
     if (data[0] == BITCOIN_PUBKEY_PREFIX_TEST) ver = 0x00, hrp = "bchtest";
     if (data[0] == BITCOIN_SCRIPT_PREFIX_TEST) ver = 0x08, hrp = "bchtest";
     data[0] = ver;
-    return _BRBCashAddrEncode(bCashAddr55, hrp, data, 21);
+    return _bchAddrEncode(bCashAddr55, hrp, data, 21);
 }
 

@@ -1,6 +1,6 @@
 //
 //  BRAssert.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 2/4/19.
 //  Copyright © 2019 breadwallet LLC
@@ -123,7 +123,7 @@ typedef void (*BRAssertRecoveryHandler) (BRAssertRecoveryInfo info);
  *
  * This is `semi-private` because it should only be used internally for Core shutdown.  A typical
  * use would be for BRPeerManager or BREthereumEWM where the recovery handler would be
- * BRPeerManagerDisconnect() or BREthereumEWMDisconnect().  If some process invoked BRFail(), like
+ * btcPeerManagerDisconnect() or BREthereumEWMDisconnect().  If some process invoked BRFail(), like
  * one BRPeer thread, then BRPeerManagerDisconnect would be called to stop the peer manager and all
  * remaining peer threads.
  *

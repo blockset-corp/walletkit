@@ -1,6 +1,6 @@
 //
 //  BREthereumAddress.h
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/17/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -21,16 +21,16 @@
 extern "C" {
 #endif
 
-#define ADDRESS_BYTES   (20)
+#define ETHEREUM_ADDRESS_BYTES   (20)
 
 /**
  * An Ethereum Address
  */
 typedef struct {
-    uint8_t bytes[ADDRESS_BYTES];
+    uint8_t bytes[ETHEREUM_ADDRESS_BYTES];
 } BREthereumAddress;
 
-#define EMPTY_ADDRESS_INIT   ((const BREthereumAddress) { \
+#define ETHEREUM_EMPTY_ADDRESS_INIT   ((const BREthereumAddress) { \
 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0 \
 })
 
@@ -58,7 +58,7 @@ ethAddressValidateString(const char *string);
 extern BREthereumAddress
 ethAddressCreateKey (const BRKey *keyWithPubKeyProvided);
 
-#define ADDRESS_ENCODED_CHARS    (2*ADDRESS_BYTES + 2 + 1)  // "0x" prefaced
+#define ADDRESS_ENCODED_CHARS    (2*ETHEREUM_ADDRESS_BYTES + 2 + 1)  // "0x" prefaced
 
 /**
  * Return a string encoding of `address`.  You own the returned string and must free it.

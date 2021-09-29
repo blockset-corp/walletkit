@@ -3,7 +3,7 @@
 //  CorePerf
 //
 //  Created by Ed Gamble on 10/11/18.
-//  Copyright © 2018-2019 Breadwallet AG. All rights reserved.
+//  Copyright © 2018-2019 Breadwinner AG. All rights reserved.
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
@@ -25,7 +25,7 @@ runEWM_freeClient (BREthereumClient client);
 
 static void
 runSyncMany (BREthereumNetwork newtork,
-             BRCryptoSyncMode mode,
+             WKSyncMode mode,
              unsigned int durationInSeconds,
              unsigned int accounts) {
 
@@ -83,7 +83,7 @@ runSyncMany (BREthereumNetwork newtork,
 #endif
 
 int main(int argc, const char * argv[]) {
-    BRCryptoSyncMode mode = CRYPTO_SYNC_MODE_API_WITH_P2P_SEND;
+    WKSyncMode mode = WK_SYNC_MODE_API_WITH_P2P_SEND;
 
     const char *paperKey = (argc > 1 ? argv[1] : "0xa9de3dbd7d561e67527bc1ecb025c59d53b9f7ef");
     BREthereumAccount account = ethAccountCreate (paperKey);

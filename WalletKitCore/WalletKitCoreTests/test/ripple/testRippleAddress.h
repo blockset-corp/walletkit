@@ -1,6 +1,6 @@
 //
 //  testRippleAddress.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 3/9/20.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

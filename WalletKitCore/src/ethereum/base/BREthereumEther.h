@@ -1,6 +1,6 @@
 //
 //  BREthereumEther
-//  Core Ethereum
+//  WalletKitCore Ethereum
 //
 //  Created by Ed Gamble on 2/21/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -12,7 +12,7 @@
 #define BR_Ethereum_Ether_H
 
 #include "support/rlp/BRRlp.h"
-#include "ethereum/util/BRUtil.h"
+#include "support/util/BRUtil.h"
 #include "BREthereumLogic.h"
 
 #ifdef __cplusplus
@@ -50,7 +50,7 @@ typedef enum {
     TETHER = 10
 } BREthereumEtherUnit;
 
-#define NUMBER_OF_ETHER_UNITS  (1 + TETHER)
+#define ETHEREUM_NUMBER_OF_ETHER_UNITS  (1 + TETHER)
 
 /**
  * Ether is the intrinsic currency of Ethereum.  It is represented as an integer value in WEI
@@ -60,7 +60,7 @@ typedef struct BREthereumEtherStruct {
     UInt256 valueInWEI;
 } BREthereumEther;
 
-#define EMPTY_ETHER_INIT  ((const BREthereumEther) { UINT256_ZERO })
+#define ETHEREUM_EMPTY_ETHER_INIT  ((const BREthereumEther) { UINT256_ZERO })
     
 extern BREthereumEther
 ethEtherCreateZero (void);

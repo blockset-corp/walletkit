@@ -1,6 +1,6 @@
 //
 //  BRHederaTransaction.h
-//  Core
+//  WalletKitCore
 //
 //  Created by Carl Cherry on Oct. 16, 2019.
 //  Copyright © 2019 Breadwinner AG. All rights reserved.

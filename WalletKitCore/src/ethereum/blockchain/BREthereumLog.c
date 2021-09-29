@@ -1,6 +1,6 @@
 //
 //  BREthereumLog.c
-//  BRCore
+//  WalletKitCore
 //
 //  Created by Ed Gamble on 5/10/18.
 //  Copyright © 2018-2019 Breadwinner AG.  All rights reserved.
@@ -39,12 +39,12 @@ static BREthereumLogTopic empty;
 // Log Topic
 //
 extern BREthereumLogTopic
-logTopicCreateFromString (const char *string) {
+ethLogTopicCreateFromString (const char *string) {
     if (NULL == string) return empty;
 
     // Ensure
     size_t stringLen = strlen(string);
-    assert (0 == strncmp (string, "0x", 2) && (2 + 2 * LOG_TOPIC_BYTES_COUNT == stringLen));
+    assert (0 == strncmp (string, "0x", 2) && (2 + 2 * ETHEREUM_LOG_TOPIC_BYTES_COUNT == stringLen));
 
     BREthereumLogTopic topic;
     hexDecode(topic.bytes, sizeof(BREthereumLogTopic), &string[2], stringLen - 2);
@@ -52,7 +52,7 @@ logTopicCreateFromString (const char *string) {
 }
 
 static BREthereumLogTopic
-logTopicCreateAddress (BREthereumAddress raw) {
+ethLogTopicCreateAddress (BREthereumAddress raw) {
     BREthereumLogTopic topic = empty;
     unsigned int addressBytes = sizeof (raw.bytes);
     unsigned int topicBytes = sizeof (topic.bytes);
@@ -63,33 +63,33 @@ logTopicCreateAddress (BREthereumAddress raw) {
 }
 
 extern BREthereumBloomFilter
-logTopicGetBloomFilter (BREthereumLogTopic topic) {
+ethLogTopicGetBloomFilter (BREthereumLogTopic topic) {
     BRRlpData data;
     data.bytes = topic.bytes;
     data.bytesCount = sizeof (topic.bytes);
-    return bloomFilterCreateData(data);
+    return ethBloomFilterCreateData(data);
 }
 
 extern BREthereumBloomFilter
-logTopicGetBloomFilterAddress (BREthereumAddress address) {
-    return logTopicGetBloomFilter (logTopicCreateAddress(address));
+ethLogTopicGetBloomFilterAddress (BREthereumAddress address) {
+    return ethLogTopicGetBloomFilter (ethLogTopicCreateAddress(address));
 }
 
 static int
-logTopicMatchesAddressBool (BREthereumLogTopic topic,
+ethLogTopicMatchesAddressBool (BREthereumLogTopic topic,
                         BREthereumAddress address) {
     return (0 == memcmp (&topic.bytes[0], &empty.bytes[0], 12) &&
             0 == memcmp (&topic.bytes[12], &address.bytes[0], 20));
 }
 
 extern BREthereumBoolean
-logTopicMatchesAddress (BREthereumLogTopic topic,
+ethLogTopicMatchesAddress (BREthereumLogTopic topic,
                         BREthereumAddress address) {
-    return AS_ETHEREUM_BOOLEAN(logTopicMatchesAddressBool(topic, address));
+    return AS_ETHEREUM_BOOLEAN(ethLogTopicMatchesAddressBool(topic, address));
 }
 
 extern BREthereumLogTopicString
-logTopicAsString (BREthereumLogTopic topic) {
+ethLogTopicAsString (BREthereumLogTopic topic) {
     BREthereumLogTopicString string;
     string.chars[0] = '0';
     string.chars[1] = 'x';
@@ -98,7 +98,7 @@ logTopicAsString (BREthereumLogTopic topic) {
 }
 
 extern BREthereumAddress
-logTopicAsAddress (BREthereumLogTopic topic) {
+ethLogTopicAsAddress (BREthereumLogTopic topic) {
     BREthereumAddress address;
     memcpy (address.bytes, &topic.bytes[12], 20);
     return address;
@@ -108,7 +108,7 @@ logTopicAsAddress (BREthereumLogTopic topic) {
 // Support
 //
 static BREthereumLogTopic
-logTopicRlpDecode (BRRlpItem item,
+ethLogTopicRlpDecode (BRRlpItem item,
                        BRRlpCoder coder) {
     BREthereumLogTopic topic;
 
@@ -122,7 +122,7 @@ logTopicRlpDecode (BRRlpItem item,
 }
 
 static BRRlpItem
-logTopicRlpEncode(BREthereumLogTopic topic,
+ethLogTopicRlpEncode(BREthereumLogTopic topic,
                       BRRlpCoder coder) {
     return rlpEncodeBytes(coder, topic.bytes, 32);
 }
@@ -130,7 +130,7 @@ logTopicRlpEncode(BREthereumLogTopic topic,
 static BREthereumLogTopic emptyTopic;
 
 static BRArrayOf(BREthereumLogTopic)
-logTopicsCopy (BRArrayOf(BREthereumLogTopic) topics) {
+ethLogTopicsCopy (BRArrayOf(BREthereumLogTopic) topics) {
     BRArrayOf(BREthereumLogTopic) copy;
     array_new(copy, array_count(topics));
     array_add_array(copy, topics, array_count(topics));
@@ -189,7 +189,7 @@ struct BREthereumLogRecord {
 };
 
 extern BREthereumLog
-logCreate (BREthereumAddress address,
+ethLogCreate (BREthereumAddress address,
            unsigned int topicsCount,
            BREthereumLogTopic *topics,
            BRRlpData data) {
@@ -208,13 +208,13 @@ logCreate (BREthereumAddress address,
     log->data = rlpDataCopy(data);
 
     // Mark the `identifier` as unknown.
-    log->identifier.transactionReceiptIndex = LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN;
+    log->identifier.transactionReceiptIndex = ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN;
 
     return log;
 }
 
 extern void
-logInitializeIdentifier (BREthereumLog log,
+ethLogInitializeIdentifier (BREthereumLog log,
                      BREthereumHash transactionHash,
                      size_t transactionReceiptIndex) {
     log->identifier.transactionHash = transactionHash;
@@ -225,10 +225,10 @@ logInitializeIdentifier (BREthereumLog log,
 }
 
 extern BREthereumBoolean
-logExtractIdentifier (BREthereumLog log,
+ethLogExtractIdentifier (BREthereumLog log,
                       BREthereumHash *transactionHash,
                       size_t *transactionReceiptIndex) {
-    if (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex)
+    if (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex)
         return ETHEREUM_BOOLEAN_FALSE;
 
     if (NULL != transactionHash) *transactionHash = log->identifier.transactionHash;
@@ -238,28 +238,28 @@ logExtractIdentifier (BREthereumLog log,
 }
 
 extern BREthereumHash
-logGetIdentifier (BREthereumLog log) {
-    return (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex
-            ? EMPTY_HASH_INIT
+ethLogGetIdentifier (BREthereumLog log) {
+    return (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN == log->identifier.transactionReceiptIndex
+            ? ETHEREUM_EMPTY_HASH_INIT
             : log->identifier.transactionHash);
 }
 
 static inline int
-logHasStatus (BREthereumLog log,
+ethLogHasStatus (BREthereumLog log,
               BREthereumTransactionStatusType type) {
     return type == log->status.type;
 }
 
 extern BREthereumComparison
-logCompare (BREthereumLog l1,
+ethLogCompare (BREthereumLog l1,
             BREthereumLog l2) {
 
     if (  l1 == l2) return ETHEREUM_COMPARISON_EQ;
     if (NULL == l2) return ETHEREUM_COMPARISON_LT;
     if (NULL == l1) return ETHEREUM_COMPARISON_GT;
 
-    int t1Blocked = logHasStatus(l1, TRANSACTION_STATUS_INCLUDED);
-    int t2Blocked = logHasStatus(l2, TRANSACTION_STATUS_INCLUDED);
+    int t1Blocked = ethLogHasStatus(l1, TRANSACTION_STATUS_INCLUDED);
+    int t2Blocked = ethLogHasStatus(l2, TRANSACTION_STATUS_INCLUDED);
 
     if (t1Blocked && t2Blocked)
         return (l1->status.u.included.blockNumber < l2->status.u.included.blockNumber
@@ -287,95 +287,95 @@ logCompare (BREthereumLog l1,
 }
 
 extern BREthereumTransactionStatus
-logGetStatus (BREthereumLog log) {
+ethLogGetStatus (BREthereumLog log) {
     return log->status;
 }
 
 extern void
-logSetStatus (BREthereumLog log,
+ethLogSetStatus (BREthereumLog log,
               BREthereumTransactionStatus status) {
     log->status = status;
 }
 
 extern BREthereumHash
-logGetHash (BREthereumLog log) {
+ethLogGetHash (BREthereumLog log) {
     // The hash only exists when we've got an identifier; must not be referenced otherwise.
-    assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != log->identifier.transactionReceiptIndex);
+    assert (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != log->identifier.transactionReceiptIndex);
     return log->hash;
 }
 
 extern BREthereumAddress
-logGetAddress (BREthereumLog log) {
+ethLogGetAddress (BREthereumLog log) {
     return log->address;
 }
 
 extern BREthereumBoolean
-logHasAddress (BREthereumLog log,
+ethLogHasAddress (BREthereumLog log,
                BREthereumAddress address) {
     return ethAddressEqual(log->address, address);
 }
 
 extern size_t
-logGetTopicsCount (BREthereumLog log) {
+ethLogGetTopicsCount (BREthereumLog log) {
     return array_count(log->topics);
 }
 
 extern  BREthereumLogTopic
-logGetTopic (BREthereumLog log, size_t index) {
+ethLogGetTopic (BREthereumLog log, size_t index) {
     return (index < array_count(log->topics)
             ? log->topics[index]
             : emptyTopic);
 }
 
 extern BRRlpData
-logGetData (BREthereumLog log) {
+ethLogGetData (BREthereumLog log) {
     return rlpDataCopy(log->data);
 }
 
 extern BRRlpData
-logGetDataShared (BREthereumLog log) {
+ethLogGetDataShared (BREthereumLog log) {
     return log->data;
 }
 
 extern BREthereumBoolean
-logMatchesAddress (BREthereumLog log,
+ethLogMatchesAddress (BREthereumLog log,
                    BREthereumAddress address,
                    BREthereumBoolean topicsOnly) {
     int match = 0;
-    size_t count = logGetTopicsCount(log);
+    size_t count = ethLogGetTopicsCount(log);
     for (int i = 0; i < count; i++)
-        match |= logTopicMatchesAddressBool(log->topics[i], address);
+        match |= ethLogTopicMatchesAddressBool(log->topics[i], address);
 
     return (ETHEREUM_BOOLEAN_IS_TRUE(topicsOnly)
             ? AS_ETHEREUM_BOOLEAN(match)
-            : AS_ETHEREUM_BOOLEAN(match | ETHEREUM_BOOLEAN_IS_TRUE(logHasAddress(log, address))));
+            : AS_ETHEREUM_BOOLEAN(match | ETHEREUM_BOOLEAN_IS_TRUE(ethLogHasAddress(log, address))));
 
 }
 
 extern BREthereumBoolean
-logIsConfirmed (BREthereumLog log) {
+ethLogIsConfirmed (BREthereumLog log) {
     return AS_ETHEREUM_BOOLEAN(TRANSACTION_STATUS_INCLUDED == log->status.type);
 }
 
 extern BREthereumBoolean
-logIsErrored (BREthereumLog log) {
+ethLogIsErrored (BREthereumLog log) {
     return AS_ETHEREUM_BOOLEAN(TRANSACTION_STATUS_ERRORED == log->status.type);
 }
 
 // Support BRSet
 extern size_t
-logHashValue (const void *l) {
-    assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l)->identifier.transactionReceiptIndex);
+ethLogHashValue (const void *l) {
+    assert (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l)->identifier.transactionReceiptIndex);
     return ethHashSetValue(&((BREthereumLog) l)->hash);
 }
 
 // Support BRSet
 extern int
-logHashEqual (const void *l1, const void *l2) {
+ethLogHashEqual (const void *l1, const void *l2) {
     if (l1 == l2) return 1;
 
-    assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l1)->identifier.transactionReceiptIndex);
-    assert (LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l2)->identifier.transactionReceiptIndex);
+    assert (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l1)->identifier.transactionReceiptIndex);
+    assert (ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN != ((BREthereumLog) l2)->identifier.transactionReceiptIndex);
     return ethHashSetEqual (&((BREthereumLog) l1)->hash,
                             &((BREthereumLog) l2)->hash);
 }
@@ -383,7 +383,7 @@ logHashEqual (const void *l1, const void *l2) {
 /// MARK: - Release // Copy
 
 extern void
-logRelease (BREthereumLog log) {
+ethLogRelease (BREthereumLog log) {
     if (NULL != log) {
         array_free(log->topics);
         rlpDataRelease(log->data);
@@ -396,23 +396,23 @@ logsRelease (BRArrayOf(BREthereumLog) logs) {
     if (NULL != logs) {
         size_t count = array_count(logs);
         for (size_t index = 0; index < count; index++)
-            logRelease (logs[index]);
+            ethLogRelease (logs[index]);
         array_free(logs);
     }
 }
 
 extern void
-logReleaseForSet (void *ignore, void *item) {
-    logRelease((BREthereumLog) item);
+ethLogReleaseForSet (void *ignore, void *item) {
+    ethLogRelease((BREthereumLog) item);
 }
 
 extern BREthereumLog
-logCopy (BREthereumLog log) {
+ethLogCopy (BREthereumLog log) {
     BREthereumLog copy = calloc (1, sizeof(struct BREthereumLogRecord));
     memcpy (copy, log, sizeof(struct BREthereumLogRecord));
 
     // Copy the topics
-    copy->topics = logTopicsCopy(log->topics);
+    copy->topics = ethLogTopicsCopy(log->topics);
 
     // Copy the data
     copy->data = rlpDataCopy(log->data);
@@ -423,19 +423,19 @@ logCopy (BREthereumLog log) {
 /// MARK: - RLP Encode/Decode
 
 static BRRlpItem
-logTopicsRlpEncode (BREthereumLog log,
+ethLogTopicsRlpEncode (BREthereumLog log,
                     BRRlpCoder coder) {
     size_t itemsCount = array_count(log->topics);
     BRRlpItem items[itemsCount];
 
     for (int i = 0; i < itemsCount; i++)
-        items[i] = logTopicRlpEncode(log->topics[i], coder);
+        items[i] = ethLogTopicRlpEncode(log->topics[i], coder);
 
     return rlpEncodeListItems(coder, items, itemsCount);
 }
 
 static BREthereumLogTopic *
-logTopicsRlpDecode (BRRlpItem item,
+ethLogTopicsRlpDecode (BRRlpItem item,
                     BRRlpCoder coder) {
     size_t itemsCount = 0;
     const BRRlpItem *items = rlpDecodeList(coder, item, &itemsCount);
@@ -444,7 +444,7 @@ logTopicsRlpDecode (BRRlpItem item,
     array_new(topics, itemsCount);
 
     for (int i = 0; i < itemsCount; i++) {
-        BREthereumLogTopic topic = logTopicRlpDecode(items[i], coder);
+        BREthereumLogTopic topic = ethLogTopicRlpDecode(items[i], coder);
         array_add(topics, topic);
     }
 
@@ -452,7 +452,7 @@ logTopicsRlpDecode (BRRlpItem item,
 }
 
 extern BREthereumLog
-logRlpDecode (BRRlpItem item,
+ethLogRlpDecode (BRRlpItem item,
               BREthereumRlpType type,
               BRRlpCoder coder) {
     BREthereumLog log = (BREthereumLog) calloc (1, sizeof (struct BREthereumLogRecord));
@@ -463,12 +463,12 @@ logRlpDecode (BRRlpItem item,
             (6 == itemsCount && RLP_TYPE_ARCHIVE == type));
 
     log->address = ethAddressRlpDecode(items[0], coder);
-    log->topics = logTopicsRlpDecode (items[1], coder);
+    log->topics = ethLogTopicsRlpDecode (items[1], coder);
 
     log->data = rlpItemGetData (coder, items[2]); //  rlpDecodeBytes(coder, items[2]);
 
     // 
-    log->identifier.transactionReceiptIndex = LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN;
+    log->identifier.transactionReceiptIndex = ETHEREUM_LOG_TRANSACTION_RECEIPT_INDEX_UNKNOWN;
 
     if (RLP_TYPE_ARCHIVE == type) {
         BREthereumHash hash = ethHashRlpDecode(items[3], coder);
@@ -476,27 +476,27 @@ logRlpDecode (BRRlpItem item,
         uint64_t transactionReceiptIndex = rlpDecodeUInt64(coder, items[4], 0);
         assert (transactionReceiptIndex <= (uint64_t) SIZE_MAX);
 
-        logInitializeIdentifier (log, hash, (size_t) transactionReceiptIndex);
-        log->status = transactionStatusRLPDecode(items[5], NULL, coder);
+        ethLogInitializeIdentifier (log, hash, (size_t) transactionReceiptIndex);
+        log->status = ethTransactionStatusRLPDecode(items[5], NULL, coder);
     }
     return log;
 }
 
 extern BRRlpItem
-logRlpEncode(BREthereumLog log,
+ethLogRlpEncode(BREthereumLog log,
              BREthereumRlpType type,
              BRRlpCoder coder) {
     
     BRRlpItem items[6]; // more than enough
 
     items[0] = ethAddressRlpEncode(log->address, coder);
-    items[1] = logTopicsRlpEncode(log, coder);
+    items[1] = ethLogTopicsRlpEncode(log, coder);
     items[2] = rlpDataGetItem(coder, log->data); //  rlpEncodeBytes(coder, log->data.bytes, log->data.bytesCount);
 
     if (RLP_TYPE_ARCHIVE == type) {
         items[3] = ethHashRlpEncode(log->identifier.transactionHash, coder);
         items[4] = rlpEncodeUInt64(coder, log->identifier.transactionReceiptIndex, 0);
-        items[5] = transactionStatusRLPEncode(log->status, coder);
+        items[5] = ethTransactionStatusRLPEncode(log->status, coder);
     }
 
     return rlpEncodeListItems(coder, items, (RLP_TYPE_ARCHIVE == type ? 6 : 3));
