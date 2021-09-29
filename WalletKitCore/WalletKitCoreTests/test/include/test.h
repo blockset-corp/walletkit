@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+// JSON
+extern void runJSONTests (void);
+
 // Util
 extern void runUtilTests (void);
 
@@ -39,6 +42,9 @@ extern void runBcTests (void);
 
 // Contract
 extern void runContractTests (void);
+
+// Structure
+extern void runStructureTests (void);
 
 // LES
 extern void runLESTests(const char *paperKey);

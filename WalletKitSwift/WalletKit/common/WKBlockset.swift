@@ -221,32 +221,33 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asBlockchainFee (json: JSON) -> SystemClient.BlockchainFee? {
             guard let confirmationTime = json.asUInt64(name: "estimated_confirmation_in"),
-                let amountValue = json.asDict(name: "fee")?["amount"] as? String,
-                let _ = json.asDict(name: "fee")?["currency_id"] as? String,
-                let tier = json.asString(name: "tier")
-                else { return nil }
+                  let amountValue = json.asDict(name: "fee")?["amount"] as? String,
+                  let _ = json.asDict(name: "fee")?["currency_id"] as? String,
+                  let tier = json.asString(name: "tier")
+            else {
+                print ("SYS: BDB: API: ERROR in asBlockchainFee JSON: '\(json)'")
+                return nil
+            }
 
             return (amount: amountValue, tier: tier, confirmationTimeInMilliseconds: confirmationTime)
         }
 
         static internal func asBlockchain (json: JSON) -> SystemClient.Blockchain? {
             guard let id = json.asString (name: "id"),
-                let name = json.asString (name: "name"),
-                let network = json.asString (name: "network"),
-                let isMainnet = json.asBool (name: "is_mainnet"),
-                let currency = json.asString (name: "native_currency_id"),
-                let blockHeight = json.asInt64 (name: "verified_height"),
-                let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
+                  let name = json.asString (name: "name"),
+                  let network = json.asString (name: "network"),
+                  let isMainnet = json.asBool (name: "is_mainnet"),
+                  let currency = json.asString (name: "native_currency_id"),
+                  let blockHeight = json.asInt64 (name: "verified_height"),
+                  let confirmationsUntilFinal = json.asUInt32(name: "confirmations_until_final")
             else {
-                print ("SYS: BDB:API: ERROR in Blockchain JSON: '\(json)'")
+                print ("SYS: BDB: API: ERROR in asBlockchain JSON: '\(json)'")
                 return nil
             }
 
-            guard let feeEstimates = json.asArray(name: "fee_estimates")?
-                .map ({ JSON (dict: $0) })
-                .map ({ asBlockchainFee (json: $0) }) as? [SystemClient.BlockchainFee]
+            guard let feeEstimates = json.asArrayMapped(name: "fee_estimates", transform: asBlockchainFee)
             else { return nil }
-            
+
             let verifiedBlockHash = json.asString(name: "verified_block_hash")
 
             return (id: id, name: name, network: network, isMainnet: isMainnet, currency: currency,
@@ -260,10 +261,13 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asCurrencyDenomination (json: JSON) -> SystemClient.CurrencyDenomination? {
             guard let name = json.asString (name: "name"),
-                let code = json.asString (name: "short_name"),
-                let decimals = json.asUInt8 (name: "decimals")
-                // let symbol = json.asString (name: "symbol")
-                else { return nil }
+                  let code = json.asString (name: "short_name"),
+                  let decimals = json.asUInt8 (name: "decimals")
+                    // let symbol = json.asString (name: "symbol")
+            else {
+                print ("SYS: BDB: API: ERROR in asCurrencyDenomination JSON: '\(json)'")
+                return nil
+            }
 
             let symbol = lookupSymbol (code)
 
@@ -279,21 +283,22 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asCurrency (json: JSON) -> SystemClient.Currency? {
             guard let id = json.asString (name: "currency_id"),
-                let name = json.asString (name: "name"),
-                let code = json.asString (name: "code"),
-                let type = json.asString (name: "type"),
-                let bid  = json.asString (name: "blockchain_id"),
-                let verified = json.asBool(name: "verified")
-                else { return nil }
+                  let name = json.asString (name: "name"),
+                  let code = json.asString (name: "code"),
+                  let type = json.asString (name: "type"),
+                  let bid  = json.asString (name: "blockchain_id"),
+                  let verified = json.asBool(name: "verified")
+            else {
+                print ("SYS: BDB: API: ERROR in asCurrency JSON: '\(json)'")
+                return nil
+            }
 
             // Address is optional
             let address = json.asString(name: "address")
 
             // All denomincations must parse
-            guard let demoninations = json.asArray (name: "denominations")?
-                .map ({ JSON (dict: $0 )})
-                .map ({ asCurrencyDenomination(json: $0)}) as? [SystemClient.CurrencyDenomination]
-                else { return nil }
+            guard let demoninations = json.asArrayMapped (name: "denominations", transform: asCurrencyDenomination)
+            else { return nil }
             
             return (id: id, name: name, code: code, type: type,
                     blockchainID: bid,
@@ -309,8 +314,11 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asAmount (json: JSON) -> SystemClient.Amount? {
             guard let currency = json.asString (name: "currency_id"),
-                let value = json.asString (name: "amount")
-                else { return nil }
+                  let value = json.asString (name: "amount")
+            else {
+                print ("SYS: BDB: API: ERROR in asAmount JSON: '\(json)'")
+                return nil
+            }
             return (currency: currency, value: value)
         }
 
@@ -318,12 +326,15 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asTransfer (json: JSON) -> SystemClient.Transfer? {
             guard let id   = json.asString (name: "transfer_id"),
-                let bid    = json.asString (name: "blockchain_id"),
-                let index  = json.asUInt64 (name: "index"),
-                let amount = json.asDict (name: "amount")
+                  let bid    = json.asString (name: "blockchain_id"),
+                  let index  = json.asUInt64 (name: "index"),
+                  let amount = json.asDict (name: "amount")
                     .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0) }) as? SystemClient.Amount
-                else { return nil }
+                    .flatMap ({ asAmount(json: $0) })
+            else {
+                print ("SYS: BDB: API: ERROR in asTransfer JSON: '\(json)'")
+                return nil
+            }
 
             // TODO: Resolve if optional or not
             let acks   = json.asUInt64 (name: "acknowledgements") ?? 0
@@ -357,16 +368,19 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asTransaction (json: JSON) -> SystemClient.Transaction? {
             guard let id = json.asString(name: "transaction_id"),
-                let bid        = json.asString (name: "blockchain_id"),
-                let hash       = json.asString (name: "hash"),
-                let identifier = json.asString (name: "identifier"),
-                let status     = json.asString (name: "status"),
-                let size       = json.asUInt64 (name: "size"),
-                let fee        = json.asDict (name: "fee")
+                  let bid        = json.asString (name: "blockchain_id"),
+                  let hash       = json.asString (name: "hash"),
+                  let identifier = json.asString (name: "identifier"),
+                  let status     = json.asString (name: "status"),
+                  let size       = json.asUInt64 (name: "size"),
+                  let fee        = json.asDict (name: "fee")
                     .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0)}) as? SystemClient.Amount,
-                asTransactionValidateStatus(status)
-                else { return nil }
+                    .flatMap ({ asAmount(json: $0)}),
+                  asTransactionValidateStatus(status)
+            else {
+                print ("SYS: BDB: API: ERROR in asTransaction JSON: '\(json)'")
+                return nil
+            }
 
             // TODO: Resolve if optional or not
             let acks       = json.asUInt64 (name: "acknowledgements") ?? 0
@@ -379,16 +393,16 @@ public class BlocksetSystemClient: SystemClient {
             let timestamp     = json.asDate   (name: "timestamp")
             let meta          = json.asDict(name: "meta")?.mapValues { return $0 as! String }
 
-            let raw = json.asData (name: "raw")
-
-            // Require "_embedded" : "transfers" as [JSON.Dict]
-            let transfersJSON = json.asDict (name: "_embedded")?["transfers"] as? [JSON.Dict] ?? []
-
-            // Require asTransfer is not .none
-            guard let transfers = transfersJSON
-                .map ({ JSON (dict: $0) })
-                .map ({ asTransfer (json: $0) }) as? [SystemClient.Transfer]
-                else { return nil }
+            let raw      = json.asData (name: "raw")
+            let embedded = json.asJSON (name: "_embedded")
+            
+            guard let transfers = (nil == embedded || nil == embedded!.asArray(name: "transfers")
+                                   ? [] // No "_embedded" or no "transfers"
+                                   : embedded!.asArrayMapped(name: "transfers", transform: asTransfer))
+            else {
+                print ("SYS: BDB: API: ERROR in asTransaction.Transfers JSON: '\(json)'")
+                return nil
+            }
 
             return (id: id, blockchainId: bid,
                      hash: hash, identifier: identifier,
@@ -405,7 +419,10 @@ public class BlocksetSystemClient: SystemClient {
             guard let id         = json.asString(name: "transaction_id"),
                   let bid        = json.asString (name: "blockchain_id"),
                   let identifier = json.asString (name: "identifier")
-            else { return nil }
+            else {
+                print ("SYS: BDB: API: ERROR in asTransactionIdentifier JSON: '\(json)'")
+                return nil
+            }
 
             let hash = json.asString (name: "hash")
 
@@ -421,8 +438,11 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asTransactionFee (json: JSON) -> SystemClient.TransactionFee? {
             guard let costUnits = json.asUInt64(name: "cost_units")
-                else { return nil }
-            
+            else {
+                print ("SYS: BDB: API: ERROR in asTransactionFee JSON: '\(json)'")
+                return nil
+            }
+
             let properties = json.asDict(name: "properties")?.mapValues { return $0 as! String }
 
             return (costUnits: costUnits, properties: properties)
@@ -452,7 +472,10 @@ public class BlocksetSystemClient: SystemClient {
                 let height   = json.asUInt64 (name: "height"),
                 let mined    = json.asDate   (name: "mined"),
                 let size     = json.asUInt64 (name: "size")
-                else { return nil }
+            else {
+                print ("SYS: BDB: API: ERROR in asBlock JSON: '\(json)'")
+                return nil
+            }
 
             let acks     = json.asUInt64 (name: "acknowledgements") ?? 0
             let header   = json.asString (name: "header")
@@ -460,9 +483,7 @@ public class BlocksetSystemClient: SystemClient {
             let prevHash = json.asString (name: "prev_hash")
             let nextHash = json.asString (name: "next_hash")
 
-            let transactions = json.asArray (name: "transactions")?
-                .map ({ JSON (dict: $0 )})
-                .map ({ asTransaction (json: $0)}) as? [SystemClient.Transaction]  // not quite
+            let transactions = json.asArrayMapped (name: "transactions", transform: asTransaction)
 
             return (id: id, blockchainId: bid,
                     hash: hash, height: height, header: header, raw: raw, mined: mined, size: size,
@@ -477,9 +498,12 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asSubscriptionEndpoint (json: JSON) -> SubscriptionEndpoint? {
             guard let environment = json.asString (name: "environment"),
-                let kind = json.asString(name: "kind"),
-                let value = json.asString(name: "value")
-                else { return nil }
+                  let kind = json.asString(name: "kind"),
+                  let value = json.asString(name: "value")
+            else {
+                print ("SYS: BDB: API: ERROR in asSubscriptionEndpoint JSON: '\(json)'")
+                return nil
+            }
 
             return (environment: environment, kind: kind, value: value)
         }
@@ -499,7 +523,10 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asSubscriptionEvent (json: JSON) -> SubscriptionEvent? {
             guard let name = json.asString(name: "name")
-                else { return nil }
+            else {
+                print ("SYS: BDB: API: ERROR in asSubscriptionEvent JSON: '\(json)'")
+                return nil
+            }
             return (name: name, confirmations: [])
         }
 
@@ -525,11 +552,12 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asSubscriptionCurrency (json: JSON) -> SubscriptionCurrency? {
             guard let addresses = json.asStringArray (name: "addresses"),
-                let currencyId = json.asString (name: "currency_id"),
-                let events = json.asArray(name: "events")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asSubscriptionEvent(json: $0) }) as? [SubscriptionEvent] // not quite
-                else { return nil }
+                  let currencyId = json.asString (name: "currency_id"),
+                  let events = json.asArrayMapped(name: "events", transform: asSubscriptionEvent)
+            else {
+                print ("SYS: BDB: API: ERROR in asSubscriptionCurrency JSON: '\(json)'")
+                return nil
+            }
 
             return (addresses: addresses, currencyId: currencyId, events: events)
         }
@@ -552,15 +580,16 @@ public class BlocksetSystemClient: SystemClient {
             currencies: [SubscriptionCurrency]
         )
 
-       static internal func asSubscription (json: JSON) -> Subscription? {
+        static internal func asSubscription (json: JSON) -> Subscription? {
             guard let id = json.asString (name: "subscription_id"),
-                let device = json.asString (name: "device_id"),
-                let endpoint = json.asDict(name: "endpoint")
+                  let device = json.asString (name: "device_id"),
+                  let endpoint = json.asDict(name: "endpoint")
                     .flatMap ({ asSubscriptionEndpoint (json: JSON (dict: $0)) }),
-                let currencies = json.asArray(name: "currencies")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asSubscriptionCurrency (json: $0) }) as? [SubscriptionCurrency]
-                else { return nil }
+                  let currencies = json.asArrayMapped(name: "currencies", transform: asSubscriptionCurrency)
+            else {
+                print ("SYS: BDB: API: ERROR in asSubscription JSON: '\(json)'")
+                return nil
+            }
 
             return (id: id,
                     device: device,
@@ -581,12 +610,13 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asAddress (json: JSON) -> SystemClient.Address? {
             guard let bid     = json.asString (name: "blockchain_id"),
-                let address   = json.asString (name: "address"),
-                let timestamp = json.asUInt64 (name: "timestamp"),
-                let balances = json.asArray (name: "balances")?
-                    .map ({ JSON (dict: $0) })
-                    .map ({ asAmount(json: $0)}) as? [SystemClient.Amount]
-                else { return nil }
+                  let address   = json.asString (name: "address"),
+                  let timestamp = json.asUInt64 (name: "timestamp"),
+                  let balances  = json.asArrayMapped(name: "balances", transform: asAmount)
+            else {
+                print ("SYS: BDB: API: ERROR in asAddress JSON: '\(json)'")
+                return nil
+            }
 
             let nonce = json.asUInt64 (name: "nonce")
             let meta  = json.asDict(name: "meta")?.mapValues { return $0 as! String }
@@ -601,8 +631,11 @@ public class BlocksetSystemClient: SystemClient {
 
         static internal func asHederaAccount (json: JSON) -> SystemClient.HederaAccount? {
             guard let id      = json.asString (name: "account_id"),
-                let status    = json.asString (name: "account_status")
-                else { return nil }
+                  let status    = json.asString (name: "account_status")
+            else {
+                print ("SYS: BDB: API: ERROR in asHederaAccount JSON: '\(json)'")
+                return nil
+            }
 
             let balance   = json.asUInt64 (name: "hbar_balance")
 
@@ -1340,6 +1373,18 @@ public class BlocksetSystemClient: SystemClient {
 
         internal func asJSON (name: String) -> JSON? {
             return asDict(name: name).map { JSON (dict: $0) }
+        }
+
+        internal func asJSONArray (name: String) -> [JSON]? {
+            return asArray(name: name)?.map { JSON (dict: $0) }
+        }
+
+        internal func asArrayMapped<T> (name: String, transform: (JSON) -> T?) -> [T]? {
+            guard let result = asJSONArray(name: name)?.map (transform)
+            else { return nil }
+
+            let resultCompacted = result.compactMap { $0 }
+            return result.count != resultCompacted.count ? nil : resultCompacted
         }
     }
 

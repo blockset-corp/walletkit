@@ -116,3 +116,19 @@ mergesort_brd (void *__base, size_t __nel, size_t __width, SortCompareRoutine __
 #  error Undefined mergesort_brd()
 #endif
 }
+
+extern FILE *
+open_memstream_brd (char **bufp, size_t *sizep) {
+#if defined (__APPLE__)
+    if (__builtin_available(iOS 11.0, macOS 10.13, *)) {
+            return open_memstream(bufp, sizep);
+    } else {
+        // Fallback on earlier versions
+        return NULL;
+    }
+#elif defined(__linux)
+    return open_memstream(bufp, sizep);
+#elif defined(__ANDROID__)
+    return open_memstream(bufp, sizep);
+#endif
+}
