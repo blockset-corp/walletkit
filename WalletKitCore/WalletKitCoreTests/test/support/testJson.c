@@ -286,6 +286,39 @@ runJSONShowTest () {
     assert (JSON_STATUS_OK == jsonRelease(valComplex));
 }
 
+static void
+runJsonStringTest () {
+    printf ("  JSON As String\n");
+
+    BRJsonStatus status;
+    BRJson valueBuild = jsonCreateObjectVargs (&status, 3,
+                                               ((BRJsonObjectMember) { "lastname", jsonCreateString ("Nakamoto") }),
+                                               ((BRJsonObjectMember) { "fullname", jsonCreateString ("Satoshi Nakamoto") }),
+                                               ((BRJsonObjectMember) { "children", jsonCreateArrayVargs (&status, 4,
+                                                                                                         jsonCreateString ("Bitcoin"),
+                                                                                                         jsonCreateString ("Bitcoin Cash"),
+                                                                                                         jsonCreateString ("Litecoin"),
+                                                                                                         jsonCreateString ("Doge")) }));
+
+    char *valueBuildString = jsonAsString(valueBuild, false);
+
+    BRJson valueParse = jsonParse(valueBuildString, &status, NULL);
+    assert (JSON_STATUS_OK == status);
+    assert (jsonEqual (valueBuild, valueParse));
+    printf ("    Raw   : %s\n", valueBuildString);
+
+    assert (JSON_STATUS_OK == jsonRelease(valueParse));
+
+    valueBuildString = jsonAsString (valueBuild, true);
+    valueParse = jsonParse(valueBuildString, &status, NULL);
+    assert (JSON_STATUS_OK == status);
+    assert (jsonEqual (valueBuild, valueParse));
+    printf ("    Pretty: %s\n", valueBuildString);
+    assert (JSON_STATUS_OK == jsonRelease(valueParse));
+
+    assert (JSON_STATUS_OK == jsonRelease(valueBuild));
+}
+
 extern void
 runJSONTests (void) {
     printf ("JSON Tests\n");
@@ -300,4 +333,6 @@ runJSONTests (void) {
 
     runJSONArrayTest ();
     runJSONArrayPathTest ();
+
+    runJsonStringTest();
 }

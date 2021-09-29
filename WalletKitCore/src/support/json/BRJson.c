@@ -641,18 +641,18 @@ jsonEqual (BRJson value1,
 // MARK: JSON Write
 
 static void
-jsonValueWriteNewline (FILE *file, bool pretty, bool lineRequired, size_t lineIndentation, const char *linePrefix) {
+jsonWriteNewline (FILE *file, bool pretty, bool lineRequired, size_t lineIndentation, const char *linePrefix) {
     if (pretty && lineRequired) fprintf (file, "\n%s%*s", linePrefix, (int) lineIndentation, "");
 }
 
 static void
-jsonValueWriteDetailed (BRJson value,
-                        FILE *file,
-                        bool pretty,
-                        bool   lineRequired,
-                        size_t lineIndentation,
-                        const char *linePrefix) {
-    jsonValueWriteNewline (file, pretty, lineRequired, lineIndentation, linePrefix);
+jsonWriteDetailed (BRJson value,
+                   FILE *file,
+                   bool pretty,
+                   bool   lineRequired,
+                   size_t lineIndentation,
+                   const char *linePrefix) {
+    jsonWriteNewline (file, pretty, lineRequired, lineIndentation, linePrefix);
     switch (value->type) {
         case JSON_TYPE_NULL:
             fputs ("null", file);
@@ -685,12 +685,12 @@ jsonValueWriteDetailed (BRJson value,
             char *prefix = "[";
             for (size_t index = 0; index < array_count(value->u.array); index++) {
                 fputs (prefix, file);
-                jsonValueWriteDetailed (value->u.array[index], file, pretty, true,
-                                        lineIndentation + 2,
-                                        linePrefix);
-                prefix = ", ";
+                jsonWriteDetailed (value->u.array[index], file, pretty, true,
+                                   lineIndentation + 2,
+                                   linePrefix);
+                prefix = ",";
             }
-            jsonValueWriteNewline (file, pretty, true, lineIndentation, linePrefix);
+            jsonWriteNewline (file, pretty, true, lineIndentation, linePrefix);
             fputs ("]", file);
             break;
         }
@@ -705,14 +705,14 @@ jsonValueWriteDetailed (BRJson value,
             for (size_t index = 0; index < membersCount; index++) {
                 BRJsonObjectMember *member = members[index];
                 fputs (prefix, file);
-                jsonValueWriteNewline (file, pretty, true, lineIndentation + 2, linePrefix);
+                jsonWriteNewline (file, pretty, true, lineIndentation + 2, linePrefix);
                 fprintf (file, "\"%s\":%s", member->label, (pretty ? " " : ""));
-                jsonValueWriteDetailed (member->value, file, pretty, false,
-                                        lineIndentation + 2,
-                                        linePrefix);
+                jsonWriteDetailed (member->value, file, pretty, false,
+                                   lineIndentation + 2,
+                                   linePrefix);
                 prefix=",";
             }
-            jsonValueWriteNewline (file, pretty, true, lineIndentation, linePrefix);
+            jsonWriteNewline (file, pretty, true, lineIndentation, linePrefix);
             fputs ("}", file);
             break;
         }
@@ -722,13 +722,30 @@ jsonValueWriteDetailed (BRJson value,
 extern void
 jsonWrite (BRJson value,
            FILE *file) {
-    jsonValueWriteDetailed (value, file, false, false, 0, "");
+    jsonWriteDetailed (value, file, false, false, 0, "");
 }
 extern void
 jsonWritePretty (BRJson value,
                  FILE *file,
                  size_t lineIndentation,
                  const char *linePrefix) {
-    jsonValueWriteDetailed (value, file, true, true, lineIndentation, linePrefix);
+    jsonWriteDetailed (value, file, true, true, lineIndentation, linePrefix);
 }
 
+extern char *
+jsonAsString (BRJson value, bool pretty) {
+    char *result;
+    size_t resultSize;
+
+    FILE *stream = open_memstream_brd (&result, &resultSize);
+    if (NULL == stream) return NULL;
+
+    jsonWriteDetailed (value, stream, pretty, pretty, 0, "");
+
+    if (EOF == fclose (stream)) {
+        if (NULL != result) free (result);
+        return NULL;
+    }
+
+    return result;
+}

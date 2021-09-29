@@ -216,6 +216,7 @@ jsonGetValueArray (BRJson   value,
 extern void
 jsonWrite (BRJson value,
            FILE *file);
+
 extern void
 jsonWritePretty (BRJson value,
                  FILE *file,
@@ -227,6 +228,9 @@ jsonShow (BRJson value,
           const char *linePrefix) {
     jsonWritePretty (value, stdout, 0, (NULL == linePrefix ? "" : linePrefix));
 }
+
+extern char *
+jsonAsString (BRJson value, bool pretty);
 
 extern BRJson
 jsonParse (const char *string,
