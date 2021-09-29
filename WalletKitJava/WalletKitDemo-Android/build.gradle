@@ -56,6 +56,8 @@ dependencies {
     implementation deps.jacksonDatabind
     implementation deps.jacksonDatabindGuava
 
+    implementation deps.bouncyCastle;
+
     testImplementation deps.junit
 
     androidTestImplementation deps.androidxTestRunner

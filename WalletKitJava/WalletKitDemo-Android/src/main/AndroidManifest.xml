@@ -14,6 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name="com.blockset.walletkit.demo.TransferCreateDelegateActivity"
@@ -36,6 +37,9 @@
         <activity
             android:name="com.blockset.walletkit.demo.TransferListActivity"
             android:label="Transfers" />
+        <activity
+            android:name="com.blockset.walletkit.demo.WalletConnectorSessionsActivity"
+            android:label="Wallet Connect Sessions" />
         <activity
             android:name="com.blockset.walletkit.demo.WalletListActivity">
             <intent-filter>
