@@ -17,11 +17,7 @@
 
 // MARK: - Parse Stack
 
-#define CONTEXT_ERROR_BUFFER_LENGTH (1024)
-#define CONTEXT_DEFAULT_STATE_SIZE  (100)
-
 typedef enum {
-    JSON_CONTEXT_VAL,
     JSON_CONTEXT_KEY,
     JSON_CONTEXT_ARRAY,
     JSON_CONTEXT_OBJECT
@@ -73,9 +69,6 @@ jsonStackCreateObject (void) {
 static void
 jsonStackRelease (BRJsonStack stack) {
     switch (stack->type) {
-        case JSON_CONTEXT_VAL:
-            break;
-
         case JSON_CONTEXT_KEY:
             free (stack->u.key);
             break;
@@ -94,10 +87,11 @@ jsonStackRelease (BRJsonStack stack) {
 
 // MARK: - Parse Context
 
-typedef struct {
-    char *errbuf;
-    size_t errbuf_size;
+#define CONTEXT_ERROR_BUFFER_LENGTH (1024)
 
+typedef struct {
+    BRJsonStatus status;
+    char error[CONTEXT_ERROR_BUFFER_LENGTH + 1];
     BRJson json;
     BRJsonStack stack;
 } BRJsonContext;
@@ -106,10 +100,11 @@ static BRJsonContext
 jsonContextInit (void) {
     BRJsonContext context;
 
-    context.errbuf = calloc (CONTEXT_ERROR_BUFFER_LENGTH + 1, 1);
-    context.errbuf_size = CONTEXT_ERROR_BUFFER_LENGTH;
+    context.status   = JSON_STATUS_OK;
+    context.error[0] = '\0';
     context.json  = NULL;
     context.stack = NULL;
+
     return context;
 }
 
@@ -130,27 +125,33 @@ jsonContextPop (BRJsonContext *context) {
 
 static void
 jsonContextRelease (BRJsonContext *context, bool error) {
-    assert (NULL == context->json);
-    assert (error || NULL == context->stack);
+    // assert (NULL == context->json);
+    // assert (error || NULL == context->stack);
 
     if (error) while (context->stack) jsonStackRelease(jsonContextPop(context));
-    free (context->errbuf);
     memset (context, 0, sizeof (BRJsonContext));
 }
 
-static void
+static int
+jsonContextError (BRJsonContext *context, BRJsonStatus status) {
+    context->status = status;
+    return STATUS_ABORT;
+}
+
+static int
 jsonContextUpdate (BRJsonContext *context, BRJson value) {
     BRJsonStack stack = context->stack;
 
     if (NULL == stack) context->json = value;
     else
         switch (stack->type) {
-            case JSON_CONTEXT_VAL:
-                break;
-
             case JSON_CONTEXT_KEY: {
                 BRJsonStack object = stack->parent;
-                assert (JSON_CONTEXT_OBJECT == object->type);
+                if (NULL == object || JSON_CONTEXT_OBJECT != object->type) {
+                    jsonRelease(value);
+                    return jsonContextError (context, JSON_STATUS_ERROR_PARSE_INTERNAL);
+                }
+
                 array_add (object->u.object, ((BRJsonObjectMember) { strdup (stack->u.key), value }));
                 jsonStackRelease(stack);
                 jsonContextPop(context);
@@ -162,41 +163,36 @@ jsonContextUpdate (BRJsonContext *context, BRJson value) {
                 break;
 
             case JSON_CONTEXT_OBJECT:
-                assert (false);
-                break;
+                return jsonContextError (context, JSON_STATUS_ERROR_PARSE_INTERNAL);
         }
+    return STATUS_CONTINUE;
 }
 
 // MARK: - Parse Handlers
 
 static int jsonParseHandleNull (void *ctx) {
     BRJsonContext *context = ctx;
-    jsonContextUpdate (context, jsonCreateNull());
-    return STATUS_CONTINUE;
+    return jsonContextUpdate (context, jsonCreateNull());
 }
 
 static int jsonParseHandleBoolean (void *ctx, int boolean_value) {
     BRJsonContext *context = ctx;
-    jsonContextUpdate (context, jsonCreateBoolean(1 == boolean_value));
-    return STATUS_CONTINUE;
+    return jsonContextUpdate (context, jsonCreateBoolean(1 == boolean_value));
 }
 
 static int jsonParseHandleString (void *ctx, const unsigned char *string, size_t string_length) {
     BRJsonContext *context = ctx;
 
     char *str = strndup ((const char*) string, string_length);
-    jsonContextUpdate (context, jsonCreateString(str));
+    BRJson value = jsonCreateString(str);
     free (str);
 
-    return STATUS_CONTINUE;
+    return jsonContextUpdate (context, value);
 }
 
 static int jsonParseHandleNumber (void *ctx, const char *string, size_t string_length) {
-    assert (NULL != string);
-
     BRJsonContext *context = ctx;
 
-    bool success  = true;
     bool negative = false;
     char *str  = strndup ((char *) string, string_length);
     char *strToFree = str;
@@ -206,8 +202,8 @@ static int jsonParseHandleNumber (void *ctx, const char *string, size_t string_l
     errno = 0;
     long long numberLL = strtoll (str, &strEnd, 0);
     if ('\0' == *strEnd && !errno) {
-        jsonContextUpdate (context, jsonCreateInteger (uint256Create((uint64_t) llabs(numberLL)), numberLL < 0));
-        goto done;
+        free (strToFree);
+        return jsonContextUpdate (context, jsonCreateInteger (uint256Create((uint64_t) llabs(numberLL)), numberLL < 0));
     }
 
     // Try to parse a big integer
@@ -218,24 +214,20 @@ static int jsonParseHandleNumber (void *ctx, const char *string, size_t string_l
     BRCoreParseStatus status;
     UInt256 number = uint256CreateParse (str, 10, &status);
     if (CORE_PARSE_OK == status) {
-        jsonContextUpdate (context, jsonCreateInteger (number, negative));
-        goto done;
+        free (strToFree);
+        return jsonContextUpdate (context, jsonCreateInteger (number, negative));
     }
 
     // Try to parse a double
     errno = 0;
     double numberD = strtod (str, &strEnd);
     if ('\0' == *strEnd && !errno) {
-        jsonContextUpdate (context, jsonCreateReal(numberD));
-        goto done;
+        free (strToFree);
+        return jsonContextUpdate (context, jsonCreateReal(numberD));
     }
 
-    // Failed
-    success = false;
-
-done:
     free (strToFree);
-    return success ? STATUS_CONTINUE : STATUS_ABORT;
+    return jsonContextError (context, JSON_STATUS_ERROR_PARSE_NUMERIC);
 }
 
 // MARK: - Handle Object
@@ -256,13 +248,16 @@ static int jsonParseHandleObjectKey (void *ctx, const unsigned char *key, size_t
 static int jsonParseHandleObjectEnd (void *ctx) {
     BRJsonContext *context = ctx;
     BRJsonStack    stack   = jsonContextPop (context);
-    assert (JSON_CONTEXT_OBJECT == stack->type);
+    if (JSON_CONTEXT_OBJECT != stack->type) {
+        jsonStackRelease(stack);
+        return jsonContextError (context, JSON_STATUS_ERROR_PARSE_INTERNAL);
+    }
 
     BRJsonStatus status;
     BRJson json = jsonCreateObject (&status, stack->u.object);
-    jsonContextUpdate (context, json);
-
-    return STATUS_CONTINUE;
+    return (JSON_STATUS_OK == status
+            ? jsonContextUpdate (context, json)
+            : jsonContextError  (context, status));
 }
 
 // MAEK: - Handler Array
@@ -276,13 +271,16 @@ static int jsonParseHandleArrayBeg (void *ctx) {
 static int jsonParseHandleArrayEnd (void *ctx) {
     BRJsonContext *context = ctx;
     BRJsonStack    stack   = jsonContextPop (context);
-    assert (JSON_CONTEXT_ARRAY == stack->type);
+    if (JSON_CONTEXT_ARRAY != stack->type) {
+        jsonStackRelease(stack);
+        return jsonContextError (context, JSON_STATUS_ERROR_PARSE_INTERNAL);
+    }
 
     BRJsonStatus status;
     BRJson json = jsonCreateArray (&status, stack->u.array);
-    jsonContextUpdate (context, json);
-
-    return STATUS_CONTINUE;
+    return (JSON_STATUS_OK == status
+            ? jsonContextUpdate (context, json)
+            : jsonContextError  (context, status));
 }
 
 // MARK: - Parse
@@ -319,21 +317,22 @@ jsonParse (const char *input,
     status = yajl_complete_parse (handle);
 
     if (status != yajl_status_ok) {
-        if (context.errbuf != NULL && context.errbuf_size > 0) {
-            internal_err_str = (char *) yajl_get_error(handle, 1,
-                                                       (const unsigned char *) input,
-                                                       strlen(input));
-            snprintf(context.errbuf, context.errbuf_size, "%s", internal_err_str);
-            free (internal_err_str);
-        }
+        internal_err_str = (char *) yajl_get_error(handle, 1, (const unsigned char *) input, strlen(input));
+        snprintf (context.error, CONTEXT_ERROR_BUFFER_LENGTH, "%s", internal_err_str);
+        free (internal_err_str);
 
+        // Clear out context.json
         if (NULL != context.json) jsonRelease(context.json);
         context.json = NULL;
+
+        // Nothing more specific in context.status, set to ERROR_PARSE
+        if (JSON_STATUS_OK == context.status)
+            context.status = JSON_STATUS_ERROR_PARSE;
     }
     yajl_free (handle);
 
-    if (NULL != jsonStatus) *jsonStatus = (status == yajl_status_ok ? JSON_STATUS_OK : JSON_STATUS_ERROR_PARSE);
-    if (NULL != jsonError)  *jsonError  = (status == yajl_status_ok ? NULL           : strdup (context.errbuf));
+    if (NULL != jsonStatus) *jsonStatus = context.status;
+    if (NULL != jsonError)  *jsonError  = (JSON_STATUS_OK == context.status ? NULL : strdup (context.error));
 
     BRJson json = context.json;
     context.json = NULL;

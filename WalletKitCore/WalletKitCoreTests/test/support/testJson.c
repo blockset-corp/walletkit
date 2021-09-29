@@ -14,6 +14,49 @@
 #include <string.h>
 #include "support/json/BRJson.h"
 
+#define PARSE_TEST_1 "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"RelayRequest\":[{\"name\":\"target\",\"type\":\"address\"},{\"name\":\"encodedFunction\",\"type\":\"bytes\"},{\"name\":\"gasData\",\"type\":\"GasData\"},{\"name\":\"relayData\",\"type\":\"RelayData\"}],\"GasData\":[{\"name\":\"gasLimit\",\"type\":\"uint256\"},{\"name\":\"gasPrice\",\"type\":\"uint256\"},{\"name\":\"pctRelayFee\",\"type\":\"uint256\"},{\"name\":\"baseRelayFee\",\"type\":\"uint256\"}],\"RelayData\":[{\"name\":\"senderAddress\",\"type\":\"address\"},{\"name\":\"senderNonce\",\"type\":\"uint256\"},{\"name\":\"relayWorker\",\"type\":\"address\"},{\"name\":\"paymaster\",\"type\":\"address\"}]},\"domain\":{\"name\":\"GSN Relayed Transaction\",\"version\":\"1\",\"chainId\":42,\"verifyingContract\":\"0x6453D37248Ab2C16eBd1A8f782a2CBC65860E60B\"},\"primaryType\":\"RelayRequest\",\"message\":{\"target\":\"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\"encodedFunction\":\"0xa9059cbb0000000000000000000000002e0d94754b348d208d64d52d78bcd443afa9fa520000000000000000000000000000000000000000000000000000000000000007\",\"gasData\":{\"gasLimit\":\"39507\",\"gasPrice\":\"1700000000\",\"pctRelayFee\":\"70\",\"baseRelayFee\":\"0\"},\"relayData\":{\"senderAddress\":\"0x22d491bde2303f2f43325b2108d26f1eaba1e32b\",\"senderNonce\":\"3\",\"relayWorker\":\"0x3baee457ad824c94bd3953183d725847d023a2cf\",\"paymaster\":\"0x957F270d45e9Ceca5c5af2b49f1b5dC1Abb0421c\"}}}"
+#define PARSE_TEST_2 "[ 1, -1, 1.2, -1.2, 111111111111111111111111111111111111111111111111, 111111111111111111111111111111111111111111111111.11111, -0e-3, -0.1e+3 ]"
+#define PARSE_TEST_3 "[ 1, 2, 3, 111a111, 4, 5 ]"
+#define PARSE_TEST_4 "-17"
+#define PARSE_TEST_5 "{ \"address\" : \"0x6453D37248Ab2C16eBd1A8f782a2CBC65860E60B\" }"
+
+static void
+runJsonParseTest (void) {
+    static struct {
+        char *input;
+        bool  error;
+    } tests[] = {
+        { PARSE_TEST_1, false },
+        { PARSE_TEST_2, false },
+        { PARSE_TEST_3, true  },
+        { PARSE_TEST_4, false },
+        { PARSE_TEST_5, false },
+        { NULL, true }
+    };
+
+    BRJsonStatus status;
+    char *error = NULL;
+
+    const char *prefix = "      ";
+
+    for (size_t index = 0; NULL != tests[index].input; index++) {
+        BRJson json = jsonParse (tests[index].input, &status, &error);
+        if (!tests[index].error) {
+            assert (JSON_STATUS_OK == status && NULL == error);
+            printf ("    JSON Show Parse %zu: ", index);
+            jsonShow(json, prefix);
+            printf ("\n");
+        }
+        else {
+            assert (JSON_STATUS_OK != status && NULL != error);
+            printf ("    JSON Show Parse %zu:\n", index);
+            printf ("       Input: %s\n", PARSE_TEST_3);
+            printf ("       Error: %s\n", error);
+            free (error);
+        }
+    }
+}
+
 static BRJson
 jsonTestsCreateArrayBools () {
     BRJsonStatus status;
@@ -185,13 +228,13 @@ runJSONArrayPathTest () {
     bool boolean;
 
     BRJson valOfArray00 = jsonGetValue (valOfArray, &status, 2,
-                                             jsonPathCreateIndex(0),
-                                             jsonPathCreateIndex(0));
+                                        jsonPathCreateIndex(0),
+                                        jsonPathCreateIndex(0));
     assert (NULL != valOfArray00 && JSON_STATUS_OK == status);
 
     BRJson valOfArray01 = jsonGetValue (valOfArray, &status, 2,
-                                             jsonPathCreateIndex(0),
-                                             jsonPathCreateIndex(1));
+                                        jsonPathCreateIndex(0),
+                                        jsonPathCreateIndex(1));
     assert (NULL != valOfArray01 && JSON_STATUS_OK == status);
 
     // true, the false; see jsonTestsCreateArrayBools()
@@ -207,16 +250,16 @@ runJSONShowTest () {
 
     BRJsonStatus status;
 
-    BRJson valBools  = jsonTestsCreateArrayBools();
-    BRJson valObject = jsonTestsCreateObject    ();
+    BRJson valBools   = jsonTestsCreateArrayBools ();
+    BRJson valObject  = jsonTestsCreateObject     ();
     BRJson valComplex = jsonCreateObjectVargs (&status, 3,
-                                                         ((BRJsonObjectMember) { "lastname", jsonCreateString ("Nakamoto") }),
-                                                         ((BRJsonObjectMember) { "fullname", jsonCreateString ("Satoshi Nakamoto") }),
-                                                         ((BRJsonObjectMember) { "children", jsonCreateArrayVargs (&status, 4,
-                                                                                                                        jsonCreateString ("Bitcoin"),
-                                                                                                                        jsonCreateString ("Bitcoin Cash"),
-                                                                                                                        jsonCreateString ("Litecoin"),
-                                                                                                                        jsonCreateString ("Doge")) }));
+                                               ((BRJsonObjectMember) { "lastname", jsonCreateString ("Nakamoto") }),
+                                               ((BRJsonObjectMember) { "fullname", jsonCreateString ("Satoshi Nakamoto") }),
+                                               ((BRJsonObjectMember) { "children", jsonCreateArrayVargs (&status, 4,
+                                                                                                         jsonCreateString ("Bitcoin"),
+                                                                                                         jsonCreateString ("Bitcoin Cash"),
+                                                                                                         jsonCreateString ("Litecoin"),
+                                                                                                         jsonCreateString ("Doge")) }));
 
     assert (NULL != valComplex && JSON_STATUS_OK == status);
 
@@ -239,40 +282,11 @@ runJSONShowTest () {
     assert (JSON_STATUS_OK == jsonRelease(valComplex));
 }
 
-#define PARSE_TEST_1 "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"RelayRequest\":[{\"name\":\"target\",\"type\":\"address\"},{\"name\":\"encodedFunction\",\"type\":\"bytes\"},{\"name\":\"gasData\",\"type\":\"GasData\"},{\"name\":\"relayData\",\"type\":\"RelayData\"}],\"GasData\":[{\"name\":\"gasLimit\",\"type\":\"uint256\"},{\"name\":\"gasPrice\",\"type\":\"uint256\"},{\"name\":\"pctRelayFee\",\"type\":\"uint256\"},{\"name\":\"baseRelayFee\",\"type\":\"uint256\"}],\"RelayData\":[{\"name\":\"senderAddress\",\"type\":\"address\"},{\"name\":\"senderNonce\",\"type\":\"uint256\"},{\"name\":\"relayWorker\",\"type\":\"address\"},{\"name\":\"paymaster\",\"type\":\"address\"}]},\"domain\":{\"name\":\"GSN Relayed Transaction\",\"version\":\"1\",\"chainId\":42,\"verifyingContract\":\"0x6453D37248Ab2C16eBd1A8f782a2CBC65860E60B\"},\"primaryType\":\"RelayRequest\",\"message\":{\"target\":\"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\"encodedFunction\":\"0xa9059cbb0000000000000000000000002e0d94754b348d208d64d52d78bcd443afa9fa520000000000000000000000000000000000000000000000000000000000000007\",\"gasData\":{\"gasLimit\":\"39507\",\"gasPrice\":\"1700000000\",\"pctRelayFee\":\"70\",\"baseRelayFee\":\"0\"},\"relayData\":{\"senderAddress\":\"0x22d491bde2303f2f43325b2108d26f1eaba1e32b\",\"senderNonce\":\"3\",\"relayWorker\":\"0x3baee457ad824c94bd3953183d725847d023a2cf\",\"paymaster\":\"0x957F270d45e9Ceca5c5af2b49f1b5dC1Abb0421c\"}}}"
-#define PARSE_TEST_2 "[ 1, -1, 1.2, -1.2, 111111111111111111111111111111111111111111111111, 111111111111111111111111111111111111111111111111.11111, -0e-3, -0.1e+3 ]"
-#define PARSE_TEST_3 "[ 1, 2, 3, 111a111, 4, 5 ]"
-
-static void
-runJsonParseTest (void) {
-    BRJsonStatus status;
-    char *error = NULL;
-
-    const char *prefix = "      ";
-    BRJson json = jsonParse (PARSE_TEST_1, &status, &error);
-    assert (JSON_STATUS_OK == status && NULL == error);
-    printf ("    JSON Show Parse 1: ");
-    jsonShow(json, prefix);
-    printf ("\n");
-
-
-    json = jsonParse(PARSE_TEST_2, &status, &error);
-    assert (JSON_STATUS_OK == status && NULL == error);
-    printf ("    JSON Show Parse 2: ");
-    jsonShow(json, prefix);
-    printf ("\n");
-
-    json = jsonParse(PARSE_TEST_3, &status, &error);
-    assert (JSON_STATUS_OK != status && NULL != error);
-    printf ("    JSON Show Parse 3:\n");
-    printf ("       Input: %s\n", PARSE_TEST_3);
-    printf ("       Error: %s\n", error);
-    free (error);
-}
-
 extern void
 runJSONTests (void) {
     printf ("JSON Tests\n");
+    runJsonParseTest ();
+
     runJSONShowTest ();
 
     runJSONCreateTests ();
@@ -282,6 +296,4 @@ runJSONTests (void) {
 
     runJSONArrayTest ();
     runJSONArrayPathTest ();
-
-    runJsonParseTest ();
 }
