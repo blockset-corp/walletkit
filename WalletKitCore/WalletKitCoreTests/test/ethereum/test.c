@@ -557,11 +557,13 @@ runTests (int reallySend) {
 #if defined (TEST_ETHEREUM_NEED_MAIN)
 int main(int argc, const char *argv[]) {
     installTokensForTest ();
+    runJSONTests();
     runUtilTests();
     runRlpTests();
     runEventTests();
     runBcTests();
     runContractTests();
+    runStructureTests();
     runEWMTests(NODE_PAPER_KEY, "/tmp");
     runTests(0);
 }

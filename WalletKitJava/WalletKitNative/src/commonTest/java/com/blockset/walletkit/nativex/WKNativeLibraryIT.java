@@ -275,17 +275,23 @@ public class WKNativeLibraryIT {
         }
     }
 
-    // Ethereum
+    // Support
+    @Test
+    public void testSupportJson () {
+        TestWKNativeLibrary.INSTANCE.runJsonTests();
+    }
 
     @Test
-    public void testEthereumRlp () {
+    public void testSupportRlp () {
         TestWKNativeLibrary.INSTANCE.runRlpTests();
     }
 
     @Test
-    public void testEthereumUtil () {
+    public void testSupportUtil () {
         TestWKNativeLibrary.INSTANCE.runUtilTests();
     }
+
+    // Ethereum
 
     @Test
     public void testEthereumEvent () {
@@ -516,8 +522,12 @@ public class WKNativeLibraryIT {
         void runCryptoTests();
         int runCryptoTestsWithAccountAndNetwork(WKAccount account, WKNetwork network, String storagePath);
 
+        // Support
+        void runJsonTests();
         void runUtilTests();
         void runRlpTests();
+
+        // Ethereum
         void runEventTests();
         void runBaseTests();
         void runBcTests();
