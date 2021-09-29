@@ -91,6 +91,10 @@ jsonRelease (OwnershipGiven BRJson value);
 extern OwnershipGiven BRJson
 jsonClone (BRJson value);
 
+extern bool
+jsonEqual (BRJson value1,
+           BRJson value2);
+
 extern BRJson
 jsonRoot (BRJson value);
 

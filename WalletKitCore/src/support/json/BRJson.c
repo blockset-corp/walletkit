@@ -134,7 +134,7 @@ struct BRJsonRecord {
         BRArrayOf (BRJson) array;
 
         /// A set of BRJSONMember as { label, value }
-        BRSetOf (BRJsonObjectMember) object;
+        BRSetOf (BRJsonObjectMember*) object;
     } u;
 
     //
@@ -517,7 +517,7 @@ jsonClone (BRJson value) {
             break;
 
         case JSON_TYPE_STRING:
-            clone->u.string = strdup (clone->u.string);
+            clone->u.string = strdup (value->u.string);
             break;
 
         case JSON_TYPE_NUMBER:
@@ -568,6 +568,74 @@ jsonClone (BRJson value) {
     }
 
     return clone;
+}
+
+static bool
+jsonEqualArray (BRArrayOf(BRJson) values1,
+                BRArrayOf(BRJson) values2) {
+    if (values1 == values2) return true;
+    if (array_count(values1) != array_count(values2)) return false;
+    for (size_t index = 0; index < array_count(values2); index++)
+        if (!jsonEqual (values1[index], values2[index]))
+            return false;
+    return true;
+}
+
+static bool
+jsonEqualObjectMembers (BRSetOf (BRJsonObjectMember*) set1,
+                        BRSetOf (BRJsonObjectMember*) set2) {
+    if (set1 == set2) return true;
+    if (BRSetCount(set1) != BRSetCount(set2)) return false;
+    size_t count = BRSetCount(set1);
+
+    BRArrayOf(BRJsonObjectMember*) members1;
+    BRArrayOf(BRJsonObjectMember*) members2;
+
+    array_new (members1, count);
+    array_set_count(members1, count);
+    BRSetAll (set1, (void **) members1, count);
+    mergesort_brd (members1, count, sizeof(BRJsonObjectMember*), jsonMembersCompareHelper);
+
+    array_new (members2, count);
+    array_set_count(members2, count);
+    BRSetAll (set2, (void **) members2, count);
+    mergesort_brd (members2, count, sizeof(BRJsonObjectMember*), jsonMembersCompareHelper);
+
+    for (size_t index = 0; index < count; index++) {
+        BRJsonObjectMember *member1 = members1[index];
+        BRJsonObjectMember *member2 = members2[index];
+
+        if (0 != strcmp (member1->label, member2->label) || !jsonEqual (member1->value, member2->value))
+            return false;
+    }
+
+    return true;
+}
+
+extern bool
+jsonEqual (BRJson value1,
+           BRJson value2) {
+    if (value1 == value2) return true;
+    if (value1->type != value2->type) return false;
+    switch (value1->type) {
+        case JSON_TYPE_NULL:    return true;
+        case JSON_TYPE_BOOLEAN: return value1->u.boolean == value2->u.boolean;
+        case JSON_TYPE_NUMBER:
+            if (value1->u.number.type != value2->u.number.type) return false;
+            switch (value1->u.number.type) {
+                case JSON_NUMBER_TYPE_POSITIVE_INTEGER:
+                case JSON_NUMBER_TYPE_NEGATIVE_INTEGER:
+                    return UInt256Eq (value1->u.number.u.integer, value2->u.number.u.integer);
+                case JSON_NUMBER_TYPE_REAL:
+                    return value1->u.number.u.real == value2->u.number.u.real;
+            }
+        case JSON_TYPE_STRING:
+            return 0 == strcmp (value1->u.string, value2->u.string);
+        case JSON_TYPE_ARRAY:
+            return jsonEqualArray (value1->u.array, value2->u.array);
+        case JSON_TYPE_OBJECT:
+            return jsonEqualObjectMembers (value1->u.object, value2->u.object);
+    }
 }
 
 // MARK: JSON Write

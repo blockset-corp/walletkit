@@ -277,6 +277,10 @@ runJSONShowTest () {
     jsonShow(valComplex, prefix);
     printf ("\n");
 
+    assert (true  == jsonEqual (valComplex, valComplex));
+    assert (true  == jsonEqual (valComplex, jsonClone(valComplex)));
+    assert (false == jsonEqual (valComplex, valBools));
+
     assert (JSON_STATUS_OK == jsonRelease(valBools));
     assert (JSON_STATUS_OK == jsonRelease(valObject));
     assert (JSON_STATUS_OK == jsonRelease(valComplex));
