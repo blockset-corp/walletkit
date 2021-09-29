@@ -30,7 +30,7 @@ identify transactions for a User's wallet.  (For Bitcoin, this peer-to-peer inte
 SPV - 'Simple Payment Verification').  WalletKit implements peer-to-peer interfaces for some
 cyptocurrencies.  In addition, WalletKit defines an interface that can be used to identify 
 transactions based on HTTP requests made to endpoints holding cryptocurrency blocks and 
-transactions.  WalletKIt provides a default implementatin of this 'client interface' using Blockset.
+transactions.  WalletKit provides a default implementatin of this 'client interface' using Blockset.
 
 ## Event-Based
 
@@ -325,9 +325,9 @@ typedef enum {
 These events detail the system changes in state.  The listener takes actions appropriate for the
 application.  Notably, on `NETWORK_ADDED` or  `DISCOVERED_NETWORKS` the application can
 create a `WKWalletManager` for each network of interest.  One might be interested in BTC and
-ETH network types, but noet BCH for example.
+ETH network types, but not BCH for example.
 
-As the networks are annonced and wallat managers of interest are created, then their 
+As the networks are announced and wallet managers of interest are created, then their 
 associated callbacks occur, including adding wallets to wallet manager and adding transfers to
 wallets.  The `WKListener` instance handles each event with an update to application state,
 typically the UI.
@@ -359,7 +359,7 @@ typedef void
 ```
 This callback queries the manager's network for transactions in blocks `[begBlockNumber,
 endBlockNumber)` that involve any of `addressCount` addresses in the array `addresses`.
-Once all the transactions have been identifier, the application invokes
+Once all the transactions have been identified, the application invokes
 ```
 extern void
 wkClientAnnounceTransactions (OwnershipKept WKWalletManager cwm,
@@ -385,17 +385,17 @@ convenient HTTP related functions are accessible for iOS, Android and Linux plat
 
 ### WKAccount
 
-A `WKAccount` is creaed in one of two ways.  For the very first time, an account is created with:
+A `WKAccount` is created in one of two ways.  For the very first time, an account is created with:
 ```
 extern WKAccount
 wkAccountCreate (const char *paperKey, WKTimestamp timestamp, const char *uids);
 ```
-where `paperKey` is a BIP-39 sequence of 12 words, `timestap` is the Unix time at which the
+where `paperKey` is a BIP-39 sequence of 12 words, `timestamp` is the Unix time at which the
 `paperKey` was initially created (or the time of the User's first transaction on any blockchain), 
 and `uids` is a globally unique identifier for the account.  The `uids` is not used internally by
 `WalletKit`.
 
-Once an acount is created and to avoid repeated use of the sensitive, private `paperKey`, one
+Once an account is created and to avoid repeated use of the sensitive, private `paperKey`, one
 creates a serialization of the account with `wkAccountSerialize()` and then subsequently 
 re-creates the account with:
 ```
