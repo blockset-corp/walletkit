@@ -372,10 +372,39 @@ runStructureExample3Test (void) {
     BRJson value = testStructureExample3 (&status);
     assert (JSON_STATUS_OK == status);
 }
+
+extern UInt256 // Twos-Complement
+uint256Negate (UInt256 value);
+
+static void
+runInteger (uint64_t value64) {
+    UInt256 value = uint256Create(value64);
+    UInt256 valueTwosC = uint256Negate(value);
+    int64_t valueI64 = (int64_t) valueTwosC.u64[0];
+    assert (valueI64 == -value64);
+}
+
+static void
+runIntegerTests () {
+    runInteger (1);
+    runInteger (4);
+    runInteger (127);
+
+    BRCoreParseStatus status;
+    int overflow;
+
+    UInt256 valuePos = uint256CreateParse("1111111111111111111111111111111111111111", 10, &status);
+    assert (CORE_PARSE_OK == status);
+    UInt256 valueNeg = uint256Negate (valuePos);
+    UInt256 valueSum = uint256Add_Overflow (valuePos, valueNeg, &overflow);
+    assert (overflow && UInt256IsZero (valueSum));
+}
+
 extern void
 runStructureTests (void) {
     printf ("==== Structure\n");
 
+    runIntegerTests();
     runStructureExample1Test ();
     runStructureExample2Test ();
     runStructureExample3Test ();

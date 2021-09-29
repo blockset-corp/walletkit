@@ -197,9 +197,11 @@ ethEncodeValueAsAtomicType (BRJson value, const char *typeName) {
         bool negative;
         jsonExtractInteger (value, &integer, &negative);
 
-        // What next?
-        assert (false);
-        integer = UInt256Reverse(integer);
+        if (negative) integer = uint256Negate(integer);
+        integer = UInt256Reverse (integer);     // 'big endian'
+
+        memcpy (data.bytes, integer.u8, 32);
+        return data;
     }
 
     return ((BREthereumData) { 0, NULL });
