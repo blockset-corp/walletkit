@@ -21,6 +21,14 @@
 #include "support/util/BRUtil.h"
 #include "support/rlp/BRRlp.h"
 
+// MARK: - Support
+
+static OwnershipGiven BREthereumData
+ethHashAsData (BREthereumHash hash) {
+    BREthereumData data = { ETHEREUM_HASH_BYTES, malloc (ETHEREUM_HASH_BYTES) };
+    memcpy (data.bytes, hash.bytes, ETHEREUM_HASH_BYTES);
+    return data;
+}
 
 // MARK: - String Set
 
@@ -59,688 +67,7 @@ stringSetCreate (size_t capacity) {
     return BRSetNew (stringSetHash, stringSetEqual, capacity);
 }
 
-// MARK: - Support
-
-static OwnershipGiven BREthereumData
-ethHashAsData (BREthereumHash hash) {
-    BREthereumData data = { ETHEREUM_HASH_BYTES, malloc (ETHEREUM_HASH_BYTES) };
-    memcpy (data.bytes, hash.bytes, ETHEREUM_HASH_BYTES);
-    return data;
-}
-
-#if defined (ORGINAL_STRUCTURE_TYPES)
-
-// MARK: - Structure Member Type
-
-typedef enum {
-    // Atomic Types: "The atomic types are bytes1 to bytes32, uint8 to uint256, int8 to int256,
-    // bool and address."
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_UINT,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_XINT,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS,
-
-    // Dynamic Types: "The dynamic types are bytes and string. These are like the atomic types
-    // for the purposed of type declaration, but their treatment in encoding is different."
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING,
-
-    // Reference Types: "The reference types are arrays and structs. Arrays are either fixed size
-    // or dynamic and denoted by Type[n] or Type[] respectively. Structs are references to other
-    // structs by their name. The standard supports recursive struct types."
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_ARRAY,
-    ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT,
-} BREthereumStructureMemberTypeLabel;
-
-static const char *
-ethStructureMemberTypeLabelName (BREthereumStructureMemberTypeLabel label) {
-    static const char *names[] = {
-        "byte",
-        "uint",
-        "int",
-        "bool",
-        "address",
-        "bytes",
-        "string",
-        "array",        // unused
-        "struct"        // unused
-    };
-    return names[label];
-}
-
-///
-/// Member Type: "A member type can be either an atomic type, a dynamic type or a reference type."
-///
-typedef struct {
-    BREthereumStructureMemberTypeLabel label;
-    union {
-        // Atomic Types
-        struct { uint16_t bits; } byte;
-        struct { uint16_t bits; } uint;
-        struct { uint16_t bits; } xint;
-
-        // Dynamic Types
-
-        // ReferenceTypes
-
-        /// "Structs are references to other structs by their name"
-        struct { const char *name; } xstruct;
-
-        /// "Arrays are either fixed size or dynamic and denoted by Type[n] or Type[] respectively"
-        struct { const char *name; ssize_t count; } array;
-    } u;
-    char *encoding;
-} BREthereumStructureMemberType;
-
-static BREthereumStructureMemberType
-ethStructureMemberTypeCreate (BREthereumStructureMemberTypeLabel label) {
-    switch (label) {
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING:
-            return (BREthereumStructureMemberType) {
-                label,
-                { .array = { NULL, 0 }},   // zero out large union element
-                NULL
-            };
-
-        default:
-            assert (false);
-            return (BREthereumStructureMemberType) { 0 };
-    }
-}
-
-static BREthereumStructureMemberType
-ethStructureMemberTypeCreateBits (BREthereumStructureMemberTypeLabel label, uint16_t bits) {
-    switch (label) {
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE:
-            assert (bits <= 32);
-            return (BREthereumStructureMemberType) {
-                ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE,
-                { .byte = { bits }},
-                NULL
-            };
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_UINT:
-            assert (bits <= 256);
-            return (BREthereumStructureMemberType) {
-                ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE,
-                { .uint = { bits }},
-                NULL
-            };
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_XINT:
-            assert (bits <= 256);
-            return (BREthereumStructureMemberType) {
-                ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE,
-                { .xint = { bits }},
-                NULL
-            };
-
-        default:
-            assert (false);
-            break;
-    }
-}
-
-static BREthereumStructureMemberType
-ethStructureMemberTypeCreateArray (const char *name, ssize_t count) {
-    return (BREthereumStructureMemberType) {
-        ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT,
-        { .array = { name, count }},
-        NULL
-    };
-}
-
-static BREthereumStructureMemberType
-ethStructureMemberTypeCreateStruct (const char *name) {
-    return (BREthereumStructureMemberType) {
-        ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT,
-        { .xstruct = { name }},
-        NULL
-    };
-}
-
-static void
-ethStructureMemberTypeInitializeEncodimg (BREthereumStructureMemberType *type) {
-    const char *labelName = ethStructureMemberTypeLabelName (type->label);
-    switch (type->label) {
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE:
-            asprintf (&type->encoding, "%s%d", labelName, type->u.byte.bits);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_UINT:
-            asprintf (&type->encoding, "%s%d", labelName, type->u.uint.bits);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_XINT:
-            asprintf (&type->encoding, "%s%d", labelName, type->u.xint.bits);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING:
-            type->encoding = strdup (labelName);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_ARRAY:
-            if (-1 == type->u.array.count)
-                asprintf (&type->encoding, "%s[]", type->u.array.name);
-            else
-                asprintf (&type->encoding, "%s[%zu]", type->u.array.name, (size_t) type->u.array.count);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT:
-            type->encoding = strdup (type->u.xstruct.name);
-            break;
-
-        default:
-            assert (false);
-    }
-}
-
-static const char*
-ethStructureMemberTypeGetEncoding (BREthereumStructureMemberType *type) {
-    if (NULL == type->encoding) ethStructureMemberTypeInitializeEncodimg (type);
-    return type->encoding;
-}
-
-// MARK: Structure Member Variable
-
-// MemberVariable: "Member variables have a member type and a name"
-typedef struct BREthereumStructureMemberVariableRecord {
-    const char *name;
-    BREthereumStructureMemberType type;
-    char *encoding;
-} *BREthereumStructureMemberVariable;
-
-static BREthereumStructureMemberVariable
-ethStructureMemberVariableCreate (const char *name, const BREthereumStructureMemberType type) {
-    BREthereumStructureMemberVariable variable = calloc (1, sizeof (struct BREthereumStructureMemberVariableRecord));
-    variable->name = name;
-    variable->type = type;     // clone
-    variable->encoding = NULL;
-    return variable;
-}
-
-static void
-ethStructureMemberVariableInitializeEncoding (BREthereumStructureMemberVariable variable) {
-    asprintf (&variable->encoding, "%s %s",
-              ethStructureMemberTypeGetEncoding (&variable->type),
-              variable->name);
-}
-
-static const char *
-ethStructureMemberVariableGetEncoding (BREthereumStructureMemberVariable variable) {
-    if (NULL == variable->encoding) ethStructureMemberVariableInitializeEncoding (variable);
-    return variable->encoding;
-}
-
-// MARK: - Structure Type
-
-/// Structure Type: "A struct type has valid identifier as name and contains zero or more
-/// member variables"
-struct BREthereumStructureTypeRecord {
-    char *name;
-    BRArrayOf(BREthereumStructureMemberVariable) variables;
-    char *encoding;
-};
-
-static BREthereumStructureType
-ethStructureTypeCreate (const char *name,
-                        OwnershipGiven BRArrayOf(BREthereumStructureMemberVariable) variables) {
-    BREthereumStructureType type = malloc (sizeof (struct BREthereumStructureTypeRecord));
-    type->name = strdup (name);
-    type->variables = variables;
-    type->encoding  = NULL;
-    return type;
-}
-
-static void
-ethStructureTypeRelease (BREthereumStructureType type) {
-    free (type->name);
-
-    // ....
-
-    if (type->encoding) free (type->encoding);
-
-    memset (type, 0, sizeof (struct BREthereumStructureTypeRecord));
-    free (type);
-}
-
-static int
-ethStructureTypeCompare (BREthereumStructureType type1,
-                         BREthereumStructureType types2) {
-    return strcmp (type1->name, types2->name);
-}
-
-static int
-ethStructureTypeCompareHelper (const void *v1, const void *v2) {
-    const BREthereumStructureType type1 = (const BREthereumStructureType) v1;
-    const BREthereumStructureType type2 = (const BREthereumStructureType) v2;
-    return ethStructureTypeCompare (type1, type2);
-}
-
-
-static bool // true if added
-ethStructureTypeArrayAddIfUnknown (BRArrayOf(BREthereumStructureType) types,
-                                   BREthereumStructureType type) {
-    for (size_t index = 0; index < array_count(types); index++)
-        if (0 == strcmp (type->name, types[index]->name))
-            return false;
-    array_add (types, type);
-    return true;
-}
-
-static bool /// true if removed
-ethStructureTypeArrayRemIfKnown (BRArrayOf(BREthereumStructureType) types,
-                                   BREthereumStructureType type) {
-    for (size_t index = 0; index < array_count(types); index++)
-        if (0 == strcmp (type->name, types[index]->name)) {
-            array_rm (types, index);
-            return true;
-        }
-    return false;
-}
-
-static BREthereumStructureType
-ethStructureTypeArrayLookupByName (BRArrayOf(BREthereumStructureType) types, const char *name) {
-    for (size_t index = 0; index < array_count(types); index++)
-        if (0 == strcmp (name, types[index]->name))
-            return types[index];
-    return NULL;
-}
-
-static void
-ethStructureTypeFindDependents (BREthereumStructureType type,
-                                BRArrayOf(BREthereumStructureType) typesDependent,
-                                BRArrayOf(BREthereumStructureType) typesAllKnown) {
-    assert (NULL != type);
-
-    if (ethStructureTypeArrayAddIfUnknown (typesDependent, type)) {
-        for (size_t index = 0; index < array_count(type->variables); index++) {
-            BREthereumStructureMemberType memberType = type->variables[index]->type;
-            switch (memberType.label) {
-                case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_ARRAY:
-                    ethStructureTypeFindDependents (ethStructureTypeArrayLookupByName (typesAllKnown, memberType.u.array.name),
-                                                    typesDependent,
-                                                    typesAllKnown);
-                    break;
-
-                case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT:
-                    ethStructureTypeFindDependents (ethStructureTypeArrayLookupByName (typesAllKnown, memberType.u.xstruct.name),
-                                                    typesDependent,
-                                                    typesAllKnown);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-    }
-}
-
-static BRData
-ethStructureTypeEncodeOne (BREthereumStructureType type) {
-    char *encoding = NULL;
-
-    if (0 == array_count(type->variables))
-        asprintf (&encoding, "%s()", type->name);
-    else {
-        size_t variableCount = array_count(type->variables);
-
-        BRArrayOf(const char *) variableEncodings;
-        array_new (variableEncodings, variableCount);
-
-        size_t variableEncodingsLength = 0;
-        for (size_t index = 0; index < variableCount; index++) {
-            array_add (variableEncodings, ethStructureMemberVariableGetEncoding (type->variables[index]));
-            variableEncodingsLength += strlen (variableEncodings[index]);
-        }
-
-        char *variableEncoding = malloc (variableEncodingsLength + 1);
-        variableEncoding[0] = variableEncoding[variableEncodingsLength] = '\0';
-
-        for (size_t index = 0; index < variableCount; index++) {
-            strcat (variableEncoding, variableEncodings[index]);
-            if (index + 1 < variableCount)
-                strcat (variableEncoding, ",");
-        }
-        array_free (variableEncodings);
-
-        asprintf (&encoding, "%s(%s)", type->name, variableEncoding);
-    }
-
-    return ((BRData) { (uint8_t*) encoding, strlen(encoding) });
-}
-
-static void
-ethStructureTypeInitializeEncoding (BREthereumStructureType type,
-                            BRArrayOf(BREthereumStructureType) typesAllKnown) {
-    BRData encodingSelf = ethStructureTypeEncodeOne(type);
-
-    BRArrayOf (BRData) encodings;
-    array_new (encodings, 10);
-    array_add (encodings, encodingSelf);
-
-    BRArrayOf(BREthereumStructureType) typesReferenced;
-    array_new (typesReferenced, 10);
-
-    // "If the struct type references other struct types (and these in turn reference even more
-    // struct types), then the set of referenced struct types is collected, sorted by name and
-    // appended to the encoding. An example encoding is Transaction(Person from,Person to,Asset tx)
-    // Asset(address token,uint256 amount)Person(address wallet,string name)."
-
-    ethStructureTypeFindDependents  (type, typesReferenced, typesAllKnown);
-    ethStructureTypeArrayRemIfKnown (typesReferenced, type);
-
-    mergesort_brd (typesReferenced, array_count(typesReferenced), sizeof(BREthereumStructureType), ethStructureTypeCompareHelper);
-
-    for (size_t index = 0; index < array_count(typesReferenced); index++) {
-        array_add (encodings, ethStructureTypeEncodeOne (typesReferenced[index]));
-    }
-
-    BRData encoding = dataConcat (encodings, array_count(encodings));
-
-    array_free_all (encodings, dataFree);
-
-    type->encoding = malloc (encoding.size + 1);
-    memcpy (type->encoding, encoding.bytes, encoding.size);
-    type->encoding[encoding.size] = '\0';
-
-}
-
-static const char *
-ethStructureTypeGetEncoding (BREthereumStructureType type,
-                             BRArrayOf(BREthereumStructureType) typesAllKnown) {
-    if (NULL == type->encoding) ethStructureTypeInitializeEncoding (type, typesAllKnown);
-    return type->encoding;
-}
-
-static BREthereumHash
-ethStructureTypeHashX (BREthereumStructureType type,
-                      BRArrayOf(BREthereumStructureType) typesAllKnown) {
-    return ethHashCreate (ethStructureTypeGetEncoding (type, typesAllKnown));
-}
-
-// MARK: - Structure Member Value
-
-typedef struct BREthereumStructureMemberValueRecord *BREthereumStructureMemberValue;
-
-struct BREthereumStructureMemberValueRecord {
-    ///
-    BREthereumStructureMemberTypeLabel label;
-
-    /// The 'Member Variable' name
-    const char *name;
-
-    union {
-        // Atomic Type Values
-
-        // Boolean false and true are encoded as uint256 values 0 and 1 respectively
-        // Integer values are sign-extended to 256-bit and encoded in big endian order.
-        UInt256 value;
-
-        // Addresses are encoded as uint160
-        BREthereumAddress address;
-
-        // Dynamic Type Values
-
-        BRData bytes;
-        char *string;
-
-        // Reference Type Values
-
-        // Array
-        BRArrayOf (BREthereumStructureMemberValue) array;
-
-        // struct
-        BREthereumStructure xstruct;
-
-    } u;
-
-    // "Each encoded member value is exactly 32-byte long." "The dynamic values bytes and string
-    // are encoded as a keccak256 hash of their contents." "The array values are encoded as the
-    // keccak256 hash of the concatenated"
-    BREthereumHash encoding;
-} ;
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateInternal (BREthereumStructureMemberTypeLabel label,
-                                       const char *name) {
-    BREthereumStructureMemberValue value = calloc (1, sizeof (struct BREthereumStructureMemberValueRecord));
-    value->label    = label;
-    value->name     = name;
-    value->encoding = ethHashCreateEmpty();
-    return value;
-}
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateByte (uint8_t *bytes, size_t bytesCount, const char *name) {
-    assert (bytesCount <= 32);
-    BREthereumStructureMemberValue value = ethStructureMemberValueCreateInternal (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE, name);
-    // "bytes1 to bytes31 are arrays with a beginning (index 0) and an end (index length - 1), they
-    // are zero-padded at the end to bytes32 and encoded in beginning to end order. This corresponds
-    // to their encoding in ABI v1 and v2."
-    value->u.value = UINT256_ZERO;  // 'zero-pad'
-    memcpy (value->u.value.u32, bytes, bytesCount);     // reversed?
-
-    return value;
-}
-
-// uint
-// xint
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateBoolean (bool boolean, const char *name) {
-    BREthereumStructureMemberValue value = ethStructureMemberValueCreateInternal (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL, name);
-    value->u.value = uint256Create(boolean ? 1 : 0);
-    return value;
-}
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateAddress (BREthereumAddress address, const char *name) {
-    BREthereumStructureMemberValue value = ethStructureMemberValueCreateInternal (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS, name);
-    value->u.address = address;
-    return value;
-}
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateBytes (BRData bytes, const char *name) {
-    BREthereumStructureMemberValue value = ethStructureMemberValueCreateInternal (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES, name);
-    value->u.bytes = dataClone(bytes);
-    return value;
-}
-
-static BREthereumStructureMemberValue
-ethStructureMemberValueCreateString (const char *string, const char *name) {
-    BREthereumStructureMemberValue value = ethStructureMemberValueCreateInternal (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING, name);
-    value->u.string = strdup (string);
-    return value;
-}
-
-// array
-
-// struct
-
-static void
-ethStructureMemberValueRelease (BREthereumStructureMemberValue value) {
-    switch (value->label) {
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES:
-            dataFree (value->u.bytes);
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING:
-            free (value->u.string);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_ARRAY:
-            // ...
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT:
-            // ...
-            break;
-
-        default:
-            break;
-    }
-
-    memset (value, 0, sizeof (struct BREthereumStructureMemberValueRecord));
-    free (value);
-}
-
-// Forward Declaration
-static BREthereumHash ethStructureMemberValueGetEncoding (BREthereumStructureMemberValue value);
-
-static void
-ethStructureMemberValueInitializeEncoding (BREthereumStructureMemberValue value) {
-    switch (value->label) {
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BYTE:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_UINT:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_XINT:
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL:
-            memcpy (value->encoding.bytes, value->u.value.u32, 32);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS:
-            value->encoding = ethHashCreateEmpty();
-            memcpy (&value->encoding.bytes[12], value->u.address.bytes, 20);
-            break;
-
-            // Dynamc Types: "The dynamic values bytes and string are encoded as a keccak256 hash
-            // of their contents."
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES:
-            BRKeccak256 (value->encoding.bytes, value->u.bytes.bytes, value->u.bytes.size);
-            break;
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING:
-            BRKeccak256 (value->encoding.bytes, value->u.string, strlen(value->u.string));
-            break;
-
-            // Reference Types
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_ARRAY: {
-            // "The array values are encoded as the keccak256 hash of the concatenated encodeData
-            // of their contents"
-            size_t   encodingsCount = array_count (value->u.array);
-            uint8_t *encodingsBytes = calloc (encodingsCount, sizeof (BREthereumHash));
-
-            for (size_t index = 0; index < encodingsCount; index++) {
-                BREthereumHash encoding = ethStructureMemberValueGetEncoding (value->u.array[index]);
-                memcpy (&encodingsBytes[index * sizeof(BREthereumHash)], encoding.bytes, sizeof(BREthereumHash));
-            }
-
-            BRKeccak256 (value->encoding.bytes, encodingsBytes, encodingsCount * sizeof (BREthereumHash));
-            break;
-        }
-
-        case ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_REFERENCE_STRUCT:
-
-            break;
-    }
-}
-
-static BREthereumHash
-ethStructureMemberValueGetEncoding (BREthereumStructureMemberValue value) {
-    if (ethHashEqual (value->encoding, ETHEREUM_EMPTY_HASH_INIT))
-        ethStructureMemberValueInitializeEncoding (value);
-    return value->encoding;
-}
-
-
-// MARK: - Structure
-
-struct BREthereumStructureRecord {
-    BREthereumStructureType type;
-    BRArrayOf(BREthereumStructureMemberValue) values;
-};
-
-static BREthereumHash
-ethStructureHash (BREthereumStructure data) {
-
-}
-
-// MARK: - Structure Coder
-
-struct BREthereumStructureCoderRecord {
-    BRArrayOf (BREthereumStructureType) types;
-    BRArrayOf (BREthereumStructure) values;
-
-};
-
-extern BREthereumStructureCoder
-ethStructureCoderCreate (void) {
-    BREthereumStructureCoder coder = malloc (sizeof (struct BREthereumStructureCoderRecord));
-
-    array_new (coder->types, 10);
-    array_new (coder->types, 10);
-
-    // Add the EIP712Domain
-
-    return coder;
-}
-
-extern void
-ethStructureCoderRelease (BREthereumStructureCoder coder) {
-    array_free (coder->types);
-    array_free (coder->values);
-
-    memset (coder, 0, sizeof (struct BREthereumStructureCoderRecord));
-    free (coder);
-}
-
-static bool
-ethStructureMemberTypeIsAtomicTypeWithSize (const char *label) {
-
-}
-
-static bool
-ethStructureMemberTypeIsAtomicType (const char *label) {
-    return (0 == strcmp (label, ethStructureMemberTypeLabelName (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_BOOL)) ||
-            0 == strcmp (label, ethStructureMemberTypeLabelName (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_ATOMIC_ADDRESS)) ||
-            ethStructureMemberTypeIsAtomicTypeWithSize(label));
-}
-
-static bool
-ethStructureMemberTypeIsDynamicType (const char *label) {
-    return (0 == strcmp (label, ethStructureMemberTypeLabelName (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_BYTES)) ||
-            0 == strcmp (label, ethStructureMemberTypeLabelName (ETHEREUM_STRUCTURE_MEMBER_TYPE_LABEL_DYNAMIC_STRING)));
-}
-
-static bool
-ethStructureMemberTypeIsReferenceType (const char *label,
-                                       BRArrayOf (BREthereumStructureType) types) {
-    for (size_t index = 0; index < array_count(types); index++) {
-        if (0 == strcmp (label, types[index]->name))
-            return true;
-    }
-    return false;
-}
-
-extern bool
-ethStructureCoderHasType (BREthereumStructureCoder coder,
-                          const char *memberType) {
-    return (ethStructureMemberTypeIsAtomicType (memberType) ||
-            ethStructureMemberTypeIsDynamicType (memberType) ||
-            ethStructureMemberTypeIsReferenceType (memberType, coder->types));
-}
-
-extern void
-ethStructureCoderAddType (BREthereumStructureCoder coder,
-                          const char *name,
-                          BRArrayOf(const char *) memberNames,
-                          BRArrayOf(const char *) memberTypes) {  // Foo, Foo[], Foo[n]
-
-}
-
-extern void
-ethStructureCoderAddValue (BREthereumStructureCoder coder,
-                           )
-
-#endif // defined (ORGINAL_STRUCTURE_TYPES)
+// MARK: Structure Coder Record
 
 struct BREthereumStructureCoderRecord {
     BRJson typedData;
@@ -750,9 +77,6 @@ struct BREthereumStructureCoderRecord {
     BRJson types;
     BRJson domain;
     BRJson message;
-
-//    BRArrayOf (BREthereumStructureType) types;
-//    BRArrayOf (BREthereumStructure) values;
 };
 
 // MARK: - Atomic Type
@@ -798,19 +122,19 @@ ethConfirmValueIsAtomicType (BRJson value, const char *typeName) {
         return jsonExtractBoolean (value, NULL);
     }
 
-    if (1 == sscanf (typeName, "byte%d", &count) && 1 <= count && count <= 32) {
-        return true;
+    if (1 == sscanf (typeName, "byte%d", &count)) {
+        return 1 <= count && count <= 32;
     }
 
-    if (1 == sscanf (typeName, "uint%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
-        return true;
+    if (1 == sscanf (typeName, "uint%d", &count)) {
+        return ethConfirmAtomicTypeIntegerSize (count);
     }
 
-    if (1 == sscanf (typeName,  "int%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
-        return true;
+    if (1 == sscanf (typeName,  "int%d", &count)) {
+        return ethConfirmAtomicTypeIntegerSize (count);
     }
 
-    return true;
+    return false;
 }
 
 static const char *
@@ -835,35 +159,39 @@ ethEncodeValueAsAtomicType (BRJson value, const char *typeName) {
         return data;
     }
 
-    // Boolean false and true are encoded as uint256 values 0 and 1 respectively.
+    // https://eips.ethereum.org/EIPS/eip-712
+    //" Boolean false and true are encoded as uint256 values 0 and 1 respectively."
     if (0 == strcmp (typeName, "bool")) {
         bool boolean;
         jsonExtractBoolean (value, &boolean);
 
         UInt256 integer = uint256Create(boolean ? 1 : 0);
-        integer = UInt256Reverse(integer);
+        integer = UInt256Reverse(integer);      // 'big endian'
 
         memcpy (data.bytes, integer.u8, 32);
         return data;
     }
 
-    // bytes1 to bytes31 are arrays with a beginning (index 0) and an end (index length - 1), they
-    // are zero-padded at the end to bytes32 and encoded in beginning to end order.
+    // https://eips.ethereum.org/EIPS/eip-712
+    // "bytes1 to bytes31 are arrays with a beginning (index 0) and an end (index length - 1), they
+    // are zero-padded at the end to bytes32 and encoded in beginning to end order."
     if (1 == sscanf (typeName, "byte%d", &count) && 1 <= count && count <= 32) {
         assert (false);
     }
 
-    // Integer values are sign-extended to 256-bit and encoded in big endian order.
+    // https://eips.ethereum.org/EIPS/eip-712
+    // "Integer values are sign-extended to 256-bit and encoded in big endian order."
     if (1 == sscanf (typeName, "uint%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         UInt256 integer;
         jsonExtractInteger (value, &integer, NULL);
-        integer = UInt256Reverse(integer);
+        integer = UInt256Reverse(integer);      // 'big endian'
 
         memcpy (data.bytes, integer.u8, 32);
         return data;
     }
 
-    // Integer values are sign-extended to 256-bit and encoded in big endian order.
+    // https://eips.ethereum.org/EIPS/eip-712
+    // "Integer values are sign-extended to 256-bit and encoded in big endian order."
     if (1 == sscanf (typeName,  "int%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         UInt256 integer;
         bool negative;
@@ -907,7 +235,8 @@ ethEncodeTypeAsDynamicType (const char *typeName) {
     return typeName;
 }
 
-/// The dynamic values bytes and string are encoded as a keccak256 hash of their contents.
+// https://eips.ethereum.org/EIPS/eip-712
+// "The dynamic values bytes and string are encoded as a keccak256 hash of their contents."
 static BREthereumData
 ethEncodeValueAsDynamicType (BRJson value,
                                const char *typeName) {
@@ -941,15 +270,8 @@ ethEncodeValueAsDynamicType (BRJson value,
 // Forward Declaration
 static bool ethConfirmTypeName (BRJson types, const char *typeName);
 static BREthereumData ethEncodeValue (BRJson value, BRJson types, const char *typeName, bool recursive);
-static bool ethExtractTypeNameAsReferenceType (BRJson types,
-                                               const char *typeName,
-                                               char **type,
-                                               bool *array,
-                                               int *arrayCount);
-static BREthereumHash
-ethHashTypeAsStructureType (BRJson type,
-                            const char *typeName,
-                            BRJson types);
+static bool ethExtractTypeNameAsReferenceType (BRJson types,const char *typeName, char **type, bool *array, int *arrayCount);
+
 /**
  * Check if `type` is a valid structure type.  To be valid, `type` must be a known type and be
  * composed as an array of {name,type} 'member' objects.  The member name must be a string; the
@@ -1086,9 +408,10 @@ static char *
 ethEncodeTypeAsStructureTypeOne (BRJson type,
                                  const char *typeName) {
     //
+    // https://eips.ethereum.org/EIPS/eip-712
     // "The type of a struct is encoded as name ‖ "(" ‖ member₁ ‖ "," ‖ member₂ ‖ "," ‖ … ‖ memberₙ ")"
     // where each member is written as type ‖ " " ‖ name. For example, the above Mail struct is"
-    // encoded as Mail(address from,address to,string contents).
+    // encoded as Mail(address from,address to,string contents)."
     //
 
     BRArrayOf (BRJson) typeMembers;
@@ -1168,10 +491,11 @@ ethEncodeTypeAsStructureType (BRJson type,
                               BRJson types) {
 
     //
-    // If the struct type references other struct types (and these in turn reference even more
+    // https://eips.ethereum.org/EIPS/eip-712
+    // "If the struct type references other struct types (and these in turn reference even more
     // struct types), then the set of referenced struct types is collected, sorted by name and
     // appended to the encoding. An example encoding is:
-    //     Transaction(Person from,Person to,Asset tx)Asset(address token,uint256 amount)Person(address wallet,string name)
+    //     Transaction(Person from,Person to,Asset tx)Asset(address token,uint256 amount)Person(address wallet,string name)"
     //
 
     BRSetOf(char*) typeNamesSet = stringSetCreate (10);
@@ -1233,19 +557,17 @@ ethEncodeValueAsStructureType (BRJson value,
                                BRJson types,
                                BRJson type,
                                const char *typeName) {
-    // The encoding of a struct instance is enc(value₁) ‖ enc(value₂) ‖ … ‖ enc(valueₙ), i.e. the
+    //
+    // https://eips.ethereum.org/EIPS/eip-712
+    // "The encoding of a struct instance is enc(value₁) ‖ enc(value₂) ‖ … ‖ enc(valueₙ), i.e. the
     // concatenation of the encoded member values in the order that they appear in the type. Each
-    // encoded member value is exactly 32-byte long.
-
+    // encoded member value is exactly 32-byte long."
+    //
     BRArrayOf (BRJson) typeMembers;
     jsonExtractArray (type, &typeMembers);
 
     BRArrayOf(BREthereumData) encodings;
     array_new (encodings, 5);
-
-//    BREthereumStructureEncoding  encoding;
-//    BREthereumStructureEncoding *encodings = calloc (1 + array_count(typeMembers), sizeof (BREthereumStructureEncoding));
-
 
     // Prefix the encoding with the 'type hash'
     // TODO: Is this in the 'spec' or just in the example implementation of the spec
@@ -1432,9 +754,11 @@ ethEncodeValueAsReferenceType (BRJson value,
 
     else {
 
+        // https://eips.ethereum.org/EIPS/eip-712
         // "The array values are encoded as the keccak256 hash of the concatenated encodeData of
         // their contents (i.e. the encoding of SomeType[5] is identical to that of a struct
         // containing five members of type SomeType)."
+        
         BRArrayOf(BRJson) values;
         jsonExtractArray (value, &values);
 
