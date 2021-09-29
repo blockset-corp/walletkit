@@ -194,8 +194,10 @@ target_sources (WalletKitCore
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testEvent.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testJson.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testUtil.c)
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -357,9 +359,8 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBase.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testTransaction.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
     target_include_directories(WalletKitCoreTest
