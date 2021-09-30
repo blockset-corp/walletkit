@@ -239,6 +239,10 @@ private_extern WKAmount
 wkTransferGetAmountDirectedInternal (WKTransfer transfer,
                                          WKBoolean  respectSuccess);
 
+private_extern OwnershipGiven WKAmount
+wkWalletGetTransferAmountDirectedNet (WKWallet wallet,
+                                      WKTransfer transfer);
+
 #ifdef __cplusplus
 }
 #endif
