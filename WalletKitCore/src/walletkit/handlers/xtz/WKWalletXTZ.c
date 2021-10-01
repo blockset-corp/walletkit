@@ -102,16 +102,50 @@ wkWalletHasAddressXTZ (WKWallet wallet,
 
 private_extern bool
 wkWalletNeedsRevealXTZ (WKWallet wallet) {
+    //
+    // A 'reveal' is needed anytime the wallet's balance has hit zero and there has not been a
+    // subsequent successful send.  Quoting 'Tezos Experts': "If you emptied your account, the
+    // revealed public key is garbage-collected. You need to re-reveal it".  Quoting 'WalletKit
+    // Experts': crap.
+    //
+
+    // We'll update this as we find a balance of zero and a subsequent send.
+    bool needsReveal = true;
+
+    // Keep a running total of the balance
+    WKAmount balance = wkAmountCreateInteger (0, wallet->unit);
+
+    // Transactions are ordered as oldest to newest.  Surely there is going to be a screw case with
+    // two or more transactions in the same block... having an ambiguous order.
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        // reveal is needed before the first outgoing transfer and if the type of any outgoing
-        // transfer is not WK_TRANSFER_STATE_ERRORED (a failed submit).
-        WKTransferDirection direction = wkTransferGetDirection (wallet->transfers[index]);
-        WKTransferStateType type      = wkTransferGetStateType (wallet->transfers[index]);
-        if (WK_TRANSFER_SENT == direction && WK_TRANSFER_STATE_ERRORED != type) return false;
+        WKTransfer transfer = wallet->transfers[index];
+
+        // If the type is 'ERRORED' then skip to the next transfer
+        WKTransferStateType type = wkTransferGetStateType (transfer);
+        if (WK_TRANSFER_STATE_ERRORED == type) continue;
+
+        // If the direction is not 'RECEIVED' then we've already been revealed.
+        WKTransferDirection direction = wkTransferGetDirection (transfer);
+        if (WK_TRANSFER_RECEIVED != direction) needsReveal = false;
+
+        // Update the balance
+        WKAmount amount     = wkWalletGetTransferAmountDirectedNet (wallet, transfer);
+        WKAmount newBalance = wkAmountAdd (balance, amount);
+
+        wkAmountGive(amount);
+        wkAmountGive(balance);
+
+        balance = newBalance;
+
+        // If we hit zero, a reveal is need.  A subsequent 'not received' will unset this.
+        if (wkAmountIsZero(balance)) needsReveal = true;
     }
 
-    return true;
+    return needsReveal;
 }
+
+// reveal is needed before the first outgoing transfer and if the type of any outgoing
+// transfer is not WK_TRANSFER_STATE_ERRORED (a failed submit).
 
 private_extern bool
 wkWalletNeedsRevealForTransactionXTZ (WKWallet wallet,

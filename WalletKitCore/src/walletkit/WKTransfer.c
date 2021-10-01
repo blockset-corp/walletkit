@@ -289,21 +289,17 @@ wkTransferGetAmountDirectedInternal (WKTransfer transfer,
 
     switch (wkTransferGetDirection(transfer)) {
         case WK_TRANSFER_RECOVERED: {
-            amount = wkAmountCreate (transfer->unit,
-                                         WK_FALSE,
-                                         UINT256_ZERO);
+            amount = wkAmountCreate (transfer->unit, WK_FALSE, UINT256_ZERO);
             break;
         }
 
         case WK_TRANSFER_SENT: {
-            amount = wkTransferGetAmountAsSign (transfer,
-                                                    WK_TRUE);
+            amount = wkTransferGetAmountAsSign (transfer, WK_TRUE);
             break;
         }
 
         case WK_TRANSFER_RECEIVED: {
-            amount = wkTransferGetAmountAsSign (transfer,
-                                                    WK_FALSE);
+            amount = wkTransferGetAmountAsSign (transfer, WK_FALSE);
             break;
         }
         default: assert(0);
