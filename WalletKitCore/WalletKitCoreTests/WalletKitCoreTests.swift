@@ -183,12 +183,16 @@ final class WalletKitCoreTests: XCTestCase {
         runBcTests()
     }
 
+    func testTransactionETH () {
+        runTransactionTests (0)
+    }
+
     func testContractETH () {
         runContractTests()
     }
 
-    func testBasicsETH () {
-        runTests (0)
+    func testStructureETH () {
+        runStructureTests()
     }
 
     // MARK: - Ripple
@@ -457,8 +461,9 @@ final class WalletKitCoreTests: XCTestCase {
         ("testEvent",           testEventETH),
         ("testBase",            testBaseETH),
         ("testBC",              testBlockchainETH),
-        ("testContracdt",       testContractETH),
-        ("testBasics",          testBasicsETH),
+        ("testTransactions",    testTransactionETH),
+        ("testContract",        testContractETH),
+        ("testStructure",       testStructureETH),
 
         // Ripple
         ("testRipple",          testRipple),
