@@ -2,14 +2,24 @@ include ':WalletKit'
 include ':WalletKitNative'
 include ':WalletKitBRD'
 
+def useAllJvmSources = ext.get("useAllJvmSources").toString().toBoolean()
+def useAndroidSources = ext.get("useAndroidSources").toString().toBoolean()
+def ideaActive = System.getProperty("idea.active") == "true"
+def enableAndroid = useAllJvmSources || (useAndroidSources && ideaActive) || !ideaActive
+def enableJvmSources = useAllJvmSources || (!useAndroidSources && ideaActive) || !ideaActive
+
 // Android
-include ':WalletKitNative-Android'
-include ':WalletKitBRD-Android'
-include ':WalletKitDemo-Android'
+if (enableAndroid) {
+    include ':WalletKitNative-Android'
+    include ':WalletKitBRD-Android'
+    include ':WalletKitDemo-Android'
+}
 
 // JRE
-//include ':WalletKitNative-JRE'
-//include ':WalletKitBRD-JRE'
+if (enableJvmSources) {
+    include ':WalletKitNative-JRE'
+    include ':WalletKitBRD-JRE'
+}
 
 // Kotlin
 include ':WalletKit-KTX'
