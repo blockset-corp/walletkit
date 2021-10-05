@@ -413,6 +413,48 @@ wkWalletConnectorSignTransactionDataETH (
     return signedData.bytes;
 }
 
+static uint8_t*
+wkWalletConnectorSignTypedDataETH (
+        WKWalletConnector       connector,
+        BRJson                  typedData,
+        WKKey                   key,
+        uint8_t                 **digestData,
+        size_t                  *digestLength,
+        size_t                  *signatureLength,
+        WKWalletConnectorStatus *status) {
+    
+    uint8_t*                        signatureData = NULL;
+    BRKey                           brKey;
+    BREthereumStructureErrorType    error;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    *digestLength = 0;
+    *signatureLength = 0;
+    *digestData = NULL;
+    
+    brKey = *wkKeyGetCore (key);
+    BREthereumStructureCoder coder = ethStructureCoderCreateFromTypedData (typedData, &error);
+    if (NULL == coder) {
+        *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA;
+        return NULL;
+    }
+
+    BREthereumStructureSignResult signResult = ethStructureSignData (coder, brKey);
+    BRKeyClean (&brKey);
+    
+    *digestLength = sizeof (BREthereumHash);
+    *signatureLength = sizeof (BREthereumSignatureVRS);
+    *digestData = malloc (*digestLength);
+    signatureData = malloc (*signatureLength);
+    assert (NULL != *digestData && NULL != signatureData);
+
+    // Signature type, SIGNATURE_TYPE_RECOVERABLE_VRS_EIP
+    memcpy (*digestData, signResult.digest.bytes, *digestLength);
+    memcpy (signatureData, &signResult.signature.sig.vrs, *signatureLength);
+
+    return signatureData;
+}
+
 WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {
     wkWalletConnectorCreateETH,
     wkWalletConnectorReleaseETH,
@@ -423,6 +465,7 @@ WKWalletConnectorHandlers wkWalletConnectorHandlersETH = {
     wkWalletConnectorRecoverKeyETH,
     wkWalletConnectorCreateTransactionFromArgumentsETH,
     wkWalletConnectorCreateTransactionFromSerializationETH,
-    wkWalletConnectorSignTransactionDataETH
+    wkWalletConnectorSignTransactionDataETH,
+    wkWalletConnectorSignTypedDataETH
 };
 
