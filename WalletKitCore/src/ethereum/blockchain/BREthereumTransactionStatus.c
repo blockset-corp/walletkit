@@ -80,11 +80,12 @@ ethTransactionStatusCreateErrored (BREthereumTransactionErrorType type,
 
 extern int
 ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
-                                 BREthereumHash *blockHash,
-                                 uint64_t *blockNumber,
-                                 uint64_t *blockTransactionIndex,
-                                 uint64_t *blockTimestamp,
-                                 BREthereumGas *gas) {
+                                    BREthereumHash *blockHash,
+                                    uint64_t *blockNumber,
+                                    uint64_t *blockTransactionIndex,
+                                    uint64_t *blockTimestamp,
+                                    BREthereumGas *gas,
+                                    uint64_t *success) {
     if (status->type != TRANSACTION_STATUS_INCLUDED)
         return 0;
 
@@ -93,8 +94,8 @@ ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
     if (NULL != blockTransactionIndex) *blockTransactionIndex = status->u.included.transactionIndex;
     if (NULL != blockTimestamp) *blockTimestamp = status->u.included.blockTimestamp;
     if (NULL != gas) *gas = status->u.included.gasUsed;
-
-
+    if (NULL != success) *success = status->u.included.success;
+    
     return 1;
 }
 

@@ -27,6 +27,20 @@ wkTransferCoerceETH (WKTransfer transfer) {
     return (WKTransferETH) transfer;
 }
 
+static bool
+wkTransferExtractIncludeStatusFromStatusETH (BREthereumTransactionStatus status,
+                                             WKTransferIncludeStatus *includeStatus) {
+    uint64_t success;
+    if (!ethTransactionStatusExtractIncluded (&status, NULL, NULL, NULL, NULL, NULL, &success)) return false;
+
+    if (NULL != includeStatus) {
+        *includeStatus = (success
+                          ? wkTransferIncludeStatusCreateSuccess ()
+                          : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN, NULL));
+    }
+
+    return true;
+}
 extern WKTransferState
 wkTransferDeriveStateETH (BREthereumTransactionStatus status,
                               WKFeeBasis feeBasis) {
@@ -37,14 +51,19 @@ wkTransferDeriveStateETH (BREthereumTransactionStatus status,
         case TRANSACTION_STATUS_PENDING:
             return wkTransferStateInit (WK_TRANSFER_STATE_SUBMITTED);
 
-        case TRANSACTION_STATUS_INCLUDED:
+        case TRANSACTION_STATUS_INCLUDED: {
+            WKTransferIncludeStatus includeStatus = wkTransferIncludeStatusCreateSuccess();
+
+            // If 'included w/ error' fill `error`.
+            wkTransferExtractIncludeStatusFromStatusETH (status, &includeStatus);
+            
             return wkTransferStateIncludedInit (status.u.included.blockNumber,
-                                                    status.u.included.transactionIndex,
-                                                    status.u.included.blockTimestamp,
-                                                    wkFeeBasisTake (feeBasis),
-                                                    AS_WK_BOOLEAN (status.u.included.success),
-                                                    NULL);
+                                                status.u.included.transactionIndex,
+                                                status.u.included.blockTimestamp,
+                                                wkFeeBasisTake (feeBasis),
+                                                includeStatus);
             break;
+        }
 
         case TRANSACTION_STATUS_ERRORED:
             return wkTransferStateErroredInit((WKTransferSubmitError) {

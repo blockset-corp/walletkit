@@ -18,7 +18,61 @@
 extern "C" {
 #endif
 
-/// MARK: Transfer Submission Result
+// MARK: - Transfer Include Error
+
+#define WK_TRANSFER_STATUS_DETAILS_LENGTH      (31)
+
+///
+/// An 'Included Error' occurs for some currencies, none of the BTC-alikes, whereby a transaction
+/// can be included on the blockchain but not complete successfully - e.g. the asset is not
+/// transferred.
+///
+typedef enum {
+    WK_TRANSFER_INCLUDED_STATUS_SUCCESS,
+
+    /// Not enough 'gas' paid to complete the calculations required to include the transaction.  The
+    /// transaction is in the blockchain, the sender paid a fee, but the assert transfer did not
+    /// complete.
+    WK_TRANSFER_INCLUDED_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT, // out of gas
+
+    /// An error occurred during the processing of the transaction.  This is typically something
+    /// specific to the Smart Contract processing the transaction.  This error won't be seen for
+    /// a simple transfer of the native currency; nor, in the case of Ethereum, for an ERC-20
+    /// exchange. Examples:
+    ///    'Comp::_transferTokens: transfer amount exceeds balance
+    ///    'insufficient funds'
+    ///    'Too little received'
+    ///    'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT'
+    WK_TRANSFER_INCLUDED_STATUS_FAILURE_REVERTED,
+
+    /// The resons for the included failure is unknown
+    WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN,
+
+
+} WKTransferIncludeStatusType;
+
+#define TRANSFER_INCLUDED_ERROR_UNDEFINED  ((WKTransferIncludeErrorType) -1)
+
+typedef struct {
+    /// The type of include error.
+    WKTransferIncludeStatusType type;
+
+    /// Additional details, if available
+    char details [WK_TRANSFER_STATUS_DETAILS_LENGTH + 1];
+} WKTransferIncludeStatus;
+
+extern WKTransferIncludeStatus
+wkTransferIncludeStatusCreateSuccess (void);
+
+extern WKTransferIncludeStatus
+wkTransferIncludeStatusCreateFailure (WKTransferIncludeStatusType type, const char *details);
+
+extern const char *
+wkTransferIncludeStatusGetDetails (const WKTransferIncludeStatus *status);
+
+extern bool
+wkTransferIncludeStatusIsEqual (const WKTransferIncludeStatus *status1,
+                                const WKTransferIncludeStatus *status2);
 
 typedef enum {
     WK_TRANSFER_SUBMIT_ERROR_UNKNOWN,
@@ -78,8 +132,7 @@ wkTransferStateIncludedInit (uint64_t blockNumber,
                              uint64_t transactionIndex,
                              uint64_t timestamp,
                              OwnershipKept WKFeeBasis feeBasis,
-                             WKBoolean success,
-                             const char *error);
+                             WKTransferIncludeStatus status);
 
 extern WKTransferState  // Does not require wkTransferStateRelease
 wkTransferStateErroredInit (WKTransferSubmitError error);
@@ -90,8 +143,7 @@ wkTransferStateExtractIncluded (WKTransferState state,
                                 uint64_t *blockTimestamp,
                                 uint64_t *transactionIndex,
                                 WKFeeBasis *feeBasis,
-                                WKBoolean  *success,
-                                char **error);
+                                WKTransferIncludeStatus *status);
 
 extern bool
 wkTransferStateExtractError (WKTransferState state,

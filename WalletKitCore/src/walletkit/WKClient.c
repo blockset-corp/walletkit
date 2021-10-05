@@ -1450,7 +1450,7 @@ wkClientTransferBundleCompareByBlockheight (const WKClientTransferBundle b1,
 
 extern WKTransferState
 wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
-                                            WKFeeBasis confirmedFeeBasis) {
+                                        WKFeeBasis confirmedFeeBasis) {
     bool isIncluded = (WK_TRANSFER_STATE_INCLUDED == bundle->status ||    // success
                        (WK_TRANSFER_STATE_ERRORED == bundle->status &&    // error
                         BLOCK_HEIGHT_UNBOUND != bundle->blockNumber &&
@@ -1458,11 +1458,12 @@ wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
 
     return (isIncluded
             ? wkTransferStateIncludedInit (bundle->blockNumber,
-                                               bundle->blockTransactionIndex,
-                                               bundle->blockTimestamp,
-                                               confirmedFeeBasis,
-                                               AS_WK_BOOLEAN(WK_TRANSFER_STATE_INCLUDED == bundle->status),
-                                               (isIncluded ? NULL : "unknown"))
+                                           bundle->blockTransactionIndex,
+                                           bundle->blockTimestamp,
+                                           confirmedFeeBasis,
+                                           (WK_TRANSFER_STATE_INCLUDED == bundle->status
+                                            ? wkTransferIncludeStatusCreateSuccess ()
+                                            : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN, "via Blockset")))
             : (WK_TRANSFER_STATE_ERRORED == bundle->status
                ? wkTransferStateErroredInit (wkTransferSubmitErrorUnknown())
                : wkTransferStateInit (bundle->status)));

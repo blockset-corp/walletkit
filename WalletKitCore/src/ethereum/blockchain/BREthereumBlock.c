@@ -885,7 +885,7 @@ ethBlockLinkLogsWithTransactions (BREthereumBlock block) {
         BREthereumTransactionStatus status =ethTransactionGetStatus(transaction);
 
         uint64_t transactionIndex, blockNumber;
-        if (ethTransactionStatusExtractIncluded(&status, NULL, &blockNumber, &transactionIndex, NULL, NULL)) {
+        if (ethTransactionStatusExtractIncluded(&status, NULL, &blockNumber, &transactionIndex, NULL, NULL, NULL)) {
             status.u.included.gasUsed = block->status.gasUsed[transactionIndex];
             status.u.included.blockTimestamp = ethBlockGetTimestamp(block);
             ethTransactionSetStatus(transaction, status);
@@ -899,7 +899,7 @@ ethBlockLinkLogsWithTransactions (BREthereumBlock block) {
         BREthereumTransactionStatus status = ethLogGetStatus(log);
         uint64_t transactionIndex; size_t logIndex;
 
-        int transactionIncluded = ethTransactionStatusExtractIncluded (&status, NULL, NULL, &transactionIndex, NULL, NULL);
+        int transactionIncluded = ethTransactionStatusExtractIncluded (&status, NULL, NULL, &transactionIndex, NULL, NULL, NULL);
         assert (transactionIncluded);
 
         // Importantly, note that the log has no reference to the transaction itself.  And, if only

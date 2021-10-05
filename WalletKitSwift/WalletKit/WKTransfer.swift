@@ -276,18 +276,6 @@ public class TransferFeeBasis: Equatable {
 }
 
 ///
-/// A TransferConfirmation holds confirmation information.
-///
-public struct TransferConfirmation: Equatable {
-    public let blockNumber: UInt64
-    public let transactionIndex: UInt64
-    public let timestamp: UInt64
-    public let fee: Amount?  // Optional, for now
-    public let success: Bool
-    public let error: String?
-}
-
-///
 /// A TransferHash uniquely identifies a transfer *among* the owning wallet's transfers.
 ///
 public class TransferHash: Hashable, CustomStringConvertible {
@@ -339,6 +327,8 @@ extension TransferSubmitError: CustomStringConvertible {
         }
     }
 }
+
+// MARK: - Attributes
 
 ///
 /// A TransferAttribute is an arbitary {key, value} pair associated with a Transfer; the attribute
@@ -422,6 +412,67 @@ public enum TransferAttributeValidationError {
     }
 }
 
+// MARK: - Include Error
+
+///
+/// A TransferIncludeErrorType identifies the type of an include error
+///
+public enum TransferIncludeStatusType {
+    case success
+
+    // failure cases
+    case insufficientNetworkCostUnit
+    case reverted
+    case unknown
+
+    internal init (_ core: WKTransferIncludeStatusType) {
+        switch (core) {
+        case WK_TRANSFER_INCLUDED_STATUS_SUCCESS:          self = .success
+        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT: self = .insufficientNetworkCostUnit
+        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_REVERTED: self = .reverted
+        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN:  self = .unknown
+        default: preconditionFailure()
+        }
+    }
+}
+
+///
+/// A TransferIncludeError represents an include error.
+///
+public struct TransferIncludeStatus: Equatable, Error {
+    public let type: TransferIncludeStatusType
+    public let details: String?
+
+    internal init (_ core: WKTransferIncludeStatus) {
+        self.type = TransferIncludeStatusType (core.type);
+
+        var coreVar = core
+        self.details = asUTF8String(wkTransferIncludeStatusGetDetails (&coreVar))
+    }
+}
+
+extension TransferIncludeStatus: CustomStringConvertible {
+    public var description: String {
+        return "IncludeStatus: \(type)\(details.map { ": \($0)"} ?? "")"
+    }
+}
+
+// MARK: - Confirmation
+///
+/// A TransferConfirmation holds confirmation information.
+///
+public struct TransferConfirmation: Equatable {
+    public let blockNumber: UInt64
+    public let transactionIndex: UInt64
+    public let timestamp: UInt64
+    public let fee: Amount?  // Optional, for now
+    public let status: TransferIncludeStatus
+
+    public var succeeded: Bool {
+        return .success == status.type
+    }
+}
+
 ///
 /// A TransferState represents the states in Transfer's 'life-cycle'
 ///
@@ -445,17 +496,14 @@ public enum TransferState {
             var coreBlockTimestamp   : UInt64 = 0
             var coreTransactionIndex : UInt64 = 0
             var coreFeeBasis         : WKFeeBasis!
-            var coreSuccess          : WKBoolean = WK_TRUE
-            var coreErrorString      : UnsafeMutablePointer<Int8>!
+            var coreStatus           = WKTransferIncludeStatus()
 
             wkTransferStateExtractIncluded (core,
-                                                &coreBlockNumber,
-                                                &coreBlockTimestamp,
-                                                &coreTransactionIndex,
-                                                &coreFeeBasis,
-                                                &coreSuccess,
-                                                &coreErrorString);
-            defer { wkMemoryFree (coreErrorString) }
+                                            &coreBlockNumber,
+                                            &coreBlockTimestamp,
+                                            &coreTransactionIndex,
+                                            &coreFeeBasis,
+                                            &coreStatus)
 
             self = .included (
                 confirmation: TransferConfirmation (blockNumber:      coreBlockNumber,
@@ -464,8 +512,7 @@ public enum TransferState {
                                                     fee: coreFeeBasis
                                                         .map { wkFeeBasisGetFee ($0) }
                                                         .map { Amount (core: $0, take: false) },
-                                                    success: WK_TRUE == coreSuccess,
-                                                    error: coreErrorString.map { asUTF8String ($0)} ))
+                                                    status: TransferIncludeStatus (coreStatus)))
 
         case WK_TRANSFER_STATE_ERRORED:
             var error = WKTransferSubmitError()
@@ -586,3 +633,4 @@ public protocol TransferFactory {
 //                         amount: Amount,
 //                         feeBasis: TransferFeeBasis) -> Transfer? // T
 }
+
