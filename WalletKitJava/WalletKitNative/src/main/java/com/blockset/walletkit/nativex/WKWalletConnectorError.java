@@ -73,6 +73,25 @@ public enum WKWalletConnectorError {
         public int toCore() {
             return WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE;
         }
+    },
+
+    /** Indicates that typed data JSON is not valid JSON
+     */
+    INVALID_JSON {
+        @Override
+        public int toCore() {
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_JSON_VALUE;
+        }
+    },
+
+    /** Indicates that the typed data is not recognized by the WalletConnector's
+     *  network standards.
+     */
+    INVALID_TYPED_DATA {
+        @Override
+        public int toCore() {
+            return WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA_VALUE;
+        }
     };
     
     public static WKWalletConnectorError fromCore(int nativeValue) {
@@ -84,6 +103,8 @@ public enum WKWalletConnectorError {
             case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE:                return INVALID_SIGNATURE;
             case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE:            return INVALID_SERIALIZATION;
             case WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE:              return KEY_RECOVERY;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_JSON_VALUE:                     return INVALID_JSON;
+            case WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA_VALUE:               return INVALID_TYPED_DATA;
 
             case WK_WALLET_CONNECTOR_STATUS_OK_VALUE: throw new IllegalArgumentException("Invalid WKWalletConnectorError for Success");
             default: throw new IllegalArgumentException("Invalid WKWalletConnectorError core value");
@@ -99,6 +120,8 @@ public enum WKWalletConnectorError {
     private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE_VALUE             = 5;
     private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION_VALUE         = 6;
     private static final int WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED_VALUE           = 7;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_JSON_VALUE                  = 8;
+    private static final int WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA_VALUE            = 9;
 
     public abstract int toCore();
 }

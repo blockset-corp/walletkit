@@ -21,7 +21,8 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/src",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/support",
                                    projectDir.absolutePath + "/src/main/cpp/core/vendor",
-                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/secp256k1"]
+                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/secp256k1",
+                                   projectDir.absolutePath + "/src/main/cpp/core/vendor/yajl/include"]
 
     cppCryptoVendorSrcDir       = projectDir.absolutePath + "/src/main/cpp/core/vendor"
 

@@ -11,6 +11,7 @@
 
 #include "walletkit/WKHandlersP.h"
 #include "WKETH.h"
+#include "ethereum/base/BREthereumStructure.h"
 #include "walletkit/WKKeyP.h"
 #include "support/BRCrypto.h"
 
