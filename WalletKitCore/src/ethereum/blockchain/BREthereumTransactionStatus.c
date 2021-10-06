@@ -99,6 +99,19 @@ ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
     return 1;
 }
 
+extern int
+ethTransactionStatusExtractErrored (const BREthereumTransactionStatus *status,
+                                    BREthereumTransactionErrorType *type,
+                                    char **detail) {
+    if (status->type != TRANSACTION_STATUS_ERRORED)
+        return 0;
+
+    if (NULL != type) *type = status->u.errored.type;
+    if (NULL != detail) *detail = strdup (status->u.errored.detail);
+
+    return 1;
+}
+
 extern BREthereumBoolean
 ethTransactionStatusEqual (BREthereumTransactionStatus ts1,
                         BREthereumTransactionStatus ts2) {

@@ -1484,6 +1484,28 @@ extension System {
         return addresses
     }
 
+    internal static func makeClientSubmitErrorCore (_ error: SystemClientSubmissionError, details: String) -> WKClientError {
+        var submitErrorType: WKTransferSubmitErrorType!
+
+        switch error {
+        case .access:                      submitErrorType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
+        case .account:                     submitErrorType = WK_TRANSFER_SUBMIT_ERROR_ACCOUNT
+        case .signature:                   submitErrorType = WK_TRANSFER_SUBMIT_ERROR_SIGNATURE
+        case .insufficientBalance:         submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE
+        case .insufficientNetworkFee:      submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE
+        case .insufficientNetworkCostUnit: submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT
+        case .insufficientFee:             submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE
+        case .nonceTooLow:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW
+        case .nonceInvalid:                submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE
+        case .transactionDuplicate:        submitErrorType = WK_TRANSFER_SUBMIT_ERROR_DUPLICATE
+        case .transactionExpired:          submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED
+        case .transaction:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION
+        case .unknown:                     submitErrorType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
+        }
+
+        return wkClientErrorCreateSubmission (submitErrorType, details)
+    }
+
     internal static func makeClientErrorCore (_ error: SystemClientError) -> WKClientError {
         switch error {
         case .badRequest(let details):
@@ -1494,8 +1516,8 @@ extension System {
             return wkClientErrorCreate (WK_CLIENT_ERROR_RESOURCE, nil)
         case .badResponse(let details):
             return wkClientErrorCreate (WK_CLIENT_ERROR_BAD_RESPONSE, details)
-        case .submission(let details):
-            return wkClientErrorCreate (WK_CLIENT_ERROR_SUBMISSION, details)
+        case let .submission(error, details):
+            return System.makeClientSubmitErrorCore (error, details: details)
         case .unavailable:
             return wkClientErrorCreate (WK_CLIENT_ERROR_UNAVAILABLE, nil)
         }

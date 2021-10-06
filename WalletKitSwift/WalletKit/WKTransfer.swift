@@ -302,29 +302,72 @@ public class TransferHash: Hashable, CustomStringConvertible {
     }
 }
 
-public enum TransferSubmitError: Equatable, Error {
-    case unknown
-    case posix(errno: Int32, message: String?)
+// MARK: - Submit Error
 
-    internal init (core: WKTransferSubmitError) {
-        switch core.type {
-        case WK_TRANSFER_SUBMIT_ERROR_UNKNOWN:
-            self = .unknown
-        case WK_TRANSFER_SUBMIT_ERROR_POSIX:
-            var c = core
-            self = .posix(errno: core.u.posix.errnum,
-                          message: wkTransferSubmitErrorGetMessage (&c).map{ asUTF8String($0, true) } )
-        default: self = .unknown; preconditionFailure()
+public enum TransferSubmitErrorType: Equatable, Error {
+    case account
+    case signature
+    case duplicate
+    case insufficientBalance
+    case insufficientNetworkFee
+    case insufficientNetworkCostUnit
+    case insufficientFee
+    case nonceTooLow
+    case invalidNonce
+    case transactionExpired
+    case transaction
+    case unknown
+
+    case clientBadRequest
+    case clientPermission
+    case clientResource
+    case clientBadResponse
+    case clientUnavailable
+
+    internal init (_ core: WKTransferSubmitErrorType) {
+        switch core {
+        case WK_TRANSFER_SUBMIT_ERROR_ACCOUNT:   self = .account
+        case WK_TRANSFER_SUBMIT_ERROR_SIGNATURE: self = .signature
+        case WK_TRANSFER_SUBMIT_ERROR_DUPLICATE: self = .duplicate
+        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE:           self = .insufficientBalance
+        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE:       self = .insufficientNetworkFee
+        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT: self = .insufficientNetworkCostUnit
+        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE:    self = .insufficientFee
+        case WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW:       self = .nonceTooLow
+        case WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE:       self = .invalidNonce
+        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED: self = .transactionExpired
+        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION:         self = .transaction
+        case WK_TRANSFER_SUBMIT_ERROR_UNKNOWN:             self = .unknown
+
+            // Client
+        case WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST:  self = .clientBadRequest
+        case WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION:   self = .clientPermission
+        case WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE:     self = .clientResource
+        case WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE: self = .clientBadResponse
+        case WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE:  self = .clientUnavailable
+        default: preconditionFailure()
         }
+    }
+}
+
+///
+/// A TransferSubmitError represents a submit error.
+///
+public struct TransferSubmitError: Equatable, Error {
+    let type: TransferSubmitErrorType
+    let details: String?
+
+    internal init (_ core: WKTransferSubmitError) {
+        self.type = TransferSubmitErrorType (core.type);
+
+        var coreVar = core
+        self.details = asUTF8String(wekTransferSubmitErrorGetDetails(&coreVar))
     }
 }
 
 extension TransferSubmitError: CustomStringConvertible {
     public var description: String {
-        switch self {
-        case .unknown: return ".unknown"
-        case let .posix(errno, message): return ".posix(\(errno):\(message ?? ""))"
-        }
+        return "SubmitError: \(type)\(details.map { ": \($0)"} ?? "")"
     }
 }
 
@@ -515,10 +558,10 @@ public enum TransferState {
                                                     status: TransferIncludeStatus (coreStatus)))
 
         case WK_TRANSFER_STATE_ERRORED:
-            var error = WKTransferSubmitError()
-            wkTransferStateExtractError (core, &error)
-            self = .failed(error: TransferSubmitError (core: error))
-
+            var coreError = WKTransferSubmitError()
+            wkTransferStateExtractError (core, &coreError)
+            self = .failed (error: TransferSubmitError (coreError))
+            
         case WK_TRANSFER_STATE_DELETED:   self = .deleted
         default: /* ignore this */ self = .pending; preconditionFailure()
         }

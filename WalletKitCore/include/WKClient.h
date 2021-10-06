@@ -53,6 +53,9 @@ typedef struct WKClientErrorRecord *WKClientError;
 extern OwnershipGiven WKClientError
 wkClientErrorCreate (WKClientErrorType type, const char *details);
 
+extern OwnershipGiven WKClientError
+wkClientErrorCreateSubmission (WKTransferSubmitErrorType submitErrorType, const char *details);
+
 // ...
 
 /**

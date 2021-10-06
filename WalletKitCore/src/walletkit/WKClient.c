@@ -47,6 +47,15 @@ wkClientErrorCreate (WKClientErrorType type, const char *details) {
     return wkClientErrorCreateInternal(type, details);
 }
 
+extern OwnershipGiven WKClientError
+wkClientErrorCreateSubmission (WKTransferSubmitErrorType submitErrorType, const char *details) {
+    WKClientError error = wkClientErrorCreateInternal (WK_CLIENT_ERROR_SUBMISSION, details);
+
+    error->u.submitErrorType = submitErrorType;
+
+    return error;
+}
+
 private_extern void
 wkClientErrorRelease (WKClientError error) {
     if (NULL != error->details) free (error->details);
@@ -1009,6 +1018,46 @@ typedef struct {
     WKClientError error;
 } WKClientAnnounceSubmitEvent;
 
+static WKTransferSubmitError
+wkClientErrorToSubmitError (WKWalletManager manager,
+                            WKClientError clientError) {
+    WKTransferSubmitErrorType type;
+    char *details;
+
+    switch (clientError->type) {
+        case WK_CLIENT_ERROR_BAD_REQUEST:
+            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST;
+            details = "Bad Reqeust";
+            break;
+
+        case WK_CLIENT_ERROR_PERMISSION:
+            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION;
+            details = "Permission";
+            break;
+
+        case WK_CLIENT_ERROR_RESOURCE:
+            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE;
+            details = "Resource";
+            break;
+
+        case WK_CLIENT_ERROR_BAD_RESPONSE:
+            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE;
+            details = "Bad Response";
+            break;
+
+        case WK_CLIENT_ERROR_SUBMISSION:
+            type = clientError->u.submitErrorType;
+            details = clientError->details;
+            break;
+
+        case WK_CLIENT_ERROR_UNAVAILABLE:
+            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE;
+            details = "Unavailable";
+            break;
+    }
+
+    return wkTransferSubmitErrorCreate (type, details);
+}
 static void
 wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
                       OwnershipGiven WKClientCallbackState callbackState,
@@ -1023,7 +1072,7 @@ wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
     // Get the transfer state
     WKTransferState transferState = (NULL == error
                                      ? wkTransferStateInit (WK_TRANSFER_STATE_SUBMITTED)
-                                     : wkTransferStateErroredInit (wkTransferSubmitErrorUnknown()));
+                                     : wkTransferStateErroredInit (wkClientErrorToSubmitError (manager, error)));
 
     // Recover the `state` as either SUBMITTED or a UNKNOWN ERROR.  We have a slight issue, as
     // a possible race condition, whereby the transfer can already be INCLUDED by the time this
@@ -1465,7 +1514,7 @@ wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
                                             ? wkTransferIncludeStatusCreateSuccess ()
                                             : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN, "via Blockset")))
             : (WK_TRANSFER_STATE_ERRORED == bundle->status
-               ? wkTransferStateErroredInit (wkTransferSubmitErrorUnknown())
+               ? wkTransferStateErroredInit (wkTransferSubmitErrorCreate(WK_TRANSFER_SUBMIT_ERROR_UNKNOWN, "via Blockset"))
                : wkTransferStateInit (bundle->status)));
 }
 

@@ -12,6 +12,7 @@ import Foundation // DispatchQueue
 
 #if os(Linux)
 import FoundationNetworking
+import WalletKitCore
 #endif
 
 private struct BlocksetCapabilities: OptionSet, CustomStringConvertible {
@@ -1237,7 +1238,7 @@ public class BlocksetSystemClient: SystemClient {
                         case .failure (let error):
                             // If a submission error (with HTTP status of 422), the Hedera accont
                             // already exists.  Just get it.
-                            if case .submission (_) = error {
+                            if case .submission (_, _) = error {
                                 self.getHederaAccount (blockchainId: blockchainId,
                                                        publicKey: publicKey,
                                                        completion: completion)
@@ -1394,17 +1395,47 @@ public class BlocksetSystemClient: SystemClient {
                 case 500, 504: respError = SystemClientError.unavailable
                 case 422:
                     // We expect `json` with more information about the error
-                    let message = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "message") }
+                    let status = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "submit_status") }
 
                     if nil == data {
-                        respError = SystemClientError.badResponse ("Submission Data Error: None provided")
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'data' Provided")
                     }
-                    else if nil == message {
+                    else if nil == status {
                         let dataString = data!.map { String(format: "%c", $0) }.joined()
-                        respError = SystemClientError.badResponse ("Submission Data Error: No JSON Result: Data: \(dataString)")
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'status' Provided: Data: \(dataString)")
                     }
                     else {
-                        respError = SystemClientError.submission(message!)
+                        let submitDetails = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "network_message") } ?? data!.map { String(format: "%c", $0) }.joined()
+
+                        var submitError: SystemClientSubmissionError!
+                        switch (status!) {
+                        case "success":                    submitError = .unknown
+                        case "unknown_error":              submitError = .unknown
+                        case "fee_too_low":                submitError = .insufficientFee
+                        case "gas_too_low":                submitError = .insufficientNetworkCostUnit
+                        case "gas_limit_too_low":          submitError = .insufficientNetworkCostUnit
+                        case "invalid_signature":          submitError = .signature
+                        case "invalid_transaction":        submitError = .transaction
+                        case "transaction_expired":        submitError = .transactionExpired
+                        case "insufficient_payer_balance": submitError = .insufficientBalance
+                        case "nonce_already_used":         submitError = .nonceTooLow
+                        case "nonce_gap":                  submitError = .nonceInvalid
+                        case "nonce_error":                submitError = .nonceInvalid
+                        case "duplicate":                  submitError = .transactionDuplicate
+                        case "rejected":                   submitError = .transaction
+                        case "invalid_address_or_key":     submitError = .account
+                        case "unknown_account":            submitError = .account
+
+                            // Client had an access/internal issue communicating the submission
+                        case "unauthorized":               fallthrough
+                        case "bad_request":                fallthrough
+                        case "parse_error":                fallthrough
+                        case "coin_node_error":            fallthrough
+                        case "invalid_parameters":         fallthrough
+                        case "method_not_found":           submitError = .access
+                        default:                           submitError = .unknown
+                        }
+                        respError = SystemClientError.submission(error: submitError, details: submitDetails)
                     }
                 default:
                     respError = SystemClientError.badRequest("Unrecognized Status Code: \(res.statusCode)")

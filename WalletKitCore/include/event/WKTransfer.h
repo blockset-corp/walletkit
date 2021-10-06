@@ -74,25 +74,85 @@ extern bool
 wkTransferIncludeStatusIsEqual (const WKTransferIncludeStatus *status1,
                                 const WKTransferIncludeStatus *status2);
 
+// MARK: Transfer Submission Error
+
+///
+/// A 'Submit Error' occurs when a Transfer is submitted to a Network but a problem arises.
+/// Generally, on such an error, the transfer will never be included in the Network's blockchain;
+/// the cause of the error must be resolved, a new transfer created (signed, etc) ad submitted.
+/// 
+/// Note: in the case of a 'CLIENT' error a resubmit could work.
+///
 typedef enum {
+    /// The 'source/sender' account/address is unknown.
+    WK_TRANSFER_SUBMIT_ERROR_ACCOUNT,
+
+    /// The signature is flawed.
+    WK_TRANSFER_SUBMIT_ERROR_SIGNATURE,
+
+    /// The transaction is a duplicate.
+    WK_TRANSFER_SUBMIT_ERROR_DUPLICATE,
+
+    /// The account's balance is insufficient for the `amount + fee`.
+    WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE,
+
+    /// The 'network fee' (aka, for Ethereum, the 'gas price') is too low.
+    WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE,        // gaPrice too low
+
+    /// The 'network cost unit' (aka, for Ethereum, the 'gas (limit)') is too low.
+    WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT,  // gas     too low
+
+    /// The fee is insufficient.
+    WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE,
+
+    /// The nonce is too low; in the past.
+    WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW,
+
+    /// The nonce is invalid.
+    WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE,                    // nonce, besides too low
+
+    /// The transaction hs expired and been rejected.
+    WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED,
+
+    /// The transaction itself is invalid and has been rejected
+    WK_TRANSFER_SUBMIT_ERROR_TRANSACTION,
+
+    /// An unknown submit error
     WK_TRANSFER_SUBMIT_ERROR_UNKNOWN,
-    WK_TRANSFER_SUBMIT_ERROR_POSIX,
+
+    // CLIENT ERRORS
+
+    /// The client got a bad request (internal error)
+    WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST,
+
+    /// The client forbid the request.
+    WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION,
+
+    /// The client resource limits were violated.
+    WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE,
+
+    /// The client produced a bad response (internal error)
+    WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE,
+
+    /// The client was unavailable
+    WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE,
+
 } WKTransferSubmitErrorType;
+
+#define TRANSFER_SUBMIT_ERROR_UNDEFINED  ((WKTransferSubmitErrorType) -1)
 
 typedef struct {
     WKTransferSubmitErrorType type;
-    union {
-        struct {
-            int errnum;
-        } posix;
-    } u;
+
+    /// Additional details, if available
+    char details [WK_TRANSFER_STATUS_DETAILS_LENGTH + 1];
 } WKTransferSubmitError;
 
 extern WKTransferSubmitError
-wkTransferSubmitErrorUnknown(void);
+wkTransferSubmitErrorCreate (WKTransferSubmitErrorType type, const char *details);
 
-extern WKTransferSubmitError
-wkTransferSubmitErrorPosix(int errnum);
+extern const char *
+wekTransferSubmitErrorGetDetails (const WKTransferSubmitError *error);
 
 extern bool
 wkTransferSubmitErrorIsEqual (const WKTransferSubmitError *e1,

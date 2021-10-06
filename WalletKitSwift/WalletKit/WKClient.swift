@@ -11,6 +11,32 @@
 import Foundation  // Data, Date
 
 ///
+/// An Error is a result of 'submission' to the System Client.  The System Client successfully
+/// processed a request and produced a response (processed a 'submisison') but the result of the
+/// submission is an error.
+///
+public enum SystemClientSubmissionError: Error {
+    /// The process handling the submit could not be accessed
+    case access
+
+    /// Transaction errors, generally
+    case account
+    case signature
+    case insufficientBalance
+    case insufficientNetworkFee
+    case insufficientNetworkCostUnit
+    case insufficientFee
+    case nonceTooLow
+    case nonceInvalid
+    case transactionDuplicate
+    case transactionExpired
+    case transaction
+
+    /// An unknown, unclassifiable error - see details.
+    case unknown
+}
+
+///
 /// An Error from SystemClient
 ///
 public enum SystemClientError: Error {
@@ -30,7 +56,7 @@ public enum SystemClientError: Error {
     /// The request and response succeeded, but the submission ultimately failed.  For example,
     /// the Client submitted a Transaction to the Ethereum network but the submission failed with
     /// 'gas_too_low'
-    case submission (String)
+    case submission (error: SystemClientSubmissionError, details: String)
 
     /// The client is unavailable.
     case unavailable

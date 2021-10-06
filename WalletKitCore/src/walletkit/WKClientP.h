@@ -33,6 +33,9 @@ extern "C" {
 struct WKClientErrorRecord {
     WKClientErrorType type;
     char *details;
+    union {
+        WKTransferSubmitErrorType submitErrorType;
+    } u;
 };
 
 private_extern void

@@ -133,6 +133,10 @@ ethTransactionStatusExtractIncluded (const BREthereumTransactionStatus *status,
                                      uint64_t *blockTimestamp,
                                      BREthereumGas *gas,
                                      uint64_t *success);
+extern int
+ethTransactionStatusExtractErrored (const BREthereumTransactionStatus *status,
+                                    BREthereumTransactionErrorType *type,
+                                    char **detail);
 
 extern BREthereumBoolean
 ethTransactionStatusEqual (BREthereumTransactionStatus ts1,

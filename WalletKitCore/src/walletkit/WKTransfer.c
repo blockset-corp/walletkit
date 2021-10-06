@@ -20,6 +20,63 @@
 
 #include "WKHandlersP.h"
 
+#if 0
+SUCCESS("success"),
+GENERAL("unknown_error"),
+* FEE_TOO_LOW("fee_too_low"),
+* GAS_TOO_LOW("gas_too_low"),
+* GAS_LIMIT_TOO_LOW("gas_limit_too_low"),
+* INVALID_SIGNATURE("invalid_signature"),
+* INVALID_TRANSACTION("invalid_transaction"),
+* TRANSACTION_EXPIRED("transaction_expired"),
+* INSUFFICIENT_PAYER_BALANCE("insufficient_payer_balance"),
+* NONCE_PAST("nonce_already_used"),
+* NONCE_FUTURE("nonce_gap"),
+* NONCE_ERROR("nonce_error"),
+UNAUTHORIZED("unauthorized"),
+BAD_REQUEST("bad_request"),
+PARSE_ERROR("parse_error"),
+COIN_NODE_ERROR("coin_node_error"),
+INVALID_PARAMETERS("invalid_parameters"),
+METHOD_NOT_FOUND("method_not_found"),
+* DUPLICATE("duplicate"),
+REJECTED("rejected"),
+INVALID_ADDRESS_OR_KEY("invalid_address_or_key"),
+* UNKNOWN_ACCOUNT("unknown_account");
+
+enum {
+    2  UNKNOWN                // catch all status, sorry
+    3  IN_NONFINAL_BLOCK      // transaction is in a block that could be reversed
+    4  IN_FINAL_BLOCK         // transaction is in a block that can not be reversed
+    5  IN_MEMPOOL             // transaction is in the mempool of connected node
+    6  PENDING_SUBMIT         // we have the txn but the node does not
+    7  UNSPECIFIED_FAILURE    // recoverable: we will retry this transaction
+    *    8  INSUFFICIENT_FEE       // recoverable: we will retry this transaction
+    *    9  INSUFFICIENT_BALANCE   // unrecoverable: invalid transaction
+    *    10  INSUFFICIENT_GAS       // unrecoverable: invalid transaction
+    *    11  DUPLICATE_TRANSACTION  // unrecoverable: invalid transaction
+    *    12  NONCE_TOO_LOW          // unrecoverable: invalid transaction
+    *    13  NONCE_TOO_HIGH         // unrecoverable: invalid transaction
+    *    14  SIGNATURE_ERROR        // unrecoverable: invalid transaction
+    *    15  INVALID_ACCOUNT        // unrecoverable: invalid transaction
+    16}
+
+
+
+16typedef enum {
+    *    17    TRANSACTION_ERROR_INVALID_SIGNATURE = 0,
+    *    18    TRANSACTION_ERROR_NONCE_TOO_LOW,
+    *    19    TRANSACTION_ERROR_BALANCE_TOO_LOW,
+    *    20    TRANSACTION_ERROR_GAS_PRICE_TOO_LOW,
+    *    21    TRANSACTION_ERROR_GAS_TOO_LOW,
+    22    TRANSACTION_ERROR_REPLACEMENT_UNDER_PRICED,
+    23    TRANSACTION_ERROR_DROPPED,
+    *    24    TRANSACTION_ERROR_ALREADY_KNOWN,   // Geth: submit arrives after shared (from other peer)
+    25    TRANSACTION_ERROR_UNKNOWN,
+    26} BREthereumTransactionErrorType;
+27
+28
+#endif
 
 // MARK: - Transfer Include Error
 
@@ -37,8 +94,11 @@ wkTransferIncludeStatusCreateFailure (WKTransferIncludeStatusType type, const ch
     WKTransferIncludeStatus status;
 
     status.type = type;
-    strncpy (status.details, details, WK_TRANSFER_STATUS_DETAILS_LENGTH);
-    status.details[WK_TRANSFER_STATUS_DETAILS_LENGTH] = '\0';
+    status.details[0] = '\0';
+    if (NULL != details) {
+        strncpy (status.details, details, WK_TRANSFER_STATUS_DETAILS_LENGTH);
+        status.details[WK_TRANSFER_STATUS_DETAILS_LENGTH] = '\0';
+    }
 
     return status;
 }
@@ -53,6 +113,34 @@ wkTransferIncludeStatusIsEqual (const WKTransferIncludeStatus *e1,
                                const WKTransferIncludeStatus *e2) {
     return (e1->type == e2->type && 0 == strcmp (e1->details, e2->details));
 }
+
+// MARK: Transfer Submit Error
+
+extern WKTransferSubmitError
+wkTransferSubmitErrorCreate (WKTransferSubmitErrorType type, const char *details) {
+    WKTransferSubmitError error;
+
+    error.type = type;
+    error.details[0] = '\0';
+    if (NULL != details) {
+        strncpy (error.details, details, WK_TRANSFER_STATUS_DETAILS_LENGTH);
+        error.details[WK_TRANSFER_STATUS_DETAILS_LENGTH] = '\0';
+    }
+
+    return error;
+}
+
+extern const char *
+wekTransferSubmitErrorGetDetails (const WKTransferSubmitError *error) {
+    return error->details;
+}
+
+extern bool
+wkTransferSubmitErrorIsEqual (const WKTransferSubmitError *e1,
+                              const WKTransferSubmitError *e2) {
+    return (e1->type == e2->type && 0 == strcmp (e1->details, e2->details));
+}
+
 /// MARK: - Transfer State Type
 
 IMPLEMENT_WK_GIVE_TAKE (WKTransferState, wkTransferState)
@@ -179,7 +267,7 @@ wkTransferStateExtractIncluded (WKTransferState state,
 
 extern bool
 wkTransferStateExtractError (WKTransferState state,
-                                 WKTransferSubmitError *error) {
+                             WKTransferSubmitError *error) {
     if (WK_TRANSFER_STATE_ERRORED != state->type) return false;
 
     if (NULL != error) *error = state->u.errored.error;
@@ -701,52 +789,6 @@ wkTransferEventTypeString (WKTransferEventType t) {
     return "<WK_TRANSFER_EVENT_TYPE_UNKNOWN>";
 }
 
-
-/// MARK: Transaction Submission Error
-
-// TODO(fix): This should be moved to a more appropriate file (BRTransfer.c/h?)
-
-extern WKTransferSubmitError
-wkTransferSubmitErrorUnknown(void) {
-    return (WKTransferSubmitError) {
-        WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
-    };
-}
-
-extern WKTransferSubmitError
-wkTransferSubmitErrorPosix(int errnum) {
-    return (WKTransferSubmitError) {
-        WK_TRANSFER_SUBMIT_ERROR_POSIX,
-        { .posix = { errnum } }
-    };
-}
-
-extern bool
-wkTransferSubmitErrorIsEqual (const WKTransferSubmitError *e1,
-                                  const WKTransferSubmitError *e2) {
-    return (e1->type == e2->type &&
-            (e1->type != WK_TRANSFER_SUBMIT_ERROR_POSIX ||
-             e1->u.posix.errnum == e2->u.posix.errnum));
-}
-
-extern char *
-wkTransferSubmitErrorGetMessage (WKTransferSubmitError *e) {
-    char *message = NULL;
-
-    switch (e->type) {
-        case WK_TRANSFER_SUBMIT_ERROR_POSIX: {
-            if (NULL != (message = strerror (e->u.posix.errnum))) {
-                message = strdup (message);
-            }
-            break;
-        }
-        default: {
-            break;
-        }
-    }
-
-    return message;
-}
 
 
 /// MARK: - Transfer Attribute
