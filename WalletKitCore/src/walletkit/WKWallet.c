@@ -477,24 +477,24 @@ wkWalletDecBalance (WKWallet wallet,
  * Return the amount from `transfer` that applies to the balance of `wallet`.  The result must
  * be in the wallet's unit
  */
-static OwnershipGiven WKAmount // called wtih wallet->lock
+private_extern OwnershipGiven WKAmount // called wtih wallet->lock
 wkWalletGetTransferAmountDirectedNet (WKWallet wallet,
-                                          WKTransfer transfer) {
+                                      WKTransfer transfer) {
     // If the wallet and transfer units are compatible, use the transfer's amount
     WKAmount transferAmount = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unit)
-                                     ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
-                                     : wkAmountCreateInteger (0, wallet->unit));
+                               ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
+                               : wkAmountCreateInteger (0, wallet->unit));
 
     // If the wallet unit and the transfer unitForFee are compatible and if we did not
     // receive the transfer then use the transfer's fee
     WKAmount transferFee    = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unitForFee) &&
-                                     WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
-                                     ? wkTransferGetFee (transfer)
-                                     : NULL);
+                               WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
+                               ? wkTransferGetFee (transfer)
+                               : NULL);
 
     WKAmount transferNet = (NULL != transferFee
-                                  ? wkAmountSub  (transferAmount, transferFee)
-                                  : wkAmountTake (transferAmount));
+                            ? wkAmountSub  (transferAmount, transferFee)
+                            : wkAmountTake (transferAmount));
 
     wkAmountGive(transferFee);
     wkAmountGive(transferAmount);

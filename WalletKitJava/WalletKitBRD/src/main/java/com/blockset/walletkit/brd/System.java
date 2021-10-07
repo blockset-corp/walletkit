@@ -112,6 +112,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -129,7 +130,6 @@ import java.util.logging.Logger;
 import static com.google.common.base.Preconditions.checkState;
 
 import androidx.annotation.Nullable;
-import androidx.collection.ArrayMap;
 
 /* package */
 final class System implements com.blockset.walletkit.System {
@@ -1680,12 +1680,12 @@ final class System implements com.blockset.walletkit.System {
                                 manager.getCoreBRCryptoWalletManager().announceEstimateTransactionFee(callbackState,
                                         false,
                                         UnsignedLong.ZERO,
-                                        new ArrayMap<>());
+                                        new LinkedHashMap<>());
                             }
                         });
             } catch (RuntimeException e) {
                 Log.log(Level.SEVERE, e.getMessage());
-                coreWalletManager.announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new ArrayMap<>());
+                coreWalletManager.announceEstimateTransactionFee(callbackState, false, UnsignedLong.ZERO, new LinkedHashMap<>());
             } finally {
                 coreWalletManager.give();
             }
