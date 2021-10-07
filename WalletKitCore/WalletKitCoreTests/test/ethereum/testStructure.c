@@ -379,6 +379,147 @@ runStructureExample3Test (void) {
 
 }
 
+static void
+testStructureTypeValues (BRJson *types, BRJson *domain) {
+    BRJsonStatus status;
+    *types = jsonParse ("{\
+        \"EIP712Domain\": [\
+            { \"name\": \"name\",    \"type\": \"string\" },\
+              { \"name\": \"version\", \"type\": \"string\" },\
+              { \"name\": \"verifyingContract\", \"type\": \"address\" }\
+        ],\
+    \
+        \"Data\": [\
+            { \"name\": \"d1\",   \"type\": \"bytes\" },\
+              { \"name\": \"d2\", \"type\": \"byte9\" },\
+              { \"name\": \"d3\", \"type\": \"uint64\" },\
+              { \"name\": \"d4\", \"type\": \"int8\" }\
+        ]\
+    }", &status, NULL);
+    assert (JSON_STATUS_OK == status);
+
+    *domain = jsonParse("{\
+        \"name\": \"GSN Relayed Transaction\",\
+        \"version\": \"1\",\
+        \"chainId\": 42,\
+        \"verifyingContract\": \"0x6453D37248Ab2C16eBd1A8f782a2CBC65860E60B\"\
+    }", &status, NULL);
+    assert (JSON_STATUS_OK == status);
+}
+
+static void
+runStructureTypeTest (void) {
+    BREthereumStructureErrorType error;
+    BRJsonStatus status, statusMessage;
+
+    BRJson types, domain, value;
+    BREthereumStructureCoder coder;
+
+    // All good.
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": 12345,\
+        \"d4\": \"-127\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL != coder);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // Too many bytes (11 != 9)
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27ffff\",\
+        \"d3\": 12345,\
+        \"d4\": \"-127\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // Int8 ouf of range
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": 12345,\
+        \"d4\": \"-129\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // uint64 ouf of range
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": \"11111111111111111111111111111111111111\",\
+        \"d4\": \"-129\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // not a hex string
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efeXX\",\
+        \"d3\": 12345,\
+        \"d4\": \"-129\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+}
+
 extern UInt256 // Twos-Complement
 uint256Negate (UInt256 value);
 
@@ -406,8 +547,6 @@ runIntegerTests () {
     assert (overflow && UInt256IsZero (valueSum));
 }
 
-static void
-
 extern void
 runStructureTests (void) {
     printf ("==== Structure\n");
@@ -416,6 +555,7 @@ runStructureTests (void) {
     runStructureExample1Test ();
     runStructureExample2Test ();
     runStructureExample3Test ();
+    runStructureTypeTest ();
 }
 
 
