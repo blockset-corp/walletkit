@@ -82,17 +82,18 @@ struct BREthereumStructureCoderRecord {
 };
 
 // MARK: - Atomic Type
+
+static size_t
+ethComputeAtomicTypeIntegerBytes (size_t count) {
+    if (count > 256 || 0 != count % 8) return 0;
+    return count / 8;
+}
 /**
  * Check the `count` is a valid number of bits for a an integer (`int` or `uint`)
  */
 static bool
-ethConfirmAtomicTypeIntegerSize (int count) {
-    return (  8 == count ||
-             16 == count ||
-             32 == count ||
-             64 == count ||
-            128 == count ||
-            256 == count);
+ethConfirmAtomicTypeIntegerSize (size_t count) {
+    return 0 != ethComputeAtomicTypeIntegerBytes (count);
 }
 
 /**
@@ -100,13 +101,13 @@ ethConfirmAtomicTypeIntegerSize (int count) {
  */
 static bool
 ethConfirmTypeNameIsAtomicType (const char *typeName) {
-    int count = 0;
+    size_t count = 0;
 
     return  (0 == strcmp (typeName, "address") ||
              0 == strcmp (typeName, "bool")    ||
-             (1 == sscanf (typeName, "byte%d", &count) && 1 <= count && count <= 32) ||
-             (1 == sscanf (typeName, "uint%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) ||
-             (1 == sscanf (typeName,  "int%d", &count) && ethConfirmAtomicTypeIntegerSize (count)));
+             (1 == sscanf (typeName, "byte%zd", &count) && 1 <= count && count <= 32) ||
+             (1 == sscanf (typeName, "uint%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)) ||
+             (1 == sscanf (typeName,  "int%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)));
 }
 
 /**
@@ -148,7 +149,42 @@ ethConfirmValueIsAtomicTypeParseInteger (const char *string, UInt256 *integer, b
 }
 
 static bool
-ethConfirmValueIsAtomicTypeByte (BRJson value, int count, BREthereumData *data) {
+ethConfirmValueIsAtomicTypeInRange (UInt256 value, bool negative, size_t rangeCount, bool rangeNegative) {
+    size_t offset = ethComputeAtomicTypeIntegerBytes (rangeCount);
+    if ( 0 == offset) return false;
+    if (32 == offset) return true;
+
+    // Value must be positive and is positive - all bytes above offset must be zero
+    if (!rangeNegative && !negative) {
+        UInt256 zeros = UINT256_ZERO;
+        return 0 == memcmp (&value.u8[offset], &zeros.u8[offset], 32 - offset);
+    }
+
+    // Value must be positive but is negative - false
+    else if (!rangeNegative &&  negative) return false;
+
+    // Value can be negative but is positve - all btyes above offset must be zero and last byte <= INT8_MAX
+    else if ( rangeNegative && !negative) {
+        return ethConfirmValueIsAtomicTypeInRange (value, negative, rangeCount, false) && value.u8[offset] < INT8_MAX;
+    }
+
+    // Value can be negative and is negative - All bytes above offset must be negative and last byte be in INT8 range
+    else if ( rangeNegative && negative) {
+        int16_t valuePre = - (int16_t) value.u8[offset - 1];
+        value = uint256Negate(value);
+
+        // Al bytes above offset must be negative
+        UInt256 ones = ((const UInt256) { .u64 = { (uint64_t) -1, (uint64_t) -1, (uint64_t) -1, (uint64_t) -1 } });
+        return (0 == memcmp (&value.u8[offset], &ones.u8[offset], 32 - offset) &&
+                INT8_MIN <= valuePre && valuePre <= INT8_MAX);
+    }
+    else {
+        return /* impossible */ false;
+    }
+}
+
+static bool
+ethConfirmValueIsAtomicTypeByte (BRJson value, size_t count, BREthereumData *data) {
     const char *string;
 
     if (jsonExtractString (value, &string)) {
@@ -172,7 +208,7 @@ ethConfirmValueIsAtomicTypeByte (BRJson value, int count, BREthereumData *data) 
 }
 
 static bool
-ethConfirmValueIsAtomicTypeUInt (BRJson value, int count, UInt256 *integerP) {
+ethConfirmValueIsAtomicTypeUInt (BRJson value, size_t count, UInt256 *integerP) {
     UInt256 integer;
     const char *string;
     bool negative;
@@ -183,17 +219,7 @@ ethConfirmValueIsAtomicTypeUInt (BRJson value, int count, UInt256 *integerP) {
         if (negative) return false;
 
         // Check the range
-        bool inRange = true;
-        switch (count) {
-            case 8:   inRange = integer.u64[0] <= UINT8_MAX;  break;
-            case 16:  inRange = integer.u64[0] <= UINT16_MAX; break;
-            case 32:  inRange = integer.u64[0] <= UINT32_MAX; break;
-            case 64:  inRange = 0 == integer.u64[1] && 0 == integer.u64[2] && 0 == integer.u64[3]; break;
-            case 128: inRange = 0 == integer.u64[2] && 0 == integer.u64[3]; break;
-            case 256: inRange = true; break;
-        }
-
-        if (!inRange) return false;
+        if (!ethConfirmValueIsAtomicTypeInRange (integer, false, count, false)) return false;
 
         if (NULL != integerP) *integerP = integer;
 
@@ -204,7 +230,7 @@ ethConfirmValueIsAtomicTypeUInt (BRJson value, int count, UInt256 *integerP) {
 }
 
 static bool
-ethConfirmValueIsAtomicTypeInt (BRJson value, int count, UInt256 *integerP, bool *negativeP) {
+ethConfirmValueIsAtomicTypeInt (BRJson value, size_t count, UInt256 *integerP, bool *negativeP) {
     UInt256 integer;
     const char *string;
     bool negative;
@@ -212,21 +238,8 @@ ethConfirmValueIsAtomicTypeInt (BRJson value, int count, UInt256 *integerP, bool
     // In practice, EIP-712 'integers' are 'strings parsable as integers'
     if (jsonExtractInteger (value, &integer, &negative) ||
         (jsonExtractString (value, &string) && ethConfirmValueIsAtomicTypeParseInteger (string, &integer, &negative))) {
-        UInt256 integerComp = (negative ? uint256Negate(integer) : integer);
-        int64_t comp = (int64_t) integerComp.u64[0];
 
-        // Check the range
-        bool inRange = true;
-        switch (count) {
-            case 8:   inRange = INT8_MIN  <= comp && comp <= UINT8_MAX;  break;
-            case 16:  inRange = INT16_MIN <= comp && comp <= UINT16_MAX; break;
-            case 32:  inRange = INT32_MIN <= comp && comp <= UINT32_MAX; break;
-            case 64:  inRange = 0 == integer.u64[1] && 0 == integer.u64[2] && 0 == integer.u64[3]; break;
-            case 128: inRange = 0 == integer.u64[2] && 0 == integer.u64[3]; break;
-            case 256: inRange = true; break;
-        }
-
-        if (!inRange) return false;
+        if (!ethConfirmValueIsAtomicTypeInRange (integer, negative, count, true)) return false;
 
         if (NULL != integerP)  *integerP  = integer;
         if (NULL != negativeP) *negativeP = negative;
@@ -239,7 +252,7 @@ ethConfirmValueIsAtomicTypeInt (BRJson value, int count, UInt256 *integerP, bool
 
 static bool
 ethConfirmValueIsAtomicType (BRJson value, const char *typeName) {
-    int count = 0;
+    size_t count = 0;
 
     if (0 == strcmp (typeName, "address")) {
         const char *addressString;
@@ -252,15 +265,15 @@ ethConfirmValueIsAtomicType (BRJson value, const char *typeName) {
         return jsonExtractBoolean (value, NULL);
     }
 
-    if (1 == sscanf (typeName, "byte%d", &count) &&1 <= count && count <= 32) {
+    if (1 == sscanf (typeName, "byte%zd", &count) &&1 <= count && count <= 32) {
         return ethConfirmValueIsAtomicTypeByte (value, count, NULL);
     }
 
-    if (1 == sscanf (typeName, "uint%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
+    if (1 == sscanf (typeName, "uint%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         return ethConfirmValueIsAtomicTypeUInt (value, count, NULL);
     }
 
-    if (1 == sscanf (typeName,  "int%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
+    if (1 == sscanf (typeName,  "int%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         return ethConfirmValueIsAtomicTypeInt (value, count, NULL, NULL);
     }
 
@@ -276,7 +289,7 @@ static BREthereumData
 ethEncodeValueAsAtomicType (BRJson value, const char *typeName) {
     BREthereumData data = { 32, calloc (1, 32) };
 
-    int count = 0;
+    size_t count = 0;
 
     if (0 == strcmp (typeName, "address")) {
         const char *addressString = NULL;
@@ -305,14 +318,14 @@ ethEncodeValueAsAtomicType (BRJson value, const char *typeName) {
     // https://eips.ethereum.org/EIPS/eip-712
     // "bytes1 to bytes31 are arrays with a beginning (index 0) and an end (index length - 1), they
     // are zero-padded at the end to bytes32 and encoded in beginning to end order."
-    if (1 == sscanf (typeName, "byte%d", &count) && 1 <= count && count <= 32) {
+    if (1 == sscanf (typeName, "byte%zd", &count) && 1 <= count && count <= 32) {
         ethConfirmValueIsAtomicTypeByte (value, count, &data);
         return data;
     }
 
     // https://eips.ethereum.org/EIPS/eip-712
     // "Integer values are sign-extended to 256-bit and encoded in big endian order."
-    if (1 == sscanf (typeName, "uint%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
+    if (1 == sscanf (typeName, "uint%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         UInt256 integer;
 
         ethConfirmValueIsAtomicTypeUInt (value, count, &integer);       // already validated
@@ -324,7 +337,7 @@ ethEncodeValueAsAtomicType (BRJson value, const char *typeName) {
 
     // https://eips.ethereum.org/EIPS/eip-712
     // "Integer values are sign-extended to 256-bit and encoded in big endian order."
-    if (1 == sscanf (typeName,  "int%d", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
+    if (1 == sscanf (typeName,  "int%zd", &count) && ethConfirmAtomicTypeIntegerSize (count)) {
         UInt256 integer;
         bool negative;
 

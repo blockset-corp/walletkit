@@ -519,7 +519,7 @@ runStructureTypeTest (void) {
         \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
         \"d2\": \"0x9cf40ef3d1622efe27\",\
         \"d3\": \"11111111111111111111111111111111111111\",\
-        \"d4\": \"-129\"\
+        \"d4\": \"-127\"\
     }", &statusMessage, NULL) }) );
     assert (JSON_STATUS_OK == status);
     assert (JSON_STATUS_OK == statusMessage);
@@ -540,7 +540,7 @@ runStructureTypeTest (void) {
         \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
         \"d2\": \"0x9cf40ef3d1622efeXX\",\
         \"d3\": 12345,\
-        \"d4\": \"-129\"\
+        \"d4\": \"-127\"\
     }", &statusMessage, NULL) }) );
     assert (JSON_STATUS_OK == status);
     assert (JSON_STATUS_OK == statusMessage);
@@ -575,6 +575,11 @@ runIntegerTests () {
     assert (CORE_PARSE_OK == status);
     UInt256 valueNeg = uint256Negate (valuePos);
     UInt256 valueSum = uint256Add_Overflow (valuePos, valueNeg, &overflow);
+    assert (overflow && UInt256IsZero (valueSum));
+
+    valuePos = uint256Create(129);
+    valueNeg = uint256Negate(valuePos);
+    valueSum = uint256Add_Overflow (valuePos, valueNeg, &overflow);
     assert (overflow && UInt256IsZero (valueSum));
 }
 
