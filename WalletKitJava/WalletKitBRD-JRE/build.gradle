@@ -19,13 +19,14 @@ sourceSets {
 
 dependencies {
     api project(':WalletKit')
+    api deps.guavaJre
 
     implementation project(':WalletKitNative-JRE')
-    implementation deps.guavaJre
-    implementation deps.androidxAppcompat
+    implementation deps.androidxAnnotation
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind
+    implementation deps.jacksonDatabindGuava
 
     testImplementation deps.junit
 }

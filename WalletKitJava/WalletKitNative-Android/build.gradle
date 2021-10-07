@@ -1,6 +1,10 @@
 apply plugin: 'com.android.library'
 apply from: '../gradle/publish.gradle'
 
+def activateAndroid = gradle.startParameter.taskNames.any {  it.contains("-Android") }
+def disableIdeaCheck = activateAndroid || property("disableIdeaCheck") == "true"
+def ideaActive = !disableIdeaCheck && System.getProperty("idea.active") == "true"
+
 android {
     compileSdkVersion androidConfig.compileSdkVersion
 
@@ -52,14 +56,10 @@ android {
 
     sourceSets {
         main {
-            java {
-                srcDirs = [project(':WalletKitNative').javaMainSrcDir]
-            }
-
-        }
-        androidTest {
-            java {
-                srcDirs = [project(':WalletKitNative').javaTestSrcDir]
+            if (!ideaActive) {
+                java {
+                    srcDirs = [project(':WalletKitNative').javaMainSrcDir]
+                }
             }
         }
     }
@@ -67,8 +67,7 @@ android {
 
 dependencies {
     api deps.jnaAndroid
-
-    implementation deps.guavaAndroid
+    api deps.guavaAndroid
 
     testImplementation deps.junit
 
