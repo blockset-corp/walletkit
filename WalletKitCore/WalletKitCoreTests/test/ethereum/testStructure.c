@@ -371,6 +371,12 @@ runStructureExample3Test (void) {
     BRJsonStatus status;
     BRJson value = testStructureExample3 (&status);
     assert (JSON_STATUS_OK == status);
+
+    BREthereumStructureErrorType error;
+
+    BREthereumStructureCoder coder = ethStructureCoderCreateFromTypedData (value, &error);
+    BREthereumHash           hash  = ethStructureHashData(coder);
+
 }
 
 extern UInt256 // Twos-Complement
@@ -399,6 +405,8 @@ runIntegerTests () {
     UInt256 valueSum = uint256Add_Overflow (valuePos, valueNeg, &overflow);
     assert (overflow && UInt256IsZero (valueSum));
 }
+
+static void
 
 extern void
 runStructureTests (void) {
