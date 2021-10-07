@@ -105,12 +105,16 @@ model {
             }
         }
 
-        corecrypto(NativeLibrarySpec) {
+        WalletKitCore(NativeLibrarySpec) {
             sources {
                 c {
                     source {
                         srcDirs project(':WalletKitNative').cppCryptoMainSrcDirs
                         include "**/*.c"
+
+                        def mainSrcDir = project(':WalletKitNative').cppCryptoMainSrcDirs.first()
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/les"), it)
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/bcs"), it)
                     }
                 }
             }
@@ -149,13 +153,17 @@ model {
         }
         // Add a second target for the test version of the crypto library. This looks like it is
         // needed because we can't change the source set based on build type...
-        corecryptoWithTests(NativeLibrarySpec) {
+        WalletKitCoreTest(NativeLibrarySpec) {
             sources {
                 c {
                     source {
                         srcDirs project(':WalletKitNative').cppCryptoMainSrcDirs
                         srcDirs project(':WalletKitNative').cppCryptoTestSrcDirs
                         include "**/*.c"
+
+                        def mainSrcDir = project(':WalletKitNative').cppCryptoMainSrcDirs.first()
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/les"), it)
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/bcs"), it)
                     }
                 }
             }
@@ -208,6 +216,20 @@ model {
     }
 }
 
+static def excludeNativeSourceFolder(excludeDir, sources) {
+    def rootFiles = excludeDir.listFiles().toList()
+    rootFiles.forEach { file ->
+        if (file.isDirectory()) {
+            def subFiles = file.listFiles().toList()
+            subFiles.forEach { subFile ->
+                sources.exclude "**/${subFile.name}"
+            }
+        } else {
+            sources.exclude "**/${file.name}"
+        }
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -230,8 +252,7 @@ sourceSets {
 
 dependencies {
     api deps.jnaJre
-
-    implementation deps.guavaJre
+    api deps.guavaJre
 
     testImplementation deps.junit
 }

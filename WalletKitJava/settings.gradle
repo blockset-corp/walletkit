@@ -8,8 +8,8 @@ include ':WalletKitBRD-Android'
 include ':WalletKitDemo-Android'
 
 // JRE
-//include ':WalletKitNative-JRE'
-//include ':WalletKitBRD-JRE'
+include ':WalletKitNative-JRE'
+include ':WalletKitBRD-JRE'
 
 // Kotlin
 include ':WalletKit-KTX'

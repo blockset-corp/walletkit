@@ -5,7 +5,8 @@ ext {
 
     cppSqliteSrcDir             = projectDir.absolutePath + "/src/main/cpp/core/vendor/sqlite3"
 
-    cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/src/bcash",
+    cppCryptoMainSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/src",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/bcash",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/bitcoin",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/bsv",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/crypto",
@@ -14,6 +15,9 @@ ext {
                                    projectDir.absolutePath + "/src/main/cpp/core/src/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/ripple",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/tezos",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/dogecoin",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/litecoin",
+                                   projectDir.absolutePath + "/src/main/cpp/core/src/stellar",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/support",
                                    projectDir.absolutePath + "/src/main/cpp/core/src/version"]
 
@@ -25,12 +29,13 @@ ext {
 
     cppCryptoVendorSrcDir       = projectDir.absolutePath + "/src/main/cpp/core/vendor"
 
-    cppCryptoTestSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/bitcoin",
-                                   projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/crypto",
+    cppCryptoTestSrcDirs        = [projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/walletkit",
+                                   projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/bitcoin",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/ethereum",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/hedera",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/ripple",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/tezos",
+                                   projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/stellar",
                                    projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/support"]
 
     cppCryptoTestIncDirs        = [projectDir.absolutePath + "/src/main/cpp/core/WalletKitCoreTests/test/include"]
