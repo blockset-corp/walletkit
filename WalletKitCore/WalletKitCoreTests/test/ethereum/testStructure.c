@@ -375,8 +375,39 @@ runStructureExample3Test (void) {
     BREthereumStructureErrorType error;
 
     BREthereumStructureCoder coder = ethStructureCoderCreateFromTypedData (value, &error);
-    BREthereumHash           hash  = ethStructureHashData(coder);
 
+    char *typeCompute = ethStructureEncodeType (coder, "RelayRequest");
+    BREthereumHash typeHashCompute    = ethStructureHashType   (coder, "RelayRequest");
+    BREthereumHash typeHashResult     = ((BREthereumHash) { 47,248,202,217,252,82,201,49,190,239,145,120,167,38,209,171,98,128,169,194,182,166,57,100,80,161,129,129,156,241,229,64 });
+    assert (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (typeHashCompute, typeHashResult));
+
+    BREthereumData messageDataCompute = ethStructureEncodeData (coder);
+    uint8_t messageDataResultBytes[] = { 47,248,202,217,252,82,201,49,190,239,145,120,167,38,209,171,98,128,169,194,182,166,57,100,80,161,129,129,156,241,229,64,0,0,0,0,0,0,0,0,0,0,0,0,156,244,14,243,209,98,46,254,39,15,230,254,114,5,133,180,190,78,238,255,169,72,83,84,221,157,52,14,2,120,156,252,84,12,108,74,47,245,81,27,235,65,75,100,99,74,94,17,198,167,22,140,255,155,240,126,36,230,255,9,67,234,220,25,138,67,80,14,64,22,212,21,23,176,28,146,212,178,33,121,9,97,3,113,176,112,252,255,247,76,7,183,130,13,147,21,154,47,213,203,142,47,223,6,14,231,180,46,121,241,180,65,75,204,204,193 };
+    size_t  messageDataResultBytesCount = sizeof (messageDataResultBytes) / sizeof (uint8_t);
+    BREthereumData messageDataResult = ((BREthereumData) { messageDataResultBytesCount, messageDataResultBytes});
+    assert (ETHEREUM_BOOLEAN_TRUE == ethDataEqual (&messageDataCompute, &messageDataResult));
+
+    BREthereumHash messageHashCompute = ethStructureHashData   (coder);
+    BREthereumHash messageHashResult  = ((BREthereumHash) { 64,20,25,119,111,87,245,22,45,208,90,48,114,245,148,24,104,172,77,236,250,120,158,80,21,152,153,124,72,164,52,136 });
+    assert (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (messageHashCompute, messageHashResult));
+
+
+    BRKey privateKey;
+    BREthereumHash privateKeyBytes = ethHashCreateFromBytes((uint8_t*) "cow", 3);
+    BRKeySetSecret (&privateKey, (const UInt256 *) &privateKeyBytes, 0);
+    BRKeyPubKey (&privateKey, NULL, 0);
+
+//    BREthereumSignature sigResult = ((BREthereumSignature) { SIGNATURE_TYPE_RECOVERABLE_VRS_EIP, { .vrs = { 28 }}});
+//    hexDecode (sigResult.sig.vrs.r, 32, "4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d", 64);
+//    hexDecode (sigResult.sig.vrs.s, 32, "07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562", 64);
+
+    BREthereumStructureSignResult sigCompute = ethStructureSignData (coder, privateKey);
+    uint8_t        sigMessageResult[] = { 25,1,79,250,249,203,125,249,254,0,22,213,234,131,88,203,97,236,97,135,93,152,168,86,152,45,33,96,21,171,191,55,18,39,64,20,25,119,111,87,245,22,45,208,90,48,114,245,148,24,104,172,77,236,250,120,158,80,21,152,153,124,72,164,52,136 };
+    BREthereumData sigMessageData     = ((BREthereumData) { sizeof (sigMessageResult), sigMessageResult });
+    BREthereumHash sigMessageHash     = ((BREthereumHash) { 171,199,159,82,114,115,185,231,188,161,179,241,172,106,209,168,67,31,166,220,52,236,233,0,222,171,205,105,105,133,107,94 });
+//    assert (ETHEREUM_BOOLEAN_TRUE == ethSignatureEqual (sigResult, sigCompute.signature));
+    assert (ETHEREUM_BOOLEAN_TRUE == ethDataEqual (&sigMessageData, &sigCompute.message));
+    assert (ETHEREUM_BOOLEAN_TRUE == ethHashEqual (sigMessageHash,   sigCompute.digest));
 }
 
 static void
