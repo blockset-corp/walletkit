@@ -64,13 +64,13 @@ public class WKNativeLibraryIT {
         assertEquals(1, TestWKNativeLibrary.INSTANCE.BRRunTests());
     }
 
-    @Test
-    public void testBitcoinSyncOne() {
-        int success = 0;
-
-        success = TestWKNativeLibrary.INSTANCE.BRRunTestsSync (paperKey, 1, 1);
-        assertEquals(1, success);
-    }
+//    @Test
+//    public void testBitcoinSyncOne() {
+//        int success = 0;
+//
+//        success = TestWKNativeLibrary.INSTANCE.BRRunTestsSync (paperKey, 1, 1);
+//        assertEquals(1, success);
+//    }
     
 // REFACTOR
 //    @Test
@@ -85,66 +85,66 @@ public class WKNativeLibraryIT {
 //        assertEquals(1, success);
 //    }
 
-    @Test
-    public void testBitcoinWalletManagerSyncStressBtc() {
-        int success;
+//    @Test
+//    public void testBitcoinWalletManagerSyncStressBtc() {
+//        int success;
+//
+//        coreDirClear();
+//        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
+//                paperKey,
+//                coreDataDir.getAbsolutePath(),
+//                epoch,
+//                500000,
+//                1,
+//                1
+//        );
+//        assertEquals(1, success);
+//
+//        coreDirClear();
+//        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
+//                paperKey,
+//                coreDataDir.getAbsolutePath(),
+//                epoch,
+//                1500000,
+//                1,
+//                0
+//        );
+//        assertEquals(1, success);
+//    }
 
-        coreDirClear();
-        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
-                paperKey,
-                coreDataDir.getAbsolutePath(),
-                epoch,
-                500000,
-                1,
-                1
-        );
-        assertEquals(1, success);
-
-        coreDirClear();
-        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
-                paperKey,
-                coreDataDir.getAbsolutePath(),
-                epoch,
-                1500000,
-                1,
-                0
-        );
-        assertEquals(1, success);
-    }
-
-    @Test
-    public void testBitcoinWalletManagerSyncStressBch() {
-        int success;
-
-        coreDirClear();
-        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
-                paperKey,
-                coreDataDir.getAbsolutePath(),
-                epoch,
-                500000,
-                0,
-                1
-        );
-        assertEquals(1, success);
-
-        coreDirClear();
-        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
-                paperKey,
-                coreDataDir.getAbsolutePath(),
-                epoch,
-                1500000,
-                0,
-                0
-        );
-        assertEquals(1, success);
-    }
+//    @Test
+//    public void testBitcoinWalletManagerSyncStressBch() {
+//        int success;
+//
+//        coreDirClear();
+//        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
+//                paperKey,
+//                coreDataDir.getAbsolutePath(),
+//                epoch,
+//                500000,
+//                0,
+//                1
+//        );
+//        assertEquals(1, success);
+//
+//        coreDirClear();
+//        success = TestWKNativeLibrary.INSTANCE.BRRunTestWalletManagerSyncStress(
+//                paperKey,
+//                coreDataDir.getAbsolutePath(),
+//                epoch,
+//                1500000,
+//                0,
+//                0
+//        );
+//        assertEquals(1, success);
+//    }
 
     // Support
 
-    @Test
-    public void testBitcoinSupport() {
-        assertEquals(1, TestWKNativeLibrary.INSTANCE.BRRunSupTests());
-    }
+//    @Test
+//    public void testBitcoinSupport() {
+//        assertEquals(1, TestWKNativeLibrary.INSTANCE.BRRunSupTests());
+//    }
 
     // Crypto
 
@@ -155,7 +155,7 @@ public class WKNativeLibraryIT {
 //    }
 
     @Test
-    public void testCryptoWithAccountAndNetworkBtc() {
+    public void testWalletKitWithAccountAndNetworkBtc() {
         WKAccount account = WKAccount.createFromPhrase(
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
@@ -168,7 +168,7 @@ public class WKNativeLibraryIT {
             network = createBitcoinNetwork(true, 500000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -180,7 +180,7 @@ public class WKNativeLibraryIT {
             network = createBitcoinNetwork(false, 1500000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -195,7 +195,7 @@ public class WKNativeLibraryIT {
     }
 
     @Test
-    public void testCryptoWithAccountAndNetworkBch() {
+    public void testWalletKitWithAccountAndNetworkBch() {
         WKAccount account = WKAccount.createFromPhrase(
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
@@ -208,7 +208,7 @@ public class WKNativeLibraryIT {
             network = createBitcoinCashNetwork(true, 500000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -220,7 +220,7 @@ public class WKNativeLibraryIT {
             network = createBitcoinCashNetwork(false, 1500000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -234,7 +234,7 @@ public class WKNativeLibraryIT {
     }
 
     @Test
-    public void testCryptoWithAccountAndNetworkEth() {
+    public void testWalletKitWithAccountAndNetworkEth() {
         WKAccount account = WKAccount.createFromPhrase(
                 paperKey.getBytes(StandardCharsets.UTF_8),
                 UnsignedLong.valueOf(epoch),
@@ -247,7 +247,7 @@ public class WKNativeLibraryIT {
             network = createEthereumNetwork(true, 8000000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -261,7 +261,7 @@ public class WKNativeLibraryIT {
             network = createEthereumNetwork(false, 4500000);
             try {
                 coreDirClear();
-                int success = TestWKNativeLibrary.INSTANCE.runCryptoTestsWithAccountAndNetwork(
+                int success = TestWKNativeLibrary.INSTANCE.runWalletKitTestsWithAccountAndNetwork(
                         account,
                         network,
                         coreDataDir.getAbsolutePath());
@@ -330,11 +330,11 @@ public class WKNativeLibraryIT {
 //        TestCryptoLibrary.INSTANCE.runEWMTests(paperKey, coreDataDir.getAbsolutePath());
 //    }
 
-    @Test
-    public void testLES () {
-        TestWKNativeLibrary.INSTANCE.runLESTests(paperKey);
-        TestWKNativeLibrary.INSTANCE.runNodeTests();
-    }
+//    @Test
+//    public void testLES () {
+//        TestWKNativeLibrary.INSTANCE.runLESTests(paperKey);
+//        TestWKNativeLibrary.INSTANCE.runNodeTests();
+//    }
 
     // Ripple
 
@@ -526,7 +526,7 @@ public class WKNativeLibraryIT {
         int BRRunTestWalletManagerSyncStress(String paperKey, String storagePath, int epoch, long blockHeight, int isBTC, int isMainnet);
 
         void runCryptoTests();
-        int runCryptoTestsWithAccountAndNetwork(WKAccount account, WKNetwork network, String storagePath);
+        int runWalletKitTestsWithAccountAndNetwork(WKAccount account, WKNetwork network, String storagePath);
 
         // Support
         void runEventTests();
