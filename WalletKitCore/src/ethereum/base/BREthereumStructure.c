@@ -137,10 +137,10 @@ ethConfirmValueIsAtomicTypeParseInteger (const char *string, UInt256 *integer, b
     if ('+' == *str) { str++; neg = false; }
 
     BRCoreParseStatus status;
-    UInt256 number = uint256CreateParse (str, 10, &status);
+    UInt256 number = uint256CreateParse (str, 0, &status);
     if (CORE_PARSE_OK == status) {
         free (strToFree);
-        if (NULL != integer ) *integer   = number;
+        if (NULL != integer ) *integer  = number;
         if (NULL != negative) *negative = neg;
         return true;
     }

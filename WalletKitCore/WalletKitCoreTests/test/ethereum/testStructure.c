@@ -508,6 +508,70 @@ runStructureTypeTest (void) {
     assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
     assert (JSON_STATUS_OK == jsonRelease(value));
 
+    // uint64 is a hex string
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": \"0x12345\",\
+        \"d4\": \"-127\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL != coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // uint64 is a big-int hex string, out of range of uint64
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": \"0x123456789012345678901234567890123456789012345678901\",\
+        \"d4\": \"-127\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+    // uint64 is an valid, negative hex string... but must be uint
+
+    testStructureTypeValues (&types, &domain);
+    value =  jsonCreateObjectVargs (&status, 4,
+                                    ((BRJsonObjectMember) { "types", types }),
+                                    ((BRJsonObjectMember) { "primaryType", jsonCreateString ("Data") }),
+                                    ((BRJsonObjectMember) { "domain", domain }),
+                                    ((BRJsonObjectMember) { "message", jsonParse("{\
+        \"d1\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\",\
+        \"d2\": \"0x9cf40ef3d1622efe27\",\
+        \"d3\": \"-0x123456789\",\
+        \"d4\": \"-127\"\
+    }", &statusMessage, NULL) }) );
+    assert (JSON_STATUS_OK == status);
+    assert (JSON_STATUS_OK == statusMessage);
+
+    coder = ethStructureCoderCreateFromTypedData (value, &error);
+    assert (NULL == coder);
+    assert (ETHEREUM_STRUCTURE_ERROR_INVALID_MESSAGE_VALUE == error);
+    assert (JSON_STATUS_OK == jsonRelease(value));
+
+
     // uint64 ouf of range
 
     testStructureTypeValues (&types, &domain);
