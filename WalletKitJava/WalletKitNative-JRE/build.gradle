@@ -8,8 +8,8 @@ def projectRoot = projectDir.absolutePath
 def projectResMainDir = Paths.get(projectRoot, 'build', 'native', 'cryptoMain').toAbsolutePath().toString()
 def projectResTestDir = Paths.get(projectRoot, 'build', 'native', 'cryptoTest').toAbsolutePath().toString()
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 static def jnaOsFromGradle(os) {
     if (os == "osx") {
