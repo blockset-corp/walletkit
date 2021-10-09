@@ -42,7 +42,16 @@ typedef enum {
      * signature.  Used for Ethereum messaging (P2P, DIS, LES, etc).  The 'v' field does not
      * have an offset; the value will be either 0x00 or 0x01.
      */
-    SIGNATURE_TYPE_RECOVERABLE_RSV
+    SIGNATURE_TYPE_RECOVERABLE_RSV,
+
+    /**
+     * Based SIGNATURE_TYPE_RECOVERABLE_RSV organization with constant offset for 'v' and
+     * recovery flag.
+     * This signing approach found in such signing implementations as 'ethereumjs-util',
+     * 'ecsign', there entitled 'ECDSA'
+     */
+    SIGNATURE_TYPE_RECOVERABLE_RSV_ECDSA // For lack of a better name?
+
 } BREthereumSignatureType;
 
 /**

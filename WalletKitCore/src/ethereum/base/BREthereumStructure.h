@@ -135,7 +135,8 @@ extern BREthereumHash
 ethStructureHashData (BREthereumStructureCoder coder);
 
 extern BREthereumStructureSignResult
-ethStructureSignData (BREthereumStructureCoder coder,
+ethStructureSignData (BREthereumSignatureType type,
+                      BREthereumStructureCoder coder,
                       BRKey privateKey);
 
 #ifdef __cplusplus

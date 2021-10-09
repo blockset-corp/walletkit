@@ -1148,7 +1148,8 @@ ethStructureHashData (BREthereumStructureCoder coder) {
 }
 
 extern BREthereumStructureSignResult
-ethStructureSignData (BREthereumStructureCoder coder,
+ethStructureSignData (BREthereumSignatureType type,
+                      BREthereumStructureCoder coder,
                       BRKey privateKey) {
     BRKey privateKeyUncompressed = privateKey;
     privateKeyUncompressed.compressed = 0;
@@ -1164,7 +1165,7 @@ ethStructureSignData (BREthereumStructureCoder coder,
     memcpy (&buffer.bytes[2 + ETHEREUM_HASH_BYTES], hashData.bytes,   ETHEREUM_HASH_BYTES);
 
     BREthereumHash      digest;
-    BREthereumSignature signature = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
+    BREthereumSignature signature = ethSignatureCreate (type,
                                                         buffer.bytes,
                                                         buffer.count,
                                                         privateKey,

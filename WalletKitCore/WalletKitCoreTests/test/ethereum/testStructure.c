@@ -184,7 +184,7 @@ runStructureExample1Test (void) {
     hexDecode (sigResult.sig.vrs.r, 32, "4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d", 64);
     hexDecode (sigResult.sig.vrs.s, 32, "07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562", 64);
 
-    BREthereumStructureSignResult sigCompute = ethStructureSignData (coder, privateKey);
+    BREthereumStructureSignResult sigCompute = ethStructureSignData (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP, coder, privateKey);
     assert (ETHEREUM_BOOLEAN_TRUE == ethSignatureEqual (sigResult, sigCompute.signature));
 
     int sigExtractSuccess;
@@ -401,7 +401,7 @@ runStructureExample3Test (void) {
 //    hexDecode (sigResult.sig.vrs.r, 32, "4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d", 64);
 //    hexDecode (sigResult.sig.vrs.s, 32, "07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562", 64);
 
-    BREthereumStructureSignResult sigCompute = ethStructureSignData (coder, privateKey);
+    BREthereumStructureSignResult sigCompute = ethStructureSignData (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP, coder, privateKey);
     uint8_t        sigMessageResult[] = { 25,1,79,250,249,203,125,249,254,0,22,213,234,131,88,203,97,236,97,135,93,152,168,86,152,45,33,96,21,171,191,55,18,39,64,20,25,119,111,87,245,22,45,208,90,48,114,245,148,24,104,172,77,236,250,120,158,80,21,152,153,124,72,164,52,136 };
     BREthereumData sigMessageData     = ((BREthereumData) { sizeof (sigMessageResult), sigMessageResult });
     BREthereumHash sigMessageHash     = ((BREthereumHash) { 171,199,159,82,114,115,185,231,188,161,179,241,172,106,209,168,67,31,166,220,52,236,233,0,222,171,205,105,105,133,107,94 });
