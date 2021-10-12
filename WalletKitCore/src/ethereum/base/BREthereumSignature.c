@@ -79,31 +79,6 @@ ethSignatureCreateFromDigest (BREthereumSignatureType type,
 
             break;
         }
-
-        case SIGNATURE_TYPE_RECOVERABLE_RSV_ECDSA: {
-
-
-            // Determine the signature length
-            size_t signatureLen = BRKeyCompactSignEthereumEcsign (&privateKeyUncompressed,
-                                                                  NULL, 0,
-                                                                  digestAsUInt256);
-            // Fill the signature
-            uint8_t signatureBytes[signatureLen];
-            signatureLen = BRKeyCompactSignEthereumEcsign (&privateKeyUncompressed,
-                                                           signatureBytes, signatureLen,
-                                                           digestAsUInt256);
-            assert (65 == signatureLen);
-
-            // The actual 'signature' is one byte added to secp256k1_ecdsa_recoverable_signature
-            // and secp256k1_ecdsa_recoverable_signature is 64 bytes as {r[32], s32]}
-
-            // Extract V, R, and S
-            memcpy(signature.sig.rsv.r, &signatureBytes[ 0], 32);
-            memcpy(signature.sig.rsv.s, &signatureBytes[32], 32);
-            signature.sig.rsv.v = signatureBytes[64];
-
-            break;
-        }
     }
 
     return signature;
@@ -151,7 +126,6 @@ ethSignatureExtractAddress(const BREthereumSignature signature,
                                            sizeof (signature.sig.vrs));
             break;
         case SIGNATURE_TYPE_RECOVERABLE_RSV:
-        case SIGNATURE_TYPE_RECOVERABLE_RSV_ECDSA:
             *success = BRKeyRecoverPubKeyEthereum (&key, digest,
                                                    &signature.sig.rsv,
                                                    sizeof (signature.sig.rsv));

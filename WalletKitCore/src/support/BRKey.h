@@ -136,9 +136,6 @@ int BRKeyRecoverPubKey(BRKey *key, UInt256 md, const void *compactSig, size_t si
 // write a 'shared secret' for key w/ pubKey to out32
 void BRKeyECDH(const BRKey *privKey, uint8_t *out32, BRKey *pubKey);
 
-// sign using key creating RSV format compatible with WalletConnect
-size_t BRKeyCompactSignEthereumEcsign(const BRKey *key, void *compactSig, size_t sigLen, UInt256 md);
-
 size_t BRKeyCompactSignEthereum(const BRKey *key, void *compactSig, size_t sigLen, UInt256 md);
 int BRKeyRecoverPubKeyEthereum(BRKey *key, UInt256 md, const void *compactSig, size_t sigLen);
 

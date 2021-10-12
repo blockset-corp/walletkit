@@ -648,16 +648,7 @@ runSigningTypedDataTest() {
 
 static void
 runTypedDataSignatureTest() {
-   // const char* walletConnector1Dot0WalletSigningKey = "0x61be70f4c5c8b05d683c92949fd9d6902d65e14408d3f29cfddbbb2b159bb10f";
-    WKSecret walletConnector1Dot0WalletSigningKey = {
-        .data = {
-             97, 190, 112, 244, 197, 200, 176, 93,
-            104,  60, 146, 148, 159, 217, 214, 144,
-             45, 101, 225,  68,   8, 211, 242, 156,
-            253, 219, 187,  43,  21, 155, 177,  15
-         }
-    };
-    
+    const char* walletConnector1Dot0WalletSigningKey = "0x61be70f4c5c8b05d683c92949fd9d6902d65e14408d3f29cfddbbb2b159bb10f";
     const char* walletConnector1Dot0DappTypedDataRequest =
     "{"
         "\"types\": {"
@@ -724,14 +715,6 @@ runTypedDataSignatureTest() {
             "}"
         "}"
     "}";
-    
-    uint8_t walletConnector1Dot0WalletTypedDataRequestHash[32] = {
-        171, 199, 159,  82, 114, 115, 185, 231,
-        188, 161, 179, 241, 172, 106, 209, 168,
-         67,  31, 166, 220,  52, 236, 233,   0,
-        222, 171, 205, 105, 105, 133, 107,  94
-    };
-    
     const char* walletConnector1Dot0WalletSigningResult = "0x7cd2107da9c93030ac5996c0c5da3d27479d9968a3d12cfde88eeba1ef74fdec4f5c137d18fe9ed7b0616f0a9f9af1795105ed0f662f4cbacb92fffb396d7a8d1c";
 
     WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
@@ -741,9 +724,13 @@ runTypedDataSignatureTest() {
     uint8_t                 *digestData = NULL;
     size_t                  digestLength = 0;
     WKSecret                pKey;
-    BREthereumSignatureRSV  signingResult;
-    
-    WKKey signingKey = wkKeyCreateFromSecret (walletConnector1Dot0WalletSigningKey);
+    BREthereumSignatureVRS  signingResult;
+
+    hexDecode (pKey.data,
+               sizeof (pKey.data),
+               (walletConnector1Dot0WalletSigningKey + 2),
+               strlen (walletConnector1Dot0WalletSigningKey) - 2);
+    WKKey signingKey = wkKeyCreateFromSecret (pKey);
 
     typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
                                                         walletConnector1Dot0DappTypedDataRequest,
@@ -752,20 +739,10 @@ runTypedDataSignatureTest() {
                                                         &digestLength,
                                                         &typedDataSignatureLength,
                                                         &status);
-    // Verify basic requirements and that the same input 'RelayRequest' typed data input
-    // produces the same hash by WalletKit as what the Wallet Connect 1.0 sample wallet does
     assert (WK_WALLET_CONNECTOR_STATUS_OK == status);
+    assert (NULL != typedDataSignature && 65 == typedDataSignatureLength);
     assert (NULL != digestData && 32 == digestLength);
-    assert (0 == memcmp(digestData, walletConnector1Dot0WalletTypedDataRequestHash, 32));
 
-    char walletConnectSigHex[typedDataSignatureLength * 2 + 1];
-    hexEncode(walletConnectSigHex,
-              typedDataSignatureLength * 2 + 1,
-              typedDataSignature,
-              typedDataSignatureLength);
-    printf("WalletConnect 1.0 Signature %s\n", walletConnector1Dot0WalletSigningResult + 2);
-    printf("Ours:                       %s\n", walletConnectSigHex);
-    
     hexDecode ((uint8_t*)&signingResult,
                sizeof (signingResult),
                walletConnector1Dot0WalletSigningResult + 2,
@@ -773,8 +750,7 @@ runTypedDataSignatureTest() {
 
     // Compare Wallet Connector 1.0 Sample Wallet signing against ours with the
     // same inputs.
-    assert (NULL != typedDataSignature && 65 == typedDataSignatureLength);
-    assert (0 == memcmp (&signingResult, typedDataSignature, sizeof (signingResult)));
+    assert (memcmp (&signingResult, typedDataSignature, sizeof (signingResult)) == 0);
 
     free (digestData);
     free (typedDataSignature);

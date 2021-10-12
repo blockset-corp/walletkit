@@ -551,31 +551,6 @@ size_t BRKeyCompactSignEthereum(const BRKey *key, void *compactSig, size_t sigLe
     }
     return r;
 }
-
-// Pieter Wuille's compact signature encoding used for bitcoin message signing
-// with 'v' per recovery flag + constant offset 27, citing ECDSA sign...
-//  - Per ethereumjs-util/dist/index.js ecsign() function
-size_t BRKeyCompactSignEthereumEcsign(const BRKey *key, void *compactSig, size_t sigLen, UInt256 md)
-{
-    size_t r = 0;
-    int recid = 0;
-    secp256k1_ecdsa_recoverable_signature s;
-
-    assert(key != NULL);
-    assert(sigLen >= 65 || compactSig == NULL);
-
-    if (! UInt256IsZero(key->secret)) { // can't sign with a public key
-        if (compactSig && sigLen >= 65 &&
-            secp256k1_ecdsa_sign_recoverable(_ctx, &s, md.u8, key->secret.u8, secp256k1_nonce_function_rfc6979, NULL) &&
-            secp256k1_ecdsa_recoverable_signature_serialize_compact(_ctx, (uint8_t *)compactSig, &recid, &s)) {
-            ((uint8_t *)compactSig)[64] = recid + 27;
-            r = 65;
-        }
-        else if (! compactSig) r = 65;
-    }
-    return r;
-}
-
 // assigns pubKey recovered from compactSig to key and returns true on success
 int BRKeyRecoverPubKeyEthereum(BRKey *key, UInt256 md, const void *compactSig, size_t sigLen)
 {

@@ -440,9 +440,7 @@ wkWalletConnectorSignTypedDataETH (
         return NULL;
     }
 
-    BREthereumStructureSignResult signResult = ethStructureSignData (SIGNATURE_TYPE_RECOVERABLE_RSV_ECDSA,
-                                                                     coder,
-                                                                     brKey);
+    BREthereumStructureSignResult signResult = ethStructureSignData (coder, brKey);
     BRKeyClean (&brKey);
     
     *digestLength = sizeof (BREthereumHash);
@@ -453,7 +451,7 @@ wkWalletConnectorSignTypedDataETH (
 
     // Signature type, SIGNATURE_TYPE_RECOVERABLE_VRS_EIP
     memcpy (*digestData, signResult.digest.bytes, *digestLength);
-    memcpy (signatureData, &signResult.signature.sig.rsv, *signatureLength);
+    memcpy (signatureData, &signResult.signature.sig.vrs, *signatureLength);
 
     return signatureData;
 }

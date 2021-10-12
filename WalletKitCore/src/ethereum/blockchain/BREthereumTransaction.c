@@ -303,7 +303,6 @@ ethTransactionIsSigned (BREthereumTransaction transaction) {
         case SIGNATURE_TYPE_RECOVERABLE_VRS_EIP:
             return AS_ETHEREUM_BOOLEAN (transaction->signature.sig.vrs.v != 0);
         case SIGNATURE_TYPE_RECOVERABLE_RSV:
-        case SIGNATURE_TYPE_RECOVERABLE_RSV_ECDSA:
             return AS_ETHEREUM_BOOLEAN (transaction->signature.sig.rsv.v != 0);
     }
 }
