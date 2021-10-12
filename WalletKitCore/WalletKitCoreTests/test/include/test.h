@@ -25,7 +25,7 @@ extern "C" {
 // Support
 
 // JSON
-extern void runJSONTests (void);
+extern void runJsonTests (void);
 
 // Util
 extern void runUtilTests (void);
