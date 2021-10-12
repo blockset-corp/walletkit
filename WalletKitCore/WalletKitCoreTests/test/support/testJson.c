@@ -102,7 +102,7 @@ jsonTestsCreateObject () {
 }
 
 static void
-runJSONCreateTests () {
+runJsonCreateTests () {
     printf ("  JSON Create Tests\n");
     BRJsonStatus status;
 
@@ -123,7 +123,7 @@ runJSONCreateTests () {
 }
 
 static void
-runJSONObjectTest () {
+runJsonObjectTest () {
     printf ("  JSON Object\n");
 
     BRJsonStatus status;
@@ -161,7 +161,7 @@ runJSONObjectTest () {
 }
 
 static void
-runJSONObjectPathTest () {
+runJsonObjectPathTest () {
     printf ("  JSON Object Path\n");
 
     BRJsonStatus status;
@@ -190,12 +190,12 @@ runJSONObjectPathTest () {
 }
 
 static void
-runJSONArrayTest () {
+runJsonArrayTest () {
     printf ("  JSON Array\n");
 }
 
 static void
-runJSONArrayPathTest () {
+runJsonArrayPathTest () {
     printf ("  JSON Array Path\n");
 
     BRJsonStatus status;
@@ -245,7 +245,7 @@ runJSONArrayPathTest () {
 }
 
 static void
-runJSONShowTest () {
+runJsonShowTest () {
     printf ("  JSON Show\n");
 
     BRJsonStatus status;
@@ -320,19 +320,19 @@ runJsonStringTest () {
 }
 
 extern void
-runJSONTests (void) {
+runJsonTests (void) {
     printf ("JSON Tests\n");
     runJsonParseTest ();
 
-    runJSONShowTest ();
+    runJsonShowTest ();
 
-    runJSONCreateTests ();
+    runJsonCreateTests ();
 
-    runJSONObjectTest();
-    runJSONObjectPathTest();
+    runJsonObjectTest();
+    runJsonObjectPathTest();
 
-    runJSONArrayTest ();
-    runJSONArrayPathTest ();
+    runJsonArrayTest ();
+    runJsonArrayPathTest ();
 
     runJsonStringTest();
 }

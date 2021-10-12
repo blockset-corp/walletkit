@@ -8,8 +8,8 @@ def projectRoot = projectDir.absolutePath
 def projectResMainDir = Paths.get(projectRoot, 'build', 'native', 'cryptoMain').toAbsolutePath().toString()
 def projectResTestDir = Paths.get(projectRoot, 'build', 'native', 'cryptoTest').toAbsolutePath().toString()
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 static def jnaOsFromGradle(os) {
     if (os == "osx") {
@@ -105,6 +105,22 @@ model {
             }
         }
 
+        yajl(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/src"
+                        include "*.c"
+                    }
+                }
+            }
+            binaries {
+                binaries.all {
+                    cCompiler.args "-I" + project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/include"
+                }
+            }
+        }
+
         WalletKitCore(NativeLibrarySpec) {
             sources {
                 c {
@@ -127,6 +143,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -183,6 +200,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name

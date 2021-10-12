@@ -29,7 +29,8 @@ target_include_directories (WalletKitCore
                             ${PROJECT_SOURCE_DIR}/src/support
                             ${PROJECT_SOURCE_DIR}
                             ${PROJECT_SOURCE_DIR}/vendor
-                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
+                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include)
 
 # specify compiler warnings
 target_compile_options (WalletKitCore
@@ -62,6 +63,30 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                             ${PROJECT_SOURCE_DIR})
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
+#
+# yajl build
+#
+add_library(yajl
+            STATIC)
+
+target_sources (yajl
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_alloc.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_buf.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_encode.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_gen.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_lex.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_parser.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_tree.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_version.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl.c)
+
+target_include_directories (yajl
+                            PRIVATE
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src/api
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src)
 	     
 #
 # sqlite3 build
@@ -182,6 +207,10 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventAlarm.h
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.c
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.h
+                # JSON 
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.c
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.h
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJsonParse.c
 		# Util
 		${PROJECT_SOURCE_DIR}/src/support/util/BRUtil.h
                 ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMath.c
@@ -194,8 +223,9 @@ target_sources (WalletKitCore
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testJson.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testUtil.c)
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -734,6 +764,7 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Link in the static sqlite3 library
 target_link_libraries (WalletKitCore
+                       yajl
                        sqlite3
                        ed25519
                        blake2
