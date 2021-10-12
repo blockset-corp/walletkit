@@ -140,18 +140,25 @@ wkWalletConnectorSignDataETH (
                                                         brKey,
                                                         NULL    );
     BRKeyClean (&brKey);
+    assert (27 == signature.sig.vrs.v || 28 == signature.sig.vrs.v);  // uncompressed
 
-    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
-    assert (signatureData != NULL);
-    
+    // Get the Ethereum network's chainId for EIP-155 encoding.
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
-    
-    // 'v' parameter as specified in EIP-155
-    signature.sig.vrs.v = signature.sig.vrs.v + 8 + 2 * chainId;
+
+    // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
+    //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
+    // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+    signature.sig.vrs.v += (8 + 2 * chainId);
+
+    // The WalletConnect specification, apparently, wants V, R and S ordered as R, S and V.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
+
+    // Fill in the signature bytes.
+    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureRSV));
+    assert (signatureData != NULL);
+
     memcpy (signatureData, &rsv, sizeof (BREthereumSignatureRSV));
-    
     *signatureLength = sizeof (BREthereumSignatureRSV);
 
     return signatureData;
@@ -177,12 +184,17 @@ wkWalletConnectorRecoverKeyETH (
     if (65 != signatureLength) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
     }
+
+    // The WalletConnect specification, apparently, provides R, S and V; we want V, R and S.
     BREthereumSignatureVRS vrs = walletConnectVrsSignatureFromRsv(*((BREthereumSignatureRSV*)signature));
-    
+
+    // Get the Ethereum network's chainId for EIP-155 decoding.
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
     BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
-    
-    vrs.v = vrs.v - 8 - 2 * chainId;
+
+    // Undo the EIP-155 encoding if it exists.  See above `wkWalletConnectorSignDataETH()`
+    if (vrs.v > 28) vrs.v -= (8 + 2 * chainId);
+
     if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
         key = wkKeyCreateFromKey (&k);
     } else {
