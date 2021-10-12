@@ -557,9 +557,11 @@ runTests (int reallySend) {
 #if defined (TEST_ETHEREUM_NEED_MAIN)
 int main(int argc, const char *argv[]) {
     installTokensForTest ();
-    runJSONTests();
+    // Support
+    runJsonTests();
     runUtilTests();
     runRlpTests();
+    // Ethereum
     runEventTests();
     runBcTests();
     runContractTests();
