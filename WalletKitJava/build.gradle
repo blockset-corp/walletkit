@@ -17,7 +17,8 @@ buildscript {
         'jackson':                  '2.10.1',
         'jna':                      '5.4.0',
         'junit':                    '4.12',
-        'cmake':                    '3.10.2'        // See .../WalletKitCore/CMakeLists.txt
+        'cmake':                    '3.10.2',        // See .../WalletKitCore/CMakeLists.txt
+        'desugar':                  '1.1.5'
     ]
     ext.deps = [
         'androidxAppcompat':        "androidx.appcompat:appcompat:${versions.androidxAppcompat}",
@@ -37,6 +38,7 @@ buildscript {
         'jnaAndroid':               "net.java.dev.jna:jna:${versions.jna}@aar",
         'jnaJre':                   "net.java.dev.jna:jna:${versions.jna}",
         'junit':                    "junit:junit:${versions.junit}",
+        'desugar':                  "com.android.tools:desugar_jdk_libs:${versions.desugar}",
     ]
     repositories {
         google()
