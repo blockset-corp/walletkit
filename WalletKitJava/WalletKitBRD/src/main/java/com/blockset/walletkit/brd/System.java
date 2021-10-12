@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.Key;
+import com.blockset.walletkit.brd.systemclient.BlocksetTransaction;
 import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
@@ -1419,6 +1420,18 @@ final class System implements com.blockset.walletkit.System {
                 blockHeight));
     }
 
+    private static void canonicalizeTransactions (List<Transaction> transactions) {
+        // Sort descending (reverse order) by {BlockHeight, Index}
+        Collections.sort (transactions, BlocksetTransaction.blockHeightAndIndexComparator.reversed());
+
+        // Remove duplicates
+        HashSet<String> uids = new HashSet<>();
+        transactions.removeIf(t -> !uids.add (t.getId()));
+
+        // Sort ascending
+        Collections.reverse(transactions);
+    }
+
      private static void getTransactions(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                          List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
@@ -1455,6 +1468,9 @@ final class System implements com.blockset.walletkit.System {
                             public void handleData(List<Transaction> transactions) {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
+
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
 
                                 List<WKClientTransactionBundle> bundles = transactions.stream()
                                         .map (t -> System.makeTransactionBundle(t).orNull())
@@ -1563,6 +1579,9 @@ final class System implements com.blockset.walletkit.System {
                             public void handleData(List<Transaction> transactions) {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
+
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
 
                                 List<WKClientTransferBundle> bundles = transactions.stream()
                                         .flatMap(t -> makeTransferBundles(t, canonicalAddresses).stream())
