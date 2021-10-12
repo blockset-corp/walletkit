@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.Key;
+import com.blockset.walletkit.brd.systemclient.BlocksetTransaction;
 import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
@@ -1417,6 +1418,18 @@ final class System implements com.blockset.walletkit.System {
                 blockHeight));
     }
 
+    private static void canonicalizeTransactions (List<Transaction> transactions) {
+        // Sort descending (reverse order) by {BlockHeight, Index}
+        Collections.sort (transactions, BlocksetTransaction.blockHeightAndIndexComparator.reversed());
+
+        // Remove duplicates
+        HashSet<String> uids = new HashSet<>();
+        transactions.removeIf(t -> !uids.add (t.getId()));
+
+        // Sort ascending
+        Collections.reverse(transactions);
+    }
+
      private static void getTransactions(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                          List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
@@ -1454,12 +1467,13 @@ final class System implements com.blockset.walletkit.System {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
 
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
+
                                 List<WKClientTransactionBundle> bundles = new ArrayList<>();
                                 for (Transaction transaction : transactions) {
-                                    Optional<WKClientTransactionBundle> bundle = makeTransactionBundle(transaction);
-                                    if (bundle.isPresent()) {
-                                        bundles.add(bundle.get());
-                                    }
+                                    makeTransactionBundle(transaction)
+                                            .transform(b -> { bundles.add (b); return true; });
                                 }
                                 manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
                                         true,
@@ -1564,20 +1578,21 @@ final class System implements com.blockset.walletkit.System {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
 
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
+
                                 List<WKClientTransferBundle> bundles = new ArrayList<>();
 
-                                try {
-                                    for (Transaction transaction : transactions) {
-                                        bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
-                                    }
-
-                                    success = true;
-                                    Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
-                                } finally {
-                                    manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
-                                            true,
-                                            bundles);
+                                for (Transaction transaction : transactions) {
+                                    bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
                                 }
+
+                                manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                        true,
+                                        bundles);
+
+                                success = true;
+                                Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
                             }
 
                             @Override
