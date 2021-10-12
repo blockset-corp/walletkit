@@ -47,13 +47,17 @@ wkWalletConnectorCreateStandardMessageETH (
         size_t                  msgLength,
         size_t                  *standardMessageLength ) {
 
+    char msgLengthStr[32];
+    snprintf (msgLengthStr, 32, "%lu", msgLength);
+    
     size_t prefixLen = strlen(ethereumSignedMessagePrefix);
-    uint8_t *standardMessage = malloc (msgLength + prefixLen);
+    uint8_t *standardMessage = malloc (msgLength + strlen (msgLengthStr) + prefixLen);
     assert (NULL != standardMessage);
 
     memcpy (standardMessage, ethereumSignedMessagePrefix, prefixLen);
-    memcpy (standardMessage + prefixLen, msg, msgLength);
-    *standardMessageLength = msgLength + prefixLen;
+    memcpy (standardMessage + prefixLen, msgLengthStr, strlen (msgLengthStr));
+    memcpy (standardMessage + prefixLen + strlen (msgLengthStr), msg, msgLength);
+    *standardMessageLength = msgLength + strlen (msgLengthStr) + prefixLen;
 
     return standardMessage;
 }
@@ -92,6 +96,26 @@ wkWalletConnectorCreateKeyFromSeedETH(
     return wkKeyCreateFromKey(&key);
 }
 
+static BREthereumSignatureRSV
+walletConnectRsvSignatureFromVrs(BREthereumSignatureVRS vrs) {
+    BREthereumSignatureRSV rsv;
+    rsv.v = vrs.v;
+    memcpy (rsv.r, vrs.r, sizeof (rsv.r));
+    memcpy (rsv.s, vrs.s, sizeof (rsv.s));
+    
+    return rsv;
+}
+
+static BREthereumSignatureVRS
+walletConnectVrsSignatureFromRsv(BREthereumSignatureRSV rsv) {
+    BREthereumSignatureVRS vrs;
+    vrs.v = rsv.v;
+    memcpy (vrs.r, rsv.r, sizeof (vrs.r));
+    memcpy (vrs.s, rsv.s, sizeof (vrs.s));
+    
+    return vrs;
+}
+
 static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
@@ -119,8 +143,16 @@ wkWalletConnectorSignDataETH (
 
     uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
     assert (signatureData != NULL);
-    memcpy (signatureData, &signature.sig.vrs, sizeof (BREthereumSignatureVRS));
-    *signatureLength = sizeof (BREthereumSignatureVRS);
+    
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+    
+    // 'v' parameter as specified in EIP-155
+    signature.sig.vrs.v = signature.sig.vrs.v + 8 + 2 * chainId;
+    BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
+    memcpy (signatureData, &rsv, sizeof (BREthereumSignatureRSV));
+    
+    *signatureLength = sizeof (BREthereumSignatureRSV);
 
     return signatureData;
 }
@@ -145,7 +177,13 @@ wkWalletConnectorRecoverKeyETH (
     if (65 != signatureLength) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
     }
-    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), signature, signatureLength) ) {
+    BREthereumSignatureVRS vrs = walletConnectVrsSignatureFromRsv(*((BREthereumSignatureRSV*)signature));
+    
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+    
+    vrs.v = vrs.v - 8 - 2 * chainId;
+    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
         key = wkKeyCreateFromKey (&k);
     } else {
         *status = WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED;
