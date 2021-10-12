@@ -105,6 +105,22 @@ model {
             }
         }
 
+        yajl(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/src"
+                        include "*.c"
+                    }
+                }
+            }
+            binaries {
+                binaries.all {
+                    cCompiler.args "-I" + project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/include"
+                }
+            }
+        }
+
         WalletKitCore(NativeLibrarySpec) {
             sources {
                 c {
@@ -127,6 +143,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -183,6 +200,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
