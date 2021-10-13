@@ -687,7 +687,7 @@ runSigningTypedDataTest() {
 
 static void
 runTypedDataSignatureTest() {
-    const char* walletConnector1Dot0WalletSigningKey = "0x61be70f4c5c8b05d683c92949fd9d6902d65e14408d3f29cfddbbb2b159bb10f";
+
     const char* walletConnector1Dot0DappTypedDataRequest =
     "{"
         "\"types\": {"
@@ -754,6 +754,14 @@ runTypedDataSignatureTest() {
             "}"
         "}"
     "}";
+
+    uint8_t walletConnector1Dot0WalletTypedDataRequestHash[32] = {
+        171, 199, 159,  82, 114, 115, 185, 231,
+        188, 161, 179, 241, 172, 106, 209, 168,
+         67,  31, 166, 220,  52, 236, 233,   0,
+        222, 171, 205, 105, 105, 133, 107,  94
+    };
+
     const char* walletConnector1Dot0WalletSigningResult = "0x7cd2107da9c93030ac5996c0c5da3d27479d9968a3d12cfde88eeba1ef74fdec4f5c137d18fe9ed7b0616f0a9f9af1795105ed0f662f4cbacb92fffb396d7a8d1c";
 
     WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
@@ -763,13 +771,9 @@ runTypedDataSignatureTest() {
     uint8_t                 *digestData = NULL;
     size_t                  digestLength = 0;
     WKSecret                pKey;
-    BREthereumSignatureVRS  signingResult;
+    BREthereumSignatureRSV  walletConnector1Dot0WalletSigningResultRsv;
 
-    hexDecode (pKey.data,
-               sizeof (pKey.data),
-               (walletConnector1Dot0WalletSigningKey + 2),
-               strlen (walletConnector1Dot0WalletSigningKey) - 2);
-    WKKey signingKey = wkKeyCreateFromSecret (pKey);
+    WKKey signingKey = wkKeyCreateFromSecret (walletConnector1Dot0WalletSigningKey);
 
     typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
                                                         walletConnector1Dot0DappTypedDataRequest,
@@ -778,24 +782,42 @@ runTypedDataSignatureTest() {
                                                         &digestLength,
                                                         &typedDataSignatureLength,
                                                         &status);
+    
+    // Verify basic requirements and that the same input 'RelayRequest' typed data input
+    // produces the same hash by WalletKit as what the Wallet Connect 1.0 sample wallet does
     assert (WK_WALLET_CONNECTOR_STATUS_OK == status);
     assert (NULL != typedDataSignature && 65 == typedDataSignatureLength);
     assert (NULL != digestData && 32 == digestLength);
+    assert (0 == memcmp(digestData, walletConnector1Dot0WalletTypedDataRequestHash, 32));
 
-    hexDecode ((uint8_t*)&signingResult,
-               sizeof (signingResult),
+    // For display only...
+    char walletConnectSigHex[typedDataSignatureLength * 2 + 1];
+    hexEncode(walletConnectSigHex,
+              typedDataSignatureLength * 2 + 1,
+              typedDataSignature,
+              typedDataSignatureLength);
+    printf("WalletConnect 1.0 Signature %s\n", walletConnector1Dot0WalletSigningResult + 2);
+    printf("Ours:                       %s\n", walletConnectSigHex);
+
+    // Compare what we produced to against what WalletConnect 1.0 sample dApp verifies as correct
+    hexDecode ((uint8_t*)&walletConnector1Dot0WalletSigningResultRsv,
+               sizeof (walletConnector1Dot0WalletSigningResultRsv),
                walletConnector1Dot0WalletSigningResult + 2,
                strlen (walletConnector1Dot0WalletSigningResult) - 2);
 
-    // Compare Wallet Connector 1.0 Sample Wallet signing against ours with the
-    // same inputs.
-    assert (memcmp (&signingResult, typedDataSignature, sizeof (signingResult)) == 0);
+    BREthereumSignatureRSV *ourResultRsv = (BREthereumSignatureRSV*)typedDataSignature;
+    assert (0 == memcmp (walletConnector1Dot0WalletSigningResultRsv.r, ourResultRsv->r, 32));
+    assert (0 == memcmp (walletConnector1Dot0WalletSigningResultRsv.s, ourResultRsv->s, 32));
+    
+    // WalletConnect 1.0 samples ignore the chainId both in generation (wallet) and confirmation (dApp)
+    // and thus does not account for the EIP-155 treatment of 'v' value.
+    // Signing on the wallet side is done via ethereumjs-util/dist/index.js -- exports.ecsign()
+   // assert (walletConnector1Dot0WalletSigningResultRsv.v == ourResultRsv->v);
 
     free (digestData);
     free (typedDataSignature);
 
     wkWalletConnectorRelease(walletConnector);
-
 }
 
 static void
@@ -805,6 +827,7 @@ runSignTypedDataTest() {
     // Compare WalletKit output against WalletConnect 1.0 sample wallet
     runTypedDataSignatureTest();
 }
+
 /** Run all WalletConnector interface tests.
  *
  *

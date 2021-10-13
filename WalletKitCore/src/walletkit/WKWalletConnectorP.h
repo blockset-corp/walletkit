@@ -88,7 +88,7 @@ typedef uint8_t*
 
 typedef uint8_t*
 (*WKWalletConnectorSignTransactionDataHandler) (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         const uint8_t           *transactionData,
         size_t                  dataLength,
         WKKey                   key,
@@ -97,7 +97,7 @@ typedef uint8_t*
 
 typedef uint8_t*
 (*WKWalletConnectorSignTypedDataHandler) (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         BRJson                  typedData,
         WKKey                   key,
         uint8_t                 **digestData,

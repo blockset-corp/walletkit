@@ -152,7 +152,7 @@ wkWalletConnectorSignDataETH (
     // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
     signature.sig.vrs.v += (8 + 2 * chainId);
 
-    // The WalletConnect specification, apparently, wants V, R and S ordered as R, S and V.
+    // The WalletConnect signatures are in R, S and V ordering.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
 
     // Fill in the signature bytes.
@@ -466,7 +466,7 @@ wkWalletConnectorSignTransactionDataETH (
 
 static uint8_t*
 wkWalletConnectorSignTypedDataETH (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         BRJson                  typedData,
         WKKey                   key,
         uint8_t                 **digestData,
@@ -484,6 +484,10 @@ wkWalletConnectorSignTypedDataETH (
     *digestData = NULL;
     
     brKey = *wkKeyGetCore (key);
+
+    // Ensure private key uncompressed
+    BRKeySetCompressed(&brKey, 0);
+
     BREthereumStructureCoder coder = ethStructureCoderCreateFromTypedData (typedData, &error);
     if (NULL == coder) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA;
@@ -492,16 +496,30 @@ wkWalletConnectorSignTypedDataETH (
 
     BREthereumStructureSignResult signResult = ethStructureSignData (coder, brKey);
     BRKeyClean (&brKey);
+    assert (27 == signResult.signature.sig.vrs.v ||
+            28 == signResult.signature.sig.vrs.v);  // uncompressed
     
+    // Get the Ethereum network's chainId for EIP-155 encoding.
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+
+    // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
+    //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
+    // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+    signResult.signature.sig.vrs.v += (8 + 2 * chainId);
+
+    // The WalletConnect signatures are in R, S and V ordering.
+    BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signResult.signature.sig.vrs);
+
     *digestLength = sizeof (BREthereumHash);
-    *signatureLength = sizeof (BREthereumSignatureVRS);
+    *signatureLength = sizeof (BREthereumSignatureRSV);
     *digestData = malloc (*digestLength);
     signatureData = malloc (*signatureLength);
     assert (NULL != *digestData && NULL != signatureData);
 
     // Signature type, SIGNATURE_TYPE_RECOVERABLE_VRS_EIP
     memcpy (*digestData, signResult.digest.bytes, *digestLength);
-    memcpy (signatureData, &signResult.signature.sig.vrs, *signatureLength);
+    memcpy (signatureData, &rsv, *signatureLength);
 
     return signatureData;
 }
