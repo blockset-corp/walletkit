@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.Key;
+import com.blockset.walletkit.brd.systemclient.BlocksetTransaction;
 import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
@@ -116,6 +117,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -126,6 +128,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -1417,6 +1420,18 @@ final class System implements com.blockset.walletkit.System {
                 blockHeight));
     }
 
+    private static void canonicalizeTransactions (List<Transaction> transactions) {
+        // Sort descending (reverse order) by {BlockHeight, Index}
+        Collections.sort (transactions, BlocksetTransaction.blockHeightAndIndexComparator.reversed());
+
+        // Remove duplicates
+        HashSet<String> uids = new HashSet<>();
+        transactions.removeIf(t -> !uids.add (t.getId()));
+
+        // Sort ascending
+        Collections.reverse(transactions);
+    }
+
      private static void getTransactions(Cookie context, WKWalletManager coreWalletManager, WKClientCallbackState callbackState,
                                          List<String> addresses, long begBlockNumber, long endBlockNumber) {
         EXECUTOR_CLIENT.execute(() -> {
@@ -1454,13 +1469,14 @@ final class System implements com.blockset.walletkit.System {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransactionsCallback received transactions");
 
-                                List<WKClientTransactionBundle> bundles = new ArrayList<>();
-                                for (Transaction transaction : transactions) {
-                                    Optional<WKClientTransactionBundle> bundle = makeTransactionBundle(transaction);
-                                    if (bundle.isPresent()) {
-                                        bundles.add(bundle.get());
-                                    }
-                                }
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
+
+                                List<WKClientTransactionBundle> bundles = transactions.stream()
+                                        .map (t -> System.makeTransactionBundle(t).orNull())
+                                        .filter (Objects::nonNull)
+                                        .collect(Collectors.toList());
+
                                 manager.getCoreBRCryptoWalletManager().announceTransactions(callbackState,
                                         true,
                                         bundles);
@@ -1564,20 +1580,19 @@ final class System implements com.blockset.walletkit.System {
                                 boolean success = false;
                                 Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback received transfers");
 
-                                List<WKClientTransferBundle> bundles = new ArrayList<>();
+                                // Sort and filter `transactions` - will be ascending, duplicate free.
+                                canonicalizeTransactions(transactions);
 
-                                try {
-                                    for (Transaction transaction : transactions) {
-                                        bundles.addAll(makeTransferBundles(transaction, canonicalAddresses));
-                                    }
+                                List<WKClientTransferBundle> bundles = transactions.stream()
+                                        .flatMap(t -> makeTransferBundles(t, canonicalAddresses).stream())
+                                        .collect(Collectors.toList());
 
-                                    success = true;
-                                    Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
-                                } finally {
-                                    manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
-                                            true,
-                                            bundles);
-                                }
+                                manager.getCoreBRCryptoWalletManager().announceTransfers(callbackState,
+                                        true,
+                                        bundles);
+
+                                success = true;
+                                Log.log(Level.FINE, "BRCryptoCWMGetTransfersCallback : complete");
                             }
 
                             @Override

@@ -158,7 +158,7 @@ final class WalletKitCoreTests: XCTestCase {
     // MARK: - Support
 
     func testJSONSUP () {
-        runJSONTests()
+        runJsonTests()
     }
 
     func testRLPSUP () {
