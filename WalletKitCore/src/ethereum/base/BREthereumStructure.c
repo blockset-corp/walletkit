@@ -1150,9 +1150,6 @@ ethStructureHashData (BREthereumStructureCoder coder) {
 extern BREthereumStructureSignResult
 ethStructureSignData (BREthereumStructureCoder coder,
                       BRKey privateKey) {
-    BRKey privateKeyUncompressed = privateKey;
-    privateKeyUncompressed.compressed = 0;
-
     BREthereumHash hashDomain = ethStructureHashDomain (coder);
     BREthereumHash hashData   = ethStructureHashData   (coder);
 

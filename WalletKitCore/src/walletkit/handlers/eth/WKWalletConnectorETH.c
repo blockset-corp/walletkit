@@ -128,9 +128,6 @@ wkWalletConnectorSignDataETH (
 
     BRKey brKey = *wkKeyGetCore (key);
 
-    // Ensure private key uncompressed
-    BRKeySetCompressed(&brKey, 0);
-
     // No error
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
 
@@ -443,9 +440,7 @@ wkWalletConnectorSignTransactionDataETH (
     rlpItemRelease  (coder, item);
     rlpCoderRelease (coder);
 
-    // Step 2: Create a signature directly on the input data and add it onto the
-    //         ETH transaction. Ensure that private key is uncompressed
-    BRKeySetCompressed(&brKey, 0);
+    // Step 2: Create a signature directly on the input data and add it onto the ETH transaction.
     BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
                                                                        ethAddress,
                                                                        SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
@@ -475,7 +470,7 @@ wkWalletConnectorSignTypedDataETH (
         WKWalletConnectorStatus *status) {
     
     uint8_t*                        signatureData = NULL;
-    BRKey                           brKey;
+    BRKey                           brKey = *wkKeyGetCore (key);
     BREthereumStructureErrorType    error;
 
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
@@ -483,11 +478,6 @@ wkWalletConnectorSignTypedDataETH (
     *signatureLength = 0;
     *digestData = NULL;
     
-    brKey = *wkKeyGetCore (key);
-
-    // Ensure private key uncompressed
-    BRKeySetCompressed(&brKey, 0);
-
     BREthereumStructureCoder coder = ethStructureCoderCreateFromTypedData (typedData, &error);
     if (NULL == coder) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA;
