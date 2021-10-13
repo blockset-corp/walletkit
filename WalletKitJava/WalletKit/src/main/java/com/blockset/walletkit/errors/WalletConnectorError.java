@@ -73,6 +73,16 @@ public abstract class WalletConnectorError extends Exception {
         public InvalidSignature(String message) { super(message); }
         public InvalidSignature(Throwable throwable) { super(throwable); }
     }
+    public static class InvalidJson extends WalletConnectorError {
+        public InvalidJson() { super(); }
+        public InvalidJson(String message) { super(message); }
+        public InvalidJson(Throwable throwable) { super(throwable); }
+    }
+    public static class InvalidTypedData extends WalletConnectorError {
+        public InvalidTypedData() { super(); }
+        public InvalidTypedData(String message) { super(message); }
+        public InvalidTypedData(Throwable throwable) { super(throwable); }
+    }
     public static class SubmitFailed extends WalletConnectorError {
         public SubmitFailed() { super(); }
         public SubmitFailed(String message) { super(message); }

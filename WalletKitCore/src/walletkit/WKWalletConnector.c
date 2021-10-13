@@ -10,6 +10,7 @@
 
 #include "WKWalletConnectorP.h"
 #include "WKHandlersP.h"
+#include "support/json/BRJson.h"
 
 
 /** Creates a shallow copy of strings in the input strs 'WordList' into
@@ -367,4 +368,57 @@ wkWalletConnectorSignTransactionData (
             *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
         }
         return transaction;
+}
+
+extern uint8_t*
+wkWalletConnectorSignTypedData(
+        WKWalletConnector       connector,
+        const char              *typedData,
+        WKKey                   key,
+        uint8_t                 **digestData,
+        size_t                  *digestLength,
+        size_t                  *signatureLength,
+        WKWalletConnectorStatus *status) {
+
+    assert (NULL != connector           &&
+            NULL != typedData           &&
+            NULL != key                 &&
+            NULL != digestData          &&
+            NULL != digestLength        &&
+            NULL != signatureLength     &&
+            NULL != status );
+
+    uint8_t* signedTypedData = NULL;
+
+    *status = WK_WALLET_CONNECTOR_STATUS_OK;
+    const WKHandlers *netHandlers = wkHandlersLookup(connector->type);
+
+    if (NULL != netHandlers             &&
+        NULL != netHandlers->connector  &&
+        NULL != netHandlers->connector->signTypedData) {
+
+        char            *error = NULL;
+        BRJson          typedDataJson;
+        BRJsonStatus    jsonParsingStatus;
+
+        typedDataJson = jsonParse(typedData, &jsonParsingStatus, &error);
+        if (JSON_STATUS_OK != jsonParsingStatus || NULL != error) {
+            *status = WK_WALLET_CONNECTOR_STATUS_INVALID_JSON;
+        } else {
+            signedTypedData =  netHandlers->connector->signTypedData(connector,
+                                                                     typedDataJson,
+                                                                     key,
+                                                                     digestData,
+                                                                     digestLength,
+                                                                     signatureLength,
+                                                                     status);
+
+            if (NULL == signedTypedData && WK_WALLET_CONNECTOR_STATUS_OK == *status)
+                *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
+        }
+
+    } else {
+        *status = WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION;
+    }
+    return signedTypedData;
 }

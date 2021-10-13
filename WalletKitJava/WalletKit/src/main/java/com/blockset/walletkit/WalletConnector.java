@@ -241,6 +241,27 @@ public interface WalletConnector {
            Key             key         );
 
     /**
+     * Sign typed data. The typedData provided must firstly be a string containing a valid JSON object. Secondly,
+     * the contents of the JSON must be typed data in the form suitable to the network on which the WalletConnector
+     * operates (for example, with Ethereum networks, the typedData must be presented as EIP-712 structured data).
+     *
+     * This function designated for handling JSON-RPC `eth_signTypedData`
+     *
+     * @param message: The data to sign
+     * @param key A private key
+     *
+     * @return * @return The pair of the {@link Digest} and {@link Signature}, or on failure
+     *         a {@link Result} composed with
+     *           {@link WalletConnectorError.InvalidKeyForSigning} if not having a private key, or
+     *           {@link WalletConnectorError.InvalidJson} if the typedData is not a JSON, or
+     *           {@link WalletConnectorError.InvalidTypedData} if the JSON is not a valid typed data
+     *                                                         for the wallet connectors network
+     */
+    Result<DigestAndSignaturePair, WalletConnectorError>
+    sign(   String       message,
+            Key          key    );
+
+    /**
      * Send a transaction to the connector's network. As implied by the presence of a
      * CompletionHandler, this method executes asynchronously.
      *

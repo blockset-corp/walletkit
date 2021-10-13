@@ -18,7 +18,12 @@
 extern BREthereumSignature
 ethSignatureCreateFromDigest (BREthereumSignatureType type,
                               BREthereumHash digest,
-                              BRKey privateKeyUncompressed) {
+                              BRKey privateKey) {
+    // Ethereum signing expects an uncompressed key; force it.
+    BRKey privateKeyUncompressed = privateKey;
+    BRKeySetCompressed (&privateKeyUncompressed, 0);
+
+    // Copy `digest` to a `UInt256`, as expected by `BRKeyCompactSign()`
     UInt256 digestAsUInt256;
     memcpy (digestAsUInt256.u8, digest.bytes, 32);
 
@@ -80,6 +85,7 @@ ethSignatureCreateFromDigest (BREthereumSignatureType type,
             break;
         }
     }
+    BRKeyClean (&privateKeyUncompressed);
 
     return signature;
 }
@@ -88,13 +94,12 @@ extern BREthereumSignature
 ethSignatureCreate(BREthereumSignatureType type,
                    const uint8_t *bytes,
                    size_t bytesCount,
-                   BRKey privateKeyUncompressed,
+                   BRKey privateKey,
                    BREthereumHash *digestRef) {
-
     // Hash with the required Keccak-256
     BREthereumHash digest = ethHashCreateFromBytes (bytes, bytesCount);
     if (NULL != digestRef) *digestRef = digest;
-    return ethSignatureCreateFromDigest (type, digest, privateKeyUncompressed);
+    return ethSignatureCreateFromDigest (type, digest, privateKey);
 }
 
 extern BREthereumBoolean

@@ -304,6 +304,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumLogic.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.h
+                ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumStructure.c
+                ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumStructure.h
 
                 # BCS
                 # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.c

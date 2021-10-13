@@ -591,6 +591,243 @@ runTransactionFromTransactionDataTest() {
     wkWalletConnectorRelease(walletConnector);
 }
 
+static void
+runSigningTypedDataTest() {
+
+    WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
+    WKWalletConnector       walletConnector = createTestConnector();
+    uint8_t                 *typedDataSignature = NULL;
+    size_t                  typedDataSignatureLength = 0;
+    uint8_t                 *digestData = NULL;
+    size_t                  digestLength = 0;
+
+    // Sign the transaction and compare to canned reference
+    WKKey signingKey = wkWalletConnectorCreateKey (walletConnector,
+                                                   testPaperKey,
+                                                   &status);
+    assert (NULL != signingKey);
+
+    const char* emptyJson = "";
+    assert (NULL == (typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
+                                                                         emptyJson,
+                                                                         signingKey,
+                                                                         &digestData,
+                                                                         &digestLength,
+                                                                         &typedDataSignatureLength,
+                                                                         &status)) &&
+            WK_WALLET_CONNECTOR_STATUS_INVALID_JSON == status);
+
+    const char* invalidJson = "{a=1}";
+    assert (NULL == (typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
+                                                                         invalidJson,
+                                                                         signingKey,
+                                                                         &digestData,
+                                                                         &digestLength,
+                                                                         &typedDataSignatureLength,
+                                                                         &status)) &&
+            WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA != status);
+
+    const char* eip712TypedData =
+    "{"
+        "\"types\": {"
+            "\"EIP712Domain\":["
+                "{\"name\":\"name\",\"type\":\"string\"},"
+                "{\"name\":\"version\",\"type\":\"string\"},"
+                "{\"name\":\"chainId\",\"type\":\"uint256\"},"
+                "{\"name\":\"verifyingContract\",\"type\":\"address\"}"
+            "],"
+
+            "\"Person\":["
+                "{\"name\":\"name\",\"type\":\"string\"},"
+                "{\"name\":\"wallet\",\"type\":\"address\"}"
+            "],"
+
+            "\"Mail\":["
+                "{\"name\":\"from\",\"type\":\"Person\"},"
+                "{\"name\":\"to\",\"type\":\"Person\"},"
+                "{\"name\":\"contents\",\"type\":\"string\"}"
+            "]"
+        "},"
+
+        "\"primaryType\":\"Mail\","
+        "\"domain\":{"
+            "\"name\":\"Ether Mail\","
+            "\"version\":\"1\","
+            "\"chainId\":1,"
+            "\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\""
+        "},"
+
+        "\"message\":{"
+            "\"from\":{"
+                "\"name\":\"Cow\","
+                "\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},"
+            "\"to\":{"
+                "\"name\":\"Bob\","
+                "\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\"},"
+            "\"contents\":\"Hello, Bob!\""
+        "}"
+    "}";
+
+    typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
+                                                        eip712TypedData,
+                                                        signingKey,
+                                                        &digestData,
+                                                        &digestLength,
+                                                        &typedDataSignatureLength,
+                                                        &status);
+    assert (WK_WALLET_CONNECTOR_STATUS_OK == status);
+    assert (NULL != typedDataSignature && 65 == typedDataSignatureLength);
+    assert (NULL != digestData && 32 == digestLength);
+
+    free (digestData);
+    free (typedDataSignature);
+
+    wkWalletConnectorRelease(walletConnector);
+}
+
+static void
+runTypedDataSignatureTest() {
+
+    const char* walletConnector1Dot0DappTypedDataRequest =
+    "{"
+        "\"types\": {"
+             "\"EIP712Domain\": ["
+                 "{\"name\": \"name\","
+                  "\"type\": \"string\" },"
+                 "{\"name\": \"version\","
+                  "\"type\": \"string\" },"
+                 "{\"name\": \"verifyingContract\","
+                  "\"type\": \"address\" }"
+             "],"
+             "\"RelayRequest\": ["
+                 "{\"name\": \"target\","
+                  "\"type\": \"address\" },"
+                 "{\"name\": \"encodedFunction\","
+                  "\"type\": \"bytes\" },"
+                 "{\"name\": \"gasData\","
+                  "\"type\": \"GasData\"},"
+                 "{\"name\": \"relayData\","
+                  "\"type\": \"RelayData\"}"
+             "],"
+             "\"GasData\": ["
+                 "{\"name\": \"gasLimit\","
+                  "\"type\": \"uint256\" },"
+                 "{\"name\": \"gasPrice\","
+                  "\"type\": \"uint256\" },"
+                 "{\"name\": \"pctRelayFee\","
+                  "\"type\": \"uint256\"},"
+                 "{\"name\": \"baseRelayFee\","
+                  "\"type\": \"uint256\"}"
+             "],"
+             "\"RelayData\": ["
+                 "{\"name\": \"senderAddress\","
+                  "\"type\": \"address\" },"
+                 "{\"name\": \"senderNonce\","
+                  "\"type\": \"uint256\" },"
+                 "{\"name\": \"relayWorker\","
+                  "\"type\": \"address\" },"
+                 "{\"name\": \"paymaster\","
+                  "\"type\": \"address\" }"
+             "]"
+        "},"
+        "\"domain\": {"
+            "\"name\": \"GSN Relayed Transaction\","
+            "\"version\": \"1\","
+            "\"chainId\": 42,"
+            "\"verifyingContract\": \"0x6453D37248Ab2C16eBd1A8f782a2CBC65860E60B\""
+        "},"
+        "\"primaryType\": \"RelayRequest\","
+        "\"message\": {"
+            "\"target\": \"0x9cf40ef3d1622efe270fe6fe720585b4be4eeeff\","
+            "\"encodedFunction\": \"0xa9059cbb0000000000000000000000002e0d94754b348d208d64d52d78bcd443afa9fa520000000000000000000000000000000000000000000000000000000000000007\","
+            "\"gasData\": {"
+                "\"gasLimit\": \"39507\","
+                "\"gasPrice\": \"1700000000\","
+                "\"pctRelayFee\": \"70\","
+                "\"baseRelayFee\": \"0\""
+            "},"
+            "\"relayData\":{"
+                "\"senderAddress\":\"0x22d491bde2303f2f43325b2108d26f1eaba1e32b\","
+                "\"senderNonce\": \"3\","
+                "\"relayWorker\": \"0x3baee457ad824c94bd3953183d725847d023a2cf\","
+                "\"paymaster\": \"0x957F270d45e9Ceca5c5af2b49f1b5dC1Abb0421c\""
+            "}"
+        "}"
+    "}";
+
+    uint8_t walletConnector1Dot0WalletTypedDataRequestHash[32] = {
+        171, 199, 159,  82, 114, 115, 185, 231,
+        188, 161, 179, 241, 172, 106, 209, 168,
+         67,  31, 166, 220,  52, 236, 233,   0,
+        222, 171, 205, 105, 105, 133, 107,  94
+    };
+
+    const char* walletConnector1Dot0WalletSigningResult = "0x7cd2107da9c93030ac5996c0c5da3d27479d9968a3d12cfde88eeba1ef74fdec4f5c137d18fe9ed7b0616f0a9f9af1795105ed0f662f4cbacb92fffb396d7a8d1c";
+
+    WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
+    WKWalletConnector       walletConnector = createTestConnector();
+    uint8_t                 *typedDataSignature = NULL;
+    size_t                  typedDataSignatureLength = 0;
+    uint8_t                 *digestData = NULL;
+    size_t                  digestLength = 0;
+    WKSecret                pKey;
+    BREthereumSignatureRSV  walletConnector1Dot0WalletSigningResultRsv;
+
+    WKKey signingKey = wkKeyCreateFromSecret (walletConnector1Dot0WalletSigningKey);
+
+    typedDataSignature = wkWalletConnectorSignTypedData(walletConnector,
+                                                        walletConnector1Dot0DappTypedDataRequest,
+                                                        signingKey,
+                                                        &digestData,
+                                                        &digestLength,
+                                                        &typedDataSignatureLength,
+                                                        &status);
+    
+    // Verify basic requirements and that the same input 'RelayRequest' typed data input
+    // produces the same hash by WalletKit as what the Wallet Connect 1.0 sample wallet does
+    assert (WK_WALLET_CONNECTOR_STATUS_OK == status);
+    assert (NULL != typedDataSignature && 65 == typedDataSignatureLength);
+    assert (NULL != digestData && 32 == digestLength);
+    assert (0 == memcmp(digestData, walletConnector1Dot0WalletTypedDataRequestHash, 32));
+
+    // For display only...
+    char walletConnectSigHex[typedDataSignatureLength * 2 + 1];
+    hexEncode(walletConnectSigHex,
+              typedDataSignatureLength * 2 + 1,
+              typedDataSignature,
+              typedDataSignatureLength);
+    printf("WalletConnect 1.0 Signature %s\n", walletConnector1Dot0WalletSigningResult + 2);
+    printf("Ours:                       %s\n", walletConnectSigHex);
+
+    // Compare what we produced to against what WalletConnect 1.0 sample dApp verifies as correct
+    hexDecode ((uint8_t*)&walletConnector1Dot0WalletSigningResultRsv,
+               sizeof (walletConnector1Dot0WalletSigningResultRsv),
+               walletConnector1Dot0WalletSigningResult + 2,
+               strlen (walletConnector1Dot0WalletSigningResult) - 2);
+
+    BREthereumSignatureRSV *ourResultRsv = (BREthereumSignatureRSV*)typedDataSignature;
+    assert (0 == memcmp (walletConnector1Dot0WalletSigningResultRsv.r, ourResultRsv->r, 32));
+    assert (0 == memcmp (walletConnector1Dot0WalletSigningResultRsv.s, ourResultRsv->s, 32));
+    
+    // WalletConnect 1.0 samples ignore the chainId both in generation (wallet) and confirmation (dApp)
+    // and thus does not account for the EIP-155 treatment of 'v' value.
+    // Signing on the wallet side is done via ethereumjs-util/dist/index.js -- exports.ecsign()
+   // assert (walletConnector1Dot0WalletSigningResultRsv.v == ourResultRsv->v);
+
+    free (digestData);
+    free (typedDataSignature);
+
+    wkWalletConnectorRelease(walletConnector);
+}
+
+static void
+runSignTypedDataTest() {
+    runSigningTypedDataTest();
+
+    // Compare WalletKit output against WalletConnect 1.0 sample wallet
+    runTypedDataSignatureTest();
+}
+
 /** Run all WalletConnector interface tests.
  *
  *
@@ -635,6 +872,10 @@ runWalletConnectTests (void) {
     // Sign a transaction
     uint8_t *ignore = runSignTransactionTest(NULL);
     free (ignore);
+
+    // Sign typed data
+    printf ("Sign typed data\n");
+    runSignTypedDataTest();
 
     printf("WalletConnect 1.0 Done\n");
 }

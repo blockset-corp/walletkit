@@ -519,6 +519,8 @@ public enum WalletConnectorError: Error {
     case previouslySignedTransaction
     case invalidDigest
     case invalidSignature
+    case invalidJson
+    case invalidTypeData
     case submitFailed
     // ...
 
@@ -531,6 +533,8 @@ public enum WalletConnectorError: Error {
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
         case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
         case WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED:            self = .unrecoverableKey
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_JSON:                   self = .invalidJson
+        case WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA:             self = .invalidTypeData
     
         // Not an error and should never be passed to this enumeration
         case WK_WALLET_CONNECTOR_STATUS_OK: preconditionFailure()
@@ -858,6 +862,49 @@ public final class WalletConnector {
         }
     }
 
+    ///
+    /// Sign typed data. The typedData provided must firstly be a string containing a valid JSON object. Secondly,
+    /// the contents of the JSON must be typed data in the form suitable to the network on which the WalletConnector
+    /// operates (for example, with Ethereum networks, the typedData must be presented as EIP-712 structured data).
+    ///
+    /// This function designated for handling JSON-RPC `eth_signTypedData`
+    ///
+    /// - Parameter typedData: The data to sign
+    /// - Parameter key: A private key
+    ///
+    /// - Returns: On success a pair {Digest,Signature}.  On failure a WalletConnectorError of:
+    ///     .invalidKeyForSigning - if `key` is not private
+    ///     .invalidJson - if the typedData is not a JSON
+    ///     .invalidTypedData - if the JSON is not a valid typed data for the wallet connectors network
+    public func sign (typedData: String, using key: Key) -> Result<(digest: Digest, signature: Signature), WalletConnectorError> {
+        guard key.hasSecret else { return Result.failure(.invalidKeyForSigning) }
+
+        var digestLen : size_t = 0;
+        var signatureLen : size_t = 0;
+        var digestData : UnsafeMutablePointer<UInt8>!
+        
+        var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK;
+
+        let signatureData  = wkWalletConnectorSignTypedData (self.core,
+                                                             typedData,
+                                                             key.core,
+                                                             &digestData,
+                                                             &digestLen,
+                                                             &signatureLen,
+                                                             &status);
+        defer {
+            wkMemoryFree(signatureData);
+            wkMemoryFree(digestData);
+        }
+        if (signatureData == nil) {
+            return Result.failure(WalletConnectorError(core: status))
+        }
+        
+        let digest = Digest (core: self.core, data32: Data (bytes: digestData, count: digestLen))
+        let signature = Signature (core: self.core, data: Data (bytes: signatureData!, count: signatureLen))
+        return Result.success((digest: digest, signature: signature))
+    }
+    
     ///
     /// Send a transaction to the connector's network
     ///

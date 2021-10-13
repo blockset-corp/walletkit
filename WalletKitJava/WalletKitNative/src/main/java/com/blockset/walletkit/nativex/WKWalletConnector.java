@@ -18,6 +18,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 
 import java.util.List;
 
@@ -337,6 +338,70 @@ public class WKWalletConnector extends PointerType {
             Native.free(Pointer.nativeValue(signedTransactionDataPtr));
         }
 
+        return res;
+    }
+
+    /** A wrapper of digest and signature, which in the case of
+     *  signed typed data, can be returned in one call.
+     */
+    public class WKTypedDataSigningResult {
+        private final byte[] digest;
+        private final byte[] signature;
+        public WKTypedDataSigningResult(byte[] digest, byte[] signature) {
+            this.digest = digest;
+            this.signature = signature;
+        }
+
+        public byte[] getDigest() { return this.digest; }
+        public byte[] getSignature() { return this.signature; }
+    }
+
+    /** Signs the typed data provided, which string should contain a valid JSON
+     *  representing a typed data structure in the idiom of the networks typed
+     *  data standards.
+     *
+     * @param typedData The typed data to be signed
+     * @param key The signing key
+     * @return A {@link WKResult} object containing the signature and digest wrapper,
+     *         or a suitable {@link WKWalletConnectorError} in the case of a failure
+     */
+    public WKResult<WKTypedDataSigningResult, WKWalletConnectorError>
+    sign( String    typedData,
+          WKKey     key     ) {
+
+        WKResult            res;
+        IntByReference      err = new IntByReference();
+        Pointer             keyPtr = key.getPointer();
+        SizeTByReference    signedTypedDataLenRef = new SizeTByReference();
+        SizeTByReference    digestDataLenRef = new SizeTByReference();
+        PointerByReference  digestData = new PointerByReference();
+
+        Pointer signedTypedDataPtr = WKNativeLibraryDirect.wkWalletConnecterSignTypedData(
+                this.getPointer(),
+                typedData,
+                keyPtr,
+                digestData,
+                digestDataLenRef,
+                signedTypedDataLenRef,
+                err );
+
+        try {
+            int signedTypedDataLen = UnsignedInts.checkedCast(signedTypedDataLenRef.getValue().intValue());
+            int digestLength = UnsignedInts.checkedCast(digestDataLenRef.getValue().intValue());
+
+            if (signedTypedDataPtr.equals(Pointer.NULL)) {
+                res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
+            } else {
+                byte[] signature = signedTypedDataPtr.getByteArray(0, signedTypedDataLen);
+                byte[] digest = digestData.getValue().getByteArray(0, digestLength);
+                WKTypedDataSigningResult signingResult = new WKTypedDataSigningResult(digest,
+                                                                                      signature);
+                res = WKResult.success(signingResult);
+            }
+        } finally {
+            Native.free(Pointer.nativeValue(signedTypedDataPtr));
+            Native.free(Pointer.nativeValue(digestData.getValue()));
+        }
         return res;
     }
 

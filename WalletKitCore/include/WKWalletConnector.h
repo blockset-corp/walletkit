@@ -44,8 +44,16 @@ typedef enum {
     WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION,
 
     // The public key cannot be recovered from the digest + signature
-    WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED
+    WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED,
     
+    // Typed data string is not a valid JSON object
+    WK_WALLET_CONNECTOR_STATUS_INVALID_JSON,
+
+    // The typed data is not in form recognizable to the network's
+    // rules concerning 'type data'. The contents, format, or
+    // validity is not correct.
+    WK_WALLET_CONNECTOR_STATUS_INVALID_TYPED_DATA
+
     // ...
 
 } WKWalletConnectorStatus;
@@ -225,6 +233,35 @@ wkWalletConnectorSignTransactionData (
         WKKey                   key,
         size_t                  *signedDataLength,
         WKWalletConnectorStatus *status            );
+
+/** Signs a typed data request and returns this message's digest and signature in the
+ *  WKTypedDataSignature result.
+ *
+ *  The input typedData is expected to be in a form recognizable, complete, and parsable
+ *  by the WalletConnector's network standards. For example, for Ethereum networks, the
+ *  typedData must be presented as EIP-712 structured data.
+ *
+ *  @param connector The wallet connector object
+ *  @param typedData A JSON string containing structured data (per above notes)
+ *  @param key The key provided to do signing
+ *  @param digestData The digest bytes when signature has been calculated successfully.
+ *  @param digestLength The length of the digest when the signature has been calculated successfully.
+ *  @param signatureLength The length of the signature
+ *  @param status A status of the operation
+ *  @return When successful, the signature bytes, and the length of this buffer indicated
+ *          by 'signatureLength'. On failure the result will be NULL and a suitable error
+ *          code will be held within 'status'. On failure, the 'digestBytes', 'digestLength'
+ *          and 'signatureLength' should be ignored.
+ */
+extern uint8_t*
+wkWalletConnectorSignTypedData(
+        WKWalletConnector       connector,
+        const char              *typedData,
+        WKKey                   key,
+        uint8_t                 **digestData,
+        size_t                  *digestLength,
+        size_t                  *signatureLength,
+        WKWalletConnectorStatus *status);
 
 #ifdef __cplusplus
 }
