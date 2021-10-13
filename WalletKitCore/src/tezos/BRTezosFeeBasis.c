@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-//#include <stdio.h>
+#include <stdio.h>
 
 #include "support/util/BRUtilMath.h"
 

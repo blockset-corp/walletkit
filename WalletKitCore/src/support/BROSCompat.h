@@ -29,6 +29,7 @@
 #include <string.h>         // strlcpy()
 #include <stdint.h>
 #include <stdlib.h>         // arc4random
+#include <stdio.h>          // FILE
 
 #if defined (__linux__) && !defined(__ANDROID__)
 // TODO: Including bsd/stdlib.h causes a `swift build` failure
@@ -76,6 +77,9 @@ arc4random_uniform_brd(uint32_t upperBbound);
 extern int
 mergesort_brd (void *__base, size_t __nel, size_t __width,
                int (*__compar)(const void *, const void *));
+
+extern FILE *
+open_memstream_brd (char **bufp, size_t *sizep);
 
 #ifdef __cplusplus
 }

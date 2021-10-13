@@ -34,7 +34,7 @@
 
 #define RIPPLE_SEQUENCE_PROTOCOL_CHANGE_BLOCK 55313921
 
-#define RIPPLE_ACCOUNT_MINIMUM_IN_XRP            (20)
+#define RIPPLE_ACCOUNT_MINIMUM_IN_XRP            (10)
 
 struct BRRippleAccountRecord {
     BRRippleAddress address; // The 20 byte account id

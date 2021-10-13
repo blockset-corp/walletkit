@@ -14,6 +14,7 @@
 #include "WKWalletConnector.h"
 #include "support/BRArray.h"
 #include "support/BRInt.h"
+#include "support/json/BRJson.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,12 +88,22 @@ typedef uint8_t*
 
 typedef uint8_t*
 (*WKWalletConnectorSignTransactionDataHandler) (
-        WKWalletConnector       connector,
+        WKWalletConnector       walletConnector,
         const uint8_t           *transactionData,
         size_t                  dataLength,
         WKKey                   key,
         size_t                  *signedDataLength,
         WKWalletConnectorStatus *status            );
+
+typedef uint8_t*
+(*WKWalletConnectorSignTypedDataHandler) (
+        WKWalletConnector       walletConnector,
+        BRJson                  typedData,
+        WKKey                   key,
+        uint8_t                 **digestData,
+        size_t                  *digestLength,
+        size_t                  *signatureLength,
+        WKWalletConnectorStatus *status);
 
 typedef struct {
     WKWalletConnectorCreateHandler                              create;
@@ -105,6 +116,7 @@ typedef struct {
     WKWalletConnectorCreateTransactionFromArgumentsHandler      createTransactionFromArguments;
     WKWalletConnectorCreateTransactionFromSerializationHandler  createTransactionFromSerialization;
     WKWalletConnectorSignTransactionDataHandler                 signTransactionData;
+    WKWalletConnectorSignTypedDataHandler                       signTypedData;
 } WKWalletConnectorHandlers;
 
 // MARK: - Connector

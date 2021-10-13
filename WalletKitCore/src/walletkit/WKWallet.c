@@ -22,8 +22,8 @@
 
 static void
 wkWalletUpdTransfer (WKWallet wallet,
-                                  WKTransfer transfer,
-                                  OwnershipKept WKTransferState newState);
+                     WKTransfer transfer,
+                     OwnershipKept WKTransferState oldState);
 
 static void
 wkWalletUpdBalanceOnTransferConfirmation (WKWallet wallet,
@@ -477,24 +477,24 @@ wkWalletDecBalance (WKWallet wallet,
  * Return the amount from `transfer` that applies to the balance of `wallet`.  The result must
  * be in the wallet's unit
  */
-static OwnershipGiven WKAmount // called wtih wallet->lock
+private_extern OwnershipGiven WKAmount // called wtih wallet->lock
 wkWalletGetTransferAmountDirectedNet (WKWallet wallet,
-                                          WKTransfer transfer) {
+                                      WKTransfer transfer) {
     // If the wallet and transfer units are compatible, use the transfer's amount
     WKAmount transferAmount = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unit)
-                                     ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
-                                     : wkAmountCreateInteger (0, wallet->unit));
+                               ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
+                               : wkAmountCreateInteger (0, wallet->unit));
 
     // If the wallet unit and the transfer unitForFee are compatible and if we did not
     // receive the transfer then use the transfer's fee
     WKAmount transferFee    = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unitForFee) &&
-                                     WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
-                                     ? wkTransferGetFee (transfer)
-                                     : NULL);
+                               WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
+                               ? wkTransferGetFee (transfer)
+                               : NULL);
 
     WKAmount transferNet = (NULL != transferFee
-                                  ? wkAmountSub  (transferAmount, transferFee)
-                                  : wkAmountTake (transferAmount));
+                            ? wkAmountSub  (transferAmount, transferFee)
+                            : wkAmountTake (transferAmount));
 
     wkAmountGive(transferFee);
     wkAmountGive(transferAmount);
@@ -716,19 +716,27 @@ wkWalletReplaceTransfer (WKWallet wallet,
 static void
 wkWalletUpdTransfer (WKWallet wallet,
                          WKTransfer transfer,
-                         WKTransferState newState) {
+                         WKTransferState oldState) {
     // The transfer's state has changed.  This implies a possible amount/fee change as well as
     // perhaps other wallet changes, such a nonce change.
     pthread_mutex_lock (&wallet->lock);
     if (WK_TRUE == wkWalletHasTransferLock (wallet, transfer, false)) {
-        switch (newState->type) {
+        switch (transfer->state->type) {
             case WK_TRANSFER_STATE_CREATED:
             case WK_TRANSFER_STATE_SIGNED:
             case WK_TRANSFER_STATE_SUBMITTED:
             case WK_TRANSFER_STATE_DELETED:
                 break; // nothing
             case WK_TRANSFER_STATE_INCLUDED:
-                wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+                // If the `oldState` is INCLUDED, then this is a re-org and (somehow) the oldState
+                // and the newState can have completely different fees.  Just recompute the wallet
+                // balance with `transfer` (and its `newState`).  This case is highly uncommon.
+                if (WK_TRANSFER_STATE_INCLUDED == oldState->type)
+                    wkWalletUpdBalance (wallet, false);
+                else
+                    // If `oldState` is not INCLUDED, the updae the balance based on a different
+                    // between the estimated and confirmed fees. This case is common.
+                    wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
                 break;
             case WK_TRANSFER_STATE_ERRORED:
                 // Recompute the balance

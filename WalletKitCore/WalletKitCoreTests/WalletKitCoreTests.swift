@@ -155,15 +155,21 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
-    // MARK: - Ethereum
+    // MARK: - Support
 
-    func testRLPETH () {
+    func testJSONSUP () {
+        runJsonTests()
+    }
+
+    func testRLPSUP () {
         runRlpTests()
     }
 
-    func testUtilETH () {
+    func testUtilSUP () {
         runUtilTests()
     }
+
+    // MARK: - Ethereum
 
     func testEventETH () {
         runEventTests ()
@@ -177,12 +183,16 @@ final class WalletKitCoreTests: XCTestCase {
         runBcTests()
     }
 
+    func testTransactionETH () {
+        runTransactionTests (0)
+    }
+
     func testContractETH () {
         runContractTests()
     }
 
-    func testBasicsETH () {
-        runTests (0)
+    func testStructureETH () {
+        runStructureTests()
     }
 
     // MARK: - Ripple
@@ -442,14 +452,18 @@ final class WalletKitCoreTests: XCTestCase {
         ("testWalletKitBCH",    testWalletKitWithAccountAndNetworkBCH),
         ("testWalletKitETH",    testWalletKitWithAccountAndNetworkETH),
 
+        // Support
+        ("testRLP",             testRLPSUP),
+        ("testUtil",            testUtilSUP),
+        ("testJSON",            testJSONSUP),
+
         // Ethereum
-        ("testRLP",             testRLPETH),
-        ("testUtil",            testUtilETH),
         ("testEvent",           testEventETH),
         ("testBase",            testBaseETH),
         ("testBC",              testBlockchainETH),
-        ("testContracdt",       testContractETH),
-        ("testBasics",          testBasicsETH),
+        ("testTransactions",    testTransactionETH),
+        ("testContract",        testContractETH),
+        ("testStructure",       testStructureETH),
 
         // Ripple
         ("testRipple",          testRipple),

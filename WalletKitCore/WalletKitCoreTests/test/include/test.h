@@ -22,14 +22,22 @@
 extern "C" {
 #endif
 
+// Support
+
+// JSON
+extern void runJsonTests (void);
+
 // Util
 extern void runUtilTests (void);
 
 // RLP
 extern void runRlpTests (void);
 
+
 // Event
 extern void runEventTests (void);
+
+// Ethereum
 
 // Base
 extern void runBaseTests (void);
@@ -37,17 +45,22 @@ extern void runBaseTests (void);
 // Block Chain
 extern void runBcTests (void);
 
+// Transactions
+extern void runTransactionTests (int reallySend);
+
 // Contract
 extern void runContractTests (void);
 
+// Structure
+extern void runStructureTests (void);
+
+#if REFACTOR
 // LES
 extern void runLESTests(const char *paperKey);
-
-extern void
-runNodeTests (void);
+extern void runNodeTests (void);
 
 // EWM
-#if REFACTOR
+
 extern void
 runEWMTests (const char *paperKey,
              const char *storagePath);
@@ -62,10 +75,8 @@ runSyncTest (BREthereumNetwork network,
 //
 extern void
 installTokensForTest (void);
-#endif
 
-extern void
-runTests (int reallySend);
+#endif
 
 extern void
 runPerfTestsCoder (int repeat, int many);

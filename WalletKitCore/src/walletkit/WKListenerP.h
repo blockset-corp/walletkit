@@ -45,8 +45,8 @@ wkListenerGenerateNetworkEvent (const WKNetworkListener *listener,
 // A Hack: Instead Wallet should listen for WK_TRANSFER_EVENT_CHANGED
 typedef void
 (*WKTransferStateChangedCallback) (WKWallet wallet,
-                                         WKTransfer transfer,
-                                         OwnershipKept WKTransferState newState);
+                                   WKTransfer transfer, // has `newState`
+                                   OwnershipKept WKTransferState oldState);
 
 
 /**

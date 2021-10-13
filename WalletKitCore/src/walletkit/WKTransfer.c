@@ -289,21 +289,17 @@ wkTransferGetAmountDirectedInternal (WKTransfer transfer,
 
     switch (wkTransferGetDirection(transfer)) {
         case WK_TRANSFER_RECOVERED: {
-            amount = wkAmountCreate (transfer->unit,
-                                         WK_FALSE,
-                                         UINT256_ZERO);
+            amount = wkAmountCreate (transfer->unit, WK_FALSE, UINT256_ZERO);
             break;
         }
 
         case WK_TRANSFER_SENT: {
-            amount = wkTransferGetAmountAsSign (transfer,
-                                                    WK_TRUE);
+            amount = wkTransferGetAmountAsSign (transfer, WK_TRUE);
             break;
         }
 
         case WK_TRANSFER_RECEIVED: {
-            amount = wkTransferGetAmountAsSign (transfer,
-                                                    WK_FALSE);
+            amount = wkTransferGetAmountAsSign (transfer, WK_FALSE);
             break;
         }
         default: assert(0);
@@ -393,7 +389,7 @@ wkTransferSetStateForced (WKTransfer transfer,
     if (forced || !wkTransferStateIsEqual (oldState, newState)) {
         // A Hack: Instead Wallet shouild listen for WK_TRANSFER_EVENT_CHANGED
         if (NULL != transfer->listener.transferChangedCallback)
-            transfer->listener.transferChangedCallback (transfer->listener.wallet, transfer, newState);
+            transfer->listener.transferChangedCallback (transfer->listener.wallet, transfer, oldState);
 
         wkTransferGenerateEvent (transfer, (WKTransferEvent) {
             WK_TRANSFER_EVENT_CHANGED,

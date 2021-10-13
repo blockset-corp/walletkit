@@ -244,6 +244,30 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     @Override
+    public Result<DigestAndSignaturePair, WalletConnectorError>
+    sign(   String message,
+            com.blockset.walletkit.WalletConnector.Key key) {
+
+        if (!(key instanceof Key)) {
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+        if (!key.hasSecret()) {
+            return Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
+        }
+
+        WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
+        WKResult<WKWalletConnector.WKTypedDataSigningResult, WKWalletConnectorError> typedDataSigningResult =
+                core.sign(message, cryptoKey);
+        if (typedDataSigningResult.isFailure()) {
+            return Result.failure(wkErrorToError(typedDataSigningResult.getFailure()));
+        }
+
+        Digest digest = new Digest(this.core, typedDataSigningResult.getSuccess().getDigest());
+        Signature signature = new Signature(this.core, typedDataSigningResult.getSuccess().getSignature());
+        return Result.success(new DigestAndSignaturePair(digest, signature));
+    }
+
+    @Override
     public void submit(
             com.blockset.walletkit.WalletConnector.Transaction transaction,
             CompletionHandler<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError> completion  ) {

@@ -298,9 +298,77 @@ static void createSubmittableTransaction(const char * sourcePaperKey,
     printf("\n");
 }
 
+static void addressStringTests()
+{
+    BRStellarAddress address = stellarAddressCreateFromString("", true);
+    assert(address == NULL);
+    address = stellarAddressCreateFromString("", false);
+    assert(address != NULL);
+    // Get the address and ensure it is unknown
+    char * stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "unknown") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+
+    address = stellarAddressCreateFromString(NULL, true);
+    assert(address == NULL);
+    address = stellarAddressCreateFromString(NULL, false);
+    assert(address != NULL);
+    stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "unknown") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+
+    address = stellarAddressCreateFromString("addressofthewronglength", true);
+    assert(address == NULL);
+    address = stellarAddressCreateFromString("addressofthewronglength", false);
+    assert(address == NULL);
+
+    // The correct lenght but a lower case letter
+    address = stellarAddressCreateFromString("GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFj", true);
+    assert(address == NULL);
+    address = stellarAddressCreateFromString("GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFj", false);
+    assert(address == NULL);
+
+    // Finally a good address - strict = true
+    address = stellarAddressCreateFromString("GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFJ", true);
+    assert(address != NULL);
+    stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFJ") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+
+    // Finally a good address - strict = false
+    address = stellarAddressCreateFromString("GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFJ", false);
+    assert(address != NULL);
+    stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "GBBZPBJHWLQ5ALFDZ2Y3XKXH5S5J3EJL7QYO7HS52IUMKN7MM6UT2CFJ") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+
+    // The fee address
+    address = stellarAddressCreateFromString("__fee__", false);
+    assert(address != NULL);
+    // Get the address and ensure it is "__fee__"
+    stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "__fee__") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+
+    // The unknown address
+    address = stellarAddressCreateFromString("unknown", false);
+    assert(address != NULL);
+    // Get the address and ensure it is "fee"
+    stringAddress = stellarAddressAsString(address);
+    assert(strcmp(stringAddress, "unknown") == 0);
+    free(stringAddress);
+    stellarAddressFree(address);
+}
+
 extern void
 runStellarTest (void /* ... */) {
     printf("Running stellar unit tests...\n");
+    addressStringTests();
     runAccountTests();
     runTransactionTests();
 

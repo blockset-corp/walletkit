@@ -17,6 +17,7 @@
 #include "support/BRKey.h"
 #include "ripple/BRRipple.h"
 
+#if 0
 #include "tezos/BRTezosTransaction.h"
 #include "tezos/BRTezosTransfer.h"
 #include "tezos/BRTezosAccount.h"
@@ -139,5 +140,5 @@ void createTransactions() {
     createRippleTransaction();
     createTezosTransaction();
 }
-
+#endif
 
