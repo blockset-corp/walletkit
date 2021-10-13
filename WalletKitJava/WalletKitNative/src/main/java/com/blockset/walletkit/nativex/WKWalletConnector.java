@@ -376,7 +376,7 @@ public class WKWalletConnector extends PointerType {
         SizeTByReference    digestDataLenRef = new SizeTByReference();
         PointerByReference  digestData = new PointerByReference();
 
-        Pointer signedTypedDataPtr = WKNativeLibraryDirect.wkWalletConnecterSignTypedData(
+        Pointer signedTypedDataPtr = WKNativeLibraryDirect.wkWalletConnectorSignTypedData(
                 this.getPointer(),
                 typedData,
                 keyPtr,
