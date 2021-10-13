@@ -47,13 +47,17 @@ wkWalletConnectorCreateStandardMessageETH (
         size_t                  msgLength,
         size_t                  *standardMessageLength ) {
 
+    char msgLengthStr[32];
+    snprintf (msgLengthStr, 32, "%lu", msgLength);
+    
     size_t prefixLen = strlen(ethereumSignedMessagePrefix);
-    uint8_t *standardMessage = malloc (msgLength + prefixLen);
+    uint8_t *standardMessage = malloc (msgLength + strlen (msgLengthStr) + prefixLen);
     assert (NULL != standardMessage);
 
     memcpy (standardMessage, ethereumSignedMessagePrefix, prefixLen);
-    memcpy (standardMessage + prefixLen, msg, msgLength);
-    *standardMessageLength = msgLength + prefixLen;
+    memcpy (standardMessage + prefixLen, msgLengthStr, strlen (msgLengthStr));
+    memcpy (standardMessage + prefixLen + strlen (msgLengthStr), msg, msgLength);
+    *standardMessageLength = msgLength + strlen (msgLengthStr) + prefixLen;
 
     return standardMessage;
 }
@@ -92,6 +96,26 @@ wkWalletConnectorCreateKeyFromSeedETH(
     return wkKeyCreateFromKey(&key);
 }
 
+static BREthereumSignatureRSV
+walletConnectRsvSignatureFromVrs(BREthereumSignatureVRS vrs) {
+    BREthereumSignatureRSV rsv;
+    rsv.v = vrs.v;
+    memcpy (rsv.r, vrs.r, sizeof (rsv.r));
+    memcpy (rsv.s, vrs.s, sizeof (rsv.s));
+    
+    return rsv;
+}
+
+static BREthereumSignatureVRS
+walletConnectVrsSignatureFromRsv(BREthereumSignatureRSV rsv) {
+    BREthereumSignatureVRS vrs;
+    vrs.v = rsv.v;
+    memcpy (vrs.r, rsv.r, sizeof (vrs.r));
+    memcpy (vrs.s, rsv.s, sizeof (vrs.s));
+    
+    return vrs;
+}
+
 static uint8_t*
 wkWalletConnectorSignDataETH (
         WKWalletConnector       walletConnector,
@@ -116,11 +140,26 @@ wkWalletConnectorSignDataETH (
                                                         brKey,
                                                         NULL    );
     BRKeyClean (&brKey);
+    assert (27 == signature.sig.vrs.v || 28 == signature.sig.vrs.v);  // uncompressed
 
-    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureVRS));
+    // Get the Ethereum network's chainId for EIP-155 encoding.
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+
+    // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
+    //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
+    // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+    signature.sig.vrs.v += (8 + 2 * chainId);
+
+    // The WalletConnect specification, apparently, wants V, R and S ordered as R, S and V.
+    BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
+
+    // Fill in the signature bytes.
+    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureRSV));
     assert (signatureData != NULL);
-    memcpy (signatureData, &signature.sig.vrs, sizeof (BREthereumSignatureVRS));
-    *signatureLength = sizeof (BREthereumSignatureVRS);
+
+    memcpy (signatureData, &rsv, sizeof (BREthereumSignatureRSV));
+    *signatureLength = sizeof (BREthereumSignatureRSV);
 
     return signatureData;
 }
@@ -145,7 +184,18 @@ wkWalletConnectorRecoverKeyETH (
     if (65 != signatureLength) {
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE;
     }
-    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), signature, signatureLength) ) {
+
+    // The WalletConnect specification, apparently, provides R, S and V; we want V, R and S.
+    BREthereumSignatureVRS vrs = walletConnectVrsSignatureFromRsv(*((BREthereumSignatureRSV*)signature));
+
+    // Get the Ethereum network's chainId for EIP-155 decoding.
+    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
+    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+
+    // Undo the EIP-155 encoding if it exists.  See above `wkWalletConnectorSignDataETH()`
+    if (vrs.v > 28) vrs.v -= (8 + 2 * chainId);
+
+    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
         key = wkKeyCreateFromKey (&k);
     } else {
         *status = WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED;
