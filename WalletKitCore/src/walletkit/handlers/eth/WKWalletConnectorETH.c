@@ -188,12 +188,21 @@ wkWalletConnectorRecoverKeyETH (
 
     // Get the Ethereum network's chainId for EIP-155 decoding.
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+    BREthereumChainId ourChainId = ethNetworkGetChainId(managerETH->network);
 
-    // Undo the EIP-155 encoding if it exists.  See above `wkWalletConnectorSignDataETH()`
-    if (vrs.v > 28) vrs.v -= (8 + 2 * chainId);
+    // Flag to indicate if the chainId in `signature` matches ours.
+    bool validChainId = true;
 
-    if (1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
+    // Undo the EIP-155 encoding if it exists.  See above `wkWalletConnectorSignDataETH()`.  Note:
+    // we decode the `sigChainId` and compare it to `outChainId` to confirm a valid signature.
+    if (vrs.v > 28) {
+        BREthereumChainId sigChainId = (vrs.v - 35) / 2;
+
+        validChainId = (sigChainId == ourChainId);
+        if (validChainId) vrs.v -= (8 + 2 * sigChainId);
+    }
+
+    if (validChainId && 1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
         key = wkKeyCreateFromKey (&k);
     } else {
         *status = WK_WALLET_CONNECTOR_STATUS_KEY_RECOVERY_FAILED;
