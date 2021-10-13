@@ -338,6 +338,11 @@ final class Wallet implements com.blockset.walletkit.Wallet {
             return;
         }
 
+        // The absolute minimum value that can be transferred.  If we can't get an estimate for
+        // this we are utterly dead in the water.
+        Amount transferMin  = Amount.create(1, walletManager.getBaseUnit());
+        Amount transferZero = Amount.create(0, walletManager.getBaseUnit());
+
         //
         // We are forced to deal with XTZ.  Not by our choosing.  The value returned by the above
         // `coreManager.estimateLimit` is something well below `self.balance` for XTZ - because
@@ -348,11 +353,6 @@ final class Wallet implements com.blockset.walletkit.Wallet {
         // User's funds until XTZ matures.
         //
         if (NetworkType.XTZ == walletManager.getNetwork().getType()) {
-
-            // The absolute minimum value that can be transferred.  If we can't get an estimate for
-            // this we are utterly dead in the water.
-            Amount transferMin  = Amount.create(1, walletManager.getBaseUnit());
-            Amount transferZero = Amount.create(0, walletManager.getBaseUnit());
 
             CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError> estimationHandlerXTZ =
                     new CompletionHandler<com.blockset.walletkit.TransferFeeBasis, FeeEstimationError>() {
@@ -409,7 +409,8 @@ final class Wallet implements com.blockset.walletkit.Wallet {
                     Optional<Amount> transactionAmount = newTransferAmount.get().add(newTransferFee);
                     checkState(transactionAmount.isPresent());
 
-                    if (getBalance().compareTo(transactionAmount.get()) >= 0) {
+                    if (getBalance().compareTo(transactionAmount.get()) >= 0 &&
+                            newTransferAmount.get().compareTo(transferZero) >= 0) {
                         handler.handleData(newTransferAmount.get());
                     } else {
                         handler.handleError(new LimitEstimationInsufficientFundsError());
