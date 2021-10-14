@@ -64,6 +64,11 @@ wkClientErrorRelease (WKClientError error) {
     free (error);
 }
 
+extern WKClientErrorType
+wkClientErrorGetType (WKClientError error) {
+    return error->type;
+}
+
 // MARK: Client Sync/Send Forward Declarations
 
 static void
@@ -711,7 +716,7 @@ wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
 
     wkClientQRYManagerUpdateSync (qry, syncCompleted, syncSuccess, true);
 
-    array_free_all (bundles, wkClientTransactionBundleRelease);
+    if (NULL != bundles) array_free_all (bundles, wkClientTransactionBundleRelease);
     wkClientCallbackStateRelease(callbackState);
 }
 
@@ -728,7 +733,7 @@ static void
 wkClientAnnounceTransactionsDestroyer (WKClientAnnounceTransactionsEvent *event) {
     wkWalletManagerGive (event->manager);
     wkClientCallbackStateRelease (event->callbackState);
-    array_free_all (event->bundles, wkClientTransactionBundleRelease);
+    if (NULL != event->bundles) array_free_all (event->bundles, wkClientTransactionBundleRelease);
 }
 
 BREventType handleClientAnnounceTransactionsEventType = {
@@ -847,7 +852,7 @@ wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
 
     wkClientQRYManagerUpdateSync (qry, syncCompleted, syncSuccess, true);
 
-    array_free_all (bundles, wkClientTransferBundleRelease);
+    if (NULL != bundles) array_free_all (bundles, wkClientTransferBundleRelease);
     wkClientCallbackStateRelease(callbackState);
 }
 
@@ -1021,43 +1026,22 @@ typedef struct {
 static WKTransferSubmitError
 wkClientErrorToSubmitError (WKWalletManager manager,
                             WKClientError clientError) {
-    WKTransferSubmitErrorType type;
-    char *details;
+    static WKTransferSubmitErrorType types[] = {
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST,
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION,
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE,
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE,
+        WK_TRANSFER_SUBMIT_ERROR_UNKNOWN,
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE
+    };
 
-    switch (clientError->type) {
-        case WK_CLIENT_ERROR_BAD_REQUEST:
-            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST;
-            details = "Bad Reqeust";
-            break;
+    WKTransferSubmitErrorType type = (WK_CLIENT_ERROR_SUBMISSION == clientError->type
+                                      ? clientError->u.submitErrorType
+                                      : types[clientError->type]);
 
-        case WK_CLIENT_ERROR_PERMISSION:
-            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION;
-            details = "Permission";
-            break;
-
-        case WK_CLIENT_ERROR_RESOURCE:
-            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE;
-            details = "Resource";
-            break;
-
-        case WK_CLIENT_ERROR_BAD_RESPONSE:
-            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE;
-            details = "Bad Response";
-            break;
-
-        case WK_CLIENT_ERROR_SUBMISSION:
-            type = clientError->u.submitErrorType;
-            details = clientError->details;
-            break;
-
-        case WK_CLIENT_ERROR_UNAVAILABLE:
-            type = WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE;
-            details = "Unavailable";
-            break;
-    }
-
-    return wkTransferSubmitErrorCreate (type, details);
+    return wkTransferSubmitErrorCreate (type, clientError->details);
 }
+
 static void
 wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
                       OwnershipGiven WKClientCallbackState callbackState,
@@ -1253,8 +1237,8 @@ wkClientHandleEstimateTransactionFee (OwnershipKept WKWalletManager manager,
 
     wkClientCallbackStateRelease (callbackState);
 
-    array_free_all (attributeKeys, wkMemoryFree);
-    array_free_all (attributeVals, wkMemoryFree);
+    if (NULL != attributeKeys) array_free_all (attributeKeys, wkMemoryFree);
+    if (NULL != attributeVals) array_free_all (attributeVals, wkMemoryFree);
 }
 
 static void
@@ -1272,8 +1256,8 @@ static void
 wkClientAnnounceEstimateTransactionFeeDestroyer (WKClientAnnounceEstimateTransactionFeeEvent *event) {
     wkWalletManagerGive (event->manager);
     wkClientCallbackStateRelease (event->callbackState);
-    array_free_all (event->keys, wkMemoryFree);
-    array_free_all (event->vals, wkMemoryFree);
+    if (NULL != event->keys) array_free_all (event->keys, wkMemoryFree);
+    if (NULL != event->vals) array_free_all (event->vals, wkMemoryFree);
 }
 
 BREventType handleClientAnnounceEstimateTransactionFeeEventType = {

@@ -578,7 +578,7 @@ extension TransferState: CustomStringConvertible {
         case .submitted: return "Submitted"
         case .pending:   return "Pending"
         case .included:  return "Included"
-        case .failed (let error): return "Failed (\(error))"
+        case .failed:    return "Failed"   // See 'error' for details.
         case .deleted:   return "Deleted"
         }
     }

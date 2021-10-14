@@ -1402,7 +1402,7 @@ public class BlocksetSystemClient: SystemClient {
                     }
                     else if nil == status {
                         let dataString = data!.map { String(format: "%c", $0) }.joined()
-                        respError = SystemClientError.badResponse ("Submission Status Error: No 'status' Provided: Data: \(dataString)")
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'submit_status' Provided: Data: \(dataString)")
                     }
                     else {
                         let submitDetails = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "network_message") } ?? data!.map { String(format: "%c", $0) }.joined()

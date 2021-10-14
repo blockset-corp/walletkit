@@ -20,7 +20,7 @@ extern "C" {
 
 // MARK: - Transfer Include Error
 
-#define WK_TRANSFER_STATUS_DETAILS_LENGTH      (31)
+#define WK_TRANSFER_STATUS_DETAILS_LENGTH      (63)
 
 ///
 /// An 'Included Error' occurs for some currencies, none of the BTC-alikes, whereby a transaction
