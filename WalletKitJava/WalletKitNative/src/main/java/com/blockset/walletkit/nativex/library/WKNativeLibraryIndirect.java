@@ -9,6 +9,7 @@ package com.blockset.walletkit.nativex.library;
 
 import com.blockset.walletkit.nativex.WKClientCurrencyBundle;
 import com.blockset.walletkit.nativex.WKClientCurrencyDenominationBundle;
+import com.blockset.walletkit.nativex.WKClientError;
 import com.blockset.walletkit.nativex.WKClientTransactionBundle;
 import com.blockset.walletkit.nativex.WKClientTransferBundle;
 import com.blockset.walletkit.nativex.WKCurrency;
@@ -45,41 +46,47 @@ public final class WKNativeLibraryIndirect {
         return INSTANCE.wkWalletValidateTransferAttributes(wallet, attributesCount, attributes, validates);
     }
 
-    public static void wkClientAnnounceEstimateTransactionFee(Pointer cwm,
-                                                                  Pointer callbackState,
-                                                                  int success,
-                                                                  long costUnits,
-                                                                  SizeT attributesCount,
-                                                                  String[] attributeKeys,
-                                                                  String[] attributeVals) {
+    public static void wkClientAnnounceEstimateTransactionFeeSuccess(Pointer cwm,
+                                                                     Pointer callbackState,
+                                                                     long costUnits,
+                                                                     SizeT attributesCount,
+                                                                     String[] attributeKeys,
+                                                                     String[] attributeVals) {
         attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
         attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
 
-        INSTANCE.wkClientAnnounceEstimateTransactionFee(cwm, callbackState, success,
+        INSTANCE.wkClientAnnounceEstimateTransactionFeeSuccess(cwm, callbackState,
                 costUnits,
                 attributesCount,
                 attributeKeys,
                 attributeVals);
     }
 
+    public static void wkClientAnnounceEstimateTransactionFeeFailure(Pointer cwm,
+                                                                     Pointer callbackState,
+                                                                     Pointer error) {
+        INSTANCE.wkClientAnnounceEstimateTransactionFeeFailure(cwm, callbackState, error);
+    }
+
+
     public static Pointer wkClientTransferBundleCreate(int status,
-                                                           String hash,
-                                                           String identifier,
-                                                           String uids,
-                                                           String sourceAddr,
-                                                           String targetAddr,
-                                                           String amount,
-                                                           String currency,
-                                                           String fee,
-                                                           long transferIndex,
-                                                           long blockTimestamp,
-                                                           long blockHeight,
-                                                           long blockConfirmations,
-                                                           long blockTransactionIndex,
-                                                           String blockHash,
-                                                           SizeT attributesCount,
-                                                           String[] attributeKeys,
-                                                           String[] attributeVals) {
+                                                       String hash,
+                                                       String identifier,
+                                                       String uids,
+                                                       String sourceAddr,
+                                                       String targetAddr,
+                                                       String amount,
+                                                       String currency,
+                                                       String fee,
+                                                       long transferIndex,
+                                                       long blockTimestamp,
+                                                       long blockHeight,
+                                                       long blockConfirmations,
+                                                       long blockTransactionIndex,
+                                                       String blockHash,
+                                                       SizeT attributesCount,
+                                                       String[] attributeKeys,
+                                                       String[] attributeVals) {
         attributeKeys = attributesCount.intValue() == 0 ? null : attributeKeys;
         attributeVals = attributesCount.intValue() == 0 ? null : attributeVals;
         return INSTANCE.wkClientTransferBundleCreate(status,
@@ -89,27 +96,35 @@ public final class WKNativeLibraryIndirect {
                 attributesCount, attributeKeys, attributeVals);
     }
 
-    public static void wkClientAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, WKClientTransactionBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.wkClientAnnounceTransactions(cwm, callbackState, success,
+    public static void wkClientAnnounceTransactionsSuccess(Pointer cwm, Pointer callbackState, WKClientTransactionBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.wkClientAnnounceTransactionsSuccess(cwm, callbackState,
                 (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
     }
 
-    public static void wkClientAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, WKClientTransferBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.wkClientAnnounceTransfers(cwm, callbackState, success,
+    public static void wkClientAnnounceTransactionsFailure(Pointer cwm, Pointer callbackState, Pointer error) {
+        INSTANCE.wkClientAnnounceTransactionsFailure(cwm, callbackState, error);
+    }
+
+    public static void wkClientAnnounceTransfersSuccess(Pointer cwm, Pointer callbackState, WKClientTransferBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.wkClientAnnounceTransfersSuccess(cwm, callbackState,
                 (0 == bundlesCount.intValue() ? null : bundles),
                 bundlesCount);
+    }
+
+    public static void wkClientAnnounceTransfersFailure(Pointer cwm, Pointer callbackState, Pointer error) {
+        INSTANCE.wkClientAnnounceTransfersFailure(cwm, callbackState, error);
     }
 
     public static Pointer wkClientCurrencyBundleCreate(String id,
-                                                           String name,
-                                                           String code,
-                                                           String type,
-                                                           String blockchainId,
-                                                           String address,
-                                                           boolean verified,
-                                                           SizeT denominationsCount,
-                                                           WKClientCurrencyDenominationBundle[] denominations) {
+                                                       String name,
+                                                       String code,
+                                                       String type,
+                                                       String blockchainId,
+                                                       String address,
+                                                       boolean verified,
+                                                       SizeT denominationsCount,
+                                                       WKClientCurrencyDenominationBundle[] denominations) {
         return INSTANCE.wkClientCurrencyBundleCreate(
                 id,
                 name,
@@ -122,20 +137,24 @@ public final class WKNativeLibraryIndirect {
                 (0 == denominationsCount.intValue() ? null : denominations));
     }
 
-    public static void wkClientAnnounceCurrencies(Pointer system, WKClientCurrencyBundle[] bundles, SizeT bundlesCount) {
-        INSTANCE.wkClientAnnounceCurrencies(system,
+    public static void wkClientAnnounceCurrenciesSuccess (Pointer system, WKClientCurrencyBundle[] bundles, SizeT bundlesCount) {
+        INSTANCE.wkClientAnnounceCurrenciesSuccess(system,
                 (0 == bundles.length ? null : bundles),
                 bundlesCount);
     }
 
+    public static void wkClientAnnounceCurrenciesFailure(Pointer system, Pointer error) {
+        INSTANCE.wkClientAnnounceCurrenciesFailure(system, error);
+    }
+
     public static void wkWalletManagerEstimateFeeBasis(Pointer cwm,
-                                                           Pointer wid,
-                                                           Pointer cookie,
-                                                           Pointer target,
-                                                           Pointer amount,
-                                                           Pointer fee,
-                                                           SizeT attributesCount,
-                                                           WKTransferAttribute[] attributes) {
+                                                       Pointer wid,
+                                                       Pointer cookie,
+                                                       Pointer target,
+                                                       Pointer amount,
+                                                       Pointer fee,
+                                                       SizeT attributesCount,
+                                                       WKTransferAttribute[] attributes) {
         attributes = attributes.length == 0 ? null : attributes;
         INSTANCE.wkWalletManagerEstimateFeeBasis(
                 cwm,
@@ -149,11 +168,11 @@ public final class WKNativeLibraryIndirect {
     }
 
     public static Pointer wkSystemCreateWalletManager(Pointer system,
-                                                          Pointer network,
-                                                          int mode,
-                                                          int scheme,
-                                                          WKCurrency[] currencies,
-                                                          SizeT currenciesCount) {
+                                                      Pointer network,
+                                                      int mode,
+                                                      int scheme,
+                                                      WKCurrency[] currencies,
+                                                      SizeT currenciesCount) {
         return INSTANCE.wkSystemCreateWalletManager(
                 system,
                 network,
@@ -174,63 +193,73 @@ public final class WKNativeLibraryIndirect {
         int wkWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, WKTransferAttribute[] attributes, IntByReference validates);
 
         Pointer wkClientTransferBundleCreate(int status,
-                                                 String hash,
-                                                 String identifier,
-                                                 String uids,
-                                                 String sourceAddr,
-                                                 String targetAddr,
-                                                 String amount,
-                                                 String currency,
-                                                 String fee,
-                                                 long transferIndex,
-                                                 long blockTimestamp,
-                                                 long blockHeight,
-                                                 long blockConfirmations,
-                                                 long blockTransactionIndex,
-                                                 String blockHash,
-                                                 SizeT attributesCount,
-                                                 String[] attributeKeys,
-                                                 String[] attributeVals);
+                                             String hash,
+                                             String identifier,
+                                             String uids,
+                                             String sourceAddr,
+                                             String targetAddr,
+                                             String amount,
+                                             String currency,
+                                             String fee,
+                                             long transferIndex,
+                                             long blockTimestamp,
+                                             long blockHeight,
+                                             long blockConfirmations,
+                                             long blockTransactionIndex,
+                                             String blockHash,
+                                             SizeT attributesCount,
+                                             String[] attributeKeys,
+                                             String[] attributeVals);
 
-        void wkClientAnnounceTransactions(Pointer cwm, Pointer callbackState, int success, WKClientTransactionBundle[] bundles, SizeT bundlesCount);
-        void wkClientAnnounceTransfers(Pointer cwm, Pointer callbackState, int success, WKClientTransferBundle[] bundles, SizeT bundlesCount);
+        void wkClientAnnounceTransactionsSuccess(Pointer cwm, Pointer callbackState, WKClientTransactionBundle[] bundles, SizeT bundlesCount);
+
+        void wkClientAnnounceTransactionsFailure(Pointer cwm, Pointer callbackState, Pointer error);
+
+        void wkClientAnnounceTransfersSuccess(Pointer cwm, Pointer callbackState, WKClientTransferBundle[] bundles, SizeT bundlesCount);
+
+        void wkClientAnnounceTransfersFailure(Pointer cwm, Pointer callbackState, Pointer error);
 
         Pointer wkClientCurrencyBundleCreate(String id,
-                                                 String name,
-                                                 String code,
-                                                 String type,
-                                                 String blockchainId,
-                                                 String address,
-                                                 boolean verified,
-                                                 SizeT denominationsCount,
-                                                 WKClientCurrencyDenominationBundle[] denominations);
+                                             String name,
+                                             String code,
+                                             String type,
+                                             String blockchainId,
+                                             String address,
+                                             boolean verified,
+                                             SizeT denominationsCount,
+                                             WKClientCurrencyDenominationBundle[] denominations);
 
-        void wkClientAnnounceCurrencies (Pointer system, WKClientCurrencyBundle[] bundles, SizeT bundlesCount);
+        void wkClientAnnounceCurrenciesSuccess(Pointer system, WKClientCurrencyBundle[] bundles, SizeT bundlesCount);
 
-        void wkClientAnnounceEstimateTransactionFee(Pointer cwm,
-                                                        Pointer callbackState,
-                                                        int success,
-                                                        long costUnits,
-                                                        SizeT attributesCount,
-                                                        String[] attributeKeys,
-                                                        String[] attributeVals);
+        void wkClientAnnounceCurrenciesFailure(Pointer system, Pointer error);
+
+        void wkClientAnnounceEstimateTransactionFeeSuccess(Pointer cwm,
+                                                           Pointer callbackState,
+                                                           long costUnits,
+                                                           SizeT attributesCount,
+                                                           String[] attributeKeys,
+                                                           String[] attributeVals);
+
+        void wkClientAnnounceEstimateTransactionFeeFailure(Pointer cwm,
+                                                           Pointer callbackState,
+                                                           Pointer error);
 
         // crypto/BRCryptoWalletManager.h
-        void wkWalletManagerEstimateFeeBasis (Pointer cwm,
-                                                  Pointer wallet,
-                                                  Pointer cookie,
-                                                  Pointer target,
-                                                  Pointer amount,
-                                                  Pointer fee,
-                                                  SizeT attributesCount,
-                                                  WKTransferAttribute[] attributes);
+        void wkWalletManagerEstimateFeeBasis(Pointer cwm,
+                                             Pointer wallet,
+                                             Pointer cookie,
+                                             Pointer target,
+                                             Pointer amount,
+                                             Pointer fee,
+                                             SizeT attributesCount,
+                                             WKTransferAttribute[] attributes);
 
         // crypto/BRCryptoSystem.h
         Pointer wkSystemCreateWalletManager(Pointer system,
-                                                Pointer network,
-                                                int mode,
-                                                int scheme,
-                                                WKCurrency[] currencies,
-                                                SizeT currenciesCount);
+                                            Pointer network,
+                                            int mode,
+                                            int scheme,
+                                            WKCurrency[] currencies,
+                                            SizeT currenciesCount);
     }
 }

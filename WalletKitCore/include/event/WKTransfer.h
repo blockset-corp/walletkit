@@ -30,9 +30,9 @@ extern "C" {
 typedef enum {
     WK_TRANSFER_INCLUDED_STATUS_SUCCESS,
 
-    /// Not enough 'gas' paid to complete the calculations required to include the transaction.  The
-    /// transaction is in the blockchain, the sender paid a fee, but the assert transfer did not
-    /// complete.
+    /// Not enough 'gas' paid to complete the calculations as is required to include the
+    /// transaction.  The transaction is in the blockchain, the sender paid a fee, but the asset
+    /// transfer did not complete.
     WK_TRANSFER_INCLUDED_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT, // out of gas
 
     /// An error occurred during the processing of the transaction.  This is typically something
@@ -45,10 +45,8 @@ typedef enum {
     ///    'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT'
     WK_TRANSFER_INCLUDED_STATUS_FAILURE_REVERTED,
 
-    /// The resons for the included failure is unknown
+    /// The reason for the included failure is unknown
     WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN,
-
-
 } WKTransferIncludeStatusType;
 
 #define TRANSFER_INCLUDED_ERROR_UNDEFINED  ((WKTransferIncludeErrorType) -1)

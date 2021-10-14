@@ -8,7 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.TransferFeeBasis;
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.nativex.WKClientTransactionBundle;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKAddress;
@@ -159,7 +159,7 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
                 false,
                 false,
                 null,
-                new CompletionHandler<List<Transaction>, QueryError>() {
+                new CompletionHandler<List<Transaction>, SystemClientError>() {
 
                     @Override
                     public void handleData(List<Transaction> transactions) {
@@ -191,7 +191,7 @@ final class WalletSweeper implements com.blockset.walletkit.WalletSweeper {
                     }
 
                     @Override
-                    public void handleError(QueryError e) {
+                    public void handleError(SystemClientError e) {
                         completion.handleError(new WalletSweeperQueryError(e));
                     }
                 });

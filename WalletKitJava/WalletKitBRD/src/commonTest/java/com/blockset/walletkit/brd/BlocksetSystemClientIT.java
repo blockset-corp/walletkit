@@ -14,7 +14,7 @@ import com.blockset.walletkit.brd.systemclient.BlocksetSubscriptionEvent;
 import com.blockset.walletkit.brd.systemclient.DataTask;
 import com.blockset.walletkit.SystemClient.Blockchain;
 import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.SystemClient.Block;
 import com.blockset.walletkit.SystemClient.Currency;
 import com.blockset.walletkit.SystemClient.Subscription;
@@ -402,7 +402,7 @@ public class BlocksetSystemClientIT {
 
         delHandler = new SynchronousCompletionHandler<>();
         blockchainDb.deleteSubscription(createSubscription.getId(), delHandler);
-        QueryError error = delHandler.err().orNull();
+        SystemClientError error = delHandler.err().orNull();
         assertNull(error);
 
         // subscription get all tre
@@ -417,19 +417,19 @@ public class BlocksetSystemClientIT {
 
     // Helpers
 
-    private static class SynchronousCompletionHandler<T> implements CompletionHandler<T, QueryError> {
+    private static class SynchronousCompletionHandler<T> implements CompletionHandler<T, SystemClientError> {
 
         private final Semaphore sema = new Semaphore(0);
 
         private T data;
-        private QueryError error;
+        private SystemClientError error;
 
         Optional<T> dat() {
             sema.acquireUninterruptibly();
             return Optional.fromNullable(data);
         }
 
-        Optional<QueryError> err() {
+        Optional<SystemClientError> err() {
             sema.acquireUninterruptibly();
             return Optional.fromNullable(error);
         }
@@ -442,7 +442,7 @@ public class BlocksetSystemClientIT {
         }
 
         @Override
-        public void handleError(QueryError error) {
+        public void handleError(SystemClientError error) {
             this.data = null;
             this.error = error;
             sema.release();

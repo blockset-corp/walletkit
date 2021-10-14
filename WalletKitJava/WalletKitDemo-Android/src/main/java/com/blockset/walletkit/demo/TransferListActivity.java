@@ -43,6 +43,7 @@ import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.TransferConfirmation;
+import com.blockset.walletkit.TransferIncludeStatus;
 import com.blockset.walletkit.TransferState;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
@@ -505,7 +506,10 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
             this.stateText = Suppliers.memoize(() -> {
                 String text = String.format("State: %s", state());
                 return confirmation().transform((c) -> text +
-                        (c.getSuccess() ? "" : String.format(" (%s)", c.getError().or("<err>"))))
+                        (c.getStatus().type == TransferIncludeStatus.Type.SUCCESS
+                                ? ""
+                                : String.format(" %s: (%s)",
+                                c.getStatus().type, c.getStatus().details)))
                         .or(text);
             });
             this.dateText = Suppliers.memoize(() -> confirmation()

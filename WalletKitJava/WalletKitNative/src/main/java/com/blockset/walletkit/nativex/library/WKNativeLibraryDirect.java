@@ -10,6 +10,7 @@ package com.blockset.walletkit.nativex.library;
 import com.blockset.walletkit.nativex.WKClient;
 import com.blockset.walletkit.nativex.WKPayProtReqBitPayAndBip70Callbacks;
 import com.blockset.walletkit.nativex.WKSyncStoppedReason;
+import com.blockset.walletkit.nativex.WKTransferIncludeStatus;
 import com.blockset.walletkit.nativex.WKWalletManager;
 import com.blockset.walletkit.nativex.WKWalletManagerState;
 import com.blockset.walletkit.nativex.WKWalletManagerDisconnectReason;
@@ -249,7 +250,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkTransferGetConfirmedFeeBasis (Pointer transfer);
 
     public static native int wkTransferStateGetType(Pointer state);
-    public static native int wkTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, IntByReference success, PointerByReference error);
+    public static native int wkTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, WKTransferIncludeStatus.ByValue status);
     public static native int wkTransferStateExtractError(Pointer state, WKTransferSubmitError.ByValue error);
     public static native Pointer wkTransferStateTake(Pointer state);
     public static native void wkTransferStateGive(Pointer state);
@@ -261,7 +262,9 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkTransferTake(Pointer obj);
     public static native void wkTransferGive(Pointer obj);
 
-    public static native Pointer wkTransferSubmitErrorGetMessage(WKTransferSubmitError error);
+    public static native Pointer wkTransferSubmitErrorCreate (int type, String details);
+    public static native Pointer wkTransferIncludeStatusCreateSuccess ();
+    public static native Pointer wkTransferIncludeStatusCreateFailure (int type, String details);
 
     public static native Pointer wkTransferAttributeCopy(Pointer attribute);
     public static native Pointer wkTransferAttributeGetKey(Pointer attribute);
@@ -393,8 +396,14 @@ public final class WKNativeLibraryDirect {
     // See 'Indirect':
     public static native void wkClientCurrencyBundleRelease (Pointer currencyBundle);
 
-    public static native void wkClientAnnounceBlockNumber(Pointer cwm, Pointer callbackState, int success, long blockNumber, String verifiedBlockHash);
-    public static native void wkClientAnnounceSubmitTransfer(Pointer cwm, Pointer callbackState, String identifier, String hash, int success);
+    public static native void wkClientAnnounceBlockNumberSuccess(Pointer cwm, Pointer callbackState, long blockNumber, String verifiedBlockHash);
+    public static native void wkClientAnnounceBlockNumberFailure(Pointer cwm, Pointer callbackState, Pointer clientError);
+    public static native void wkClientAnnounceSubmitTransferSuccess(Pointer cwm, Pointer callbackState, String identifier, String hash);
+    public static native void wkClientAnnounceSubmitTransferFailure(Pointer cwm, Pointer callbackState, Pointer clientError);
+
+    public static native int wkClientErrorGetType(Pointer error);
+    public static native Pointer wkClientErrorCreate (int type, String details);
+    public static native Pointer wkClientErrorCreateSubmission (int submitErrorType, String details);
 
     //
     // Crypto Primitives

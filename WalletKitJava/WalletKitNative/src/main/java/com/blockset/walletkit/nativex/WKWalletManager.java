@@ -325,62 +325,95 @@ public class WKWalletManager extends PointerType {
                 fee.getPointer());
     }
 
-    public void announceGetBlockNumber(WKClientCallbackState callbackState, boolean success, UnsignedLong blockNumber, String verifiedBlockHash) {
-        WKNativeLibraryDirect.wkClientAnnounceBlockNumber (
+    public void announceGetBlockNumberSuccess(WKClientCallbackState callbackState, UnsignedLong blockNumber, String verifiedBlockHash) {
+        WKNativeLibraryDirect.wkClientAnnounceBlockNumberSuccess (
                 this.getPointer(),
                 callbackState.getPointer(),
-                (success ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE),
                 blockNumber.longValue(),
                 verifiedBlockHash);
     }
 
-    public void announceTransactions(WKClientCallbackState callbackState, boolean success, List<WKClientTransactionBundle> bundles) {
+    public void announceGetBlockNumberFailure(WKClientCallbackState callbackState, WKClientError error) {
+        WKNativeLibraryDirect.wkClientAnnounceBlockNumberFailure (
+                this.getPointer(),
+                callbackState.getPointer(),
+                error.getPointer());
+    }
+
+    public void announceTransactionsSuccess(WKClientCallbackState callbackState, List<WKClientTransactionBundle> bundles) {
         int bundlesCount = bundles.size();
         WKClientTransactionBundle[] bundlesArr = bundles.toArray(new WKClientTransactionBundle[bundlesCount]);
 
-        WKNativeLibraryIndirect.wkClientAnnounceTransactions(
+        WKNativeLibraryIndirect.wkClientAnnounceTransactionsSuccess(
                 this.getPointer(),
                 callbackState.getPointer(),
-                (success ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE),
                 bundlesArr,
                 new SizeT(bundlesCount));
     }
 
-    public void announceTransfers(WKClientCallbackState callbackState, boolean success, List<WKClientTransferBundle> bundles) {
+    public void announceTransactionsFailure(WKClientCallbackState callbackState, WKClientError error) {
+
+        WKNativeLibraryIndirect.wkClientAnnounceTransactionsFailure(
+                this.getPointer(),
+                callbackState.getPointer(),
+                error.getPointer());
+     }
+
+
+    public void announceTransfersSuccess(WKClientCallbackState callbackState, List<WKClientTransferBundle> bundles) {
         int bundlesCount = bundles.size();
         WKClientTransferBundle[] bundlesArr = bundles.toArray(new WKClientTransferBundle[bundlesCount]);
 
-        WKNativeLibraryIndirect.wkClientAnnounceTransfers(
+        WKNativeLibraryIndirect.wkClientAnnounceTransfersSuccess(
                 this.getPointer(),
                 callbackState.getPointer(),
-                (success ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE),
                 bundlesArr,
                 new SizeT(bundlesCount));
     }
 
-    public void announceSubmitTransfer(WKClientCallbackState callbackState, String identifier, String hash, boolean success) {
-        WKNativeLibraryDirect.wkClientAnnounceSubmitTransfer (
+    public void announceTransfersFailure(WKClientCallbackState callbackState, WKClientError error) {
+
+        WKNativeLibraryIndirect.wkClientAnnounceTransfersFailure(
+                this.getPointer(),
+                callbackState.getPointer(),
+                error.getPointer());
+    }
+
+    public void announceSubmitTransferSuccess(WKClientCallbackState callbackState, String identifier, String hash) {
+        WKNativeLibraryDirect.wkClientAnnounceSubmitTransferSuccess (
                 this.getPointer(),
                 callbackState.getPointer(),
                 identifier,
-                hash,
-                (success ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE));
+                hash);
     }
 
-     public void announceEstimateTransactionFee(WKClientCallbackState callbackState, boolean success, UnsignedLong costUnits, Map<String, String> meta) {
-         int metaCount     = (null == meta ? 0    : meta.size());
-         String[] metaKeys = (null == meta ? null : meta.keySet().toArray(new String[metaCount]));
-         String[] metaVals = (null == meta ? null : meta.values().toArray(new String[metaCount]));
+    public void announceSubmitTransferFailure(WKClientCallbackState callbackState, WKClientError error) {
+        WKNativeLibraryDirect.wkClientAnnounceSubmitTransferFailure (
+                this.getPointer(),
+                callbackState.getPointer(),
+                error.getPointer());
+    }
 
-         WKNativeLibraryIndirect.wkClientAnnounceEstimateTransactionFee(
-                 this.getPointer(),
-                 callbackState.getPointer(),
-                 (success ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE),
-                 costUnits.longValue(),
-                 new SizeT(metaCount),
-                 metaKeys,
-                 metaVals);
-     }
+    public void announceEstimateTransactionFeeSuccess(WKClientCallbackState callbackState, UnsignedLong costUnits, Map<String, String> meta) {
+        int metaCount     = (null == meta ? 0    : meta.size());
+        String[] metaKeys = (null == meta ? null : meta.keySet().toArray(new String[metaCount]));
+        String[] metaVals = (null == meta ? null : meta.values().toArray(new String[metaCount]));
+
+        WKNativeLibraryIndirect.wkClientAnnounceEstimateTransactionFeeSuccess(
+                this.getPointer(),
+                callbackState.getPointer(),
+                costUnits.longValue(),
+                new SizeT(metaCount),
+                metaKeys,
+                metaVals);
+    }
+
+    public void announceEstimateTransactionFeeFailure(WKClientCallbackState callbackState, WKClientError error) {
+        WKNativeLibraryIndirect.wkClientAnnounceEstimateTransactionFeeFailure(
+                this.getPointer(),
+                callbackState.getPointer(),
+                error.getPointer());
+    }
 
     public WKWalletManager take() {
         Pointer thisPtr = this.getPointer();
