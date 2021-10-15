@@ -35,9 +35,17 @@ import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import com.blockset.walletkit.Address;
+import com.blockset.walletkit.ExportablePaperWallet;
+import com.blockset.walletkit.Key;
 import com.blockset.walletkit.Wallet;
+import com.blockset.walletkit.WalletConnector;
 import com.blockset.walletkit.demo.walletconnect.WalletConnect;
 import com.blockset.walletkit.demo.walletconnect.WalletConnectSessionDescription;
+import com.blockset.walletkit.errors.ExportablePaperWalletError;
+import com.blockset.walletkit.errors.WalletConnectorError;
+import com.blockset.walletkit.utility.CompletionHandler;
+import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 
@@ -193,7 +201,28 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         DemoApplication.initialize(this);
 
         wallet = getWallet(getIntent());
-        walletConnect = new WalletConnect(wallet.getWalletManager().getNetwork().isMainnet());
+
+        wallet.getWalletManager().createWalletConnector(
+                new CompletionHandler<WalletConnector, WalletConnectorError>() {
+
+                    @Override
+                    public void handleData(WalletConnector connector) {
+                        walletConnect = new WalletConnect(wallet.getWalletManager().getNetwork().isMainnet(),
+                                                          connector,
+                                                          DemoApplication.getPaperKey());
+                    }
+
+                    @Override
+                    public void handleError(WalletConnectorError error) {
+                        runOnUiThread(() -> {
+                            new AlertDialog.Builder(WalletConnectorSessionsActivity.this)
+                                    .setTitle("Error")
+                                    .setMessage("Failed to initialize WalletConnector: " + error.toString())
+                                    .setPositiveButton("Ok", (d, w) -> {}).show();
+                        });
+                    }
+                }
+        );
         if (null == wallet) {
             finish();
             return;
@@ -263,7 +292,7 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
             for (String key : pendingRequest.requestData.keySet()) {
                 builder.append("  " + key + ": " + pendingRequest.requestData.get(key) + "\n");
             }
-            Log.log(Level.FINE, "WC: User to bless:\n" + builder.toString());
+            Log.log(Level.FINE, "WC: User to bless:" + builder.toString());
             new AlertDialog.Builder(WalletConnectorSessionsActivity.this)
                     .setTitle("Approve Request " + pendingRequest.requestId)
                     .setMessage(builder.toString())

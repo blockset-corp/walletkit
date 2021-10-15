@@ -3,6 +3,8 @@ package com.blockset.walletkit.demo.walletconnect;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.blockset.walletkit.WalletConnector.Key;
+import com.blockset.walletkit.WalletConnector;
 import com.blockset.walletkit.brd.systemclient.ObjectCoder;
 import com.blockset.walletkit.demo.DemoApplication;
 import com.blockset.walletkit.demo.walletconnect.msg.EncryptedPayload;
@@ -15,12 +17,9 @@ import com.blockset.walletkit.demo.walletconnect.msg.SocketMessage;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionRequestReq;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionRequestResp;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionUpdateReq;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.blockset.walletkit.errors.WalletConnectorError;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,6 +59,47 @@ public class WalletConnect {
     private final int               chainId;
     private WebSocket               socket;
     private WalletConnectSession    session;
+    private WalletConnector         connector;
+    private Key                     key;
+
+    private String hexEncode(byte[] binary) {
+        StringBuilder build = new StringBuilder();
+        build.append("0x");
+        for (byte b: binary) {
+            build.append(String.format("%02x", b));
+        }
+        return build.toString();
+    }
+
+    private int fromHex(char c) {
+        if (c >= '0' && c <= '9')
+            return c - 48;
+        if (c >= 'a' && c <= 'f')
+            return c - 97 + 10;
+        if (c >= 'A' && c <= 'F')
+            return c - 65 + 10;
+        throw new IllegalArgumentException("Invalid char in hex decode: " + c);
+    }
+    private byte[] hexDecode(String s) {
+        if (s.startsWith("0x"))
+            s = s.substring(2);
+
+        if (s.length() % 2 != 0)
+            throw new IllegalArgumentException("Bad hex string input: " + s);
+
+        byte[] b = null;
+        try {
+            int pos = 0;
+            b = new byte[s.length() / 2];
+            while (pos < s.length()) {
+                b[pos/2] = (byte)((fromHex(s.charAt(pos)) << 4 | fromHex(s.charAt(pos+1))) & 0xff);
+                pos += 2;
+            }
+        } catch(IllegalArgumentException ie) {
+            throw new IllegalArgumentException("Bad hex string: " + s + "(" + ie.toString() + ")");
+        }
+        return b;
+    }
 
     // public enum WalletConnectError {
 
@@ -343,7 +383,7 @@ public class WalletConnect {
                 // Decode the encrypted payload
                 failureReason = "deserialize encrypted payload";
                 EncryptedPayload payload = coder.deserializeJson(EncryptedPayload.class, msg.getPayload());
-                Log.log(Level.FINE, "WC:    " + payload.toString());
+                Log.log(Level.FINE, "WC:    payload: " + payload.toString());
 
                 String content = EncryptedPayloadHandler.recover(sessionInfo.getDAppPubKey(),
                                                                  payload);
@@ -456,8 +496,7 @@ public class WalletConnect {
                         @Override
                         public void reject() {
                             sessionReject(webSocket,
-                                    rpc.getId(),
-                                    sessionRequest.getPeerId());
+                                          rpc.getId());
                         }
                     }
                 )
@@ -484,24 +523,30 @@ public class WalletConnect {
                         @Override
                         public void approve() {
 
-                            // Use the WalletConnector walletkit interface here to sign...
-                            // We will probably not handle errors to the UI, but this approve()
-                            // might return boolean if we need to. 65 bytes of data in the signature
-                            String takenFromSampleWalletTypedDataSignature = "0x7cd2107da9c93030ac5996c0c5da3d27479d9968a3d12cfde88eeba1ef74fdec4f5c137d18fe9ed7b0616f0a9f9af1795105ed0f662f4cbacb92fffb396d7a8d1c";
-                            sendResponse(webSocket, rpcId, peerId, takenFromSampleWalletTypedDataSignature);
+                            WalletConnector.Result<WalletConnector.DigestAndSignaturePair, WalletConnectorError> res =
+                                connector.sign(params.get(1), key);
+
+                            if (res.isSuccess()) {
+                                String sigValue = hexEncode(res.getSuccess().signature.getData());
+                                sendResponse(webSocket, rpcId, peerId, sigValue);
+
+                                Log.log(Level.FINE, String.format("WC: eth_signTypedData msg %s", params.get(1)));
+                                Log.log(Level.FINE, String.format("WC:     digest: %s", hexEncode(res.getSuccess().digest.getData32())));
+                                Log.log(Level.FINE, String.format("WC:     signature: %s", sigValue));
+                            } else {
+                                sendError(JsonRpcError.SERVER_ERROR,
+                                        "Failed data signing of typed data",
+                                        webSocket,
+                                        rpcId);
+                            }
                         }
 
                         @Override
                         public void reject() {
-                            // Construct the error response as the WalletConnect 1.0 sample does.
-                            JsonRpcError rejectRequest = JsonRpcError.create(JsonRpcError.SERVER_ERROR,
-                                                                             "Failed or Rejected Request");
-                            try {
-                                String respJson = coder.serializeObject(rejectRequest);
-                                sendResponse(webSocket, rpcId, peerId, respJson);
-                            } catch (ObjectCoder.ObjectCoderException oce) {
-                                Log.log(Level.SEVERE, "WC: Failure encoding approval rejection " + oce);
-                            }
+                            sendError(JsonRpcError.SERVER_ERROR,
+                                      "Failed or Rejected Request",
+                                       webSocket,
+                                       rpcId);
                         }
                     }
                     )
@@ -528,24 +573,32 @@ public class WalletConnect {
                         @Override
                         public void approve() {
 
-                            // Use WalletKit WalletConnector to do the signing here...
+                            WalletConnector.Result<WalletConnector.DigestAndSignaturePair, WalletConnectorError> res;
 
-                            // WalletConnect 1.0 sample signature result
-                            String takenFromSampleWalletDataSignature = "0x1434f497b047beefe7eb5f066be78a11406cf1baa756764d388356d2302a08357c178cda39b174a2b1116b3ee95169e79fd8c31278b0566550de79ffc3fd2f411c";
-                            sendResponse(webSocket, rpcId, peerId, takenFromSampleWalletDataSignature);
+                            byte[] toSign = hexDecode(params.get(1));
+                            res = connector.sign(toSign, key, true);
+                            if (res.isSuccess()) {
+                                String sigValue = hexEncode(res.getSuccess().signature.getData());
+                                sendResponse(webSocket, rpcId, peerId, sigValue);
+
+                                Log.log(Level.FINE, String.format("WC: eth_sign msg %s", params.get(1)));
+                                Log.log(Level.FINE, String.format("WC:     message: %s", new String(toSign)));
+                                Log.log(Level.FINE, String.format("WC:     digest: %s", hexEncode(res.getSuccess().digest.getData32())));
+                                Log.log(Level.FINE, String.format("WC:     signature: %s", sigValue));
+                            } else {
+                                sendError(JsonRpcError.SERVER_ERROR,
+                                        "Failed data signing",
+                                        webSocket,
+                                        rpcId);
+                            }
                         }
 
                         @Override
                         public void reject() {
-                            // Construct the error response as the WalletConnect 1.0 sample does.
-                            JsonRpcError rejectRequest = JsonRpcError.create(JsonRpcError.SERVER_ERROR,
-                                    "Failed or Rejected Request");
-                            try {
-                                String respJson = coder.serializeObject(rejectRequest);
-                                sendResponse(webSocket, rpcId, peerId, respJson);
-                            } catch (ObjectCoder.ObjectCoderException oce) {
-                                Log.log(Level.SEVERE, "WC: Failure encoding approval rejection " + oce);
-                            }
+                            sendError(JsonRpcError.SERVER_ERROR,
+                                      "Failed or RejectedRequest",
+                                      webSocket,
+                                      rpcId);
                         }
                     }
                     )
@@ -580,15 +633,10 @@ public class WalletConnect {
 
                         @Override
                         public void reject() {
-                            // Construct the error response as the WalletConnect 1.0 sample does.
-                            // For whatever reason the handling of error for eth_sendTransaction in
-                            // the WalletConnect 1.0 sample dApp is particular about the format
-                            // of an error result. The field must be 'error' rather than 'result'
-                            // which triggers a thrown exception in their code. Most likely the other
-                            // 'reject()'s should be changed to use this error response and retested...
-                            JsonRpcError rejectRequest = JsonRpcError.create(JsonRpcError.SERVER_ERROR,
-                                                                             "Failed or Rejected Request");
-                            sendErrorResponse(webSocket, rpcId, peerId, rejectRequest);
+                            sendError(JsonRpcError.SERVER_ERROR,
+                                      "Failed or RejectedRequest",
+                                      webSocket,
+                                      rpcId);
                         }
                     }
                     )
@@ -617,29 +665,51 @@ public class WalletConnect {
             }
         }
 
-        private void sendErrorResponse(
-                WebSocket       sock,
-                Number          rpcId,
-                String          peerId,
-                JsonRpcError    error) {
+        // Session rejection is handled by returning an error message, not a
+        // a wc_sessionResponse with an 'approved'=false as might be surmised by
+        // what is given in the spec ("The sc_sessionRequest will expect a response
+        // with the following parameters:"  ... details interface WCSessionRequestResponse...)
+        private void sessionReject(
+                WebSocket   sock,
+                Number      rpcId) {
 
+            // What the sample wallet does...
+            JsonRpcError err = JsonRpcError.create(JsonRpcError.SERVER_ERROR, "Session Rejected");
             try {
-                JsonRpcErrorResponse jsonResp = JsonRpcErrorResponse.create(
+                String errJson = coder.serializeObject(err);
+                JsonRpcResponse jsonResp = JsonRpcResponse.create(
                         rpcId,
                         JsonRpcRequest.WALLET_CONNECT_1_0_RPC_VERSION,
-                        error);
+                        errJson);
                 String jsonRpcJson = coder.serializeObject(jsonResp);
                 EncryptedPayload payload = EncryptedPayloadHandler.construct(this.sessionInfo.getDAppPubKey(),
-                        jsonRpcJson);
+                                                                             jsonRpcJson);
                 String payloadJson = coder.serializeObject(payload);
-                SocketMessage response = SocketMessage.create(peerId,
+                SocketMessage response = SocketMessage.create(
+                        peerId,
                         SocketMessage.PUBLISH_TYPE,
                         payloadJson,
                         true  );
                 String responseJson = coder.serializeObject(response);
                 sock.send(responseJson);
             } catch(ObjectCoder.ObjectCoderException e) {
-                Log.log(Level.SEVERE, "WC: Cannot send rpcId " + rpcId + ": " + e);
+                Log.log(Level.SEVERE, "WC: Cannot serialize session rejection: " + e);
+            }
+        }
+
+        private void sendError(
+                int         errCode,
+                String      msg,
+                WebSocket   webSocket,
+                Number      rpcId) {
+
+            // Construct the error response as the WalletConnect 1.0 sample does.
+            JsonRpcError rejectRequest = JsonRpcError.create(errCode, msg);
+            try {
+                String respJson = coder.serializeObject(rejectRequest);
+                sendResponse(webSocket, rpcId, peerId, respJson);
+            } catch (ObjectCoder.ObjectCoderException oce) {
+                Log.log(Level.SEVERE, "WC: Failure encoding approval rejection " + oce);
             }
         }
 
@@ -669,49 +739,25 @@ public class WalletConnect {
             }
         }
 
-        // N.B. Nowhere in the spec do I see any detail about returning error
-        //      response to reject, rather the spec claims that wc_sessionRequest gets
-        //      a wc_sessionResponse with the peerId and 'approved' flag. One might
-        //      naturally conclude to return that message with 'approved'=false...
-        //      Also, nowhere is it apparent that the 'topic' field of the returned SocketMessage
-        //      ought to be the peerId, but the sample wallet shows this to be true. Otherwise,
-        //      bridge ignores the returned reject
-        private void sessionReject(
-                WebSocket   sock,
-                Number      rpcId,
-                String      peerId) {
-
-            // What the sample wallet does...
-            JsonRpcError err = JsonRpcError.create(JsonRpcError.SERVER_ERROR, "Session Rejected");
-            try {
-                String errJson = coder.serializeObject(err);
-                JsonRpcResponse jsonResp = JsonRpcResponse.create(
-                        rpcId,
-                        JsonRpcRequest.WALLET_CONNECT_1_0_RPC_VERSION,
-                        errJson);
-                String jsonRpcJson = coder.serializeObject(jsonResp);
-                EncryptedPayload payload = EncryptedPayloadHandler.construct(this.sessionInfo.getDAppPubKey(),
-                                                                             jsonRpcJson);
-                String payloadJson = coder.serializeObject(payload);
-                SocketMessage response = SocketMessage.create(
-                        peerId,
-                        SocketMessage.PUBLISH_TYPE,
-                        payloadJson,
-                        true  );
-                String responseJson = coder.serializeObject(response);
-                sock.send(responseJson);
-            } catch(ObjectCoder.ObjectCoderException e) {
-                Log.log(Level.SEVERE, "WC: Cannot serialize session rejection: " + e);
-            }
-        }
     }
 
     // Public constructor for now
-    public WalletConnect(boolean isMainnet) {
+    public WalletConnect(
+        boolean             isMainnet,
+        WalletConnector     connector,
+        byte[]              paperKey) {
 
         // WalletConnect 1.0 is strictly an Ethereum thing, so we assign the
         // chain id based on mainnet vs testnet
         this.chainId = isMainnet ? 1 : 3;
+        this.connector = connector;
+
+        WalletConnector.Result<WalletConnector.Key, WalletConnectorError> result = connector.createKey(new String(paperKey));
+        if (result.isSuccess()) {
+            this.key = result.getSuccess();
+        } else {
+            throw new IllegalArgumentException("Unable to create signing key: " + result.getFailure().toString());
+        }
     }
 
     public void connect(

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.databind.util.Converter;
@@ -102,6 +103,11 @@ public class JsonRpcRequest {
 
         @Override
         public String convert(JsonNode value) {
+            // Another JSON
+            if (value.getNodeType() == JsonNodeType.OBJECT)
+                return value.toString();
+            if (value.getNodeType() == JsonNodeType.STRING)
+                return value.asText();
             return value.toString();
         }
 

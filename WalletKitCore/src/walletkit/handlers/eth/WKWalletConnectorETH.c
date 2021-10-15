@@ -17,7 +17,10 @@
 
 #include <stdlib.h>
 
-
+// Define the following flag for testing against WalletConnect 1.0 sample dApps.
+// The web app does not treat recovery of public key, in particular treatment of
+// 'v' wrt chain ID as it should
+//#define WALLET_CONNECT_1_0_TESTING  (1)
 
 // Several RPC methods in WalletConnect 1.0 mandate a prefix as follows
 // (https://docs.walletconnect.org/json-rpc-api-methods/ethereum)
@@ -147,13 +150,15 @@ wkWalletConnectorSignDataETH (
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
     // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+#ifndef WALLET_CONNECT_1_0_TESTING
     signature.sig.vrs.v += (8 + 2 * chainId);
+#endif
 
     // The WalletConnect signatures are in R, S and V ordering.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
 
     // Fill in the signature bytes.
-    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureRSV));
+    uint8_t *signatureData = (uint8_t*) malloc (sizeof (BREthereumSignatureRSV));
     assert (signatureData != NULL);
 
     memcpy (signatureData, &rsv, sizeof (BREthereumSignatureRSV));
@@ -505,7 +510,9 @@ wkWalletConnectorSignTypedDataETH (
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
     // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+#ifndef WALLET_CONNECT_1_0_TESTING
     signResult.signature.sig.vrs.v += (8 + 2 * chainId);
+#endif
 
     // The WalletConnect signatures are in R, S and V ordering.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signResult.signature.sig.vrs);
