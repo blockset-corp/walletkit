@@ -493,6 +493,8 @@ static uint8_t*
 runSignTransactionTest(size_t *signedTransactionSerializationLength) {
 
     size_t                  transactionDataLength = 0;
+    size_t                  transactionIdentifierLength = 0;
+    uint8_t                 *transactionIdentifier = NULL;
     WKWalletConnector       walletConnector = createTestConnector();
     WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
 
@@ -512,10 +514,21 @@ runSignTransactionTest(size_t *signedTransactionSerializationLength) {
                                                                                    transactionDataInRLPFormUnsigned,
                                                                                    transactionDataLength,
                                                                                    signingKey,
+                                                                                   &transactionIdentifier,
+                                                                                   &transactionIdentifierLength,
                                                                                    &signedSerializationLength,
                                                                                    &status   );
     assert (WK_WALLET_CONNECTOR_STATUS_OK == status);
     assert (signedSerializationLength > 0);
+    assert (ETHEREUM_HASH_BYTES == transactionIdentifierLength);
+    assert (NULL != transactionIdentifier);
+    
+    char identifierHexEncode[2 * transactionIdentifierLength + 1];
+    hexEncode(identifierHexEncode,
+              2 * transactionIdentifierLength + 1,
+              transactionIdentifier,
+              transactionIdentifierLength);
+    printf("    Transaction identifier: %s\n", identifierHexEncode);
 
     if (NULL != signedTransactionSerializationLength)
         *signedTransactionSerializationLength = signedSerializationLength;
@@ -530,7 +543,7 @@ runSignTransactionTest(size_t *signedTransactionSerializationLength) {
     assert (strcmp (signedSerializationHexEncode,
                     referenceSignedTransactionSerializationWithTestNonceHexEncode) == 0);
 
-    printf ("    Verified signed transaction serialization (len %lu): %s",
+    printf ("    Verified signed transaction serialization (len %lu): %s\n",
             signedSerializationLength,
             signedSerializationHexEncode    );
 

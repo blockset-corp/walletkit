@@ -220,6 +220,9 @@ wkWalletConnectorCreateTransactionFromSerialization  (
  * @param transactionData The input serialized transaction data to be signed
  * @param dataLength The length of input transaction data
  * @param key The key for signing
+ * @param transactionIdentifier An identifier for the signed transaction, such as a hash or alternative
+ *                              convention of the particular blockchain
+ * @param The length of the transaction identifier
  * @param signedDataLength The length of returned signed transaction data (on success > 0)
  * @param status A status of the operation
  * @return When successful the signed transaction serialization of length signedDataLength. The caller
@@ -231,6 +234,8 @@ wkWalletConnectorSignTransactionData (
         const uint8_t           *transactionData,
         size_t                  dataLength,
         WKKey                   key,
+        uint8_t                 **transactionIdentifier,
+        size_t                  *transactionIdentifierLength,
         size_t                  *signedDataLength,
         WKWalletConnectorStatus *status            );
 

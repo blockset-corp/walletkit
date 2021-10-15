@@ -168,7 +168,7 @@ wkWalletConnectorSignData   (
         size_t                    dataLen,
         WKKey                     key,
         size_t                    *signatureLength,
-        WKWalletConnectorStatus  *status            ) {
+        WKWalletConnectorStatus   *status            ) {
 
     assert (NULL != connector       &&
             NULL != data            &&
@@ -336,12 +336,16 @@ wkWalletConnectorSignTransactionData (
         const uint8_t           *transactionData,
         size_t                  dataLength,
         WKKey                   key,
+        uint8_t                 **transactionIdentifier,
+        size_t                  *transactionIdentifierLength,
         size_t                  *signedDataLength,
         WKWalletConnectorStatus *status            ) {
 
-    assert (NULL != connector           &&
-            NULL != transactionData     &&
-            NULL != signedDataLength    &&
+    assert (NULL != connector                   &&
+            NULL != transactionData             &&
+            NULL != transactionIdentifier       &&
+            NULL != transactionIdentifierLength &&
+            NULL != signedDataLength            &&
             NULL != status );
 
         uint8_t* transaction = NULL;
@@ -358,6 +362,8 @@ wkWalletConnectorSignTransactionData (
                     transactionData,
                     dataLength,
                     key,
+                    transactionIdentifier,
+                    transactionIdentifierLength,
                     signedDataLength,
                     status);
 
