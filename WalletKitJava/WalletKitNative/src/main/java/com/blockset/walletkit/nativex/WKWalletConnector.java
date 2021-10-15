@@ -300,21 +300,39 @@ public class WKWalletConnector extends PointerType {
         return res;
     }
 
+    /** A wrapper of signed transaction serialization and transaction identifier
+     */
+    public class WKTransactionSigningResult {
+        private final byte[] signedTransactionData;
+        private final byte[] identifier;
+        public WKTransactionSigningResult(byte[] signedTransactionData,
+                                          byte[] transactionIdentifier) {
+            this.signedTransactionData = signedTransactionData;
+            this.identifier = transactionIdentifier;
+        }
+
+        public byte[] getIdentifier() { return this.identifier; }
+        public byte[] getTransactionData() { return this.signedTransactionData; }
+    }
+
     /** Signs the data assuming it is a validated, serialized transaction.
      *
      * @param transactionData The transaction to be signed
      * @param key The key, presumed to have private key information, to sign with
-     * @return A {@link WKResult} object containing the signature buffer, or a
-     *         WalletKit native error representation.
+     * @return A {@link WKResult} object containing the {@link WKTransactionSigningResult}
+     *         which has both the signed transaction serialization and the associated
+     *         transaction identifier, or, a WalletKit native error representation.
      */
-    public WKResult<byte[], WKWalletConnectorError>
+    public WKResult<WKTransactionSigningResult, WKWalletConnectorError>
     signTransaction(    byte[]  transactionData,
                         WKKey   key ) {
 
-        WKResult res;
-        Pointer keyPtr = key.getPointer();
-        SizeTByReference signedDataLenRef = new SizeTByReference();
-        IntByReference err = new IntByReference();
+        WKResult            res;
+        Pointer             keyPtr = key.getPointer();
+        SizeTByReference    signedDataLenRef = new SizeTByReference();
+        IntByReference      err = new IntByReference();
+        SizeTByReference    transactionIdentifierLenRef = new SizeTByReference();
+        PointerByReference  transactionIdentifier = new PointerByReference();
 
         // First find the required buffer length for the signature.
         Pointer signedTransactionDataPtr = WKNativeLibraryDirect.wkWalletConnectorSignTransactionData(
@@ -322,20 +340,25 @@ public class WKWalletConnector extends PointerType {
                 transactionData,
                 new SizeT(transactionData.length),
                 keyPtr,
+                transactionIdentifier,
+                transactionIdentifierLenRef,
                 signedDataLenRef,
                 err  );
         try {
-
-            int signatureLen = UnsignedInts.checkedCast(signedDataLenRef.getValue().intValue());
+            int signedDataLength = UnsignedInts.checkedCast(signedDataLenRef.getValue().intValue());
+            int transactionIdentifierLength = UnsignedInts.checkedCast(transactionIdentifierLenRef.getValue().intValue());
 
             // Firstly deal with the potential directly indicated error of signing
             if (signedTransactionDataPtr.equals(Pointer.NULL)) {
                 res = WKResult.failure(WKWalletConnectorError.fromCore(err.getValue()));
             } else {
-                res = WKResult.success(signedTransactionDataPtr.getByteArray(0, signatureLen));
+                byte[] identifier = transactionIdentifier.getValue().getByteArray(0, transactionIdentifierLength);
+                byte[] signedTransactionData = signedTransactionDataPtr.getByteArray(0, signedDataLength);
+                res = WKResult.success(new WKTransactionSigningResult(signedTransactionData, identifier));
             }
         } finally {
             Native.free(Pointer.nativeValue(signedTransactionDataPtr));
+            Native.free(Pointer.nativeValue(transactionIdentifier.getValue()));
         }
 
         return res;

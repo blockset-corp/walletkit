@@ -92,6 +92,8 @@ typedef uint8_t*
         const uint8_t           *transactionData,
         size_t                  dataLength,
         WKKey                   key,
+        uint8_t                 **transactionIdentifier,
+        size_t                  *transactionIdentifierLength,
         size_t                  *signedDataLength,
         WKWalletConnectorStatus *status            );
 

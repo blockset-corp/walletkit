@@ -430,6 +430,8 @@ wkWalletConnectorSignTransactionDataETH (
     const uint8_t           *transactionData,
     size_t                  dataLength,
     WKKey                   key,
+    uint8_t                 **transactionIdentifier,
+    size_t                  *transactionIdentifierLength,
     size_t                  *signedDataLength,
     WKWalletConnectorStatus *status ) {
 
@@ -441,7 +443,9 @@ wkWalletConnectorSignTransactionDataETH (
 
     // No error
     *status = WK_WALLET_CONNECTOR_STATUS_OK;
-
+    *transactionIdentifier = NULL;
+    *transactionIdentifierLength = 0;
+    
     // Step 1: Deserialize RLP encoded transaction data into an ETH transaction which can be signed
     BRRlpCoder              coder           = rlpCoderCreate ();
     BRRlpData               rlpData         = { .bytesCount = dataLength,
@@ -452,7 +456,6 @@ wkWalletConnectorSignTransactionDataETH (
                                                                        RLP_TYPE_TRANSACTION_UNSIGNED,
                                                                        coder);
     rlpItemRelease  (coder, item);
-    rlpCoderRelease (coder);
 
     // Step 2: Create a signature directly on the input data and add it onto the ETH transaction.
     BREthereumSignature signature = ethAccountSignBytesWithPrivateKey (ethAccount,
@@ -464,11 +467,25 @@ wkWalletConnectorSignTransactionDataETH (
     ethTransactionSign (ethTransaction, signature);
     BRKeyClean (&brKey);
 
-    // Step 3: Add the signature to the ETH transaction and serialize it
-    BRRlpData signedData = ethTransactionGetRlpData(ethTransaction,
-                                                    ethNetwork,
-                                                    RLP_TYPE_TRANSACTION_SIGNED);
-
+    // Step 3: RLP Encode the SIGNED transaction and then assign the hash, leaving the
+    // hash available as the 'identifier'
+    item = ethTransactionRlpEncode (ethTransaction,
+                                    ethNetwork,
+                                    RLP_TYPE_TRANSACTION_SIGNED,
+                                    coder);
+    BREthereumHash hash = ethHashCreateFromData (rlpItemGetDataSharedDontRelease (coder, item));
+    ethTransactionSetHash (ethTransaction, hash);
+    
+    // Step 4: Get the transaction serialization
+    BRRlpData signedData = rlpItemGetData(coder,
+                                          item);
+    rlpItemRelease (coder, item);
+    rlpCoderRelease (coder);
+    
+    *transactionIdentifierLength = ETHEREUM_HASH_BYTES;
+    *transactionIdentifier = malloc (ETHEREUM_HASH_BYTES);
+    assert (NULL != *transactionIdentifier);
+    memcpy (*transactionIdentifier, hash.bytes, ETHEREUM_HASH_BYTES);
     *signedDataLength = signedData.bytesCount;
     return signedData.bytes;
 }

@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.utility.CompletionHandler;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import java.util.Map;
@@ -74,6 +75,11 @@ public interface WalletConnector {
          *
          */
         Serialization getSerialization();
+
+        /** Returns the transaction's identifier.
+         *  This is optional and will exist if {@link #isSigned}
+         */
+        Optional<byte[]> getIdentifier();
     }
 
     /** Serialization

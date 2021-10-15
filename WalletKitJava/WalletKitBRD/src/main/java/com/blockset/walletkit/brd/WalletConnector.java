@@ -228,19 +228,21 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         
         WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
 
-        // Returns the RLP serialization of a signed transaction
-        WKResult<byte[], WKWalletConnectorError> signedTransactionRlpSerializationResult =
-                core.signTransaction(transaction.getSerialization().getData(),
-                                     cryptoKey);
+        // Returns the RLP serialization of a signed transaction + transaction identifier
+        WKResult<WKWalletConnector.WKTransactionSigningResult, WKWalletConnectorError> res =
+                    core.signTransaction(transaction.getSerialization().getData(),
+                                         cryptoKey);
         
-        if (signedTransactionRlpSerializationResult.isFailure()) {
-            return Result.failure(wkErrorToError(signedTransactionRlpSerializationResult.getFailure()));
+        if (res.isFailure()) {
+            return Result.failure(wkErrorToError(res.getFailure()));
         }
         
         // Return fresh signed transaction
+        Serialization transactionData = new Serialization(this.core,
+                                                          res.getSuccess().getTransactionData());
         return Result.success(new Transaction(this.core,
-                              new Serialization(this.core, signedTransactionRlpSerializationResult.getSuccess()),
-                              true));
+                                              transactionData,
+                                              res.getSuccess().getIdentifier()));
     }
 
     @Override
@@ -392,6 +394,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         private final Serialization     serialization;
         final WKWalletConnector         core;
         final boolean                   isSigned;
+        byte[]                          identifier;
 
         Transaction(WKWalletConnector   core,
                     Serialization       serialization,
@@ -402,11 +405,28 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
             this.isSigned = isSigned;
         }
 
+        Transaction(WKWalletConnector   core,
+                    Serialization       serialization,
+                    byte[]              identifier   ) {
+            this.core = core;
+            this.serialization = serialization;
+            this.isSigned = true;
+            this.identifier = identifier;
+        }
+
         @Override
         public Serialization getSerialization() { return serialization; }
 
         @Override
         public boolean isSigned() { return isSigned; }
+
+        @Override
+        public Optional<byte[]> getIdentifier() {
+            if (isSigned) {
+                return Optional.of(identifier);
+            }
+            return Optional.absent();
+        }
     }
 
     /** Translate native error enumeration to Walletkit Java class equivalents
