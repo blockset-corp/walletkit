@@ -841,23 +841,33 @@ public final class WalletConnector {
             let transactionBytesAddr = transactionBytes.baseAddress?.assumingMemoryBound(to:UInt8.self)
             let transactionBytesLength = transactionBytes.count
             var serializationLength : size_t = 0
+            var transactionIdentifierLength : size_t = 0;
+            var transactionIdentifierBytes : UnsafeMutablePointer<UInt8>!
             var status : WKWalletConnectorStatus = WK_WALLET_CONNECTOR_STATUS_OK
             
             let signedTransactionBytes = wkWalletConnectorSignTransactionData(self.core,
                                                                               transactionBytesAddr,
                                                                               transactionBytesLength,
                                                                               key.core,
+                                                                              &transactionIdentifierBytes,
+                                                                              &transactionIdentifierLength,
                                                                               &serializationLength,
                                                                               &status)
-            defer { wkMemoryFree(signedTransactionBytes) }
+            defer {
+                wkMemoryFree(signedTransactionBytes)
+                wkMemoryFree(transactionIdentifierBytes)
+            }
+            
             if (signedTransactionBytes == nil) {
                 return Result.failure(WalletConnectorError(core: status))
             }
             
             let signedSerializationData = Data(bytes: signedTransactionBytes!, count: serializationLength)
+            let transactionIdentifier = Data(bytes: transactionIdentifierBytes, count: transactionIdentifierLength)
             let signedSerialization = Serialization(core: self.core, data: signedSerializationData)
             return Result.success(Transaction(core: self.core,
                                               isSigned: true,
+                                              identifier: transactionIdentifier,
                                               serialization:signedSerialization))
         }
     }
@@ -1005,6 +1015,9 @@ public final class WalletConnector {
         /// Check if signed
         public var isSigned: Bool
 
+        /// The transaction's identifier.  This is optional and will exist if `isSigned`
+        public var identifier: Data?
+        
         /// The serialization - this could be unsigned (if `!isSigned`) or signed (if `isSigned`)
         public var serialization: Serialization
 
