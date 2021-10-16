@@ -134,6 +134,18 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         }
 
         @Override
+        public void sessionEnded() {
+            runOnUiThread(() -> {
+                AlertDialog dialog = new AlertDialog.Builder(this.context)
+                        .setTitle("WalletConnect")
+                        .setMessage("Session ended by dApp")
+                        .setPositiveButton("Ok", (d, w) -> {
+                            setUiDisconnected();
+                        }).show();
+            });
+        }
+
+        @Override
         public void approveRequest(
                 Number requestId,
                 ApprovalType requestType,
@@ -177,7 +189,7 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
                         .setMessage("WalletConnect failed: " + reason)
                         .setPositiveButton("Ok", (d, w) -> {
                         }).show();
-                dAppUriEditText.setText("");
+                //dAppUriEditText.setText("");
             });
         }
     }

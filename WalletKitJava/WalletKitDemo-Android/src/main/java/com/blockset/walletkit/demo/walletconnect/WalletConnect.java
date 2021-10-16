@@ -165,6 +165,8 @@ public class WalletConnect {
                                 String          clientId,
                                 String          peerId  );
 
+        void sessionEnded   ();
+
         void grantSession   (   String          bridgeUrl,
                                 String          dAppName,
                                 String          description,
@@ -436,6 +438,13 @@ public class WalletConnect {
                         handleSessionRequest(rpc, webSocket);
                         break;
 
+                    case "wc_sessionUpdate":
+
+                        // Only thing we handle right now is 'disconnect'
+                        handleSessionUpdate(rpc, webSocket);
+
+                        break;
+
                     case "eth_signTypedData":
                         failureReason = "handle eth_signTypedData";
 
@@ -447,6 +456,7 @@ public class WalletConnect {
                         break;
 
                     case "eth_sign":
+                        failureReason = "handle eth_sign";
 
                         handleSignData(rpc.getId(),
                                        DAppSessionClient.ApprovalType.APPROVAL_FOR_OPAQUE_DATA,
@@ -455,6 +465,8 @@ public class WalletConnect {
                         break;
 
                     case "eth_sendTransaction":
+
+                        failureReason = "handle eth_sendTransaction";
 
                         // Get the WalletKit WalletConnector applicable transaction arguments from what
                         // provided us, and create a transaction object out of them.
@@ -532,6 +544,16 @@ public class WalletConnect {
                     }
                 )
             );
+        }
+
+        private void handleSessionUpdate(JsonRpcRequest rpc, WebSocket webSocket) throws ObjectCoder.ObjectCoderException {
+            WCSessionUpdateReq updateRequest = coder.deserializeJson(WCSessionUpdateReq.class, rpc.getParams().get(0));
+
+            // The only thing we handle is 'disconnect' indicated by approval flag false.
+            if (updateRequest.getApproved() == false) {
+                disconnect(webSocket);
+                onUserExecutor.submit(() -> sessionClient.sessionEnded());
+            } // else ignore
         }
 
         private void handleSignTypedData(
