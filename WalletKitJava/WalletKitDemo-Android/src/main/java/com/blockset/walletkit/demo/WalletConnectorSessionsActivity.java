@@ -151,6 +151,18 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         }
 
         @Override
+        public void transactionSubmitted(boolean signingStatus, String serializationData) {
+            runOnUiThread(() -> {
+                new AlertDialog.Builder(this.context)
+                        .setTitle("Transaction Submitted")
+                        .setMessage("Signed:" + signingStatus + "\n" +
+                                    "Serialization: " + serializationData)
+                        .setPositiveButton("OK", (d, w) -> {
+                        }).show();
+            });
+        }
+
+        @Override
         public void sessionStarted(String dApp, String topic, String clientId, String peerId) {
             runOnUiThread(() -> {
                 setUiConnected(dApp, topic, clientId, peerId);
@@ -158,17 +170,16 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         }
 
         @Override
-       public void sessionError(String reason) {
-
-       //    if (err == WalletConnect.WalletConnectError.WALLET_CONNECT_CONNECTION_ERROR) {
-               // Initial connection has failed
-               AlertDialog dialog = new AlertDialog.Builder(this.context)
-                   .setTitle("Failed")
-                       .setMessage("Connection failed: " + reason)
-                       .setPositiveButton("Cancel", (d, w) -> {}).show();
-               dAppUriEditText.setText("");
-      //     }
-       }
+       public void failure(String reason) {
+            runOnUiThread(() -> {
+                AlertDialog dialog = new AlertDialog.Builder(this.context)
+                        .setTitle("Failed")
+                        .setMessage("WalletConnect failed: " + reason)
+                        .setPositiveButton("Ok", (d, w) -> {
+                        }).show();
+                dAppUriEditText.setText("");
+            });
+        }
     }
 
     private void setUiConnected(

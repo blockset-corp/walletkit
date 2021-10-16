@@ -303,7 +303,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
 
                     @Override
                     public void handleError(QueryError error) {
-                        completion.handleError(new WalletConnectorError.SubmitFailed());
+                        completion.handleError(new WalletConnectorError.SubmitFailed(error.toString()));
                     }
                 });
     }

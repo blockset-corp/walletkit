@@ -7,8 +7,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PeerMeta {
 
-    // WalletConnect 1.0 spec does not mention this 'silent' flag but the sample
-    // dApp has it
     @JsonCreator
     public static PeerMeta create(@JsonProperty("description") String      description,
                                   @JsonProperty("url")         String      url,

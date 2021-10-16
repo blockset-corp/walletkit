@@ -14,10 +14,12 @@ import com.blockset.walletkit.demo.walletconnect.msg.JsonRpcRequest;
 import com.blockset.walletkit.demo.walletconnect.msg.JsonRpcResponse;
 import com.blockset.walletkit.demo.walletconnect.msg.PeerMeta;
 import com.blockset.walletkit.demo.walletconnect.msg.SocketMessage;
+import com.blockset.walletkit.demo.walletconnect.msg.TransactionParameter;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionRequestReq;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionRequestResp;
 import com.blockset.walletkit.demo.walletconnect.msg.WCSessionUpdateReq;
 import com.blockset.walletkit.errors.WalletConnectorError;
+import com.blockset.walletkit.utility.CompletionHandler;
 
 import java.security.SecureRandom;
 import java.util.Collections;
@@ -121,12 +123,31 @@ public class WalletConnect {
         void reject();
     }
 
+    /** Response messages may return the data field either
+     *  as a response or error. In some cases, like 'sessionReject()',
+     *  error object data (JsonRpcError) is added to a 'result' to be recognized
+     *  by dApp. And in standard cases, like error indication from 'eth_...' methods,
+     *  the JsonRpcError goes within JsonRcpErrorResponse object ('error' field)
+     */
+    public enum ResponseIndicationType {
+
+        /** Carrier of the response is JsonRpcResponse and the data consequently
+         * enters the 'result' field
+         */
+        AS_RESULT,
+
+        /** Carrier of the response is a JsonRpcErrorResponse and the relevant
+         *  field information is carried in the 'error' field
+         */
+        AS_ERROR
+    }
+
     public interface DAppSessionClient {
 
         enum ApprovalType {
             APPROVAL_FOR_TYPED_DATA("Approval to sign 'Typed Data'"),
             APPROVAL_FOR_OPAQUE_DATA("Approval to sign data"),
-            APPROVAL_FOR_SENDING_TRANSACTION("Approval to sign and submit transaction");
+            APPROVAL_FOR_SENDING_TRANSACTION("Approval to sign and submit a transaction");
 
             private String description;
 
@@ -143,7 +164,6 @@ public class WalletConnect {
                                 String          topic,
                                 String          clientId,
                                 String          peerId  );
-        void sessionError   (   String          reason  );
 
         void grantSession   (   String          bridgeUrl,
                                 String          dAppName,
@@ -155,6 +175,11 @@ public class WalletConnect {
                                 ApprovalType        requestType,
                                 Map<String, String> requestData,
                                 RequestApprover     requestApproval );
+
+        void transactionSubmitted (boolean  signingStatus,
+                                   String   serializationData);
+
+        void failure       (    String          reason  );
 
     };
 
@@ -431,9 +456,15 @@ public class WalletConnect {
 
                     case "eth_sendTransaction":
 
+                        // Get the WalletKit WalletConnector applicable transaction arguments from what
+                        // provided us, and create a transaction object out of them.
+                        TransactionParameter parm = coder.deserializeJson(TransactionParameter.class,
+                                                                          rpc.getParams().get(0));
+                        Map<String,String> walletConnectorTransactionArgs = parm.getAsWalletConnectorArguments();
+
                         handleSendTransaction(rpc.getId(),
                                               DAppSessionClient.ApprovalType.APPROVAL_FOR_SENDING_TRANSACTION,
-                                              rpc.getParams(),
+                                              walletConnectorTransactionArgs,
                                               webSocket);
                         break;
 
@@ -507,7 +538,7 @@ public class WalletConnect {
                 Number                          rpcId,
                 DAppSessionClient.ApprovalType  toApproveOf,
                 List<String>                    params,
-                WebSocket                       webSocket) {
+                WebSocket                       sock) {
 
             // Essentially, metadata of the request for UI to show it
             Map<String, String> requestElements = new HashMap<String, String>();
@@ -528,25 +559,22 @@ public class WalletConnect {
 
                             if (res.isSuccess()) {
                                 String sigValue = hexEncode(res.getSuccess().signature.getData());
-                                sendResponse(webSocket, rpcId, peerId, sigValue);
+                                reply(sock, rpcId, sigValue);
 
                                 Log.log(Level.FINE, String.format("WC: eth_signTypedData msg %s", params.get(1)));
                                 Log.log(Level.FINE, String.format("WC:     digest: %s", hexEncode(res.getSuccess().digest.getData32())));
                                 Log.log(Level.FINE, String.format("WC:     signature: %s", sigValue));
                             } else {
-                                sendError(JsonRpcError.SERVER_ERROR,
-                                        "Failed data signing of typed data",
-                                        webSocket,
-                                        rpcId);
+                                Log.log(Level.SEVERE, "WC: failed to sign typed data: " + res.getFailure().toString());
+                                replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                           "Failed data signing of typed data");
                             }
                         }
 
                         @Override
                         public void reject() {
-                            sendError(JsonRpcError.SERVER_ERROR,
-                                      "Failed or Rejected Request",
-                                       webSocket,
-                                       rpcId);
+                            replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                       "Failed or Rejected Request");
                         }
                     }
                     )
@@ -557,7 +585,7 @@ public class WalletConnect {
                 Number                          rpcId,
                 DAppSessionClient.ApprovalType  toApproveOf,
                 List<String>                    params,
-                WebSocket                       webSocket) {
+                WebSocket                       sock) {
 
             // Metadata for UI to show
             Map<String, String> requestElements = new HashMap<String, String>();
@@ -579,26 +607,23 @@ public class WalletConnect {
                             res = connector.sign(toSign, key, true);
                             if (res.isSuccess()) {
                                 String sigValue = hexEncode(res.getSuccess().signature.getData());
-                                sendResponse(webSocket, rpcId, peerId, sigValue);
+                                reply(sock, rpcId, sigValue);
 
                                 Log.log(Level.FINE, String.format("WC: eth_sign msg %s", params.get(1)));
                                 Log.log(Level.FINE, String.format("WC:     message: %s", new String(toSign)));
                                 Log.log(Level.FINE, String.format("WC:     digest: %s", hexEncode(res.getSuccess().digest.getData32())));
                                 Log.log(Level.FINE, String.format("WC:     signature: %s", sigValue));
                             } else {
-                                sendError(JsonRpcError.SERVER_ERROR,
-                                        "Failed data signing",
-                                        webSocket,
-                                        rpcId);
+                                Log.log(Level.SEVERE, "WC: failed to sign data: " + res.getFailure().toString());
+                                replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                           "Failed data signing");
                             }
                         }
 
                         @Override
                         public void reject() {
-                            sendError(JsonRpcError.SERVER_ERROR,
-                                      "Failed or RejectedRequest",
-                                      webSocket,
-                                      rpcId);
+                            replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                       "Failed or RejectedRequest");
                         }
                     }
                     )
@@ -608,35 +633,78 @@ public class WalletConnect {
         private void handleSendTransaction(
                 Number                          rpcId,
                 DAppSessionClient.ApprovalType  toApproveOf,
-                List<String>                    params,
-                WebSocket                       webSocket) {
-
-            // Metadata for UI to show
-            Map<String, String> requestElements = new HashMap<String, String>();
-            requestElements.put("transaction", params.get(0));
+                Map<String, String>             walletConnectorTransactionArgs,
+                WebSocket                       sock) {
 
             onUserExecutor.submit(() -> sessionClient.approveRequest(
                     rpcId,
                     toApproveOf,
-                    requestElements,
+                    walletConnectorTransactionArgs,
                     new RequestApprover() {
 
                         @Override
                         public void approve() {
 
-                            // Use WalletKit WalletConnector to do the submission here...
+                            Log.log(Level.FINE, "WC: create transaction from arguments...");
+                            WalletConnector.Result<WalletConnector.Transaction, WalletConnectorError> res =
+                                    connector.createTransaction(walletConnectorTransactionArgs);
+                            if (res.isSuccess()) {
+                                Log.log(Level.FINE, "WC: transaction created, sign...");
 
-                            // WalletConnect 1.0 sample transaction hash result:
-                            String takenFromSampleWalletTransactionHash = "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331";
-                            sendResponse(webSocket, rpcId, peerId, takenFromSampleWalletTransactionHash);
+                                // Sign the transaction prior to submission
+                                WalletConnector.Transaction toSign = res.getSuccess();
+                                WalletConnector.Result<WalletConnector.Transaction, WalletConnectorError> signingRes =
+                                        connector.sign(toSign, key);
+
+                                if (signingRes.isSuccess()) {
+
+                                    Log.log(Level.FINE, "WC: transaction signed, submit...");
+
+                                    // Submit the transaction
+                                    WalletConnector.Transaction toSubmit = signingRes.getSuccess();
+                                    String transactionHash = hexEncode(toSubmit.getIdentifier().get());
+
+                                    connector.submit(toSubmit, new CompletionHandler<WalletConnector.Transaction, WalletConnectorError>() {
+
+                                        @Override
+                                        public void handleData(WalletConnector.Transaction transaction) {
+                                            Log.log(Level.FINE, "WC: transaction submitted!");
+                                            String serializationData = hexEncode(transaction.getSerialization().getData());
+                                            onUserExecutor.submit(() -> sessionClient.transactionSubmitted(
+                                                    transaction.isSigned(),
+                                                    serializationData));
+
+                                            reply(sock, rpcId, transactionHash);
+
+                                        }
+
+                                        @Override
+                                        public void handleError(WalletConnectorError error) {
+
+                                            Log.log(Level.SEVERE, "WC: submission failed " + error.toString());
+                                            replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                                       "Failed to submit transaction");
+
+                                            onUserExecutor.submit(() -> sessionClient.failure("Transaction submission failed"));
+
+                                        }
+                                    });
+                                } else {
+                                    Log.log(Level.SEVERE, "WC: failed to sign transaction " + res.getFailure().toString());
+                                    replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                               "Failed to sign transaction");
+                                }
+                            } else {
+                                Log.log(Level.SEVERE, "WC: failed to create transaction " + res.getFailure().toString());
+                                replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                           "Failed create transaction from arguments");
+                            }
                         }
 
                         @Override
                         public void reject() {
-                            sendError(JsonRpcError.SERVER_ERROR,
-                                      "Failed or RejectedRequest",
-                                      webSocket,
-                                      rpcId);
+                            replyError(sock, rpcId, JsonRpcError.SERVER_ERROR,
+                                       "Request rejected");
                         }
                     }
                     )
@@ -659,7 +727,7 @@ public class WalletConnect {
                     accountsList.toArray(accounts));
             try {
                 String respJson = coder.serializeObject(resp);
-                sendResponse(sock, rpcId, peerId, respJson);
+                reply(sock, rpcId, respJson);
             } catch(ObjectCoder.ObjectCoderException e) {
                 Log.log(Level.SEVERE, "WC: Cannot serialize wc_sessionResponse: " + e);
             }
@@ -673,65 +741,94 @@ public class WalletConnect {
                 WebSocket   sock,
                 Number      rpcId) {
 
-            // What the sample wallet does...
-            JsonRpcError err = JsonRpcError.create(JsonRpcError.SERVER_ERROR, "Session Rejected");
+            // Send error 'as result'
+            replyFailed(sock,
+                        rpcId,
+                        JsonRpcError.SERVER_ERROR,
+                        "Session Rejected");
+        }
+
+        private void reply(
+                WebSocket sock,
+                Number    rpcId,
+                String    responseJson) {
+
+            // The responseJson becomes the 'result' field fo the response
             try {
-                String errJson = coder.serializeObject(err);
                 JsonRpcResponse jsonResp = JsonRpcResponse.create(
                         rpcId,
                         JsonRpcRequest.WALLET_CONNECT_1_0_RPC_VERSION,
-                        errJson);
+                        responseJson);
                 String jsonRpcJson = coder.serializeObject(jsonResp);
-                EncryptedPayload payload = EncryptedPayloadHandler.construct(this.sessionInfo.getDAppPubKey(),
-                                                                             jsonRpcJson);
-                String payloadJson = coder.serializeObject(payload);
-                SocketMessage response = SocketMessage.create(
-                        peerId,
-                        SocketMessage.PUBLISH_TYPE,
-                        payloadJson,
-                        true  );
-                String responseJson = coder.serializeObject(response);
-                sock.send(responseJson);
-            } catch(ObjectCoder.ObjectCoderException e) {
-                Log.log(Level.SEVERE, "WC: Cannot serialize session rejection: " + e);
-            }
-        }
-
-        private void sendError(
-                int         errCode,
-                String      msg,
-                WebSocket   webSocket,
-                Number      rpcId) {
-
-            // Construct the error response as the WalletConnect 1.0 sample does.
-            JsonRpcError rejectRequest = JsonRpcError.create(errCode, msg);
-            try {
-                String respJson = coder.serializeObject(rejectRequest);
-                sendResponse(webSocket, rpcId, peerId, respJson);
+                encryptAndSendResponse(sock, rpcId, jsonRpcJson);
             } catch (ObjectCoder.ObjectCoderException oce) {
-                Log.log(Level.SEVERE, "WC: Failure encoding approval rejection " + oce);
+                Log.log(Level.SEVERE,
+                        String.format("WC: Failure encoding reply object (%s)",
+                                      responseJson));
             }
         }
 
-        private void sendResponse(
+        private void replyFailed(
                 WebSocket   sock,
                 Number      rpcId,
-                String      peerId,
-                String      responseResult) {
+                int         errCode,
+                String      msg) {
 
+            // Construct the error object which will be held as 'result'
+            // on the response
+            JsonRpcError resultAsError = JsonRpcError.create(errCode, msg);
             try {
+                String responseJson = coder.serializeObject(resultAsError);
                 JsonRpcResponse jsonResp = JsonRpcResponse.create(
                         rpcId,
                         JsonRpcRequest.WALLET_CONNECT_1_0_RPC_VERSION,
-                        responseResult);
+                        responseJson);
                 String jsonRpcJson = coder.serializeObject(jsonResp);
+                Log.log(Level.FINE, String.format("WC: returning failed result (%s)", jsonRpcJson));
+                encryptAndSendResponse(sock, rpcId, jsonRpcJson);
+            } catch (ObjectCoder.ObjectCoderException oce) {
+                Log.log(Level.SEVERE,
+                        String.format("WC: Failure encoding error reply (%s)",
+                                      msg));
+            }
+        }
+
+        private void replyError(
+                WebSocket   sock,
+                Number      rpcId,
+                int         errCode,
+                String      msg ) {
+
+            // The error which will be held as 'error'
+            // on the response
+            JsonRpcError errorResult = JsonRpcError.create(errCode, msg);
+            try {
+                JsonRpcErrorResponse jsonErrorResp = JsonRpcErrorResponse.create(
+                        rpcId,
+                        JsonRpcRequest.WALLET_CONNECT_1_0_RPC_VERSION,
+                        errorResult);
+                String jsonRpcJson = coder.serializeObject(jsonErrorResp);
+                encryptAndSendResponse(sock, rpcId, jsonRpcJson);
+            } catch (ObjectCoder.ObjectCoderException oce) {
+                Log.log(Level.SEVERE,
+                        String.format("WC: Failure encoding error reply (%s)",
+                                      msg));
+            }
+        }
+
+        private void encryptAndSendResponse(
+                WebSocket   sock,
+                Number      rpcId,
+                String      unencryptedJsonPayload) {
+
+            try {
                 EncryptedPayload payload = EncryptedPayloadHandler.construct(this.sessionInfo.getDAppPubKey(),
-                        jsonRpcJson);
+                                                                             unencryptedJsonPayload);
                 String payloadJson = coder.serializeObject(payload);
                 SocketMessage response = SocketMessage.create(peerId,
-                        SocketMessage.PUBLISH_TYPE,
-                        payloadJson,
-                        true  );
+                                                              SocketMessage.PUBLISH_TYPE,
+                                                              payloadJson,
+                                                              true  );
                 String responseJson = coder.serializeObject(response);
                 sock.send(responseJson);
             } catch(ObjectCoder.ObjectCoderException e) {

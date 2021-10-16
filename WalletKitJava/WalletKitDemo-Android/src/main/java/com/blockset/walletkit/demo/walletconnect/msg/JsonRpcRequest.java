@@ -28,13 +28,11 @@ public class JsonRpcRequest {
 
     public final static String WALLET_CONNECT_1_0_RPC_VERSION = "2.0";
 
-    // WalletConnect 1.0 spec does not mention this 'silent' flag but the sample
-    // dApp has it
     @JsonCreator
-    public static JsonRpcRequest create(@JsonProperty("id")         Number      id,
-                                        @JsonProperty("jsonrpc")    String      jsonRpc,
+    public static JsonRpcRequest create(@JsonProperty("id")                   Number      id,
+                                        @JsonProperty("jsonrpc")              String      jsonRpc,
                                         @JsonProperty("method") @Nullable     String      method,
-                                        @JsonProperty("params")     List<String>      params) {
+                                        @JsonProperty("params")               List<String>      params) {
         return new JsonRpcRequest(id,
                                   checkNotNull(jsonRpc),
                                   method,
