@@ -195,6 +195,7 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         topicTextView.setText(topic);
         clientIdTextView.setText(clientId);
         peerIdTextView.setText(peerId);
+        dAppUriEditText.setEnabled(false);
     }
 
     private void setUiDisconnected() {
@@ -202,6 +203,7 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
         connectToBridgeButton.setEnabled(false);
         containerOfSessionInfo.setVisibility(View.GONE);
         containerOfPendingRequests.setVisibility(View.GONE);
+        dAppUriEditText.setEnabled(true);
     }
 
     @Override
