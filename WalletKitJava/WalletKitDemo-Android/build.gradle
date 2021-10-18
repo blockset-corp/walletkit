@@ -59,6 +59,8 @@ dependencies {
     implementation deps.jacksonDatabind
     implementation deps.jacksonDatabindGuava
 
+    // For AES-256-CBC and HMAC-SHA256 support required for
+    // Wallet Connect 1.0
     implementation deps.bouncyCastle
 
     testImplementation deps.junit

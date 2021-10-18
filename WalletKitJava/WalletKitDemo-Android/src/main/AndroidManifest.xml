@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+        Add the following attribute if running WalletConnect against a local
+        bridge, or a bridge w/o https endpoint
+
+        android:usesCleartextTraffic="true" -->
     <application
         android:name="com.blockset.walletkit.demo.DemoApplication"
         android:allowBackup="false"
@@ -14,7 +19,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name="com.blockset.walletkit.demo.TransferCreateDelegateActivity"
