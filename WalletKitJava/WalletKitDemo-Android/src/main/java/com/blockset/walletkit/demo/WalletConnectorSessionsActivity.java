@@ -189,7 +189,6 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
                         .setMessage("WalletConnect failed: " + reason)
                         .setPositiveButton("Ok", (d, w) -> {
                         }).show();
-                //dAppUriEditText.setText("");
             });
         }
     }
@@ -346,15 +345,10 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-       // DemoApplication.getDispatchingSystemListener().addWalletListener(wallet, this);
-       // loadTransfers();
     }
 
     @Override
     protected void onPause() {
-      //  DemoApplication.getDispatchingSystemListener().removeWalletListener(wallet, this);
-
         super.onPause();
     }
 

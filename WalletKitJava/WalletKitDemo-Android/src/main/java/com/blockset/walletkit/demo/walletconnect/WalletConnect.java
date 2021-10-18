@@ -103,12 +103,6 @@ public class WalletConnect {
         return b;
     }
 
-    // public enum WalletConnectError {
-
-        // Unable to establish connection to bridge
-   //     WALLET_CONNECT_CONNECTION_ERROR
-  //  }
-
     public interface SessionApprover {
         void accept(List<String> accounts,
                     String   url,
