@@ -17,7 +17,11 @@
 
 #include <stdlib.h>
 
-
+// The following define controls EIP-155 treatment of chainId in RSV signature 'v'
+// value. The WalletConnect 1.0 sample dApp does not encode the chainId as would
+// be expected with adherence to that specification. So note that when the following
+// define is enabled, the sample dApp shows 'Rejected' on any of our 'signing' responses.
+#define NEED_EIP_155_SIGNATURE_ENCODING
 
 // Several RPC methods in WalletConnect 1.0 mandate a prefix as follows
 // (https://docs.walletconnect.org/json-rpc-api-methods/ethereum)
@@ -147,13 +151,15 @@ wkWalletConnectorSignDataETH (
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
     // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+#if defined (NEED_EIP_155_SIGNATURE_ENCODING)
     signature.sig.vrs.v += (8 + 2 * chainId);
+#endif
 
     // The WalletConnect signatures are in R, S and V ordering.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signature.sig.vrs);
 
     // Fill in the signature bytes.
-    uint8_t *signatureData = malloc (sizeof(BREthereumSignatureRSV));
+    uint8_t *signatureData = (uint8_t*) malloc (sizeof (BREthereumSignatureRSV));
     assert (signatureData != NULL);
 
     memcpy (signatureData, &rsv, sizeof (BREthereumSignatureRSV));
@@ -195,12 +201,14 @@ wkWalletConnectorRecoverKeyETH (
 
     // Undo the EIP-155 encoding if it exists.  See above `wkWalletConnectorSignDataETH()`.  Note:
     // we decode the `sigChainId` and compare it to `outChainId` to confirm a valid signature.
+#if defined (NEED_EIP_155_SIGNATURE_ENCODING)
     if (vrs.v > 28) {
         BREthereumChainId sigChainId = (vrs.v - 35) / 2;
 
         validChainId = (sigChainId == ourChainId);
         if (validChainId) vrs.v -= (8 + 2 * sigChainId);
     }
+#endif
 
     if (validChainId && 1 == BRKeyRecoverPubKey (&k, UInt256Get (digest), &vrs, signatureLength) ) {
         key = wkKeyCreateFromKey (&k);
@@ -522,7 +530,9 @@ wkWalletConnectorSignTypedDataETH (
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
     // Because the VRS_EIP signing produces `v` of {27|28}, we transfer the EIP-155 encoding to:
+#if defined (NEED_EIP_155_SIGNATURE_ENCODING)
     signResult.signature.sig.vrs.v += (8 + 2 * chainId);
+#endif
 
     // The WalletConnect signatures are in R, S and V ordering.
     BREthereumSignatureRSV rsv = walletConnectRsvSignatureFromVrs(signResult.signature.sig.vrs);
