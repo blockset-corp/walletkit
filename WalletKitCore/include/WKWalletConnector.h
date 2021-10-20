@@ -33,6 +33,11 @@ typedef enum {
     // One or more transaction arguments key-value pairs are not
     // provided, or values are invalid
     WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS,
+    
+    // A unit fee, or 'pricePerCostFactor' (e.g. in Ethereum the: 'gasPrice') 
+    // could not be determined, neither from passed transaction arguments, 
+    // nor from an optional default fee
+    WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE,
 
     // The digest creation has failed or the digest is of an expected length
     WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST,
@@ -175,6 +180,9 @@ wkWalletConnectorRecoverKey (
  *               of 'keys' and in the correct order
  * @param keyValuePairsCount The number of key and corresponding values, of which there are expected
  *                           to be an equal number
+ * @param defaultFee A default fee that will apply only if the arguments
+ *                   themselves do not indicate a preferred fee (e.g. For Ethereum, this
+ *                   would be the 'gasPrice')
  * @param serialization Length The length of the serialization created
  * @param status A status of the operation
  * @return When successful, a series of bytes of length serializationLength representing
@@ -186,6 +194,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
         const char              **keys,
         const char              **values,
         size_t                  keyValuePairsCount,
+        WKNetworkFee            defaultFee,
         size_t                  *serializationLength,
         WKWalletConnectorStatus *status            );
 

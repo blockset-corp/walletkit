@@ -248,6 +248,7 @@ static const char* transactionFromArgsFieldNames[WK_WALLET_CONNECT_ETH_FIELD_MAX
                           (1 << WK_WALLET_CONNECT_ETH_GAS)          | \
                           (1 << WK_WALLET_CONNECT_ETH_GASPRICE) )
 #define WK_WALLET_CONNECT_ETH_MET(met, reqmet) (met | 1 << reqmet)
+#define WK_WALLET_CONNECT_ETH_IS_MET(met, reqmet) ((met & 1 << reqmet) != 0)
 #define WK_WALLET_CONNECT_ETH_MANDATORY_MET(met) ((met & MANDATORY_FIELDS) == MANDATORY_FIELDS)
 
 static WKWalletConnectEthTransactionField getTransactionFieldFromKey(const char* keyValue) {
@@ -270,6 +271,7 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         WKWalletConnector       walletConnector,
         BRArrayOf (const char*) keys,
         BRArrayOf (const char*) values,
+        WKNetworkFee            defaultFee,
         size_t                  *serializationLength,
         WKWalletConnectorStatus *status         ) {
 
@@ -282,17 +284,24 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
     BREthereumGas       gas;
     const char*         data;
     uint64_t            nonce = ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED;
-
+    int                 reqsMet = 0;
     // Permissible 'optional' field defaults:
     // w/o DATA: Assume "" or NULL
     // w/o VALUE: Assume 0
     //
     // Nonce is provided by walletkit, if supplied
-    // by arguements, that value is ignored.
+    // by arguments, that value is ignored.
     amount = ethEtherCreateZero ();
     data = NULL;
 
-    int reqsMet = 0;
+    // A default gas price may have been indicated, in which 
+    // case callers that omit 'gasPrice' in the arguments will
+    // still be treated w/o error
+    if (NULL != defaultFee) {
+        gasPrice = wkNetworkFeeAsETH(defaultFee);
+        reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE);
+    }
+    
     size_t elems = array_count (keys);
     for (size_t elemNo=0; elemNo < elems; elemNo++) {
 
@@ -346,7 +355,15 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         }
     }
 
-    if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet) ) {
+    if (!WK_WALLET_CONNECT_ETH_IS_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE)) {
+        
+        // Missing specifically the required gasPrice. Caller may add
+        // optional `networkFee` to correct this
+        *status = WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE;
+        return NULL;
+    } else if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet)) {
+        
+        // Missing one or more other mandatory fields
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS;
         return NULL;
     }

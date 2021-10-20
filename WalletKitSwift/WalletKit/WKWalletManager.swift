@@ -512,6 +512,7 @@ public enum WalletConnectorError: Error {
     case illegalOperation
     case unknownEntity
     case invalidTransactionArguments
+    case missingFee
     case invalidTransactionSerialization
     case invalidKeyForSigning
     case unrecoverableKey
@@ -529,6 +530,7 @@ public enum WalletConnectorError: Error {
         case WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR:          self = .unsupportedConnector
         case WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION:              self = .illegalOperation
         case WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS:  self = .invalidTransactionArguments
+        case WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE:        self = .missingFee
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE:              self = .invalidSignature
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
         case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
@@ -747,7 +749,7 @@ public final class WalletConnector {
     /// - Returns: On success, an unsigned `Transaction`.  On failure, a WalletConnectError of:
     ///      TBD
     ///
-    public func createTransaction (arguments: Dictionary<String,String>) -> Result<Transaction, WalletConnectorError> {
+    public func createTransaction (arguments: Dictionary<String,String>, defaultFee:NetworkFee? = nil) -> Result<Transaction, WalletConnectorError> {
         
         let keys = Array(arguments.keys)
         let values = Array(arguments.values)
@@ -767,6 +769,7 @@ public final class WalletConnector {
                                                                                  &(keysStrs),
                                                                                  &(valuesStrs),
                                                                                  keys.count,
+                                                                                 defaultFee?.core,
                                                                                  &serializationLength,
                                                                                  &status)
                                                       

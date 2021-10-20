@@ -63,56 +63,11 @@ WKWalletConnector createTestConnector() {
     //   Need an ETH network to support `ethTransactionGetRlpData`
 
     // Create accounts object which is needed on Ethereum for signing
-    WKAccount accounts = wkAccountCreate(testPaperKey, 1514764800, testAccountUids);
-
-    WKCurrency currency = wkCurrencyCreate("ethereum-ropsten:__native__",
-                                           "Ethereum",
-                                           "eth",
-                                           "native",
-                                           NULL);
-
-    // Create an Ethereum network, directly through the handler
     const WKHandlers* ethHandlers = wkHandlersLookup(WK_NETWORK_TYPE_ETH);
-    WKNetworkListener noNetListener = {NULL, NULL}; // Hope it works...
-    WKNetwork ethNetwork = ethHandlers->network->create(noNetListener,
-                                                        "ethereum-ropsten",
-                                                        "Ethereum",
-                                                        "testnet",
-                                                        false,                  // isMainnet?
-                                                        15,                     // confirmationPeriodInSeconds
-                                                        WK_ADDRESS_SCHEME_NATIVE,
-                                                        WK_SYNC_MODE_API_ONLY,
-                                                        currency);
-
-    // Need to introduce a currency association before adding the currency unit.
-    WKClientCurrencyDenominationBundle ethNativeDenomination = wkClientCurrencyDenominationBundleCreate("Ether",    // name
-                                                                                                        "eth",      // code
-                                                                                                        "Ξ",        // symbol
-                                                                                                        18          );// decimals
-    WKClientCurrencyBundle ethNativeBundle = wkClientCurrencyBundleCreate("ethereum-ropsten:__native__",    // id
-                                                                          "Ethereum",                       // name
-                                                                          "eth",                            // code
-                                                                          "native",                         // type
-                                                                          "ethereum-ropsten",               // blockchainId
-                                                                          NULL,                             // address
-                                                                          true,                             // verified
-                                                                          1,
-                                                                          &ethNativeDenomination);
-    wkNetworkAddCurrencyAssociationFromBundle(ethNetwork, ethNativeBundle, WK_FALSE);
-
-    // Without a valid unit, manager creation will assert
-    WKUnit weiUnit = wkUnitCreateAsBase(currency,
-                                        "wei",
-                                        "wei",
-                                        "WEI");
-    WKUnit gweiUnit = wkUnitCreate(currency,
-                                   "gwei",
-                                   "Gwei",      // name
-                                   "GWEI",      // symbol
-                                   weiUnit,     // baseUnit
-                                   9       );   // powerOffset
-    wkNetworkAddCurrencyUnit(ethNetwork, currency, gweiUnit);
-
+    WKAccount accounts = wkAccountCreate(testPaperKey, 1514764800, testAccountUids);
+    WKNetwork ethNetwork = wkNetworkFindBuiltin ("ethereum-ropsten",
+                                                 false);
+    
     // Create a minimal Ethereum manager, for our WalletKit needs with no
     // application integration (clients or listeners).
     WKWalletManagerListener noMgrListener = {NULL, NULL};
@@ -124,7 +79,6 @@ WKWalletConnector createTestConnector() {
                                                               WK_SYNC_MODE_API_ONLY,
                                                               WK_ADDRESS_SCHEME_NATIVE,
                                                               ""    );
-
     WKWalletConnector connector = wkWalletConnectorCreate(ethManager);
     assert (NULL != connector);
 
@@ -300,6 +254,26 @@ runRecoverTest(
     wkWalletConnectorRelease (walletConnector);
 }
 
+/** A function for creating a default fee
+ */
+typedef WKNetworkFee (*DefaultFeeSupplier)(WKWalletConnector connector);
+
+WKNetworkFee GetDefaultFee(WKWalletConnector connector) {
+
+    size_t count = 0;
+    WKNetworkFee fee = NULL;
+    WKNetworkFee* fees = wkNetworkGetNetworkFees(connector->manager->network, &count);
+    if (0 < count) {
+        fee = fees[0];
+        for (size_t i = 1; i < count; i++) {
+            wkNetworkFeeGive(fees[i]);
+        }
+        free (fees);
+    }
+    
+    return fee;
+}
+
 /** Defines a `transactionFromArgs()` test
  *
  */
@@ -311,6 +285,7 @@ typedef struct transactionArgsCheckTag {
         const char*     transactionValues[8];
         size_t          entryCount;
     } pairs;
+    DefaultFeeSupplier  defaultFee;
 } TransactionArgsTestDefinition;
 
 /** Runs a few different combinations of possible input to the
@@ -344,7 +319,7 @@ runTransactionFromArgumentsInputsTest() {
                 "0x3d39e3313c662ddc955980ef817a7548a670d973", "0x3b9aca00",
                 "0x3d39e3313c662ddc955980ef817a7548a670d973" },
                8
-           }
+           }, NULL
         },
 
         // Test: minimum required fields provided
@@ -352,7 +327,7 @@ runTransactionFromArgumentsInputsTest() {
                {"gasPrice", "to", "gas" },
                {"0x0df8475800", "0x3d39e3313c662ddc955980ef817a7548a670d973", "0x5208"},
                3
-           }
+           }, NULL
         },
 
         // Test: Missing mandatory 'gas'
@@ -360,7 +335,7 @@ runTransactionFromArgumentsInputsTest() {
                {"gasPrice", "to"},
                {"0x5208", "0x3d39e3313c662ddc955980ef817a7548a670d973"},
                2
-           }
+           }, NULL
         },
 
         // Test: 'gas' vs 'gasLimit'
@@ -373,7 +348,7 @@ runTransactionFromArgumentsInputsTest() {
                 "0x3d39e3313c662ddc955980ef817a7548a670d973", "0x3b9aca00",
                 "0x3d39e3313c662ddc955980ef817a7548a670d973" },
                8
-           }
+           }, NULL
         }
     };
 
@@ -384,20 +359,101 @@ runTransactionFromArgumentsInputsTest() {
         TransactionArgsTestDefinition test = transactionArgsTests[i];
         const char** keys = test.pairs.transactionKeys;
         const char** vals = test.pairs.transactionValues;
-
+        
         WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
         printf ("    TransactionFromArgs test: %s\n", test.name);
         size_t transactionLength = 0;
+        
         uint8_t *transaction = wkWalletConnectorCreateTransactionFromArguments(walletConnector,
                                                                                keys,
                                                                                vals,
                                                                                test.pairs.entryCount,
+                                                                               NULL,
                                                                                &transactionLength,
                                                                                &status);
+        
         assert ((test.ok && WK_WALLET_CONNECTOR_STATUS_OK == status) ||
                 (!test.ok && WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS == status));
         assert (!test.ok || (test.ok && transactionLength > 0));
 
+        free (transaction);
+    }
+
+    wkWalletConnectorRelease(walletConnector);
+}
+
+/** Checks specifically if the missing 'gasPrice' can be handled properly
+ *
+ *  Confirms: wkWalletConnectorCreateTransactionFromArguments w/o gasPrice argument
+ */
+static void
+runTransactionFromArgumentsGasPriceHandling() {
+
+    WKWalletConnector walletConnector = createTestConnector();
+
+    // Based on observing inputs from WalletConnect 1.0 sample dApp
+    TransactionArgsTestDefinition transactionArgsTests[] = {
+
+        // In the following
+        // gas/gasLimit: 0x5208 (21000)
+        // gasPrice: 0x0df8475800 (60,000,000,000)
+        // value: 0x3b9aca00 (1,000,000,000)
+
+
+        // Test: All required fields plus extras
+        // 'chainId': May be supplied but is ignored (taken from network of wallet)
+        // 'nonce': WalletConnect 1.0 dApp might provide it, we should ignore it
+        // 'from': WalletConnect 1.0 wallet sample eliminates the from of transaction fields
+    
+        // Test: provision of optional gas price
+        { "Provide default fee when not contained in arguments", true, {
+               {"to", "gas" },
+               {"0x3d39e3313c662ddc955980ef817a7548a670d973", "0x5208"},
+               2
+           }, GetDefaultFee
+        },
+        
+        // Test: catch neither default gas provided and not passed through arguments
+        { "No gasPrice and no default fee", false, {
+               {"to", "gas" },
+               {"0x3d39e3313c662ddc955980ef817a7548a670d973", "0x5208"},
+               2
+           }, NULL
+        },
+    };
+
+    printf ("  -- %s\n", __FUNCTION__);
+    int numberOfTests = sizeof (transactionArgsTests) / sizeof (TransactionArgsTestDefinition);
+    for (int i=0; i < numberOfTests; i++) {
+
+        TransactionArgsTestDefinition test = transactionArgsTests[i];
+        const char** keys = test.pairs.transactionKeys;
+        const char** vals = test.pairs.transactionValues;
+
+        // Determine any default fee for this test
+        WKNetworkFee defaultFee = NULL;
+        if (NULL != test.defaultFee) {
+            defaultFee = test.defaultFee(walletConnector);
+        }
+        
+        WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
+        printf ("    TransactionFromArgs test: %s\n", test.name);
+        size_t transactionLength = 0;
+        
+        uint8_t *transaction = wkWalletConnectorCreateTransactionFromArguments(walletConnector,
+                                                                               keys,
+                                                                               vals,
+                                                                               test.pairs.entryCount,
+                                                                               defaultFee,
+                                                                               &transactionLength,
+                                                                               &status);
+        
+        assert ((test.ok && WK_WALLET_CONNECTOR_STATUS_OK == status) ||
+                (!test.ok && WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE));
+        assert (!test.ok || (test.ok && transactionLength > 0));
+
+        if (NULL != defaultFee) wkNetworkFeeGive(defaultFee);
+            
         free (transaction);
     }
 
@@ -439,10 +495,12 @@ runTransactionFromArgumentsSerializationTest(
 
     WKWalletConnectorStatus status = WK_WALLET_CONNECTOR_STATUS_OK;
     size_t serializationLength = 0;
+    WKNetworkFee noDefaultFee = NULL;
     uint8_t *serialization = wkWalletConnectorCreateTransactionFromArguments(walletConnector,
                                                                              keys,
                                                                              vals,
                                                                              serializationTest.pairs.entryCount,
+                                                                             noDefaultFee,
                                                                              &serializationLength,
                                                                              &status);
     
@@ -474,6 +532,7 @@ runTransactionFromArgumentsSerializationTest(
 static void
 runTransactionFromArgsTest() {
     runTransactionFromArgumentsInputsTest();
+    runTransactionFromArgumentsGasPriceHandling();
     uint8_t *ignore = runTransactionFromArgumentsSerializationTest(NULL);
     free (ignore);
 }
