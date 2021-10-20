@@ -209,11 +209,16 @@ public interface WalletConnector {
      * Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
      * the connector's network.  For ETH the Dictionary keys are: {...}
      * @param arguments Connector networks arguments for transaction, in the form of key/value pairs
+     * @param defaultFee An optional alternative fee used in case the transaction arguments
+     *                   do not contain the mandatory fee
      * @result An unsigned {@link Transaction} or {@link Result} composed with
-     *         {@link WalletConnectorError.InvalidTransactionArguments}
+     *         {@link WalletConnectorError.InvalidTransactionArguments} in case one or more missing
+     *         required arguments, or {@link WalletConnectorError.MissingFee} if the fee is neither among
+     *         the transaction arguments nor provided via defaultFee
      */
     Result<Transaction, WalletConnectorError>
-    createTransaction ( Map<String, String> arguments );
+    createTransaction ( Map<String, String>     arguments,
+                        @Nullable NetworkFee    defaultFee);
 
     /**
      * Create a Transaction from a signed or unsigned serialization. Creation of a

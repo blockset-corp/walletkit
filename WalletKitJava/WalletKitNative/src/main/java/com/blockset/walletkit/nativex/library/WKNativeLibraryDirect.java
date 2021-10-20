@@ -326,7 +326,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkWalletConnectorCreateKey(Pointer connector, String phrase, IntByReference err);
     public static native Pointer wkWalletConnectorSignData(Pointer connector, byte[] data, SizeT dataLength, Pointer key, SizeTByReference signatureLength, IntByReference err);
     public static native Pointer wkWalletConnectorRecoverKey(Pointer connector, byte[] digest, SizeT digestLength, byte[] signature, SizeT signatureLength, IntByReference err);
-    public static native Pointer wkWalletConnectorCreateTransactionFromArguments(Pointer connector, StringArray keysArray, StringArray valuesArray, SizeT arrayCount, SizeTByReference serializationLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateTransactionFromArguments(Pointer connector, StringArray keysArray, StringArray valuesArray, SizeT arrayCount, Pointer defaultFee, SizeTByReference serializationLength, IntByReference err);
     public static native Pointer wkWalletConnectorCreateTransactionFromSerialization(Pointer connector, byte[] data, SizeT dataLength, SizeTByReference serializationLength, IntByReference isSigned, IntByReference err);
     public static native Pointer wkWalletConnectorSignTransactionData(Pointer connector, byte[] transactionData, SizeT dataLength, Pointer key, PointerByReference transactionIdentifier, SizeTByReference transactionIdentifierLength, SizeTByReference signedDataLength, IntByReference err);
     public static native Pointer wkWalletConnectorSignTypedData(Pointer connector, String typedData, Pointer key,  PointerByReference digestData, SizeTByReference digestLength, SizeTByReference signatureLength, IntByReference err);

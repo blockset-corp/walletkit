@@ -3,8 +3,10 @@ package com.blockset.walletkit.demo.walletconnect;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.blockset.walletkit.NetworkFee;
 import com.blockset.walletkit.WalletConnector.Key;
 import com.blockset.walletkit.WalletConnector;
+import com.blockset.walletkit.WalletManager;
 import com.blockset.walletkit.brd.systemclient.ObjectCoder;
 import com.blockset.walletkit.demo.DemoApplication;
 import com.blockset.walletkit.demo.walletconnect.msg.EncryptedPayload;
@@ -59,6 +61,7 @@ public class WalletConnect {
     private final OkHttpClient      client = new OkHttpClient();
     private final ObjectCoder       coder = ObjectCoder.createObjectCoderWithFailOnUnknownProperties();
     private final int               chainId;
+    private final NetworkFee        defaultFee;
     private WebSocket               socket;
     private WalletConnectSession    session;
     private WalletConnector         connector;
@@ -663,7 +666,7 @@ public class WalletConnect {
 
                             Log.log(Level.FINE, "WC: create transaction from arguments...");
                             WalletConnector.Result<WalletConnector.Transaction, WalletConnectorError> res =
-                                    connector.createTransaction(walletConnectorTransactionArgs);
+                                    connector.createTransaction(walletConnectorTransactionArgs, defaultFee);
                             if (res.isSuccess()) {
                                 Log.log(Level.FINE, "WC: transaction created, sign...");
 
@@ -856,14 +859,15 @@ public class WalletConnect {
 
     // Public constructor for now
     public WalletConnect(
-        boolean             isMainnet,
+        WalletManager       walletManager,
         WalletConnector     connector,
         byte[]              paperKey) {
 
         // WalletConnect 1.0 is strictly an Ethereum thing, so we assign the
         // chain id based on mainnet vs testnet
-        this.chainId = isMainnet ? 1 : 3;
+        this.chainId = walletManager.getNetwork().isMainnet() ? 1 : 3;
         this.connector = connector;
+        this.defaultFee = walletManager.getNetwork().getMinimumFee();
 
         WalletConnector.Result<WalletConnector.Key, WalletConnectorError> result = connector.createKey(new String(paperKey));
         if (result.isSuccess()) {

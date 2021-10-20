@@ -745,9 +745,12 @@ public final class WalletConnector {
     /// This function is the 'create' part of the ETH JSON-RPC `eth_sendTransaction`
     ///
     /// - Parameter arguments: A dictionary (JSON-RPC-like) of create arguments
+    /// - Parameter defaultFee: An optional alternative fee used in case the transaction arguments
+    ///                         do not contain the mandatory fee
     ///
     /// - Returns: On success, an unsigned `Transaction`.  On failure, a WalletConnectError of:
-    ///      TBD
+    ///      invalidTransactionArguments in case one or more missing required arguments, or
+    ///      missingFee if the fee is neither among the transaction arguments nor provided via defaultFee
     ///
     public func createTransaction (arguments: Dictionary<String,String>, defaultFee:NetworkFee? = nil) -> Result<Transaction, WalletConnectorError> {
         

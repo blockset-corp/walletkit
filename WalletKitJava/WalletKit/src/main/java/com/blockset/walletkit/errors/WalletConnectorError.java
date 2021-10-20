@@ -38,6 +38,11 @@ public abstract class WalletConnectorError extends Exception {
         public InvalidTransactionArguments(String message) { super(message); }
         public InvalidTransactionArguments(Throwable throwable) { super(throwable); }
     }
+    public static class MissingFee extends WalletConnectorError {
+        public MissingFee() { super(); }
+        public MissingFee(String message) { super(message); }
+        public MissingFee(Throwable throwable) { super(throwable); }
+    }
     public static class InvalidTransactionSerialization extends WalletConnectorError {
         public InvalidTransactionSerialization() { super(); }
         public InvalidTransactionSerialization(String message) { super(message); }
