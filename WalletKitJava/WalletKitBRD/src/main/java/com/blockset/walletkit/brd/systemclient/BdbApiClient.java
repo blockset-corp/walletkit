@@ -378,56 +378,51 @@ public class BdbApiClient {
                                     String details = json.get("network_message").toString();
                                     switch (status) {
                                         case "success":
-                                        case "unknown_error":
+                                            submitError = new SystemClientSubmitError.Unknown(details); // unexpected "success" on 422
+                                            break;
+                                        case "error_internal":
+                                        case "error_unknown":
                                             submitError = new SystemClientSubmitError.Unknown(details);
                                             break;
-                                        case "fee_too_low":
-                                            submitError = new SystemClientSubmitError.InsufficientFee(details);
-                                            break;
-                                        case "gas_too_low":
-                                        case "gas_limit_too_low":
-                                            submitError = new SystemClientSubmitError.InsufficientNetworkCostUnit(details);
-                                            break;
-                                        case "invalid_signature":
-                                            submitError = new SystemClientSubmitError.Signature(details);
-                                            break;
-                                        case "invalid_transaction":
+                                        case "error_transaction_invalid":
                                             submitError = new SystemClientSubmitError.Transaction(details);
                                             break;
-                                        case "transaction_expired":
+                                        case "error_transaction_expired":
                                             submitError = new SystemClientSubmitError.TransactionExpired(details);
                                             break;
-                                        case "insufficient_payer_balance":
-                                            submitError = new SystemClientSubmitError.InsufficientBalance(details);
-                                            break;
-                                        case "nonce_already_used":
-                                            submitError = new SystemClientSubmitError.NonceTooLow(details);
-                                            break;
-                                        case "nonce_gap":
-                                        case "nonce_error":
-                                            submitError = new SystemClientSubmitError.NonceInvalid(details);
-                                            break;
-                                        case "duplicate":
+                                        case "error_transaction_duplicate":
                                             submitError = new SystemClientSubmitError.TransactionDuplicate(details);
                                             break;
-                                        case "rejected":
-                                            submitError = new SystemClientSubmitError.Transaction(details);
+                                        case "error_signature_invalid":
+                                            submitError = new SystemClientSubmitError.Signature(details);
                                             break;
-                                        case "invalid_address_or_key":
-                                        case "unknown_account":
+
+                                        case "error_nonce_used":
+                                            submitError = new SystemClientSubmitError.NonceTooLow(details);
+                                            break;
+                                        case "error_nonce_invalid":
+                                        case "error_nonce_gap":
+                                           submitError = new SystemClientSubmitError.NonceInvalid(details);
+                                            break;
+
+                                        case "error_fee_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientFee(details);
+                                            break;
+                                        case "error_fee_rate_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientNetworkFee(details);
+                                            break;
+                                        case "error_fee_budget_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientNetworkCostUnit(details);
+                                            break;
+
+                                        case "error_balance_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientBalance(details);
+                                            break;
+                                        case "error_account_unknown":
                                             submitError = new SystemClientSubmitError.Account(details);
                                             break;
 
-                                        // Client had an access/internal issue communicating the submission
-                                        case "unauthorized":
-                                        case "bad_request":
-                                        case "parse_error":
-                                        case "coin_node_error":
-                                        case "invalid_parameters":
-                                        case "method_not_found":
-                                            submitError = new SystemClientSubmitError.Access(details);
-                                            break;
-                                        default:
+                                         default:
                                             submitError = new SystemClientSubmitError.Unknown(details);
                                             break;
                                     }

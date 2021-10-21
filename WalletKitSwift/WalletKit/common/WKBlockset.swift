@@ -1409,31 +1409,25 @@ public class BlocksetSystemClient: SystemClient {
 
                         var submitError: SystemClientSubmissionError!
                         switch (status!) {
-                        case "success":                    submitError = .unknown
-                        case "unknown_error":              submitError = .unknown
-                        case "fee_too_low":                submitError = .insufficientFee
-                        case "gas_too_low":                submitError = .insufficientNetworkCostUnit
-                        case "gas_limit_too_low":          submitError = .insufficientNetworkCostUnit
-                        case "invalid_signature":          submitError = .signature
-                        case "invalid_transaction":        submitError = .transaction
-                        case "transaction_expired":        submitError = .transactionExpired
-                        case "insufficient_payer_balance": submitError = .insufficientBalance
-                        case "nonce_already_used":         submitError = .nonceTooLow
-                        case "nonce_gap":                  submitError = .nonceInvalid
-                        case "nonce_error":                submitError = .nonceInvalid
-                        case "duplicate":                  submitError = .transactionDuplicate
-                        case "rejected":                   submitError = .transaction
-                        case "invalid_address_or_key":     submitError = .account
-                        case "unknown_account":            submitError = .account
+                        case "success":                       submitError = .unknown // unexpected "success" on 422
+                        case "error_internal":                fallthrough
+                        case "error_unknown":                 submitError = .unknown
+                        case "error_transaction_invalid":     submitError = .transaction
+                        case "error_transaction_expired":     submitError = .transactionExpired
+                        case "error_transaction_duplicate":   submitError = .transactionDuplicate
+                        case "error_signature_invalid":       submitError = .signature
 
-                            // Client had an access/internal issue communicating the submission
-                        case "unauthorized":               fallthrough
-                        case "bad_request":                fallthrough
-                        case "parse_error":                fallthrough
-                        case "coin_node_error":            fallthrough
-                        case "invalid_parameters":         fallthrough
-                        case "method_not_found":           submitError = .access
-                        default:                           submitError = .unknown
+                        case "error_nonce_invalid":           submitError = .nonceInvalid
+                        case "error_nonce_used":              submitError = .nonceTooLow
+                        case "error_nonce_gap":               submitError = .nonceInvalid
+
+                        case "error_fee_insufficient":        submitError = .insufficientFee
+                        case "error_fee_rate_insufficient":   submitError = .insufficientNetworkFee
+                        case "error_fee_budget_insufficient": submitError = .insufficientNetworkCostUnit
+
+                        case "error_balance_insufficient":    submitError = .insufficientBalance
+                        case "error_account_unknown":         submitError = .account
+                        default:                              submitError = .unknown
                         }
                         respError = SystemClientError.submission(error: submitError, details: submitDetails)
                     }

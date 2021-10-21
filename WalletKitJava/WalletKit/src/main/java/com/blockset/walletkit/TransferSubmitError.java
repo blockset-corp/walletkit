@@ -6,7 +6,6 @@ public class TransferSubmitError {
     public enum Type {
         ACCOUNT,
         SIGNATURE,
-        DUPLICATE,
         INSUFFICIENT_BALANCE,
         INSUFFICIENT_NETWORK_FEE,
         INSUFFICIENT_NETWORK_COST_UNIT,
@@ -14,13 +13,15 @@ public class TransferSubmitError {
         NONCE_TOO_LOW,
         NONCE_INVALID,
         TRANSACTION_EXPIRED,
+        TRANSACTION_DUPLICATE,
         TRANSACTION,
         UNKNOWN,
         CLIENT_BAD_REQUEST,
         CLIENT_PERMISSION,
         CLIENT_RESOURCE,
         CLIENT_BAD_RESPONSE,
-        CLIENT_UNAVAILABLE;
+        CLIENT_UNAVAILABLE,
+        LOST_NETWORK;
     }
 
     Type type;

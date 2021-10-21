@@ -34,13 +34,6 @@ public class WKTransferSubmitError extends Structure {
             }
         },
 
-        DUPLICATE {
-            @Override
-            public int toCore() {
-                return DUPLICATE_VALUE;
-            }
-        },
-
         INSUFFICIENT_BALANCE {
             @Override
             public int toCore() {
@@ -87,6 +80,13 @@ public class WKTransferSubmitError extends Structure {
             @Override
             public int toCore() {
                 return TRANSACTION_EXPIRED_VALUE;
+            }
+        },
+
+        TRANSACTION_DUPLICATE {
+            @Override
+            public int toCore() {
+                return TRANSACTION_DUPLICATE_VALUE;
             }
         },
 
@@ -137,45 +137,55 @@ public class WKTransferSubmitError extends Structure {
             public int toCore() {
                 return CLIENT_UNAVAILABLE_VALUE;
             }
+        },
+
+        LOST_NETWORK {
+            @Override
+            public int toCore() {
+                return LOST_NETWORK_VALUE;
+            }
+
         };
 
-        public static final int ACCOUNT_VALUE              = 0;
-        public static final int SIGNATURE_VALUE            = 1;
-        public static final int DUPLICATE_VALUE            = 2;
-        public static final int INSUFFICIENT_BALANCE_VALUE = 3;
-        public static final int INSUFFICIENT_NETWORK_FEE_VALUE       = 4;
-        public static final int INSUFFICIENT_NETWORK_COST_UNIT_VALUE = 5;
-        public static final int INSUFFICIENT_FEE_VALUE    = 6;
-        public static final int NONCE_TOO_LOW_VALUE       = 7;
-        public static final int NONCE_INVALID_VALUE       = 8;
-        public static final int TRANSACTION_EXPIRED_VALUE = 9;
-        public static final int TRANSACTION_VALUE         = 10;
-        public static final int UNKNOWN_VALUE             = 11;
-        public static final int CLIENT_BAD_REQUEST_VALUE  = 12;
-        public static final int CLIENT_PERMISSION_VALUE   = 13;
-        public static final int CLIENT_RESOURCE_VALUE     = 14;
-        public static final int CLIENT_BAD_RESPONSE_VALUE = 15;
-        public static final int CLIENT_UNAVAILABLE_VALUE  = 16;
+        public static final int ACCOUNT_VALUE               = 0;
+        public static final int SIGNATURE_VALUE             = 1;
+        public static final int INSUFFICIENT_BALANCE_VALUE  = 2;
+        public static final int INSUFFICIENT_NETWORK_FEE_VALUE       = 3;
+        public static final int INSUFFICIENT_NETWORK_COST_UNIT_VALUE = 4;
+        public static final int INSUFFICIENT_FEE_VALUE      = 5;
+        public static final int NONCE_TOO_LOW_VALUE         = 6;
+        public static final int NONCE_INVALID_VALUE         = 7;
+        public static final int TRANSACTION_EXPIRED_VALUE   = 8;
+        public static final int TRANSACTION_DUPLICATE_VALUE = 9;
+        public static final int TRANSACTION_VALUE           = 10;
+        public static final int UNKNOWN_VALUE               = 11;
+        public static final int CLIENT_BAD_REQUEST_VALUE    = 12;
+        public static final int CLIENT_PERMISSION_VALUE     = 13;
+        public static final int CLIENT_RESOURCE_VALUE       = 14;
+        public static final int CLIENT_BAD_RESPONSE_VALUE   = 15;
+        public static final int CLIENT_UNAVAILABLE_VALUE    = 16;
+        public static final int LOST_NETWORK_VALUE          = 17;
 
         private static WKTransferSubmitError.Type fromCore(int core) {
             switch (core) {
-                case ACCOUNT_VALUE:              return ACCOUNT;
-                case SIGNATURE_VALUE:            return SIGNATURE;
-                case DUPLICATE_VALUE:            return DUPLICATE;
-                case INSUFFICIENT_BALANCE_VALUE: return INSUFFICIENT_BALANCE;
+                case ACCOUNT_VALUE:               return ACCOUNT;
+                case SIGNATURE_VALUE:             return SIGNATURE;
+                case INSUFFICIENT_BALANCE_VALUE:  return INSUFFICIENT_BALANCE;
                 case INSUFFICIENT_NETWORK_FEE_VALUE:       return INSUFFICIENT_NETWORK_FEE;
                 case INSUFFICIENT_NETWORK_COST_UNIT_VALUE: return INSUFFICIENT_NETWORK_COST_UNIT;
-                case INSUFFICIENT_FEE_VALUE:     return INSUFFICIENT_FEE;
-                case NONCE_TOO_LOW_VALUE:        return NONCE_TOO_LOW;
-                case NONCE_INVALID_VALUE:        return NONCE_INVALID;
-                case TRANSACTION_EXPIRED_VALUE:  return TRANSACTION_EXPIRED;
-                case TRANSACTION_VALUE:          return TRANSACTION;
-                case UNKNOWN_VALUE:              return UNKNOWN;
-                case CLIENT_BAD_REQUEST_VALUE:   return CLIENT_BAD_REQUEST;
-                case CLIENT_PERMISSION_VALUE:    return CLIENT_PERMISSION;
-                case CLIENT_RESOURCE_VALUE:      return CLIENT_RESOURCE;
-                case CLIENT_BAD_RESPONSE_VALUE:  return CLIENT_BAD_RESPONSE;
-                case CLIENT_UNAVAILABLE_VALUE:   return CLIENT_UNAVAILABLE;
+                case INSUFFICIENT_FEE_VALUE:      return INSUFFICIENT_FEE;
+                case NONCE_TOO_LOW_VALUE:         return NONCE_TOO_LOW;
+                case NONCE_INVALID_VALUE:         return NONCE_INVALID;
+                case TRANSACTION_EXPIRED_VALUE:   return TRANSACTION_EXPIRED;
+                case TRANSACTION_DUPLICATE_VALUE: return TRANSACTION_DUPLICATE;
+                case TRANSACTION_VALUE:           return TRANSACTION;
+                case UNKNOWN_VALUE:               return UNKNOWN;
+                case CLIENT_BAD_REQUEST_VALUE:    return CLIENT_BAD_REQUEST;
+                case CLIENT_PERMISSION_VALUE:     return CLIENT_PERMISSION;
+                case CLIENT_RESOURCE_VALUE:       return CLIENT_RESOURCE;
+                case CLIENT_BAD_RESPONSE_VALUE:   return CLIENT_BAD_RESPONSE;
+                case CLIENT_UNAVAILABLE_VALUE:    return CLIENT_UNAVAILABLE;
+                case LOST_NETWORK_VALUE:          return LOST_NETWORK;
                 default: throw new IllegalArgumentException("Invalid core value");
             }
         }

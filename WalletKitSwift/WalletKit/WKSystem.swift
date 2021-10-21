@@ -1496,9 +1496,9 @@ extension System {
         case .insufficientNetworkCostUnit: submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT
         case .insufficientFee:             submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE
         case .nonceTooLow:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW
-        case .nonceInvalid:                submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE
-        case .transactionDuplicate:        submitErrorType = WK_TRANSFER_SUBMIT_ERROR_DUPLICATE
+        case .nonceInvalid:                submitErrorType = WK_TRANSFER_SUBMIT_ERROR_NONCE_INVALID
         case .transactionExpired:          submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED
+        case .transactionDuplicate:        submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE
         case .transaction:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION
         case .unknown:                     submitErrorType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
         }
@@ -1520,6 +1520,8 @@ extension System {
             return System.makeClientSubmitErrorCore (error, details: details)
         case .unavailable:
             return wkClientErrorCreate (WK_CLIENT_ERROR_UNAVAILABLE, nil)
+        case .lostConnectivity:
+            return wkClientErrorCreate(WK_CLIENT_ERROR_LOST_CONNECTIVITY, nil)
         }
     }
 

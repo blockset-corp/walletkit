@@ -82,40 +82,57 @@ wkTransferIncludeStatusIsEqual (const WKTransferIncludeStatus *status1,
 /// Note: in the case of a 'CLIENT' error a resubmit could work.
 ///
 typedef enum {
-    /// The 'source/sender' account/address is unknown.
+    /// The 'source/sender' account/address is unknown.  This might occur for a Hedera account
+    /// that has not been initialized or for a Tezos account that has not had its public key
+    /// revealed.
     WK_TRANSFER_SUBMIT_ERROR_ACCOUNT,
 
     /// The signature is flawed.
     WK_TRANSFER_SUBMIT_ERROR_SIGNATURE,
 
-    /// The transaction is a duplicate.
-    WK_TRANSFER_SUBMIT_ERROR_DUPLICATE,
-
-    /// The account's balance is insufficient for the `amount + fee`.
+    /// The account's balance is insufficient for the `amount + fee`.  This would generally be an
+    /// error with the 'max' calculation or, perhaps, with missing transactions in the query such
+    /// that that WalletKit balance does not reflect the actual balance.
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE,
 
-    /// The 'network fee' (aka, for Ethereum, the 'gas price') is too low.
+    /// The 'network fee' (aka, for Ethereum, the 'gas price') is too low.  `NetworkFee` is the
+    /// generic term for the 'Fee Rate' - as in SAT/byte or ETH/gas.  Some networks have an absolute
+    /// minimum for the network fee.
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE,        // gaPrice too low
 
-    /// The 'network cost unit' (aka, for Ethereum, the 'gas (limit)') is too low.
+    /// The 'network cost unit' (aka, for Ethereum, the 'gas (limit)') is too low. A 'cost unit'
+    /// is the generic term for the 'size factor' in a fee computation.  A 'cost unit' along with
+    /// the NetworkFee comprises a `FeeBasis`.  Networks differ in the computation used to determine
+    /// a fee - bytes, gas, storage_limit, etc.
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT,  // gas     too low
 
-    /// The fee is insufficient.
+    /// The fee is insufficient.  Sometimes a fee is not determines as simply as:
+    ///     `cost_unit * network_fee` - Tezos for example has all sorts of 'add ons'.  The result
+    /// is that the fee can be too low, even if the network_fee and cost_unit are individually
+    /// sufficient.
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE,
 
-    /// The nonce is too low; in the past.
+    /// The nonce is too low; in the past.  A 'nonce' is generally the count of sent transactions
+    /// possibly with some offset.  If there are missing sent transactions, then the nonce won't
+    /// be computed accurately.  (Some networks allow for direct query of the nonce, and balance;
+    /// but, in WalletKit the nonce and balance are computed from the transactions).
     WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW,
 
-    /// The nonce is invalid.
-    WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE,                    // nonce, besides too low
+    /// The nonce is invalid.  Something has gone awry.
+    WK_TRANSFER_SUBMIT_ERROR_NONCE_INVALID,
 
-    /// The transaction hs expired and been rejected.
+    /// The transaction has expired and been rejected.
     WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED,
 
-    /// The transaction itself is invalid and has been rejected
+    /// The transaction is a duplicate.  Likely a prior submit succeeded but this submit failed.
+    WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE,
+
+    /// The transaction itself is invalid and has been rejected.  Something about the transaction's
+    /// serialization is amiss.  Perhaps an Network has changed its encoding protocol; perhaps,
+    /// since WalletKit doesn't encode all transaction operations, something was overlooked.
     WK_TRANSFER_SUBMIT_ERROR_TRANSACTION,
 
-    /// An unknown submit error
+    /// An unknown submit error.  The dreaded catch-all.
     WK_TRANSFER_SUBMIT_ERROR_UNKNOWN,
 
     // CLIENT ERRORS
@@ -135,9 +152,16 @@ typedef enum {
     /// The client was unavailable
     WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE,
 
+    // MOBILE APP ERRORS
+
+    /// The network connection is lost.
+    WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY,
+
+
 } WKTransferSubmitErrorType;
 
-#define TRANSFER_SUBMIT_ERROR_UNDEFINED  ((WKTransferSubmitErrorType) -1)
+#define TRANSFER_SUBMIT_ERROR_UNDEFINED         ((WKTransferSubmitErrorType) -1)
+#define NUMBER_OF_TRANSFER_SUBMIT_ERROR_TYPES   (1 + WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY)
 
 typedef struct {
     WKTransferSubmitErrorType type;

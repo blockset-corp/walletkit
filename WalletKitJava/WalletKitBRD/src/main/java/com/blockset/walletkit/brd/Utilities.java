@@ -7,23 +7,6 @@
  */
 package com.blockset.walletkit.brd;
 
-import static com.blockset.walletkit.TransferSubmitError.Type.CLIENT_BAD_REQUEST;
-import static com.blockset.walletkit.TransferSubmitError.Type.CLIENT_BAD_RESPONSE;
-import static com.blockset.walletkit.TransferSubmitError.Type.CLIENT_PERMISSION;
-import static com.blockset.walletkit.TransferSubmitError.Type.CLIENT_RESOURCE;
-import static com.blockset.walletkit.TransferSubmitError.Type.CLIENT_UNAVAILABLE;
-import static com.blockset.walletkit.TransferSubmitError.Type.DUPLICATE;
-import static com.blockset.walletkit.TransferSubmitError.Type.INSUFFICIENT_BALANCE;
-import static com.blockset.walletkit.TransferSubmitError.Type.INSUFFICIENT_FEE;
-import static com.blockset.walletkit.TransferSubmitError.Type.INSUFFICIENT_NETWORK_COST_UNIT;
-import static com.blockset.walletkit.TransferSubmitError.Type.INSUFFICIENT_NETWORK_FEE;
-import static com.blockset.walletkit.TransferSubmitError.Type.NONCE_INVALID;
-import static com.blockset.walletkit.TransferSubmitError.Type.NONCE_TOO_LOW;
-import static com.blockset.walletkit.TransferSubmitError.Type.SIGNATURE;
-import static com.blockset.walletkit.TransferSubmitError.Type.TRANSACTION;
-import static com.blockset.walletkit.TransferSubmitError.Type.TRANSACTION_EXPIRED;
-import static com.blockset.walletkit.TransferSubmitError.Type.UNKNOWN;
-
 import com.blockset.walletkit.AddressScheme;
 import com.blockset.walletkit.NetworkType;
 import com.blockset.walletkit.PaymentProtocolRequestType;
@@ -182,7 +165,6 @@ final class Utilities {
         switch (type) {
             case ACCOUNT:              return TransferSubmitError.Type.ACCOUNT;
             case SIGNATURE:            return TransferSubmitError.Type.SIGNATURE;
-            case DUPLICATE:            return TransferSubmitError.Type.DUPLICATE;
             case INSUFFICIENT_BALANCE: return TransferSubmitError.Type.INSUFFICIENT_BALANCE;
             case INSUFFICIENT_NETWORK_FEE:       return TransferSubmitError.Type.INSUFFICIENT_NETWORK_FEE;
             case INSUFFICIENT_NETWORK_COST_UNIT: return TransferSubmitError.Type.INSUFFICIENT_NETWORK_COST_UNIT;
@@ -190,6 +172,7 @@ final class Utilities {
             case NONCE_TOO_LOW:        return TransferSubmitError.Type.NONCE_TOO_LOW;
             case NONCE_INVALID:        return TransferSubmitError.Type.NONCE_INVALID;
             case TRANSACTION_EXPIRED:  return TransferSubmitError.Type.TRANSACTION_EXPIRED;
+            case TRANSACTION_DUPLICATE:return TransferSubmitError.Type.TRANSACTION_DUPLICATE;
             case TRANSACTION:          return TransferSubmitError.Type.TRANSACTION;
             case UNKNOWN:              return TransferSubmitError.Type.UNKNOWN;
             case CLIENT_BAD_REQUEST:   return TransferSubmitError.Type.CLIENT_BAD_REQUEST;
@@ -197,6 +180,7 @@ final class Utilities {
             case CLIENT_RESOURCE:      return TransferSubmitError.Type.CLIENT_RESOURCE;
             case CLIENT_BAD_RESPONSE:  return TransferSubmitError.Type.CLIENT_BAD_RESPONSE;
             case CLIENT_UNAVAILABLE:   return TransferSubmitError.Type.CLIENT_UNAVAILABLE;
+            case LOST_NETWORK:         return TransferSubmitError.Type.LOST_NETWORK;
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -277,6 +261,11 @@ final class Utilities {
                 public WKClientError visit(SystemClientError.Unavailable error) {
                     return new WKClientError(WKClientError.Type.UNAVAILABLE, null);
                 }
+
+                @Override
+                public WKClientError visit(SystemClientError.LostConnectivity error) {
+                    return new WKClientError(WKClientError.Type.LOST_CONNECTIVITY, null);
+                }
             };
 
     static WKClientError systemClientErrorToCrypto(SystemClientError error) {
@@ -331,13 +320,13 @@ final class Utilities {
                 }
 
                 @Override
-                public WKClientError visit(SystemClientSubmitError.TransactionDuplicate error) {
-                    return new WKClientError(WKTransferSubmitError.Type.DUPLICATE, error.details);
+                public WKClientError visit(SystemClientSubmitError.TransactionExpired error) {
+                    return new WKClientError(WKTransferSubmitError.Type.TRANSACTION_EXPIRED, error.details);
                 }
 
                 @Override
-                public WKClientError visit(SystemClientSubmitError.TransactionExpired error) {
-                    return new WKClientError(WKTransferSubmitError.Type.TRANSACTION_EXPIRED, error.details);
+                public WKClientError visit(SystemClientSubmitError.TransactionDuplicate error) {
+                    return new WKClientError(WKTransferSubmitError.Type.TRANSACTION_DUPLICATE, error.details);
                 }
 
                 @Override

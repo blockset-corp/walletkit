@@ -60,6 +60,9 @@ public enum SystemClientError: Error {
 
     /// The client is unavailable.
     case unavailable
+
+    /// The client cannot be reached as network connectivity has been lost
+    case lostConnectivity
 }
 
 public protocol SystemClient {

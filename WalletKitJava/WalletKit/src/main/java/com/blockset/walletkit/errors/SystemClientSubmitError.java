@@ -20,8 +20,8 @@ public abstract class SystemClientSubmitError extends Exception {
         T visit(InsufficientFee error);
         T visit(NonceTooLow error);
         T visit(NonceInvalid error);
-        T visit(TransactionDuplicate error);
         T visit(TransactionExpired error);
+        T visit(TransactionDuplicate error);
         T visit(Transaction error);
         T visit(Unknown error);
     }
@@ -36,8 +36,8 @@ public abstract class SystemClientSubmitError extends Exception {
         @Nullable public T visit(InsufficientFee error) { return null; }
         @Nullable public T visit(NonceTooLow error) { return null; }
         @Nullable public T visit(NonceInvalid error) { return null; }
-        @Nullable public T visit(TransactionDuplicate error) { return null; }
         @Nullable public T visit(TransactionExpired error) { return null; }
+        @Nullable public T visit(TransactionDuplicate error) { return null; }
         @Nullable public T visit(Transaction error) { return null; }
         @Nullable public T visit(Unknown error) { return null; }
     }
@@ -120,15 +120,15 @@ public abstract class SystemClientSubmitError extends Exception {
         }
     }
 
-    public static class TransactionDuplicate extends SystemClientSubmitError {
-        public TransactionDuplicate(String details) { super (details); }
+    public static class TransactionExpired extends SystemClientSubmitError {
+        public TransactionExpired(String details) { super (details); }
         public <T> T accept(Visitor<T> visitor) {
             return visitor.visit(this);
         }
     }
 
-    public static class TransactionExpired extends SystemClientSubmitError {
-        public TransactionExpired(String details) { super (details); }
+    public static class TransactionDuplicate extends SystemClientSubmitError {
+        public TransactionDuplicate(String details) { super (details); }
         public <T> T accept(Visitor<T> visitor) {
             return visitor.visit(this);
         }

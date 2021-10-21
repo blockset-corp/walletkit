@@ -32,6 +32,20 @@
 
 // MARK: - Error
 
+extern const char *
+wkClientErrorTypeDescription (WKClientErrorType type) {
+    static const char *descriptions[] = {
+        "Bad Reqeust",
+        "Permission",
+        "Resource",
+        "Bad Response",
+        "Submission",
+        "Unavailable",
+        "Lost Connectivity"
+    };
+    return descriptions[type];
+}
+
 static OwnershipGiven WKClientError
 wkClientErrorCreateInternal (WKClientErrorType type, const char *details) {
     WKClientError error = calloc (1, sizeof (struct WKClientErrorRecord));
@@ -1026,13 +1040,14 @@ typedef struct {
 static WKTransferSubmitError
 wkClientErrorToSubmitError (WKWalletManager manager,
                             WKClientError clientError) {
-    static WKTransferSubmitErrorType types[] = {
+    static WKTransferSubmitErrorType types[NUMBER_OF_TRANSFER_SUBMIT_ERROR_TYPES] = {
         WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST,
         WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION,
         WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE,
         WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE,
         WK_TRANSFER_SUBMIT_ERROR_UNKNOWN,
-        WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE
+        WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE,
+        WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY,
     };
 
     WKTransferSubmitErrorType type = (WK_CLIENT_ERROR_SUBMISSION == clientError->type

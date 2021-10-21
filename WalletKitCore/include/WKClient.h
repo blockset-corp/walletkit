@@ -45,7 +45,15 @@ typedef enum {
     /// error.  Generally resubmitting the request will eventually succeed.
     WK_CLIENT_ERROR_UNAVAILABLE,
 
+    /// The client can't be reached because network connectivity has been lost
+    WK_CLIENT_ERROR_LOST_CONNECTIVITY,
+
 } WKClientErrorType;
+
+#define NUMBER_OF_CLIENT_ERROR_TYPES     (1 + WK_CLIENT_ERROR_LOST_CONNECTIVITY)
+
+extern const char *
+wkClientErrorTypeDescription (WKClientErrorType type);
 
 typedef struct WKClientErrorRecord *WKClientError;
 

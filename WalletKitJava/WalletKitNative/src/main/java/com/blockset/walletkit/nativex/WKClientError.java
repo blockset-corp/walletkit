@@ -46,6 +46,13 @@ public class WKClientError extends PointerType {
             public int toCore() {
                 return UNAVAILABLE_VALUE;
             }
+        },
+
+        LOST_CONNECTIVITY {
+            @Override
+            public int toCore() {
+                return LOST_CONNECTIVITY_VALUE;
+            }
         };
 
         public static final int BAD_REQUEST_VALUE  = 0;
@@ -54,6 +61,7 @@ public class WKClientError extends PointerType {
         public static final int BAD_RESPONSE_VALUE = 3;
         public static final int SUBMISSION_VALUE   = 4;
         public static final int UNAVAILABLE_VALUE  = 5;
+        public static final int LOST_CONNECTIVITY_VALUE = 6;
 
         public static Type fromCore(int core) {
             switch (core) {
@@ -63,6 +71,7 @@ public class WKClientError extends PointerType {
                 case BAD_RESPONSE_VALUE: return BAD_RESPONSE;
                 case SUBMISSION_VALUE:   return SUBMISSION;
                 case UNAVAILABLE_VALUE:  return UNAVAILABLE;
+                case LOST_CONNECTIVITY_VALUE: return LOST_CONNECTIVITY;
                 default: throw new IllegalArgumentException("Invalid core value");
             }
         }

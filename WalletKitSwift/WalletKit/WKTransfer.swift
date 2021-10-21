@@ -307,7 +307,6 @@ public class TransferHash: Hashable, CustomStringConvertible {
 public enum TransferSubmitErrorType: Equatable, Error {
     case account
     case signature
-    case duplicate
     case insufficientBalance
     case insufficientNetworkFee
     case insufficientNetworkCostUnit
@@ -315,6 +314,7 @@ public enum TransferSubmitErrorType: Equatable, Error {
     case nonceTooLow
     case invalidNonce
     case transactionExpired
+    case transactionDuplicate
     case transaction
     case unknown
 
@@ -324,20 +324,22 @@ public enum TransferSubmitErrorType: Equatable, Error {
     case clientBadResponse
     case clientUnavailable
 
+    case lostConnectivity
+
     internal init (_ core: WKTransferSubmitErrorType) {
         switch core {
         case WK_TRANSFER_SUBMIT_ERROR_ACCOUNT:   self = .account
         case WK_TRANSFER_SUBMIT_ERROR_SIGNATURE: self = .signature
-        case WK_TRANSFER_SUBMIT_ERROR_DUPLICATE: self = .duplicate
         case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE:           self = .insufficientBalance
         case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE:       self = .insufficientNetworkFee
         case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT: self = .insufficientNetworkCostUnit
-        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE:    self = .insufficientFee
-        case WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW:       self = .nonceTooLow
-        case WK_TRANSFER_SUBMIT_ERROR_INVALID_NONCE:       self = .invalidNonce
-        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED: self = .transactionExpired
-        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION:         self = .transaction
-        case WK_TRANSFER_SUBMIT_ERROR_UNKNOWN:             self = .unknown
+        case WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE:      self = .insufficientFee
+        case WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW:         self = .nonceTooLow
+        case WK_TRANSFER_SUBMIT_ERROR_NONCE_INVALID:         self = .invalidNonce
+        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED:   self = .transactionExpired
+        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE: self = .transactionDuplicate
+        case WK_TRANSFER_SUBMIT_ERROR_TRANSACTION:           self = .transaction
+        case WK_TRANSFER_SUBMIT_ERROR_UNKNOWN:               self = .unknown
 
             // Client
         case WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST:  self = .clientBadRequest
@@ -345,6 +347,10 @@ public enum TransferSubmitErrorType: Equatable, Error {
         case WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE:     self = .clientResource
         case WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE: self = .clientBadResponse
         case WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE:  self = .clientUnavailable
+
+            // App
+        case WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY:   self = .lostConnectivity
+
         default: preconditionFailure()
         }
     }

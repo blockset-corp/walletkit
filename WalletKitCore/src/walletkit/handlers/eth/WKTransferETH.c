@@ -61,7 +61,7 @@ wkTransferExtractSubmitErrorFromStatusETH (BREthereumTransactionStatus status,
             case TRANSACTION_ERROR_GAS_TOO_LOW:       submitType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT; break;
             case TRANSACTION_ERROR_REPLACEMENT_UNDER_PRICED: submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION; break;
             case TRANSACTION_ERROR_DROPPED:           submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED; break;
-            case TRANSACTION_ERROR_ALREADY_KNOWN:     submitType = WK_TRANSFER_SUBMIT_ERROR_DUPLICATE; break;
+            case TRANSACTION_ERROR_ALREADY_KNOWN:     submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE; break;
             case TRANSACTION_ERROR_UNKNOWN:           submitType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN; break;
         }
 
