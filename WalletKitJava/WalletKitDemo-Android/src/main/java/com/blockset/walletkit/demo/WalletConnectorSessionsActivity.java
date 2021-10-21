@@ -231,7 +231,7 @@ public class WalletConnectorSessionsActivity extends AppCompatActivity {
 
                     @Override
                     public void handleData(WalletConnector connector) {
-                        walletConnect = new WalletConnect(wallet.getWalletManager().getNetwork().isMainnet(),
+                        walletConnect = new WalletConnect(wallet.getWalletManager(),
                                                           connector,
                                                           DemoApplication.getPaperKey());
                     }

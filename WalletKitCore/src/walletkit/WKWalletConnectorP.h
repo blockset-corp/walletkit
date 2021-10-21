@@ -74,6 +74,7 @@ typedef uint8_t*
         WKWalletConnector       walletConnector,
         BRArrayOf (const char*) keys,
         BRArrayOf (const char*) values,
+        WKNetworkFee            defaultFee,
         size_t                  *serializationLength,
         WKWalletConnectorStatus *status           );
 

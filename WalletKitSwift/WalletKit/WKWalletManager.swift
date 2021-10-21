@@ -512,6 +512,7 @@ public enum WalletConnectorError: Error {
     case illegalOperation
     case unknownEntity
     case invalidTransactionArguments
+    case missingFee
     case invalidTransactionSerialization
     case invalidKeyForSigning
     case unrecoverableKey
@@ -529,6 +530,7 @@ public enum WalletConnectorError: Error {
         case WK_WALLET_CONNECTOR_STATUS_UNSUPPORTED_CONNECTOR:          self = .unsupportedConnector
         case WK_WALLET_CONNECTOR_STATUS_ILLEGAL_OPERATION:              self = .illegalOperation
         case WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS:  self = .invalidTransactionArguments
+        case WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE:        self = .missingFee
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SIGNATURE:              self = .invalidSignature
         case WK_WALLET_CONNECTOR_STATUS_INVALID_SERIALIZATION:          self = .invalidTransactionSerialization
         case WK_WALLET_CONNECTOR_STATUS_INVALID_DIGEST:                 self = .invalidDigest
@@ -738,16 +740,27 @@ public final class WalletConnector {
 
     ///
     /// Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
-    /// the connector's network.  For ETH the Dictionary keys are: {...}
+    /// the connector's network.  For ETH the Dictionary keys are: {...}.  There are circumstances
+    /// where the `arguments` do not specify the `NetworkFee` to use.  In this case the `defaultFee`
+    /// will be used.
+    ///
+    /// In practice, the caller cannot know if `arguments` does specify the fee and thus cannot tell
+    /// if `defaultFee` must be provided.  The caller can simply provide a `defaultFee` always or
+    /// the caller can look for `WalletConnectorError.missingFee` and then reinvoke this function
+    /// with a non-nil fee.  [The User might need to be queried to select a `NetworkFee` and thus
+    /// the caller might prefer to wait for `missingFee` before prompting the User.]
     ///
     /// This function is the 'create' part of the ETH JSON-RPC `eth_sendTransaction`
     ///
     /// - Parameter arguments: A dictionary (JSON-RPC-like) of create arguments
+    /// - Parameter defaultFee: If `arguments` does not include an argument that specifies the
+    ///     network fee, then the `defaultFee` is used
     ///
     /// - Returns: On success, an unsigned `Transaction`.  On failure, a WalletConnectError of:
-    ///      TBD
+    ///      invalidTransactionArguments in case one or more missing required arguments, or
+    ///      missingFee if the fee is neither among the transaction arguments nor provided via defaultFee
     ///
-    public func createTransaction (arguments: Dictionary<String,String>) -> Result<Transaction, WalletConnectorError> {
+    public func createTransaction (arguments: Dictionary<String,String>, defaultFee:NetworkFee? = nil) -> Result<Transaction, WalletConnectorError> {
         
         let keys = Array(arguments.keys)
         let values = Array(arguments.values)
@@ -767,6 +780,7 @@ public final class WalletConnector {
                                                                                  &(keysStrs),
                                                                                  &(valuesStrs),
                                                                                  keys.count,
+                                                                                 defaultFee?.core,
                                                                                  &serializationLength,
                                                                                  &status)
                                                       

@@ -145,8 +145,7 @@ wkWalletConnectorSignDataETH (
     assert (27 == signature.sig.vrs.v || 28 == signature.sig.vrs.v);  // uncompressed
 
     // Get the Ethereum network's chainId for EIP-155 encoding.
-    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+    BREthereumChainId chainId = ethNetworkGetChainId(wkWalletManagerGetNetworkAsETH(walletConnector->manager));
 
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"
@@ -193,8 +192,7 @@ wkWalletConnectorRecoverKeyETH (
     BREthereumSignatureVRS vrs = walletConnectVrsSignatureFromRsv(*((BREthereumSignatureRSV*)signature));
 
     // Get the Ethereum network's chainId for EIP-155 decoding.
-    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumChainId ourChainId = ethNetworkGetChainId(managerETH->network);
+    BREthereumChainId ourChainId = ethNetworkGetChainId(wkWalletManagerGetNetworkAsETH(walletConnector->manager));
 
     // Flag to indicate if the chainId in `signature` matches ours.
     bool validChainId = true;
@@ -248,6 +246,7 @@ static const char* transactionFromArgsFieldNames[WK_WALLET_CONNECT_ETH_FIELD_MAX
                           (1 << WK_WALLET_CONNECT_ETH_GAS)          | \
                           (1 << WK_WALLET_CONNECT_ETH_GASPRICE) )
 #define WK_WALLET_CONNECT_ETH_MET(met, reqmet) (met | 1 << reqmet)
+#define WK_WALLET_CONNECT_ETH_IS_MET(met, reqmet) ((met & 1 << reqmet) != 0)
 #define WK_WALLET_CONNECT_ETH_MANDATORY_MET(met) ((met & MANDATORY_FIELDS) == MANDATORY_FIELDS)
 
 static WKWalletConnectEthTransactionField getTransactionFieldFromKey(const char* keyValue) {
@@ -270,6 +269,7 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         WKWalletConnector       walletConnector,
         BRArrayOf (const char*) keys,
         BRArrayOf (const char*) values,
+        WKNetworkFee            defaultFee,
         size_t                  *serializationLength,
         WKWalletConnectorStatus *status         ) {
 
@@ -282,17 +282,24 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
     BREthereumGas       gas;
     const char*         data;
     uint64_t            nonce = ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED;
-
+    int                 reqsMet = 0;
     // Permissible 'optional' field defaults:
     // w/o DATA: Assume "" or NULL
     // w/o VALUE: Assume 0
     //
     // Nonce is provided by walletkit, if supplied
-    // by arguements, that value is ignored.
+    // by arguments, that value is ignored.
     amount = ethEtherCreateZero ();
     data = NULL;
 
-    int reqsMet = 0;
+    // A default gas price may have been indicated, in which 
+    // case callers that omit 'gasPrice' in the arguments will
+    // still be treated w/o error
+    if (NULL != defaultFee) {
+        gasPrice = wkNetworkFeeAsETH(defaultFee);
+        reqsMet = WK_WALLET_CONNECT_ETH_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE);
+    }
+    
     size_t elems = array_count (keys);
     for (size_t elemNo=0; elemNo < elems; elemNo++) {
 
@@ -346,14 +353,22 @@ wkWalletConnectorCreateTransactionFromArgumentsETH (
         }
     }
 
-    if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet) ) {
+    if (!WK_WALLET_CONNECT_ETH_IS_MET(reqsMet, WK_WALLET_CONNECT_ETH_GASPRICE)) {
+        
+        // Missing specifically the required gasPrice. Caller may add
+        // optional `networkFee` to correct this
+        *status = WK_WALLET_CONNECTOR_STATUS_TRANSACTION_MISSING_FEE;
+        return NULL;
+    } else if (!WK_WALLET_CONNECT_ETH_MANDATORY_MET (reqsMet)) {
+        
+        // Missing one or more other mandatory fields
         *status = WK_WALLET_CONNECTOR_STATUS_INVALID_TRANSACTION_ARGUMENTS;
         return NULL;
     }
 
     // Set the source address 'from', and 'nonce' based on the current account
+    BREthereumNetwork ethNetwork = wkWalletManagerGetNetworkAsETH(walletConnector->manager);
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumNetwork ethNetwork = managerETH->network;
     BREthereumAccount ethAccount = managerETH->account;
     BREthereumAddress sourceAddress = ethAccountGetPrimaryAddress (ethAccount);
 
@@ -387,8 +402,7 @@ wkWalletConnectorCreateTransactionFromSerializationETH (
         WKBoolean               *isSigned,
         WKWalletConnectorStatus *status) {
 
-    WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumNetwork   ethNetwork  = managerETH->network;
+    BREthereumNetwork   ethNetwork  = wkWalletManagerGetNetworkAsETH(walletConnector->manager);
 
     // No result, no error
     *serializationLength = 0;
@@ -439,7 +453,7 @@ wkWalletConnectorSignTransactionDataETH (
     WKWalletConnectorStatus *status ) {
 
     WKWalletManagerETH  managerETH  = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumNetwork   ethNetwork  = managerETH->network;
+    BREthereumNetwork   ethNetwork  = wkWalletManagerGetNetworkAsETH(walletConnector->manager);
     BRKey               brKey       = *wkKeyGetCore (key);
     BREthereumAccount   ethAccount  = managerETH->account;
     BREthereumAddress   ethAddress  = ethAccountGetPrimaryAddress (ethAccount);
@@ -524,8 +538,7 @@ wkWalletConnectorSignTypedDataETH (
             28 == signResult.signature.sig.vrs.v);  // uncompressed
     
     // Get the Ethereum network's chainId for EIP-155 encoding.
-    WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (walletConnector->manager);
-    BREthereumChainId chainId = ethNetworkGetChainId(managerETH->network);
+    BREthereumChainId chainId = ethNetworkGetChainId(wkWalletManagerGetNetworkAsETH(walletConnector->manager));
 
     // Update the signature `V` field with the EIP-155 encoding as per https://eips.ethereum.org/EIPS/eip-155
     //    "the v of the signature MUST be set to {0,1} + CHAIN_ID * 2 + 35 where {0,1} is the parity of y"

@@ -2,8 +2,11 @@ package com.blockset.walletkit.demo.walletconnect.msg;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import androidx.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,39 +18,44 @@ import java.util.Map;
  */
 public class TransactionParameter {
 
+    /** For the sake of unmarshalling received JSON transaction arguments,
+     *  'to', 'gas' are the only absolutely mandatory arguements. 'gasPrice'
+     *  may be met with default fees, the the other arguments are purely optional
+     *  (and in some cases, 'nonce' for example, may be ignored)
+     */
     @JsonCreator
-    public static TransactionParameter create(@JsonProperty("from")     String      from,
-                                              @JsonProperty("to")       String      to,
-                                              @JsonProperty("gasPrice") String      gasPrice,
-                                              @JsonProperty("gas")      String      gas,
-                                              @JsonProperty("value")    String      value,
-                                              @JsonProperty("nonce")    String      nonce,
-                                              @JsonProperty("data")     String      data ) {
+    public static TransactionParameter create(@JsonProperty("from") @Nullable       String      from,
+                                              @JsonProperty("to")                   String      to,
+                                              @JsonProperty("gasPrice") @Nullable   String      gasPrice,
+                                              @JsonProperty("gas")                  String      gas,
+                                              @JsonProperty("value") @Nullable      String      value,
+                                              @JsonProperty("nonce") @Nullable      String      nonce,
+                                              @JsonProperty("data")  @Nullable      String      data ) {
 
-        return new TransactionParameter(checkNotNull(from),
+        return new TransactionParameter(from,
                                         checkNotNull(to),
-                                        checkNotNull(gasPrice),
+                                        gasPrice,
                                         checkNotNull(gas),
-                                        checkNotNull(value),
-                                        checkNotNull(nonce),
-                                        checkNotNull(data));
+                                        value,
+                                        nonce,
+                                        data);
     }
 
-    private final String    from;
-    private final String    to;
-    private final String    gasPrice;
-    private final String    gas;
-    private final String    value;
-    private final String    nonce;
-    private final String    data;
+    private final @Nullable String  from;
+    private final String            to;
+    private final @Nullable String  gasPrice;
+    private final String            gas;
+    private final @Nullable String  value;
+    private final @Nullable String  nonce;
+    private final @Nullable String  data;
 
-    private TransactionParameter(String     from,
-                                 String     to,
-                                 String     gasPrice,
-                                 String     gas,
-                                 String     value,
-                                 String     nonce,
-                                 String     data) {
+    private TransactionParameter(@Nullable String   from,
+                                 String             to,
+                                 @Nullable String   gasPrice,
+                                 String             gas,
+                                 @Nullable String   value,
+                                 @Nullable String   nonce,
+                                 @Nullable String   data) {
         this.from = from;
         this.to = to;
         this.gasPrice = gasPrice;
@@ -60,25 +68,25 @@ public class TransactionParameter {
     // getters
 
     @JsonProperty("from")
-    public String getFrom() { return from; }
+    public Optional<String> getFrom() { return Optional.fromNullable(from); }
 
     @JsonProperty("to")
     public String getTo() { return to; }
 
     @JsonProperty("gasPrice")
-    public String getGasPrice() { return gasPrice; }
+    public Optional<String> getGasPrice() { return Optional.fromNullable(gasPrice); }
 
     @JsonProperty("gas")
     public String getGas() { return gas; }
 
     @JsonProperty("value")
-    public String getValue() { return value; }
+    public Optional<String> getValue() { return Optional.fromNullable(value); }
 
     @JsonProperty("nonce")
-    public String getNonce() { return nonce; }
+    public Optional<String> getNonce() { return Optional.fromNullable(nonce); }
 
     @JsonProperty("data")
-    public String getData() { return data; }
+    public Optional<String> getData() { return Optional.fromNullable(data); }
 
     /** getAsWalletConnectorArguments
      *
@@ -89,10 +97,13 @@ public class TransactionParameter {
     public Map<String, String> getAsWalletConnectorArguments() {
         Map<String, String> parms = new HashMap<String, String>();
         parms.put("to", getTo());
-        parms.put("data", getData());
+        if (getData().isPresent())
+            parms.put("data", getData().get());
         parms.put("gas", getGas());
-        parms.put("gasPrice", getGasPrice());
-        parms.put("value", getValue());
+        if (getGasPrice().isPresent())
+            parms.put("gasPrice", getGasPrice().get());
+        if (getData().isPresent())
+            parms.put("value", getValue().get());
         return parms;
     }
 

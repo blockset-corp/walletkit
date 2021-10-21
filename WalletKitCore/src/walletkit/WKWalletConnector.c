@@ -246,6 +246,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
         const char                **keys,
         const char                **values,
         size_t                    keyValuePairsCount,
+        WKNetworkFee              defaultFee,
         size_t                    *serializationLength,
         WKWalletConnectorStatus *status            ) {
 
@@ -273,6 +274,7 @@ wkWalletConnectorCreateTransactionFromArguments  (
                 connector,
                 arrayOfKeys,
                 arrayOfValues,
+                defaultFee,
                 serializationLength,
                 status);
 

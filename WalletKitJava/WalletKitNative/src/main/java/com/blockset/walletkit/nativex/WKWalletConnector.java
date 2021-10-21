@@ -22,6 +22,8 @@ import com.sun.jna.ptr.PointerByReference;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 /** WKWalletConnector processes interactions with WalletKit native code
  *  and transmits expected results or errors in the form of WKResults.
  */
@@ -205,9 +207,10 @@ public class WKWalletConnector extends PointerType {
      */
     public WKResult<byte[], WKWalletConnectorError>
     createTransactionFromArguments(
-            List<String> keys, 
-            List<String> values,
-            int          countOfKeyValuePairs) {
+            List<String>            keys,
+            List<String>            values,
+            int                     countOfKeyValuePairs,
+            @Nullable WKNetworkFee  defaultFee) {
 
         WKResult res;
         StringArray keysArray = new StringArray(keys.toArray(new String[0]), "UTF-8");
@@ -216,11 +219,13 @@ public class WKWalletConnector extends PointerType {
         IntByReference err = new IntByReference();
         
         // There are equal number of keys and values
+        Pointer useFee = defaultFee != null ? defaultFee.getPointer() : Pointer.NULL;
         Pointer serializationPtr = 
             WKNativeLibraryDirect.wkWalletConnectorCreateTransactionFromArguments(this.getPointer(),
                                                                                   keysArray,
                                                                                   valuesArray,
                                                                                   new SizeT(countOfKeyValuePairs),
+                                                                                  useFee,
                                                                                   serLengthRef,
                                                                                   err   );
         

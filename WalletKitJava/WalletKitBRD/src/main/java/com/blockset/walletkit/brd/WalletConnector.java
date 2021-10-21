@@ -7,9 +7,12 @@
  */
 package com.blockset.walletkit.brd;
 
+import androidx.annotation.Nullable;
+
 import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.errors.QueryError;
 import com.blockset.walletkit.nativex.WKKey;
+import com.blockset.walletkit.nativex.WKNetworkFee;
 import com.blockset.walletkit.nativex.WKWalletConnectorError;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.errors.WalletConnectorError;
@@ -164,16 +167,24 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
 
     @Override
     public Result<com.blockset.walletkit.WalletConnector.Transaction, WalletConnectorError>
-    createTransaction(Map<String, String> arguments) {
+    createTransaction(Map<String, String> arguments,
+                      @Nullable com.blockset.walletkit.NetworkFee defaultFee) {
 
         List<String> keys = new ArrayList<String>();
         List<String> vals = new ArrayList<String>();
         
         keys.addAll(arguments.keySet());
         vals.addAll(arguments.values());
-        
+
+        WKNetworkFee useFee = null;
+        if (defaultFee != null)
+            useFee = NetworkFee.from(defaultFee).getCoreBRCryptoNetworkFee();
+
         WKResult<byte[], WKWalletConnectorError> serializationRes =
-                core.createTransactionFromArguments(keys, vals, arguments.size());
+                core.createTransactionFromArguments(keys,
+                                                    vals,
+                                                    arguments.size(),
+                                                    useFee);
 
         if (serializationRes.isFailure()) {
             return Result.failure(wkErrorToError(serializationRes.getFailure()));
