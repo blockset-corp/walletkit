@@ -206,14 +206,24 @@ public interface WalletConnector {
     Serialization createSerialization(byte[] data);
 
     /**
-     * Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
-     * the connector's network.  For ETH the Dictionary keys are: {...}
-     * @param arguments Connector networks arguments for transaction, in the form of key/value pairs
-     * @param defaultFee An optional alternative fee used in case the transaction arguments
-     *                   do not contain the mandatory fee
+     *  Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
+     *  the connector's network.  For ETH the Dictionary keys are: {...}.  There are circumstances
+     *  where the `arguments` do not specify the `NetworkFee` to use.  In this case the `defaultFee`
+     *  will be used.
+     *
+     *  In practice, the caller cannot know if `arguments` does specify the fee and thus cannot tell
+     *  if `defaultFee` must be provided.  The caller can simply provide a `defaultFee` always or
+     *  the caller can look for `WalletConnectorError.missingFee` and then reinvoke this function
+     *  with a non-nil fee.  [The User might need to be queried to select a `NetworkFee` and thus
+     *  the caller might prefer to wait for `missingFee` before prompting the User.]
+     *
+     * @param arguments A Map (JSON-RPC-like) of create arguments
+     * @param defaultFee If `arguments` does not include an argument that specifies the
+     *                   network fee, then the `defaultFee` is used
      * @result An unsigned {@link Transaction} or {@link Result} composed with
      *         {@link WalletConnectorError.InvalidTransactionArguments} in case one or more missing
-     *         required arguments, or {@link WalletConnectorError.MissingFee} if the fee is neither among
+     *         required arguments, or,
+     *         {@link WalletConnectorError.MissingFee} if the fee is neither among
      *         the transaction arguments nor provided via defaultFee
      */
     Result<Transaction, WalletConnectorError>

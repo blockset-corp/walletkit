@@ -740,13 +740,21 @@ public final class WalletConnector {
 
     ///
     /// Create a Transaction from a wallet-connect-specific dictionary of arguments applicable to
-    /// the connector's network.  For ETH the Dictionary keys are: {...}
+    /// the connector's network.  For ETH the Dictionary keys are: {...}.  There are circumstances
+    /// where the `arguments` do not specify the `NetworkFee` to use.  In this case the `defaultFee`
+    /// will be used.
+    ///
+    /// In practice, the caller cannot know if `arguments` does specify the fee and thus cannot tell
+    /// if `defaultFee` must be provided.  The caller can simply provide a `defaultFee` always or
+    /// the caller can look for `WalletConnectorError.missingFee` and then reinvoke this function
+    /// with a non-nil fee.  [The User might need to be queried to select a `NetworkFee` and thus
+    /// the caller might prefer to wait for `missingFee` before prompting the User.]
     ///
     /// This function is the 'create' part of the ETH JSON-RPC `eth_sendTransaction`
     ///
     /// - Parameter arguments: A dictionary (JSON-RPC-like) of create arguments
-    /// - Parameter defaultFee: An optional alternative fee used in case the transaction arguments
-    ///                         do not contain the mandatory fee
+    /// - Parameter defaultFee: If `arguments` does not include an argument that specifies the
+    ///     network fee, then the `defaultFee` is used
     ///
     /// - Returns: On success, an unsigned `Transaction`.  On failure, a WalletConnectError of:
     ///      invalidTransactionArguments in case one or more missing required arguments, or
