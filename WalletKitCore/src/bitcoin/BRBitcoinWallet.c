@@ -643,7 +643,7 @@ BRBitcoinTransaction *btcWalletCreateTxForOutputsWithFeePerKb(BRBitcoinWallet *w
 {
     BRBitcoinTransaction *tx, *transaction = btcTransactionNew();
     uint64_t feeAmount, amount = 0, balance = 0, minAmount;
-    size_t i, j, cpfpSize = 0;
+    size_t i, cpfpSize = 0;
     BRBitcoinUTXO *o;
     BRAddress addr = BR_ADDRESS_NONE;
     
@@ -671,34 +671,6 @@ BRBitcoinTransaction *btcWalletCreateTxForOutputsWithFeePerKb(BRBitcoinWallet *w
         if (! tx || o->n >= tx->outCount) continue;
         btcTransactionAddInput(transaction, tx->txHash, o->n, tx->outputs[o->n].amount,
                               tx->outputs[o->n].script, tx->outputs[o->n].scriptLen, NULL, 0, NULL, 0, TXIN_SEQUENCE);
-        
-        if (btcTransactionVSize(transaction) + TX_OUTPUT_SIZE > TX_MAX_SIZE) { // transaction size-in-bytes too large
-            btcTransactionFree(transaction);
-            transaction = NULL;
-        
-            // check for sufficient total funds before building a smaller transaction
-            if (wallet->balance < amount + _txFee(feePerKb, 10 + array_count(wallet->utxos)*TX_INPUT_SIZE +
-                                                  (outCount + 1)*TX_OUTPUT_SIZE + cpfpSize)) break;
-            pthread_mutex_unlock(&wallet->lock);
-
-            if (outputs[outCount - 1].amount > amount + feeAmount + minAmount - balance) {
-                BRBitcoinTxOutput newOutputs[outCount];
-                
-                for (j = 0; j < outCount; j++) {
-                    newOutputs[j] = outputs[j];
-                }
-                
-                newOutputs[outCount - 1].amount -= amount + feeAmount - balance; // reduce last output amount
-                transaction = btcWalletCreateTxForOutputsWithFeePerKb(wallet, feePerKb, newOutputs, outCount);
-            }
-            else transaction = btcWalletCreateTxForOutputsWithFeePerKb(wallet, feePerKb, outputs,
-                                                                       outCount - 1); // remove last output
-
-            balance = amount = feeAmount = 0;
-            pthread_mutex_lock(&wallet->lock);
-            break;
-        }
-        
         balance += tx->outputs[o->n].amount;
         
 //        // size of unconfirmed, non-change inputs for child-pays-for-parent fee
@@ -717,17 +689,19 @@ BRBitcoinTransaction *btcWalletCreateTxForOutputsWithFeePerKb(BRBitcoinWallet *w
     
     pthread_mutex_unlock(&wallet->lock);
     
-    if (transaction && (outCount < 1 || balance < amount + feeAmount)) { // no outputs/insufficient funds
-        btcTransactionFree(transaction);
-        transaction = NULL;
-    }
-    else if (transaction && balance - (amount + feeAmount) > minAmount) { // add change output
+    if (transaction && balance > amount + feeAmount + minAmount) { // add change output
         btcWalletUnusedAddrs(wallet, &addr, 1, 1);
         uint8_t script[BRAddressScriptPubKey(NULL, 0, wallet->addrParams, addr.s)];
         size_t scriptLen = BRAddressScriptPubKey(script, sizeof(script), wallet->addrParams, addr.s);
     
         btcTransactionAddOutput(transaction, balance - (amount + feeAmount), script, scriptLen);
         btcTransactionShuffleOutputs(transaction);
+    }
+
+    if (transaction && (outCount < 1 || balance < amount + feeAmount ||
+                        btcTransactionVSize(transaction) > TX_MAX_SIZE)) { // no outputs/insufficient funds/too large
+        btcTransactionFree(transaction);
+        transaction = NULL;
     }
     
     return transaction;
@@ -1303,21 +1277,32 @@ uint64_t btcWalletMaxOutputAmount(BRBitcoinWallet *wallet)
 // use feePerKb UINT64_MAX to indicate that the wallet feePerKb should be used
 uint64_t btcWalletMaxOutputAmountWithFeePerKb(BRBitcoinWallet *wallet, uint64_t feePerKb)
 {
-    BRBitcoinTransaction *tx;
+    BRBitcoinTransaction *t, *tx = btcTransactionNew();
     BRBitcoinUTXO *o;
     uint64_t fee, amount = 0;
-    size_t i, txSize, cpfpSize = 0, inCount = 0;
+    size_t i, cpfpSize = 0;
 
     assert(wallet != NULL);
     pthread_mutex_lock(&wallet->lock);
     feePerKb = UINT64_MAX == feePerKb ? wallet->feePerKb : feePerKb;
 
-    for (i = array_count(wallet->utxos); i > 0; i--) {
-        o = &wallet->utxos[i - 1];
-        tx = BRSetGet(wallet->allTx, &o->hash);
-        if (! tx || o->n >= tx->outCount) continue;
-        inCount++;
-        amount += tx->outputs[o->n].amount;
+    for (i = 0; i < array_count(wallet->utxos); i++) {
+        o = &wallet->utxos[i];
+        t = BRSetGet(wallet->allTx, &o->hash);
+        if (! t || o->n >= t->outCount) continue;
+        btcTransactionAddInput(tx, o->hash, o->n,
+                               t->outputs[o->n].amount,
+                               t->outputs[o->n].script, t->outputs[o->n].scriptLen,
+                               NULL, 0,
+                               NULL, 0,
+                               TXIN_SEQUENCE);
+        
+        if (btcTransactionVSize(tx) + TX_OUTPUT_SIZE*2 > TX_MAX_SIZE) {
+            btcTxInputSetScript(tx->inputs + --tx->inCount, NULL, 0);
+            break;
+        }
+        
+        amount += t->outputs[o->n].amount;
         
 //        // size of unconfirmed, non-change inputs for child-pays-for-parent fee
 //        // don't include parent tx with more than 10 inputs or 10 outputs
@@ -1325,10 +1310,9 @@ uint64_t btcWalletMaxOutputAmountWithFeePerKb(BRBitcoinWallet *wallet, uint64_t 
 //            ! _btcWalletTxIsSend(wallet, tx)) cpfpSize += btcTransactionVSize(tx);
     }
 
-    txSize = 8 + BRVarIntSize(inCount) + TX_INPUT_SIZE*inCount + BRVarIntSize(2) + TX_OUTPUT_SIZE*2;
-    fee = _txFee(feePerKb, txSize + cpfpSize);
     pthread_mutex_unlock(&wallet->lock);
-    
+    fee = _txFee(feePerKb, btcTransactionVSize(tx) + TX_OUTPUT_SIZE*2 + cpfpSize);
+    btcTransactionFree(tx);
     return (amount > fee) ? amount - fee : 0;
 }
 

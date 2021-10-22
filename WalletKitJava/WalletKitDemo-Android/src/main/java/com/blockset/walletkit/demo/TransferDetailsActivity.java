@@ -12,10 +12,10 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Html;
 import android.text.Spanned;
 import android.view.View;
@@ -31,7 +31,7 @@ import com.blockset.walletkit.TransferState;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.walletmanager.DefaultWalletManagerEventVisitor;
 import com.blockset.walletkit.events.walletmanager.WalletManagerBlockUpdatedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
@@ -160,7 +160,7 @@ public class TransferDetailsActivity extends AppCompatActivity implements Defaul
     }
 
     @Override
-    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
         loadTransfer();
     }
 

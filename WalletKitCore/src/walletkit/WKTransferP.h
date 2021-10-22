@@ -86,16 +86,16 @@ typedef bool // true if changed
 (*WKTransferSetHashHandler) (WKTransfer transfer,
                                    WKHash hash);
 
-typedef uint8_t *
+typedef OwnershipGiven uint8_t *
 (*WKTransferSerializeHandler) (WKTransfer transfer,
-                                     WKNetwork  network,
-                                     WKBoolean  requireSignature,
-                                     size_t *serializationCount);
+                               WKNetwork  network,
+                               WKBoolean  requireSignature,
+                               size_t *serializationCount);
 
-typedef uint8_t *
+typedef OwnershipGiven uint8_t *
 (*WKTransferGetBytesForFeeEstimateHandler) (WKTransfer transfer,
-                                                  WKNetwork  network,
-                                                  size_t *bytesCount);
+                                            WKNetwork  network,
+                                            size_t *bytesCount);
 
 typedef int // 1 if equal, 0 if not
 (*WKTransferIsEqualHandler) (WKTransfer t1,
@@ -122,8 +122,28 @@ struct WKTransferRecord {
     pthread_mutex_t lock;
     WKTransferListener listener;
 
+    /// The UIDS is globally unique.  It is derived from the transfer's originating
+    /// transaction's identifier w/ the addition of an otherwise arbitrary index.  That is, one
+    /// transaction can generate multiple transfers; the ordering of those generated transfers is
+    /// arbitrary but each one can be assigned an index.
+    ///
+    /// In practice the UIDS is `<identifier>:<index>`.  The `identifier` is usually a hash.
+    ///
+    /// The UIDS can not exist until the transaction has been processed into its one or more
+    /// transfers.  When a transfer is created this value will be NULL.
+    char *uids;
+
+    /// The identifier for this transfer's originating transaction.  This is usually the string
+    /// representation of a hash; however some currencies, notably Hedera, have identifier that
+    /// are not hashes.
+    ///
+    /// The identifier can be NULL.
     char *identifier;
+
+    /// The source address sent the amount and paid the fee.
     WKAddress sourceAddress;
+
+    /// The target address received the amount.
     WKAddress targetAddress;
 
     /// The state (modifiable)
@@ -158,21 +178,26 @@ typedef void (*WKTransferCreateCallback) (WKTransferCreateContext context,
 
 extern WKTransfer // OwnershipKept, all arguments
 wkTransferAllocAndInit (size_t sizeInBytes,
-                            WKNetworkType type,
-                            WKTransferListener listener,
-                            WKUnit unit,
-                            WKUnit unitForFee,
-                            WKFeeBasis feeBasisEstimated,
-                            WKAmount amount,
-                            WKTransferDirection direction,
-                            WKAddress sourceAddress,
-                            WKAddress targetAddress,
-                            WKTransferState state,
-                            WKTransferCreateContext  createContext,
-                            WKTransferCreateCallback createCallback);
+                        WKNetworkType type,
+                        WKTransferListener listener,
+                        const char *uids,
+                        WKUnit unit,
+                        WKUnit unitForFee,
+                        WKFeeBasis feeBasisEstimated,
+                        WKAmount amount,
+                        WKTransferDirection direction,
+                        WKAddress sourceAddress,
+                        WKAddress targetAddress,
+                        WKTransferState state,
+                        WKTransferCreateContext  createContext,
+                        WKTransferCreateCallback createCallback);
 
 private_extern WKNetworkType
 wkTransferGetType (WKTransfer transfer);
+
+private_extern void
+wkTransferSetUids (WKTransfer transfer,
+                   const char *uids);
 
 private_extern void
 wkTransferSetStateForced (WKTransfer transfer,
@@ -213,6 +238,10 @@ wkTransferGetFeeBasis (WKTransfer transfer);
 private_extern WKAmount
 wkTransferGetAmountDirectedInternal (WKTransfer transfer,
                                          WKBoolean  respectSuccess);
+
+private_extern OwnershipGiven WKAmount
+wkWalletGetTransferAmountDirectedNet (WKWallet wallet,
+                                      WKTransfer transfer);
 
 #ifdef __cplusplus
 }

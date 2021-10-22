@@ -8,6 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.nativex.WKAddressScheme;
+import com.blockset.walletkit.nativex.WKFeeBasis;
 import com.blockset.walletkit.nativex.WKNetworkType;
 import com.blockset.walletkit.nativex.WKPaymentProtocolError;
 import com.blockset.walletkit.nativex.WKPaymentProtocolType;
@@ -181,6 +182,7 @@ final class Utilities {
                             included.transactionIndex,
                             included.blockTimestamp,
                             Optional.fromNullable(included.feeBasis)
+                                    .transform(WKFeeBasis::take)
                                     .transform(TransferFeeBasis::create)
                                     .transform(TransferFeeBasis::getFee),
                             included.success,
@@ -215,6 +217,7 @@ final class Utilities {
             case HBAR:return WKNetworkType.HBAR;
             case XTZ: return WKNetworkType.XTZ;
             case XLM: return WKNetworkType.XLM;
+            /* case __SYMBOL__: return WKNetworkType.__SYMBOL__; */
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }
@@ -232,6 +235,7 @@ final class Utilities {
             case HBAR:return NetworkType.HBAR;
             case XTZ: return NetworkType.XTZ;
             case XLM: return NetworkType.XLM;
+            /* case __SYMBOL__: return NetworkType.__SYMBOL__; */
             default: throw new IllegalArgumentException("Unsupported type");
         }
     }

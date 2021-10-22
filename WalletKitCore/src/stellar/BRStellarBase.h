@@ -18,6 +18,8 @@
 #include "support/BRArray.h"
 #include "BRStellarResultCodes.h"
 
+#define STELLAR_ADDRESS_BYTES   (32)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,7 +92,7 @@ typedef enum st_manage_offer_type
 typedef uint32_t  BRStellarFee;
 typedef int64_t  BRStellarSequence;
 typedef uint64_t TimePoint;
-typedef int64_t  BRStellarAmount;
+typedef uint64_t  BRStellarAmount;
 
 // A Stellar Transaction Hash
 typedef struct {
@@ -118,7 +120,7 @@ typedef struct st_memo {
 
 typedef struct st_account_id {
     BRStellarPublicKeyType accountType;
-    uint8_t                accountID[32];
+    uint8_t                accountID[STELLAR_ADDRESS_BYTES];
 } BRStellarAccountID;
 
 typedef struct st_asset

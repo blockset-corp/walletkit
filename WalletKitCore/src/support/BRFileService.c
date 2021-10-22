@@ -1,6 +1,6 @@
 //
 //  BRFileService.c
-//  WalletKitCore
+//  Core
 //
 //  Created by Richard Evers on 1/4/19.
 //  Copyright © 2019 breadwallet LLC
@@ -278,6 +278,9 @@ fileServiceCreate (const char *basePath,
         return NULL;
     }
 
+    // Allow an absurdly long timeout for DB creation
+    sqlite3_busy_timeout (fs->sdb, 10 * 1000); // 10 seconds
+
     // Create the SQLite 'Entity' Table
     sqlite3_stmt *sdbCreateTableStmt;
     status = sqlite3_prepare_v2 (fs->sdb, FILE_SERVICE_SDB_ENTITY_TABLE, -1, &sdbCreateTableStmt, NULL);
@@ -352,6 +355,8 @@ fileServiceCreate (const char *basePath,
         }
     }
 #  endif
+    // A shorter timeout for individual statements; we'll handle SQLITE_BUSY
+    sqlite3_busy_timeout (fs->sdb, 2 * 1000); // 2 seconds
 #endif // !define(NEUTER_FILE_SERVICE)
 
     // Allocate the `entityTypes` array
@@ -434,6 +439,8 @@ fileServiceSetErrorHandler (BRFileService fs,
 static BRFileServiceEntityType *
 fileServiceLookupType (const BRFileService fs,
                        const char *type) {
+    if (NULL == fs) return NULL;
+
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
         if (0 == strcmp (type, fs->entityTypes[index].type))
@@ -629,8 +636,13 @@ _fileServiceSave (BRFileService fs,
 
     status = sqlite3_step (fs->sdbInsertStmt);
     if (SQLITE_DONE != status) {
-        free (data);
-        return fileServiceFailedSDB (fs, needLock, status);
+        int retries = 3;
+        while (retries-- > 0 && status != SQLITE_DONE && status != SQLITE_BUSY)
+            status = sqlite3_step (fs->sdbInsertStmt);
+        if (0 == retries) {
+            free (data);
+            return fileServiceFailedSDB (fs, needLock, status);
+        }
     }
 
     // Ensure the 'implicit DB transaction' is committed.
@@ -686,6 +698,8 @@ fileServiceLoad (BRFileService fs,
     // Zero out the dataByte memory to avoid subsequent Clang Static Analysis errors releted
     // to dereferencing uninitialized memory.  We accept this minimal, extraneous function call.
     memset(dataBytes, 0, dataBytesCount);
+
+    BRArrayOf(void*) entitiesToSave = NULL;
 
     while (SQLITE_ROW == sqlite3_step(fs->sdbSelectAllStmt)) {
         const char *hash = (const char *) sqlite3_column_text (fs->sdbSelectAllStmt, 0);
@@ -757,23 +771,36 @@ fileServiceLoad (BRFileService fs,
 
         // Update results with the newly restored entity
         void *oldEntity = BRSetAdd (results, entity);
-        assert (NULL == oldEntity);  // DEBUG builds
-        if (NULL != oldEntity)
+
+        // We should never have a `oldEntity` - there was an identifier clash.
+        if (NULL != oldEntity) {
+            assert (true);  // DEBUG builds
+            // TODO: Is this too harsh?
             return fileServiceFailedEntity (fs, 1, (dataBytes == dataBytesBuffer ? NULL : dataBytes), NULL,
                                             type, "duplicate set entry");
+        }
 
         // If the read version is not the current version, update
         if (updateVersion &&
             (version != entityType->currentVersion ||
-             headerVersion != currentHeaderFormatVersion))
-            // This could signal an error.  Perhaps we should test the return result and
-            // if `0` skip out here?  We won't - we couldn't save the entity in the new format
-            // but we'll continue and will try next time we load it.
-            _fileServiceSave (fs, type, entity, 0);
+             headerVersion != currentHeaderFormatVersion)) {
+            if (NULL == entitiesToSave) array_new (entitiesToSave, 100);
+            array_add (entitiesToSave, entity);
+        }
     }
 
     // Ensure the 'implicit DB transaction' is committed.
     sqlite3_reset (fs->sdbSelectAllStmt);
+
+    // Save any entities for which we upgraded a version.
+    if (NULL != entitiesToSave) {
+        for (size_t index = 0; index < array_count(entitiesToSave); index++)
+            // This could signal an error.  Perhaps we should test the return result and
+            // if `0` skip out here?  We won't - we couldn't save the entity in the new format
+            // but we'll continue and will try next time we load it.
+            _fileServiceSave (fs, type, entitiesToSave[index], 0);
+        array_free (entitiesToSave);
+    }
 
     pthread_mutex_unlock (&fs->lock);
 
@@ -881,6 +908,8 @@ fileServiceClear (BRFileService fs,
 
 extern int
 fileServiceClearAll (BRFileService fs) {
+    if (NULL == fs) return 0;
+
     int success = 1;
     size_t typeCount = array_count(fs->entityTypes);
     for (size_t index = 0; index < typeCount; index++)
@@ -1027,7 +1056,7 @@ fileServiceWipe (const char *basePath,
 extern bool
 fileServiceHasType (BRFileService fs,
                     const char *type) {
-    return NULL != fs && NULL != fileServiceLookupType (fs, type);
+    return NULL != fileServiceLookupType (fs, type);
 }
 
 extern UInt256

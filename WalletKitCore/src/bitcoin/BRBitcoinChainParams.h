@@ -68,7 +68,7 @@ typedef struct {
 extern const BRBitcoinChainParams *btcChainParams(bool mainnet);
 
 static inline int btcChainParamsHasParams (const BRBitcoinChainParams *params) {
-    return btcChainParams(true) == params || btcChainParams(true) == params;
+    return btcChainParams(true) == params || btcChainParams(false) == params;
 }
 
 extern const BRBitcoinCheckPoint *btcChainParamsGetCheckpointBefore (const BRBitcoinChainParams *params, uint32_t timestamp);

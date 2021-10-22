@@ -91,7 +91,8 @@ wkWalletManagerSignTransactionWithSeedHBAR (WKWalletManager manager,
                                                 WKWallet wallet,
                                                 WKTransfer transfer,
                                                 UInt512 seed) {
-    BRHederaAccount account = wkAccountAsHBAR (manager->account);
+    BRHederaAccount account = (BRHederaAccount) wkAccountAs (manager->account,
+                                                             WK_NETWORK_TYPE_HBAR);
     BRKey publicKey = hederaAccountGetPublicKey (account);
     BRHederaTransaction transaction = wkTransferCoerceHBAR(transfer)->hbarTransaction;
     // BRHederaAddress nodeAddress = hederaAccountGetNodeAddress(account);
@@ -163,6 +164,8 @@ wkWalletManagerEstimateFeeBasisHBAR (WKWalletManager manager,
                                          OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
     BRHederaFeeBasis hbarFeeBasis;
+
+    // No margin needed.
     hbarFeeBasis.pricePerCostFactor = (BRHederaUnitTinyBar) value.u64[0];
     hbarFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
     
@@ -181,7 +184,8 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
                                                           OwnershipKept WKClientTransferBundle bundle) {
     // create BRHederaTransaction
     
-    BRHederaAccount hbarAccount = wkAccountAsHBAR (manager->account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (manager->account,
+                                                                 WK_NETWORK_TYPE_HBAR);
     
     BRHederaUnitTinyBar amountHbar, feeHbar = 0;
     sscanf(bundle->amount, "%" PRIi64, &amountHbar);
@@ -217,7 +221,8 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsHBAR (txHash);
 
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
+
     wkHashGive(hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsHBAR (wallet->unit, hederaTransactionGetFeeBasis(hbarTransaction));
@@ -225,6 +230,7 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsHBAR (wallet->listenerTransfer,
+                                                   bundle->uids,
                                                    wallet->unit,
                                                    wallet->unitForFee,
                                                    state,
@@ -235,6 +241,7 @@ wkWalletManagerRecoverTransferFromTransferBundleHBAR (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     
@@ -268,7 +275,8 @@ wkWalletManagerCreateWalletHBAR (WKWalletManager manager,
                                      WKCurrency currency,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRHederaAccount hbarAccount = wkAccountAsHBAR(manager->account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (manager->account,
+                                                                 WK_NETWORK_TYPE_HBAR);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

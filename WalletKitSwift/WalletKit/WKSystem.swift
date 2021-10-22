@@ -1307,8 +1307,6 @@ extension System {
 
                 // On 'FEE_BASIS_ESTIMATED' invoke the callbackCoordinator
                 if WK_WALLET_EVENT_FEE_BASIS_ESTIMATED == wkWalletEventGetType(event!) {
-                    print (printString)
-
                     var status:   WKStatus = WK_SUCCESS
                     var cookie:   WKCookie!
                     var feeBasis: WKFeeBasis!
@@ -1316,9 +1314,11 @@ extension System {
                     wkWalletEventExtractFeeBasisEstimate (event, &status, &cookie, &feeBasis);
 
                     if status == WK_SUCCESS {
+                        print (printString + ": Fee = \(TransferFeeBasis (core: feeBasis, take: true).fee)")
                         system.callbackCoordinator.handleWalletFeeEstimateSuccess (cookie, estimate: TransferFeeBasis (core: feeBasis, take: false))
                     }
                     else {
+                        print (printString + ": FAILED")
                         system.callbackCoordinator.handleWalletFeeEstimateFailure (cookie, error: Wallet.FeeEstimationError.fromStatus(status))
                     }
                 }
@@ -1342,7 +1342,7 @@ extension System {
                 }
             },
 
-            // WKListenerWalletCallback
+            // WKListenerTransferCallback
             { (context, cwm, wid, tid, event) in
                 precondition (nil != context  && nil != cwm && nil != wid && nil != tid)
                 defer { wkWalletManagerGive(cwm); wkWalletGive(wid); wkTransferGive(tid) }
@@ -1486,8 +1486,10 @@ extension System {
 
     internal static func canonicalizeTransactions (_ transactions: [SystemClient.Transaction]) -> [SystemClient.Transaction] {
         var uids = Set<String>()
+
+        // Sort transactions to be ascending {blockHeight, Index}
         return transactions
-            // Sort by {blockHeight, index }
+            // Sort by { blockHeight, index }
             .sorted {
                 let bh0 = $0.blockHeight ?? UInt64.max
                 let bh1 = $1.blockHeight ?? UInt64.max
@@ -1496,8 +1498,12 @@ extension System {
 
                 return bh0 < bh1 || (bh0 == bh1 && bi0 < bi1 )
             }
-            // Remove duplicates
+            // Reverse to be descending
+            .reversed ()
+            // Remove duplicates; keeping newer entries (hence descending order)
             .filter { uids.insert($0.id).inserted }
+            // Back to ascending order
+            .reversed ()
     }
 
     internal static func makeTransactionBundle (_ model: SystemClient.Transaction) -> WKClientTransactionBundle {
@@ -1536,14 +1542,15 @@ extension System {
                 defer { metaValsPtr.forEach { wkMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
 
                 return wkClientTransferBundleCreate (status,
-                                                         transfer.id,
                                                          transaction.hash,
                                                          transaction.identifier,
+                                                         transfer.id,
                                                          transfer.source,
                                                          transfer.target,
                                                          transfer.amount.value,
                                                          transfer.amount.currency,
                                                          fee.map { $0.value },
+                                                         transfer.index,
                                                          blockTimestamp,
                                                          blockHeight,
                                                          blockConfirmations,
@@ -1624,7 +1631,7 @@ extension System {
                     defer { wkWalletManagerGive(cwm) }
                     res.resolve(
                         success: {
-                            var bundles: [WKClientTransferBundle?]  = $0.flatMap { System.makeTransferBundles ($0, addresses: addresses) }
+                            var bundles: [WKClientTransferBundle?]  = System.canonicalizeTransactions($0).flatMap { System.makeTransferBundles ($0, addresses: addresses) }
                             wkClientAnnounceTransfers (cwm, sid, WK_TRUE,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransfers: Error: \(e)")

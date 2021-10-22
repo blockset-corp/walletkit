@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "BRTezosBase.h"
+#include "BRTezosOperation.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,62 +21,48 @@ extern "C" {
 
 #define TEZOS_DEFAULT_MUTEZ_PER_BYTE 1
 
-typedef enum {
-    FEE_BASIS_INITIAL,      // for fee estimation
-    FEE_BASIS_ESTIMATE,     // for submit
-    FEE_BASIS_ACTUAL        // when included
-} BRTezosFeeBasisType;
-
 typedef struct
 {
-    BRTezosFeeBasisType type;
-    union {
-        struct {
-            BRTezosUnitMutez    mutezPerKByte;
-            double              sizeInKBytes;
-            int64_t             gasLimit;
-            int64_t             storageLimit;
-        } initial;
-        
-        struct {
-            BRTezosUnitMutez    calculatedFee;
-            int64_t             gasLimit;
-            int64_t             storageLimit;
-            int64_t             counter;
-        } estimate;
-        
-        struct {
-            BRTezosUnitMutez fee;
-        } actual;
-    } u;
+    BRTezosUnitMutez    mutezPerKByte;
+
+    BRTezosOperationFeeBasis primaryOperationFeeBasis;
+
+    bool hasRevealOperationFeeBasis;
+    BRTezosOperationFeeBasis revealOperationFeeBasis;
 } BRTezosFeeBasis;
 
+extern BRTezosFeeBasis
+tezosFeeBasisCreate (BRTezosUnitMutez mutezPerKByte,
+                     BRTezosOperationFeeBasis primaryOperationFeeBasis);
 
 extern BRTezosFeeBasis
-tezosDefaultFeeBasis(BRTezosUnitMutez mutezPerKByte);
+tezosFeeBasisCreateWithReveal (BRTezosUnitMutez mutezPerKByte,
+                               BRTezosOperationFeeBasis primaryOperationFeeBasis,
+                               BRTezosOperationFeeBasis revealOperationFeeBasis);
 
 extern BRTezosFeeBasis
-tezosFeeBasisCreateEstimate(BRTezosUnitMutez mutezPerKByte,
-                            double sizeInBytes,
-                            int64_t gasLimit,
-                            int64_t storageLimit,
-                            int64_t counter);
+tezosFeeBasisCreateWithFee (BRTezosOperationKind kind,
+                            BRTezosUnitMutez fee);
 
 extern BRTezosFeeBasis
-tezosFeeBasisCreateActual(BRTezosUnitMutez fee);
+tezosFeeBasisCreateDefault (BRTezosUnitMutez mutexPerKByte, bool isDelegate, bool needsReveal);
 
 extern BRTezosUnitMutez
-tezosFeeBasisGetFee(BRTezosFeeBasis *feeBasis);
+tezosFeeBasisGetFee(BRTezosFeeBasis feeBasis);
 
-extern bool
-tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
+extern BRTezosFeeBasis
+tezosFeeBasisGiveTezosAGift (BRTezosFeeBasis feeBasis, unsigned int marginPercentage);
 
+#if 0
 private_extern int64_t
 tezosFeeBasisGetGasLimit(BRTezosFeeBasis feeBasis);
 
 private_extern int64_t
 tezosFeeBasisGetStorageLimit(BRTezosFeeBasis feeBasis);
+#endif
 
+extern bool
+tezosFeeBasisIsEqual(BRTezosFeeBasis *fb1, BRTezosFeeBasis *fb2);
 
 #ifdef __cplusplus
 }

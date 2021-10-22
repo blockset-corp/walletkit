@@ -185,6 +185,12 @@ wkWalletSetState (WKWallet wallet,
 private_extern WKTransfer
 wkWalletGetTransferByHash (WKWallet wallet, WKHash hashToMatch);
 
+private_extern WKTransfer
+wkWalletGetTransferByUIDS (WKWallet wallet, const char *identifier);
+
+private_extern WKTransfer
+wkWalletGetTransferByHashOrUIDS (WKWallet wallet, WKHash hash, const char *uids);
+
 private_extern void
 wkWalletAddTransfer (WKWallet wallet, WKTransfer transfer);
 

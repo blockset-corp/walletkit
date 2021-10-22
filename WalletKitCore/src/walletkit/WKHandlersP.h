@@ -11,6 +11,7 @@
 #ifndef WKHandlersP_h
 #define WKHandlersP_h
 
+#include "WKAccountP.h"
 #include "WKAddressP.h"
 #include "WKNetworkP.h"
 #include "WKTransferP.h"
@@ -33,6 +34,7 @@ extern "C" {
  */
 typedef struct {
     WKNetworkType type;
+    const WKAccountHandlers  *account;
     const WKNetworkHandlers  *network;
     const WKAddressHandlers  *address;
     const WKTransferHandlers *transfer;

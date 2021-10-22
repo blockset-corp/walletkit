@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
@@ -73,6 +73,27 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
         return manager;
     }
 
+    /* package */
+    Wallet walletBy(WKWallet coreWallet) {
+        if (core.containsWallet(coreWallet)) {
+            return Wallet.takeAndCreate(coreWallet,
+                                        this,
+                                        this.callbackCoordinator);
+        }
+        return null;
+    }
+
+    /* package */
+    Wallet walletByCoreOrCreate(WKWallet coreWallet, boolean create) {
+        Wallet wallet = walletBy(coreWallet);
+        if (wallet == null && create) {
+            wallet = Wallet.takeAndCreate(coreWallet,
+                                          this,
+                                          this.callbackCoordinator);
+        }
+        return wallet;
+    }
+
     private WKWalletManager core;
     private final System system;
     private final SystemCallbackCoordinator callbackCoordinator;
@@ -91,7 +112,7 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
         this.callbackCoordinator = callbackCoordinator;
 
         this.accountSupplier = Suppliers.memoize(() -> Account.create(core.getAccount()));
-        this.networkSupplier = Suppliers.memoize(() -> Network.create(core.getNetwork()));
+        this.networkSupplier = Suppliers.memoize(() -> Network.create(core.getNetwork(), false));
         this.networkCurrencySupplier = Suppliers.memoize(() -> getNetwork().getCurrency());
         this.pathSupplier = Suppliers.memoize(core::getPath);
 
@@ -112,7 +133,7 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
     public void createSweeper(com.blockset.walletkit.Wallet wallet,
                               com.blockset.walletkit.Key key,
                               CompletionHandler<com.blockset.walletkit.WalletSweeper, WalletSweeperError> completion) {
-        WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getBlockchainDb(), completion);
+        WalletSweeper.create(this, Wallet.from(wallet), Key.from(key), system.getSystemClient(), completion);
     }
 
     @Override

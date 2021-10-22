@@ -30,7 +30,7 @@ identify transactions for a User's wallet.  (For Bitcoin, this peer-to-peer inte
 SPV - 'Simple Payment Verification').  WalletKit implements peer-to-peer interfaces for some
 cyptocurrencies.  In addition, WalletKit defines an interface that can be used to identify 
 transactions based on HTTP requests made to endpoints holding cryptocurrency blocks and 
-transactions.  WalletKIt provides a default implementatin of this 'client interface' using Blockset.
+transactions.  WalletKit provides a default implementatin of this 'client interface' using Blockset.
 
 ## Event-Based
 
@@ -245,6 +245,11 @@ code and the `WalletKitCore` C code.
 
 WalletKit can be started in Android Studio using ...
 
+### Command Line
+
+The `cmake` file 'WalletKitCore/CMakeLists.txt' can be used to build all of the C code into  
+`libWalletKitCore.so` which can then be linked into an exectuable.
+
 # Framework Use
 
 `WalletKit` is delivered as a framework and is designed to be embedded in another 
@@ -252,9 +257,11 @@ application.  The `WalletKit` interfaces are implmented in each of `C`, `Swift` 
 the interfaces are analogous to one other with differences owing to idiomatic usage for that
 language.
 
+## Concepts
+
 The following describes the `C` interfaces, upon which the `Swift` and `Java` interfaces are built.
 
-## WKSystem
+### WKSystem
 
 Use of the framework starts with the instantiation of `WKSystem`.  The top-level 
 interfaces is:
@@ -278,7 +285,7 @@ The embedding applications primary interaction with a system comes from the `WKL
 As listener callbacks (aka events) occur, the application can create wallet managers of interest,
 update the UI with the blockchains current height, display wallet balances and transfers.
 
-## WKListener
+### WKListener
 
 A `WKListener` is created with:
 ```
@@ -318,14 +325,14 @@ typedef enum {
 These events detail the system changes in state.  The listener takes actions appropriate for the
 application.  Notably, on `NETWORK_ADDED` or  `DISCOVERED_NETWORKS` the application can
 create a `WKWalletManager` for each network of interest.  One might be interested in BTC and
-ETH network types, but noet BCH for example.
+ETH network types, but not BCH for example.
 
-As the networks are annonced and wallat managers of interest are created, then their 
+As the networks are announced and wallet managers of interest are created, then their 
 associated callbacks occur, including adding wallets to wallet manager and adding transfers to
 wallets.  The `WKListener` instance handles each event with an update to application state,
 typically the UI.
 
-## WKClient
+### WKClient
 
 A `WKClient` is created as a value-type instance of:
 ```
@@ -352,7 +359,7 @@ typedef void
 ```
 This callback queries the manager's network for transactions in blocks `[begBlockNumber,
 endBlockNumber)` that involve any of `addressCount` addresses in the array `addresses`.
-Once all the transactions have been identifier, the application invokes
+Once all the transactions have been identified, the application invokes
 ```
 extern void
 wkClientAnnounceTransactions (OwnershipKept WKWalletManager cwm,
@@ -376,19 +383,19 @@ a specified 'bundle' for each object, c) and then 'announce' all the bundles.
 A default `WKClient`, based on `Blockset` is implemented in the Swift and Java code - where
 convenient HTTP related functions are accessible for iOS, Android and Linux platforms.
 
-## WKAccount
+### WKAccount
 
-A `WKAccount` is creaed in one of two ways.  For the very first time, an account is created with:
+A `WKAccount` is created in one of two ways.  For the very first time, an account is created with:
 ```
 extern WKAccount
 wkAccountCreate (const char *paperKey, WKTimestamp timestamp, const char *uids);
 ```
-where `paperKey` is a BIP-39 sequence of 12 words, `timestap` is the Unix time at which the
+where `paperKey` is a BIP-39 sequence of 12 words, `timestamp` is the Unix time at which the
 `paperKey` was initially created (or the time of the User's first transaction on any blockchain), 
 and `uids` is a globally unique identifier for the account.  The `uids` is not used internally by
 `WalletKit`.
 
-Once an acount is created and to avoid repeated use of the sensitive, private `paperKey`, one
+Once an account is created and to avoid repeated use of the sensitive, private `paperKey`, one
 creates a serialization of the account with `wkAccountSerialize()` and then subsequently 
 re-creates the account with:
 ```
@@ -399,13 +406,44 @@ wkAccountCreateFromSerialization (const uint8_t *bytes, size_t bytesCount, const
 The BIP-39 `paperKey` is thus only used in two cases: 1) to create the account initially and 2)
 to sign transactions.
 
-## WKDatabaseClient
+### WKDatabaseClient
+
+TBD
+
+## Example
+
+WalletKit is designed to be include in Swift, Java or C executables.  An example is provided for 
+each.
+
+The high-level process is to create a `System` by providing:
+    - Client - implements functions designed to query for a User's transactions.  The Swift and
+    Java implementations provide a default client that uses Blockset
+    - Listener - implements functions, as callbacks, that announce changes to WalletKit state such
+    as the addition of a `Transfer` to a `Wallet`.
+    - Account - provides the public key information needed to derive a User's addresses.  The 
+    private key is only needed when signing transactions for submission to a blockchain.
+    
+Given a `System` one then starts and connects it. 
+
+Importantly, one of the early events provided by a `System`, which gets announced through the
+`Listener` interface, is the `WK_SYSTEM_EVENT_NETWORK_ADDED` event.  All networks, aka
+blockchains such as BTC, BCH, DOGE, ETH, XRP, etc, supported by WalletKit get announced.
+If your application is interested in the announced network, your application must call 
+`wkSystemCreateWalletManager()`.  The created wallet manager is responsible for managing
+the currencies on that network.
+
+### Swift
+
+### Java
+
+### C
 
 # Versions
 
-## 1.0
+## 0.10.0
 
-Version 1.0 is currently the basis for the BRD iOS and Android mobile applications
+Version 0.10.0 is currently the basis for the BRD iOS and Android mobile applications.  Note
+that `walletkit-0.10.x` has evolved from `core-9.x.x`
 
 # Support
 

@@ -19,16 +19,31 @@
 #include <memory.h>
 #include <assert.h>
 
-// temporary
-
-#if !defined (OwnershipGiven)
-#define OwnershipGiven
-#endif
-
+//
+// An OwnershipKept annotation on a function's arguments implies that ownership is not passed into
+// the function; instead the caller continues having ownership.  If the return value is annotated
+// with OwnershipKept then the caller, receiving the return value, does not own the value and must
+// take or copy if held beyond the caller's scope
+//
+// OwnershipKept is the default for any parameters that are not annotated.
+//
 #if !defined (OwnershipKept)
 #define OwnershipKept
 #endif
 
+//
+// An Ownership annotation on a function's arguments implies that ownership is passed into the
+// function; the body of the function takes ownership and must release/free the objects - either
+// directly or by passing to another function declaring the argument as OwnershipGiven.  If the
+// return value is annotaed with OwnershipGiven then the caller, receiving the return value, owns
+// the object and must dispose of the object.
+#if !defined (OwnershipGiven)
+#define OwnershipGiven
+#endif
+
+//
+// A Nullable annotation declares that an argument or return value can be NULL
+//
 #if !defined (Nullable)
 #define Nullable
 #endif
@@ -172,70 +187,6 @@ typedef uint64_t WKTimestamp;
 #define AS_WK_TIMESTAMP(unixSeconds)      ((WKTimestamp) (unixSeconds))
 #define NO_WK_TIMESTAMP                   (AS_WK_TIMESTAMP (0))
 
-
-/// MARK: - Data32 / Data16
-
-typedef struct {
-    uint8_t data[256/8];
-} WKData32;
-
-static inline void wkData32Clear (WKData32 *data32) {
-    memset (data32, 0, sizeof (WKData32));
-}
-
-typedef struct {
-    uint8_t data[128/8];
-} WKData16;
-
-static inline void wkData16Clear (WKData16 *data16) {
-    memset (data16, 0, sizeof (WKData16));
-}
-
-/// MARK: - Variable Size Data
-
-typedef struct {
-    uint8_t * bytes;
-    size_t size;
-} WKData;
-
-static inline WKData wkDataNew (size_t size) {
-    WKData data;
-    data.size = size;
-    if (size < 1) data.size = 1;
-    data.bytes = calloc (data.size, sizeof(uint8_t));
-    assert (data.bytes != NULL);
-    return data;
-}
-
-static inline WKData wkDataCopy (uint8_t * bytes, size_t size) {
-    WKData data;
-    data.bytes = malloc (size * sizeof(uint8_t));
-    memcpy (data.bytes, bytes, size);
-    data.size = size;
-    return data;
-}
-
-static inline WKData
-wkDataConcat (WKData * fields, size_t numFields) {
-    size_t totalSize = 0;
-    for (int i=0; i < numFields; i++) {
-        totalSize += fields[i].size;
-    }
-    WKData concat = wkDataNew (totalSize);
-    totalSize = 0;
-    for (int i=0; i < numFields; i++) {
-        memcpy (&concat.bytes[totalSize], fields[i].bytes, fields[i].size);
-        totalSize += fields[i].size;
-    }
-    return concat;
-}
-
-static inline void wkDataFree (WKData data) {
-    if (data.bytes) free(data.bytes);
-    data.bytes = NULL;
-    data.size = 0;
-}
-
 /// MARK: Network Canonical Type
 
 ///
@@ -259,10 +210,12 @@ typedef enum {
     WK_NETWORK_TYPE_XRP,
     WK_NETWORK_TYPE_HBAR,
     WK_NETWORK_TYPE_XTZ,
-    WK_NETWORK_TYPE_XLM
+    WK_NETWORK_TYPE_XLM,
+    /* WK_NETWORK_TYPE___SYMBOL__ */
 } WKNetworkType;
 
-#define NUMBER_OF_NETWORK_TYPES     (1 + WK_NETWORK_TYPE_XLM)
+#define WK_NETWORK_TYPE_LAST        WK_NETWORK_TYPE_XLM
+#define NUMBER_OF_NETWORK_TYPES     (1 + WK_NETWORK_TYPE_LAST)
 #define WK_NETWORK_TYPE_UNKNOWN (UINT32_MAX)
 //
 // Crypto Network Base Currency
@@ -280,6 +233,7 @@ typedef enum {
 #define WK_NETWORK_CURRENCY_HBAR    "hbar"
 #define WK_NETWORK_CURRENCY_XTZ     "xtz"
 #define WK_NETWORK_CURRENCY_XLM     "xlm"
+/* #define WK_NETWORK_CURRENCY___SYMBOL__    "__symbol__" */
 
 extern const char *
 wkNetworkTypeGetCurrencyCode (WKNetworkType type);
@@ -376,6 +330,10 @@ static int wkRefDebug = 0;
 
 #if !defined (private_extern)
 #  define private_extern          extern
+#endif
+
+#if !defined(ASSERT_UNIMPLEMENTED)
+#define ASSERT_UNIMPLEMENTED    assert(false);
 #endif
 
 #ifdef __cplusplus

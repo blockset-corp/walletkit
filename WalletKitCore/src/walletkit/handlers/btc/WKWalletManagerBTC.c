@@ -171,6 +171,7 @@ wkWalletManagerEstimateFeeBasisBTC (WKWalletManager cwm,
     uint64_t btcAmount   = wkAmountGetIntegerRaw (amount, &overflow);
     assert(WK_FALSE == overflow);
 
+    // No margin needed.
     uint64_t btcFee = (0 == btcAmount ? 0 : btcWalletFeeForTxAmountWithFeePerKb (btcWallet, btcFeePerKB, btcAmount));
 
     return wkFeeBasisCreateAsBTC (wallet->unitForFee, btcFee, btcFeePerKB, WK_FEE_BASIS_BTC_SIZE_UNKNOWN);
@@ -179,19 +180,8 @@ wkWalletManagerEstimateFeeBasisBTC (WKWalletManager cwm,
 static BRMasterPubKey
 wkWalletManagerGetMPK (WKWalletManager manager) {
     assert (wkNetworkTypeIsBitcoinBased(manager->type));
-    switch (manager->type) {
-        case WK_NETWORK_TYPE_BTC:
-        case WK_NETWORK_TYPE_BCH:
-        case WK_NETWORK_TYPE_BSV:
-            return wkAccountAsBTC (manager->account);
-        case WK_NETWORK_TYPE_LTC:
-            return wkAccountAsLTC (manager->account);
-        case WK_NETWORK_TYPE_DOGE:
-            return wkAccountAsDOGE (manager->account);
-        default:
-            assert (false);
-            return (BRMasterPubKey) { 0 };
-    }
+    return *((BRMasterPubKey*) wkAccountAs (manager->account,
+                                            manager->type));
 }
 
 static WKWallet
@@ -601,6 +591,13 @@ static void wkWalletManagerBTCTxUpdated (void *info,
                                                                                blockHeight,
                                                                                timestamp,
                                                                                feeBasis);
+
+            if (btcTransactionIsSigned(transfer->tid)) {
+                char *uids = NULL;
+                asprintf (&uids, "%s:0", u256hex(transfer->tid->txHash));
+                wkTransferSetUids (&transfer->base, uids);
+                free (uids);
+            }
 
             wkTransferSetState (&transfer->base, newState);
 

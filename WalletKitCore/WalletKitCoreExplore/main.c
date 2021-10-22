@@ -209,7 +209,7 @@ void assertHandle(void *info) {
 }
 
 void assertRecover (void *info) {
-    printf ("AssertRecover: %p\n", info);
+    printf ("AssertRecover: %zu\n", (size_t) info);
 }
 
 int work (void *option) {
@@ -227,7 +227,7 @@ int work (void *option) {
 void *assertThread (void *ignore) {
     pthread_setname_brd (pthread_self(), "Asserter");
     sleep (2);
-    work (ignore);
+    work ((size_t) ignore);
 
     return NULL;
 }
@@ -317,12 +317,12 @@ derivePrivateKeyFromSeedRipple (UInt512 seed, uint32_t index) {
     BRKey privateKey;
 
     // The BIP32 privateKey for m/44'/60'/0'/0/index
-    BRBIP32PrivKeyPath(&privateKey, &seed, sizeof(UInt512), 5,
-                       44 | BIP32_HARD,          // purpose  : BIP-44
-                       144 | BIP32_HARD,          // coin_type: Ripple
-                       0 | BIP32_HARD,          // account  : <n/a>
-                       0,                        // change   : not change
-                       index);                   // index    :
+    BRBIP32PrivKeyPath(&privateKey, &seed, sizeof(UInt512), 5, (const uint32_t []) {
+        44 | BIP32_HARD,          // purpose  : BIP-44
+        144 | BIP32_HARD,          // coin_type: Ripple
+        0 | BIP32_HARD,          // account  : <n/a>
+        0,                        // change   : not change
+        index});                   // index    :
 
     privateKey.compressed = 0;
 

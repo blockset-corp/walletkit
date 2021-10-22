@@ -7,7 +7,7 @@
 //
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
-
+#include <stdio.h>
 #include <ctype.h>
 #include <strings.h>
 
@@ -42,6 +42,7 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_HBAR,
         WK_NETWORK_CURRENCY_XTZ,
         WK_NETWORK_CURRENCY_XLM,
+        /* WK_NETWORK_CURRENCY___SYMBOL__, */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
@@ -60,7 +61,8 @@ wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
         false,      // XRP
         false,      // HBAR
         false,      // XTZ
-        false       // XLM
+        false,      // XLM
+     /* false,      // __SYMBOL__ */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return isBitcoinBased[type];

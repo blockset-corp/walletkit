@@ -11,8 +11,7 @@
 #ifndef WKXRP_h
 #define WKXRP_h
 
-#include "../WKHandlersExport.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "ripple/BRRipple.h"
 
@@ -56,6 +55,7 @@ wkTransferCoerceXRP (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXRP (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,

@@ -12,17 +12,17 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.util.SortedList;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.util.SortedListAdapterCallback;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SortedList;
+import androidx.recyclerview.widget.SortedListAdapterCallback;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Html;
 import android.text.Spanned;
 import android.view.LayoutInflater;
@@ -38,6 +38,7 @@ import android.widget.Toast;
 import com.blockset.walletkit.Network;
 import com.blockset.walletkit.NetworkPeer;
 import com.blockset.walletkit.NetworkType;
+import com.blockset.walletkit.PaymentProtocolRequest;
 import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.Transfer;
@@ -49,7 +50,7 @@ import com.blockset.walletkit.WalletManagerSyncDepth;
 import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
 import com.blockset.walletkit.events.transfer.DefaultTransferEventVisitor;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.transfer.TransferChangedEvent;
 import com.blockset.walletkit.events.transfer.TransferCreatedEvent;
 import com.blockset.walletkit.events.transfer.TransferDeletedEvent;
@@ -61,6 +62,7 @@ import com.google.common.primitives.UnsignedInteger;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,6 +93,14 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     private boolean isBitcoin;
     private Adapter transferAdapter;
     private ClipboardManager clipboardManager;
+    private ArrayList<PaymentProtocolRequestType> availablePaymentProtocols = new ArrayList();
+
+    void setActionConditionalOnNetwork(Button button, List<NetworkType> netTypes, View.OnClickListener clicker) {
+        if (netTypes.contains(wallet.getWalletManager().getNetwork().getType()))
+            button.setOnClickListener(clicker);
+        else
+            button.setEnabled(false);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,22 +115,59 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
             return;
         }
 
+        Network net = wallet.getWalletManager().getNetwork();
         String currencyCode = wallet.getCurrency().getCode().toLowerCase();
-        NetworkType networkType = wallet.getWalletManager().getNetwork().getType();
+        NetworkType networkType = net.getType();
         isBitcoin = NetworkType.BTC == networkType || NetworkType.BCH == networkType;
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
+        // Send currency must be contingent on available funds
         Button sendView = findViewById(R.id.send_view);
-        sendView.setOnClickListener(v -> TransferCreateSendActivity.start(TransferListActivity.this, wallet));
+        if (wallet.getBalance().isZero())
+            sendView.setEnabled(false);
+        else
+            sendView.setOnClickListener(v -> TransferCreateSendActivity.start(TransferListActivity.this, wallet));
 
         Button recvView = findViewById(R.id.receive_view);
         recvView.setOnClickListener(v -> copyReceiveAddress());
 
+        // Payment is dependent on available payment protocols for this wallet.
         Button payView = findViewById(R.id.pay_view);
-        payView.setOnClickListener(v -> showPaymentMenu(TransferListActivity.this, wallet));
+        for (PaymentProtocolRequestType pprt :PaymentProtocolRequestType.values()) {
+            if (PaymentProtocolRequest.checkPaymentMethodSupported(wallet, pprt))
+                availablePaymentProtocols.add(pprt);
+        }
+        if (availablePaymentProtocols.size() > 0)
+            payView.setOnClickListener(v -> showPaymentMenu(TransferListActivity.this, wallet));
+        else
+            payView.setEnabled(false);
 
         Button sweepView = findViewById(R.id.sweep_view);
-        sweepView.setOnClickListener(v -> TransferCreateSweepActivity.start(TransferListActivity.this, wallet));
+        setActionConditionalOnNetwork(sweepView, Arrays.asList(NetworkType.BTC, NetworkType.BCH), new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v) {
+                TransferCreateSweepActivity.start(TransferListActivity.this, wallet);
+            }
+        });
+
+        Button delegateView = findViewById(R.id.delegate_view);
+        setActionConditionalOnNetwork(delegateView, Arrays.asList(NetworkType.XTZ), new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                TransferCreateDelegateActivity.start(TransferListActivity.this, wallet);
+            }
+        });
+
+        Button exportablePaperView = findViewById(R.id.exportablepaper_view);
+        setActionConditionalOnNetwork(exportablePaperView, Arrays.asList(NetworkType.BTC), new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                TransferCreateExportablePaperActivity.start(TransferListActivity.this, wallet);
+            }
+        });
 
         RecyclerView transfersView = findViewById(R.id.transfer_recycler_view);
         transfersView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
@@ -181,7 +228,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     }
 
     @Override
-    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+    public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
         event.accept(new DefaultTransferEventVisitor<Void>() {
             @Override
             public Void visit(TransferCreatedEvent event) {
@@ -340,18 +387,19 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     }
 
     private void showPaymentMenu(Activity context, Wallet wallet) {
+        String[] availablePaymentMethods = new String[availablePaymentProtocols.size()];
+        for (int choiceNum = 0;choiceNum < availablePaymentProtocols.size(); choiceNum++) {
+            availablePaymentMethods[choiceNum] =  availablePaymentProtocols.get(choiceNum).toString();
+        }
         runOnUiThread(() -> new AlertDialog.Builder(this)
                 .setTitle("Payment Protocol")
-                .setSingleChoiceItems(new String[]{PaymentProtocolRequestType.BITPAY.name(), PaymentProtocolRequestType.BIP70.name()},
-                        -1,
-                        (d, w) -> {
-                            switch (w) {
-                                case 0: TransferCreatePaymentActivity.start(context, wallet, PaymentProtocolRequestType.BITPAY); break;
-                                case 1: TransferCreatePaymentActivity.start(context, wallet, PaymentProtocolRequestType.BIP70); break;
-                                default: break;
-                            };
-                            d.dismiss();
-                        })
+                .setNegativeButton("Cancel", (d,w) -> {})
+                .setPositiveButton("Ok", (d,w) -> {
+                    int selected = ((AlertDialog)d).getListView().getCheckedItemPosition();
+                    TransferCreatePaymentActivity.start(context, wallet, availablePaymentProtocols.get(selected));
+                    d.dismiss();
+                })
+                .setSingleChoiceItems(availablePaymentMethods,0, null)
                 .show());
     }
 

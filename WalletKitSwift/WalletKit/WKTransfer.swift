@@ -101,6 +101,8 @@ public final class Transfer: Equatable {
         else { return nil }
     }
 
+    /// The originating transaction's identifier - typically a hash.  This may be `nil`.  There
+    /// may be transfers with duplicate identifiers in a wallet.
     public var identifier: String? {
         return wkTransferGetIdentifier(core)
             .map { asUTF8String($0) }

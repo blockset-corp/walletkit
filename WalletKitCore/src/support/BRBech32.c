@@ -33,6 +33,9 @@
 #include <assert.h>
 
 // bech32 address format: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
+// bech32m format for v1+: https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
+
+#define BECH32M_CONST 0x2bc830a3
 
 #define polymod(x) ((((x) & 0x1ffffff) << 5) ^ (-(((x) >> 25) & 1) & 0x3b6a57b2) ^\
                     (-(((x) >> 26) & 1) & 0x26508e6d) ^ (-(((x) >> 27) & 1) & 0x1ea119fa) ^\
@@ -43,7 +46,7 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
 {
     size_t i, j, bufLen, addrLen, sep;
     uint32_t x, chk = 1;
-    uint8_t c, ver = 0xff, buf[52], upper = 0, lower = 0;
+    uint8_t c, ver = 0xff, buf[52], upper = 0, lower = 0, pad = 0;
 
     assert(hrp84 != NULL);
     assert(data42 != NULL);
@@ -78,6 +81,7 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
         
         chk = polymod(chk) ^ c;
         if (j == -1) ver = c;
+        if (i + 7 == addrLen) pad = c;
         if (j == -1 || i + 6 >= addrLen) continue;
         x = (j % 8)*5 - ((j % 8)*5/8)*8;
         buf[(j/8)*5 + (j % 8)*5/8] |= (c << 3) >> x;
@@ -85,7 +89,10 @@ size_t BRBech32Decode(char *hrp84, uint8_t *data42, const char *addr)
     }
     
     bufLen = (addrLen - (sep + 2 + 6))*5/8;
-    if (hrp84 == NULL || data42 == NULL || chk != 1 || ver > 16 || bufLen < 2 || bufLen > 40) return 0;
+    if (hrp84 == NULL || data42 == NULL || ver > 16 || bufLen < 2 || bufLen > 40) return 0;
+    if ((ver == 0 && chk != 1) || (ver > 0 && chk != BECH32M_CONST)) return 0; // verify checksum
+    x = (addrLen - sep)*5 % 8;
+    if (x > 4 || pad & (0xff >> (8 - x))) return 0; // verify padding
     assert(sep < 84);
     for (i = 0; i < sep; i++) hrp84[i] = tolower(addr[i]);
     hrp84[sep] = '\0';
@@ -136,7 +143,7 @@ size_t BRBech32Encode(char *addr91, const char *hrp, const uint8_t data[])
     }
     
     for (j = 0; j < 6; j++) chk = polymod(chk);
-    chk ^= 1;
+    chk ^= (ver == 0) ? 1 : BECH32M_CONST;
     for (j = 0; j < 6; ++j) addr[i++] = chars[(chk >> ((5 - j)*5)) & 0x1f];
     addr[i++] = '\0';
     memcpy(addr91, addr, i);

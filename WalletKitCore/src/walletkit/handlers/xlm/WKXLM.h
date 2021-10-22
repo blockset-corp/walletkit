@@ -11,8 +11,7 @@
 #ifndef WKSTELLAR_h
 #define WKSTELLAR_h
 
-#include "../WKHandlersExport.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "stellar/BRStellar.h"
 
@@ -56,6 +55,7 @@ wkTransferCoerceXLM (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsXLM (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,

@@ -311,6 +311,7 @@ public enum NetworkType: CustomStringConvertible {
     case hbar
     case xtz
     case xlm
+    /* case __symbol__ */
 
     internal init (core: WKNetworkType) {
         switch core {
@@ -324,6 +325,7 @@ public enum NetworkType: CustomStringConvertible {
         case WK_NETWORK_TYPE_HBAR: self = .hbar
         case WK_NETWORK_TYPE_XTZ:  self = .xtz
         case WK_NETWORK_TYPE_XLM:  self = .xlm
+        /* case WK_NETWORK_TYPE___SYMBOL__: self = .__symbol__ */
         default: preconditionFailure()
         }
     }
@@ -340,6 +342,7 @@ public enum NetworkType: CustomStringConvertible {
         case .hbar: return WK_NETWORK_TYPE_HBAR
         case .xtz: return WK_NETWORK_TYPE_XTZ
         case .xlm: return WK_NETWORK_TYPE_XLM
+        /* case .__symbol__: return WK_NETWORK_TYPE___SYMBOL__ */
         }
     }
 

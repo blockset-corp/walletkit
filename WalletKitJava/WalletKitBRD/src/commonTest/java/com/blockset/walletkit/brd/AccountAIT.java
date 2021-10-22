@@ -12,6 +12,7 @@ import com.google.common.base.Optional;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 
 import static org.junit.Assert.*;
@@ -55,6 +56,12 @@ public class AccountAIT {
         byte[] serializationFromSerialization = accountFromSerialization.serialize();
         assertArrayEquals(serializationFromPhrase, serializationFromSerialization);
         accountFromSerialization.validate(serializationFromSerialization);
+
+        // check that a malformed serialization can be detected by validation
+        byte[] badSerialization = Arrays.copyOf(serializationFromPhrase,
+                                                serializationFromPhrase.length);
+        badSerialization[badSerialization.length - 1] = (byte)~badSerialization[badSerialization.length - 1];
+        assertFalse(accountFromPhrase.validate(badSerialization));
 
         // check that validity is transitive
         accountFromPhrase.validate(serializationFromSerialization);

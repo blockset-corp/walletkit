@@ -11,8 +11,7 @@
 #ifndef WKHBAR_h
 #define WKHBAR_h
 
-#include "../WKHandlersExport.h"
-#include "walletkit/WKFeeBasisP.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "hedera/BRHederaBase.h"
 #include "hedera/BRHederaAddress.h"
@@ -59,6 +58,7 @@ wkTransferCoerceHBAR (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsHBAR (WKTransferListener listener,
+                            const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKTransferState state,

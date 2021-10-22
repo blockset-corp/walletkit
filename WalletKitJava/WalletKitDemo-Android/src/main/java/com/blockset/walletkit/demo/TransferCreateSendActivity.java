@@ -9,18 +9,22 @@ package com.blockset.walletkit.demo;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.TextWatcher;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.blockset.walletkit.Address;
@@ -39,6 +43,7 @@ import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -70,7 +75,9 @@ public class TransferCreateSendActivity extends AppCompatActivity {
     private WalletManager walletManager;
     private Wallet wallet;
     private Unit baseUnit;
-    private NetworkFee fee;
+    private NetworkFee selectedFee;
+    private List<NetworkFee> allFees;
+
     @Nullable
     private TransferFeeBasis feeBasis;
 
@@ -83,6 +90,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
     private TextView amountMinView;
     private TextView amountMaxView;
     private TextView feeView;
+    private Spinner availableFeesView;
     private Button submitView;
 
     @Override
@@ -99,7 +107,13 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         }
         walletManager = wallet.getWalletManager();
         network = walletManager.getNetwork();
-        fee = walletManager.getDefaultNetworkFee();
+
+        // Initial default fee selection is the minimum fee,
+        // assuming the network fees are returned sorted in
+        // ascending order (as they are)
+        allFees = (List<NetworkFee>)walletManager.getNetwork().getFees();
+        selectedFee = allFees.get(0);
+
         baseUnit = wallet.getUnit();
         minValue = Amount.create(0, baseUnit);
         maxValue = wallet.getBalance();
@@ -108,6 +122,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         amountView = findViewById(R.id.amount_view);
         amountValueView = findViewById(R.id.amount_value_view);
         feeView = findViewById(R.id.fee_view);
+        availableFeesView = findViewById(R.id.available_fees_view);
         submitView = findViewById(R.id.submit_view);
         amountMinView = findViewById(R.id.amount_min_view);
         amountMaxView = findViewById(R.id.amount_max_view);
@@ -130,11 +145,31 @@ public class TransferCreateSendActivity extends AppCompatActivity {
             }
         });
 
+        ArrayAdapter<NetworkFee> feeAdapter = new ArrayAdapter(this,
+                                                                android.R.layout.simple_spinner_item,
+                                                                allFees.toArray());
+        feeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        availableFeesView.setAdapter(feeAdapter);
+        availableFeesView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+                selectedFee = (NetworkFee)parent.getItemAtPosition(position);
+                updateFee();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
         CharSequence receiverViewText = network.isMainnet() ? "" : wallet.getTarget().toString();
         receiverView.setText(receiverViewText);
         receiverView.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
+                setTransferEditDisposition();
+
                 updateLimit();
                 updateFee();
                 updateViewOnChange(s);
@@ -170,19 +205,37 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar_view);
         setSupportActionBar(toolbar);
 
+        setTransferEditDisposition();
         updateLimit();
         updateFee();
         updateView(amountViewProgress, receiverViewText);;
     }
 
+    /** Enables various transfer editing fields only once a valid RA is
+     *  entered
+     */
+    private void setTransferEditDisposition() {
+        String addressStr = receiverView.getText().toString();
+        Optional<? extends Address> target = network.addressFor(addressStr);
+        boolean validRAAddress = target.isPresent();
+
+        availableFeesView.setEnabled(validRAAddress);
+        feeView.setEnabled(validRAAddress);
+        amountView.setEnabled(validRAAddress);
+        amountValueView.setEnabled(validRAAddress);
+        amountMinView.setEnabled(validRAAddress);
+        amountMaxView.setEnabled(validRAAddress);
+    }
+
     private void updateLimit() {
+        // Contingent on valid receiver address
         String addressStr = receiverView.getText().toString();
         Optional<? extends Address> target = network.addressFor(addressStr);
         if (!target.isPresent()) {
             return;
         }
 
-        wallet.estimateLimitMinimum(target.get(), fee, new CompletionHandler<Amount, LimitEstimationError>() {
+        wallet.estimateLimitMinimum(target.get(), selectedFee, new CompletionHandler<Amount, LimitEstimationError>() {
             @Override
             public void handleData(Amount amount) {
                 minValue = amount;
@@ -195,7 +248,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
             }
         });
 
-        wallet.estimateLimitMaximum(target.get(), fee, new CompletionHandler<Amount, LimitEstimationError>() {
+        wallet.estimateLimitMaximum(target.get(), selectedFee, new CompletionHandler<Amount, LimitEstimationError>() {
             @Override
             public void handleData(Amount amount) {
                 maxValue = amount;
@@ -217,7 +270,7 @@ public class TransferCreateSendActivity extends AppCompatActivity {
         }
 
         Amount amount = calculateValue(amountView.getProgress());
-        wallet.estimateFee(target.get(), amount, fee, null, new CompletionHandler<TransferFeeBasis,
+        wallet.estimateFee(target.get(), amount, selectedFee, null, new CompletionHandler<TransferFeeBasis,
                 FeeEstimationError>() {
             @Override
             public void handleData(TransferFeeBasis data) {

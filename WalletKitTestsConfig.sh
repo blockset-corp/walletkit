@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 BASE_DIR=$1
 
@@ -55,4 +55,5 @@ copyConfigFile "${BASE_DIR}/WalletKitSwift/WalletKitTests/Resources/WalletKitTes
 
 # Java
 copyConfigFile "${BASE_DIR}/WalletKitJava/WalletKitDemo-Android/src/main/assets/WalletKitTestsConfig.json"
+copyConfigFile "${BASE_DIR}/WalletKitJava/WalletKitBRD-Android/src/main/assets/WalletKitTestsConfig.json"
 

@@ -10,17 +10,18 @@ package com.blockset.walletkit.brd;
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.Network;
 import com.blockset.walletkit.System;
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
+import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.events.network.NetworkEvent;
 import com.blockset.walletkit.events.system.DefaultSystemListener;
 import com.blockset.walletkit.events.system.SystemEvent;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.blockset.walletkit.events.system.SystemManagerAddedEvent;
 import com.blockset.walletkit.events.system.SystemNetworkAddedEvent;
-import com.blockset.walletkit.events.transfer.TranferEvent;
+import com.blockset.walletkit.events.transfer.TransferEvent;
 import com.blockset.walletkit.events.wallet.WalletEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerWalletAddedEvent;
@@ -89,7 +90,7 @@ class HelpersAIT {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
         SystemListener listener = new DefaultSystemListener() {};
-        BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithToken();
+        BlocksetSystemClient query = HelpersAIT.createDefaultBlockchainDbWithToken();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         com.blockset.walletkit.brd.System system = com.blockset.walletkit.brd.System.create(executor, listener, account, false, storagePath, query);
 
@@ -103,7 +104,7 @@ class HelpersAIT {
     static System createAndConfigureSystemWithListener(File dataDir, SystemListener listener, Boolean mainnet) {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
-        BlockchainDb query = HelpersAIT.createDefaultBlockchainDbWithToken();
+        BlocksetSystemClient query = HelpersAIT.createDefaultBlockchainDbWithToken();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         com.blockset.walletkit.brd.System system = com.blockset.walletkit.brd.System.create(executor, listener, account, mainnet, storagePath, query);
 
@@ -114,7 +115,7 @@ class HelpersAIT {
     }
 
     /* package */
-    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlockchainDb query, List<com.blockset.walletkit.blockchaindb.models.bdb.Currency> currencies) {
+    static System createAndConfigureSystemWithBlockchainDbAndCurrencies(File dataDir, BlocksetSystemClient query, List<SystemClient.Currency> currencies) {
         String storagePath = dataDir.getAbsolutePath();
         Account account = HelpersAIT.createDefaultAccount();
         SystemListener listener = new DefaultSystemListener() {};
@@ -184,16 +185,16 @@ class HelpersAIT {
     private static final OkHttpClient DEFAULT_HTTP_CLIENT = new OkHttpClient();
 
     /* package */
-    static BlockchainDb createDefaultBlockchainDbWithToken() {
+    static BlocksetSystemClient createDefaultBlockchainDbWithToken() {
         if (null == testConfiguration) testConfiguration = TestConfigurationLoader.getTestConfiguration();
-        return BlockchainDb.createForTest(DEFAULT_HTTP_CLIENT,
+        return BlocksetSystemClient.createForTest(DEFAULT_HTTP_CLIENT,
                 testConfiguration.getBlocksetAccess().getToken(),
                 testConfiguration.getBlocksetAccess().getBaseURL());
     }
 
     /* package */
-    static BlockchainDb createDefaultBlockchainDbWithoutToken() {
-        return new BlockchainDb(DEFAULT_HTTP_CLIENT);
+    static BlocksetSystemClient createDefaultBlockchainDbWithoutToken() {
+        return new BlocksetSystemClient(DEFAULT_HTTP_CLIENT);
     }
 
     // Listeners
@@ -252,7 +253,7 @@ class HelpersAIT {
                 this.event = event;
             }
 
-            private CryptoEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TranferEvent event) {
+            private CryptoEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer, TransferEvent event) {
                 this.system = system;
                 this.network = null;
                 this.manager = manager;
@@ -286,7 +287,7 @@ class HelpersAIT {
 
         @Override
         public void handleTransferEvent(System system, WalletManager manager, Wallet wallet, Transfer transfer,
-                                        TranferEvent event) {
+                                        TransferEvent event) {
             events.add(new CryptoEvent(system, manager, wallet, transfer, event));
         }
 

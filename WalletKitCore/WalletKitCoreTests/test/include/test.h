@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+// JSON
+extern void runJsonTests (void);
+
 // Util
 extern void runUtilTests (void);
 
@@ -39,6 +42,9 @@ extern void runBcTests (void);
 
 // Contract
 extern void runContractTests (void);
+
+// Structure
+extern void runStructureTests (void);
 
 // LES
 extern void runLESTests(const char *paperKey);
@@ -114,13 +120,13 @@ extern int BRRunTestsBWM (const char *paperKey,
 
 extern void BRRandInit (void);
 
-// testCrypto.c
-extern void runCryptoTests (void);
+// testWalletKit.c
+extern void runWalletKitTests (void);
 
 extern WKBoolean
-runCryptoTestsWithAccountAndNetwork (WKAccount account,
-                                     WKNetwork network,
-                                     const char *storagePath);
+runWalletKitTestsWithAccountAndNetwork (WKAccount account,
+                                        WKNetwork network,
+                                        const char *storagePath);
 
 // Ripple
 extern void
@@ -137,6 +143,8 @@ runTezosTest (void);
 // Stellar
 extern void
 runStellarTest (void);
+
+// __NEW_BLOCKCHAIN_TEST_DEFN__
 
 #ifdef __cplusplus
 }

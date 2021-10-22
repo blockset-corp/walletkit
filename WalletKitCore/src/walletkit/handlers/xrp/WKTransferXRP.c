@@ -45,6 +45,7 @@ wkTransferCreateCallbackXRP (WKTransferCreateContext context,
 
 extern WKTransfer
 wkTransferCreateAsXRP (WKTransferListener listener,
+                           const char *uids,
                            WKUnit unit,
                            WKUnit unitForFee,
                            WKTransferState state,
@@ -69,6 +70,7 @@ wkTransferCreateAsXRP (WKTransferListener listener,
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferXRPRecord),
                                                             WK_NETWORK_TYPE_XRP,
                                                             listener,
+                                                            uids,
                                                             unit,
                                                             unitForFee,
                                                             feeBasisEstimated,
@@ -102,7 +104,7 @@ wkTransferGetHashXRP (WKTransfer transfer) {
             : wkHashCreateAsXRP (hash));
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeXRP (WKTransfer transfer,
                             WKNetwork network,
                             WKBoolean  requireSignature,

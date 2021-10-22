@@ -9,10 +9,10 @@ package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.Network;
+import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.Unit;
 import com.blockset.walletkit.Wallet;
-import com.blockset.walletkit.blockchaindb.BlockchainDb;
-import com.blockset.walletkit.blockchaindb.models.bdb.Currency;
+import com.blockset.walletkit.SystemClient;
 import com.blockset.walletkit.events.system.SystemListener;
 import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedInteger;
@@ -82,12 +82,12 @@ public final class ApiProvider implements Api.Provider {
                                                     com.blockset.walletkit.Account account,
                                                     boolean isMainnet,
                                                     String path,
-                                                    BlockchainDb query) {
+                                                    SystemClient query) {
             return System.create(executor, listener, account, isMainnet, path, query);
         }
 
         @Override
-        public Optional<Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
+        public Optional<SystemClient.Currency> asBDBCurrency(String uids, String name, String code, String type, UnsignedInteger decimals) {
             return System.asBDBCurrency(uids, name, code, type, decimals);
         }
 
@@ -113,6 +113,12 @@ public final class ApiProvider implements Api.Provider {
         @Override
         public Optional<com.blockset.walletkit.PaymentProtocolRequest> createRequestForBip70(Wallet wallet, byte[] serialization) {
             return PaymentProtocolRequest.createForBip70(wallet, serialization).transform(r -> r);
+        }
+
+        @Override
+        public boolean checkPaymentMethodSupported(Wallet                       wallet,
+                                                   PaymentProtocolRequestType   protocolType) {
+            return PaymentProtocolRequest.checkPaymentMethodSupported(wallet, protocolType);
         }
 
         @Override

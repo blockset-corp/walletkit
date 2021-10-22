@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.errors;
 
-import com.blockset.walletkit.blockchaindb.models.bdb.HederaAccount;
+import com.blockset.walletkit.SystemClient.HederaAccount;
 
 import java.util.List;
 

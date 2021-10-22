@@ -39,6 +39,7 @@ wkTransferCreateCallbackHBAR (WKTransferCreateContext context,
 
 extern WKTransfer
 wkTransferCreateAsHBAR (WKTransferListener listener,
+                            const char *uids,
                             WKUnit unit,
                             WKUnit unitForFee,
                             WKTransferState state,
@@ -64,6 +65,7 @@ wkTransferCreateAsHBAR (WKTransferListener listener,
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferHBARRecord),
                                                             WK_NETWORK_TYPE_HBAR,
                                                             listener,
+                                                            uids,
                                                             unit,
                                                             unitForFee,
                                                             feeBasisEstimated,
@@ -113,7 +115,7 @@ crptoTransferUpdateIdentifierHBAR (WKTransfer transfer) {
     transfer->identifier = hederaTransactionGetTransactionId (transferHBAR->hbarTransaction);
 }
 
-static uint8_t *
+static OwnershipGiven uint8_t *
 wkTransferSerializeHBAR (WKTransfer transfer,
                              WKNetwork network,
                              WKBoolean  requireSignature,

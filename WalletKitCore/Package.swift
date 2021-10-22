@@ -43,7 +43,8 @@ let package = Package(
                 "WalletKitSQLite",
                 "WalletKitEd25519",
                 "WalletKitHederaProto",
-                "WalletKitBlake2"
+                "WalletKitBlake2",
+                "WalletKitYajl",
             ],
             path: ".",
             sources: ["src/version"],               // Holds WKVersion.c only
@@ -73,6 +74,7 @@ let package = Package(
                 .headerSearchPath("."),
                 .headerSearchPath("../vendor"),
                 .headerSearchPath("../vendor/secp256k1"),  // To compile vendor/secp256k1/secp256k1.c
+                .headerSearchPath("../vendor/yajl/include"),
                 .unsafeFlags([
                     // Enable warning flags
                     "-Wall",
@@ -149,6 +151,22 @@ let package = Package(
             ]
         ),
 
+        // Custom compilation flags for yajl
+        .target(
+            name: "WalletKitYajl",
+            dependencies: [],
+            path: "vendor/yajl",
+            exclude: [],
+            publicHeadersPath: nil,
+            cSettings: [
+                .headerSearchPath("include"),
+                .unsafeFlags([
+                    "-Xclang", "-analyzer-disable-all-checks",
+                    "-Wno-conversion",
+                ])
+            ]
+        ),
+
         // MARK: - Core Misc Targets
 
         .target (
@@ -192,7 +210,8 @@ let package = Package(
             ],
             path: "WalletKitCoreTests",
             exclude: [
-                "test"
+                "test",
+                "WalletKitCoreTests.c"
             ],
             cSettings: [
                 .headerSearchPath("../src"),

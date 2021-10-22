@@ -141,7 +141,7 @@ static TestDef allTests[] = {
 
 /* --------------- Tests ----------------- */
 int testCrypto(void) {
-    runCryptoTests();
+    runWalletKitTests();
     return NO_ASSERTION;
 }
 
@@ -167,7 +167,7 @@ int testCryptoWithAccountAndNetworkBTC(void) {
         network = createBitcoinNetwork(configurations[config].isMainnet,
                                        configurations[config].blockHeight);
 
-        success = success && runCryptoTestsWithAccountAndNetwork (account,
+        success = success && runWalletKitTestsWithAccountAndNetwork (account,
                                                                   network,
                                                                   TEST_DATA_DIR);
 
@@ -201,7 +201,7 @@ int testCryptoWithAccountAndNetworkBCH() {
         network = createBitcoinCashNetwork(configurations[config].isMainnet,
                                            configurations[config].blockHeight);
 
-        success = success && runCryptoTestsWithAccountAndNetwork (account,
+        success = success && runWalletKitTestsWithAccountAndNetwork (account,
                                                                   network,
                                                                   TEST_DATA_DIR);
 
@@ -235,7 +235,7 @@ int testCryptoWithAccountAndNetworkETH(void) {
         network = createEthereumNetwork(configurations[config].isMainnet,
                                         configurations[config].blockHeight);
 
-        success = success && runCryptoTestsWithAccountAndNetwork (account,
+        success = success && runWalletKitTestsWithAccountAndNetwork (account,
                                                                   network,
                                                                   TEST_DATA_DIR);
 

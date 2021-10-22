@@ -74,6 +74,7 @@ wkTransferCreateCallbackETH (WKTransferCreateContext context,
 
 extern WKTransfer
 wkTransferCreateAsETH (WKTransferListener listener,
+                           const char *uids,
                            WKHash hash,
                            WKUnit unit,
                            WKUnit unitForFee,
@@ -102,6 +103,7 @@ wkTransferCreateAsETH (WKTransferListener listener,
     return wkTransferAllocAndInit (sizeof (struct WKTransferETHRecord),
                                        WK_NETWORK_TYPE_ETH,
                                        listener,
+                                       uids,
                                        unit,
                                        unitForFee,
                                        feeBasisEstimated,
@@ -178,7 +180,7 @@ wkTransferGetOriginatingTransactionHashETH (WKTransferETH transfer) {
              : ETHEREUM_EMPTY_HASH_INIT);
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeETH (WKTransfer transfer,
                             WKNetwork  network,
                             WKBoolean  requireSignature,
@@ -202,7 +204,7 @@ wkTransferSerializeETH (WKTransfer transfer,
     return data.bytes;
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferGetBytesForFeeEstimateETH (WKTransfer transfer,
                                          WKNetwork  network,
                                          size_t *bytesCount) {

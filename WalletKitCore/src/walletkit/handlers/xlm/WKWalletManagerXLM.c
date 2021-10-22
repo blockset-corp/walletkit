@@ -91,12 +91,11 @@ wkWalletManagerSignTransactionWithSeedXLM (WKWalletManager manager,
                                                 WKWallet wallet,
                                                 WKTransfer transfer,
                                                 UInt512 seed) {
-    BRStellarAccount account = wkAccountAsXLM (manager->account);
-    BRKey publicKey = stellarAccountGetPublicKey (account);
+    BRStellarAccount account = (BRStellarAccount) wkAccountAs (manager->account,
+                                                               WK_NETWORK_TYPE_XLM);
     BRStellarTransaction transaction = wkTransferCoerceXLM(transfer)->xlmTransaction;
 
-    // TODO - carl
-    size_t tx_size = 0; //stellarTransactionSignTransaction (transaction, publicKey, seed, nodeAddress);
+    size_t tx_size = stellarAccountSignTransaction (account, transaction, seed);
 
     return AS_WK_BOOLEAN(tx_size > 0);
 }
@@ -110,7 +109,6 @@ wkWalletManagerSignTransactionWithKeyXLM (WKWalletManager manager,
     return WK_FALSE;
 }
 
-//TODO:XLM make common?
 static WKAmount
 wkWalletManagerEstimateLimitXLM (WKWalletManager manager,
                                       WKWallet  wallet,
@@ -160,12 +158,12 @@ wkWalletManagerEstimateFeeBasisXLM (WKWalletManager manager,
                                          size_t attributesCount,
                                          OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
-    BRStellarFeeBasis xlmFeeBasis;
-    xlmFeeBasis.pricePerCostFactor = (BRStellarAmount) value.u64[0];
-    xlmFeeBasis.costFactor = 1;  // 'cost factor' is 'transaction'
+    BRStellarFee fee;
 
-    // TODO - Carl
-    return NULL; //wkFeeBasisCreateAsXLM (wallet->unitForFee, xlmFeeBasis);
+    // No margin needed.
+    fee = (BRStellarFee) value.u32[0];
+
+    return wkFeeBasisCreateAsXLM (wallet->unitForFee, fee);
 }
 
 static void
@@ -180,10 +178,11 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
                                                           OwnershipKept WKClientTransferBundle bundle) {
     // create BRStellarTransaction
     
-    BRStellarAccount xlmAccount = wkAccountAsXLM (manager->account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (manager->account,
+                                                                  WK_NETWORK_TYPE_XLM);
     
     BRStellarAmount amount = 0;
-    sscanf(bundle->amount, "%lf", &amount);
+    sscanf(bundle->amount, "%" PRIu64, &amount);
     BRStellarFee fee = 0;
     if (NULL != bundle->fee) sscanf(bundle->fee, "%" PRIi32, &fee);
     BRStellarFeeBasis stellarFeeBasis = { fee, 1};
@@ -216,7 +215,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsXLM (txHash);
 
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     wkHashGive(hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsXLM (wallet->unit, stellarTransactionGetFee(xlmTransaction));
@@ -224,6 +223,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsXLM (wallet->listenerTransfer,
+                                                   bundle->uids,
                                                    wallet->unit,
                                                    wallet->unitForFee,
                                                    state,
@@ -234,6 +234,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXLM (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids  (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     
@@ -267,7 +268,8 @@ wkWalletManagerCreateWalletXLM (WKWalletManager manager,
                                      WKCurrency currency,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                      Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRStellarAccount xlmAccount = wkAccountAsXLM(manager->account);
+    BRStellarAccount xlmAccount = (BRStellarAccount) wkAccountAs (manager->account,
+                                                                  WK_NETWORK_TYPE_XLM);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

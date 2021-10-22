@@ -1,0 +1,24 @@
+// MARK: __SYMBOL__ Mainnet
+
+#define NETWORK_NAME    "__Name__"
+DEFINE_NETWORK (WK_NETWORK_TYPE___SYMBOL__,  "__name__-mainnet", NETWORK_NAME, "mainnet", true, 35516170, 1, 5)
+DEFINE_NETWORK_FEE_ESTIMATE ("__name__-mainnet", "100", "5s", 5 * 1000)
+DEFINE_CURRENCY ("__name__-mainnet",     "__name__-mainnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY___SYMBOL__,  "native",   NULL,   true)
+    DEFINE_UNIT ("__name__-mainnet:__native__",  "lumen_i",     "xlm_i",   0,  "__SYMBOL___I")
+    DEFINE_UNIT ("__name__-mainnet:__native__",  "lumen",       "xlm",     7,  "__SYMBOL__")
+DEFINE_ADDRESS_SCHEMES  ("__name__-mainnet", WK_ADDRESS_SCHEME_NATIVE)
+DEFINE_MODES            ("__name__-mainnet", WK_SYNC_MODE_API_ONLY)
+
+#if HAS___SYMBOL___TESTNET
+DEFINE_NETWORK (WK_NETWORK_TYPE___SYMBOL__,  "__name__-testnet", NETWORK_NAME, "testnet", false, 1075721, 1, 5)
+DEFINE_NETWORK_FEE_ESTIMATE ("__name__-testnet", "100", "5s", 5 * 1000)
+DEFINE_CURRENCY ("__name__-testnet",     "__name__-testnet:__native__",   NETWORK_NAME,  WK_NETWORK_CURRENCY___SYMBOL__,  "native",   NULL,   true)
+    DEFINE_UNIT ("__name__-testnet:__native__",  "lumen_i",     "txlm_i",   0,  "t__SYMBOL___I")
+    DEFINE_UNIT ("__name__-testnet:__native__",  "lumen",       "txlm",     7,  "t__SYMBOL__")
+DEFINE_ADDRESS_SCHEMES  ("__name__-testnet", WK_ADDRESS_SCHEME_NATIVE)
+DEFINE_MODES            ("__name__-testnet", WK_SYNC_MODE_API_ONLY)
+#endif
+DEFINE_HANDLERS (WK_NETWORK_TYPE___SYMBOL__, __SYMBOL__)
+#undef NETWORK_NAME
+
+// __CONFIG__

@@ -11,16 +11,40 @@
 #ifndef BRTezosBase_h
 #define BRTezosBase_h
 
-#include "WKBase.h"
+#include "WKBase.h"   //
+#include "support/BRKey.h"
 #include "support/BRBase58.h"
+#include "support/BRData.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// MARK: Tezos Public Key
 
 #define TEZOS_PUBLIC_KEY_SIZE 32
+
+typedef struct {
+    uint8_t bytes [TEZOS_PUBLIC_KEY_SIZE];
+} BRTezosPublicKey;
+
+static inline BRKey
+tezosPublicKeyGetKey (BRTezosPublicKey xtzKey) {
+    BRKey publicKey;
+    memset (&publicKey, 0x00, sizeof (BRKey));
+    memcpy ( publicKey.pubKey, xtzKey.bytes, TEZOS_PUBLIC_KEY_SIZE);
+    return publicKey;
+}
+
+static inline bool
+tezosPublicKeyEqual (const BRTezosPublicKey *pk1,
+                     const BRTezosPublicKey *pk2) {
+    return 0 == memcmp (pk1->bytes, pk2->bytes, TEZOS_PUBLIC_KEY_SIZE);
+}
+
+// MARK: - Tezos Hash
+
 #define TEZOS_HASH_BYTES 34
 
 typedef struct {
@@ -34,18 +58,6 @@ typedef struct {
     0, 0, 0, 0,     0, 0, 0, 0, \
     0, 0, 0, 0,     0, 0, 0, 0, \
 })
-
-typedef int64_t BRTezosUnitMutez;
-
-#define TEZOS_TEZ_SCALE_FACTOR       (1000000)  // 1 TEZ = 1e6 MUTEZ
-#define TEZOS_TEZ_TO_MUTEZ(x)        ((x) * TEZOS_TEZ_SCALE_FACTOR)
-
-typedef enum {
-    TEZOS_OP_ENDORESEMENT = 0,
-    TEZOS_OP_REVEAL = 107,
-    TEZOS_OP_TRANSACTION = 108,
-    TEZOS_OP_DELEGATION = 110
-} BRTezosOperationKind;
 
 static inline bool
 tezosHashIsEqual (const BRTezosHash h1,
@@ -72,6 +84,30 @@ tezosHashToString (BRTezosHash hash) {
     char string[64] = {0};
     BRBase58CheckEncode(string, sizeof(string), hash.bytes, sizeof(hash.bytes));
     return strdup(string);
+}
+
+// MARK: - Tezos Mutez / Operation
+
+typedef int64_t BRTezosUnitMutez;
+
+#define TEZOS_TEZ_SCALE_FACTOR       (1000000)  // 1 TEZ = 1e6 MUTEZ
+#define TEZOS_TEZ_TO_MUTEZ(x)        ((x) * TEZOS_TEZ_SCALE_FACTOR)
+
+typedef enum {
+    TEZOS_OP_ENDORESEMENT = 0,
+    TEZOS_OP_REVEAL = 107,
+    TEZOS_OP_TRANSACTION = 108,
+    TEZOS_OP_DELEGATION = 110
+} BRTezosOperationKind;
+
+static inline const char *
+tezosOperationKindDescription (BRTezosOperationKind kind) {
+    switch (kind) {
+        case TEZOS_OP_ENDORESEMENT: return "Endoresement";
+        case TEZOS_OP_REVEAL:       return "Reveal";
+        case TEZOS_OP_TRANSACTION:  return "Transaction";
+        case TEZOS_OP_DELEGATION:   return "Delegation";
+    }
 }
 
 #ifdef __cplusplus

@@ -102,6 +102,25 @@ extern int
 wkClientTransactionBundleCompare (const WKClientTransactionBundle b1,
                                   const WKClientTransactionBundle b2);
 
+static inline int
+wkClientTransactionBundleCompareForSort (const void *v1, const void *v2) {
+    const WKClientTransactionBundle *b1 = v1;
+    const WKClientTransactionBundle *b2 = v2;
+    return wkClientTransactionBundleCompare (*b1, *b2);
+}
+
+extern int
+wkClientTransactionBundleCompareByBlockheight (const WKClientTransactionBundle b1,
+                                                   const WKClientTransactionBundle b2);
+
+static inline int
+wkClientTransactionBundleCompareByBlockheightForSort (const void *tb1, const void *tb2) {
+    WKClientTransactionBundle b1 = * (WKClientTransactionBundle *) tb1;
+    WKClientTransactionBundle b2 = * (WKClientTransactionBundle *) tb2;
+    return wkClientTransactionBundleCompareByBlockheight (b1, b2);
+}
+
+
 /**
  * Announce the array of bundles with an overall success boolean
  */
@@ -141,14 +160,15 @@ typedef struct WKClientTransferBundleRecord *WKClientTransferBundle;
  */
 extern WKClientTransferBundle
 wkClientTransferBundleCreate (WKTransferStateType status,
-                              OwnershipKept const char *uids,
-                              OwnershipKept const char *hash,
-                              OwnershipKept const char *identifier,
+                              OwnershipKept const char */* transaction */ hash,
+                              OwnershipKept const char */* transaction */ identifier,
+                              OwnershipKept const char */* transfer */ uids,
                               OwnershipKept const char *from,
                               OwnershipKept const char *to,
                               OwnershipKept const char *amount,
                               OwnershipKept const char *currency,
                               OwnershipKept const char *fee,
+                              uint64_t transferIndex,
                               WKTimestamp blockTimestamp,
                               WKBlockNumber blockNumber,
                               WKBlockNumber blockConfirmations,
@@ -170,6 +190,25 @@ wkClientTransferBundleRelease (WKClientTransferBundle bundle);
 extern int
 wkClientTransferBundleCompare (const WKClientTransferBundle b1,
                                const WKClientTransferBundle b2);
+
+static inline int
+wkClientTransferBundleCompareForSort (const void *v1, const void *v2) {
+    const WKClientTransferBundle *b1 = v1;
+    const WKClientTransferBundle *b2 = v2;
+    return wkClientTransferBundleCompare (*b1, *b2);
+}
+
+extern int
+wkClientTransferBundleCompareByBlockheight (const WKClientTransferBundle b1,
+                                                const WKClientTransferBundle b2);
+
+static inline int
+wkClientTransferBundleCompareByBlockheightForSort (const void *tb1, const void *tb2) {
+    WKClientTransferBundle b1 = * (WKClientTransferBundle *) tb1;
+    WKClientTransferBundle b2 = * (WKClientTransferBundle *) tb2;
+    return wkClientTransferBundleCompareByBlockheight (b1, b2);
+}
+
 
 /**
  * Get the transfer bundle's state.

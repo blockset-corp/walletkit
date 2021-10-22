@@ -7,22 +7,26 @@
  */
 package com.blockset.walletkit.demo;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.util.SortedList;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.util.SortedListAdapterCallback;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SortedList;
+import androidx.recyclerview.widget.SortedListAdapterCallback;
+import androidx.appcompat.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
 
 import com.blockset.walletkit.Currency;
@@ -43,10 +47,19 @@ import com.blockset.walletkit.events.walletmanager.WalletManagerEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncProgressEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStartedEvent;
 import com.blockset.walletkit.events.walletmanager.WalletManagerSyncStoppedEvent;
+import com.blockset.walletkit.utility.AccountSpecification;
+import com.blockset.walletkit.utility.TestConfiguration;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,38 +71,105 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     private static final int WALLET_CHUNK_SIZE = 10;
 
     private Adapter walletsAdapter;
+    private TestConfiguration testConfiguration;
+    private List<AccountSpecification> accounts;
+    private int accountIdx = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wallet_list);
 
+        getTestConfiguration();
+
+        // Blockset access
+        getIntent().putExtra(DemoApplication.EXTRA_BLOCKSETACCESS_TOKEN,
+                             this.testConfiguration.getBlocksetAccess().getToken());
+        getIntent().putExtra(DemoApplication.EXTRA_BLOCKSETURL_TOKEN,
+                             this.testConfiguration.getBlocksetAccess().getBaseURL());
+
+        setInitialAccount();
         DemoApplication.initialize(this);
+        if (configOk()) {
 
-        RecyclerView walletsView = findViewById(R.id.wallet_recycler_view);
-        walletsView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
+            setActivityTitle();
+            RecyclerView walletsView = findViewById(R.id.wallet_recycler_view);
 
-        RecyclerView.LayoutManager walletsLayoutManager = new LinearLayoutManager(this);
-        walletsView.setLayoutManager(walletsLayoutManager);
+            walletsView.addItemDecoration(new DividerItemDecoration(getApplicationContext(), DividerItemDecoration.VERTICAL));
 
-        walletsAdapter = new Adapter((wallet) -> TransferListActivity.start(this, wallet));
-        walletsView.setAdapter(walletsAdapter);
+            RecyclerView.LayoutManager walletsLayoutManager = new LinearLayoutManager(this);
+            walletsView.setLayoutManager(walletsLayoutManager);
 
-        Toolbar toolbar = findViewById(R.id.toolbar_view);
-        setSupportActionBar(toolbar);
+            walletsAdapter = new Adapter((wallet) -> TransferListActivity.start(this, wallet));
+            walletsView.setAdapter(walletsAdapter);
+
+            Toolbar toolbar = findViewById(R.id.toolbar_view);
+            setSupportActionBar(toolbar);
+        } else {
+
+            LinearLayout topView = findViewById(R.id.wallet_list_layout);
+            topView.removeAllViews();
+            TextView discord = new TextView(this);
+            discord.setText("Invalid or missing configuration JSON");
+            discord.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            topView.addView (discord);
+        }
+    }
+
+    private void setActivityTitle() {
+
+        setTitle(accounts.get(accountIdx).getNetwork() + " "
+                 + getString(R.string.wallets_list_title)
+                 + " ("
+                 + accounts.get(accountIdx).getIdentifier()
+                 + ")");
+    }
+
+    private boolean configOk() {
+        return accountIdx != -1;
+    }
+
+
+    /* Initial account selection is the first account provided
+     * in the config, assuming the config was valid
+     */
+    private void setInitialAccount() {
+
+        Intent intent = getIntent();
+
+       if (accounts != null && accounts.size() > 0) {
+
+            // We have a valid account
+            accountIdx = 0;
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new GuavaModule());
+            String acctSer;
+            try {
+                acctSer = mapper.writeValueAsString(accounts.get(accountIdx));
+            } catch (JsonProcessingException processingException) {
+                throw new RuntimeException (processingException);
+            }
+
+            intent.putExtra(DemoApplication.EXTRA_ACCOUNT_SPEC, acctSer);
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        DemoApplication.getDispatchingSystemListener().addSystemListener(this);
-        loadWallets();
+        if (configOk()) {
+            DemoApplication.getDispatchingSystemListener().addSystemListener(this);
+            loadWallets();
+        }
     }
 
     @Override
     protected void onPause() {
-        DemoApplication.getDispatchingSystemListener().removeSystemListener(this);
+        if (configOk()) {
+            DemoApplication.getDispatchingSystemListener().removeSystemListener(this);
+        }
 
         super.onPause();
     }
@@ -103,6 +183,9 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_choose_account:
+                showChooseAccount();
+                return true;
             case R.id.action_connect:
                 connect();
                 return true;
@@ -252,6 +335,41 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
         ApplicationExecutors.runOnBlockingExecutor(() -> {
             DemoApplication.wipeSystem();
             runOnUiThread(this::recreate);
+        });
+    }
+
+    private void showChooseAccount() {
+        ApplicationExecutors.runOnUiExecutor(() -> {
+
+            String[] accountTexts = new String[accounts.size()];
+            for (int i = 0; i < accounts.size(); i++) {
+                accountTexts[i] = accounts.get(i).getIdentifier();
+            }
+
+            int selectedItem = 0;
+            runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle("Select Account")
+                    .setNegativeButton("Cancel", (d,w) -> {})
+                    .setPositiveButton("Ok", (d,w) -> {
+
+                        // We can assume the index is within valid bounds
+                        // as it comes from selection of the choice initialized
+                        // with range of account strings
+                        int selected = ((AlertDialog)d).getListView().getCheckedItemPosition();
+                        AccountSpecification acc = accounts.get(selected);
+                        if (!accounts.get(accountIdx).getIdentifier().equals(acc.getIdentifier())) {
+                            accountIdx = selected;
+                            setActivityTitle();
+                            DemoApplication.setAccount(accounts.get(accountIdx));
+
+                            onResume();
+                        }
+
+                        // Switch system account here
+                        d.dismiss();
+                    })
+                    .setSingleChoiceItems(accountTexts, accountIdx,null)
+                    .show());
         });
     }
 
@@ -508,6 +626,17 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
             currencyView = view.findViewById(R.id.item_currency);
             symbolView = view.findViewById(R.id.item_symbol);
             syncView = view.findViewById(R.id.item_sync_status);
+        }
+    }
+
+    public void getTestConfiguration() {
+        try (final InputStream inputStream = getAssets().open("WalletKitTestsConfig.json");
+             final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            this.testConfiguration = TestConfiguration.loadFrom(reader);
+            this.accounts = testConfiguration.getAccountSpecifications();
+        }
+        catch (IOException e) {
+            throw new RuntimeException (e);
         }
     }
 }

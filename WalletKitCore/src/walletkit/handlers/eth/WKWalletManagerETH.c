@@ -73,7 +73,6 @@ wkWalletManagerCoerceETH (WKWalletManager manager) {
 }
 
 typedef struct {
-    BREthereumNetwork network;
     BREthereumAccount account;
     BRRlpCoder coder;
 } WKWalletManagerCreateContextETH;
@@ -84,7 +83,6 @@ wkWaleltMangerCreateCallbackETH (WKWalletManagerCreateContext context,
     WKWalletManagerCreateContextETH *contextETH = (WKWalletManagerCreateContextETH*) context;
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (manager);
 
-    managerETH->network = contextETH->network;
     managerETH->account = contextETH->account;
     managerETH->coder   = contextETH->coder;
 }
@@ -98,8 +96,7 @@ wkWalletManagerCreateETH (WKWalletManagerListener listener,
                               WKAddressScheme scheme,
                               const char *path) {
     WKWalletManagerCreateContextETH contextETH = {
-        wkNetworkAsETH (network),
-        wkAccountAsETH (account),
+        (BREthereumAccount) wkAccountAs (account, WK_NETWORK_TYPE_ETH),
         rlpCoderCreate()
     };
 
@@ -169,7 +166,7 @@ wkWalletManagerSignTransactionETH (WKWalletManager manager,
     WKTransferETH      transferETH = wkTransferCoerceETH      (transfer);
 
 
-    BREthereumNetwork     ethNetwork     = managerETH->network;
+    BREthereumNetwork     ethNetwork     = wkWalletManagerGetNetworkAsETH(manager);
     BREthereumAccount     ethAccount     = managerETH->account;
     BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
     BREthereumTransaction ethTransaction = transferETH->originatingTransaction;
@@ -300,8 +297,7 @@ wkWalletManagerEstimateFeeBasisETH (WKWalletManager manager,
     wkClientQRYEstimateTransferFee (manager->qryManager,
                                         cookie,
                                         transfer,
-                                        networkFee,
-                                        feeBasis);
+                                        networkFee);
 
     wkTransferGive (transfer);
     wkFeeBasisGive (feeBasis);
@@ -312,15 +308,23 @@ wkWalletManagerEstimateFeeBasisETH (WKWalletManager manager,
 
 static WKFeeBasis
 wkWalletManagerRecoverFeeBasisFromFeeEstimateETH (WKWalletManager cwm,
-                                                      WKNetworkFee networkFee,
-                                                      WKFeeBasis initialFeeBasis,
-                                                      double costUnits,
-                                                      size_t attributesCount,
-                                                      OwnershipKept const char **attributeKeys,
-                                                      OwnershipKept const char **attributeVals) {
-    BREthereumFeeBasis feeBasis = ethFeeBasisCreate (ethGasCreate ((uint64_t) costUnits),
-                                                     wkNetworkFeeAsETH (networkFee));
-    return wkFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit, feeBasis);
+                                                  WKTransfer transfer,
+                                                  WKNetworkFee networkFee,
+                                                  double costUnits,
+                                                  size_t attributesCount,
+                                                  OwnershipKept const char **attributeKeys,
+                                                  OwnershipKept const char **attributeVals) {
+    WKTransferETH transferETH = wkTransferCoerceETH(transfer);
+    assert (NULL != transferETH->originatingTransaction);
+    
+    BREthereumTransaction ethTransaction = transferETH->originatingTransaction;
+    BREthereumGas         ethGasLimit    = ethGasCreate((uint64_t) costUnits);
+
+    // Apply a margin
+    BREthereumGas ethGasLimitWithMargin  = ethTransactionApplyGasLimitMargin (ethTransaction, ethGasLimit);
+
+    return wkFeeBasisCreateAsETH (networkFee->pricePerCostFactorUnit,
+                                  ethFeeBasisCreate (ethGasLimitWithMargin, wkNetworkFeeAsETH (networkFee)));
 }
 
 static void
@@ -866,6 +870,9 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     if (NULL != currency)
         wkWalletManagerEnsureTokenForCurrency (managerETH, currency);
 
+    // If we have a fee, we'll check if we sent the transfer and, if so, need a transfer
+    bool hasFee = (NULL != bundle->fee);
+
     UInt256  amountETH;
     uint64_t gasLimit;
     uint64_t gasUsed;
@@ -902,21 +909,16 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     // Get the hash; we'll use it to find a pre-existing transfer in wallet or primaryWallet
     WKHash hash = wkNetworkCreateHashFromString (network, bundle->hash);
 
-    // We'll create or find a transfer for the bundle
-    WKTransfer transfer = NULL;
-
-    // Look for a transfer in the wallet for currency
-    if (NULL != wallet)
-        transfer = wkWalletGetTransferByHash (wallet, hash);
-
-    // If there isn't a wallet, the currency is unknown, look in the primaryWallet (for a fee)
-    else
-        transfer = wkWalletGetTransferByHash (primaryWallet, hash);
+    // We'll create or find a transfer for the bundle uids
+    WKTransfer transfer = wkWalletGetTransferByHashOrUIDS ((NULL != wallet ? wallet : primaryWallet), hash, bundle->uids);
 
     // If we have a transfer, simply update its state and the nonce
     if (NULL != transfer) {
         // Get the transferETH so as to check for a nonce update
         WKTransferETH transferETH = wkTransferCoerceETH(transfer);
+
+        // Get the UIDS
+        wkTransferSetUids (transfer, bundle->uids);
 
         // Compare the current nonce with the transfer's.
         bool nonceChanged = (nonce != wkTransferGetNonceETH(transferETH));
@@ -929,12 +931,6 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
     }
 
     else {
-        WKAddress source = wkNetworkCreateAddress (network, bundle->from);
-        WKAddress target = wkNetworkCreateAddress (network, bundle->to);
-
-        BREthereumFeeBasis feeBasisEstimatedETH = ethFeeBasisCreate (ethGasCreate(gasLimit), ethGasPriceCreate(ethEtherCreate(gasPrice)));
-        WKFeeBasis   feeBasisEstimated = wkFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisEstimatedETH);
-
         WKAmount amount = NULL;
 
         // If we have a currency, then create an amount
@@ -944,8 +940,8 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
             wkUnitGive(amountUnit);
         }
 
-        // We pay the fee
-        bool paysFee = (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (accountETH, ethAddressCreate(bundle->from)));
+        // If we pay the fee, we'll need a transfer in the primaryWallet.
+        bool paysFee = hasFee && (ETHEREUM_BOOLEAN_TRUE == ethAccountHasAddress (accountETH, ethAddressCreate(bundle->from)));
 
         // If we pay the fee but don't have a currency, then we'll need a transfer with a zero amount.
         if (NULL == amount && paysFee)
@@ -953,10 +949,17 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
 
         // If we have a currency or pay the fee, we'll need a transfer
         if (NULL != currency || paysFee) {
+            WKAddress source = wkNetworkCreateAddress (network, bundle->from);
+            WKAddress target = wkNetworkCreateAddress (network, bundle->to);
+
+            BREthereumFeeBasis feeBasisEstimatedETH = ethFeeBasisCreate (ethGasCreate(gasLimit), ethGasPriceCreate(ethEtherCreate(gasPrice)));
+            WKFeeBasis   feeBasisEstimated = wkFeeBasisCreateAsETH (primaryWallet->unitForFee, feeBasisEstimatedETH);
+
             WKWallet transfersPrimaryWallet = (NULL != wallet ? wallet : primaryWallet);
 
             // Finally create a transfer
             transfer = wkTransferCreateAsETH (transfersPrimaryWallet->listenerTransfer,
+                                                  bundle->uids,
                                                   hash,
                                                   transfersPrimaryWallet->unit,
                                                   transfersPrimaryWallet->unitForFee,
@@ -976,6 +979,10 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
             if (paysFee && transfersPrimaryWallet != primaryWallet)
                 wkWalletAddTransfer (primaryWallet, transfer);
 
+            wkFeeBasisGive (feeBasisEstimated);
+            wkAddressGive (target);
+            wkAddressGive (source);
+
 #if defined (NEVER_DEFINED)
             // if we pay the fee, then we send the transfer, update the Ethereum Account's nonce
             if (paysFee) {
@@ -989,9 +996,6 @@ wkWalletManagerRecoverTransferFromTransferBundleETH (WKWalletManager manager,
         }
 
         wkAmountGive (amount);
-        wkFeeBasisGive (feeBasisEstimated);
-        wkAddressGive (target);
-        wkAddressGive (source);
     }
 
     wkTransferGive (transfer);

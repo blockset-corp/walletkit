@@ -381,6 +381,7 @@ int BRBech32Tests()
     char *s, addr[91];
     size_t l;
     
+    // bech32
     s = "\x00\x14\x75\x1e\x76\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23\xf1\x43\x3b\xd6";
     l = BRBech32Decode(h, b, "BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4");
     if (l != 22 || strcmp(h, "bc") || memcmp(s, b, l))
@@ -394,14 +395,122 @@ int BRBech32Tests()
     if (l == 0 || strcmp(addr, "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 2", __func__);
 
-    s = "\x52\x10\x75\x1e\x76\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23";
-    l = BRBech32Decode(h, b, "bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj");
-    if (l != 18 || strcmp(h, "bc") || memcmp(s, b, l))
+    // bech32m
+    char s3[] = "\x00\x20\x18\x63\x14\x3c\x14\xc5\x16\x68\x04\xbd\x19\x20\x33\x56\xda\x13\x6c\x98\x56\x78\xcd\x4d\x27"
+    "\xa1\xb8\xc6\x32\x96\x04\x90\x32\x62";
+    l = BRBech32Decode(h, b, "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7");
+    if (l != sizeof(s3) - 1 || strcmp(h, "tb") || memcmp(s3, b, l))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 3", __func__);
 
-    l = BRBech32Encode(addr, "bc", b);
-    if (l == 0 || strcmp(addr, "bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj"))
+    l = BRBech32Encode(addr, "tb", b);
+    if (l == 0 || strcmp(addr, "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7"))
         r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 3", __func__);
+
+    char s4[] = "\x51\x28\x75\x1e\x76\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23\xf1\x43\x3b\xd6\x75\x1e\x76"
+    "\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23\xf1\x43\x3b\xd6";
+    l = BRBech32Decode(h, b, "bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y");
+    if (l != sizeof(s4) - 1 || strcmp(h, "bc") || memcmp(s4, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 4", __func__);
+
+    l = BRBech32Encode(addr, "bc", b);
+    if (l == 0 || strcmp(addr, "bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 4", __func__);
+
+    char s5[] = "\x60\x02\x75\x1e";
+    l = BRBech32Decode(h, b, "BC1SW50QGDZ25J");
+    if (l != sizeof(s5) - 1 || strcmp(h, "bc") || memcmp(s5, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 5", __func__);
+
+    l = BRBech32Encode(addr, "bc", b);
+    if (l == 0 || strcmp(addr, "bc1sw50qgdz25j"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 5", __func__);
+
+    char s6[] = "\x52\x10\x75\x1e\x76\xe8\x19\x91\x96\xd4\x54\x94\x1c\x45\xd1\xb3\xa3\x23";
+    l = BRBech32Decode(h, b, "bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs");
+    if (l != sizeof(s6) - 1 || strcmp(h, "bc") || memcmp(s6, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 6", __func__);
+
+    l = BRBech32Encode(addr, "bc", b);
+    if (l == 0 || strcmp(addr, "bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 6", __func__);
+
+    char s7[] = "\x00\x20\x00\x00\x00\xc4\xa5\xca\xd4\x62\x21\xb2\xa1\x87\x90\x5e\x52\x66\x36\x2b\x99\xd5\xe9\x1c\x6c"
+    "\xe2\x4d\x16\x5d\xab\x93\xe8\x64\x33";
+    l = BRBech32Decode(h, b, "tb1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesrxh6hy");
+    if (l != sizeof(s7) - 1 || strcmp(h, "tb") || memcmp(s7, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 7", __func__);
+
+    l = BRBech32Encode(addr, "tb", b);
+    if (l == 0 || strcmp(addr, "tb1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesrxh6hy"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 7", __func__);
+
+    char s8[] = "\x51\x20\x00\x00\x00\xc4\xa5\xca\xd4\x62\x21\xb2\xa1\x87\x90\x5e\x52\x66\x36\x2b\x99\xd5\xe9\x1c\x6c"
+    "\xe2\x4d\x16\x5d\xab\x93\xe8\x64\x33";
+    l = BRBech32Decode(h, b, "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c");
+    if (l != sizeof(s8) - 1 || strcmp(h, "tb") || memcmp(s8, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 8", __func__);
+
+    l = BRBech32Encode(addr, "tb", b);
+    if (l == 0 || strcmp(addr, "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 8", __func__);
+
+    char s9[] = "\x51\x20\x79\xbe\x66\x7e\xf9\xdc\xbb\xac\x55\xa0\x62\x95\xce\x87\x0b\x07\x02\x9b\xfc\xdb\x2d\xce\x28"
+    "\xd9\x59\xf2\x81\x5b\x16\xf8\x17\x98";
+    l = BRBech32Decode(h, b, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0");
+    if (l != sizeof(s9) - 1 || strcmp(h, "bc") || memcmp(s9, b, l))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 9", __func__);
+
+    l = BRBech32Encode(addr, "bc", b);
+    if (l == 0 || strcmp(addr, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0"))
+        r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Encode() test 9", __func__);
+
+    // Invalid checksum (Bech32 instead of Bech32m)
+    l = BRBech32Decode(h, b, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqh2y7hd");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 10", __func__);
+
+    // Invalid checksum (Bech32 instead of Bech32m)
+    l = BRBech32Decode(h, b, "tb1z0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqglt7rf");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 11", __func__);
+
+    // Invalid checksum (Bech32 instead of Bech32m)
+    l = BRBech32Decode(h, b, "BC1S0XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ54WELL");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 12", __func__);
+
+    // Invalid checksum (Bech32 instead of Bech32m)
+    l = BRBech32Decode(h, b, "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kemeawh");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 13", __func__);
+
+    // Invalid checksum (Bech32 instead of Bech32m)
+    l = BRBech32Decode(h, b, "tb1q0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq24jc47");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 14", __func__);
+
+    // Invalid character in checksum
+    l = BRBech32Decode(h, b, "bc1p38j9r5y49hruaue7wxjce0updqjuyyx0kh56v8s25huc6995vvpql3jow4");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 15", __func__);
+
+    // Invalid program length (1 byte)
+    l = BRBech32Decode(h, b, "bc1pw5dgrnzv");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 16", __func__);
+
+    // Invalid program length (41 bytes)
+    l = BRBech32Decode(h, b, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v8n0nx0muaewav253zgeav");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 17", __func__);
+
+    // Mixed case
+    l = BRBech32Decode(h, b, "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq47Zagq");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 18", __func__);
+
+    // zero padding of more than 4 bits
+    l = BRBech32Decode(h, b, "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v07qwwzcrf");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 19", __func__);
+
+    // Non-zero padding in 8-to-5 conversion
+    l = BRBech32Decode(h, b, "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vpggkg4j");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 20", __func__);
+
+    // Empty data section
+    l = BRBech32Decode(h, b, "bc1gmk9yu");
+    if (l != 0) r = 0, fprintf(stderr, "\n***FAILED*** %s: BRBech32Decode() test 21", __func__);
 
     if (! r) fprintf(stderr, "\n                                    ");
     return r;
@@ -2780,7 +2889,8 @@ int btcWalletTests()
     amt = btcWalletMaxOutputAmount(w);
     tx = btcWalletCreateTransaction(w, amt, addr.s);
     
-    if (btcWalletAmountSentByTx(w, tx) - btcWalletFeeForTx(w, tx) != amt || btcWalletAmountReceivedFromTx(w, tx) != 0)
+    if (! tx || btcWalletAmountSentByTx(w, tx) - btcWalletFeeForTx(w, tx) != amt ||
+        btcWalletAmountReceivedFromTx(w, tx) != 0)
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletMaxOutputAmount() test\n", __func__);
 
     fee = btcWalletFeeForTxAmount (w, amt);
@@ -2790,7 +2900,7 @@ int btcWalletTests()
     if (fee != btcWalletFeeForTxAmountWithFeePerKb (w, 65000, amt))
         r = 0, fprintf(stderr, "***FAILED*** %s: btcWalletFeeForTxAmountWithFeePerKb() test\n", __func__);
 
-    btcTransactionFree(tx);
+    if (tx) btcTransactionFree(tx);
     btcWalletFree(w);
     
     amt = btcBitcoinAmount(50000, 50000);

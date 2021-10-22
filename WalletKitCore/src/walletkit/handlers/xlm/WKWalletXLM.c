@@ -194,41 +194,26 @@ wkWalletCreateTransferXLM (WKWallet  wallet,
     UInt256 value = wkAmountGetValue (amount);
     
     BRStellarAddress source  = stellarAccountGetAddress(walletXLM->xlmAccount);
-    BRStellarAmount amountXLM = (double)value.u64[0];
+    BRStellarAmount amountXLM = value.u64[0];
 
-    // TODO - Carl - I think this is when we create a new transaction to submit
     BRStellarTransaction xlmTransaction = stellarTransactionCreate (source,
                                                                   wkAddressAsXLM(target),
                                                                   amountXLM,
                                                                   wkFeeBasisAsXLM(estimatedFeeBasis));
+    stellarAddressFree(source);
 
-    if (NULL == xlmTransaction)
-        return NULL;
-
-    // TODO - attributes?
+    // TODO - check out if Stellar needs any attributes for submitted transactions
+    /*
     for (size_t index = 0; index < attributesCount; index++) {
         WKTransferAttribute attribute = attributes[index];
         if (NULL != wkTransferAttributeGetValue(attribute)) {
-            /*
-            if (stellarCompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_DESTINATION_TAG)) {
-                BRCoreParseStatus tag;
-                sscanf (wkTransferAttributeGetValue(attribute), "%u", &tag);
-                stellarTransactionSetDestinationTag (xlmTransaction, tag);
-            }
-            else if (stellarCompareFieldOption (wkTransferAttributeGetKey(attribute), FIELD_OPTION_INVOICE_ID)) {
-                // TODO: Handle INVOICE_ID (note: not used in BRD App)
-            }
-            else {
-                // TODO: Impossible if validated?
-            }
-             */
         }
     }
-
-    stellarAddressFree(source);
+    */
 
     WKTransferState state    = wkTransferStateInit(WK_TRANSFER_STATE_CREATED);
     WKTransfer      transfer = wkTransferCreateAsXLM (wallet->listenerTransfer,
+                                                                NULL,
                                                                 unit,
                                                                 unitForFee,
                                                                 state,
@@ -279,7 +264,7 @@ wkWalletAnnounceTransferXLM (WKWallet wallet,
 
     // We need to keep track of the first block number where this account shows up to do this:
     // initial_sequence = blockNumber << 32;
-    int64_t minBlockHeight = INT64_MAX;
+    uint64_t minBlockHeight = UINT64_MAX;
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
         BRStellarTransaction xlmTransfer = wkTransferAsXLM (wallet->transfers[index]);
 

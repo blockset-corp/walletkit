@@ -99,7 +99,8 @@ wkWalletManagerSignTransactionWithSeedXRP (WKWalletManager manager,
                                                WKWallet wallet,
                                                WKTransfer transfer,
                                                UInt512 seed) {
-    BRRippleAccount account = wkAccountAsXRP (manager->account);
+    BRRippleAccount account = (BRRippleAccount) wkAccountAs (manager->account,
+                                                             WK_NETWORK_TYPE_XRP);
     BRRippleTransaction tid = wkTransferCoerceXRP(transfer)->xrpTransaction;
     if (tid) {
         size_t tx_size = rippleAccountSignTransaction (account, tid, seed);
@@ -167,7 +168,10 @@ wkWalletManagerEstimateFeeBasisXRP (WKWalletManager manager,
                                         size_t attributesCount,
                                         OwnershipKept WKTransferAttribute *attributes) {
     UInt256 value = wkAmountGetValue (wkNetworkFeeGetPricePerCostFactor (networkFee));
+
+    // No margin needed.
     BRRippleUnitDrops fee = value.u64[0];
+
     return wkFeeBasisCreateAsXRP (wallet->unitForFee, fee);
 }
 
@@ -183,7 +187,8 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
                                                          OwnershipKept WKClientTransferBundle bundle) {
     // create BRRippleTransfer
 
-    BRRippleAccount xrpAccount = wkAccountAsXRP(manager->account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (manager->account,
+                                                                WK_NETWORK_TYPE_XRP);
     
     BRRippleUnitDrops amountDrops = 0;
     sscanf(bundle->amount, "%" PRIu64, &amountDrops);
@@ -194,6 +199,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
 
     BRRippleAddress toAddress   = rippleAddressCreateFromString (bundle->to,   false);
     BRRippleAddress fromAddress = rippleAddressCreateFromString (bundle->from, false);
+
     // Convert the hash string to bytes
     BRRippleTransactionHash txId;
     hexDecode(txId.bytes, sizeof(txId.bytes), bundle->hash, strlen(bundle->hash));
@@ -217,7 +223,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
     WKWallet wallet = wkWalletManagerGetWallet (manager);
     WKHash hash = wkHashCreateAsXRP (txId);
     
-    WKTransfer baseTransfer = wkWalletGetTransferByHash (wallet, hash);
+    WKTransfer baseTransfer = wkWalletGetTransferByHashOrUIDS (wallet, hash, bundle->uids);
     wkHashGive (hash);
 
     WKFeeBasis      feeBasis = wkFeeBasisCreateAsXRP (wallet->unitForFee, feeDrops);
@@ -225,6 +231,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
 
     if (NULL == baseTransfer) {
         baseTransfer = wkTransferCreateAsXRP (wallet->listenerTransfer,
+                                                  bundle->uids,
                                                   wallet->unit,
                                                   wallet->unitForFee,
                                                   state,
@@ -235,6 +242,7 @@ wkWalletManagerRecoverTransferFromTransferBundleXRP (WKWalletManager manager,
         wkWalletAddTransfer (wallet, baseTransfer);
     }
     else {
+        wkTransferSetUids  (baseTransfer, bundle->uids);
         wkTransferSetState (baseTransfer, state);
     }
     
@@ -268,7 +276,8 @@ wkWalletManagerCreateWalletXRP (WKWalletManager manager,
                                     WKCurrency currency,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                     Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers) {
-    BRRippleAccount xrpAccount = wkAccountAsXRP(manager->account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (manager->account,
+                                                                WK_NETWORK_TYPE_XRP);
 
     // Create the primary WKWallet
     WKNetwork  network       = manager->network;

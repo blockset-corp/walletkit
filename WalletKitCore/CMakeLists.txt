@@ -34,9 +34,11 @@ if (LINUX)
                      WalletKitCoreTests/test/bitcoin/test.c)
     target_include_directories(test_bitcoin
                                PRIVATE
-                               WalletKitCoreTests/test/include)
+                               WalletKitCoreTests/test/include
+                               include
+                               src)
     target_link_libraries (test_bitcoin
-                           corecrypto)
+                           WalletKitCore)
     
     # Example 2: Create a separate test-all application that runs
     # all core crypto tests by linking the test crypto shared lib
@@ -48,10 +50,11 @@ if (LINUX)
         target_include_directories(WalletKitCoreTests
                                    PRIVATE
                                    WalletKitCoreTests/test/include
-                                   WalletKitCore/include)
+                                   include
+                                   src)
         target_link_libraries (WalletKitCoreTests
-                               corecryptotest
-                               corecrypto)
+                               WalletKitCoreTest
+                               WalletKitCore)
     endif ()
 
     # _POSIX_C_SOURCE:
@@ -64,26 +67,27 @@ else()
      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
 #
-# Core Crypto Library
+# WalletKitCore Library
 #
 
 add_library( # Sets the name of the library.
-             corecrypto
+             WalletKitCore
              # Sets the library as a shared library.
              SHARED)
 
 # Setup all the include paths
-target_include_directories (corecrypto
+target_include_directories (WalletKitCore
                             PUBLIC
                             ${PROJECT_SOURCE_DIR}/include
                             ${PROJECT_SOURCE_DIR}/src
                             ${PROJECT_SOURCE_DIR}/src/support
                             ${PROJECT_SOURCE_DIR}
                             ${PROJECT_SOURCE_DIR}/vendor
-                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
+                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include)
 
 # specify compiler warnings
-target_compile_options (corecrypto
+target_compile_options (WalletKitCore
 	   	        PUBLIC
 		        "-Wall"
 		        "-Wconversion"
@@ -95,33 +99,56 @@ target_compile_options (corecrypto
 
 # Set BITCOIN_DEBUG define when building DEBUG builds
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_compile_definitions(corecrypto
+    target_compile_definitions(WalletKitCore
                                PUBLIC
                                "BITCOIN_DEBUG")
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 #
-# Core Crypto Test Library
+# WalletKitCore Test Library
 #
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   add_library(corecryptotest
+   add_library(WalletKitCoreTest
 	       STATIC)
-	   
    # Prevent including main() from bitcoin test.c when
    # linking the various 'test'.c files into corecrptotest
    # so; so it can be linked with Linux tests app
    if (LINUX)
-       target_compile_options (corecryptotest
+       target_compile_options (WalletKitCoreTest
                                PRIVATE
                                "-DOMIT_FOR_TEST_ALL_LINUX")
    endif()
-   target_include_directories (corecryptotest
+   target_include_directories (WalletKitCoreTest
                                PUBLIC
                             ${PROJECT_SOURCE_DIR}/include
                             ${PROJECT_SOURCE_DIR}/src
                             ${PROJECT_SOURCE_DIR})
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
+#
+# yajl build
+#
+add_library(yajl
+            STATIC)
+
+target_sources (yajl
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_alloc.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_buf.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_encode.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_gen.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_lex.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_parser.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_tree.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_version.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl.c)
+
+target_include_directories (yajl
+                            PRIVATE
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src/api
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src)
 	     
 #
 # sqlite3 build
@@ -210,7 +237,7 @@ endif()
 #
 
 # Support
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/support/BRAddress.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRAddress.h
@@ -229,6 +256,7 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP39WordsEn.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.h
+                ${PROJECT_SOURCE_DIR}/src/support/BRData.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP38Key.c
@@ -253,6 +281,10 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventAlarm.h
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.c
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.h
+                # JSON 
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.c
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.h
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJsonParse.c
 		# Util
 		${PROJECT_SOURCE_DIR}/src/support/util/BRUtil.h
                 ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMath.c
@@ -263,13 +295,17 @@ target_sources (corecrypto
 
 # Support Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c)
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testJson.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testUtil.c)
+
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Bitcoin
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinBloomFilter.c
                 ${PROJECT_SOURCE_DIR}/src/bitcoin/BRBitcoinBloomFilter.h
@@ -290,39 +326,39 @@ target_sources (corecrypto
 
 # Bitcoin Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/bitcoin/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/bitcoin/testBwm.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # BCash
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashAddr.c
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashAddr.h
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashParams.h
                 ${PROJECT_SOURCE_DIR}/src/bcash/BRBCashParams.c)
 # BSV
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.h
                 ${PROJECT_SOURCE_DIR}/src/bsv/BRBSVParams.c)
                 
 # Litecoin
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.h
                 ${PROJECT_SOURCE_DIR}/src/litecoin/BRLitecoinParams.c)
 
 # Dogecoin
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.h
                 ${PROJECT_SOURCE_DIR}/src/dogecoin/BRDogecoinParams.c)
                 
 # Ethereum
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 # Base
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumAddress.c
@@ -420,25 +456,23 @@ target_sources (corecrypto
 
 # Ethereum Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBase.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testRlp.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testUtil.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
-    target_include_directories(corecryptotest
+    target_include_directories(WalletKitCoreTest
             PRIVATE
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Ripple
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/ripple/BRRipple.h
                 ${PROJECT_SOURCE_DIR}/src/ripple/BRRippleAccount.c
@@ -460,7 +494,7 @@ target_sources (corecrypto
 
 # Ripple Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   target_sources (corecryptotest
+   target_sources (WalletKitCoreTest
                    PRIVATE
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ripple/testRipple.c
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ripple/testRippleTxList1.h
@@ -468,7 +502,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Hedera
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHedera.h
                 ${PROJECT_SOURCE_DIR}/src/hedera/BRHederaAccount.c
@@ -505,13 +539,13 @@ target_sources (hederaproto
 
 # Hedera Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   target_sources (corecryptotest
+   target_sources (WalletKitCoreTest
                    PRIVATE
                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/hedera/testHedera.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Tezos
-target_sources (corecrypto
+target_sources (WalletKitCore
         PRIVATE
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezos.h
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAccount.c
@@ -519,24 +553,22 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.c
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosAddress.h
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosBase.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosEncoder.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.h
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.c
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosFeeBasis.h
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosOperation.c
+		${PROJECT_SOURCE_DIR}/src/tezos/BRTezosOperation.h
         ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.h
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.c
-        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransfer.h)
+        ${PROJECT_SOURCE_DIR}/src/tezos/BRTezosTransaction.h)
 
 # Tezos Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
             PRIVATE
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/tezos/testTezos.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Stellar
-target_sources (corecrypto
+target_sources (WalletKitCore
         PRIVATE
         ${PROJECT_SOURCE_DIR}/src/stellar/utils/b64.h
         ${PROJECT_SOURCE_DIR}/src/stellar/utils/base32.c
@@ -553,8 +585,6 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarAddress.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarBase.h
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.c
-        ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarDecode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.c
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarEncode.h
         ${PROJECT_SOURCE_DIR}/src/stellar/BRStellarFeeBasis.c
@@ -568,13 +598,17 @@ target_sources (corecrypto
 
 # Stellar Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
             PRIVATE
             ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/stellar/testStellar.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+# __NEW_BLOCKCHAIN_IMPL__
+
+# __NEW_BLOCKCHAIN_TEST__
+
 # Crypto
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
                 # Public Includes
                 ${PROJECT_SOURCE_DIR}/include/WKAccount.h
@@ -626,7 +660,6 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKFileService.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlersP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHandlers.c
-                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/WKHandlersExport.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHashP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHash.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKHasher.c
@@ -655,11 +688,13 @@ target_sources (corecrypto
                 ${PROJECT_SOURCE_DIR}/src/version/WKVersion.c)
 
 # Crypto BTC
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAccountBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKAddressBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKBTC.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKFeeBasisBTC.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKHandlersBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKNetworkBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKPaymentBTC.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/btc/WKSupportBTC.c
@@ -673,11 +708,13 @@ target_sources (corecrypto
                 )
 
 # Crypto ETH
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAccountETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKAddressETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKETH.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKFeeBasisETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKHandlersETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKNetworkETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKSupportETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKTransferETH.c
@@ -686,10 +723,12 @@ target_sources (corecrypto
                 )
 
 # Crypto XRP
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAccountXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKAddressXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKFeeBasisXRP.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKHandlersXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKNetworkXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKSupportXRP.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xrp/WKTransferXRP.c
@@ -699,10 +738,12 @@ target_sources (corecrypto
                 )
 
 # Crypto HBAR
-target_sources (corecrypto
+target_sources (WalletKitCore
                 PRIVATE
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAccountHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKAddressHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKFeeBasisHBAR.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHandlersHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKHBAR.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKNetworkHBAR.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/hbar/WKSupportHBAR.c
@@ -712,10 +753,12 @@ target_sources (corecrypto
                 )
 
 # Crypto XTZ
-target_sources (corecrypto
+target_sources (WalletKitCore
         PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAccountXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKAddressXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKFeeBasisXTZ.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKHandlersXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKNetworkXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKSupportXTZ.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xtz/WKTransferXTZ.c
@@ -726,10 +769,12 @@ target_sources (corecrypto
 
 
 # Crypto XLM
-target_sources (corecrypto
+target_sources (WalletKitCore
         PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAccountXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKAddressXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKFeeBasisXLM.c
+        ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKHandlersXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKNetworkXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKSupportXLM.c
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKTransferXLM.c
@@ -738,31 +783,34 @@ target_sources (corecrypto
         ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/xlm/WKXLM.h
         )
 
-# Crypto Tests
+# __NEW_HANDLER__
+
+# WalletKitCore Tests
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    target_sources (corecryptotest
+    target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/crypto/testCrypto.c)
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletKit.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 
 # Link in the static sqlite3 library
-target_link_libraries (corecrypto
+target_link_libraries (WalletKitCore
+                       yajl
                        sqlite3
                        ed25519
                        blake2
-		       hederaproto)
+                       hederaproto)
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-   target_link_libraries (corecrypto
-   			  corecryptotest)
+   target_link_libraries (WalletKitCore
+   			  WalletKitCoreTest)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # On Android, link in the log library
 if (ANDROID)
     find_library (log-lib
                   log)
-    target_link_libraries (corecrypto
+    target_link_libraries (WalletKitCore
                            ${log-lib})
 endif(ANDROID)
 
@@ -770,7 +818,7 @@ endif(ANDROID)
 if (APPLE)
     find_library (log-lib
                   log)
-    target_link_libraries (corecrypto
+    target_link_libraries (WalletKitCore
                            "resolv"
                            "-framework Security")
 endif(APPLE)
@@ -785,7 +833,7 @@ if (LINUX)
                   bsd)
     find_library (pthreadlib
                   pthread)
-    target_link_libraries (corecrypto
+    target_link_libraries (WalletKitCore
                            ${loglib}
                            ${mathlib}
                            ${bsdlib}

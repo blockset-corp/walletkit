@@ -5,25 +5,28 @@ buildscript {
         'targetSdkVersion':         28,
     ]
     ext.versions = [
-        'androidAppCompatV7':       '28.0.0',
-        'androidConstraintLayout':  '1.1.3',
-        'androidRecyclerView':      '28.0.0',
-        'androidTestRunner':        '1.0.2',
-        'androidTestEspresso':      '3.0.2',
+        'androidxAppcompat':        '1.3.1',
+        'androidxAnnotation':       '1.2.0',
+        'androidxConstraintLayout': '1.1.3',
+        'androidxRecyclerView':     '1.2.1',
+        'androidxTestRunner':       '1.4.0',
+        'androidxTestEspresso':     '3.4.0',
         'coroutines':               '1.4.2',
         'guava':                    '28.1',
-        'okhttp':                   '4.2.0',
+        'okhttp':                   '4.9.1',
         'jackson':                  '2.10.1',
         'jna':                      '5.4.0',
         'junit':                    '4.12',
-        'cmake':                    '3.10.2'        // See .../WalletKitCore/CMakeLists.txt
+        'cmake':                    '3.10.2',        // See .../WalletKitCore/CMakeLists.txt
+        'desugar':                  '1.1.5'
     ]
     ext.deps = [
-        'androidAppCompatV7':       "com.android.support:appcompat-v7:${versions.androidAppCompatV7}",
-        'androidConstraintLayout':  "com.android.support.constraint:constraint-layout:${versions.androidConstraintLayout}",
-        'androidRecyclerView':      "com.android.support:recyclerview-v7:${versions.androidRecyclerView}",
-        'androidTestRunner':        "com.android.support.test:runner:${versions.androidTestRunner}",
-        'androidTestEspresso':      "com.android.support.test.espresso:espresso-core:${versions.androidTestEspresso}",
+        'androidxAppcompat':        "androidx.appcompat:appcompat:${versions.androidxAppcompat}",
+        'androidxAnnotation':       "androidx.annotation:annotation:${versions.androidxAnnotation}",
+        'androidxConstraintLayout': "androidx.constraintlayout:constraintlayout:${versions.androidxConstraintLayout}",
+        'androidxRecyclerView':     "androidx.recyclerview:recyclerview:${versions.androidxRecyclerView}",
+        'androidxTestRunner':       "androidx.test:runner:${versions.androidxTestRunner}",
+        'androidxTestEspresso':     "androidx.test.espresso:espresso-core:${versions.androidxTestEspresso}",
         'coroutinesCore':           "org.jetbrains.kotlinx:kotlinx-coroutines-core:${versions.coroutines}",
         'guavaAndroid':             "com.google.guava:guava:${versions.guava}-android",
         'guavaJre':                 "com.google.guava:guava:${versions.guava}-jre",
@@ -35,13 +38,14 @@ buildscript {
         'jnaAndroid':               "net.java.dev.jna:jna:${versions.jna}@aar",
         'jnaJre':                   "net.java.dev.jna:jna:${versions.jna}",
         'junit':                    "junit:junit:${versions.junit}",
+        'desugar':                  "com.android.tools:desugar_jdk_libs:${versions.desugar}",
     ]
     repositories {
         google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.3'
+        classpath 'com.android.tools.build:gradle:7.0.2'
         classpath 'digital.wup:android-maven-publish:3.6.2'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
     }

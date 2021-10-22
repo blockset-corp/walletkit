@@ -72,7 +72,8 @@ wkNetworkIsAccountInitializedHBAR (WKNetwork network,
     WKNetworkHBAR networkHBAR = wkNetworkCoerce (network);
     (void) networkHBAR;
 
-    BRHederaAccount hbarAccount = wkAccountAsHBAR (account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (account,
+                                                                 WK_NETWORK_TYPE_HBAR);
     assert (NULL != hbarAccount);
 
     return AS_WK_BOOLEAN (hederaAccountHasPrimaryAddress (hbarAccount));
@@ -86,7 +87,8 @@ wkNetworkGetAccountInitializationDataHBAR (WKNetwork network,
     WKNetworkHBAR networkHBAR = wkNetworkCoerce (network);
     (void) networkHBAR;
 
-    BRHederaAccount hbarAccount = wkAccountAsHBAR (account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (account,
+                                                                 WK_NETWORK_TYPE_HBAR);
     assert (NULL != hbarAccount);
 
     return hederaAccountGetPublicKeyBytes (hbarAccount, bytesCount);
@@ -100,7 +102,8 @@ wkNetworkInitializeAccountHBAR (WKNetwork network,
     WKNetworkHBAR networkHBAR = wkNetworkCoerce (network);
     (void) networkHBAR;
 
-    BRHederaAccount hbarAccount = wkAccountAsHBAR (account);
+    BRHederaAccount hbarAccount = (BRHederaAccount) wkAccountAs (account,
+                                                                 WK_NETWORK_TYPE_HBAR);
     assert (NULL != hbarAccount);
 
     char *hederaAddressString = malloc (bytesCount + 1);

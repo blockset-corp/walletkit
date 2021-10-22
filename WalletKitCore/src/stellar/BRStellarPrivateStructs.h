@@ -15,8 +15,6 @@
 #include "BRStellarBase.h"
 #include "support/BRKey.h"
 
-#define STELLAR_ADDRESS_BYTES   (32)
-
 struct BRStellarAddressRecord {
     uint8_t bytes[STELLAR_ADDRESS_BYTES];
 };

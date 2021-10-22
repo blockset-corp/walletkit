@@ -168,9 +168,13 @@ wkTransferCreateAsBTC (WKTransferListener listener,
                                                                     tid->timestamp,
                                                                     feeBasisEstimated);
 
+    char *uids = NULL;
+    if (btcTransactionIsSigned(tid)) asprintf (&uids, "%s:0", u256hex(tid->txHash));
+
     WKTransfer transfer = wkTransferAllocAndInit (sizeof (struct WKTransferBTCRecord),
                                                             type,
                                                             listener,
+                                                            uids,
                                                             unit,
                                                             unitForFee,
                                                             feeBasisEstimated,
@@ -182,11 +186,12 @@ wkTransferCreateAsBTC (WKTransferListener listener,
                                                             &contextBTC,
                                                             wkTransferCreateCallbackBTC);
 
-    wkTransferStateGive (state);
+    if (NULL != uids) free (uids);
     wkFeeBasisGive (feeBasisEstimated);
     wkAmountGive  (amount);
     wkAddressGive (sourceAddress);
     wkAddressGive (targetAddress);
+    wkTransferStateGive (state);
 
     return transfer;
 }
@@ -223,7 +228,7 @@ wkTransferGetHashBTC (WKTransfer transfer) {
             : wkHashCreateAsBTC (transferBTC->tid->txHash));
 }
 
-extern uint8_t *
+extern OwnershipGiven uint8_t *
 wkTransferSerializeBTC (WKTransfer transfer,
                             WKNetwork  network,
                             WKBoolean  requireSignature,

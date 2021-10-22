@@ -85,13 +85,13 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
-    // MARK: - Crypto
+    // MARK: - WalletKit
 
-    func testCrypto () {
-        runCryptoTests ()
+    func testWalletKit () {
+        runWalletKitTests ()
     }
 
-    func testCryptoWithAccountAndNetworkBTC() {
+    func testWalletKitWithAccountAndNetworkBTC() {
         let account = wkAccountCreate(paperKey, 0, uids)
         defer { wkAccountGive (account) }
 
@@ -102,12 +102,12 @@ final class WalletKitCoreTests: XCTestCase {
             let network = createBitcoinNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
             XCTAssertEqual(WK_TRUE, success)
         }
     }
 
-    func testCryptoWithAccountAndNetworkBCH() {
+    func testWalletKitWithAccountAndNetworkBCH() {
         let account = wkAccountCreate(paperKey, 0, uids)
         defer { wkAccountGive (account) }
 
@@ -118,12 +118,12 @@ final class WalletKitCoreTests: XCTestCase {
             let network = createBitcoinCashNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
             XCTAssertEqual(WK_TRUE, success)
         }
     }
     
-    func testCryptoWithAccountAndNetworkBSV() {
+    func testWalletKitWithAccountAndNetworkBSV() {
         let account = wkAccountCreate(paperKey, 0, uids)
         defer { wkAccountGive (account) }
 
@@ -134,12 +134,12 @@ final class WalletKitCoreTests: XCTestCase {
             let network = createBitcoinSVNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
             XCTAssertEqual(WK_TRUE, success)
         }
     }
 
-    func testCryptoWithAccountAndNetworkETH() {
+    func testWalletKitWithAccountAndNetworkETH() {
         let account = wkAccountCreate(paperKey, 0, uids)
         defer { wkAccountGive (account) }
 
@@ -150,20 +150,26 @@ final class WalletKitCoreTests: XCTestCase {
             let network = createEthereumNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
-            let success = runCryptoTestsWithAccountAndNetwork (account, network, storagePath)
+            let success = runWalletKitTestsWithAccountAndNetwork (account, network, storagePath)
             XCTAssertEqual(WK_TRUE, success)
         }
     }
 
-    // MARK: - Ethereum
+    // MARK: - Support
 
-    func testRLPETH () {
+    func testJSONSUP () {
+        runJsonTests()
+    }
+
+    func testRLPSUP () {
         runRlpTests()
     }
 
-    func testUtilETH () {
+    func testUtilSUP () {
         runUtilTests()
     }
+
+    // MARK: - Ethereum
 
     func testEventETH () {
         runEventTests ()
@@ -206,8 +212,10 @@ final class WalletKitCoreTests: XCTestCase {
         runStellarTest()
     }
 
+    // __NEW_BLOCKCHAIN_TEST_IMPL__
+    
     // MARK: - Bitcoin
-
+    
     func testBitcoinSupport () {
         XCTAssert(1 == BRRunSupTests ())
     }
@@ -430,14 +438,17 @@ final class WalletKitCoreTests: XCTestCase {
 
     static var allTests = [
         // Crypto
-        ("testCrypto",          testCrypto),
-        ("testCryptoBTC",       testCryptoWithAccountAndNetworkBTC),
-        ("testCryptoBCH",       testCryptoWithAccountAndNetworkBCH),
-        ("testCryptoETH",       testCryptoWithAccountAndNetworkETH),
+        ("testWalletKit",       testWalletKit),
+        ("testWalletKitBTC",    testWalletKitWithAccountAndNetworkBTC),
+        ("testWalletKitBCH",    testWalletKitWithAccountAndNetworkBCH),
+        ("testWalletKitETH",    testWalletKitWithAccountAndNetworkETH),
+
+        // Support
+        ("testRLP",             testRLPSUP),
+        ("testUtil",            testUtilSUP),
+        ("testJSON",            testJSONSUP),
 
         // Ethereum
-        ("testRLP",             testRLPETH),
-        ("testUtil",            testUtilETH),
         ("testEvent",           testEventETH),
         ("testBase",            testBaseETH),
         ("testBC",              testBlockchainETH),
@@ -461,5 +472,7 @@ final class WalletKitCoreTests: XCTestCase {
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
+        
+        // __NEW_BLOCKCHAIN_TEST__
     ]
 }

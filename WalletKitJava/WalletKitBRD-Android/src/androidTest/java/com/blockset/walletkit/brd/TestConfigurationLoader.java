@@ -8,7 +8,8 @@
 package com.blockset.walletkit.brd;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+
+import androidx.test.InstrumentationRegistry;
 
 import com.blockset.walletkit.utility.TestConfiguration;
 
@@ -29,3 +30,11 @@ public class TestConfigurationLoader {
         }
     }
 }
+
+// Another implementation, directly accessing .json
+//public class TestConfigurationLoader {
+//    public static TestConfiguration getTestConfiguration() {
+//        String filename = java.lang.System.getProperty("user.home") + File.separator + ".brdWalletKitTestsConfig.json";
+//        return TestConfiguration.loadFrom(filename);
+//    }
+//}

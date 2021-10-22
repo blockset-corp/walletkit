@@ -24,8 +24,8 @@
 
 static void
 wkWalletUpdTransfer (WKWallet wallet,
-                                  WKTransfer transfer,
-                                  OwnershipKept WKTransferState newState);
+                     WKTransfer transfer,
+                     OwnershipKept WKTransferState oldState);
 
 static void
 wkWalletUpdBalanceOnTransferConfirmation (WKWallet wallet,
@@ -235,7 +235,7 @@ wkWalletEventExtractFeeBasisUpdate (WKWalletEvent event,
 private_extern WKWalletEvent
 wkWalletEventCreateFeeBasisEstimated (WKStatus status,
                                           WKCookie cookie,
-                                          OwnershipGiven WKFeeBasis basis) {
+                                          OwnershipKept WKFeeBasis basis) {
     WKWalletEvent event = wkWalletEventCreate (WK_WALLET_EVENT_FEE_BASIS_ESTIMATED);
 
     event->u.feeBasisEstimated.status = status;
@@ -479,24 +479,24 @@ wkWalletDecBalance (WKWallet wallet,
  * Return the amount from `transfer` that applies to the balance of `wallet`.  The result must
  * be in the wallet's unit
  */
-static OwnershipGiven WKAmount // called wtih wallet->lock
+private_extern OwnershipGiven WKAmount // called wtih wallet->lock
 wkWalletGetTransferAmountDirectedNet (WKWallet wallet,
-                                          WKTransfer transfer) {
+                                      WKTransfer transfer) {
     // If the wallet and transfer units are compatible, use the transfer's amount
     WKAmount transferAmount = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unit)
-                                     ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
-                                     : wkAmountCreateInteger (0, wallet->unit));
+                               ? wkTransferGetAmountDirectedInternal (transfer, WK_TRUE)
+                               : wkAmountCreateInteger (0, wallet->unit));
 
     // If the wallet unit and the transfer unitForFee are compatible and if we did not
     // receive the transfer then use the transfer's fee
     WKAmount transferFee    = (WK_TRUE == wkUnitIsCompatible(wallet->unit, transfer->unitForFee) &&
-                                     WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
-                                     ? wkTransferGetFee (transfer)
-                                     : NULL);
+                               WK_TRANSFER_RECEIVED != wkTransferGetDirection(transfer)
+                               ? wkTransferGetFee (transfer)
+                               : NULL);
 
     WKAmount transferNet = (NULL != transferFee
-                                  ? wkAmountSub  (transferAmount, transferFee)
-                                  : wkAmountTake (transferAmount));
+                            ? wkAmountSub  (transferAmount, transferFee)
+                            : wkAmountTake (transferAmount));
 
     wkAmountGive(transferFee);
     wkAmountGive(transferAmount);
@@ -689,7 +689,9 @@ wkWalletReplaceTransfer (WKWallet wallet,
     
     pthread_mutex_lock (&wallet->lock);
     for (size_t index = 0; index < array_count(wallet->transfers); index++) {
-        if (WK_TRUE == wkTransferEqual (wallet->transfers[index], oldTransfer)) {
+        if (oldTransfer == wallet->transfers[index] ||
+            WK_TRUE == wkTransferEqual (wallet->transfers[index], oldTransfer)) {
+
             walletTransfer = wallet->transfers[index];
             wallet->transfers[index] = wkTransferTake (newTransfer);
 
@@ -716,19 +718,27 @@ wkWalletReplaceTransfer (WKWallet wallet,
 static void
 wkWalletUpdTransfer (WKWallet wallet,
                          WKTransfer transfer,
-                         WKTransferState newState) {
+                         WKTransferState oldState) {
     // The transfer's state has changed.  This implies a possible amount/fee change as well as
     // perhaps other wallet changes, such a nonce change.
     pthread_mutex_lock (&wallet->lock);
     if (WK_TRUE == wkWalletHasTransferLock (wallet, transfer, false)) {
-        switch (newState->type) {
+        switch (transfer->state->type) {
             case WK_TRANSFER_STATE_CREATED:
             case WK_TRANSFER_STATE_SIGNED:
             case WK_TRANSFER_STATE_SUBMITTED:
             case WK_TRANSFER_STATE_DELETED:
                 break; // nothing
             case WK_TRANSFER_STATE_INCLUDED:
-                wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
+                // If the `oldState` is INCLUDED, then this is a re-org and (somehow) the oldState
+                // and the newState can have completely different fees.  Just recompute the wallet
+                // balance with `transfer` (and its `newState`).  This case is highly uncommon.
+                if (WK_TRANSFER_STATE_INCLUDED == oldState->type)
+                    wkWalletUpdBalance (wallet, false);
+                else
+                    // If `oldState` is not INCLUDED, the updae the balance based on a different
+                    // between the estimated and confirmed fees. This case is common.
+                    wkWalletUpdBalanceOnTransferConfirmation (wallet, transfer);
                 break;
             case WK_TRANSFER_STATE_ERRORED:
                 // Recompute the balance
@@ -771,6 +781,52 @@ wkWalletGetTransferByHash (WKWallet wallet, WKHash hashToMatch) {
     pthread_mutex_unlock (&wallet->lock);
 
     return wkTransferTake (transfer);
+}
+
+private_extern WKTransfer
+wkWalletGetTransferByUIDS (WKWallet wallet, const char *uids) {
+    WKTransfer transfer = NULL;
+
+    pthread_mutex_lock (&wallet->lock);
+    for (size_t index = 0; NULL == transfer && index < array_count(wallet->transfers); index++) {
+        const char *transferUIDS = wallet->transfers[index]->uids;
+        if (NULL != transferUIDS && 0 == strcmp (transferUIDS, uids))
+            transfer = wallet->transfers[index];
+    }
+    pthread_mutex_unlock (&wallet->lock);
+
+    return wkTransferTake (transfer);
+}
+
+private_extern WKTransfer
+wkWalletGetTransferByHashOrUIDS (WKWallet wallet, WKHash hash, const char *uids) {
+    WKTransfer transfer = NULL;
+
+    // This is quite a special match...
+
+    // 1) If we've nothing to match, then we are done.
+    if (NULL == hash && NULL == uids) return NULL;
+
+    // 2) If we find a uids match, we are done.
+    transfer = (NULL == uids
+                ? NULL
+                : wkWalletGetTransferByUIDS (wallet, uids));
+    if (NULL != transfer) return transfer;
+
+    // 3) If we don't find a hash match, we are done
+    transfer = (NULL == hash
+                ? NULL
+                : wkWalletGetTransferByHash (wallet, hash));
+    if (NULL == transfer) return NULL;
+
+    // 4) If we wanted a UIDS but then transfer doesn't have one, then we are done.  This is a
+    // transfer that we created... and it is waiting for a uids
+    if (NULL != uids && NULL == transfer->uids) return transfer;
+
+    // 5) We are done.
+    return NULL;
+
+    // WHY?
 }
 
 extern WKAddress

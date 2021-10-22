@@ -21,11 +21,11 @@
 #include "support/BRBIP39WordsEn.h"
 #include "support/BRKey.h"
 #include "support/BRBase58.h"
+#include "support/util/BRHex.h"
 
+#include "tezos/BRTezosOperation.h"
 #include "tezos/BRTezosTransaction.h"
-#include "tezos/BRTezosTransfer.h"
 #include "tezos/BRTezosAccount.h"
-#include "tezos/BRTezosEncoder.h"
 
 static int debug_log = 0;
 
@@ -117,8 +117,8 @@ testCreateTezosAccountWithSeed() {
     
     uint8_t expectedPubKey[32];
     hex2bin(testAccount1.pubKey, expectedPubKey);
-    BRKey pubKey = tezosAccountGetPublicKey(account);
-    assert (0 == (memcmp(expectedPubKey, pubKey.pubKey, 32)));
+    BRTezosPublicKey publicKey = tezosAccountGetPublicKey(account);
+    assert (0 == (memcmp(expectedPubKey, publicKey.bytes, 32)));
     
     BRTezosAddress address = tezosAccountGetAddress (account);
     
@@ -307,15 +307,18 @@ static void testWalletBalance() {
 
 // MARK: - Encoder Tests
 
+extern BRData
+encodeZarith (int64_t value);
+
 static void
 testZarithNumberEncode(int64_t input, const char* expectedHex) {
-    WKData encoded = encodeZarith(input);
+    BRData encoded = encodeZarith(input);
     char encodedOutput[64] = {0};
     bin2HexString(encoded.bytes, encoded.size, encodedOutput);
 //    printf("input: %" PRIx64 "\n", input);
 //    printByteString(0, encoded.bytes, encoded.size);
     assert (0 == strcasecmp(expectedHex, encodedOutput));
-    wkDataFree(encoded);
+    dataFree(encoded);
 }
 
 static void
@@ -340,89 +343,78 @@ testTransactionSerialize() {
     BRTezosAccount account = makeAccount(testAccount1);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
-    BRTezosFeeBasis feeBasis;
+    BRTezosOperationFeeBasis operationFeeBasis;
+
+    BRTezosOperation   operation;
+    BRTezosTransaction transaction;
+
+    BRData unsignedBytes;
+    BRTezosPublicKey publicKey;
+
     int64_t amount;
     int64_t counter;
     
-    char serializedHex[256] = {0};
-    
+    char * unsignedBytesInHex;
+
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
     counter = 3;
     amount = 100000000;
-    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, counter);
-    
+
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
-    
-    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
-    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
-    
-    BRTezosTransaction opList[1];
-    size_t opCount = 1;
-    opList[0] = tx;
-    
-    WKData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
-    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
-    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
 
-    tezosTransferFree(transfer);
-    wkDataFree(unsignedBytes);
+    operation     = tezosOperationCreateTransaction(sourceAddress, targetAddress, operationFeeBasis, amount);
+    unsignedBytes = tezosOperationSerializeList (&operation, 1, lastBlockHash);
+    unsignedBytesInHex = hexEncodeCreate (NULL, unsignedBytes.bytes,unsignedBytes.size);
+    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", unsignedBytesInHex));
+
+    free (unsignedBytesInHex);
+    dataFree(unsignedBytes);
     
     // reveal
-    uint8_t *pubKey = tezosAccountGetPublicKey(account).pubKey;
-    tx = tezosTransactionCreateReveal(sourceAddress, pubKey, feeBasis, counter);
-    
-    opList[0] = tx;
-    
-    unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+
+    publicKey     = tezosAccountGetPublicKey(account);
+    operation     = tezosOperationCreateReveal(sourceAddress, targetAddress, operationFeeBasis, publicKey);
+    unsignedBytes = tezosOperationSerializeList (&operation, 1, lastBlockHash);
+    unsignedBytesInHex = hexEncodeCreate (NULL, unsignedBytes.bytes,unsignedBytes.size);
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
-    
-    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", serializedHex));
-    
-    wkDataFree(unsignedBytes);
-    tezosTransactionFree(tx);
-    
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d4294", unsignedBytesInHex));
+
+    free (unsignedBytesInHex);
+    dataFree(unsignedBytes);
+
     // delegation on
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_DELEGATION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+
     tezosAddressFree(targetAddress);
-    targetAddress = NULL;
     targetAddress = tezosAddressCreateFromString("tz1RKLoYm4vtLzo7TAgGifMDAkiWhjfyXwP4", true);
-    transfer = tezosTransferCreateNew(sourceAddress, targetAddress, 0, feeBasis, counter, 1);
-    tx = tezosTransferGetTransaction(transfer);
-    
-    opList[0] = tx;
-    
-    unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    operation     = tezosOperationCreateDelegation (sourceAddress, targetAddress, operationFeeBasis);
+    unsignedBytes = tezosOperationSerializeList (&operation, 1, lastBlockHash);
+    unsignedBytesInHex = hexEncodeCreate (NULL, unsignedBytes.bytes,unsignedBytes.size);
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
-    
-    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac02ff003e47f837f0467b4acde406ed5842f35e2414b1a8", serializedHex));
-    //                                                                                                                                   ******
-    
-    tezosTransferFree(transfer);
-    wkDataFree(unsignedBytes);
-    
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac02ff003e47f837f0467b4acde406ed5842f35e2414b1a8", unsignedBytesInHex));
+
+    free (unsignedBytesInHex);
+    dataFree(unsignedBytes);
+
     // delegation off
     tezosAddressFree(targetAddress);
-    targetAddress = NULL;
-    transfer = tezosTransferCreateNew(sourceAddress, sourceAddress, 0, feeBasis, counter, 1);
-    tx = tezosTransferGetTransaction(transfer);
-    
-    opList[0] = tx;
-    
-    unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    operation     = tezosOperationCreateDelegation (sourceAddress, sourceAddress, operationFeeBasis);
+    unsignedBytes = tezosOperationSerializeList (&operation, 1, lastBlockHash);
+    unsignedBytesInHex = hexEncodeCreate (NULL, unsignedBytes.bytes,unsignedBytes.size);
     //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
-    
-    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200", serializedHex));
-    
-    tezosTransferFree(transfer);
-    wkDataFree(unsignedBytes);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86e004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200", unsignedBytesInHex));
 
-    
+    free (unsignedBytesInHex);
+    dataFree(unsignedBytes);
+
+
     tezosAddressFree(sourceAddress);
     tezosAccountFree(account);
 }
@@ -432,7 +424,6 @@ testBatchOperationSerialize() {
     BRTezosAccount account = makeAccount(testAccount1);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
-    BRTezosFeeBasis feeBasis;
     int64_t amount;
     int64_t counter;
     
@@ -442,33 +433,33 @@ testBatchOperationSerialize() {
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
     counter = 3;
     amount = 100000000;
-    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, counter);
-    
+
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
-    
-    uint8_t *pubKey = tezosAccountGetPublicKey(account).pubKey;
-    
+
+    BRTezosPublicKey publicKey = tezosAccountGetPublicKey(account);
+
     // reveal op
-    BRTezosTransaction reveal = tezosTransactionCreateReveal(sourceAddress, pubKey, feeBasis, counter);
+    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+    BRTezosOperation         revealOperation = tezosOperationCreateReveal (sourceAddress, targetAddress, revealFeeBasis, publicKey);
     
     // transaction op
-    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
-    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
-    
-    BRTezosTransaction opList[2];
-    size_t opCount = 2;
-    opList[0] = reveal;
-    opList[1] = tx;
+    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+    BRTezosOperation         transferOperation = tezosOperationCreateTransaction (sourceAddress, targetAddress, transferFeeBasis, amount);
 
-    WKData unsignedBytes = tezosSerializeOperationList(opList, opCount, lastBlockHash);
+    BRTezosOperation operations[2] = {
+        revealOperation,
+        transferOperation
+    };
+
+    BRData unsignedBytes     = tezosOperationSerializeList (operations, 2, lastBlockHash);
+    char *unsignedBytesInHex = hexEncodeCreate (NULL, unsignedBytes.bytes,unsignedBytes.size);
 //    //printByteString(0, unsignedBytes.bytes, unsignedBytes.size);
-    bin2HexString(unsignedBytes.bytes, unsignedBytes.size, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d42946c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", serializedHex));
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86b004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0200efc82a1445744a87fec55fce35e1b7ec80f9bbed9df2a03bcdde1a346f3d42946c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000", unsignedBytesInHex));
 
-    tezosTransferFree(transfer);
-    tezosTransactionFree(reveal);
-    wkDataFree(unsignedBytes);
+    free (unsignedBytesInHex);
+    dataFree(unsignedBytes);
+
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
     tezosAccountFree(account);
@@ -480,45 +471,40 @@ testTransactionSign() {
     UInt512 seed = getSeed(testAccount1);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
-    BRTezosFeeBasis feeBasis;
+    BRTezosOperationFeeBasis operationFeeBasis;
     int64_t amount;
     int64_t counter;
-    
-    char serializedHex[512] = {0};
-    
+
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1SeV3tueHQMTfquZSU7y98otvQTw6GDKaY", true);
     targetAddress = tezosAddressCreateFromString("tz1es8RjqHUD483BN9APWtvCzgjTFVGeMh3y", true);
     counter = 3;
     amount = 100000000;
-    feeBasis = tezosFeeBasisCreateEstimate(48880, 1, 10200, 0, counter);
-    
+    operationFeeBasis = tezosOperationFeeBasisCreate (TEZOS_OP_TRANSACTION, 52500, 10200, 0, 0, counter, 0);  // mutez/kbyte = 48800
+
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BMZck1BxBCkFHJNSDp6GZBYsawi5U6cQYdzipKK7EUTZCrsG74s");
-    
-    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
-    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
 
-    size_t signedSize = tezosTransactionSerializeAndSign(tx, account, seed, lastBlockHash, 0);
-    assert(signedSize > 0);
+    BRTezosOperation   transferOperation = tezosOperationCreateTransaction (sourceAddress, targetAddress, operationFeeBasis, amount);
+    BRTezosTransaction transaction       = tezosTransactionCreate (transferOperation);
 
-    size_t signedSize2 = 0;
-    uint8_t *signedBytes = tezosTransactionGetSignedBytes(tx, &signedSize2);
-    assert(signedSize == signedSize2);
-    
+    tezosTransactionSerializeAndSign (transaction, account, seed, lastBlockHash);
+
+    BRData signedBytes;
+    signedBytes.bytes = tezosTransactionGetSignedBytes(transaction, &signedBytes.size);
     //printByteString(0, signedBytes, signedSize);
 
-    bin2HexString(signedBytes, signedSize, serializedHex);
-    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000333955b5c77d6c054dd9cad5359b57f7c0990932bf36e957604762e03d4a18364c88ff2785dba99e4899d3f5d84f93507f5ef60f000e9b8b84189d49dd975004", serializedHex));
+    char *signedBytesInHex = hexEncodeCreate (NULL, signedBytes.bytes, signedBytes.size);
+    assert (0 == strcasecmp("f3b761a633b2b0cc9d2edbb09cda4800818f893b3d6567b09a818f1a5f685fb86c004cdee21a9180f80956ab8d27fb6abdbd89934052949a0303d84fac0280c2d72f0000d2e495a7ab40156d0a7c35b73d2530a3470fc87000333955b5c77d6c054dd9cad5359b57f7c0990932bf36e957604762e03d4a18364c88ff2785dba99e4899d3f5d84f93507f5ef60f000e9b8b84189d49dd975004", signedBytesInHex));
 
-    BRTezosHash hash = tezosTransactionGetHash(tx);
+    BRTezosHash hash = tezosTransactionGetHash(transaction);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
     assert (0 == strcmp ("onwgTQgCHBPvTGFWmGrXzDMm3HQdJ4bvWwvv6LEEExmKy6CwMoo", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
-    tezosTransferFree(transfer);
+    tezosTransactionFree(transaction);
     tezosAccountFree(account);
 }
 
@@ -528,46 +514,45 @@ testTransactionSignWithReveal() {
     UInt512 seed = getSeed(testAccount2);
     BRTezosAddress sourceAddress;
     BRTezosAddress targetAddress;
-    BRTezosFeeBasis feeBasis;
     int64_t amount;
     int64_t counter;
-    
-    char serializedHex[1024] = {0};
-    
+
     // transaction
     sourceAddress = tezosAddressCreateFromString("tz1PTZ7kd7BwpB9sNuMgJrwksEiYX3fb9Bdf", true);
     targetAddress = tezosAddressCreateFromString("tz1YZpECan19MCZpubtM4zo4mgURHaLoMomy", true);
     counter = 6307075;
     amount = 100000;
-    feeBasis = tezosFeeBasisCreateEstimate(3700, 1, 12000, 0, counter);
-    
+
+
+    BRTezosPublicKey publicKey = tezosAccountGetPublicKey(account);
+
     BRTezosHash lastBlockHash;
     BRBase58CheckDecode(lastBlockHash.bytes, sizeof(lastBlockHash.bytes), "BLcz2Y6BikLFrwnejtRgBPSiGt1RLTjizUCg15BsUZ6x6JFazJS");
 
-    // transaction op
-    BRTezosTransfer transfer = tezosTransferCreateNew(sourceAddress, targetAddress, amount, feeBasis, counter, /*delegation*/0);
-    BRTezosTransaction tx = tezosTransferGetTransaction(transfer);
+    BRTezosOperationFeeBasis revealFeeBasis  = tezosOperationFeeBasisCreate (TEZOS_OP_REVEAL,      0, 24000, 0, 0, counter,     0);  // mutez/kbyte = 48800
+    BRTezosOperation         revealOperation = tezosOperationCreateReveal   (sourceAddress, targetAddress, revealFeeBasis, publicKey);
 
-    size_t signedSize = tezosTransactionSerializeAndSign(tx, account, seed, lastBlockHash, 1);
-    assert(signedSize > 0);
+    BRTezosOperationFeeBasis transferFeeBasis  = tezosOperationFeeBasisCreate    (TEZOS_OP_TRANSACTION, 10500, 24000, 0, 0, counter + 1, 0);  // mutez/kbyte = 48800
+    BRTezosOperation         transferOperation = tezosOperationCreateTransaction (sourceAddress, targetAddress, transferFeeBasis, amount);
 
-    size_t signedSize2 = 0;
-    uint8_t *signedBytes = tezosTransactionGetSignedBytes(tx, &signedSize2);
-    assert(signedSize == signedSize2);
-    
-    //printByteString(0, signedBytes, signedSize);
+    BRTezosTransaction transaction       = tezosTransactionCreateWithReveal (transferOperation, revealOperation);
 
-    bin2HexString(signedBytes, signedSize, serializedHex);
-    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b50083fa8003c0bb01ac020064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5845284fa8003c0bb01ac02a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f645007120555278435abcd9a8b1397d1964024acd978ee6286b34a04d18aa0d8ee00bf911bc10879bcac6dd9198189f39ee80246724750ac8f3ccba042c3d1fd45507", serializedHex));
+    tezosTransactionSerializeAndSign (transaction, account, seed, lastBlockHash);
 
-    BRTezosHash hash = tezosTransactionGetHash(tx);
+    BRData signedBytes;
+    signedBytes.bytes = tezosTransactionGetSignedBytes(transaction, &signedBytes.size);
+
+    char *signedBytesInHex = hexEncodeCreate (NULL, signedBytes.bytes, signedBytes.size);
+    assert (0 == strcasecmp("77aa56c6022b22922cc1e5760ff22768437341b41f6f084b14a8d2487c80b7a86b0029e55328366cf257b64de39e784c9b6682c2f2b50083fa8003c0bb01ac020064b6cfc1ed37bc26ab4c68ec93d4769f98e83f1e07afd36fb4cb42d01203339e6c0029e55328366cf257b64de39e784c9b6682c2f2b5845284fa8003c0bb01ac02a08d0600008dcd911b4896ac05a3649d4cd1c462cef4e7f645007120555278435abcd9a8b1397d1964024acd978ee6286b34a04d18aa0d8ee00bf911bc10879bcac6dd9198189f39ee80246724750ac8f3ccba042c3d1fd45507", signedBytesInHex));
+
+    BRTezosHash hash = tezosTransactionGetHash (transaction);
     char hashString[64] = {0};
     BRBase58CheckEncode(hashString, sizeof(hashString), hash.bytes, sizeof(hash.bytes));
     assert (0 == strcmp ("op5o529Ggohc614wQBKfxsQXG6tcH5Q6jqDSDZ4dVDz8mC6LGDB", hashString));
     
     tezosAddressFree(targetAddress);
     tezosAddressFree(sourceAddress);
-    tezosTransferFree(transfer);
+    tezosTransactionFree(transaction);
     tezosAccountFree(account);
 }
 

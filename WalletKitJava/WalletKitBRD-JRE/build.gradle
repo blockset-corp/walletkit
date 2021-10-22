@@ -1,8 +1,8 @@
 apply plugin: 'java-library'
 apply from: '../gradle/publish.gradle'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 sourceSets {
     main {
@@ -19,13 +19,14 @@ sourceSets {
 
 dependencies {
     api project(':WalletKit')
+    api deps.guavaJre
 
     implementation project(':WalletKitNative-JRE')
-    implementation deps.guavaJre
-    implementation deps.androidAppCompatV7
+    implementation deps.androidxAnnotation
     implementation deps.jacksonAnnotations
     implementation deps.jacksonCore
     implementation deps.jacksonDatabind
+    implementation deps.jacksonDatabindGuava
 
     testImplementation deps.junit
 }

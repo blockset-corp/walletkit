@@ -22,13 +22,13 @@ extern "C" {
 
 #define ETHEREUM_TRANSACTION_NONCE_IS_NOT_ASSIGNED   UINT64_MAX
 
+#define DEFAULT_ETHER_GAS_LIMIT    21000ull
+
 /// If we get a gasEstimate we'll want the gasLimit to have a margin over the estimate
 #define ETHEREUM_GAS_LIMIT_MARGIN_PERCENT        (20)
 
-static inline BREthereumGas
-gasApplyLimitMargin (BREthereumGas gas) {
-    return ethGasCreate(((100 + ETHEREUM_GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
-}
+extern BREthereumGas
+ethGasApplyLimitMargin (BREthereumGas gas);
 
 /**
  * An Ethereum Transaction is a transaction on the Ethereum P2P network
@@ -128,6 +128,10 @@ ethTransactionGetFeeBasis (BREthereumTransaction transaction);
 extern BREthereumEther
 ethTransactionGetFee (BREthereumTransaction transaction,
                    BREthereumBoolean *overflow);
+
+extern BREthereumGas
+ethTransactionApplyGasLimitMargin (BREthereumTransaction transaction,
+                                   BREthereumGas gasLimit);
 
 extern uint64_t
 ethTransactionGetNonce (BREthereumTransaction transaction);

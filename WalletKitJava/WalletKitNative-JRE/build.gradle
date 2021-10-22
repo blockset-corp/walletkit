@@ -8,8 +8,8 @@ def projectRoot = projectDir.absolutePath
 def projectResMainDir = Paths.get(projectRoot, 'build', 'native', 'cryptoMain').toAbsolutePath().toString()
 def projectResTestDir = Paths.get(projectRoot, 'build', 'native', 'cryptoTest').toAbsolutePath().toString()
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 static def jnaOsFromGradle(os) {
     if (os == "osx") {
@@ -105,12 +105,32 @@ model {
             }
         }
 
-        corecrypto(NativeLibrarySpec) {
+        yajl(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/src"
+                        include "*.c"
+                    }
+                }
+            }
+            binaries {
+                binaries.all {
+                    cCompiler.args "-I" + project(':WalletKitNative').cppCryptoVendorSrcDir + "/yajl/include"
+                }
+            }
+        }
+
+        WalletKitCore(NativeLibrarySpec) {
             sources {
                 c {
                     source {
                         srcDirs project(':WalletKitNative').cppCryptoMainSrcDirs
                         include "**/*.c"
+
+                        def mainSrcDir = project(':WalletKitNative').cppCryptoMainSrcDirs.first()
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/les"), it)
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/bcs"), it)
                     }
                 }
             }
@@ -123,6 +143,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -149,13 +170,17 @@ model {
         }
         // Add a second target for the test version of the crypto library. This looks like it is
         // needed because we can't change the source set based on build type...
-        corecryptoWithTests(NativeLibrarySpec) {
+        WalletKitCoreTest(NativeLibrarySpec) {
             sources {
                 c {
                     source {
                         srcDirs project(':WalletKitNative').cppCryptoMainSrcDirs
                         srcDirs project(':WalletKitNative').cppCryptoTestSrcDirs
                         include "**/*.c"
+
+                        def mainSrcDir = project(':WalletKitNative').cppCryptoMainSrcDirs.first()
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/les"), it)
+                        excludeNativeSourceFolder(file("${mainSrcDir}/ethereum/bcs"), it)
                     }
                 }
             }
@@ -175,6 +200,7 @@ model {
                     lib library: 'sqlite3', linkage: 'static'
                     lib library: 'ed25519', linkage: 'static'
                     lib library: 'blake2',  linkage: 'static'
+                    lib library: 'yajl',    linkage: 'static'
                 }
                 withType(SharedLibraryBinarySpec) {
                     def target = targetPlatform.name
@@ -208,6 +234,20 @@ model {
     }
 }
 
+static def excludeNativeSourceFolder(excludeDir, sources) {
+    def rootFiles = excludeDir.listFiles().toList()
+    rootFiles.forEach { file ->
+        if (file.isDirectory()) {
+            def subFiles = file.listFiles().toList()
+            subFiles.forEach { subFile ->
+                sources.exclude "**/${subFile.name}"
+            }
+        } else {
+            sources.exclude "**/${file.name}"
+        }
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -230,8 +270,7 @@ sourceSets {
 
 dependencies {
     api deps.jnaJre
-
-    implementation deps.guavaJre
+    api deps.guavaJre
 
     testImplementation deps.junit
 }

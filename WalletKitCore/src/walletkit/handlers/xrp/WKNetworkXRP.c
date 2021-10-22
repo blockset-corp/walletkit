@@ -72,7 +72,8 @@ wkNetworkIsAccountInitializedXRP (WKNetwork network,
     WKNetworkXRP networkXRP = wkNetworkCoerce (network);
     (void) networkXRP;
 
-    BRRippleAccount xrpAccount = wkAccountAsXRP (account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (account,
+                                                                WK_NETWORK_TYPE_XRP);
     assert (NULL != xrpAccount);
     return AS_WK_BOOLEAN (true);
 }
@@ -85,7 +86,8 @@ wkNetworkGetAccountInitializationDataXRP (WKNetwork network,
     WKNetworkXRP networkXRP = wkNetworkCoerce (network);
     (void) networkXRP;
 
-    BRRippleAccount xrpAccount = wkAccountAsXRP (account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (account,
+                                                                WK_NETWORK_TYPE_XRP);;
     assert (NULL != xrpAccount);
     if (NULL != bytesCount) *bytesCount = 0;
     return NULL;
@@ -99,7 +101,8 @@ wkNetworkInitializeAccountXRP (WKNetwork network,
     WKNetworkXRP networkXRP = wkNetworkCoerce (network);
     (void) networkXRP;
 
-    BRRippleAccount xrpAccount = wkAccountAsXRP (account);
+    BRRippleAccount xrpAccount = (BRRippleAccount) wkAccountAs (account,
+                                                                WK_NETWORK_TYPE_XRP);
     assert (NULL != xrpAccount);
     return;
 }

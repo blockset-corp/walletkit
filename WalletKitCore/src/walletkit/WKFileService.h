@@ -22,7 +22,8 @@ extern "C" {
 #define WK_FILE_SERVICE_TYPE_TRANSFER      "crypto_transfers"
 
 typedef enum {
-    WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_1
+    WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_1,
+    WK_FILE_SERVICE_TYPE_TRANSFER_VERSION_2
 } WKFileServiceTransferVersion;
 
 private_extern UInt256
@@ -32,9 +33,15 @@ wkFileServiceTypeTransferV1Identifier (BRFileServiceContext context,
 
 private_extern void *
 wkFileServiceTypeTransferV1Reader (BRFileServiceContext context,
-                                 BRFileService fs,
-                                 uint8_t *bytes,
-                                 uint32_t bytesCount);
+                                   BRFileService fs,
+                                   uint8_t *bytes,
+                                   uint32_t bytesCount);
+
+private_extern void *
+wkFileServiceTypeTransferV2Reader (BRFileServiceContext context,
+                                   BRFileService fs,
+                                   uint8_t *bytes,
+                                   uint32_t bytesCount);
 
 private_extern uint8_t *
 wkFileServiceTypeTransferV1Writer (BRFileServiceContext context,

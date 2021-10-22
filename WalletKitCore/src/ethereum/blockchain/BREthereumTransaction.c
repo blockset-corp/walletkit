@@ -21,6 +21,11 @@
 static unsigned int transactionAllocCount = 0;
 #endif
 
+extern BREthereumGas
+ethGasApplyLimitMargin (BREthereumGas gas) {
+    return ethGasCreate(((100 + ETHEREUM_GAS_LIMIT_MARGIN_PERCENT) * gas.amountOfGas) / 100);
+}
+
 //
 // Transaction
 //
@@ -230,6 +235,19 @@ extern BREthereumEther
 ethTransactionGetFee (BREthereumTransaction transaction,
                    BREthereumBoolean *overflow) {
     return ethFeeBasisGetFee (ethTransactionGetFeeBasis (transaction), overflow);
+}
+
+extern BREthereumGas
+ethTransactionApplyGasLimitMargin (BREthereumTransaction transaction,
+                                   BREthereumGas gasLimit) {
+    // Apply a margin to `gasLimit` any time the gas value is not DEFAULT_ETHER_GAS_LIMIT.  The
+    // value of DEFAULT_ETHER_GAS_LIMIT identifies a transfer of Ether.
+    //
+    // Eventually, there may be more complicated cases depending in transaction->data, which encodes
+    // a Smart Contract function.
+    return (DEFAULT_ETHER_GAS_LIMIT == gasLimit.amountOfGas
+            ? gasLimit
+            : ethGasApplyLimitMargin (gasLimit));
 }
 
 extern uint64_t

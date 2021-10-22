@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKPeer;
@@ -57,7 +57,7 @@ final class NetworkPeer implements com.blockset.walletkit.NetworkPeer {
 
     private NetworkPeer(WKPeer core) {
         this.core = core;
-        this.network = Network.create(core.getNetwork());
+        this.network = Network.create(core.getNetwork(), false);
         this.address = core.getAddress();
         this.port = core.getPort().shortValue();
         this.publicKey = core.getPublicKey().orNull();

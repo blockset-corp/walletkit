@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.events.system;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public abstract class DefaultSystemEventVisitor<T> implements SystemEventVisitor<T> {
 

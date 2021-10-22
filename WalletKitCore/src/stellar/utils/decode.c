@@ -65,7 +65,7 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     if (!(isalnum(src[j]) || '+' == src[j] || '/' == src[j])) { break; }
 
     // read up to 4 bytes at a time into `tmp'
-    tmp[i++] = src[j++];
+    tmp[i++] = (unsigned char) src[j++];
 
     // if 4 bytes read then decode into `buf'
     if (4 == i) {
@@ -124,7 +124,7 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
 
     // write remainer decoded buffer to `dec'
-    dec = (unsigned char *) b64_realloc(dec, size + (i - 1));
+    dec = (unsigned char *) b64_realloc(dec, size + (size_t) (i - 1));
     if (dec != NULL){
       for (j = 0; (j < i - 1); ++j) {
         dec[size++] = buf[j];

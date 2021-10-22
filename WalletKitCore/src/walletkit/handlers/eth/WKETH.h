@@ -11,7 +11,7 @@
 #ifndef WKETH_h
 #define WKETH_h
 
-#include "../WKHandlersExport.h"
+#include "walletkit/WKHandlersP.h"
 
 #include "ethereum/base/BREthereumBase.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
@@ -77,6 +77,7 @@ wkTransferCoerceETH (WKTransfer transfer);
 
 extern WKTransfer
 wkTransferCreateAsETH (WKTransferListener listener,
+                           const char *uids,
                            WKHash hash,
                            WKUnit unit,
                            WKUnit unitForFee,
@@ -149,22 +150,23 @@ wkWalletLookupTransferByOriginatingHash (WKWalletETH wallet,
 typedef struct WKWalletManagerETHRecord {
     struct WKWalletManagerRecord base;
 
-    BREthereumNetwork network;
     BREthereumAccount account;
-
     BRSetOf(BREthereumToken) tokens;
 
     BRRlpCoder coder;
-
 } *WKWalletManagerETH;
 
 extern WKWalletManagerETH
 wkWalletManagerCoerceETH (WKWalletManager manager);
 
+static inline BREthereumNetwork
+wkWalletManagerGetNetworkAsETH (WKWalletManager manager) {
+    return wkNetworkAsETH (manager->network);
+}
+
 private_extern WKWalletETH
 wkWalletManagerEnsureWalletForToken (WKWalletManagerETH managerETH,
                                          BREthereumToken token);
-
 
 // MARK: - Support
 
