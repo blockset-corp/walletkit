@@ -12,7 +12,7 @@ message(STATUS "  Vers:   ${CMAKE_SYSTEM_VERSION}")
 message(STATUS "  Compiler: ${CMAKE_C_COMPILER_ID}")
 
 # Establish OS compile type using platform info (see https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks)
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT ANDROID)
     message(STATUS "  Linux based compilation")
     set (LINUX TRUE)
 endif()
@@ -23,30 +23,22 @@ set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "-Oz")
 
 if (LINUX)
-    
-    # Example 1: Build like the top level makefile the single bitcoin test.c 
-    # only in this case satisfying all dependencies by linking
-    # corecrypto shared library rather than directly compiling in 
-    # required bitcoin sources
-    add_executable (test_bitcoin)
-    target_sources  (test_bitcoin
-                     PRIVATE
-                     WalletKitCoreTests/test/bitcoin/test.c)
-    target_include_directories(test_bitcoin
-                               PRIVATE
-                               WalletKitCoreTests/test/include
-                               include
-                               src)
-    target_link_libraries (test_bitcoin
-                           WalletKitCore)
-    
-    # Example 2: Create a separate test-all application that runs
-    # all core crypto tests by linking the test crypto shared lib
+
     if (CMAKE_BUILD_TYPE MATCHES Debug)
-        add_executable (WalletKitCoreTests)
-        target_sources  (WalletKitCoreTests
-                         PRIVATE
-                         WalletKitCoreTests/WalletKitCoreTests.c)
+
+        # Bitcoin test application
+        add_executable (test_bitcoin
+                WalletKitCoreTests/test/bitcoin/test.c)
+        target_include_directories(test_bitcoin
+                PRIVATE
+                WalletKitCoreTests/test/include
+                include
+                src)
+        target_link_libraries (test_bitcoin
+                WalletKitCore)
+
+        # WalletKitCore tests
+        add_executable (WalletKitCoreTests WalletKitCoreTests/WalletKitCoreTests.c)
         target_include_directories(WalletKitCoreTests
                                    PRIVATE
                                    WalletKitCoreTests/test/include
@@ -230,6 +222,7 @@ if (LINUX)
     target_compile_options(blake2 PRIVATE -fPIC)
     target_compile_options(hederaproto PRIVATE -fPIC)
     target_compile_options(ed25519 PRIVATE -fPIC)
+    target_compile_options(yajl PRIVATE -fPIC)
 endif()
 
 #
