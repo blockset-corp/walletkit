@@ -19,7 +19,7 @@ endif
 
 LIBS_OS_BRD := -lpthread -lm
 ifeq "$(OS_BRD)" "Linux"
-    LIBS_OS_BRD := $(LIBS_OS_BRD) -lbsd
+    LIBS_OS_BRD := $(LIBS_OS_BRD) -lbsd -ldl
 endif
 
 LFLAGS_OS_BRD  := -L./cmake
@@ -45,12 +45,11 @@ run:	test
 	./test
 
 
-all: run
 
 #######################################################################################
 #  Targets for cmake 
 #
-# Traditionally WalletKit has been built using Darwin/Clang
+# WalletKit can be built under Darwin/Clang or alternatively with GNU/Linux.
 #
 # libs:                 Build WalletKitCore lib
 #
@@ -61,17 +60,18 @@ all: run
 
 # Make libcorecrypto.so on Linux with gcc
 libs: FORCE
-	(rm -rf libs; mkdir libs; cd libs; cmake ../; make clean; make)	
+	(rm -rf build; mkdir -p build/libs; cd build/libs; cmake ../..; make clean; make)	
 
 # Make libcorecrypto.so, libcorecryptotests.so, WalletKitCoreTests & test_bitcoin
 # which is an application that runs equivalent of WalletKitCoreTests.swift and links 
 # with the 2 shared libs
 tests: FORCE
-	(rm -rf tests; mkdir tests; cd tests; cmake -DCMAKE_BUILD_TYPE=Debug ../; make clean; make)	
+	(rm -rf build; mkdir -p build/tests; cd build/tests; cmake -DCMAKE_BUILD_TYPE=Debug ../..; make clean; make)	
 
 
 #################################### E/O Linux/GNU #####################################		
 clean:
 	rm -f *.o */*.o */*/*.o test
+	rm -rf build
 
 FORCE:
