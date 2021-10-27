@@ -72,6 +72,8 @@ wkClientErrorCreateSubmission (WKTransferSubmitErrorType submitErrorType, const 
 
 private_extern void
 wkClientErrorRelease (WKClientError error) {
+    if (NULL == error) return;
+    
     if (NULL != error->details) free (error->details);
 
     memset (error, 0, sizeof (struct WKClientErrorRecord));
@@ -542,25 +544,25 @@ typedef struct {
 } WKClientAnnounceBlockNumberEvent;
 
 static void
-wkClientHandleBlockNumber (OwnershipKept WKWalletManager cwm,
+wkClientHandleBlockNumber (OwnershipKept WKWalletManager manager,
                            OwnershipGiven WKClientCallbackState callbackState,
                            WKBlockNumber blockNumber,
                            char *blockHashString,
-                           WKClientError error) {
+                           OwnershipGiven WKClientError error) {
 
     if (NULL == error) {
-        WKBlockNumber oldBlockNumber = wkNetworkGetHeight (cwm->network);
+        WKBlockNumber oldBlockNumber = wkNetworkGetHeight (manager->network);
 
         if (oldBlockNumber != blockNumber) {
-            wkNetworkSetHeight (cwm->network, blockNumber);
+            wkNetworkSetHeight (manager->network, blockNumber);
 
             if (NULL != blockHashString && '\0' != blockHashString[0]) {
-                WKHash verifiedBlockHash = wkNetworkCreateHashFromString (cwm->network, blockHashString);
-                wkNetworkSetVerifiedBlockHash (cwm->network, verifiedBlockHash);
+                WKHash verifiedBlockHash = wkNetworkCreateHashFromString (manager->network, blockHashString);
+                wkNetworkSetVerifiedBlockHash (manager->network, verifiedBlockHash);
                 wkHashGive (verifiedBlockHash);
             }
 
-            wkWalletManagerGenerateEvent (cwm, (WKWalletManagerEvent) {
+            wkWalletManagerGenerateEvent (manager, (WKWalletManagerEvent) {
                 WK_WALLET_MANAGER_EVENT_BLOCK_HEIGHT_UPDATED,
                 { .blockHeight = blockNumber }
             });
@@ -569,22 +571,21 @@ wkClientHandleBlockNumber (OwnershipKept WKWalletManager cwm,
         wkClientCallbackStateRelease (callbackState);
         wkMemoryFree(blockHashString);
     }
-    else {
-        wkClientErrorRelease(error);
-    }
 
     // After getting any block number, whether successful or not, do a sync.  The sync will be
     // incremental or full - depending on where the last sync ended.
-    wkClientQRYRequestSync (cwm->qryManager, true);
+    wkClientQRYRequestSync (manager->qryManager, true);
+
+    wkWalletManagerAnnounceClientError (manager, error);
 }
 
 static void
 wkClientAnnounceBlockNumberDispatcher (BREventHandler ignore,
-                                           WKClientAnnounceBlockNumberEvent *event) {
+                                       WKClientAnnounceBlockNumberEvent *event) {
     wkClientHandleBlockNumber (event->manager,
-                                   event->callbackState,
-                                   event->blockNumber,
-                                   event->blockHashString,
+                               event->callbackState,
+                               event->blockNumber,
+                               event->blockHashString,
                                event->error);
 }
 
@@ -724,7 +725,6 @@ wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
         else {
             syncCompleted = true;
             syncSuccess   = false;
-            wkClientErrorRelease(error);
         }
     }
 
@@ -732,6 +732,8 @@ wkClientHandleTransactions (OwnershipKept WKWalletManager manager,
 
     if (NULL != bundles) array_free_all (bundles, wkClientTransactionBundleRelease);
     wkClientCallbackStateRelease(callbackState);
+
+    wkWalletManagerAnnounceClientError (manager, error);
 }
 
 static void
@@ -778,8 +780,8 @@ wkClientAnnounceTransactionsSuccess (OwnershipKept WKWalletManager manager,
 
 extern void
 wkClientAnnounceTransactionsFailure (OwnershipKept WKWalletManager manager,
-                              OwnershipGiven WKClientCallbackState callbackState,
-                                     WKClientError error) {
+                                     OwnershipGiven WKClientCallbackState callbackState,
+                                     OwnershipGiven WKClientError error) {
     WKClientAnnounceTransactionsEvent event =
     { { NULL, &handleClientAnnounceTransactionsEventType },
         wkWalletManagerTakeWeak(manager),
@@ -802,10 +804,9 @@ typedef struct {
 
 extern void
 wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
-                                OwnershipGiven WKClientCallbackState callbackState,
-                                BRArrayOf (WKClientTransferBundle) bundles,
-                         WKClientError error) {
-
+                         OwnershipGiven WKClientCallbackState callbackState,
+                         BRArrayOf (WKClientTransferBundle) bundles,
+                         OwnershipGiven WKClientError error) {
 
     WKClientQRYManager qry = manager->qryManager;
 
@@ -860,7 +861,6 @@ wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
         else {
             syncCompleted = true;
             syncSuccess   = false;
-            wkClientErrorRelease(error);
         }
     }
 
@@ -868,6 +868,8 @@ wkClientHandleTransfers (OwnershipKept WKWalletManager manager,
 
     if (NULL != bundles) array_free_all (bundles, wkClientTransferBundleRelease);
     wkClientCallbackStateRelease(callbackState);
+
+    wkWalletManagerAnnounceClientError (manager, error);
 }
 
 static void
@@ -916,7 +918,7 @@ wkClientAnnounceTransfersSuccess (OwnershipKept WKWalletManager manager,
 extern void
 wkClientAnnounceTransfersFailure (OwnershipKept WKWalletManager manager,
                                   OwnershipGiven WKClientCallbackState callbackState,
-                                  WKClientError error) {
+                                  OwnershipGiven WKClientError error) {
     WKClientAnnounceTransfersEvent event =
     { { NULL, &handleClientAnnounceTransfersEventType },
         wkWalletManagerTakeWeak(manager),
@@ -1062,7 +1064,7 @@ wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
                       OwnershipGiven WKClientCallbackState callbackState,
                       OwnershipKept char *identifierStr,
                       OwnershipKept char *hashStr,
-                      WKClientError error) {
+                      OwnershipGiven WKClientError error) {
     assert (CLIENT_CALLBACK_SUBMIT_TRANSACTION == callbackState->type);
 
     WKWallet   wallet   = callbackState->u.submitTransaction.wallet;
@@ -1117,6 +1119,8 @@ wkClientHandleSubmit (OwnershipKept WKWalletManager manager,
     wkClientCallbackStateRelease(callbackState);
     wkMemoryFree (identifierStr);
     wkMemoryFree (hashStr);
+
+    wkWalletManagerAnnounceClientError (manager, error);
 }
 
 static void
@@ -1163,7 +1167,7 @@ wkClientAnnounceSubmitTransferSuccess (OwnershipKept WKWalletManager manager,
 extern void
 wkClientAnnounceSubmitTransferFailure (OwnershipKept WKWalletManager manager,
                                        OwnershipGiven WKClientCallbackState callbackState,
-                                       WKClientError error) {
+                                       OwnershipGiven WKClientError error) {
     WKClientAnnounceSubmitEvent event =
     { { NULL, &handleClientAnnounceSubmitEventType },
         wkWalletManagerTakeWeak(manager),
@@ -1218,7 +1222,7 @@ wkClientHandleEstimateTransactionFee (OwnershipKept WKWalletManager manager,
                                       uint64_t costUnits,
                                       BRArrayOf(char*) attributeKeys,
                                       BRArrayOf(char*) attributeVals,
-                                      WKClientError error) {
+                                      OwnershipGiven WKClientError error) {
     assert (CLIENT_CALLBACK_ESTIMATE_TRANSACTION_FEE == callbackState->type);
 
     WKStatus status = (NULL == error ? WK_SUCCESS : WK_ERROR_FAILED);
@@ -1254,6 +1258,8 @@ wkClientHandleEstimateTransactionFee (OwnershipKept WKWalletManager manager,
 
     if (NULL != attributeKeys) array_free_all (attributeKeys, wkMemoryFree);
     if (NULL != attributeVals) array_free_all (attributeVals, wkMemoryFree);
+
+    wkWalletManagerAnnounceClientError (manager, error);
 }
 
 static void
@@ -1318,7 +1324,7 @@ wkClientAnnounceEstimateTransactionFeeSuccess (OwnershipKept WKWalletManager man
 extern void
 wkClientAnnounceEstimateTransactionFeeFailure (OwnershipKept WKWalletManager manager,
                                                OwnershipGiven WKClientCallbackState callbackState,
-                                               WKClientError error) {
+                                               OwnershipGiven WKClientError error) {
     WKClientAnnounceEstimateTransactionFeeEvent event =
     { { NULL, &handleClientAnnounceEstimateTransactionFeeEventType },
         wkWalletManagerTakeWeak(manager),

@@ -1373,7 +1373,27 @@ public class BlocksetSystemClient: SystemClient {
                                  completion: @escaping (Result<T, SystemClientError>) -> Void) {
         dataTaskFunc (session, request) { (data, res, error) in
             guard nil == error else {
-                completion (Result.failure(SystemClientError.badResponse ("General Error: \(String (reflecting: error))")))
+                var sce: SystemClientError = SystemClientError.badResponse ("General Error: \(String (reflecting: error))")
+                let error = error! as NSError
+
+                if error.domain == NSURLErrorDomain {
+                    switch error.code {
+                    case NSURLErrorCannotFindHost,
+                        NSURLErrorCannotConnectToHost,
+                        NSURLErrorRedirectToNonExistentLocation:
+                        sce = SystemClientError.unavailable
+
+                    case NSURLErrorTimedOut,
+                        NSURLErrorNetworkConnectionLost,
+                        NSURLErrorDNSLookupFailed,
+                        NSURLErrorNotConnectedToInternet:
+                        sce = SystemClientError.lostConnectivity
+
+                    default: break
+                    }
+                }
+
+                completion (Result.failure(sce))
                 return
             }
 
@@ -1392,7 +1412,7 @@ public class BlocksetSystemClient: SystemClient {
                 case 400, 404: respError = SystemClientError.badRequest ("Resource Not Found")
                 case 403:      respError = SystemClientError.permission
                 case 429:      respError = SystemClientError.resource
-                case 500, 504: respError = SystemClientError.unavailable
+                case 500, 504: respError = SystemClientError.badResponse ("Submission Status Error: \(res.statusCode)")
                 case 422:
                     // We expect `json` with more information about the error
                     let status = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "submit_status") }
@@ -1402,10 +1422,11 @@ public class BlocksetSystemClient: SystemClient {
                     }
                     else if nil == status {
                         let dataString = data!.map { String(format: "%c", $0) }.joined()
-                        respError = SystemClientError.badResponse ("Submission Status Error: No 'submit_status' Provided: Data: \(dataString)")
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'submit_status': \(dataString)")
                     }
                     else {
-                        let submitDetails = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "network_message") } ?? data!.map { String(format: "%c", $0) }.joined()
+                        let submitDetails = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "network_message") }
+                        ?? "Submission Status Error: Missed 'network_message': \(data!.map { String(format: "%c", $0) }.joined())"
 
                         var submitError: SystemClientSubmissionError!
                         switch (status!) {
@@ -1432,7 +1453,7 @@ public class BlocksetSystemClient: SystemClient {
                         respError = SystemClientError.submission(error: submitError, details: submitDetails)
                     }
                 default:
-                    respError = SystemClientError.badRequest("Unrecognized Status Code: \(res.statusCode)")
+                    respError = SystemClientError.badResponse("Submission Status Error: Unrecognized Status Code: \(res.statusCode)")
                 }
 
                 completion (Result.failure(respError))

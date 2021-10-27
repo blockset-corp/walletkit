@@ -16,6 +16,10 @@ import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.collect.Multimap;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -314,6 +318,16 @@ public class BdbApiClient {
         sendRequest(requestBuilder.build(), dataTask, parser, handler);
     }
 
+    private boolean lostConnectivity() {
+        try {
+            return !InetAddress.getByName("1.1.1.1").isReachable(1000); // Cloudflare DNS
+        } catch (UnknownHostException e) {
+            return true;
+        } catch (Exception e) {
+            return false; // unsure
+        }
+    }
+
     private <T> void sendRequest(Request request,
                                  DataTask dataTask,
                                  ResponseParser<? extends T> parser,
@@ -346,7 +360,7 @@ public class BdbApiClient {
                                 break;
                             case 500:
                             case 504:
-                                error = new SystemClientError.Unavailable();
+                                error = new SystemClientError.BadResponse ("Submission Status Error: " + responseCode);
                                 break;
                             case 422: {
                                 Map<String, Object> json = null;
@@ -354,12 +368,12 @@ public class BdbApiClient {
 
                                 // Parse any responseData as JSON
                                 if (responseBody == null)
-                                    error = new SystemClientError.BadResponse("Submission Status Error: No 'data' Provided: Request: " + request.toString());
+                                    error = new SystemClientError.BadResponse("Submission Status Error: No 'data' Provided");
                                 else {
                                     try {
                                         json = coder.deserializeJson(Map.class, responseBody.string());
                                     } catch (ObjectCoderException e) {
-                                        error = new SystemClientError.BadResponse("Submission Status Error: Can't Parse 'data' Provided: Data: " + responseBody.string());
+                                        error = new SystemClientError.BadResponse("Submission Status Error: Can't Parse 'data': " + responseBody.string());
                                     }
                                 }
 
@@ -370,7 +384,7 @@ public class BdbApiClient {
                                     if (statusObject instanceof String)
                                         status = (String) statusObject;
                                     else
-                                        error = new SystemClientError.BadResponse("Submission Status Error: No 'submit_status' Provided: Data: " + responseBody.string());
+                                        error = new SystemClientError.BadResponse("Submission Status Error: No 'submit_status': " + responseBody.string());
                                 }
 
                                 if (null == error) {
@@ -429,7 +443,11 @@ public class BdbApiClient {
 
                                     error = new SystemClientError.Submission(submitError);
                                 }
+                                break;
                             }
+                            default:
+                                error = new SystemClientError.BadResponse("Submission Status Error: Unrecognized Status Code: " + responseCode);
+                                break;
                         }
                     }
                 } catch (SystemClientError e) {
@@ -440,7 +458,7 @@ public class BdbApiClient {
 
                 // if anything goes wrong, make sure we report as an error
                 if (error != null) {
-                    Log.log(Level.SEVERE, "response failed with error: ", error);
+                    Log.log(Level.SEVERE, String.format ("response failed with error: '%s'", error.getLocalizedMessage()));
                     handler.handleError(error);
                 } else {
                     handler.handleData(data);
@@ -448,9 +466,38 @@ public class BdbApiClient {
             }
 
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.log(Level.SEVERE, "send request failed", e);
-                handler.handleError(new SystemClientError.BadResponse(e.getMessage()));
+            public void onFailure(Call call, IOException exception) {
+                Log.log(Level.SEVERE, String.format("send request failed: '%s'", exception.getLocalizedMessage()));
+                SystemClientError error = null;
+                try {
+                    throw exception;
+                } catch (UnknownHostException | ConnectException e) {
+                    // Apparently 'Airplane Plane Mode' and 'www.xblocksetx.com' both produce `UnknownHostException`
+                    error = lostConnectivity()
+                            ? new SystemClientError.LostConnectivity()
+                            : new SystemClientError.Unavailable();
+                } catch (SocketTimeoutException e) {
+                    error = new SystemClientError.LostConnectivity();
+                } catch (IOException e) {
+
+                    // IOExceptions in java.net
+                    //
+                    // BindException               - Signals that an error occurred while attempting to bind a socket to a local address and port.
+                    //*ConnectException            - Signals that an error occurred while attempting to connect a socket to a remote address and port.
+                    // HttpRetryException          - Thrown to indicate that a HTTP request needs to be retried but cannot be retried automatically, due to streaming mode being enabled.
+                    // MalformedURLException       - Thrown to indicate that a malformed URL has occurred.
+                    // NoRouteToHostException	    - Signals that an error occurred while attempting to connect a socket to a remote address and port.
+                    // PortUnreachableException    - Signals that an ICMP Port Unreachable message has been received on a connected datagram.
+                    // ProtocolException           - Thrown to indicate that there is an error in the underlying protocol, such as a TCP error.
+                    // SocketException             - Thrown to indicate that there is an error creating or accessing a Socket.
+                    //*SocketTimeoutException      - Signals that a timeout has occurred on a socket read or accept.
+                    //*UnknownHostException        - Thrown to indicate that the IP address of a host could not be determined.
+                    // UnknownServiceException     - Thrown to indicate that an unknown service exception has occurred.
+                    // URISyntaxException          - Checked exception thrown to indicate that a string could not be parsed as a URI reference.
+
+                    error = new SystemClientError.BadResponse("General Error: " + e.getLocalizedMessage());
+                }
+                handler.handleError(error);
             }
         });
     }
