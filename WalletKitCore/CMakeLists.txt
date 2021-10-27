@@ -22,32 +22,32 @@ endif()
 set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "-Oz")
 
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+
+    # Bitcoin test application
+    add_executable (test_bitcoin
+            WalletKitCoreTests/test/bitcoin/test.c)
+    target_include_directories(test_bitcoin
+            PRIVATE
+            WalletKitCoreTests/test/include
+            include
+            src)
+    target_link_libraries (test_bitcoin
+            WalletKitCore)
+
+    # WalletKitCore tests
+    add_executable (WalletKitCoreTests WalletKitCoreTests/WalletKitCoreTests.c)
+    target_include_directories(WalletKitCoreTests
+                               PRIVATE
+                               WalletKitCoreTests/test/include
+                               include
+                               src)
+    target_link_libraries (WalletKitCoreTests
+                           WalletKitCoreTest
+                           WalletKitCore)
+endif ()
+
 if (LINUX)
-
-    if (CMAKE_BUILD_TYPE MATCHES Debug)
-
-        # Bitcoin test application
-        add_executable (test_bitcoin
-                WalletKitCoreTests/test/bitcoin/test.c)
-        target_include_directories(test_bitcoin
-                PRIVATE
-                WalletKitCoreTests/test/include
-                include
-                src)
-        target_link_libraries (test_bitcoin
-                WalletKitCore)
-
-        # WalletKitCore tests
-        add_executable (WalletKitCoreTests WalletKitCoreTests/WalletKitCoreTests.c)
-        target_include_directories(WalletKitCoreTests
-                                   PRIVATE
-                                   WalletKitCoreTests/test/include
-                                   include
-                                   src)
-        target_link_libraries (WalletKitCoreTests
-                               WalletKitCoreTest
-                               WalletKitCore)
-    endif ()
 
     # _POSIX_C_SOURCE:
     #    200809L if you want the pthread mutex recursive/normal defines & 
@@ -105,11 +105,9 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
    # Prevent including main() from bitcoin test.c when
    # linking the various 'test'.c files into corecrptotest
    # so; so it can be linked with Linux tests app
-   if (LINUX)
-       target_compile_options (WalletKitCoreTest
-                               PRIVATE
-                               "-DOMIT_FOR_TEST_ALL_LINUX")
-   endif()
+   target_compile_options (WalletKitCoreTest
+                           PRIVATE
+                           "-DOMIT_FOR_TEST_ALL_LINUX")
    target_include_directories (WalletKitCoreTest
                                PUBLIC
                             ${PROJECT_SOURCE_DIR}/include

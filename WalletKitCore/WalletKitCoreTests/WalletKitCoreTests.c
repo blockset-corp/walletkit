@@ -537,7 +537,7 @@ int main(int argc, char* argv[]) {
 
     if (specificTest != -1) {
         totalTests = 1;
-        printf("%lu) %s\n", specificTest, allTests[specificTest].desc);
+        printf("%d) %s\n", specificTest, allTests[specificTest].desc);
         if (allTests[specificTest].func()) {
             pass++;
         }
