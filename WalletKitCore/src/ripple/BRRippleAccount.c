@@ -271,3 +271,25 @@ rippleAccountGetDefaultFeeBasis (BRRippleAccount account) {
         10, 1
     };
 }
+
+extern BRRippleFeeBasis
+rippleAccountGetAccountDeleteFeeBasis (BRRippleAccount account) {
+    return (BRRippleFeeBasis) {
+        5000000, 1
+    };
+}
+
+extern BRRippleTransaction
+rippleAccountCreateCloseTransaction(BRRippleAccount account,
+                                    BRRippleAddress toAddress,
+                                    BRRippleFeeBasis feeBasis)
+{
+    // Get the source address
+    BRRippleAddress sourceAddress = rippleAccountGetAddress(account);
+    BRRippleTransaction tx = rippleTransactionCreateCloseTransaction(sourceAddress,
+                                                                     toAddress,
+                                                                     feeBasis);
+    rippleAddressFree(sourceAddress);
+    return tx;
+}
+

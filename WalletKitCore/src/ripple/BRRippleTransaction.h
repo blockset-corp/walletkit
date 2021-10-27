@@ -157,4 +157,10 @@ extern const char *rippleTransactionFieldOptionalNames[];
 extern void rippleTransactionSetDestinationTag (BRRippleTransaction transaction, BRRippleDestinationTag tag);
 extern void rippleTransactionSetInvoiceID (BRRippleTransaction transaction, UInt256 invoiceId);
 
+// NOTE *** this function will create a transaction that will delete the sourceAddress
+// account and send all the remaining XRP to the targetAddress - use with caution as
+// this cannot be undone - however the account can be re-created by sending it at least 10 XRP
+BRRippleTransaction rippleTransactionCreateCloseTransaction(BRRippleAddress sourceAddress,
+                                                            BRRippleAddress targetAddress,
+                                                            BRRippleFeeBasis feeBasis);
 #endif // BRRipple_transaction_h
