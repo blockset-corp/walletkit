@@ -227,7 +227,7 @@ int work (void *option) {
 void *assertThread (void *ignore) {
     pthread_setname_brd (pthread_self(), "Asserter");
     sleep (2);
-    work ((size_t) ignore);
+    work ((void*) ignore);
 
     return NULL;
 }
