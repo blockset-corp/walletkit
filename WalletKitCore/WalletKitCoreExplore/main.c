@@ -212,8 +212,8 @@ void assertRecover (void *info) {
     printf ("AssertRecover: %zu\n", (size_t) info);
 }
 
-int work (int option) {
-    if (0 == option % 2) {
+int work (void *option) {
+    if (0 == ((unsigned long) option) % 2) {
         printf ("Assert\n");
         BRAssert(0);
     }
@@ -227,7 +227,7 @@ int work (int option) {
 void *assertThread (void *ignore) {
     pthread_setname_brd (pthread_self(), "Asserter");
     sleep (2);
-    work ((size_t) ignore);
+    work ((void*) ignore);
 
     return NULL;
 }

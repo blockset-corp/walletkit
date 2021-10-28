@@ -1,1 +1,4 @@
-/test
+test
+cmake/
+build/
+btc-test
