@@ -148,6 +148,9 @@ strsep_brd(char **restrict stringp, const char *restrict delim) {
         }
         s++;
     }
+
+    // Delimiter not found
+    *stringp = NULL;
     return m;
 
 #else
