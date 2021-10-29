@@ -11,6 +11,7 @@
 #ifndef BRStellar_base_h
 #define BRStellar_base_h
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>

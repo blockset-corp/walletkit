@@ -84,8 +84,8 @@ uint256CreateParseDecimal (const char *string, int decimals, BRCoreParseStatus *
     char *splitter = splitterA;
     strcpy (splitter, string);
     
-    char *whole = strsep(&splitter, ".");
-    char *fract = strsep(&splitter, ".");
+    char *whole = strsep_brd(&splitter, ".");
+    char *fract = strsep_brd(&splitter, ".");
     
     if (NULL == whole) whole = "";
     if (NULL == fract) fract = "";

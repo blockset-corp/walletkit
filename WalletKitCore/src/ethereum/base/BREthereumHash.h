@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <memory.h>
+#include "support/BROSCompat.h"
 #include "support/BRInt.h"
 #include "support/BRArray.h"
 #include "support/rlp/BRRlp.h"

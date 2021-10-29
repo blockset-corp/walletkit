@@ -3,6 +3,7 @@
 #define __STELLAR_CRC_32_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 /*
  * Copyright 2001-2010 Georges Menie (www.menie.org)

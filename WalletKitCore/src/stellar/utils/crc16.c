@@ -1,5 +1,4 @@
 #include "crc16.h"
-#include <stdint.h>
 
 /*
  * Copyright 2001-2010 Georges Menie (www.menie.org)
