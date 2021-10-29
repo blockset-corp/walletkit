@@ -476,10 +476,10 @@ public enum TransferIncludeStatusType {
 
     internal init (_ core: WKTransferIncludeStatusType) {
         switch (core) {
-        case WK_TRANSFER_INCLUDED_STATUS_SUCCESS:          self = .success
-        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT: self = .insufficientNetworkCostUnit
-        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_REVERTED: self = .reverted
-        case WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN:  self = .unknown
+        case WK_TRANSFER_INCLUDE_STATUS_SUCCESS:          self = .success
+        case WK_TRANSFER_INCLUDE_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT: self = .insufficientNetworkCostUnit
+        case WK_TRANSFER_INCLUDE_STATUS_FAILURE_REVERTED: self = .reverted
+        case WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN:  self = .unknown
         default: preconditionFailure()
         }
     }

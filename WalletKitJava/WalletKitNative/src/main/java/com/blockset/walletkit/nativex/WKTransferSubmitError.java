@@ -8,11 +8,8 @@
 package com.blockset.walletkit.nativex;
 
 import com.blockset.walletkit.nativex.library.WKNativeLibraryDirect;
-import com.google.common.base.Optional;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
-import com.sun.jna.Union;
 
 import java.util.Arrays;
 import java.util.List;

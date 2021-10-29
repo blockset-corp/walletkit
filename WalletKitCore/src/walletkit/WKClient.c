@@ -1517,7 +1517,7 @@ wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
                                            confirmedFeeBasis,
                                            (WK_TRANSFER_STATE_INCLUDED == bundle->status
                                             ? wkTransferIncludeStatusCreateSuccess ()
-                                            : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN, "via Blockset")))
+                                            : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN, "via Blockset")))
             : (WK_TRANSFER_STATE_ERRORED == bundle->status
                ? wkTransferStateErroredInit (wkTransferSubmitErrorCreate(WK_TRANSFER_SUBMIT_ERROR_UNKNOWN, "via Blockset"))
                : wkTransferStateInit (bundle->status)));

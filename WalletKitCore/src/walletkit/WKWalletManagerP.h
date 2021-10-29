@@ -99,10 +99,6 @@ typedef WKWallet
                                              Nullable OwnershipKept BRArrayOf(WKClientTransactionBundle) transactions,
                                              Nullable OwnershipKept BRArrayOf(WKClientTransferBundle) transfers);
 
-typedef WKTransferSubmitError
-(*WKWalletManagerRecoverSubmitErrorFromNetworkString) (WKWalletManager cwm,
-                                                       const char *string);
-
 typedef void
 (*WKWalletManagerSaveTransactionBundleHandler) (WKWalletManager cwm,
                                                       OwnershipKept WKClientTransactionBundle bundle);

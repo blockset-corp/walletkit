@@ -20,7 +20,7 @@ extern "C" {
 
 // MARK: - Transfer Include Error
 
-#define WK_TRANSFER_STATUS_DETAILS_LENGTH      (63)
+#define WK_TRANSFER_STATUS_DETAILS_LENGTH      (127)
 
 ///
 /// An 'Included Error' occurs for some currencies, none of the BTC-alikes, whereby a transaction
@@ -28,12 +28,13 @@ extern "C" {
 /// transferred.
 ///
 typedef enum {
-    WK_TRANSFER_INCLUDED_STATUS_SUCCESS,
+    /// The transfer was included successfully.
+    WK_TRANSFER_INCLUDE_STATUS_SUCCESS,
 
     /// Not enough 'gas' paid to complete the calculations as is required to include the
     /// transaction.  The transaction is in the blockchain, the sender paid a fee, but the asset
     /// transfer did not complete.
-    WK_TRANSFER_INCLUDED_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT, // out of gas
+    WK_TRANSFER_INCLUDE_STATUS_FAILURE_INSUFFICIENT_NETWORK_COST_UNIT, // out of gas
 
     /// An error occurred during the processing of the transaction.  This is typically something
     /// specific to the Smart Contract processing the transaction.  This error won't be seen for
@@ -43,13 +44,17 @@ typedef enum {
     ///    'insufficient funds'
     ///    'Too little received'
     ///    'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT'
-    WK_TRANSFER_INCLUDED_STATUS_FAILURE_REVERTED,
+    WK_TRANSFER_INCLUDE_STATUS_FAILURE_REVERTED,
 
     /// The reason for the included failure is unknown
-    WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN,
+    WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN,
 } WKTransferIncludeStatusType;
 
-#define TRANSFER_INCLUDED_ERROR_UNDEFINED  ((WKTransferIncludeErrorType) -1)
+#define WK_TRANSFER_INCLUDE_STATUS_UNDEFINED  ((WKTransferIncludeErrorType) -1)
+#define NUMBER_OF_TRANSFER_INCLUDED_STATUS_TYPES   (1 + WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN)
+
+extern const char *
+wkTransferIncludeStatusTypeDescription (WKTransferIncludeStatusType type);
 
 typedef struct {
     /// The type of include error.
@@ -107,9 +112,9 @@ typedef enum {
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT,  // gas     too low
 
     /// The fee is insufficient.  Sometimes a fee is not determines as simply as:
-    ///     `cost_unit * network_fee` - Tezos for example has all sorts of 'add ons'.  The result
-    /// is that the fee can be too low, even if the network_fee and cost_unit are individually
-    /// sufficient.
+    ///     `cost_unit * network_fee`
+    /// Tezos for example has all sorts of 'add ons'.  The result is that the fee can be too low,
+    /// even if the network_fee and cost_unit are individually sufficient.
     WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE,
 
     /// The nonce is too low; in the past.  A 'nonce' is generally the count of sent transactions
@@ -160,8 +165,11 @@ typedef enum {
 
 } WKTransferSubmitErrorType;
 
-#define TRANSFER_SUBMIT_ERROR_UNDEFINED         ((WKTransferSubmitErrorType) -1)
+#define WK_TRANSFER_SUBMIT_ERROR_UNDEFINED         ((WKTransferSubmitErrorType) -1)
 #define NUMBER_OF_TRANSFER_SUBMIT_ERROR_TYPES   (1 + WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY)
+
+extern const char *
+wkTransferSubmitErrorTypeDescription (WKTransferSubmitErrorType type);
 
 typedef struct {
     WKTransferSubmitErrorType type;

@@ -11,7 +11,7 @@
 import Foundation  // Data, Date
 
 ///
-/// An Error is a result of 'submission' to the System Client.  The System Client successfully
+/// An Error as a result of 'submission' to the System Client.  The System Client successfully
 /// processed a request and produced a response (processed a 'submisison') but the result of the
 /// submission is an error.
 ///

@@ -7,33 +7,6 @@
  */
 package com.blockset.walletkit.brd;
 
-import com.blockset.walletkit.AddressScheme;
-import com.blockset.walletkit.NetworkType;
-import com.blockset.walletkit.PaymentProtocolRequestType;
-import com.blockset.walletkit.SystemState;
-import com.blockset.walletkit.TransferConfirmation;
-import com.blockset.walletkit.TransferDirection;
-import com.blockset.walletkit.TransferIncludeStatus;
-import com.blockset.walletkit.TransferState;
-import com.blockset.walletkit.TransferSubmitError;
-import com.blockset.walletkit.WalletManagerDisconnectReason;
-import com.blockset.walletkit.WalletManagerMode;
-import com.blockset.walletkit.WalletManagerState;
-import com.blockset.walletkit.WalletManagerSyncDepth;
-import com.blockset.walletkit.WalletManagerSyncStoppedReason;
-import com.blockset.walletkit.WalletState;
-import com.blockset.walletkit.errors.FeeEstimationError;
-import com.blockset.walletkit.errors.FeeEstimationServiceFailureError;
-import com.blockset.walletkit.errors.FeeEstimationServiceUnavailableError;
-import com.blockset.walletkit.errors.PaymentProtocolCertificateMissingError;
-import com.blockset.walletkit.errors.PaymentProtocolCertificateNotTrustedError;
-import com.blockset.walletkit.errors.PaymentProtocolError;
-import com.blockset.walletkit.errors.PaymentProtocolRequestExpiredError;
-import com.blockset.walletkit.errors.PaymentProtocolSignatureTypeUnsupportedError;
-import com.blockset.walletkit.errors.PaymentProtocolSignatureVerificationFailedError;
-import com.google.common.base.Optional;
-import com.blockset.walletkit.errors.SystemClientError;
-import com.blockset.walletkit.errors.SystemClientSubmitError;
 import com.blockset.walletkit.nativex.WKAddressScheme;
 import com.blockset.walletkit.nativex.WKClientError;
 import com.blockset.walletkit.nativex.WKFeeBasis;
@@ -52,6 +25,36 @@ import com.blockset.walletkit.nativex.WKTransferState;
 import com.blockset.walletkit.nativex.WKTransferSubmitError;
 import com.blockset.walletkit.nativex.WKWalletManagerState;
 import com.blockset.walletkit.nativex.WKWalletState;
+
+import com.blockset.walletkit.AddressScheme;
+import com.blockset.walletkit.NetworkType;
+import com.blockset.walletkit.PaymentProtocolRequestType;
+import com.blockset.walletkit.SystemState;
+import com.blockset.walletkit.TransferConfirmation;
+import com.blockset.walletkit.TransferDirection;
+import com.blockset.walletkit.TransferIncludeStatus;
+import com.blockset.walletkit.TransferState;
+import com.blockset.walletkit.TransferSubmitError;
+import com.blockset.walletkit.WalletManagerDisconnectReason;
+import com.blockset.walletkit.WalletManagerMode;
+import com.blockset.walletkit.WalletManagerState;
+import com.blockset.walletkit.WalletManagerSyncDepth;
+import com.blockset.walletkit.WalletManagerSyncStoppedReason;
+import com.blockset.walletkit.WalletState;
+
+import com.blockset.walletkit.errors.SystemClientError;
+import com.blockset.walletkit.errors.SystemClientSubmitError;
+import com.blockset.walletkit.errors.FeeEstimationError;
+import com.blockset.walletkit.errors.FeeEstimationServiceFailureError;
+import com.blockset.walletkit.errors.FeeEstimationServiceUnavailableError;
+import com.blockset.walletkit.errors.PaymentProtocolCertificateMissingError;
+import com.blockset.walletkit.errors.PaymentProtocolCertificateNotTrustedError;
+import com.blockset.walletkit.errors.PaymentProtocolError;
+import com.blockset.walletkit.errors.PaymentProtocolRequestExpiredError;
+import com.blockset.walletkit.errors.PaymentProtocolSignatureTypeUnsupportedError;
+import com.blockset.walletkit.errors.PaymentProtocolSignatureVerificationFailedError;
+
+import com.google.common.base.Optional;
 import com.google.common.primitives.UnsignedLong;
 
 import java.util.Date;
@@ -154,7 +157,7 @@ final class Utilities {
     static TransferIncludeStatus.Type transferIncludeStatusTypeFromCrypto (WKTransferIncludeStatus.Type type) {
         switch (type) {
             case SUCCESS:          return TransferIncludeStatus.Type.SUCCESS;
-            case FAILURE_INSUFFICIENT_NETWORK_COST_UNIT: return TransferIncludeStatus.Type.INSUFFICIENT_NETWORK_CORE_UNIT;
+            case FAILURE_INSUFFICIENT_NETWORK_COST_UNIT: return TransferIncludeStatus.Type.INSUFFICIENT_NETWORK_COST_UNIT;
             case FAILURE_REVERTED: return TransferIncludeStatus.Type.REVERTED;
             case FAILURE_UNKNOWN:  return TransferIncludeStatus.Type.UNKNOWN;
             default: throw new IllegalArgumentException("Unsupported type");

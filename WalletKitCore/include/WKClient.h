@@ -20,12 +20,12 @@ extern "C" {
 
 typedef enum {
     /// The request itself was flawed.  For example, the URL could not be built.  This error is
-    /// an internal error and not recoverable, typiclaly.
+    /// an internal error and not recoverable, typically.
     WK_CLIENT_ERROR_BAD_REQUEST,
 
     /// The request was rejected w/ invalid permission.  For example, a 'client token' has expired
     /// or is otherwise rejected.  This error might be recoverable is the User's permission is
-    ///reestablished.
+    /// reestablished.
     WK_CLIENT_ERROR_PERMISSION,
 
     /// The request was rejected having exceeded a resource (rateLimit, dataLimit, etc)
@@ -41,8 +41,8 @@ typedef enum {
     /// 'gas_too_low'
     WK_CLIENT_ERROR_SUBMISSION,
 
-    /// The client is unavailable.  For example, the client is dead owing to, say, an internal
-    /// error.  Generally resubmitting the request will eventually succeed.
+    /// The client is unavailable.  For example, the client is dead or gone.  It is possible that
+    /// the client returns and thus a retry might succeed.
     WK_CLIENT_ERROR_UNAVAILABLE,
 
     /// The client can't be reached because network connectivity has been lost

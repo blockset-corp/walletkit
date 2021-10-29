@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 public class TransferIncludeStatus {
     public enum Type {
         SUCCESS,
-        INSUFFICIENT_NETWORK_CORE_UNIT,
+        INSUFFICIENT_NETWORK_COST_UNIT,
         REVERTED,
         UNKNOWN;
     }

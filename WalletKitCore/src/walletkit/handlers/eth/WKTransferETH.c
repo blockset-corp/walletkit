@@ -36,7 +36,7 @@ wkTransferExtractIncludeStatusFromStatusETH (BREthereumTransactionStatus status,
     if (NULL != includeStatus) {
         *includeStatus = (success
                           ? wkTransferIncludeStatusCreateSuccess ()
-                          : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDED_STATUS_FAILURE_UNKNOWN, NULL));
+                          : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN, NULL));
     }
 
     return true;
