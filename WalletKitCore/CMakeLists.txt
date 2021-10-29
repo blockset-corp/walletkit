@@ -58,6 +58,7 @@ if (LINUX)
 else()
      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
+
 #
 # WalletKitCore Library
 #
@@ -456,6 +457,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testStructure.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testTransaction.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
