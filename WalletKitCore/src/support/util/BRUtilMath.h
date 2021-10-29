@@ -11,6 +11,7 @@
 #ifndef BR_Util_Math_H
 #define BR_Util_Math_H
 
+#include "support/BROSCompat.h"
 #include "support/BRInt.h"
 
 #ifdef __cplusplus

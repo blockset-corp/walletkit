@@ -8,6 +8,7 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
+
 #include "WKETH.h"
 
 #include "walletkit/WKAmountP.h"
@@ -19,6 +20,8 @@
 #include "walletkit/WKWalletManagerP.h"
 
 #include <ctype.h>
+
+#include <strings.h>
 
 // MARK: - Forward Declarations
 
