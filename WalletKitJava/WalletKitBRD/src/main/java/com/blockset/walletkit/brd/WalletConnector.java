@@ -58,7 +58,7 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
     }
 
     /**
-     * Create a WalletConnector is supported for the manager's network
+     * Create a WalletConnector if supported for the manager's network
      *
      * @param manager: The `WalletManager` for this connector
      * @param completion A completion handler for the result and potential
@@ -136,6 +136,30 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
 
         Digest digest = new Digest(this.core, digestResult.getSuccess());
         Signature signature = new Signature(this.core, signatureData);
+        return Result.success(new DigestAndSignaturePair(digest, signature));
+    }
+
+    @Override
+    public Result<DigestAndSignaturePair, WalletConnectorError>
+    sign(   String typedData,
+            com.blockset.walletkit.WalletConnector.Key key) {
+
+        if (!(key instanceof Key)) {
+            return Result.failure(new WalletConnectorError.UnknownEntity());
+        }
+        if (!key.hasSecret()) {
+            return Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
+        }
+
+        WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
+        WKResult<WKWalletConnector.WKTypedDataSigningResult, WKWalletConnectorError> typedDataSigningResult =
+                core.sign(typedData, cryptoKey);
+        if (typedDataSigningResult.isFailure()) {
+            return Result.failure(wkErrorToError(typedDataSigningResult.getFailure()));
+        }
+
+        Digest digest = new Digest(this.core, typedDataSigningResult.getSuccess().getDigest());
+        Signature signature = new Signature(this.core, typedDataSigningResult.getSuccess().getSignature());
         return Result.success(new DigestAndSignaturePair(digest, signature));
     }
 
@@ -254,30 +278,6 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
         return Result.success(new Transaction(this.core,
                                               transactionData,
                                               res.getSuccess().getIdentifier()));
-    }
-
-    @Override
-    public Result<DigestAndSignaturePair, WalletConnectorError>
-    sign(   String message,
-            com.blockset.walletkit.WalletConnector.Key key) {
-
-        if (!(key instanceof Key)) {
-            return Result.failure(new WalletConnectorError.UnknownEntity());
-        }
-        if (!key.hasSecret()) {
-            return Result.failure(new WalletConnectorError.InvalidKeyForSigning("Key object does not have a private key"));
-        }
-
-        WKKey cryptoKey = ((com.blockset.walletkit.brd.WalletConnector.Key)key).getCore();
-        WKResult<WKWalletConnector.WKTypedDataSigningResult, WKWalletConnectorError> typedDataSigningResult =
-                core.sign(message, cryptoKey);
-        if (typedDataSigningResult.isFailure()) {
-            return Result.failure(wkErrorToError(typedDataSigningResult.getFailure()));
-        }
-
-        Digest digest = new Digest(this.core, typedDataSigningResult.getSuccess().getDigest());
-        Signature signature = new Signature(this.core, typedDataSigningResult.getSuccess().getSignature());
-        return Result.success(new DigestAndSignaturePair(digest, signature));
     }
 
     @Override

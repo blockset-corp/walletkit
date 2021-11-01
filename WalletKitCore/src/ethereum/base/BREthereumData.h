@@ -58,7 +58,7 @@ ethDataAsRlpData (BREthereumData data);
 static inline BREthereumBoolean
 ethDataEqual (const BREthereumData *data1,
               const BREthereumData *data2) {
-    return AS_ETHEREUM_BOOLEAN (data1->count == data2->count & 0 == memcmp (data1->bytes, data2->bytes, data1->count));
+    return AS_ETHEREUM_BOOLEAN (data1->count == data2->count && 0 == memcmp (data1->bytes, data2->bytes, data1->count));
 }
 
 extern BREthereumData
