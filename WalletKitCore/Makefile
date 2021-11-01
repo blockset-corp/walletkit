@@ -89,26 +89,45 @@ btc-test-run:	btc-test
 #
 ########################################################################################
 
+# Test for DEBUG nature of the build requires inspecting
+# the prior `cmake` CMAKE_BUILD_TYPE, presuming cmake has
+# been run. Only `Debug` results in the production of
+# tests and required test libraries, so in some cases 
+# force remake with appropriate flags.
 cmake-walletkit-debug:
-	if [ ! -d "build" ]; then mkdir build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; fi
+	@if [ ! -d "build" ]; then \
+         mkdir build; \
+         cd build; \
+         cmake -DCMAKE_BUILD_TYPE=Debug ..; \
+     else \
+         cur_dbg_setting=($$(cat build/CMakeCache.txt | grep CMAKE_BUILD_TYPE | tr "=" " ")); \
+         if [ -z "$${cur_dbg_setting[1]}" ]; then \
+             echo "Re-make for debug (tests)"; \
+             rm -rf build; \
+             mkdir build; \
+             cd build; \
+             cmake -DCMAKE_BUILD_TYPE=Debug ..; \
+         fi; \
+     fi;
+ 
 
 cmake-walletkit:
-	if [ ! -d "build" ]; then mkdir build; cd build; cmake ..; fi
+	@if [ ! -d "build" ]; then mkdir build; cd build; cmake ..; fi
 
 cmake-walletkit-verbose:
-	if [ ! -d "build" ]; then mkdir build; cd build; cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..; fi
+	@if [ ! -d "build" ]; then mkdir build; cd build; cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..; fi
 
 cmake-installed:
 	@[ -f `which cmake` ] || { echo "cmake is required for WalletKit make"; exit 1; }
 
 wallet-kit-libs: cmake-installed cmake-walletkit FORCE
-	make -C build 
+	@make -C build 
 
 wallet-kit-libs-verbose: cmake-installed cmake-walletkit-verbose FORCE
-	make -C build 
+	@make -C build 
 
 wallet-kit-test: cmake-installed cmake-walletkit-debug FORCE
-	make -C build
+	@make -C build
 
 wallet-kit-test-run: wallet-kit-test FORCE
 	build/WalletKitCoreTests
