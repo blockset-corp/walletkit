@@ -4,6 +4,7 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.10.2)
+project(WalletKitCore)
 
 message(STATUS "System Information")
 message(STATUS "  System: ${CMAKE_SYSTEM}")

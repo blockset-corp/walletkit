@@ -88,34 +88,43 @@ btc-test-run:	btc-test
 #                         (test_bitcoin, WalletKitCoreTests)
 #
 ########################################################################################
+CMAKE_BUILD_SETUP := check_force_cmake_settings() { \
+    settings=("$$@"); \
+    if [ ! -d "build" ]; then \
+        mkdir build; \
+        cd build; \
+        for (( i=0; i<$${\#settings[@]}; i+=2 )); do \
+            cmake_settings="$${cmake_settings} -D$${settings[$$i]}=$${settings[$$i+1]}"; \
+        done; \
+        echo "cmake settings: $${cmake_settings}"; \
+        cmake $$cmake_settings ..; \
+    else \
+        force_remake=0; \
+        for (( i=0; i<$${\#settings[@]}; i+=2 )); do \
+            cmake_settings="$${cmake_settings} -D$${settings[$$i]}=$${settings[$$i+1]}"; \
+            cur_cmake_setting=($$(cat build/CMakeCache.txt | grep $${settings[$$i]} | tr "=" " ")); \
+            if [ "$${cur_cmake_setting[1]}" != "$${settings[$$i+1]}" ]; then \
+                echo "Force remake for $${settings[$$i]}=$${settings[$$i+1]} (currently $${cur_cmake_setting[1]})"; \
+                force_remake=1; \
+            fi; \
+            if [ $${force_remake} -eq 1 ]; then \
+                rm -rf build; \
+                mkdir build; \
+                cd build; \
+                cmake $${cmake_settings} ..; \
+            fi; \
+        done; \
+     fi; \
+}
 
-# Test for DEBUG nature of the build requires inspecting
-# the prior `cmake` CMAKE_BUILD_TYPE, presuming cmake has
-# been run. Only `Debug` results in the production of
-# tests and required test libraries, so in some cases 
-# force remake with appropriate flags.
 cmake-walletkit-debug:
-	@if [ ! -d "build" ]; then \
-         mkdir build; \
-         cd build; \
-         cmake -DCMAKE_BUILD_TYPE=Debug ..; \
-     else \
-         cur_dbg_setting=($$(cat build/CMakeCache.txt | grep CMAKE_BUILD_TYPE | tr "=" " ")); \
-         if [ -z "$${cur_dbg_setting[1]}" ]; then \
-             echo "Re-make for debug (tests)"; \
-             rm -rf build; \
-             mkdir build; \
-             cd build; \
-             cmake -DCMAKE_BUILD_TYPE=Debug ..; \
-         fi; \
-     fi;
- 
+	@$(CMAKE_BUILD_SETUP); check_force_cmake_settings CMAKE_BUILD_TYPE Debug CMAKE_VERBOSE_MAKEFILE FALSE 
 
 cmake-walletkit:
-	@if [ ! -d "build" ]; then mkdir build; cd build; cmake ..; fi
+	@$(CMAKE_BUILD_SETUP); check_force_cmake_settings CMAKE_BUILD_TYPE Release CMAKE_VERBOSE_MAKEFILE FALSE 
 
 cmake-walletkit-verbose:
-	@if [ ! -d "build" ]; then mkdir build; cd build; cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..; fi
+	@$(CMAKE_BUILD_SETUP); check_force_cmake_settings CMAKE_BUILD_TYPE Release CMAKE_VERBOSE_MAKEFILE ON
 
 cmake-installed:
 	@[ -f `which cmake` ] || { echo "cmake is required for WalletKit make"; exit 1; }
