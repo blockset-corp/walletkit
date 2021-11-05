@@ -89,8 +89,7 @@ public abstract class WalletConnectorError extends Exception {
         public InvalidTypedData(Throwable throwable) { super(throwable); }
     }
     public static class SubmitFailed extends WalletConnectorError {
-        public SubmitFailed() { super(); }
-        public SubmitFailed(String message) { super(message); }
-        public SubmitFailed(Throwable throwable) { super(throwable); }
+        SystemClientError error;
+        public SubmitFailed(SystemClientError error) { this.error = error; }
     }
 }

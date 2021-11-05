@@ -10,7 +10,7 @@ package com.blockset.walletkit.brd;
 import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.nativex.WKKey;
 import com.blockset.walletkit.nativex.WKNetworkFee;
 import com.blockset.walletkit.nativex.WKWalletConnectorError;
@@ -306,15 +306,15 @@ final class WalletConnector implements com.blockset.walletkit.WalletConnector {
                 manager.getNetwork().getUids(),
                 data,
                 identifier,
-                new CompletionHandler<SystemClient.TransactionIdentifier, QueryError>() {
+                new CompletionHandler<SystemClient.TransactionIdentifier, SystemClientError>() {
                     @Override
                     public void handleData(SystemClient.TransactionIdentifier tid) {
                         completion.handleData(transaction);
                     }
 
                     @Override
-                    public void handleError(QueryError error) {
-                        completion.handleError(new WalletConnectorError.SubmitFailed(error.toString()));
+                    public void handleError(SystemClientError error) {
+                        completion.handleError(new WalletConnectorError.SubmitFailed(error));
                     }
                 });
     }
