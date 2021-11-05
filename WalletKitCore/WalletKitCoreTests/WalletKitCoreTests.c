@@ -35,17 +35,25 @@
  * Unit test prototype similar to WalletKitCoreTests.swift
  * Some tests return an integer return code to indicate success
  */
-typedef int (*UnitTestCrypto)(void);
+typedef void (*UnittestWalletKit)(void);
 
 /**
  * Definition of a test having description and callout
  *
  */
 typedef struct test {
-    int             quick;
-    const char*     desc;
-    UnitTestCrypto  func;
+    int                 quick;
+    const char*         desc;
+    UnittestWalletKit   func;
 } TestDef;
+
+// `forward` tests declaration of tests
+static TestDef allTests[]; // tentative
+int numberOfTests() {
+    int tests = 0;
+    while (NULL != allTests[tests++].func) ;
+    return tests - 1;
+}
 
 /**
  * Definition of an account
@@ -79,23 +87,39 @@ static int              numberOfAccounts        = 1;
 /**
  * Forward test function declarations
  */
-int testCrypto                          (void);
-int testCryptoWithAccountAndNetworkBTC  (void);
-int testCryptoWithAccountAndNetworkBCH  (void);
-int testCryptoWithAccountAndNetworkETH  (void);
-int testRLPETH                          (void);
-int testUtilETH                         (void);
-int testEventETH                        (void);
-int testBaseETH                         (void);
-int testBlockchainETH                   (void);
-int testContractETH                     (void);
-int testBasicsETH                       (void);
-int testRipple                          (void);
-int testHedera                          (void);
-int testTezos                           (void);
-int testBitcoinSupport                  (void);
-int testBitcoin                         (void);
-int testBitcoinSyncOne                  (void);
+
+// WalletKit
+void testWalletKit                          (void);
+void testWalletKitWithAccountAndNetworkBTC  (void);
+void testWalletKitWithAccountAndNetworkBCH  (void);
+void testWalletKitWithAccountAndNetworkETH  (void);
+
+// Support
+void testJSONSUP                            (void);
+void testRLPSUP                             (void);
+void testUtilSUP                            (void);
+
+// Ethereum
+void testEventETH                           (void);
+void testBaseETH                            (void);
+void testBlockchainETH                      (void);
+void testTransactionETH                     (void);
+void testContractETH                        (void);
+void testStructureETH                       (void);
+
+// Ripple
+void testRipple                             (void);
+
+// Hedera
+void testHedera                             (void);
+
+// Tezos
+void testTezos                              (void);
+
+// Bitcoin
+void testBitcoinSupport                     (void);
+void testBitcoin                            (void);
+void testBitcoinSyncOne                     (void);
 
 
 /* & support functions */
@@ -107,48 +131,16 @@ void        storagePathClear            (void);
 void        setup                       (void);
 void        teardown                    (void);
 
-static TestDef allTests[] = {
-    // Crypto
-    {QUICK, "testCrypto",       testCrypto                          },
-    {SLOW,  "testCryptoBTC",    testCryptoWithAccountAndNetworkBTC  },
-    {SLOW,  "testCryptoBCH",    testCryptoWithAccountAndNetworkBCH  },
-    {SLOW,  "testCryptoETH",    testCryptoWithAccountAndNetworkETH  },
+// MARK: - WalletKit
 
-    // Ethereum
-    {QUICK, "testRLP",          testRLPETH                          },
- /*CORE*/   {QUICK, "testUtil",         testUtilETH                         },
-    {QUICK, "testEvent",        testEventETH                        },
- /*CORE*/   {QUICK, "testBase",         testBaseETH                         },
-    {QUICK, "testBC",           testBlockchainETH                   },
-    {QUICK, "testContracdt",    testContractETH                     },
-    {QUICK, "testBasics",       testBasicsETH                       },
-
-    // Ripple
-    {QUICK, "testRipple",       testRipple                          },
-
-    // Hedera
-    {QUICK, "testHedera",       testHedera                          },
-
-    // Tezos
-    {QUICK, "testTezos",        testTezos                           },
-
-    // Bitcoin
-    {QUICK, "testSupportBTC",   testBitcoinSupport                  },
-    {QUICK, "testBTC",          testBitcoin                         },
-    {SLOW,  "testSyncOneBTC",   testBitcoinSyncOne                  }
-};
-#define NUM_TESTS   (sizeof(allTests) / sizeof(TestDef))
-
-/* --------------- Tests ----------------- */
-int testCrypto(void) {
+void testWalletKit(void) {
     runWalletKitTests();
-    return NO_ASSERTION;
 }
 
-int testCryptoWithAccountAndNetworkBTC(void) {
+void testWalletKitWithAccountAndNetworkBTC(void) {
     WKAccount   account;
     WKNetwork   network;
-    int         success = 1;
+    WKBoolean   success = WK_TRUE;
     TestConfig  configurations[] = {
         {true,   500000 },
         {false, 1500000 }
@@ -176,13 +168,13 @@ int testCryptoWithAccountAndNetworkBTC(void) {
 
     /*defer*/wkAccountGive (account);
 
-    return success;
+    assert (WK_TRUE == success);
 }
 
-int testCryptoWithAccountAndNetworkBCH() {
+void testWalletKitWithAccountAndNetworkBCH() {
     WKAccount   account;
     WKNetwork   network;
-    int         success = 1;
+    WKBoolean   success = WK_TRUE;
     TestConfig  configurations[] = {
         {true,   500000 },
         {false, 1500000 }
@@ -210,10 +202,10 @@ int testCryptoWithAccountAndNetworkBCH() {
 
     /*defer*/wkAccountGive (account);
 
-    return success;
+    assert (WK_TRUE == success);
 }
 
-int testCryptoWithAccountAndNetworkETH(void) {
+void testWalletKitWithAccountAndNetworkETH(void) {
     WKAccount   account;
     WKNetwork   network;
     int         success = 1;
@@ -243,75 +235,92 @@ int testCryptoWithAccountAndNetworkETH(void) {
     }
 
     /*defer*/wkAccountGive (account);
-
-    return /*success*/NO_ASSERTION; // Parity with swift tests
 }
 
-int testRLPETH(void) {
+// MARK: - Support
+
+void testJSONSUP() {
+    runJsonTests();
+}
+
+void testRLPSUP(void) {
     runRlpTests();
-    return NO_ASSERTION;
 }
 
-int testUtilETH(void) {
+void testUtilSUP(void) {
     runUtilTests();
-    return NO_ASSERTION;
 }
 
-int testEventETH(void) {
+// MARK: - Ethereum
+
+void testEventETH(void) {
     runEventTests();
-    return NO_ASSERTION;
 }
 
-int testBaseETH(void) {
+void testBaseETH(void) {
     runBaseTests();
-    return NO_ASSERTION;
 }
 
-int testBlockchainETH(void) {
+void testBlockchainETH(void) {
     runBcTests();
-    return NO_ASSERTION;
 }
 
-int testContractETH(void) {
+void testTransactionETH(void) {
+    runTransactionTests (0);
+}
+
+void testContractETH(void) {
     runContractTests();
-    return NO_ASSERTION;
 }
 
-int testBasicsETH(void) {
-    runTests(0);
-    return NO_ASSERTION;
+void testStructureETH(void) {
+    runStructureTests();
 }
 
-int testRipple(void) {
+// MARK: - Ripple
+
+void testRipple(void) {
     runRippleTest();
-    return NO_ASSERTION;
 }
 
-int testHedera(void) {
+// MARK: - Hedera
+
+void testHedera(void) {
     runHederaTest();
-    return NO_ASSERTION;
 }
 
-int testTezos(void) {
+// MARK: - Tezos
+
+void testTezos(void) {
     runTezosTest();
-    return NO_ASSERTION;
 }
 
-int testBitcoinSupport(void) {
-    return BRRunSupTests();
-    return NO_ASSERTION;
+// MARK: - Stellar
+void testStellar(void) {
+    runStellarTest();
 }
 
-int testBitcoin(void) {
-    return BRRunTests();
-    return NO_ASSERTION;
+// __NEW_BLOCKCHAIN_C_TEST_IMPL__
+
+// MARK: - Bitcoin
+
+void testBitcoinSupport(void) {
+    assert (1 == BRRunSupTests());
 }
 
-int testBitcoinSyncOne() {
+void testBitcoin(void) {
+    assert (1 == BRRunTests());
+}
+
+void testBitcoinSyncOne() {
     BRRunTestsSync (accountSpecifications[DEF_ACCT_SPEC].paperKey,
                     bitcoinChain,
                     isMainnet);
-    return NO_ASSERTION;
+}
+
+// MARK: - WalletConnect 1.0
+void testWalletConnect() {
+    runWalletConnectTests();
 }
 
 /* ---------- Support functions ------------- */
@@ -496,7 +505,7 @@ void usage(const char* nm) {
     printf("\n    -h: Print this help & exit");
     printf("\n\n");
     printf("\n  Tests:\n");
-    for (size_t i=0;i < NUM_TESTS;i++) {
+    for (size_t i=0;i < numberOfTests();i++) {
         printf("    (%2lu) - %s\n", i, allTests[i].desc);
     }
 }
@@ -514,7 +523,7 @@ void args(int argc, char* argv[]) {
             quickTestsOnly = 1;
         } else if (option == 'n') {
             specificTest = atoi (optarg);
-            if (specificTest < 0 || specificTest >= NUM_TESTS) {
+            if (specificTest < 0 || specificTest >= numberOfTests()) {
                 fprintf (stderr, "Test # %s is invalid\n", optarg);
                 usage (argv[0]);
                 exit (-1);
@@ -529,41 +538,83 @@ int main(int argc, char* argv[]) {
 
     printf("Using %s\n", (isMainnet ? "mainnet" : "testnet"));
 
-    size_t totalTests = NUM_TESTS;
-    size_t pass = 0;
-    size_t skipped = 0;
+    int totalTests = numberOfTests();
+    int pass = 0;
+    int skipped = 0;
 
     setup ();
 
+    // Tests assert on failure condition
     if (specificTest != -1) {
         totalTests = 1;
         printf("%d) %s\n", specificTest, allTests[specificTest].desc);
-        if (allTests[specificTest].func()) {
-            pass++;
-        }
+        allTests[specificTest].func();
+        pass++;
     } else {
-        for (size_t testNo = 0; testNo < totalTests; testNo++) {
+        for (int testNo = 0; testNo < totalTests; testNo++) {
 
-            printf("%lu) %s\n", testNo, allTests[testNo].desc);
+            printf("%d) %s\n", testNo, allTests[testNo].desc);
             if (quickTestsOnly && !allTests[testNo].quick) {
                 printf(" -- SKIP\n");
                 skipped++;
                 continue;
             }
 
-            if (allTests[testNo].func()) {
-                pass++;
-            }
+            allTests[testNo].func();
+            pass++;
         }
     }
 
     if ((pass+skipped) == totalTests) {
-        printf("[OK] %lu of %lu tests passed (%lu skipped)\n",
+        printf("[OK] %d of %d tests passed (%d skipped)\n",
                pass, totalTests, skipped);
     } else {
-        printf("[FAIL] %lu of %lu tests failed\n",
+        printf("[FAIL] %d of %d tests failed\n",
                (totalTests - pass), totalTests);
     }
 
     teardown ();
 }
+
+static TestDef allTests[] = {
+    // Crypto
+    {QUICK, "testWalletKit",        testWalletKit                          },
+    {SLOW,  "testWalletKitBTC",     testWalletKitWithAccountAndNetworkBTC  },
+    {SLOW,  "testWalletKitBCH",     testWalletKitWithAccountAndNetworkBCH  },
+    {SLOW,  "testWalletKitETH",     testWalletKitWithAccountAndNetworkETH  },
+
+    // Support
+    {QUICK, "testRLP",              testRLPSUP                          },
+    {QUICK, "testUtil",             testUtilSUP                         },
+    {QUICK, "testJSON",             testJSONSUP                         },
+    
+    // Ethereum
+    {QUICK, "testEvent",            testEventETH                        },
+    {QUICK, "testBase",             testBaseETH                         },
+    {QUICK, "testBC",               testBlockchainETH                   },
+    {QUICK, "testTransactions",     testTransactionETH                  },
+    {QUICK, "testContract",         testContractETH                     },
+    {QUICK, "testStructure",        testStructureETH                    },
+
+    // Ripple
+    {QUICK, "testRipple",           testRipple                          },
+
+    // Hedera
+    {QUICK, "testHedera",           testHedera                          },
+
+    // Tezos
+    {QUICK, "testTezos",            testTezos                           },
+
+    // Bitcoin
+    {QUICK, "testSupportBTC",       testBitcoinSupport                  },
+    {QUICK, "testBTC",              testBitcoin                         },
+    {SLOW,  "testSyncOneBTC",       testBitcoinSyncOne                  },
+    
+    // WalletConnect 1.0 Handler
+    {QUICK, "testWalletConnect",    testWalletConnect                   },
+    
+    // __NEW_BLOCKCHAIN_C_TEST__
+    
+    // No test...
+    {0, NULL, NULL }
+};

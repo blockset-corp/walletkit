@@ -74,6 +74,9 @@ ethHashCreateEmpty (void);
 extern BREthereumHash
 ethHashCreateFromData (BRRlpData data);
 
+extern BREthereumHash
+ethHashCreateFromBytes (const uint8_t *bytes, size_t bytesCount);
+
 /**
  * Return the hex-encoded string
  */

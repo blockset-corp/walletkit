@@ -188,6 +188,13 @@ wkFeeBasisCreateAsETH (WKUnit unit,
 private_extern BREthereumFeeBasis
 wkFeeBasisAsETH (WKFeeBasis feeBasis);
 
+// MARK: - Wallet Connector
+
+typedef struct WKWalletConnectorETHRecord {
+    struct WKWalletConnectorRecord base;
+    // ...
+} *WKWalletConnectorETH;
+
 // MARK: - Support
 
 private_extern WKHash

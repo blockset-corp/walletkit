@@ -34,6 +34,8 @@ ethDataCreateFromRlpData (BRRlpData rlp,
 
 extern BREthereumData
 ethDataCreateFromString (const char *string) {
+    if (NULL != string && 0 == strncmp (string, "0x", 2))
+        string = &string[2];
     BREthereumData data;
     data.bytes = hexDecodeCreate(&data.count, string, strlen (string));
     return data;
@@ -59,6 +61,24 @@ ethDataAsRlpData (BREthereumData data) {
     BRRlpData rlp = { data.count, malloc (data.count) };
     memcpy (rlp.bytes, data.bytes, data.count);
     return rlp;
+}
+
+extern BREthereumData
+ethDataConcat (BREthereumData *data, size_t count) {
+    size_t size   = 0;
+    size_t offset = 0;
+
+    for (size_t index = 0; index < count; index++)
+        size += data[index].count;
+
+    BREthereumData result = { size, malloc(size) };
+
+    for (size_t index = 0; index < count; index++) {
+        memcpy (&result.bytes[offset], data[index].bytes, data[index].count);
+        offset += data[index].count;
+    }
+
+    return result;
 }
 
 /// MARK: - Hash Data Pair

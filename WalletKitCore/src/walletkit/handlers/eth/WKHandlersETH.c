@@ -21,9 +21,9 @@ extern WKWalletHandlers wkWalletHandlersETH;
 // Wallet Sweep
 // ExportablePaperHandlers
 // Payment Protocol
+extern WKWalletConnectorHandlers wkWalletConnectorHandlersETH;
 extern WKFeeBasisHandlers wkFeeBasisHandlersETH;
 extern WKWalletManagerHandlers wkWalletManagerHandlersETH;
-
 
 WKHandlers wkHandlersETH = {
     WK_NETWORK_TYPE_ETH,
@@ -35,6 +35,7 @@ WKHandlers wkHandlersETH = {
     NULL,//WKWalletSweeperHandlers not supported
     NULL,//WKExportablePaperWalletHandlers
     NULL,//WKPaymentProtocolHandlers not supported
+    &wkWalletConnectorHandlersETH,
     &wkFeeBasisHandlersETH,
     &wkWalletManagerHandlersETH
 };

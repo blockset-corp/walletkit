@@ -51,6 +51,14 @@ ethHashCreateFromData (BRRlpData data) {
     return hash;
 }
 
+extern BREthereumHash
+ethHashCreateFromBytes (const uint8_t *bytes, size_t bytesCount) {
+    BREthereumHash hash;
+    BRKeccak256(hash.bytes, bytes, bytesCount);
+    return hash;
+
+}
+
 /**
  * Return the hex-encoded string
  */

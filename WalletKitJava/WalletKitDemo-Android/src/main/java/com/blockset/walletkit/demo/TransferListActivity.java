@@ -91,6 +91,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
 
     private Wallet wallet;
     private boolean isBitcoin;
+    private boolean isEthereum;
     private Adapter transferAdapter;
     private ClipboardManager clipboardManager;
     private ArrayList<PaymentProtocolRequestType> availablePaymentProtocols = new ArrayList();
@@ -119,6 +120,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
         String currencyCode = wallet.getCurrency().getCode().toLowerCase();
         NetworkType networkType = net.getType();
         isBitcoin = NetworkType.BTC == networkType || NetworkType.BCH == networkType;
+        isEthereum = NetworkType.ETH == networkType;
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
         // Send currency must be contingent on available funds
@@ -202,12 +204,16 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_transfer_list, menu);
         menu.findItem(R.id.action_connect_with_peer).setVisible(isBitcoin);
+        menu.findItem(R.id.action_walletconnect).setVisible(isEthereum);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_walletconnect:
+                WalletConnectorSessionsActivity.start(this, this.wallet);
+                return true;
             case R.id.action_connect:
                 connect();
                 return true;
