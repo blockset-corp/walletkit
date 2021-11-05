@@ -4,6 +4,7 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.10.2)
+project(WalletKitCore)
 
 message(STATUS "System Information")
 message(STATUS "  System: ${CMAKE_SYSTEM}")
@@ -32,6 +33,8 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
             WalletKitCoreTests/test/include
             include
             src)
+    set_target_properties(test_bitcoin
+            PROPERTIES COMPILE_FLAGS "-Wno-sign-conversion")
     target_link_libraries (test_bitcoin
             WalletKitCore)
 
@@ -80,7 +83,7 @@ target_include_directories (WalletKitCore
 
 # specify compiler warnings
 target_compile_options (WalletKitCore
-	   	        PUBLIC
+	   	        PRIVATE 
 		        "-Wall"
 		        "-Wconversion"
 		        "-Wsign-conversion"
