@@ -29,6 +29,7 @@
 #include <string.h>         // strlcpy()
 #include <stdint.h>
 #include <stdlib.h>         // arc4random
+#include <stdio.h>          // FILE
 
 #if defined (__linux__) && !defined(__ANDROID__)
 // TODO: Including bsd/stdlib.h causes a `swift build` failure
@@ -47,6 +48,22 @@ extern "C" {
 
     extern int pthread_setname_np (pthread_t __target_thread, const char *__name)
     __THROW __nonnull ((2));
+
+
+#if defined (__GNUC__)
+
+// For missing ssize_t inclusion through stdlib.h w/o _XOPEN_SOURCE
+#include <sys/types.h>
+
+// For missing M_LN2 w/o _XOPEN_SOURCE
+#define M_LN2          0.69314718055994530942  /* log_e 2 */
+
+// For missing _tolower, _toupper defns
+#define _tolower        tolower
+#define _toupper        toupper
+
+#endif
+
 #endif // defined(__linux__)
 
 #define PTHREAD_NULL   ((pthread_t) NULL)
@@ -76,6 +93,12 @@ arc4random_uniform_brd(uint32_t upperBbound);
 extern int
 mergesort_brd (void *__base, size_t __nel, size_t __width,
                int (*__compar)(const void *, const void *));
+
+extern char*
+strsep_brd(char **restrict stringp, const char *restrict delim);
+    
+extern FILE *
+open_memstream_brd (char **bufp, size_t *sizep);
 
 #ifdef __cplusplus
 }

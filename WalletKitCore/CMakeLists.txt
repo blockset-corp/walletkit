@@ -4,14 +4,63 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.10.2)
+project(WalletKitCore)
+
+message(STATUS "System Information")
+message(STATUS "  System: ${CMAKE_SYSTEM}")
+message(STATUS "  Name:   ${CMAKE_SYSTEM_NAME}")
+message(STATUS "  Vers:   ${CMAKE_SYSTEM_VERSION}")
+message(STATUS "  Compiler: ${CMAKE_C_COMPILER_ID}")
+
+# Establish OS compile type using platform info (see https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks)
+if (UNIX AND NOT APPLE AND NOT ANDROID)
+    message(STATUS "  Linux based compilation")
+    set (LINUX TRUE)
+endif()
 
 # Change the default RELEASE and DEBUG flags.
 # Even for RELEASE build, always use DEBUG and never NDEBUG (to enable assert())
 set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "-Oz")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+if (CMAKE_BUILD_TYPE MATCHES Debug)
 
+    # Bitcoin test application
+    add_executable (test_bitcoin
+            WalletKitCoreTests/test/bitcoin/test.c)
+    target_include_directories(test_bitcoin
+            PRIVATE
+            WalletKitCoreTests/test/include
+            include
+            src)
+    set_target_properties(test_bitcoin
+            PROPERTIES COMPILE_FLAGS "-Wno-sign-conversion")
+    target_link_libraries (test_bitcoin
+            WalletKitCore)
+
+    # WalletKitCore tests
+    add_executable (WalletKitCoreTests WalletKitCoreTests/WalletKitCoreTests.c)
+    target_include_directories(WalletKitCoreTests
+                               PRIVATE
+                               WalletKitCoreTests/test/include
+                               include
+                               src)
+    target_link_libraries (WalletKitCoreTests
+                           WalletKitCoreTest
+                           WalletKitCore)
+endif ()
+
+if (LINUX)
+
+    # _POSIX_C_SOURCE:
+    #    200809L if you want the pthread mutex recursive/normal defines & 
+    #    implicitly defined functions
+    #    200112L to support struct addrinfo
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_POSIX_C_SOURCE=200809L")
+     #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_POSIX_C_SOURCE=200112L")
+else()
+     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+endif()
 #
 # WalletKitCore Library
 #
@@ -29,11 +78,12 @@ target_include_directories (WalletKitCore
                             ${PROJECT_SOURCE_DIR}/src/support
                             ${PROJECT_SOURCE_DIR}
                             ${PROJECT_SOURCE_DIR}/vendor
-                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1)
+                            ${PROJECT_SOURCE_DIR}/vendor/secp256k1
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include)
 
 # specify compiler warnings
 target_compile_options (WalletKitCore
-	   	        PUBLIC
+	   	        PRIVATE 
 		        "-Wall"
 		        "-Wconversion"
 		        "-Wsign-conversion"
@@ -55,6 +105,12 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    add_library(WalletKitCoreTest
 	       STATIC)
+   # Prevent including main() from bitcoin test.c when
+   # linking the various 'test'.c files into corecrptotest
+   # so; so it can be linked with Linux tests app
+   target_compile_options (WalletKitCoreTest
+                           PRIVATE
+                           "-DOMIT_FOR_TEST_ALL_LINUX")
    target_include_directories (WalletKitCoreTest
                                PUBLIC
                             ${PROJECT_SOURCE_DIR}/include
@@ -62,6 +118,30 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                             ${PROJECT_SOURCE_DIR})
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
+#
+# yajl build
+#
+add_library(yajl
+            STATIC)
+
+target_sources (yajl
+                PRIVATE
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_alloc.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_buf.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_encode.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_gen.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_lex.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_parser.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_tree.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl_version.c
+                ${PROJECT_SOURCE_DIR}/vendor/yajl/src/yajl.c)
+
+target_include_directories (yajl
+                            PRIVATE
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/include
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src/api
+                            ${PROJECT_SOURCE_DIR}/vendor/yajl/src)
 	     
 #
 # sqlite3 build
@@ -132,7 +212,20 @@ add_library (hederaproto
 	     STATIC)
 
 # sources added in 'hedera'
-	    
+
+# On Linux certain sections of archive library are maintained in .rodata sections
+# - nm <libname>.a | grep " r "
+# These section constant address must be moved to global offset table using -fPIC
+# to be incorporated into shared library.
+# compilation errors. 
+if (LINUX)
+    target_compile_options(sqlite3 PRIVATE -fPIC)
+    target_compile_options(blake2 PRIVATE -fPIC)
+    target_compile_options(hederaproto PRIVATE -fPIC)
+    target_compile_options(ed25519 PRIVATE -fPIC)
+    target_compile_options(yajl PRIVATE -fPIC)
+endif()
+
 #
 # crypto sources
 #
@@ -157,6 +250,7 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP39WordsEn.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRCrypto.h
+                ${PROJECT_SOURCE_DIR}/src/support/BRData.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRFileService.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRBIP38Key.c
@@ -181,6 +275,10 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventAlarm.h
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.c
                 ${PROJECT_SOURCE_DIR}/src/support/event/BREventQueue.h
+                # JSON 
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.c
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJson.h
+                ${PROJECT_SOURCE_DIR}/src/support/json/BRJsonParse.c
 		# Util
 		${PROJECT_SOURCE_DIR}/src/support/util/BRUtil.h
                 ${PROJECT_SOURCE_DIR}/src/support/util/BRUtilMath.c
@@ -193,7 +291,11 @@ target_sources (WalletKitCore
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c)
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testJson.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testUtil.c)
+
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Bitcoin
@@ -355,8 +457,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testRlp.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testUtil.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
@@ -689,6 +789,7 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Link in the static sqlite3 library
 target_link_libraries (WalletKitCore
+                       yajl
                        sqlite3
                        ed25519
                        blake2
@@ -715,3 +816,20 @@ if (APPLE)
                            "resolv"
                            "-framework Security")
 endif(APPLE)
+
+if (LINUX)
+    
+    find_library (loglib
+                  dl)
+    find_library (mathlib
+                  m)
+    find_library (bsdlib
+                  bsd)
+    find_library (pthreadlib
+                  pthread)
+    target_link_libraries (WalletKitCore
+                           ${loglib}
+                           ${mathlib}
+                           ${bsdlib}
+                           ${pthreadlib})
+endif(LINUX)

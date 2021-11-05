@@ -246,9 +246,6 @@ wkPaymentProtocolRequestCreateTransferBTC (WKPaymentProtocolRequest protoReq,
                                                WKFeeBasis estimatedFeeBasis) {
     WKTransfer transfer = NULL;
     
-    WKUnit unit       = wkWalletGetUnit (wallet);
-    WKUnit unitForFee = wkWalletGetUnitForFee (wallet);
-    
     switch (wallet->type) {
         case WK_NETWORK_TYPE_BTC:
         case WK_NETWORK_TYPE_BCH: {
@@ -263,11 +260,11 @@ wkPaymentProtocolRequestCreateTransferBTC (WKPaymentProtocolRequest protoReq,
                         BRBitcoinTransaction *tid = btcWalletCreateTxForOutputsWithFeePerKb (wid, feePerKb, outputs, array_count (outputs));
 
                         transfer = NULL == tid ? NULL : wkTransferCreateAsBTC (wallet->listenerTransfer,
-                                                                                   unit,
-                                                                                   unitForFee,
-                                                                                   wid,
-                                                                                   tid,
-                                                                                   wallet->type);
+                                                                               wallet->unit,
+                                                                               wallet->unitForFee,
+                                                                               wid,
+                                                                               tid,
+                                                                               wallet->type);
                         array_free (outputs);
                     }
                     break;
@@ -284,10 +281,7 @@ wkPaymentProtocolRequestCreateTransferBTC (WKPaymentProtocolRequest protoReq,
             break;
         }
     }
-    
-    wkUnitGive (unitForFee);
-    wkUnitGive (unit);
-    
+
     return transfer;
 }
 

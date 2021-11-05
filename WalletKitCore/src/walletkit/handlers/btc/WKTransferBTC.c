@@ -187,11 +187,11 @@ wkTransferCreateAsBTC (WKTransferListener listener,
                                                             wkTransferCreateCallbackBTC);
 
     if (NULL != uids) free (uids);
-    wkTransferStateGive (state);
     wkFeeBasisGive (feeBasisEstimated);
     wkAmountGive  (amount);
     wkAddressGive (sourceAddress);
     wkAddressGive (targetAddress);
+    wkTransferStateGive (state);
 
     return transfer;
 }

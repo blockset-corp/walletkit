@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 #include <stdio.h>
 #include <ctype.h>
+#include <strings.h>
 
 #include "WKNetworkP.h"
 #include "WKUnit.h"
@@ -18,6 +19,7 @@
 #include "WKHashP.h"
 
 #include "WKHandlersP.h"
+#include "support/BROSCompat.h"
 
 // If '1' then display a detailed list of the builting currencies for each network
 #define SHOW_BUILTIN_CURRENCIES 0 // DEBUG
@@ -40,6 +42,7 @@ wkNetworkTypeGetCurrencyCode (WKNetworkType type) {
         WK_NETWORK_CURRENCY_HBAR,
         WK_NETWORK_CURRENCY_XTZ,
         WK_NETWORK_CURRENCY_XLM,
+        /* WK_NETWORK_CURRENCY___SYMBOL__, */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return currencies[type];
@@ -58,7 +61,8 @@ wkNetworkTypeIsBitcoinBased (WKNetworkType type) {
         false,      // XRP
         false,      // HBAR
         false,      // XTZ
-        false       // XLM
+        false,      // XLM
+     /* false,      // __SYMBOL__ */
     };
     assert (type < NUMBER_OF_NETWORK_TYPES);
     return isBitcoinBased[type];

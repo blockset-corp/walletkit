@@ -40,6 +40,7 @@ static inline int ltcChainParamsHasParams (const BRBitcoinChainParams *params) {
     return ltcChainParams(true) == params || ltcChainParams(false) == params;
 }
 
+
 #ifdef __cplusplus
 }
 #endif

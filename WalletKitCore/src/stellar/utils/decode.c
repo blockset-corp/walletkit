@@ -65,7 +65,7 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     if (!(isalnum(src[j]) || '+' == src[j] || '/' == src[j])) { break; }
 
     // read up to 4 bytes at a time into `tmp'
-    tmp[i++] = src[j++];
+    tmp[i++] = (unsigned char) src[j++];
 
     // if 4 bytes read then decode into `buf'
     if (4 == i) {

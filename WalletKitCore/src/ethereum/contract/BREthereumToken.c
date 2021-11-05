@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include <string.h>
+#include <strings.h>
 #include "support/BRArray.h"
 #include "support/BRSet.h"
 #include "BREthereumToken.h"

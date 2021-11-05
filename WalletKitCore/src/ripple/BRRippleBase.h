@@ -40,6 +40,7 @@ typedef enum {
     RIPPLE_TX_TYPE_CHECK_CANCEL      = 18,
     RIPPLE_TX_TYPE_DEPOSIT_PREAUTH   = 19,
     RIPPLE_TX_TYPE_TRUST_SET         = 20,
+    RIPPLE_TX_TYPE_DELETE_ACCOUNT    = 21,
     RIPPLE_TX_TYPE_AMENDMENT         = 100,
     RIPPLE_TX_TYPE_FEE               = 101,
 } BRRippleTransactionType ;
