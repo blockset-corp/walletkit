@@ -61,6 +61,7 @@ if (LINUX)
 else()
      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
+
 #
 # WalletKitCore Library
 #
@@ -291,6 +292,7 @@ target_sources (WalletKitCore
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
+		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testEvent.c
 		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testJson.c
 		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testRlp.c
 		    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/support/testSup.c
@@ -371,6 +373,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumLogic.h
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.c
                 ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumSignature.h
+                ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumStructure.c
+                ${PROJECT_SOURCE_DIR}/src/ethereum/base/BREthereumStructure.h
 
                 # BCS
                 # ${PROJECT_SOURCE_DIR}/src/ethereum/bcs/BREthereumBCS.c
@@ -455,9 +459,9 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBase.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testBc.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testContract.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEvent.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testEwm.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/test.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testStructure.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/ethereum/testTransaction.c
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/include/test.h)
 
     target_include_directories(WalletKitCoreTest
@@ -674,6 +678,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKUnit.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWallet.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletConnectorP.h
+                ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletConnector.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManagerP.h
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletManager.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/WKWalletSweeperP.h
@@ -712,6 +718,7 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKNetworkETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKSupportETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKTransferETH.c
+                ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletConnectorETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletETH.c
                 ${PROJECT_SOURCE_DIR}/src/walletkit/handlers/eth/WKWalletManagerETH.c
                 )
@@ -783,7 +790,8 @@ target_sources (WalletKitCore
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletKit.c)
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletKit.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletConnect.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 

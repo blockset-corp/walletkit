@@ -34,6 +34,7 @@ WKHandlers wkHandlersHBAR = {
     NULL,//WKWalletSweeperHandlers not supported
     NULL,//WKExportablePaperWalletHandlers
     NULL,//WKPaymentProtocolHandlers not supported
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersHBAR,
     &wkWalletManagerHandlersHBAR
 };

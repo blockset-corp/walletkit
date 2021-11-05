@@ -9,6 +9,7 @@ package com.blockset.walletkit.brd;
 
 import androidx.annotation.Nullable;
 
+import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.nativex.cleaner.ReferenceCleaner;
 import com.blockset.walletkit.nativex.WKClient;
 import com.blockset.walletkit.nativex.WKListener;
@@ -139,6 +140,11 @@ final class WalletManager implements com.blockset.walletkit.WalletManager {
     @Override
     public void createExportablePaperWallet(CompletionHandler<com.blockset.walletkit.ExportablePaperWallet, ExportablePaperWalletError> completion) {
         ExportablePaperWallet.create(this, completion);
+    }
+
+    @Override
+    public void createWalletConnector(CompletionHandler<com.blockset.walletkit.WalletConnector, WalletConnectorError> completion) {
+        WalletConnector.create(this, completion);
     }
 
     @Override

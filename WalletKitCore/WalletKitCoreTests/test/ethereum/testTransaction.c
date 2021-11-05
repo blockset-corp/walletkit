@@ -87,6 +87,23 @@ void runAddressTests (BREthereumAccount account) {
     free ((void *) addressString);
 }
 
+//
+// Account Tests
+//
+void runAccountTests () {
+
+    BREthereumAccount account = ethAccountCreate (TEST_PAPER_KEY);
+    BREthereumNetwork network = ethNetworkMainnet;
+
+    printf ("==== Account: %p\n", account);
+    runAddressTests(account);
+    //    runTransactionTests(account, network);
+
+    ethAccountRelease (account);
+    printf ("\n\n");
+}
+
+
 #if REFACTOR
 
 //
@@ -321,24 +338,7 @@ void runTransactionTests (BREthereumAccount account, BREthereumNetwork network) 
     runTransactionTests3 (account, network);
     runTransactionTests4 (account, network);
 }
-#endif
-//
-// Account Tests
-//
-void runAccountTests () {
-    
-    BREthereumAccount account = ethAccountCreate (TEST_PAPER_KEY);
-    BREthereumNetwork network = ethNetworkMainnet;
-    
-    printf ("==== Account: %p\n", account);
-    runAddressTests(account);
-//    runTransactionTests(account, network);
-    
-    ethAccountRelease (account);
-    printf ("\n\n");
-}
 
-#if REFACTOR
 //
 // EWM Tests
 //
@@ -540,16 +540,20 @@ installTokensForTest (void);
 #endif
 
 extern void
-runTests (int reallySend) {
-//    installSharedWordList(BRBIP39WordsEn, BIP39_WORDLIST_COUNT);
-//    installTokensForTest ();
-
+runTransactionTests (int reallySend) {
+#if REFACTOR
     // Initialize tokens
-    runAccountTests();
-//    testTransactionCodingEther ();
-//    testTransactionCodingToken ();
+    installSharedWordList(BRBIP39WordsEn, BIP39_WORDLIST_COUNT);
+    installTokensForTest ();
+#endif
 
-//*    if (reallySend) testReallySend();
+    runAccountTests();
+#if REFACTOR
+    testTransactionCodingEther ();
+    testTransactionCodingToken ();
+
+    if (reallySend) testReallySend();
+#endif
     printf ("Done\n");
 }
 
@@ -567,6 +571,6 @@ int main(int argc, const char *argv[]) {
     runContractTests();
     runStructureTests();
     runEWMTests(NODE_PAPER_KEY, "/tmp");
-    runTests(0);
+//    runTests(0);
 }
 #endif
