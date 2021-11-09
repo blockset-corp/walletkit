@@ -25,7 +25,7 @@ public class AccountAIT {
         String uids = "5766b9fa-e9aa-4b6d-9b77-b5f1136e5e96";
         Date timestamp = new Date(0);
 
-        Account account = Account.createFromPhrase(phrase, timestamp, uids).get();
+        Account account = Account.createFromPhrase(phrase, timestamp, uids, false).get();
         assertEquals(timestamp.getTime(), account.getTimestamp().getTime());
 
         // check the uids matches the one provided on creation
@@ -37,7 +37,7 @@ public class AccountAIT {
         byte[] phrase = "ginger settle marine tissue robot crane night number ramp coast roast critic".getBytes(StandardCharsets.UTF_8);
         String uids = "5766b9fa-e9aa-4b6d-9b77-b5f1136e5e96";
         Date timestamp = new Date(0);
-        Account accountFromPhrase = Account.createFromPhrase(phrase, timestamp, uids).get();
+        Account accountFromPhrase = Account.createFromPhrase(phrase, timestamp, uids, false).get();
 
         // check that serialization is repeatable and valid
         byte[] serializationFromPhrase = accountFromPhrase.serialize();

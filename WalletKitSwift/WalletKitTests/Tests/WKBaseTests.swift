@@ -90,7 +90,8 @@ class WKBaseTests: XCTestCase {
         let walletId = UUID (uuidString: "5766b9fa-e9aa-4b6d-9b77-b5f1136e5e96")?.uuidString ?? "empty-wallet-id"
         account = Account.createFrom (phrase: accountSpecification.paperKey,
                                       timestamp: accountSpecification.timestamp,
-                                      uids: walletId)
+                                      uids: walletId,
+                                      isMainnet: isMainnet)
 
 
     }

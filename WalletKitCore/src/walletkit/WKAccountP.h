@@ -32,7 +32,8 @@ typedef void* WKAccountDetails;
  *  @return The new network specific account
  */
 typedef WKAccountDetails
-(*WKAccountCreateFromSeedHandler)(UInt512 seed);
+(*WKAccountCreateFromSeedHandler)(WKBoolean isMainnet,
+                                  UInt512   seed);
 
 /** Create a network specific account from a series of bytes
  *

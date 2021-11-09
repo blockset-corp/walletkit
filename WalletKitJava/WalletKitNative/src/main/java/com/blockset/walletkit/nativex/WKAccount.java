@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class WKAccount extends PointerType {
 
-    public static Optional<WKAccount> createFromPhrase(byte[] phraseUtf8, UnsignedLong timestamp, String uids) {
+    public static Optional<WKAccount> createFromPhrase(byte[] phraseUtf8, UnsignedLong timestamp, String uids, boolean isMainnet) {
         // ensure string is null terminated
         phraseUtf8 = Arrays.copyOf(phraseUtf8, phraseUtf8.length + 1);
         try {
@@ -42,7 +42,8 @@ public class WKAccount extends PointerType {
                         WKNativeLibraryDirect.wkAccountCreate(
                                 phraseBuffer,
                                 timestamp.longValue(),
-                                uids
+                                uids,
+                                isMainnet ? WKBoolean.WK_TRUE : WKBoolean.WK_FALSE
                         )
                 ).transform(WKAccount::new);
             } finally {
