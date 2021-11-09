@@ -92,6 +92,7 @@ static int              numberOfAccounts        = 1;
 void testWalletKit                          (void);
 void testWalletKitWithAccountAndNetworkBTC  (void);
 void testWalletKitWithAccountAndNetworkBCH  (void);
+void testBTCWalletManager                   (void);
 void testWalletKitWithAccountAndNetworkETH  (void);
 
 // Support
@@ -146,27 +147,27 @@ void testWalletKitWithAccountAndNetworkBTC(void) {
         {false, 1500000 }
     };
 
-    account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
-                               0,
-                               uids);
-
     for (int config=0;
          config < (sizeof (configurations) / sizeof (struct configurations));
          config++) {
 
         storagePathClear();
 
+        account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
+                                   0,
+                                   uids,
+                                   configurations[config].isMainnet);
+        
         network = createBitcoinNetwork(configurations[config].isMainnet,
                                        configurations[config].blockHeight);
 
         success = success && runWalletKitTestsWithAccountAndNetwork (account,
-                                                                  network,
-                                                                  TEST_DATA_DIR);
+                                                                     network,
+                                                                     TEST_DATA_DIR);
 
         /*defer*/wkNetworkGive (network);
+        /*defer*/wkAccountGive (account);
     }
-
-    /*defer*/wkAccountGive (account);
 
     assert (WK_TRUE == success);
 }
@@ -180,29 +181,33 @@ void testWalletKitWithAccountAndNetworkBCH() {
         {false, 1500000 }
     };
 
-    account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
-                               0,
-                               uids);
-
     for (int config=0;
          config < (sizeof (configurations) / sizeof (struct configurations));
          config++) {
 
         storagePathClear();
+        
+        account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
+                                   0,
+                                   uids,
+                                   configurations[config].isMainnet);
 
         network = createBitcoinCashNetwork(configurations[config].isMainnet,
                                            configurations[config].blockHeight);
 
         success = success && runWalletKitTestsWithAccountAndNetwork (account,
-                                                                  network,
-                                                                  TEST_DATA_DIR);
+                                                                     network,
+                                                                     TEST_DATA_DIR);
 
         /*defer*/wkNetworkGive (network);
+        /*defer*/wkAccountGive (account);
     }
 
-    /*defer*/wkAccountGive (account);
-
     assert (WK_TRUE == success);
+}
+
+void testBTCWalletManager(void) {
+    runBTCWalletManagerTests();
 }
 
 void testWalletKitWithAccountAndNetworkETH(void) {
@@ -214,27 +219,27 @@ void testWalletKitWithAccountAndNetworkETH(void) {
         {false, 4500000  }
     };
 
-    account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
-                               0,
-                               uids);
-
     for (int config=0;
          config < (sizeof (configurations) / sizeof (struct configurations));
          config++) {
 
         storagePathClear();
+        
+        account = wkAccountCreate (accountSpecifications[DEF_ACCT_SPEC].paperKey,
+                                   0,
+                                   uids,
+                                   configurations[config].isMainnet);
 
         network = createEthereumNetwork(configurations[config].isMainnet,
                                         configurations[config].blockHeight);
 
         success = success && runWalletKitTestsWithAccountAndNetwork (account,
-                                                                  network,
-                                                                  TEST_DATA_DIR);
+                                                                     network,
+                                                                     TEST_DATA_DIR);
 
         /*defer*/wkNetworkGive (network);
+        /*defer*/wkAccountGive (account);
     }
-
-    /*defer*/wkAccountGive (account);
 }
 
 // MARK: - Support
@@ -582,6 +587,7 @@ static TestDef allTests[] = {
     {SLOW,  "testWalletKitBTC",     testWalletKitWithAccountAndNetworkBTC  },
     {SLOW,  "testWalletKitBCH",     testWalletKitWithAccountAndNetworkBCH  },
     {SLOW,  "testWalletKitETH",     testWalletKitWithAccountAndNetworkETH  },
+    {QUICK, "testBTCWalletManager", testBTCWalletManager                   },
 
     // Support
     {QUICK, "testRLP",              testRLPSUP                          },

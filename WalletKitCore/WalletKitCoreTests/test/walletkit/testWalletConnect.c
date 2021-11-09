@@ -64,7 +64,7 @@ WKWalletConnector createTestConnector() {
 
     // Create accounts object which is needed on Ethereum for signing
     const WKHandlers* ethHandlers = wkHandlersLookup(WK_NETWORK_TYPE_ETH);
-    WKAccount accounts = wkAccountCreate(testPaperKey, 1514764800, testAccountUids);
+    WKAccount accounts = wkAccountCreate(testPaperKey, 1514764800, testAccountUids, false);
     WKNetwork ethNetwork = wkNetworkFindBuiltin ("ethereum-ropsten",
                                                  false);
     

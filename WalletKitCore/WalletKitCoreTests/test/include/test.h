@@ -131,6 +131,9 @@ extern void runWalletKitTests (void);
 // testWalletConnect.c
 extern void runWalletConnectTests (void);
 
+// testBTCWalletManager.c
+extern void runBTCWalletManagerTests (void);
+
 extern WKBoolean
 runWalletKitTestsWithAccountAndNetwork (WKAccount account,
                                         WKNetwork network,
