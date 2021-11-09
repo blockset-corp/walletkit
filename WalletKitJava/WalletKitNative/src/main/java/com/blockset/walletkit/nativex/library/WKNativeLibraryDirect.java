@@ -38,7 +38,7 @@ public final class WKNativeLibraryDirect {
     public static native void wkMemoryFreeExtern(Pointer memory);
 
     // include/WKAccount.h
-    public static native Pointer wkAccountCreate(ByteBuffer phrase, long /* BRCryptoTimestamp */ timestamp, String uids);
+    public static native Pointer wkAccountCreate(ByteBuffer phrase, long /* BRCryptoTimestamp */ timestamp, String uids, int isMainnet);
     public static native Pointer wkAccountCreateFromSerialization(byte[] serialization, SizeT serializationLength, String uids);
     public static native long wkAccountGetTimestamp(Pointer account);
     public static native Pointer wkAccountGetUids(Pointer account);

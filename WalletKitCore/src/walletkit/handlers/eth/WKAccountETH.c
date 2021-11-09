@@ -12,7 +12,9 @@
 #include "WKETH.h"
 
 static WKAccountDetails
-wkAccountCreateFromSeedETH(UInt512 seed) {
+wkAccountCreateFromSeedETH(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
     return ethAccountCreateWithBIP32Seed(seed);
 }
 

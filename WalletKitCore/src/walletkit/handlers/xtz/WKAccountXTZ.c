@@ -11,7 +11,9 @@
 #include "WKXTZ.h"
 
 static WKAccountDetails
-wkAccountCreateFromSeedXTZ(UInt512 seed) {
+wkAccountCreateFromSeedXTZ(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
     return tezosAccountCreateWithSeed(seed);
 }
 

@@ -190,7 +190,8 @@ public class DemoApplication extends Application {
         String uids = UUID.randomUUID().toString();
         account = Account.createFromPhrase(paperKey,
                                            accountSpec.getTimestamp(),
-                                           uids).get();
+                                           uids,
+                                           this.isMainnet).get();
 
 
         registerCurrencyCodes = isMainnet ? new HashSet(Arrays.asList(/* "zla", "adt" */)) :

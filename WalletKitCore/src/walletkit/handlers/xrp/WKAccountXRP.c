@@ -11,7 +11,9 @@
 #include "WKXRP.h"
 
 static WKAccountDetails
-wkAccountCreateFromSeedXRP(UInt512 seed) {
+wkAccountCreateFromSeedXRP(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
     return rippleAccountCreateWithSeed(seed);
 }
 
