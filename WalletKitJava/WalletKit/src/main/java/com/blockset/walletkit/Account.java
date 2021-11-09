@@ -27,9 +27,10 @@ public interface Account {
      * @param phraseUtf8 The UTF-8 NFKD normalized BIP-39 paper key
      * @param timestamp The timestamp of when this account was first created
      * @param uids The unique identifier of this account
+     * @param isMainnet Indicates the network is a main network
      */
-    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
-        return Api.getProvider().accountProvider().createFromPhrase(phraseUtf8, timestamp, uids);
+    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids, boolean isMainnet) {
+        return Api.getProvider().accountProvider().createFromPhrase(phraseUtf8, timestamp, uids, isMainnet);
     }
 
     /**

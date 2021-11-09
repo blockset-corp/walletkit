@@ -92,13 +92,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkBTC() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+	        defer { wkAccountGive (account) }
+        
             let network = createBitcoinNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -108,13 +109,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkBCH() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE: WK_FALSE)
+            defer { wkAccountGive (account) }
+        
             let network = createBitcoinCashNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -124,13 +126,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
     
     func testWalletKitWithAccountAndNetworkBSV() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+	        defer { wkAccountGive (account) }
+        
             let network = createBitcoinSVNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -140,13 +143,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkETH() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 8_000_000), (false, 4_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+            defer { wkAccountGive (account) }
+        
             let network = createEthereumNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 

@@ -73,12 +73,20 @@ wkAccountSerializeInternal(
 // BTC & BTC/BCH/BSV shared account handling functions
 
 static WKAccountDetails
-wkAccountCreateFromSeedBTC(UInt512  seed) {
+wkAccountCreateFromSeedBTC(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
 
     BRMasterPubKey *pubKey = (BRMasterPubKey*) calloc (1, sizeof(BRMasterPubKey));
     assert (pubKey != NULL);
 
-    *pubKey = BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8));
+    if (isMainnet)
+        *pubKey = BRBIP32MasterPubKey (seed.u8, sizeof (seed.u8));
+    else
+        *pubKey = BRBIP32MasterPubKeyPath(seed.u8, 
+                                          sizeof (seed.u8), 
+                                          BITCOIN_BIP32_DEPTH_TEST, 
+                                          BITCOIN_BIP32_CHILD_TEST);
 
     return pubKey;
 }
@@ -154,7 +162,9 @@ wkAccountSerializeLTC(
 }
 
 static WKAccountDetails
-wkAccountCreateFromSeedLTC(UInt512  seed) {
+wkAccountCreateFromSeedLTC(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
 
     return wkAccountCreateSeedInternal(seed,
                                        LTC_BIP32_DEPTH,
@@ -178,7 +188,9 @@ wkAccountSerializeDOGE(
 }
 
 static WKAccountDetails
-wkAccountCreateFromSeedDOGE(UInt512  seed) {
+wkAccountCreateFromSeedDOGE(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
 
     return wkAccountCreateSeedInternal(seed,
                                        DOGE_BIP32_DEPTH,

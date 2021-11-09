@@ -51,9 +51,10 @@ final class Account implements com.blockset.walletkit.Account {
      * @param phraseUtf8 The UTF-8 NFKD normalized BIP-39 paper key
      * @param timestamp The timestamp of when this account was first created
      * @param uids The unique identifier of this account
+     * @param isMainnet Indicates the network is a main network
      */
-    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
-        Optional<WKAccount> core = WKAccount.createFromPhrase(phraseUtf8, Utilities.dateAsUnixTimestamp(timestamp), uids);
+    static Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids, boolean isMainnet) {
+        Optional<WKAccount> core = WKAccount.createFromPhrase(phraseUtf8, Utilities.dateAsUnixTimestamp(timestamp), uids, isMainnet);
         return core.transform(Account::create);
     }
 

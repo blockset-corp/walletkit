@@ -88,7 +88,8 @@ class CoreDemoAppDelegate: UIResponder, UIApplicationDelegate, UISplitViewContro
 
         account = Account.createFrom (phrase: accountSpecification.paperKey,
                                       timestamp: accountSpecification.timestamp,
-                                      uids: accountUids)
+                                      uids: accountUids,
+                                      isMainnet: mainnet)
         guard nil != account
             else { preconditionFailure ("APP: No account") }
         accountSerialization = account.serialize
@@ -316,7 +317,8 @@ extension UIApplication {
                     app.accountSpecification = accountSpecification
                     app.account = Account.createFrom (phrase: accountSpecification.paperKey,
                                                       timestamp: accountSpecification.timestamp,
-                                                      uids: "WalletID: \(accountSpecification.identifier)")
+                                                      uids: "WalletID: \(accountSpecification.identifier)",
+                                                      isMainnet: mainnet)
 
                     print ("APP: Account PaperKey  : \(accountSpecification.paperKey.components(separatedBy: CharacterSet.whitespaces).first ?? "<missed>") ...")
                     print ("APP: Account Timestamp : \(app.account.timestamp)")
