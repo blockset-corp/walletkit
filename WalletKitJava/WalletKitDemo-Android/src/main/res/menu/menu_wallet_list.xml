@@ -9,6 +9,11 @@
         app:showAsAction="never"
         tools:ignore="HardcodedText" />
 
+    <item android:id="@+id/action_walletconnect"
+        android:title="Wallet Connect"
+        app:showAsAction="never"
+        tools:ignore="HardcodedText"/>
+
     <item android:id="@+id/action_connect"
         android:title="Connect"
         app:showAsAction="never"
@@ -38,5 +43,6 @@
         android:title="Wipe"
         app:showAsAction="never"
         tools:ignore="HardcodedText" />
+
 
 </menu>

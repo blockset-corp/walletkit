@@ -11,7 +11,9 @@
 #include "WKXLM.h"
 
 static WKAccountDetails
-wkAccountCreateFromSeedXLM(UInt512 seed) {
+wkAccountCreateFromSeedXLM(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
 
     return stellarAccountCreateWithSeed(seed);
 }

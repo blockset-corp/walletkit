@@ -532,7 +532,7 @@ public final class Wallet: Equatable {
                     guard let transactionAmount = newTransferAmount + newTransferFee
                         else { preconditionFailure() }
                     
-                    completion (self.balance >= transactionAmount
+                    completion (self.balance >= transactionAmount && newTransferAmount >= transferZero
                         ? Result.success (newTransferAmount)
                         : Result.failure (Wallet.LimitEstimationError.insufficientFunds))
 

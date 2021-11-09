@@ -66,9 +66,9 @@ public final class Account {
     ///
     /// - Returns: the paperKey's corresponding account, or NIL if the paperKey is invalid.
     ///
-    public static func createFrom (phrase: String, timestamp: Date, uids: String) -> Account? {
+    public static func createFrom (phrase: String, timestamp: Date, uids: String, isMainnet: Bool) -> Account? {
         let timestampAsInt = UInt64 (timestamp.timeIntervalSince1970)
-        return wkAccountCreate (phrase, timestampAsInt, uids)
+        return wkAccountCreate (phrase, timestampAsInt, uids, isMainnet ? WK_TRUE : WK_FALSE)
             .map { Account (core: $0, take: false) }
     }
 

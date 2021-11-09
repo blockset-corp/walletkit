@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <memory.h>
+#include "support/BROSCompat.h"
 #include "support/BRInt.h"
 #include "support/BRArray.h"
 #include "support/rlp/BRRlp.h"
@@ -72,6 +73,9 @@ ethHashCreateEmpty (void);
  */
 extern BREthereumHash
 ethHashCreateFromData (BRRlpData data);
+
+extern BREthereumHash
+ethHashCreateFromBytes (const uint8_t *bytes, size_t bytesCount);
 
 /**
  * Return the hex-encoded string

@@ -11,7 +11,9 @@
 #include "WKHBAR.h"
 
 static WKAccountDetails
-wkAccountCreateFromSeedHBAR(UInt512 seed) {
+wkAccountCreateFromSeedHBAR(
+    WKBoolean   isMainnet,
+    UInt512     seed    ) {
     return hederaAccountCreateWithSeed(seed);
 }
 

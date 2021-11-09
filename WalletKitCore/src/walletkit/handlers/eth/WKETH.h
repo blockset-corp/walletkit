@@ -150,22 +150,23 @@ wkWalletLookupTransferByOriginatingHash (WKWalletETH wallet,
 typedef struct WKWalletManagerETHRecord {
     struct WKWalletManagerRecord base;
 
-    BREthereumNetwork network;
     BREthereumAccount account;
-
     BRSetOf(BREthereumToken) tokens;
 
     BRRlpCoder coder;
-
 } *WKWalletManagerETH;
 
 extern WKWalletManagerETH
 wkWalletManagerCoerceETH (WKWalletManager manager);
 
+static inline BREthereumNetwork
+wkWalletManagerGetNetworkAsETH (WKWalletManager manager) {
+    return wkNetworkAsETH (manager->network);
+}
+
 private_extern WKWalletETH
 wkWalletManagerEnsureWalletForToken (WKWalletManagerETH managerETH,
                                          BREthereumToken token);
-
 
 // MARK: - Support
 
@@ -186,6 +187,13 @@ wkFeeBasisCreateAsETH (WKUnit unit,
 
 private_extern BREthereumFeeBasis
 wkFeeBasisAsETH (WKFeeBasis feeBasis);
+
+// MARK: - Wallet Connector
+
+typedef struct WKWalletConnectorETHRecord {
+    struct WKWalletConnectorRecord base;
+    // ...
+} *WKWalletConnectorETH;
 
 // MARK: - Support
 

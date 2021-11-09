@@ -218,7 +218,8 @@ let package = Package(
             ],
             path: "WalletKitCoreTests",
             exclude: [
-                "test"
+                "test",
+                "WalletKitCoreTests.c"
             ],
             cSettings: [
                 .headerSearchPath("../src"),

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:orientation="vertical">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Request:" />
+
+            <TextView
+                android:id="@+id/requestId_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="ARequestId" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Please Approve:" />
+
+            <TextView
+                android:id="@+id/requestType_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="sessionUriGoesHere" />
+        </TableRow>
+    </TableLayout>
+
+   <!-- <TextView
+        android:id="@+id/requestId_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ARequestId" />
+
+    <TextView
+        android:id="@+id/requestType_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="sessionUriGoesHere" /> -->
+</LinearLayout>

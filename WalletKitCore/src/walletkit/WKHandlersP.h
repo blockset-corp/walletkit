@@ -19,6 +19,7 @@
 #include "WKWalletManagerP.h"
 #include "WKWalletSweeperP.h"
 #include "WKExportablePaperWalletP.h"
+#include "WKWalletConnectorP.h"
 #include "WKPaymentP.h"
 #include "WKFeeBasisP.h"
 
@@ -41,7 +42,8 @@ typedef struct {
     const WKWalletHandlers   *wallet;
     const WKWalletSweeperHandlers *sweeper;                           // NULLable
     const WKExportablePaperWalletHandlers *exportablePaperWallet;     // NULLable
-    const WKPaymentProtocolHandlers *payment;
+    const WKPaymentProtocolHandlers *payment;                         // NULLable
+    const WKWalletConnectorHandlers *connector;                       // NULLable
     const WKFeeBasisHandlers *feeBasis;
     const WKWalletManagerHandlers *manager;
 } WKHandlers;

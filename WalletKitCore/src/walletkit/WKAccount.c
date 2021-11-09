@@ -95,9 +95,10 @@ wkAccountCreateInternal (WKTimestamp timestamp,
 }
 
 static WKAccount
-wkAccountCreateFromSeedInternal (UInt512 seed,
-                                 WKTimestamp timestamp,
-                                 const char *uids) {
+wkAccountCreateFromSeedInternal (UInt512        seed,
+                                 WKTimestamp    timestamp,
+                                 const char     *uids,
+                                 WKBoolean      isMainnet) {
 
     const WKHandlers        *netHandlers;
     const WKAccountHandlers *acctHandlers;
@@ -112,19 +113,23 @@ wkAccountCreateFromSeedInternal (UInt512 seed,
 
         netHandlers = wkHandlersLookup(netNo);
         acctHandlers = netHandlers->account;
-        acct->networkAccounts[netNo] = acctHandlers->createFromSeed(seed);
+        acct->networkAccounts[netNo] = acctHandlers->createFromSeed(isMainnet, seed);
     }
 
     return acct;
 }
 
 extern WKAccount
-wkAccountCreate (const char *phrase,
-                 WKTimestamp timestamp,
-                 const char *uids) {
+wkAccountCreate (const char     *phrase,
+                 WKTimestamp    timestamp,
+                 const char     *uids,
+                 WKBoolean      isMainnet) {
     wkAccountInstall();
 
-    return wkAccountCreateFromSeedInternal (wkAccountDeriveSeedInternal(phrase), timestamp, uids);
+    return wkAccountCreateFromSeedInternal (wkAccountDeriveSeedInternal(phrase), 
+                                            timestamp, 
+                                            uids,
+                                            isMainnet);
 }
 
 /**

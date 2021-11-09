@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkState;
 public final class Api {
 
     public interface AccountProvider {
-        Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids);
+        Optional<Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids, boolean isMainnet);
         Optional<Account> createFromSerialization(byte[] serialization, String uids);
         byte[] generatePhrase(List<String> words);
         boolean validatePhrase(byte[] phraseUtf8, List<String> words);

@@ -31,8 +31,8 @@ public final class ApiProvider implements Api.Provider {
 
     private static final Api.AccountProvider accountProvider = new Api.AccountProvider() {
         @Override
-        public Optional<com.blockset.walletkit.Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids) {
-            return Account.createFromPhrase(phraseUtf8, timestamp, uids).transform(a -> a);
+        public Optional<com.blockset.walletkit.Account> createFromPhrase(byte[] phraseUtf8, Date timestamp, String uids, boolean isMainnet) {
+            return Account.createFromPhrase(phraseUtf8, timestamp, uids, isMainnet).transform(a -> a);
         }
 
         @Override

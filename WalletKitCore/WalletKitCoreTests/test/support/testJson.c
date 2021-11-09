@@ -58,11 +58,11 @@ runJsonParseTest (void) {
 }
 
 static BRJson
-jsonTestsCreateArrayBools () {
+jsonTestsCreateArrayBools (BRJson valBoolTrue, BRJson valBoolFalse) {
     BRJsonStatus status;
 
-    BRJson valBoolTrue  = jsonCreateBoolean (true);
-    BRJson valBoolFalse = jsonCreateBoolean (false);
+    if (NULL == valBoolTrue)  valBoolTrue  = jsonCreateBoolean (true);
+    if (NULL == valBoolFalse) valBoolFalse = jsonCreateBoolean (false);
 
     BRArrayOf(BRJson) valBoolArray;
     array_new (valBoolArray, 2);
@@ -112,7 +112,9 @@ runJsonCreateTests () {
     assert (JSON_STATUS_OK ==  jsonRelease (valBoolTrue));
     assert (JSON_STATUS_OK ==  jsonRelease (valBoolFalse));
 
-    BRJson valBools = jsonTestsCreateArrayBools();
+    valBoolTrue  = jsonCreateBoolean (true);
+    valBoolFalse = jsonCreateBoolean (false);
+    BRJson valBools = jsonTestsCreateArrayBools(valBoolTrue, valBoolFalse);
 
     // Can't release; invalid to even reference
     assert (JSON_STATUS_OK !=  jsonRelease (valBoolTrue));
@@ -200,7 +202,7 @@ runJsonArrayPathTest () {
 
     BRJsonStatus status;
 
-    BRJson valBools = jsonTestsCreateArrayBools();
+    BRJson valBools = jsonTestsCreateArrayBools(NULL, NULL);
 
     BRJson valBool0 = jsonGetValue(valBools, &status, 1, jsonPathCreateIndex(0));
     assert (NULL != valBool0);
@@ -250,7 +252,7 @@ runJsonShowTest () {
 
     BRJsonStatus status;
 
-    BRJson valBools   = jsonTestsCreateArrayBools ();
+    BRJson valBools   = jsonTestsCreateArrayBools (NULL, NULL);
     BRJson valObject  = jsonTestsCreateObject     ();
     BRJson valComplex = jsonCreateObjectVargs (&status, 3,
                                                ((BRJsonObjectMember) { "lastname", jsonCreateString ("Nakamoto") }),

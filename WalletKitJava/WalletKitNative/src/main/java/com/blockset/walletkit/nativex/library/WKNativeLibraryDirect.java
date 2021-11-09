@@ -37,8 +37,8 @@ public final class WKNativeLibraryDirect {
     //
     public static native void wkMemoryFreeExtern(Pointer memory);
 
-    // crypto/BRCryptoAccount.h
-    public static native Pointer wkAccountCreate(ByteBuffer phrase, long /* BRCryptoTimestamp */ timestamp, String uids);
+    // include/WKAccount.h
+    public static native Pointer wkAccountCreate(ByteBuffer phrase, long /* BRCryptoTimestamp */ timestamp, String uids, int isMainnet);
     public static native Pointer wkAccountCreateFromSerialization(byte[] serialization, SizeT serializationLength, String uids);
     public static native long wkAccountGetTimestamp(Pointer account);
     public static native Pointer wkAccountGetUids(Pointer account);
@@ -50,12 +50,12 @@ public final class WKNativeLibraryDirect {
     public static native int wkAccountValidatePaperKey(ByteBuffer phraseBuffer, StringArray wordsArray);
     public static native void wkAccountGive(Pointer obj);
 
-    // crypto/BRCryptoAddress.h
+    // include/WKAddress.h
     public static native Pointer wkAddressAsString(Pointer address);
     public static native int wkAddressIsIdentical(Pointer a1, Pointer a2);
     public static native void wkAddressGive(Pointer obj);
 
-    // crypto/BRCryptoAmount.h
+    // include/WKAmount.h
     public static native Pointer wkAmountCreateDouble(double value, Pointer unit);
     public static native Pointer wkAmountCreateInteger(long value, Pointer unit);
     public static native Pointer wkAmountCreateString(String value, int isNegative, Pointer unit);
@@ -75,7 +75,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkAmountTake(Pointer obj);
     public static native void wkAmountGive(Pointer obj);
 
-    // crypto/BRCryptoCurrency.h
+    // include/WKCurrency.h
     public static native Pointer wkCurrencyGetUids(Pointer currency);
     public static native Pointer wkCurrencyGetName(Pointer currency);
     public static native Pointer wkCurrencyGetCode(Pointer currency);
@@ -84,7 +84,7 @@ public final class WKNativeLibraryDirect {
     public static native int wkCurrencyIsIdentical(Pointer c1, Pointer c2);
     public static native void wkCurrencyGive(Pointer obj);
 
-    // crypto/BRCryptoFeeBasis.h
+    // include/WKFeeBasis.h
     public static native Pointer wkFeeBasisGetPricePerCostFactor (Pointer feeBasis);
     public static native double wkFeeBasisGetCostFactor (Pointer feeBasis);
     public static native Pointer wkFeeBasisGetFee (Pointer feeBasis);
@@ -92,13 +92,13 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkFeeBasisTake(Pointer obj);
     public static native void wkFeeBasisGive(Pointer obj);
 
-    // crypto/BRCryptoHash.h
+    // include/WKHash.h
     public static native int wkHashEqual(Pointer h1, Pointer h2);
     public static native Pointer wkHashEncodeString(Pointer hash);
     public static native int wkHashGetHashValue(Pointer hash);
     public static native void wkHashGive(Pointer obj);
 
-    // crypto/BRCryptoKey.h
+    // include/WKKey.h
     public static native int wkKeyIsProtectedPrivate(ByteBuffer keyBuffer);
     public static native Pointer wkKeyCreateFromPhraseWithWords(ByteBuffer phraseBuffer, StringArray wordsArray);
     public static native Pointer wkKeyCreateFromStringPrivate(ByteBuffer stringBuffer);
@@ -117,7 +117,7 @@ public final class WKNativeLibraryDirect {
     public static native WKSecret.ByValue wkKeyGetSecret(Pointer key);
     public static native void wkKeyGive(Pointer key);
 
-    // crypto/BRCryptoNetwork.h
+    // include/WKNetwork.h (WKNetwork)
     public static native Pointer wkNetworkGetUids(Pointer network);
     public static native Pointer wkNetworkGetName(Pointer network);
     public static native int wkNetworkIsMainnet(Pointer network);
@@ -142,27 +142,32 @@ public final class WKNativeLibraryDirect {
     public static native int wkNetworkGetType(Pointer obj);
     public static native int wkNetworkGetDefaultAddressScheme(Pointer network);
     public static native Pointer wkNetworkGetSupportedAddressSchemes(Pointer network, SizeTByReference count);
+    public static native Pointer wkNetworkCreateAddress(Pointer pointer, String address);
     public static native int wkNetworkSupportsAddressScheme(Pointer network, int scheme);
     public static native int wkNetworkGetDefaultSyncMode(Pointer network);
     public static native Pointer wkNetworkGetSupportedSyncModes(Pointer network, SizeTByReference count);
     public static native int wkNetworkSupportsSyncMode(Pointer network, int mode);
     public static native int wkNetworkRequiresMigration(Pointer network);
-
-    public static native Pointer wkNetworkInstallBuiltins(SizeTByReference count);
     public static native Pointer wkNetworkFindBuiltin(String uids, int isMainnet);
-
     public static native int wkNetworkIsAccountInitialized (Pointer network, Pointer account);
     public static native Pointer wkNetworkGetAccountInitializationData (Pointer network, Pointer account, SizeTByReference bytesCount);
     public static native void wkNetworkInitializeAccount (Pointer network, Pointer account, byte[] bytes, SizeT bytesCount);
-    public static native Pointer wkNetworkCreateAddress(Pointer pointer, String address);
+    public static native void wkNetworkSetHeight(Pointer network, long height);
+    public static native void wkNetworkAddCurrency(Pointer network, Pointer currency, Pointer baseUnit, Pointer defaultUnit);
+    public static native void wkNetworkAddCurrencyUnit(Pointer network, Pointer currency, Pointer unit);
+    public static native void wkNetworkAddNetworkFee(Pointer network, Pointer networkFee);
 
-    // crypto/BRCryptoNetwork.h (BRCryptoNetworkFee)
+    // src/walletkit/WKNetworkP.h
+    public static native Pointer wkNetworkInstallBuiltins(SizeTByReference count);
+
+    // include/WKNetwork.h (WKNetworkFee)
     public static native long wkNetworkFeeGetConfirmationTimeInMilliseconds(Pointer fee);
     public static native Pointer wkNetworkFeeGetPricePerCostFactor(Pointer fee);
     public static native int wkNetworkFeeEqual(Pointer fee, Pointer other);
     public static native void wkNetworkFeeGive(Pointer obj);
+    public static native Pointer wkNetworkFeeCreate(long timeInternalInMilliseconds, Pointer pricePerCostFactor, Pointer pricePerCostFactorUnit);
 
-    // crypto/BRCryptoNetwork.h (BRCryptoPeer)
+    // include/WKPeer.h (WKPeer)
     public static native Pointer wkPeerCreate(Pointer network, String address, short port, String publicKey);
     public static native Pointer wkPeerGetNetwork(Pointer peer);
     public static native Pointer wkPeerGetAddress(Pointer peer);
@@ -171,32 +176,32 @@ public final class WKNativeLibraryDirect {
     public static native int wkPeerIsIdentical(Pointer peer, Pointer other);
     public static native void wkPeerGive(Pointer peer);
 
-    // crypto/BRCryptoPayment.h (BRCryptoPaymentProtocolRequestBitPayBuilder)
+    // include/WKPayment.h (WKPaymentProtocolRequestBitPayBuilder)
     public static native Pointer wkPaymentProtocolRequestBitPayBuilderCreate(Pointer network,
-                                                                                 Pointer currency,
-                                                                                 WKPayProtReqBitPayAndBip70Callbacks.ByValue callbacks,
-                                                                                 String name,
-                                                                                 long time,
-                                                                                 long expires,
-                                                                                 double feePerByte,
-                                                                                 String memo,
-                                                                                 String paymentUrl,
-                                                                                 byte[] merchantData,
-                                                                                 SizeT merchantDataLen);
+                                                                             Pointer currency,
+                                                                             WKPayProtReqBitPayAndBip70Callbacks.ByValue callbacks,
+                                                                             String name,
+                                                                             long time,
+                                                                             long expires,
+                                                                             double feePerByte,
+                                                                             String memo,
+                                                                             String paymentUrl,
+                                                                             byte[] merchantData,
+                                                                             SizeT merchantDataLen);
     public static native void wkPaymentProtocolRequestBitPayBuilderAddOutput(Pointer builder, String address, long amount);
     public static native Pointer wkPaymentProtocolRequestBitPayBuilderBuild(Pointer builder);
     public static native void wkPaymentProtocolRequestBitPayBuilderGive(Pointer builder);
 
-    // crypto/BRCryptoPayment.h (BRCryptoPaymentProtocolRequest)
+    // include/WKPayment.h (WKPaymentProtocolRequest)
     public static native int wkPaymentProtocolRequestValidateSupported(int type,
-                                                                           Pointer network,
-                                                                           Pointer currency,
-                                                                           Pointer wallet);
+                                                                       Pointer network,
+                                                                       Pointer currency,
+                                                                       Pointer wallet);
     public static native Pointer wkPaymentProtocolRequestCreateForBip70(Pointer network,
-                                                                            Pointer currency,
-                                                                            WKPayProtReqBitPayAndBip70Callbacks.ByValue callbacks,
-                                                                            byte[] serialization,
-                                                                            SizeT serializationLen);
+                                                                        Pointer currency,
+                                                                        WKPayProtReqBitPayAndBip70Callbacks.ByValue callbacks,
+                                                                        byte[] serialization,
+                                                                        SizeT serializationLen);
     public static native int wkPaymentProtocolRequestGetType(Pointer request);
     public static native int wkPaymentProtocolRequestIsSecure(Pointer request);
     public static native Pointer wkPaymentProtocolRequestGetMemo(Pointer request);
@@ -208,33 +213,20 @@ public final class WKNativeLibraryDirect {
     public static native int wkPaymentProtocolRequestIsValid(Pointer request);
     public static native void wkPaymentProtocolRequestGive(Pointer request);
 
-    // crypto/BRCryptoPayment.h (BRCryptoPaymentProtocolPayment)
+    // include/WKPayment.h (WKPaymentProtocolPayment)
     public static native Pointer wkPaymentProtocolPaymentCreate(Pointer request, Pointer transfer, Pointer refundAddress);
     public static native Pointer wkPaymentProtocolPaymentEncode(Pointer payment, SizeTByReference encodedLength);
     public static native void wkPaymentProtocolPaymentGive(Pointer payment);
 
-    // crypto/BRCryptoPayment.h (BRCryptoPaymentProtocolPaymentACK)
+    // include/WKPayment.h (WKPaymentProtocolPaymentACK)
     public static native Pointer wkPaymentProtocolPaymentACKCreateForBip70(byte[] serialization, SizeT serializationLen);
     public static native Pointer wkPaymentProtocolPaymentACKGetMemo(Pointer ack);
     public static native void wkPaymentProtocolPaymentACKGive(Pointer ack);
 
-    // crypto/BRCryptoPrivate.h (BRCryptoCurrency)
+    // include/WKCurrency.h (WKCurrency)
     public static native Pointer wkCurrencyCreate(String uids, String name, String code, String type, String issuer);
 
-    // crypto/BRCryptoPrivate.h (BRCryptoNetworkFee)
-    public static native Pointer wkNetworkFeeCreate(long timeInternalInMilliseconds, Pointer pricePerCostFactor, Pointer pricePerCostFactorUnit);
-
-    // crypto/BRCryptoPrivate.h (BRCryptoNetwork)
-    public static native void wkNetworkSetHeight(Pointer network, long height);
-    public static native void wkNetworkAddCurrency(Pointer network, Pointer currency, Pointer baseUnit, Pointer defaultUnit);
-    public static native void wkNetworkAddCurrencyUnit(Pointer network, Pointer currency, Pointer unit);
-    public static native void wkNetworkAddNetworkFee(Pointer network, Pointer networkFee);
-
-    // crypto/BRCryptoPrivate.h (BRCryptoUnit)
-    public static native Pointer wkUnitCreateAsBase(Pointer currency, String uids, String name, String symbol);
-    public static native Pointer wkUnitCreate(Pointer currency, String uids, String name, String symbol, Pointer base, byte decimals);
-
-    // crypto/BRCryptoTransfer.h
+    // include/WKTransfer.h (WKTransfer)
     public static native Pointer wkTransferGetSourceAddress(Pointer transfer);
     public static native Pointer wkTransferGetTargetAddress(Pointer transfer);
     public static native Pointer wkTransferGetAmount(Pointer transfer);
@@ -247,22 +239,23 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkTransferGetUnitForFee (Pointer transfer);
     public static native Pointer wkTransferGetEstimatedFeeBasis (Pointer transfer);
     public static native Pointer wkTransferGetConfirmedFeeBasis (Pointer transfer);
+    public static native SizeT wkTransferGetAttributeCount(Pointer transfer);
+    public static native Pointer wkTransferGetAttributeAt(Pointer transfer, SizeT index);
+    public static native int wkTransferEqual(Pointer transfer, Pointer other);
+    public static native Pointer wkTransferTake(Pointer obj);
+    public static native void wkTransferGive(Pointer obj);
 
+    // include/WKTransfer.h (WKTransferState)
     public static native int wkTransferStateGetType(Pointer state);
     public static native int wkTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, IntByReference success, PointerByReference error);
     public static native int wkTransferStateExtractError(Pointer state, WKTransferSubmitError.ByValue error);
     public static native Pointer wkTransferStateTake(Pointer state);
     public static native void wkTransferStateGive(Pointer state);
 
-    public static native SizeT wkTransferGetAttributeCount(Pointer transfer);
-    public static native Pointer wkTransferGetAttributeAt(Pointer transfer, SizeT index);
-
-    public static native int wkTransferEqual(Pointer transfer, Pointer other);
-    public static native Pointer wkTransferTake(Pointer obj);
-    public static native void wkTransferGive(Pointer obj);
-
+    // include/WKTransfer.h (WKTransferSubmitError)
     public static native Pointer wkTransferSubmitErrorGetMessage(WKTransferSubmitError error);
 
+    // include/WKTransfer.h (WKTransferAttribute)
     public static native Pointer wkTransferAttributeCopy(Pointer attribute);
     public static native Pointer wkTransferAttributeGetKey(Pointer attribute);
     public static native Pointer wkTransferAttributeGetValue(Pointer attribute);
@@ -270,8 +263,9 @@ public final class WKNativeLibraryDirect {
     public static native int wkTransferAttributeIsRequired(Pointer attribute);
     public static native void wkTransferAttributeGive(Pointer attribute);
 
-
-    // crypto/BRCryptoUnit.h
+    // include/WKUnit.h (WKUnit)
+    public static native Pointer wkUnitCreateAsBase(Pointer currency, String uids, String name, String symbol);
+    public static native Pointer wkUnitCreate(Pointer currency, String uids, String name, String symbol, Pointer base, byte decimals);
     public static native Pointer wkUnitGetUids(Pointer unit);
     public static native Pointer wkUnitGetName(Pointer unit);
     public static native Pointer wkUnitGetSymbol(Pointer unit);
@@ -283,7 +277,7 @@ public final class WKNativeLibraryDirect {
     public static native int wkUnitIsIdentical(Pointer u1, Pointer u2);
     public static native void wkUnitGive(Pointer obj);
 
-    // crypto/event/BRCryptoWallet.h
+    // include/event/WKWallet.h (WKWalletEvent)
     public static native int wkWalletEventGetType(Pointer event);
     public static native int wkWalletEventExtractState(Pointer event, IntByReference oldState, IntByReference newState);
     public static native int wkWalletEventExtractTransfer(Pointer event, PointerByReference transfer);
@@ -294,7 +288,7 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkWalletEventTake(Pointer event);
     public static native void wkWalletEventGive(Pointer event);
 
-    // crypto/BRCryptoWallet.h
+    // include/WKWallet.h (WKWallet)
     public static native int wkWalletGetState(Pointer wallet);
     public static native Pointer wkWalletGetBalance(Pointer wallet);
     public static native Pointer wkWalletGetBalanceMaximum(Pointer wallet);
@@ -308,22 +302,36 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkWalletGetCurrency(Pointer wallet);
     // INDIRECT: public static native Pointer wkWalletCreateTransfer(Pointer wallet, Pointer target, Pointer amount, Pointer feeBasis, SizeT attributesCount, Pointer arrayOfAttributes);
     public static native Pointer wkWalletCreateTransferForPaymentProtocolRequest(Pointer wallet, Pointer request, Pointer feeBasis);
-
     public static native SizeT wkWalletGetTransferAttributeCount(Pointer wallet, Pointer target);
     public static native Pointer wkWalletGetTransferAttributeAt(Pointer wallet, Pointer target, SizeT index);
     public static native int wkWalletValidateTransferAttribute(Pointer wallet, Pointer attribute, IntByReference validates);
     // INDIRECT: public static native int wkWalletValidateTransferAttributes(Pointer wallet, SizeT countOfAttributes, Pointer arrayOfAttributes, IntByReference validates);
+    public static native Pointer wkWalletTake(Pointer wallet);
+    public static native void wkWalletGive(Pointer obj);
 
+    // include/WKExportablePaperWallet.h (WKNetwork)
     public static native int wkExportablePaperWalletValidateSupported(Pointer network, Pointer currency);
     public static native Pointer wkExportablePaperWalletCreate(Pointer network, Pointer currency);
+
+    // include/WKExportablePaperWallet.h (WKExportablePaperWallet)
     public static native void wkExportablePaperWalletRelease(Pointer paperWallet);
     public static native Pointer wkExportablePaperWalletGetKey(Pointer paperWallet);
     public static native Pointer wkExportablePaperWalletGetAddress (Pointer paperWallet);
 
-    public static native Pointer wkWalletTake(Pointer wallet);
-    public static native void wkWalletGive(Pointer obj);
+    // include/WKWalletConnector.h (WKWalletConnector)
+    public static native Pointer wkWalletConnectorCreate(Pointer manager);
+    public static native void wkWalletConnectorRelease(Pointer connector);
+    public static native Pointer wkWalletConnectorCreateStandardMessage(Pointer connector, byte[] msg, SizeT messageLength, SizeTByReference standardMessageLength, IntByReference err);
+    public static native Pointer wkWalletConnectorGetDigest(Pointer connector, byte[] msg, SizeT msgLen, SizeTByReference digestLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateKey(Pointer connector, String phrase, IntByReference err);
+    public static native Pointer wkWalletConnectorSignData(Pointer connector, byte[] data, SizeT dataLength, Pointer key, SizeTByReference signatureLength, IntByReference err);
+    public static native Pointer wkWalletConnectorRecoverKey(Pointer connector, byte[] digest, SizeT digestLength, byte[] signature, SizeT signatureLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateTransactionFromArguments(Pointer connector, StringArray keysArray, StringArray valuesArray, SizeT arrayCount, Pointer defaultFee, SizeTByReference serializationLength, IntByReference err);
+    public static native Pointer wkWalletConnectorCreateTransactionFromSerialization(Pointer connector, byte[] data, SizeT dataLength, SizeTByReference serializationLength, IntByReference isSigned, IntByReference err);
+    public static native Pointer wkWalletConnectorSignTransactionData(Pointer connector, byte[] transactionData, SizeT dataLength, Pointer key, PointerByReference transactionIdentifier, SizeTByReference transactionIdentifierLength, SizeTByReference signedDataLength, IntByReference err);
+    public static native Pointer wkWalletConnectorSignTypedData(Pointer connector, String typedData, Pointer key,  PointerByReference digestData, SizeTByReference digestLength, SizeTByReference signatureLength, IntByReference err);
 
-    // crypto/BRCryptoWalletManager.h
+    // include/WKWalletManager.h (WKWalletManager)
     public static native Pointer wkWalletManagerWipe(Pointer network, String path);
     public static native Pointer wkWalletManagerCreate(WKWalletManager.Listener.ByValue listener,
                                                        WKClient.ByValue client,
@@ -361,12 +369,10 @@ public final class WKNativeLibraryDirect {
     public static native Pointer wkWalletManagerTake(Pointer cwm);
     public static native void wkWalletManagerGive(Pointer cwm);
 
+    // include/WKWalletManager.h (WKWalletManagerDisconnectReason)
     public static native Pointer wkWalletManagerDisconnectReasonGetMessage(WKWalletManagerDisconnectReason reason);
 
-    // crypto/BRCryptoSync.h
-    public static native Pointer wkSyncStoppedReasonGetMessage(WKSyncStoppedReason reason);
-
-    // crypto/BRCryptoWalletManager.h (BRCryptoWalletSweeper)
+    // include/WKWalletManager.h (WKWalletSweeper)
     public static native int wkWalletManagerWalletSweeperValidateSupported(Pointer cwm, Pointer wallet, Pointer key);
     public static native Pointer wkWalletManagerCreateWalletSweeper(Pointer cwm, Pointer wallet, Pointer key);
     public static native Pointer wkWalletSweeperGetKey(Pointer sweeper);
@@ -377,13 +383,16 @@ public final class WKNativeLibraryDirect {
     public static native void wkWalletSweeperRelease(Pointer sweeper);
     public static native Pointer wkWalletSweeperCreateTransferForWalletSweep(Pointer sweeper, Pointer walletManager, Pointer wallet, Pointer feeBasis);
 
+    // include/WKSync.h (WKSyncStoppedReason)
+    public static native Pointer wkSyncStoppedReasonGetMessage(WKSyncStoppedReason reason);
 
-    // crypto/BRCryptoClient.h
+
+    // include/WKClient.h
     public static native Pointer wkClientTransactionBundleCreate (int status,
-                                                                      byte[] transaction,
-                                                                      SizeT transactionLength,
-                                                                      long timestamp,
-                                                                      long blockHeight);
+                                                                  byte[] transaction,
+                                                                  SizeT transactionLength,
+                                                                  long timestamp,
+                                                                  long blockHeight);
     public static native void wkClientTransactionBundleRelease (Pointer bundle);
 
     // See 'Indirect': void wkClientTransferBundleCreate (int status, ...)
@@ -400,7 +409,7 @@ public final class WKNativeLibraryDirect {
     // Crypto Primitives
     //
 
-    // crypto/BRCryptoCipher.h
+    // include/WKCipher.h (WKCipher)
     public static native Pointer wkCipherCreateForAESECB(byte[] key, SizeT keyLen);
     public static native Pointer wkCipherCreateForChacha20Poly1305(Pointer key, byte[] nonce12, SizeT nonce12Len, byte[] ad, SizeT adLen);
     public static native Pointer wkCipherCreateForPigeon(Pointer privKey, Pointer pubKey, byte[] nonce12, SizeT nonce12Len);
@@ -411,7 +420,7 @@ public final class WKNativeLibraryDirect {
     public static native int wkCipherMigrateBRCoreKeyCiphertext(Pointer cipher, byte[] dst, SizeT dstLen, byte[] src, SizeT srcLen);
     public static native void wkCipherGive(Pointer cipher);
 
-    // crypto/BRCryptoCoder.h
+    // include/WKCoder.h (WKCoder)
     public static native Pointer wkCoderCreate(int type);
     public static native SizeT wkCoderEncodeLength(Pointer coder, byte[] src, SizeT srcLen);
     public static native int wkCoderEncode(Pointer coder, byte[] dst, SizeT dstLen, byte[] src, SizeT srcLen);
@@ -419,25 +428,25 @@ public final class WKNativeLibraryDirect {
     public static native int wkCoderDecode(Pointer coder, byte[] dst, SizeT dstLen, byte[] src);
     public static native void wkCoderGive(Pointer coder);
 
-    // crypto/BRCryptoHasher.h
+    // include/WKHasher.h (WKHasher)
     public static native Pointer wkHasherCreate(int type);
     public static native SizeT wkHasherLength(Pointer hasher);
     public static native int wkHasherHash(Pointer hasher, byte[] dst, SizeT dstLen, byte[] src, SizeT srcLen);
     public static native void wkHasherGive(Pointer hasher);
 
-    // crypto/BRCryptoSigner.h
+    // include/WKSigner.h (WKSigner)
     public static native Pointer wkSignerCreate(int type);
     public static native SizeT wkSignerSignLength(Pointer signer, Pointer key, byte[] digest, SizeT digestlen);
     public static native int wkSignerSign(Pointer signer, Pointer key, byte[] signature, SizeT signatureLen, byte[] digest, SizeT digestLen);
     public static native Pointer wkSignerRecover(Pointer signer, byte[] digest, SizeT digestLen, byte[] signature, SizeT signatureLen);
     public static native void wkSignerGive(Pointer signer);
 
-    // crypto/BRCryptoListener.h
+    // include/WKListener.h (WKListener)
     public static native Pointer wkListenerCreate (Pointer context, Callback systemCB, Callback networkCB, Callback managerCB, Callback walletCB, Callback transferCB);
     public static native Pointer wkListenerTake(Pointer listener);
     public static native void wkListenerGive(Pointer listener);
 
-    // crypto/BRCryptoSystem.h
+    // include/WKSystem.h
     public static native Pointer wkSystemCreate(WKClient.ByValue client,
                                                 Pointer listener,
                                                 Pointer account,

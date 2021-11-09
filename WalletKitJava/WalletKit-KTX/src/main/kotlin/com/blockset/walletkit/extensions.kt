@@ -74,6 +74,14 @@ suspend fun PaymentProtocolRequest.estimate(fee: NetworkFee): TransferFeeBasis {
     }
 }
 
+/** See [WalletManager.createWalletConnector]. */
+@Throws(WalletConnectorError::class)
+suspend fun WalletManager.createWalletConnector(): WalletConnector {
+    return suspendForCompletion<WalletConnector, WalletConnectorError> {
+        createWalletConnector(it)
+    }
+}
+
 private suspend fun <R, E : Exception> suspendForCompletion(
         block: (CompletionHandler<R, E>) -> kotlin.Unit
 ): R = suspendCancellableCoroutine { continuation ->

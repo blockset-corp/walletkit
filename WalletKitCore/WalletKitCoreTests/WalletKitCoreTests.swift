@@ -92,13 +92,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkBTC() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+	        defer { wkAccountGive (account) }
+        
             let network = createBitcoinNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -108,13 +109,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkBCH() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE: WK_FALSE)
+            defer { wkAccountGive (account) }
+        
             let network = createBitcoinCashNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -124,13 +126,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
     
     func testWalletKitWithAccountAndNetworkBSV() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 500_000), (false, 1_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+	        defer { wkAccountGive (account) }
+        
             let network = createBitcoinSVNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -140,13 +143,14 @@ final class WalletKitCoreTests: XCTestCase {
     }
 
     func testWalletKitWithAccountAndNetworkETH() {
-        let account = wkAccountCreate(paperKey, 0, uids)
-        defer { wkAccountGive (account) }
 
         let configurations: [(Bool, UInt64)] = [(true, 8_000_000), (false, 4_500_000),]
         configurations.forEach { (isMainnet, blockHeight) in
             storagePathClear();
 
+            let account = wkAccountCreate(paperKey, 0, uids, isMainnet ? WK_TRUE : WK_FALSE)
+            defer { wkAccountGive (account) }
+        
             let network = createEthereumNetwork (isMainnet: isMainnet, blockHeight: blockHeight)
             defer { wkNetworkGive (network) }
 
@@ -183,12 +187,16 @@ final class WalletKitCoreTests: XCTestCase {
         runBcTests()
     }
 
+    func testTransactionETH () {
+        runTransactionTests (0)
+    }
+
     func testContractETH () {
         runContractTests()
     }
 
-    func testBasicsETH () {
-        runTests (0)
+    func testStructureETH () {
+        runStructureTests()
     }
 
     // MARK: - Ripple
@@ -229,7 +237,7 @@ final class WalletKitCoreTests: XCTestCase {
         XCTAssert(1 == BRRunTests())
 //        XCTAssert(1 == BRRunTestsBWM (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0)));
     }
-
+    
     func testBitcoinSyncOne() {
         BRRunTestsSync (paperKey, bitcoinChain, (isMainnet ? 1 : 0));
     }
@@ -309,6 +317,11 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
+    // MARK: - WalletConnect 1.0
+    func testWalletConnect() {
+        runWalletConnectTests();
+    }
+    
     private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
         let network = wkNetworkFindBuiltin(uids, isMainnet);
@@ -457,8 +470,9 @@ final class WalletKitCoreTests: XCTestCase {
         ("testEvent",           testEventETH),
         ("testBase",            testBaseETH),
         ("testBC",              testBlockchainETH),
-        ("testContracdt",       testContractETH),
-        ("testBasics",          testBasicsETH),
+        ("testTransactions",    testTransactionETH),
+        ("testContract",        testContractETH),
+        ("testStructure",       testStructureETH),
 
         // Avalanche
         ("testAvalanche",          testAvalanche),
@@ -479,6 +493,9 @@ final class WalletKitCoreTests: XCTestCase {
         ("testSupportBTC",      testBitcoinSupport),
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
+        
+        // WalletConnect 1.0 Handler
+        ("testWalletConnect",   testWalletConnect),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
         
         // Avalanche

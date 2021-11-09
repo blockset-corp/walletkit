@@ -175,8 +175,9 @@ static void runSignatureTests1 (void) {
     // VRS
     printf ("      SigVRS\n");
     BREthereumSignature sigVRS = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_VRS_EIP,
-                                                  signingBytes, signingBytesCount,
-                                                  privateKeyUncompressed);
+                                                     signingBytes, signingBytesCount,
+                                                     privateKeyUncompressed,
+                                                     NULL);
 
     assert (sigVRS.sig.vrs.v == 0x1b);
     assert (0 == memcmp (sigVRS.sig.vrs.r, sigRData, sigRDataLen));
@@ -189,9 +190,10 @@ static void runSignatureTests1 (void) {
     // RSV
     printf ("      SigRSV\n");
     BREthereumSignature sigRSV = ethSignatureCreate (SIGNATURE_TYPE_RECOVERABLE_RSV,
-                                                  signingBytes, signingBytesCount,
-                                                  privateKeyUncompressed);
-
+                                                     signingBytes, signingBytesCount,
+                                                     privateKeyUncompressed,
+                                                     NULL);
+    
     assert (sigRSV.sig.rsv.v == 0x00);
     assert (0 == memcmp (sigRSV.sig.rsv.r, sigRData, sigRDataLen));
     assert (0 == memcmp (sigRSV.sig.rsv.s, sigSData, sigSDataLen));

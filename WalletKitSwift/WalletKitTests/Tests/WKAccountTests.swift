@@ -42,7 +42,7 @@ class WKAccountTests: XCTestCase {
         let timestamp = dateFormatter.date(from: date)!
 
         let walletId = UUID (uuidString: "5766b9fa-e9aa-4b6d-9b77-b5f1136e5e96")?.uuidString ?? "empty-wallet-id"
-        guard let a1 = Account.createFrom (phrase: phrase, timestamp: timestamp, uids: walletId)
+        guard let a1 = Account.createFrom (phrase: phrase, timestamp: timestamp, uids: walletId, isMainnet: false)
             else { XCTAssert(false); return}
 
         // XCTAssertEqual (a1.addressAsETH, address)
@@ -57,7 +57,7 @@ class WKAccountTests: XCTestCase {
         XCTAssertEqual (a2.uids, walletId)
 
         guard let (phrase3, timestamp3) = Account.generatePhrase (words: WKAccountTests.words),
-            let a3 = Account.createFrom (phrase: phrase3, timestamp: timestamp3, uids: "ignore")
+              let a3 = Account.createFrom (phrase: phrase3, timestamp: timestamp3, uids: "ignore", isMainnet: false)
             else { XCTAssert (false); return }
 
         XCTAssertFalse (a3.validate(serialization: a1.serialize))

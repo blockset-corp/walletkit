@@ -75,11 +75,15 @@ wkAccountValidateWordsList (size_t wordsCount);
  * @param paperKey the paper key
  * @param timestamp the paper key's creation timestamp
  * @param uids a uids
+ * @param isMainnet Indicates the network is a main network
  *
  * @return The Account, or NULL.  In practice NULL is never returned.
  */
 extern WKAccount
-wkAccountCreate (const char *paperKey, WKTimestamp timestamp, const char *uids);
+wkAccountCreate (const char     *paperKey, 
+                 WKTimestamp    timestamp, 
+                 const char     *uids,
+                 WKBoolean      isMainnet   );
 
 /**
  * Recreate an Account from a serialization
