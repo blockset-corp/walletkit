@@ -791,7 +791,8 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_sources (WalletKitCoreTest
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletKit.c
-                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletConnect.c)
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testWalletConnect.c
+                    ${PROJECT_SOURCE_DIR}/WalletKitCoreTests/test/walletkit/testBTCWalletManager.c)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 

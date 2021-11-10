@@ -159,6 +159,10 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
+    func testBTCWalletManager() {
+        runBTCWalletManagerTests();
+    }
+    
     // MARK: - Support
 
     func testJSONSUP () {
@@ -455,6 +459,7 @@ final class WalletKitCoreTests: XCTestCase {
         ("testWalletKitBTC",    testWalletKitWithAccountAndNetworkBTC),
         ("testWalletKitBCH",    testWalletKitWithAccountAndNetworkBCH),
         ("testWalletKitETH",    testWalletKitWithAccountAndNetworkETH),
+        ("testBTCWalletManager", testBTCWalletManager),
 
         // Support
         ("testRLP",             testRLPSUP),
