@@ -1,0 +1,24 @@
+/*
+ * module.c
+ *
+ *  Created on: Nov. 12, 2021
+ *      Author: bryangoring
+ */
+
+// Acts in the capacity of a module registering 
+// the domain of all module logs...Only the module file that will
+// LOG_REGISTER_MODULE need to include the module's log
+// definition file with 'MACRO_GENERATION'. This should be done once
+// ...somewhere for each module. This represents the
+// runtime aspect of the module logging setup
+
+#define MACRO_GENERATION
+#include "module_logs.h"
+
+void initModule() {
+    LOG_REGISTER_MODULE(SAMPLE);
+    LOG_ADD_SUBMODULE(SAMPLE, SUBA);
+    LOG_ADD_SUBMODULE(SAMPLE, SUBB);
+    LOG_ADD_SUBMODULE(SAMPLE, SUBC);
+}
+

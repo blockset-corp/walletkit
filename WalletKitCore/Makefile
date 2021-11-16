@@ -75,7 +75,21 @@ btc-test:	clean
 btc-test-run:	btc-test
 		./btc-test
 
+logtest: clean
+	cc -o $@ -Isrc -IWalletKitCoreTests/test/log -IWalletKitCoreTests/test/module \
+	$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD) \
+	./src/support/BRLog.c \
+	./src/support/BROSCompat.c \
+	./WalletKitCoreTests/test/log/testlog.c \
+	./WalletKitCoreTests/test/log/module/module.c \
+	./WalletKitCoreTests/test/log/module/module_log_user.c
 
+logtest_pp: clean
+	cc -Isrc -E -IWalletKitCoreTests/test/log -IWalletKitCoreTests/test/module \
+	$(CFLAGS_OS_BRD) $(CFLAGS_CPU_BRD) \
+	./src/support/BRLog.c \
+	./WalletKitCoreTests/test/log/testlog.c \
+	./WalletKitCoreTests/test/log/module/module.c > out.cpp
 
 #######################################################################################
 #  Targets for cmake 
