@@ -5,6 +5,7 @@
  *      Author: bryangoring
  */
 #include <stdio.h>
+#include <string.h>
 
 // For use of logs in the system of loggers
 #include "support/BRLog.h"
@@ -24,8 +25,14 @@ int main (int argc, char* argv[]) {
     
     printf("---ERRR+WARN-----\n");
     userFunction();
-    printf("---\n");
-    printf("Done\n");
+    printf("------DESCS------\n");
+    BRLogModule* list;
+    size_t numDescs = getAllLogLevelsList (&list);
+    printf ("Number of system logs: %lu", numDescs);
+    for (size_t i=0; i < numDescs; i++) 
+        printf ("%lu) %s lvl %u\n", i, list[i]->name, list[i]->level);
+    releaseAllLogLevelsList(list);
+    printf("\nDone\n");
     return 0;
 }
 

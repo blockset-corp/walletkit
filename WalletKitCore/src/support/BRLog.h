@@ -94,21 +94,21 @@ typedef enum {
 #define MAX_LOG_MOD_NAME_LEN    (8)
 #define MAX_LOG_ADDRESS_LEN     (2 * MAX_LOG_MOD_NAME_LEN + 1) // 'mod'_'submod'
 
-typedef struct Module {
+typedef struct BRLogModuleStruct {
     BRLogLevel      level;
     char            name[MAX_LOG_ADDRESS_LEN + 1];
-} *LogModule;
+} *BRLogModule;
 
 // A 'base' or system-wide log module for using as root
 // of all first order modules
-extern LogModule SYSTEM_LOG;
+extern BRLogModule SYSTEM_LOG;
 
 void initLogSystem ();
 void registerLogModule  (   const char      *moduleName, 
-                            LogModule       *module,
-                            LogModule       *submodule);
+                            BRLogModule     *module,
+                            BRLogModule     *submodule);
 void doLog              (   BRLogLevel      lvl, 
-                            LogModule       mod, 
+                            BRLogModule     mod, 
                             const char*     fmt, ...);
 
 /* Log module and submodule declarations follow:
@@ -123,18 +123,18 @@ void doLog              (   BRLogLevel      lvl,
 #ifdef MACRO_GENERATION
 
 #define LOG_DECLARE_MODULE(mod) \
-LogModule mod##_LOG
+BRLogModule mod##_LOG
 
 #define LOG_DECLARE_SUBMODULE(mod,submod) \
-LogModule mod##_##submod##_LOG
+BRLogModule mod##_##submod##_LOG
 
 #else 
 
 #define LOG_DECLARE_MODULE(mod) \
-extern LogModule mod##_LOG
+extern BRLogModule mod##_LOG
 
 #define LOG_DECLARE_SUBMODULE(mod,submod) \
-extern LogModule mod##_##submod##_LOG
+extern BRLogModule mod##_##submod##_LOG
 
 #endif
 
@@ -156,7 +156,7 @@ extern LogModule mod##_##submod##_LOG
 // @param args ... variadac arguments
 #define LOG(lvl, modOrSubmod, fmt, ...)                                     \
     assert (lvl < MAX_LEVELS);                                              \
-    if (modOrSubmod##_LOG->level >= lvl)                                  \
+    if (modOrSubmod##_LOG->level >= lvl)                                    \
         doLog (lvl, modOrSubmod##_LOG, fmt, ##__VA_ARGS__); 
 
 /*OR
@@ -186,5 +186,7 @@ void setLogLevel(BRLogLevel newLevel, const char* modName, const char* submodNam
 // Query current module, submodules and their active log level
 // Query returned information can be used to decide which modName and submodName are
 // available to 'setLogLevel()' and also indicate the current log levels
+size_t  getAllLogLevelsList     (BRLogModule    **list);
+void    releaseAllLogLevelsList (BRLogModule    *list);
 
 #endif /* BRLog_h */
