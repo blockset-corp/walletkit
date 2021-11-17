@@ -205,6 +205,8 @@ static void ltcChainParamsInit(void) {
         { 1864800, uint256("5ee1124d9cd0678de49155b6b95a3353b2123474bf8d3c4bdd37c4b8d7dfcec1"), 1592946567, 0x1a01f14c },
         { 2016000, uint256("eef80e94f486359dddff7347f91290244b43bc575dfe097fc61ec29cf2b01f96"), 1615625468, 0x1a01bc1d }
         // 2167200
+        // 2318400
+        // 2469600
     };
 
     // Initialize ltc mainnet checkpoints
