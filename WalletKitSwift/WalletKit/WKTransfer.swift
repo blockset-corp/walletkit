@@ -498,6 +498,10 @@ public struct TransferIncludeStatus: Equatable, Error {
         var coreVar = core
         self.details = asUTF8String(wkTransferIncludeStatusGetDetails (&coreVar))
     }
+
+    internal static func success () -> TransferIncludeStatus {
+        return TransferIncludeStatus (wkTransferIncludeStatusCreateSuccess())
+    }
 }
 
 extension TransferIncludeStatus: CustomStringConvertible {

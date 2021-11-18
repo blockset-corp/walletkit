@@ -69,9 +69,6 @@ public class WKTransferIncludeStatus extends Structure {
     }
 
     public WKTransferIncludeStatus(int type, byte[] details) {
-//        super (WKNativeLibraryDirect.wkTransferSubmitErrorCreate(type, details))
-//
-//        )
         super();
         this.type = type;
         this.details = details;
