@@ -91,6 +91,7 @@ typedef enum {
 #define MAX_LEVELS          (LL_VERBOSE + 1)
 #define DEFAULT_LOG_LEVEL   (LL_WARN)
 
+#define UNSPECIFIED_LOG_MOD     (NULL)
 #define MAX_LOG_MOD_NAME_LEN    (8)
 #define MAX_LOG_ADDRESS_LEN     (2 * MAX_LOG_MOD_NAME_LEN + 1) // 'mod'_'submod'
 
@@ -159,29 +160,22 @@ extern BRLogModule mod##_##submod##_LOG
     if (modOrSubmod##_LOG->level >= lvl)                                    \
         doLog (lvl, modOrSubmod##_LOG, fmt, ##__VA_ARGS__); 
 
-/*OR
- * could do it like the following where a secondary macro specifies both
- * the module and submodule as separate arguments, but the downside is that
- * there needs to be two differently named macros...
- * 
- #define LOGSM(lvl, mod, submod, fmt, ...) \
-    assert (lvl < MAX_LEVELS); \
-    if (mod##_##submod##_LOG->level >=  lvl)                         \
-        doLog (lvl, mod##_LOG, mod##_##submod##_LOG, fmt, ##__VA_ARGS__); 
-        
- */
-
 // Set the new log level for any module or module and submodule, or module and all its
-// decendents
+// submodules
 //
-// @param newLevel The new level to be set to
-// @param modName The parent module name (e.g. SYSTEM or one of the names defined via
-//                LOG_DECLARE_MODULE
-// @param submodName The child or submodule name OR 
-//                       - NULL indicating that only the parent changes
-//                       - a specific name as declared via LOG_DECLARE_SUBMODULE
-//                       - "*" indicating the parent and all its children down to submodules
-void setLogLevel(BRLogLevel newLevel, const char* modName, const char* submodName);
+// @param newLevel      The new level to be set to
+// @param modName       The parent module name:
+//                          - a specific name as declared via LOG_DECLARE_MODULE
+//                          - "*" indicating all modules defined with the system
+// @param submodName    The child or submodule name OR 
+//                          - 'UNSPECIFIED_LOG_MOD' indicating that only the parent changes
+//                          - a specific name as declared via LOG_DECLARE_SUBMODULE
+//                          - "*" indicating the parent and all its children down to submodules
+// @return 0 When the module/submodule specification matched and existing module, < 0 otherwise
+int setLogLevel(BRLogLevel newLevel, const char* modName, const char* submodName);
+
+// Reset all system log levels to default (LL_WARN)
+void resetAllLogLevels();
 
 // Query current module, submodules and their active log level
 // Query returned information can be used to decide which modName and submodName are

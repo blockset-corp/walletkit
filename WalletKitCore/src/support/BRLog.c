@@ -178,12 +178,59 @@ void doLog(
     printf("%s\n", logMsg);
 }
 
-void setLogLevel(
-    BRLogLevel  newLevel,
-    const char  *modName,
-    const char  *submodName )
+static void setAllSubmodulesLogLevel(
+    struct BRModuleInfoStruct   *mod,
+    BRLogLevel                  newLevel )  {
+    
+    assert (NULL != mod);
+    
+    mod->base.level = newLevel;
+    for (uint32_t i=0; i < mod->numModules; i++) {
+        setAllSubmodulesLogLevel (mod->modules[i], newLevel);
+    }
+}
+
+static int setSubmoduleLogLevels(
+    struct BRModuleInfoStruct   *mod,
+    BRLogLevel                  newLevel,
+    const char                  *modName,
+    const char                  *submodName )
 {
-    // TODO...
+    assert (NULL != modName);
+    
+    if (0 == strcmp (modName, "*")) {
+        // Wildcard on all sub module definitions of the current root
+        setAllSubmodulesLogLevel (mod, newLevel);
+        return 0;
+    } else {
+        for (size_t i=0; i < mod->numModules; i++) {
+            if (0 == strcmp (mod->modules[i]->tag, modName)) {
+                if (NULL != submodName) {
+                    return setSubmoduleLogLevels(mod->modules[i], newLevel, submodName, NULL);
+                } else {
+                    mod->modules[i]->base.level = newLevel;
+                    return 0;
+                }
+            }
+        }
+    }
+    
+    return -1;
+}
+
+int setLogLevel(
+    BRLogLevel newLevel,
+    const char* modName,
+    const char* submodName  ) {
+    
+   return setSubmoduleLogLevels((struct BRModuleInfoStruct*)SYSTEM_LOG, 
+                                newLevel, 
+                                modName, 
+                                submodName);
+}
+
+void resetAllLogLevels() {
+    setLogLevel (DEFAULT_LOG_LEVEL, "*", UNSPECIFIED_LOG_MOD);
 }
 
 static BRLogModule logModuleFromInfo(struct BRModuleInfoStruct *info) {
