@@ -248,8 +248,8 @@ public final class WKNativeLibraryDirect {
 
     // include/WKTransfer.h (WKTransferState)
     public static native int wkTransferStateGetType(Pointer state);
-    public static native int wkTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, WKTransferIncludeStatus.ByValue status);
-    public static native int wkTransferStateExtractError(Pointer state, WKTransferSubmitError.ByValue error);
+    public static native int wkTransferStateExtractIncluded(Pointer state, LongByReference blockNumber, LongByReference blockTimestamp, LongByReference transactionIndex, PointerByReference feeBasis, WKTransferIncludeStatus.ByReference status);
+    public static native int wkTransferStateExtractError(Pointer state, WKTransferSubmitError.ByReference error);
     public static native Pointer wkTransferStateTake(Pointer state);
     public static native void wkTransferStateGive(Pointer state);
 

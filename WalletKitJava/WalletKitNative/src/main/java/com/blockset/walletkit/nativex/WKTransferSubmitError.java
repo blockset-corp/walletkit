@@ -224,7 +224,7 @@ public class WKTransferSubmitError extends Structure {
     }
 
     protected List<String> getFieldOrder() {
-        return Arrays.asList("details", "type");
+        return Arrays.asList("type", "details");
     }
 
     public static class ByReference extends WKTransferSubmitError implements Structure.ByReference {}

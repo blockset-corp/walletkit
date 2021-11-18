@@ -57,7 +57,7 @@ public class WKTransferState extends PointerType {
         LongByReference transactionIndex = new LongByReference();
 
         PointerByReference feeBasis = new PointerByReference();
-        WKTransferIncludeStatus.ByValue status = new WKTransferIncludeStatus.ByValue();
+        WKTransferIncludeStatus.ByReference status = new WKTransferIncludeStatus.ByReference();
 
         if (WKBoolean.WK_FALSE ==
                 WKNativeLibraryDirect.wkTransferStateExtractIncluded(
@@ -83,7 +83,7 @@ public class WKTransferState extends PointerType {
     }
 
     public WKTransferSubmitError errored() {
-        WKTransferSubmitError.ByValue error = new WKTransferSubmitError.ByValue();
+        WKTransferSubmitError.ByReference error = new WKTransferSubmitError.ByReference();
 
         if (WKBoolean.WK_FALSE ==
                 WKNativeLibraryDirect.wkTransferStateExtractError(
